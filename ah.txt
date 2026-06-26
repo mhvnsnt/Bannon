@@ -1,0 +1,29 @@
+21623:  const _origHit = Fighter.prototype.applyHit;
+21625:    Fighter.prototype.applyHit = function(dmg, region, atk){
+22032:  const _origHit = Fighter.prototype.applyHit;
+22034:    Fighter.prototype.applyHit = function(dmg, region, atk){
+22198:  const _origHit = Fighter.prototype.applyHit;
+22200:  Fighter.prototype.applyHit = function(dmg, region, atk){
+29504:  const _origHit = Fighter.prototype.applyHit;
+29506:    Fighter.prototype.applyHit = function(dmg, region, atk) {
+29556:      call: 'Fighter.prototype.applyHit / update append'
+29850:  const _origHit = Fighter.prototype.applyHit;
+29852:    Fighter.prototype.applyHit = function(dmg, region, atk) {
+29870:      call: 'Fighter.prototype.applyHit active-ragdoll disruption'
+30192:  const _origHit = Fighter.prototype.applyHit;
+30194:    Fighter.prototype.applyHit = function(dmg, region, atk) {
+30230:      call: 'Fighter.prototype.applyHit shockwave-ripple'
+30240:  const _origHit = Fighter.prototype.applyHit;
+30242:    Fighter.prototype.applyHit = function(dmg, region, atk) {
+30272:      call: 'Fighter.prototype.applyHit exanima-trip'
+30490:     const _origHit = Fighter.prototype.applyHit;
+30492:         Fighter.prototype.applyHit = function(dmg, region, atk) {
+30575:  const _origHit = Fighter.prototype.applyHit;
+30577:    Fighter.prototype.applyHit = function(dmg, region, atk) {
+30608:      call: 'Fighter.prototype.applyHit glancing-blow'
+30746:  const _origHit = Fighter.prototype.applyHit;
+30748:    Fighter.prototype.applyHit = function(dmg, region, atk) {
+30787:      call: 'Fighter.prototype.applyHit swelling-deformation'
+33561:  const _origHitCloth = Fighter.prototype.applyHit;
+33562:  Fighter.prototype.applyHit = function(dmg, region, atk) {
+33880:        call: 'AdvancedVerletCloth / Fighter.prototype.buildMesh / applyHit / update / updateRagdoll / applyMesh'

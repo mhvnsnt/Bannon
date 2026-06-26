@@ -1,0 +1,43 @@
+4282:      this.J.ftL.set( 0.18*fl, 0.22+0.30*fl,  0.16); this.J.knL.set( 0.22*fl, 0.55+0.25*fl,  0.14);
+4308:    this.J.knL.set(this.ftTgtL.x*0.5+0.09,0.46,0.15); this.J.knR.set(this.ftTgtR.x*0.5+0.09,0.46,-0.15);
+4386:  this.J.knL.set(0.08,0.44,0.16); this.J.knR.set(0.0,0.44,-0.15);
+4541:    this.J.knL.set(0.12, 0.38, 0.15); this.J.knR.set(0.08, 0.38, -0.15);
+4551:  this.J.knL.set(0.10,0.42,0.15); this.J.knR.set(0.06,0.42,-0.15);
+4658:  this.J.knL.set(this.ftTgtL.x*0.5+0.06, 0.42-sag*0.18, 0.15);
+7265:    this.J.knL.set(0.10 + 0.02*arc, 0.40 - 0.12*arc, 0.16); this.J.knR.set(0.10 + 0.02*arc, 0.40 - 0.12*arc, -0.16);
+7274:    this.J.knL.set(0.10,0.40-0.12*arc,0.16); this.J.knR.set(0.10,0.40-0.12*arc,-0.16);
+7290:    this.J.knL.set(0.08, 0.40 - fallArc*0.22, 0.16);
+7309:    this.J.knL.set(0.18, 0.40-0.26*c, 0.16); this.J.knR.set(0.18, 0.40-0.26*c, -0.16);
+7321:    this.J.knL.set(0.10+0.30*_sit, 0.40-0.22*_sit, 0.16+0.16*_sit); this.J.knR.set(0.10+0.30*_sit, 0.40-0.22*_sit, -(0.16+0.16*_sit));
+7330:    this.J.knL.set(0.26, 0.42, 0.16); this.J.ftL.set(0.30, 0.06, 0.18);                      // front leg planted up
+7402:      this.J.knL.set(0.14, 0.36 - p*0.06, 0.16);
+7440:      this.J.knL.set(0.16, 0.34 - p*0.08, 0.16);
+7464:      this.J.knL.set(0.16, 0.36 - sq*0.14, 0.16);
+7473:      this.J.knL.set(0.12, 0.40 - sq*0.10, 0.15);
+7486:      this.J.knL.set(0.14, 0.40 - sq*0.12 + _p2*0.04, 0.16);
+7506:      this.J.knL.set(0.12, 0.40 - sq*0.12, 0.15);
+7516:      this.J.knL.set(0.12, 0.40 - sq*0.10, 0.15);
+7529:      this.J.knL.set(0.12, 0.40 - sq*0.12, 0.15);
+7566:      this.J.knL.set(0.14 + br*0.06, 0.38 - squat*0.8, 0.16);
+7576:      this.J.knL.set(0.10, 0.44, 0.15);
+7587:      this.J.knL.set(0.10, 0.44, 0.15);
+7596:      this.J.knL.set(0.10 - br*0.18, 0.44 + dipY, 0.15);
+7605:      this.J.knL.set(0.10 - br*0.18, 0.44 + dipY + Math.max(0, Math.sin(this.carryStep||0)*0.10), 0.15);
+7939:    this.J.knL.set(0.08,0.44,0.15); this.J.knR.set(0.08,0.44,-0.15);
+8126:        this.J.knL.set(a.x-0.04,a.y-0.10,a.z+0.22); this.J.ftL.set(a.x-0.08,a.y-0.30,a.z+0.28);
+8132:      this.J.knL.set(-0.10,0.62,0.22); this.J.knR.set(-0.10,0.62,-0.22);
+8145:      this.J.knL.set(0.06,0.42,0.14); this.J.knR.set(0.06,0.42,-0.14);
+8263:  this.J.knL.set(0.2+liftL*0.6,0.42+liftL,0.15); this.J.knR.set(0.2+liftR*0.6,0.42+liftR,-0.15);
+8282:  this.J.knL.set(0.18 + duck*0.22, 0.42 - duck*0.16, 0.15); this.J.knR.set(0.18 + duck*0.22, 0.42 - duck*0.16, -0.15);
+8294:  this.J.knL.set(0.32,0.34,0.15); this.J.knR.set(0.32,0.34,-0.15);    // deep crouch, knees bent into the ropes
+8306:  this.J.knL.set(0.22,0.44,0.15); this.J.knR.set(0.22,0.44,-0.15);  // crouched, ready to spring
+20171:    this.J.knL.set(0.10, 0.42, 0.15); this.J.knR.set(0.10, 0.42, -0.15);
+20189:    this.J.knL.set(0, 0.12, 0.18);
+20214:    this.J.knL.set(-0.25, 0.12, 0.18);
+20243:    this.J.knL.set(0.14+0.10*coil, 0.40-crouch, 0.15); this.J.knR.set(0.14+0.10*coil, 0.40-crouch, -0.15);  // knees bend deeper as the coil loads
+20283:    this.J.knL.set(0.12, 0.42, 0.15); this.J.knR.set(0.12, 0.42, -0.15);
+20379:    this.J.knL.set(0.30, 0.50+lift, 0.15); this.J.knR.set(-0.05, 0.40, -0.15);
+20589:    this.J.knL.set(0.16, 0.42, 0.15); this.J.knR.set(0.16, 0.42, -0.15);
+20604:    this.J.knL.set(0.10, 0.44, 0.15); this.J.knR.set(0.10, 0.44, -0.15);
+31687:    this.J.knL  && this.J.knL.set(  0.10, 0.42 + kneeLift * 0.6, 0.16);
+33926:    this.J.knL && this.J.knL.set(0.1, 0.50, 0.15);
