@@ -9999,6 +9999,16 @@ function readPlayerInput(dt){
       if (keys['w']) fwd+=1;
       if (keys['s']) fwd-=1;
       if (joy.active){ strafe+=clamp(joy.x*1.6,-1,1); fwd+=clamp(-joy.y*1.6,-1,1); }
+      // TGC APEX STEER — while fully carrying (stage 3), the same stick also bends the forklift LIVE
+      // (fwd/back = PITCH, left/right = TWIST), then only contributes a fraction to footwork.
+      // v151: this used to live AFTER the `return` below and could never run — moved inline so STEER RATE works again.
+      if (p.grappleStage===3 && !p._slamPending){
+        const _rate = (window.STEER_RATE!=null?window.STEER_RATE:1);
+        if (Math.abs(fwd)>0.25)    p.craneLift  = clamp((p.craneLift||0)  + fwd*dt*1.6*_rate, -1, 1);
+        if (Math.abs(strafe)>0.25) p.craneTwist = clamp((p.craneTwist||0) + strafe*p.dir*dt*2.0*_rate, -1.5, 1.5);
+        strafe*=0.25; fwd*=0.25;          // carrying: the stick steers the HOLD more than the feet
+        p._deliveryJoyZ = strafe*4;       // remember lateral aim for the delivery moment
+      }
       const rx=Math.sin(camAngle), rz=-Math.cos(camAngle), fx=-Math.cos(camAngle), fz=-Math.sin(camAngle);
       let mx=strafe*rx+fwd*fx, mz=strafe*rz+fwd*fz; const mg=Math.hypot(mx,mz);
       if (mg>1){ mx/=mg; mz/=mg; }
@@ -10030,13 +10040,6 @@ function readPlayerInput(dt){
   if (keys['w']||keys['arrowup']) fwd += 1;     // push into the screen / far side
   if (keys['arrowdown']) fwd -= 1;              // toward camera
   if (joy.active){ strafe += clamp(joy.x*1.6,-1,1); fwd += clamp(-joy.y*1.6,-1,1); }
-  // ===== TGC APEX STEER: while CARRYING, the stick bends the forklift LIVE (fwd/back = PITCH, left/right = TWIST) =====
-  if (p.grappling && p.grappleStage===3 && !p._slamPending){
-    if (Math.abs(fwd)>0.25)    p.craneLift  = clamp((p.craneLift||0)  + fwd*dt*1.6*(window.STEER_RATE!=null?window.STEER_RATE:1), -1, 1);          // arch back / bend forward — live STEER RATE
-    if (Math.abs(strafe)>0.25) p.craneTwist = clamp((p.craneTwist||0) + strafe*p.dir*dt*2.0*(window.STEER_RATE!=null?window.STEER_RATE:1), -1.5, 1.5);   // rotate the hold
-    strafe*=0.25; fwd*=0.25;                                                                          // carrying: the stick steers the HOLD more than the feet
-    p._deliveryJoyZ = strafe*4;                                                                       // remember lateral aim for the delivery moment
-  }
 
   // block (hold S or guard button)
   const blocking = keys['s']||heldBtns['block'];
@@ -12754,8 +12757,15 @@ if (_origTriggerHitStop) {
   };
 }
 
-// ---- UNIVERSAL GRAPPLE: ensure twist is always active ----
-// Make sure craneTwist accumulates from joy2 even without explicit D-pad
+// ---- UNIVERSAL GRAPPLE: airborne gyro on the APEX joystick ----
+// v151: this used to ALSO re-drive craneLift/craneTwist from joy2 during grapples (grappleStage>=2),
+// duplicating the base readPlayerInput forklift handler AND Fighter.prototype.updateGrappleCarry's
+// twistVel injection below — same WeakMap accumulator (aaaGet(p).twistVel) getting incremented by
+// BOTH this wrapper and updateGrappleCarry every frame but decayed only once, plus craneLift being
+// stepped twice per frame from two different formulas. That's what made the forklift/crane stick
+// feel oversensitive/erratic ("doesn't work correctly"). Removed the duplicate grapple branch —
+// the base handler (readPlayerInput's own grappleStage>=2 block) and updateGrappleCarry already
+// own craneLift/craneTwist exclusively.
 const _origReadPlayerInput = (typeof readPlayerInput === 'function') ? readPlayerInput : null;
 if (_origReadPlayerInput) {
   readPlayerInput = function(dt) {
@@ -12767,17 +12777,6 @@ if (_origReadPlayerInput) {
       if (joy2) {
         if (Math.abs(joy2.y) > 0.1) p._airPitch = (p._airPitch||0) - joy2.y * 2.8 * dt; // Pitch
         if (Math.abs(joy2.x) > 0.1) p.spin = (p.spin||0) + joy2.x * 2.8 * dt; // Roll/Spin
-      }
-    } else if (p.grappling && p.grappleStage >= 2) {
-      const s = aaaGet(p);
-      // Joy2 x drives twist, joy2 y drives crane lift (forklift)
-      if (joy2 && Math.abs(joy2.x) > 0.1) {
-        s.twistVel += joy2.x * AAA.twistTorque * dt;
-        p.craneTwist = (p.craneTwist || 0) + s.twistVel * dt;
-      }
-      if (joy2 && Math.abs(joy2.y) > 0.1) {
-        // joy2.y up = lift higher (forklift)
-        p.craneLift = Math.max(-1, Math.min(1, (p.craneLift || 0) - joy2.y * 1.8 * dt));
       }
     }
   };
