@@ -1991,14 +1991,14 @@ const REST = {
   clavL:    [0.02, 1.33, 0.13],  clavR:    [0.02, 1.33,-0.13],
   scapL:    [-0.04,1.28, 0.22],  scapR:    [-0.04,1.28,-0.22],
   // ── SHOULDERS (GH joint at acromion) ──
-  shL:[0.04, 1.36, 0.26], shR:[0.04, 1.36,-0.26],  // v102: matched to poseGuard live positions (was 0.21 → clavL>shL x2.45)
+  shL:[0.04, 1.36, 0.22], shR:[0.04, 1.36,-0.22],  // v151: narrowed 0.26→0.22 (was 0.30H, target 0.22-0.28H) — see all "0.22 width" sites below, REST alone isn't the live source of truth, poseGuard/poseAttack duplicate this literal
   // ── ARMS: a chain that actually DESCENDS — shoulder → elbow → forearm → wrist → hand ──
   elL:[0.14,1.024,0.232],  elR:[0.14,0.968,-0.232],
   faTwL:[0.224,0.87,0.204], faTwR:[0.224,0.842,-0.204],
   wrL: [0.28,0.758,0.162],  wrR: [0.28,0.758,-0.162],   // arms lengthened ~1.4x -> athletic reach (hands hang to mid-thigh)
   haL:[0.308,0.688,0.148],   haR:[0.308,0.688,-0.148],
   // ── LEGS: validated leg/height ratio ──
-  hipL:[0,0.84,0.175], hipR:[0,0.84,-0.175],
+  hipL:[0,0.885,0.175], hipR:[0,0.885,-0.175],  // v151: raised 0.84→0.885 to lengthen thigh (leg ratio was 0.45H, target 0.46-0.54H) — poseGuard/poseAttack duplicate the live hip y (0.83/0.82), shifted by the same +0.045
   knL:[0.04,0.46,0.16], knR:[0.04,0.46,-0.16],
   ankL:[0.06,0.12,0.17], ankR:[0.06,0.12,-0.17],
   ftL:[0.06,0.05,0.17], ftR:[0.06,0.05,-0.17]
@@ -3483,8 +3483,8 @@ Fighter.prototype.poseGuard = function(dt, walking){
 
   // SHOULDERS: wide deltoid projection — real fighters look WIDE because the deltoids
   // roll forward in guard, not back. z stays at full athletic width.
-  this.J.shL.set(0.04, 1.36, 0.26);
-  this.J.shR.set(0.04, 1.36, -0.26);
+  this.J.shL.set(0.04, 1.36, 0.22);
+  this.J.shR.set(0.04, 1.36, -0.22);
   // CLAVICLES: slight elevation from resting (guard arms up = clavicle rises ~5°)
   this.J.clavL.set(0.02, 1.345, 0.13);
   this.J.clavR.set(0.02, 1.345,-0.13);
@@ -3575,8 +3575,8 @@ Fighter.prototype.poseGuard = function(dt, walking){
   this.J.elR.set(0.04, 1.18, -0.20);
 
   // HIPS: staggered stance — lead hip slightly forward, rear hip back and lower
-  this.J.hipL.set(0.02, 0.83, 0.15);
-  this.J.hipR.set(-0.02, 0.82, -0.15);
+  this.J.hipL.set(0.02, 0.875, 0.15);
+  this.J.hipR.set(-0.02, 0.865, -0.15);
 
   if (walking) {
     var SO=(window.LOCO&&window.LOCO.stepOsc)||{}, AW=(window.LOCO&&window.LOCO.armWash)||{};
@@ -3604,8 +3604,8 @@ Fighter.prototype.poseGuard = function(dt, walking){
     this.J.spineMid.set(0.03 - hipDrop*0.3 + bobUp*0.6, 1.20 - hipDrop*0.7, -hipSway*0.5 + spineYaw*0.15);
     this.J.chest.set(0.08 - hipDrop*0.4 + bobUp, 1.28 - hipDrop*0.55, -hipSway*0.7 + spineYaw*0.25);
     this.J.head.set(0.04 + headLag*0.4, 1.63 - hipDrop*0.4 + bobUp, -hipSway*0.5 + headLag);
-    this.J.shL.set(0.04, 1.36 - hipDrop*0.5, 0.26 + spineYaw*0.10);
-    this.J.shR.set(0.04, 1.36 - hipDrop*0.5, -0.26 + spineYaw*0.10);
+    this.J.shL.set(0.04, 1.36 - hipDrop*0.5, 0.22 + spineYaw*0.10);
+    this.J.shR.set(0.04, 1.36 - hipDrop*0.5, -0.22 + spineYaw*0.10);
     // Clavicle rides with shoulder
     this.J.clavL.set(0.02, 1.345 - hipDrop*0.3, 0.13 + spineYaw*0.05);
     this.J.clavR.set(0.02, 1.345 - hipDrop*0.3,-0.13 + spineYaw*0.05);
@@ -3942,9 +3942,9 @@ Fighter.prototype.poseAttack = function(dt){
   this.J.chest.set(0.08, 1.28, 0);
   this.J.head.set(0.04, 1.63, 0);
   // WIDER SHOULDERS in attack — deltoids roll forward hard into the shot
-  this.J.shL.set(0.04, 1.36, 0.26); this.J.shR.set(0.04, 1.36, -0.26);
+  this.J.shL.set(0.04, 1.36, 0.22); this.J.shR.set(0.04, 1.36, -0.22);
   this.J.clavL.set(0.02, 1.34, 0.13); this.J.clavR.set(0.02, 1.34,-0.13);
-  this.J.hipL.set(0.02, 0.83, 0.15); this.J.hipR.set(-0.02, 0.82, -0.15);
+  this.J.hipL.set(0.02, 0.875, 0.15); this.J.hipR.set(-0.02, 0.865, -0.15);
   // NON-STRIKING HAND SNAPS TO JAW — the rear/lead guard tucks tight on every attack
   // This is the defining visual of high-level boxing/MMA: the off-hand NEVER floats
   this.J.haL.set(0.20, 1.50, 0.14); this.J.haR.set(0.18, 1.50, -0.11);
@@ -4005,12 +4005,12 @@ Fighter.prototype.poseAttack = function(dt){
   const guardCl  = isLeft ? 'clavR' : 'clavL';
   const shDip = shDrive * 0.06;  // the shoulder dips as the arm extends
   const shFwd = shDrive * 0.13;  // v118: stronger shoulder/clavicle protraction — the girdle drives the fist forward (real reach + shoulder/clavicle articulation), so distance comes from the chain, not from over-stretching the arm
-  this.J[strikeSh].set(0.04 + shFwd, 1.36 - shDip, drive > 0 ? 0.26 : -0.26);
+  this.J[strikeSh].set(0.04 + shFwd, 1.36 - shDip, drive > 0 ? 0.22 : -0.22);
   // v7: clavicle elevation on the striking side (clavicle rises as arm elevates)
   const clavElev = shDrive * 0.05;
   this.J[strikeCl].set(0.02 + shFwd*0.6, 1.34 + clavElev, drive > 0 ? 0.13 : -0.13);
   // GUARD SHOULDER stays back and up — the rotation RAISES the guard side
-  this.J[guardSh].set(0.04 - shFwd * 0.3, 1.36 + shDip * 0.5, drive > 0 ? -0.26 : 0.26);
+  this.J[guardSh].set(0.04 - shFwd * 0.3, 1.36 + shDip * 0.5, drive > 0 ? -0.22 : 0.22);
   this.J[guardCl].set(0.02, 1.345, drive > 0 ? -0.13 : 0.13);
 
   // GUARD HAND SNAPS TO JAW on the non-striking side as power fires
@@ -4242,10 +4242,10 @@ Fighter.prototype.poseFlinch = function(dt){
   const k = Math.sin(p*Math.PI) * clamp(r.power/120, 0.04, 0.14);
   // base guard — chin-level
   this.J.pelvis.set(-k*0.2,0.88,0); this.J.chest.set(0.08,1.28,0);
-  this.J.shL.set(0.04,1.36,0.26); this.J.shR.set(0.04,1.36,-0.26);
+  this.J.shL.set(0.04,1.36,0.22); this.J.shR.set(0.04,1.36,-0.22);
   this.J.haL.set(0.22,1.50,0.14); this.J.haR.set(0.20,1.50,-0.11);
   this.J.elL.set(0.16,1.13,0.20); this.J.elR.set(0.14,1.10,-0.20);
-  this.J.hipL.set(0.02,0.83,0.15); this.J.hipR.set(-0.02,0.82,-0.15);
+  this.J.hipL.set(0.02,0.875,0.15); this.J.hipR.set(-0.02,0.865,-0.15);
   if (r.height==='HIGH'){
     const _tr = r.traj||'STRAIGHT';
     if (_tr==='HOOK'||_tr==='SPINNING'){
@@ -4289,8 +4289,8 @@ Fighter.prototype.poseHurt = function(dt){
   const zT = (this.hurtZ||0) * _vuln;
   const part = r.part || (r.height==='HIGH'?'head': r.height==='LOW'?'legL':'ribL');
 
-  this.J.hipL.set(-recoil*0.3,0.82,0.15); this.J.hipR.set(-recoil*0.3,0.82,-0.15);
-  this.J.shL.set(-recoil*0.4,1.34,0.26);  this.J.shR.set(-recoil*0.4,1.34,-0.26);
+  this.J.hipL.set(-recoil*0.3,0.865,0.15); this.J.hipR.set(-recoil*0.3,0.865,-0.15);
+  this.J.shL.set(-recoil*0.4,1.34,0.22);  this.J.shR.set(-recoil*0.4,1.34,-0.22);
 
   if (r.height==='HIGH'){
     const _tr = r.traj||'STRAIGHT';
@@ -23957,12 +23957,12 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
     J.spineMid && J.spineMid.set(0.03, 1.20, 0);
     J.chest    && J.chest.set(0.08, 1.28, 0);
     J.head     && J.head.set(0.04, 1.63, 0);
-    J.shL      && J.shL.set(0.04, 1.36, 0.26);
-    J.shR      && J.shR.set(0.04, 1.36, -0.26);
+    J.shL      && J.shL.set(0.04, 1.36, 0.22);
+    J.shR      && J.shR.set(0.04, 1.36, -0.22);
     J.clavL    && J.clavL.set(0.02, 1.34,  0.13);
     J.clavR    && J.clavR.set(0.02, 1.34, -0.13);
-    J.hipL     && J.hipL.set(0.02, 0.83, 0.15);
-    J.hipR     && J.hipR.set(-0.02, 0.82, -0.15);
+    J.hipL     && J.hipL.set(0.02, 0.875, 0.15);
+    J.hipR     && J.hipR.set(-0.02, 0.865, -0.15);
     J.haL      && J.haL.set(0.20, 1.50, 0.14);
     J.haR      && J.haR.set(0.18, 1.50, -0.11);
     J.elL      && J.elL.set(0.15, 1.13, 0.20);
@@ -23992,13 +23992,13 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
 
     const shDip = shDrive * 0.09;   // shoulder dips harder into the shot
     const shFwd = shDrive * 0.12;   // shoulder protraction — full UFC roll-through
-    J[strikeSh] && J[strikeSh].set(0.04 + shFwd,      1.36 - shDip, drive>0 ? 0.26 : -0.26);
+    J[strikeSh] && J[strikeSh].set(0.04 + shFwd,      1.36 - shDip, drive>0 ? 0.22 : -0.22);
     // CLAVICLE: full protraction on haymaker — 0.09u forward (vs 0.055 on jab)
     const clavElev = shDrive * 0.07;
     const clavFwd  = shDrive * 0.09;
     J[strikeCl] && J[strikeCl].set(0.02 + clavFwd, 1.34 + clavElev, drive>0 ? 0.13 : -0.13);
     // Guard shoulder pulls BACK hard as striking shoulder drives through
-    J[guardSh]  && J[guardSh].set(0.04 - shFwd*0.4,  1.36 + shDip*0.6, drive>0 ? -0.26 : 0.26);
+    J[guardSh]  && J[guardSh].set(0.04 - shFwd*0.4,  1.36 + shDip*0.6, drive>0 ? -0.22 : 0.22);
     J[guardCl]  && J[guardCl].set(0.02 - clavFwd*0.3, 1.345, drive>0 ? -0.13 : 0.13);
 
     // ── HEAD DUCK — chin tucks into the shot (pro fighting tell) ────────────
