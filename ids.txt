@@ -1,0 +1,483 @@
+740:<canvas id="gameCanvas" width="1080" height="2032" style="width: 432px; height: 813px;"></canvas>
+746:<button id="freecamBtn" title="Free camera (orbit/zoom/pan the model)" style="display: none;">🎥</button>
+747:<div id="freecamHint" style="display: none;">FREE CAM · 1 finger orbit · pinch zoom · 2-finger drag pan</div>
+748:<canvas id="fxCanvas" width="432" height="813" style="opacity: 0;"></canvas>
+749:<div id="vignette"></div>
+750:<div id="scanlines"></div>
+751:<div id="hitstop-flash" style="opacity: 0;"></div>
+752:<div id="bloodLayer"></div>
+754:<div id="hud">
+755:  <div class="health-wrap" id="p1-wrap">
+757:    <div class="bar-frame"><div class="hp-fill delay" id="p1-hp-delay" style="width: 100%;"></div><div class="hp-fill" id="p1-hp" style="width: 100%;"></div></div>
+758:    <div class="stam-frame"><div class="stam-fill" id="p1-stam" style="width: 100%;"></div></div>
+759:    <div class="mom-frame"><div class="mom-fill" id="p1-mom" style="width: 6.44845%;"></div></div>
+761:  <div class="health-wrap" id="p2-wrap">
+762:    <div class="fighter-tag"><span class="fighter-style" id="p2-style">SOUTHPAW · ICE</span><span class="fighter-name" id="p2-name">VIPER</span></div>
+763:    <div class="bar-frame"><div class="hp-fill delay" id="p2-hp-delay" style="width: 79.9421%;"></div><div class="hp-fill" id="p2-hp" style="width: 79.9421%;"></div></div>
+764:    <div class="stam-frame"><div class="stam-fill" id="p2-stam" style="width: 83.3522%;"></div></div>
+766:  <div id="round-display"><div class="round-num">ROUND <span id="roundNum">1   ○○ : ○○</span></div><div class="timer" id="timer">86</div></div>
+767:  <div id="combo-display" class="combo-show" style="opacity: 0;"><div class="combo-num"><span id="comboNum">0</span></div><div class="combo-label">HIT COMBO</div></div>
+768:  <div id="announcer" class="announce-show"><div class="announce-text" id="announce-text">FROG SPLASH</div><div class="announce-sub" id="announce-sub">BANNON</div></div>
+771:<div id="topRightBtns" title="Drag to reposition">
+772:  <button class="top-btn" id="pauseBtn">❚❚<span class="btn-sub">PAUSE</span></button>
+773:  <button class="top-btn" id="movesBtn">⚔<span class="btn-sub">FORGE</span></button>
+776:<div id="kb-hints">MOVE: WASD · RUN: SHIFT+dir · ZONE(LB): context exit/climb/pin/whip · J=LIGHT · K=HEAVY · L=GRAB · G=GRAPPLE · SPACE=FINISHER · U=UPPERCUT · ESC=PAUSE</div>
+778:<div id="mobileControls">
+779:  <div id="joystick"><div id="joystickKnob" style="transform: translate(0px, 0px);"></div></div>
+780:  <div id="craneStick"><div id="craneKnob"></div><div id="craneLabel">FORWARD</div></div>
+791:    <div id="tauntCluster">
+798:  <div id="pillBtns">
+799:    <button id="btnZone" class="pill-btn pill-zone">ZONE<span class="pill-sub">LB · exit/pin/whip/climb</span></button>
+800:    <button id="btnRun" class="pill-btn pill-run">RUN<span class="pill-sub">hold + dir → ropes</span></button>
+801:    <button id="btnMod" class="pill-btn pill-mod">MOD<span class="pill-sub">RT · power / reposition</span></button>
+804:  <div id="zoneLabel" style="opacity: 0;">ZONE: RING</div>
+806:  <div id="grappleHUD" class=""><div class="grapple-pos-name" id="grapplePosName">SPINEBUSTER</div><div class="grapple-pos-hint">CRANE STICK = REPOSITION · MOD = CHANGE HOLD · ZONE = DELIVER</div></div>
+808:  <div id="finisherReady" class="">⚡ FINISHER READY ⚡</div>
+810:  <div id="subMeter">
+812:    <div class="sub-track"><div class="sub-zone" id="subZone"></div><div class="sub-needle" id="subNeedle"></div></div>
+817:<div class="menu-overlay" id="mainMenu">
+822:      <button class="menu-btn gold" id="btnFight">FIGHT <span class="arrow">▶</span></button>
+823:      <button class="menu-btn" id="btnMoves">MOVE CREATOR <span class="arrow">▶</span></button>
+824:      <button class="menu-btn" id="btnArena">ARENA: <span id="arenaName">FIRE PIT</span> <span class="arrow">▶</span></button>
+825:      <button class="menu-btn" id="btnDiff">DIFFICULTY: <span id="diffName">VETERAN</span> <span class="arrow">▶</span></button>
+826:      <button class="menu-btn" id="btnMainDir">DIRECTOR <span class="arrow">▶</span></button>
+827:      <button class="menu-btn" id="btnMainStudio">STUDIO <span class="arrow">▶</span></button>
+828:      <button class="menu-btn" id="btnOpp">OPPONENT: <span id="oppName">VIPER</span> <span class="arrow">▶</span></button>
+834:<div class="menu-overlay hidden" id="pauseMenu">
+838:      <button class="menu-btn gold" id="btnResume">RESUME <span class="arrow">▶</span></button>
+839:      <button class="menu-btn" id="btnRematch">REMATCH <span class="arrow">▶</span></button>
+840:      <button class="menu-btn" id="btnPauseMoves">MOVE CREATOR <span class="arrow">▶</span></button>
+841:      <button class="menu-btn" id="btnPauseModels">FIGHTER MODELS <span class="arrow">▶</span></button>
+842:      <button class="menu-btn" id="btnPauseTune">CREATIVE CONTROL <span class="arrow">▶</span></button>
+843:      <button class="menu-btn" id="btnPauseStudio">STUDIO <span class="arrow">▶</span></button>
+844:      <button class="menu-btn" id="btnPauseDir">DIRECTOR <span class="arrow">▶</span></button>
+845:      <button class="menu-btn" id="btnPauseCam">CAMERA: BROADCAST <span class="arrow">▶</span></button>
+846:      <button class="menu-btn" id="btnToMain">MAIN MENU <span class="arrow">▶</span></button>
+851:<div class="menu-overlay hidden" id="winnerMenu">
+853:    <div class="menu-logo" id="winnerName" style="font-size:clamp(38px, 8vw, 64px);">BANNON</div>
+856:      <button class="menu-btn gold" id="btnRematch2">REMATCH <span class="arrow">▶</span></button>
+857:      <button class="menu-btn" id="btnMainFromWin">MAIN MENU <span class="arrow">▶</span></button>
+862:<div class="menu-overlay hidden" id="creator">
+864:    <div class="creator-header"><div class="creator-title">MOVE FORGE</div><button class="close-x" id="creatorClose">×</button></div>
+867:      <div class="option-row" id="opt-fighter"></div>
+869:      <input type="text" class="move-name-input" id="moveName" value="NEW STRIKE" maxlength="22">
+871:      <div class="option-row" id="opt-category">
+880:      <div class="option-row" id="opt-position">
+887:      <div class="option-row" id="opt-gpos">
+908:      <div class="option-row" id="opt-limb">
+922:      <div class="option-row" id="opt-traj">
+934:      <div class="option-row" id="opt-height">
+941:      <div class="option-row" id="opt-style">
+951:      <div class="option-row" id="opt-follow">
+962:          <div id="selectedClipName" style="flex:1; border:2px solid #3b82f6; background:#020617; color:#60a5fa; font-family:'Bebas Neue'; font-size:32px; padding:16px 20px; letter-spacing:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:6px; box-shadow:inset 0 0 20px rgba(59,130,246,0.3);">NONE (PROCEDURAL)</div>
+965:        <button class="opt-chip" style="background:#0f172a; padding:16px; margin:8px 0 0 0; border:2px dashed #3b82f6; color:#bfdbfe; font-family:'Bebas Neue'; font-size:20px; letter-spacing:2px; width:100%; border-radius:6px; cursor:pointer;" id="btnLoadFbxLib" onclick="this.textContent='LOADING OVER 80 AAA ANIMATIONS...'; if(window.BANNON_LOAD_FBX_LIBRARY){ window.BANNON_LOAD_FBX_LIBRARY().then(()=>{ window.renderClipChips&&window.renderClipChips(); this.style.display='none'; }) } else { this.textContent='MODULE NOT FOUND'; }">INITIALIZE WWE 2K MOCAP LIBRARY CORE</button>
+967:      <div class="field-label">POWER <span id="powerVal" style="float:right; color:#60a5fa;">50</span></div>
+968:      <div class="slider-wrap"><input type="range" id="sl-power" min="10" max="100" value="50"></div>
+969:      <div class="field-label">SPEED <span id="speedVal" style="float:right; color:#60a5fa;">70</span></div>
+970:      <div class="slider-wrap"><input type="range" id="sl-speed" min="20" max="100" value="70"></div>
+971:      <div class="field-label">STAMINA COST <span id="staminaVal" style="float:right; color:#60a5fa;">14</span></div>
+972:      <div class="slider-wrap"><input type="range" id="sl-stamina" min="4" max="40" value="14"></div>
+974:        <button class="menu-btn" id="btnAddMove">ADD MOVE</button>
+975:        <button class="menu-btn gold" id="btnDoneCreator">DONE</button>
+978:    <div class="movelist-card"><div class="section-title">CURRENT MOVESET</div><div id="moveList"></div></div>
+982:<div class="menu-overlay hidden" id="animBrowser">
+993:        <input type="text" id="animSearch" placeholder="SEARCH 80+ FBX ANIMATIONS..." style="width:100%; box-sizing:border-box; border:2px solid #1e3a8a; background:#1e293b; color:#e2e8f0; font-family:'Bebas Neue'; font-size:22px; padding:15px; margin-bottom:15px; outline:none; text-transform:uppercase; transition: border-color 0.2s;" onfocus="this.style.borderColor='#3b82f6'" onblur="this.style.borderColor='#1e3a8a'" onkeyup="window.animBrowserPage=0; window.renderAnimBrowserList()">
+995:        <div class="option-row" id="animCatFilters" style="display:flex; flex-wrap:wrap; gap:10px;">
+1006:    <div style="flex:1; overflow-y:auto; padding:15px 25px; background:url('data:image/svg+xml;utf8,<svg width=\"40\" height=\"40\" viewBox=\"0 0 40 40\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20zM20 0h20v20H20V0z\" fill=\"%230f172a\" fill-opacity=\"0.4\" fill-rule=\"evenodd\"/></svg>');" id="animBrowserList">
+1010:    <div style="display:flex; justify-content:space-between; align-items:center; padding:20px 25px; background:#080c14; border-top:1px solid #1e293b;" id="animPagination">
+1012:       <span id="animPageInfo" style="color:#cbd5e1; font-family:'Bebas Neue'; font-size:18px; letter-spacing:2px;">PAGE 1 OF 1</span>
+1018:<div class="menu-overlay hidden" id="tuneLab">
+1023:        <div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">SLOW-MO / SPEED — <span id="tune_time_v" style="color:#fff;">--</span></div>
+1024:        <input type="range" id="tune_time" min="0.1" max="1.5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;">
+1027:        <div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">GRAVITY — <span id="tune_grav_v" style="color:#fff;">--</span></div>
+1028:        <input type="range" id="tune_grav" min="-60" max="-8" step="1" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;">
+1031:        <div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">MODEL HEIGHT (fix floor clipping) — <span id="tune_modely_v" style="color:#fff;">--</span></div>
+1032:        <input type="range" id="tune_modely" min="-2" max="5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;">
+1035:        <div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">RING HEIGHT — <span id="tune_ringy_v" style="color:#fff;">--</span></div>
+1036:        <input type="range" id="tune_ringy" min="-3" max="5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;">
+1039:        <div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">CAMERA HEIGHT — <span id="tune_camy_v" style="color:#fff;">--</span></div>
+1040:        <input type="range" id="tune_camy" min="-2" max="4" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;">
+1043:        <div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">HIT PUSH FORCE — <span id="tune_push_v" style="color:#fff;">--</span></div>
+1044:        <input type="range" id="tune_push" min="0" max="3" step="0.05" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;">
+1047:        <div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">HIT GIVE / WOBBLE — <span id="tune_wob_v" style="color:#fff;">--</span></div>
+1048:        <input type="range" id="tune_wob" min="60" max="170" step="1" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;">
+1051:        <div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">BANNON POSITION X — <span id="tune_p1x_v" style="color:#fff;">--</span></div>
+1052:        <input type="range" id="tune_p1x" min="-4.5" max="4.5" step="0.05" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;">
+1055:        <div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">VIPER POSITION X — <span id="tune_p2x_v" style="color:#fff;">--</span></div>
+1056:        <input type="range" id="tune_p2x" min="-4.5" max="4.5" step="0.05" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;">
+1062:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">CARRY RADIUS (TIGHTNESS) — <span id="grap_swing_v" style="color:#fff;">--</span></div>
+1063:        <input type="range" id="grap_swing" min="0" max="1.5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1064:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">GRIP DISTANCE — <span id="grap_reach_v" style="color:#fff;">--</span></div>
+1065:        <input type="range" id="grap_reach" min="-0.6" max="0.6" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1066:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">CARRY HEIGHT — <span id="grap_carryy_v" style="color:#fff;">--</span></div>
+1067:        <input type="range" id="grap_carryy" min="-0.4" max="1.0" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1068:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">BODY TILT — <span id="grap_tilt_v" style="color:#fff;">--</span></div>
+1069:        <input type="range" id="grap_tilt" min="0" max="1.5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1070:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">BRIDGE / MAT DROP — <span id="grap_bridge_v" style="color:#fff;">--</span></div>
+1071:        <input type="range" id="grap_bridge" min="0" max="1.5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1072:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">HAND SPREAD — <span id="grap_gripz_v" style="color:#fff;">--</span></div>
+1073:        <input type="range" id="grap_gripz" min="0" max="0.4" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1076:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">HOIST ROTATION — <span id="grap_hoistflip_v" style="color:#fff;">--</span></div>
+1077:        <input type="range" id="grap_hoistflip" min="-1" max="1" step="2" value="-1" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1078:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">CARRY HEFT (WEIGHT / SWAY) — <span id="grap_heft_v" style="color:#fff;">--</span></div>
+1079:        <input type="range" id="grap_heft" min="0" max="2" step="0.05" value="1" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1082:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">FALL / SLAM FORCE — <span id="knock_fall_v" style="color:#fff;">--</span></div>
+1083:        <input type="range" id="knock_fall" min="0" max="3" step="0.05" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1084:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">LIE FLAT — pull downed body to mat — <span id="rag_flat_v" style="color:#fff;">--</span></div>
+1085:        <input type="range" id="rag_flat" min="0" max="0.25" step="0.005" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1086:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">LIE HEIGHT — body thickness on mat — <span id="rag_lie_v" style="color:#fff;">--</span></div>
+1087:        <input type="range" id="rag_lie" min="0" max="0.4" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1088:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">RAGDOLL STRING — pose stiffness — <span id="rag_pull_v" style="color:#fff;">--</span></div>
+1089:        <input type="range" id="rag_pull" min="0" max="0.4" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1092:      <div class="option-row" style="margin:10px 0;"><button class="opt-chip" id="arag_toggle">ACTIVE RAGDOLL: OFF</button></div>
+1093:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">MUSCLE / STIFFNESS — low = floppy — <span id="rag_motor_v" style="color:#fff;">--</span></div>
+1094:        <input type="range" id="rag_motor" min="0.05" max="1" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1095:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">HIT REACTION — how hard strikes rock the body — <span id="rag_hit_v" style="color:#fff;">--</span></div>
+1096:        <input type="range" id="rag_hit" min="0" max="0.12" step="0.005" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1097:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">BODY COUPLING — hit bleeds into spine/hips — <span id="rag_couple_v" style="color:#fff;">--</span></div>
+1098:        <input type="range" id="rag_couple" min="0" max="1.5" step="0.05" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1099:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">STAMINA SAG — exhaustion softens motors — <span id="rag_stam_v" style="color:#fff;">--</span></div>
+1100:        <input type="range" id="rag_stam" min="0" max="0.9" step="0.05" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1103:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">STRIKE SPEED — <span id="strike_speed_v" style="color:#fff;">--</span></div>
+1104:        <input type="range" id="strike_speed" min="0.4" max="2" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1105:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">REACH / EXTENSION — <span id="strike_reach_v" style="color:#fff;">--</span></div>
+1106:        <input type="range" id="strike_reach" min="0.5" max="1.8" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1107:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">WIND-UP DEPTH — <span id="strike_windup_v" style="color:#fff;">--</span></div>
+1108:        <input type="range" id="strike_windup" min="0" max="2.5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1109:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">RECOVERY SPEED — <span id="strike_recover_v" style="color:#fff;">--</span></div>
+1110:        <input type="range" id="strike_recover" min="0.4" max="2.5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1111:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">HIT-STOP (IMPACT FREEZE) — <span id="strike_hitstop_v" style="color:#fff;">--</span></div>
+1112:        <input type="range" id="strike_hitstop" min="0" max="2.5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1115:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">ARC HEIGHT — <span id="dive_arc_v" style="color:#fff;">--</span></div>
+1116:        <input type="range" id="dive_arc" min="0.3" max="3" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1117:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">HANG TIME — <span id="dive_dur_v" style="color:#fff;">--</span></div>
+1118:        <input type="range" id="dive_dur" min="0.5" max="2.5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1119:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">FLIP SPEED — <span id="dive_spin_v" style="color:#fff;">--</span></div>
+1120:        <input type="range" id="dive_spin" min="0" max="2.5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1121:      <div style="margin:12px 0;"><div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">SPRINGBOARD BOOST — <span id="dive_spring_v" style="color:#fff;">--</span></div>
+1122:        <input type="range" id="dive_spring" min="0" max="1.5" step="0.01" style="width:100%;height:36px;accent-color:#ff7a1a;background:transparent;"></div>
+1124:      <button class="menu-btn" id="tune_reset" style="flex:1;">RESET</button>
+1125:      <button class="menu-btn" id="tune_done" style="flex:1;border-color:#ffd24a;color:#ffd24a;">DONE</button>
+1129:<div class="menu-overlay hidden" id="director">
+1131:    <div class="creator-header"><div class="creator-title">DIRECTOR</div><button class="close-x" id="dirClose">×</button></div>
+1133:      <div class="option-row" id="dirTabs">
+1146:      <div id="d-throw">
+1148:        <div class="option-row" id="dTargetRow">
+1154:        <div class="option-row" id="dModeRow">
+1159:        <div class="option-row" id="dSubRow">
+1171:        <div class="field-label">COLOR (HUE) <span id="dHueV" style="float:right;color:var(--fire);">0°</span>
+1172:          <span id="dSwatch" style="display:inline-block;width:14px;height:14px;border:1px solid #888;vertical-align:middle;margin-left:6px;background:#8b0000;"></span></div>
+1173:        <div class="slider-wrap"><input type="range" id="dHue" min="0" max="1" step="0.001" value="0"></div>
+1174:        <div class="field-label">COLOR VARIANCE <span id="dVarV" style="float:right;color:var(--fire);">0.05</span></div>
+1175:        <div class="slider-wrap"><input type="range" id="dVar" min="0" max="0.5" step="0.01" value="0.05"></div>
+1176:        <div class="field-label">COLOR FREQUENCY (cycle) <span id="dCycV" style="float:right;color:var(--fire);">0.00</span></div>
+1177:        <div class="slider-wrap"><input type="range" id="dCyc" min="0" max="2" step="0.05" value="0"></div>
+1178:        <div class="field-label">TRANSPARENCY <span id="dOpV" style="float:right;color:var(--fire);">0.92</span></div>
+1179:        <div class="slider-wrap"><input type="range" id="dOp" min="0.05" max="1" step="0.01" value="0.92"></div>
+1180:        <div class="field-label">VISCOSITY / THICKNESS <span id="dViscV" style="float:right;color:var(--fire);">0.82</span></div>
+1181:        <div class="slider-wrap"><input type="range" id="dVisc" min="0" max="1" step="0.01" value="0.82"></div>
+1182:        <div class="field-label">STICKINESS <span id="dStickV" style="float:right;color:var(--fire);">0.85</span></div>
+1183:        <div class="slider-wrap"><input type="range" id="dStick" min="0" max="1" step="0.01" value="0.85"></div>
+1184:        <div class="field-label">BLOB SIZE <span id="dSizeV" style="float:right;color:var(--fire);">0.045</span></div>
+1185:        <div class="slider-wrap"><input type="range" id="dSize" min="0.01" max="0.2" step="0.005" value="0.045"></div>
+1186:        <div class="field-label">GRAVITY <span id="dGravV" style="float:right;color:var(--fire);">1.00</span></div>
+1187:        <div class="slider-wrap"><input type="range" id="dGrav" min="0" max="2" step="0.05" value="1"></div>
+1188:        <div class="field-label">AMOUNT PER THROW <span id="dCountV" style="float:right;color:var(--fire);">18</span></div>
+1189:        <div class="slider-wrap"><input type="range" id="dCount" min="1" max="60" step="1" value="18"></div>
+1192:          <button class="menu-btn gold" id="dThrow" style="flex:1;">THROW</button>
+1193:          <button class="menu-btn" id="dPour" style="flex:1;">POUR (hold stream)</button>
+1194:          <button class="menu-btn" id="dClear" style="flex:1;">CLEAR</button>
+1203:      <div id="d-ring" style="display:none;">
+1205:        <div class="field-label">FLOOR HEIGHT (raise onto deck) <span id="dFloorV" style="float:right;color:var(--fire);">0.00</span></div>
+1206:        <div class="slider-wrap"><input type="range" id="dFloor" min="-1" max="3" step="0.01" value="0"></div>
+1207:        <div class="field-label">RING WIDTH (X) <span id="dHalfXV" style="float:right;color:var(--fire);">3.2</span></div>
+1208:        <div class="slider-wrap"><input type="range" id="dHalfX" min="2.5" max="9" step="0.1" value="5.2"></div>
+1209:        <div class="field-label">RING DEPTH (Z) <span id="dHalfZV" style="float:right;color:var(--fire);">2.2</span></div>
+1210:        <div class="slider-wrap"><input type="range" id="dHalfZ" min="1.8" max="6" step="0.1" value="3.3"></div>
+1211:        <div class="option-row" style="margin-top:10px;"><button class="menu-btn" id="dRingReset" style="flex:1;">RESET TO DEFAULT</button></div>
+1215:      <div id="d-jiggle" style="display:none;">
+1216:        <div class="field-label">IMPACT JIGGLE INTENSITY <span id="dJigV" style="float:right;color:var(--fire);">1.00</span></div>
+1217:        <div class="slider-wrap"><input type="range" id="dJig" min="0" max="3" step="0.05" value="1"></div>
+1218:        <div class="field-label">SOFT-TISSUE GIVE (chest / hips) <span id="dSoftV" style="float:right;color:var(--fire);">1.00</span></div>
+1219:        <div class="slider-wrap"><input type="range" id="dSoft" min="0" max="3" step="0.05" value="1"></div>
+1228:      <div id="d-tf" style="display:none;">
+1233:        <div class="field-label">YAW (turn) <span id="dYawV" style="float:right;color:var(--fire);">0°</span></div>
+1234:        <div class="slider-wrap"><input type="range" id="dYaw" min="-180" max="180" step="1" value="0"></div>
+1235:        <div class="field-label">PITCH (tilt fwd/back) <span id="dPitchV" style="float:right;color:var(--fire);">0°</span></div>
+1236:        <div class="slider-wrap"><input type="range" id="dPitch" min="-180" max="180" step="1" value="0"></div>
+1237:        <div class="field-label">ROLL (lean) <span id="dRollV" style="float:right;color:var(--fire);">0°</span></div>
+1238:        <div class="slider-wrap"><input type="range" id="dRoll" min="-180" max="180" step="1" value="0"></div>
+1239:        <div class="field-label">SCALE <span id="dScaleV" style="float:right;color:var(--fire);">1.00×</span></div>
+1240:        <div class="slider-wrap"><input type="range" id="dScale" min="0.1" max="6" step="0.01" value="1"></div>
+1241:        <div class="field-label">HEIGHT OFFSET <span id="dYoffV" style="float:right;color:var(--fire);">0.00</span></div>
+1242:        <div class="slider-wrap"><input type="range" id="dYoff" min="-2" max="2" step="0.01" value="0"></div>
+1245:      <div id="d-bones" style="display:none;">
+1246:        <div id="dBoneInfo" style="font-size:11px;color:#d8b48c;margin-bottom:8px;line-height:1.5;">Load a GLB model in FIGHTER MODELS, then REFRESH.</div>
+1248:          <button class="opt-chip" id="dBoneRefresh">↻ REFRESH BONES</button>
+1249:          <button class="opt-chip" id="dBoneReset">RESET BONE</button>
+1250:          <button class="opt-chip" id="dBoneResetAll">RESET ALL</button>
+1253:        <input id="dBoneFilter" placeholder="finger, thumb, jaw, eye, brow\u2026" style="width:100%;background:#1a0e08;color:#ffd9a8;border:1px solid var(--fire);padding:7px;font-family:'Share Tech Mono';font-size:12px;box-sizing:border-box;margin-bottom:6px;">
+1255:        <select id="dBoneSel" style="width:100%;background:#1a0e08;color:#ffd9a8;border:1px solid var(--fire);padding:8px;font-family:'Share Tech Mono';font-size:12px;box-sizing:border-box;"></select>
+1256:        <div class="field-label">ROTATE X <span id="dBrxV" style="float:right;color:var(--fire);">0°</span></div>
+1257:        <div class="slider-wrap"><input type="range" id="dBrx" min="-180" max="180" step="1" value="0"></div>
+1258:        <div class="field-label">ROTATE Y <span id="dBryV" style="float:right;color:var(--fire);">0°</span></div>
+1259:        <div class="slider-wrap"><input type="range" id="dBry" min="-180" max="180" step="1" value="0"></div>
+1260:        <div class="field-label">ROTATE Z <span id="dBrzV" style="float:right;color:var(--fire);">0°</span></div>
+1261:        <div class="slider-wrap"><input type="range" id="dBrz" min="-180" max="180" step="1" value="0"></div>
+1262:        <div class="field-label">MOVE X <span id="dBtxV" style="float:right;color:var(--fire);">0.000</span></div>
+1263:        <div class="slider-wrap"><input type="range" id="dBtx" min="-1" max="1" step="0.005" value="0"></div>
+1264:        <div class="field-label">MOVE Y <span id="dBtyV" style="float:right;color:var(--fire);">0.000</span></div>
+1265:        <div class="slider-wrap"><input type="range" id="dBty" min="-1" max="1" step="0.005" value="0"></div>
+1266:        <div class="field-label">MOVE Z <span id="dBtzV" style="float:right;color:var(--fire);">0.000</span></div>
+1267:        <div class="slider-wrap"><input type="range" id="dBtz" min="-1" max="1" step="0.005" value="0"></div>
+1268:        <div class="field-label">SCALE <span id="dBscV" style="float:right;color:var(--fire);">1.00×</span></div>
+1269:        <div class="slider-wrap"><input type="range" id="dBsc" min="0.2" max="3" step="0.01" value="1"></div>
+1270:        <div class="field-label">SCL X <span id="dBsxV" style="float:right;color:var(--fire);">1.00×</span></div>
+1271:        <div class="slider-wrap"><input type="range" id="dBsx" min="0.2" max="3" step="0.01" value="1"></div>
+1272:        <div class="field-label">SCL Y <span id="dBsyV" style="float:right;color:var(--fire);">1.00×</span></div>
+1273:        <div class="slider-wrap"><input type="range" id="dBsy" min="0.2" max="3" step="0.01" value="1"></div>
+1274:        <div class="field-label">SCL Z <span id="dBszV" style="float:right;color:var(--fire);">1.00×</span></div>
+1275:        <div class="slider-wrap"><input type="range" id="dBsz" min="0.2" max="3" step="0.01" value="1"></div>
+1278:      <div id="d-face" style="display:none;">
+1279:        <div id="dFaceInfo" style="font-size:11px;color:#d8b48c;margin-bottom:8px;line-height:1.5;">Load a GLB with blend shapes, then REFRESH. Mix the shapes to build any expression — happy, angry, pain, or blends of several at once.</div>
+1280:        <div class="option-row" style="margin-bottom:6px;"><button class="opt-chip" id="dFaceRefresh">↻ REFRESH FACE</button><button class="opt-chip" id="dFaceReset">RESET FACE</button><button class="opt-chip" id="dAutoFacs">AUTO-FACS: ON</button></div>
+1281:        <div id="dFaceList"></div>
+1283:        <input id="dExprName" placeholder="e.g. ANGRY, PAIN, SMIRK" style="width:100%;background:#1a0e08;color:#ffd9a8;border:1px solid var(--fire);padding:7px;font-family:'Share Tech Mono';font-size:12px;box-sizing:border-box;">
+1284:        <div class="option-row" style="margin-top:6px;"><button class="opt-chip" id="dExprSave">SAVE EXPRESSION</button></div>
+1286:        <select id="dExprSel" style="width:100%;background:#1a0e08;color:#ffd9a8;border:1px solid var(--fire);padding:8px;font-family:'Share Tech Mono';font-size:12px;box-sizing:border-box;"></select>
+1289:      <div id="d-body" style="display:none;">
+1290:        <div id="dBodyInfo" style="font-size:11px;color:#d8b48c;margin-bottom:8px;line-height:1.5;">Measured from the rig skeleton, normalized to a real pro-wrestler scale (1.88m). Override per fighter — the grip math &amp; IK read these values.</div>
+1291:        <div id="dBodyRead" style="font-family:'Share Tech Mono';font-size:11px;color:#ffd9a8;background:#160c06;border:1px solid #3a2415;padding:8px;line-height:1.7;margin-bottom:10px;">—</div>
+1292:        <div class="field-label">REACH SCALE — <span id="dReachV" style="color:var(--fire)">1.00</span></div>
+1293:        <input type="range" id="dReach" min="0.6" max="1.6" step="0.01" value="1" style="width:100%;height:34px;accent-color:#ff7a1a;background:transparent;">
+1294:        <div class="field-label" style="margin-top:8px;">GRIP SCALE — <span id="dGripV" style="color:var(--fire)">1.00</span></div>
+1295:        <input type="range" id="dGrip" min="0.6" max="1.6" step="0.01" value="1" style="width:100%;height:34px;accent-color:#ff7a1a;background:transparent;">
+1296:        <div class="option-row" style="margin-top:10px;"><button class="opt-chip" id="dBodyRefresh">↻ RE-MEASURE</button><button class="opt-chip" id="dBodyReset">RESET</button></div>
+1299:      <div id="d-combat" style="display:none;">
+1302:        <div class="field-label">READY BOUNCE <span id="dcBounceV" style="float:right;color:var(--fire);">0.6</span></div>
+1303:        <div class="slider-wrap"><input type="range" id="dcBounce" min="0" max="2" step="0.05" value="0.6"></div>
+1304:        <div class="field-label">GUARD TIGHTNESS <span id="dcGuardV" style="float:right;color:var(--fire);">0.4</span></div>
+1305:        <div class="slider-wrap"><input type="range" id="dcGuard" min="0" max="1.5" step="0.05" value="0.4"></div>
+1306:        <div class="field-label">WEIGHT SWAY <span id="dcSwayV" style="float:right;color:var(--fire);">0.5</span></div>
+1307:        <div class="slider-wrap"><input type="range" id="dcSway" min="0" max="2" step="0.05" value="0.5"></div>
+1309:        <div class="field-label">STRIKE SPEED <span id="dcSpeedV" style="float:right;color:var(--fire);">1</span></div>
+1310:        <div class="slider-wrap"><input type="range" id="dcSpeed" min="0.4" max="2" step="0.05" value="1"></div>
+1311:        <div class="field-label">WINDUP DEPTH <span id="dcWindupV" style="float:right;color:var(--fire);">1</span></div>
+1312:        <div class="slider-wrap"><input type="range" id="dcWindup" min="0" max="2.5" step="0.05" value="1"></div>
+1313:        <div class="field-label">WEIGHT TRANSFER <span id="dcWeightV" style="float:right;color:var(--fire);">1</span></div>
+1314:        <div class="slider-wrap"><input type="range" id="dcWeight" min="0" max="2.5" step="0.05" value="1"></div>
+1315:        <div class="field-label">HIP ROTATION <span id="dcHipV" style="float:right;color:var(--fire);">1</span></div>
+1316:        <div class="slider-wrap"><input type="range" id="dcHip" min="0" max="2.5" step="0.05" value="1"></div>
+1318:      <div id="d-parts" style="display:none;">
+1319:        <div id="dPartInfo" style="font-size:11px;color:#d8b48c;margin-bottom:8px;line-height:1.5;">Load a GLB model in FIGHTER MODELS, then REFRESH.</div>
+1320:        <div class="option-row" style="margin-bottom:6px;"><button class="opt-chip" id="dPartRefresh">↻ REFRESH PARTS</button></div>
+1321:        <div id="dPartList"></div>
+1325:      <textarea id="dIO" spellcheck="false" style="width:100%;height:64px;font-family:'Share Tech Mono';font-size:10px;background:#0c0805;color:#d8b48c;border:1px solid var(--fire);padding:6px;box-sizing:border-box;"></textarea>
+1327:        <button class="opt-chip" id="dExport">EXPORT ▾</button>
+1328:        <button class="opt-chip" id="dImport">IMPORT ▴</button>
+1330:      <div id="dIOMsg" style="font-size:11px;color:#9bdc8b;min-height:14px;margin-top:4px;"></div>
+1332:      <div class="creator-actions" style="margin-top:14px;"><button class="menu-btn gold" id="dirDone">DONE</button></div>
+1336:<div class="menu-overlay hidden" id="studio">
+1338:    <div class="creator-header"><div class="creator-title">BANNON STUDIO</div><button class="close-x" id="studioClose">×</button></div>
+1340:      <div class="option-row" id="studioTabs">
+1347:      <div id="st-anim">
+1349:        <select id="stMoveSel" style="width:100%;background:#1a0e08;color:#ffd9a8;border:1px solid var(--gold);padding:8px;font-family:'Share Tech Mono';font-size:12px;box-sizing:border-box;margin-bottom:4px;"></select>
+1352:        <div class="option-row" id="stJointRow"></div>
+1354:          <button class="opt-chip selected" id="stMirror">MIRROR L/R: ON</button>
+1355:          <button class="opt-chip" id="stResetPose">RESET TO STANCE</button>
+1358:        <div class="field-label">FWD / BACK <span id="stXv" style="float:right;color:var(--fire);">0.00</span></div>
+1359:        <div class="slider-wrap"><input type="range" id="stX" min="-0.8" max="1.1" step="0.005" value="0"></div>
+1360:        <div class="field-label">UP / DOWN <span id="stYv" style="float:right;color:var(--fire);">0.00</span></div>
+1361:        <div class="slider-wrap"><input type="range" id="stY" min="0" max="2" step="0.005" value="0"></div>
+1362:        <div class="field-label">SIDE (L / R) <span id="stZv" style="float:right;color:var(--fire);">0.00</span></div>
+1363:        <div class="slider-wrap"><input type="range" id="stZ" min="-0.7" max="0.7" step="0.005" value="0"></div>
+1366:          <input type="text" id="stBoneFilter" placeholder="filter: jaw, finger, arm, spine..." spellcheck="false" style="width:100%;background:#0c0805;color:#d8b48c;border:1px solid var(--fire);padding:6px;font-family:'Share Tech Mono';font-size:11px;box-sizing:border-box;margin-bottom:5px;">
+1367:          <select id="stBoneSel" style="width:100%;background:#1a0e08;color:#ffd9a8;border:1px solid var(--fire);padding:7px;font-family:'Share Tech Mono';font-size:11px;box-sizing:border-box;"></select>
+1368:          <div class="field-label">ROT X <span id="stBrxV" style="float:right;color:var(--fire);">0°</span></div>
+1369:          <div class="slider-wrap"><input type="range" id="stBrx" min="-180" max="180" step="1" value="0"></div>
+1370:          <div class="field-label">ROT Y <span id="stBryV" style="float:right;color:var(--fire);">0°</span></div>
+1371:          <div class="slider-wrap"><input type="range" id="stBry" min="-180" max="180" step="1" value="0"></div>
+1372:          <div class="field-label">ROT Z <span id="stBrzV" style="float:right;color:var(--fire);">0°</span></div>
+1373:          <div class="slider-wrap"><input type="range" id="stBrz" min="-180" max="180" step="1" value="0"></div>
+1374:          <div class="field-label">MOVE X <span id="stBtxV" style="float:right;color:var(--fire);">0.000</span></div>
+1375:          <div class="slider-wrap"><input type="range" id="stBtx" min="-1" max="1" step="0.005" value="0"></div>
+1376:          <div class="field-label">MOVE Y <span id="stBtyV" style="float:right;color:var(--fire);">0.000</span></div>
+1377:          <div class="slider-wrap"><input type="range" id="stBty" min="-1" max="1" step="0.005" value="0"></div>
+1378:          <div class="field-label">MOVE Z <span id="stBtzV" style="float:right;color:var(--fire);">0.000</span></div>
+1379:          <div class="slider-wrap"><input type="range" id="stBtz" min="-1" max="1" step="0.005" value="0"></div>
+1380:          <div class="field-label">SCALE <span id="stBscV" style="float:right;color:var(--fire);">1.00×</span></div>
+1381:          <div class="slider-wrap"><input type="range" id="stBsc" min="0.2" max="3" step="0.01" value="1"></div>
+1382:          <div class="field-label">SCL X <span id="stBsxV" style="float:right;color:var(--fire);">1.00×</span></div>
+1383:          <div class="slider-wrap"><input type="range" id="stBsx" min="0.2" max="3" step="0.01" value="1"></div>
+1384:          <div class="field-label">SCL Y <span id="stBsyV" style="float:right;color:var(--fire);">1.00×</span></div>
+1385:          <div class="slider-wrap"><input type="range" id="stBsy" min="0.2" max="3" step="0.01" value="1"></div>
+1386:          <div class="field-label">SCL Z <span id="stBszV" style="float:right;color:var(--fire);">1.00×</span></div>
+1387:          <div class="slider-wrap"><input type="range" id="stBsz" min="0.2" max="3" step="0.01" value="1"></div>
+1388:          <div class="option-row" style="margin-top:6px;"><button class="opt-chip" id="stBoneRefresh">REFRESH BONES</button><button class="opt-chip" id="stBoneReset">CLEAR BONE POSE</button><button class="opt-chip" id="stFreePose">FREE POSE: OFF</button></div>
+1392:        <div class="field-label">SCRUB <span id="stTv" style="float:right;color:var(--fire);">0.00s</span></div>
+1393:        <div class="slider-wrap"><input type="range" id="stTimeline" min="0" max="1" step="0.01" value="0"></div>
+1394:        <div class="field-label">CLIP LENGTH <span id="stDurv" style="float:right;color:var(--fire);">1.00s</span></div>
+1395:        <div class="slider-wrap"><input type="range" id="stDur" min="0.3" max="6" step="0.05" value="1"></div>
+1397:          <button class="opt-chip" id="stKeyAdd">● SET KEYFRAME @ SCRUB</button>
+1398:          <button class="opt-chip" id="stPlay">▶ PLAY</button>
+1399:          <button class="opt-chip" id="stKeyDel">DELETE NEAREST KEY</button>
+1400:          <button class="opt-chip" id="stClearKeys">CLEAR ALL</button>
+1402:        <div id="stKeyList" style="font-family:'Share Tech Mono'; font-size:11px; color:#d8b48c; margin:10px 2px; min-height:16px; line-height:1.7;"></div>
+1405:        <input type="text" class="move-name-input" id="stClipName" value="MY MOVE" maxlength="24" spellcheck="false">
+1407:          <button class="menu-btn" id="stSaveClip" style="flex:1;">SAVE CLIP</button>
+1409:        <div id="stMsg" style="font-size:11px; color:#9bdc8b; min-height:14px; margin-top:8px;"></div>
+1413:      <div id="st-clips" style="display:none;">
+1415:        <div id="stClipList" style="margin-top:6px;"></div>
+1418:          <input id="stMocapName" placeholder="CLIP NAME" style="width:46%; background:#1f1430; color:#fff; border:1px solid #7CFC00; border-radius:5px; padding:6px; font-family:'Share Tech Mono';">
+1420:          <input id="stMocapFile" type="file" accept=".glb,.gltf,.fbx,application/octet-stream" style="display:none;">
+1421:          <div id="stMocapStatus" style="font-size:11px; color:#9bdc8b; min-height:14px; margin-top:6px;"></div>
+1425:          <select id="stAssetFileSel" style="width:100%; background:#00121a; color:#80f3ff; border:1px solid #00E5FF; padding:8px; font-family:'Share Tech Mono'; font-size:12px; box-sizing:border-box; margin-bottom:8px;">
+1506:          <button class="menu-btn" id="stLoadAssetFileBtn" style="width:100%; border:1px solid #00E5FF; background:#001a24; color:#00E5FF;">LOAD SELECT FILE FROM WORKSPACE</button>
+1507:          <div id="stAssetStatus" style="font-size:11px; color:#00E5FF; min-height:14px; margin-top:6px;"></div>
+1518:      <div id="st-presets" style="display:none;">
+1520:        <input type="text" class="move-name-input" id="stPresetName" value="MY PRESET" maxlength="24" spellcheck="false">
+1521:        <div class="option-row" style="margin-top:8px;"><button class="opt-chip" id="stSavePreset">SAVE CURRENT TUNING</button></div>
+1522:        <div id="stPresetList" style="margin-top:10px;"></div>
+1529:        <textarea id="stIO" spellcheck="false" style="width:100%; height:88px; font-family:'Share Tech Mono'; font-size:10px; background:#0c0805; color:#d8b48c; border:1px solid var(--fire); padding:6px; box-sizing:border-box;"></textarea>
+1531:          <button class="opt-chip" id="stExport">EXPORT ▾</button>
+1532:          <button class="opt-chip" id="stImport">IMPORT ▴</button>
+1534:        <div id="stIOMsg" style="font-size:11px; color:#9bdc8b; min-height:14px; margin-top:6px;"></div>
+1537:      <div class="creator-actions" style="margin-top:16px;"><button class="menu-btn gold" id="stDone">DONE</button></div>
+1541:<div class="menu-overlay hidden" id="modelLab">
+1543:    <div class="creator-header"><div class="creator-title">FIGHTER MODELS</div><button class="close-x" id="modelClose">×</button></div>
+1546:      <div class="option-row" id="modelCharPick">
+1550:      <div id="modelActiveLine" style="font-size:12px;opacity:0.9;margin:6px 2px 4px;">Editing <b id="modelEditName">BANNON</b> — currently: <b id="modelEditCur">Built-in body</b></div>
+1553:      <div id="modelGallery" class="model-gallery"><div class="model-card builtin active"><div class="mc-fallback">👤</div><div class="mc-label">Built-in</div></div><div class="model-card"><div class="mc-fallback">👤</div><div class="mc-label">King</div></div><div class="model-card"><div class="mc-fallback">👤</div><div class="mc-label">Referee</div></div><div class="model-card"><div class="mc-fallback">👤</div><div class="mc-label">Chun-Li</div></div><div class="model-card"><div class="mc-fallback">👤</div><div class="mc-label">Jin</div></div><div class="model-card"><div class="mc-fallback">👤</div><div class="mc-label">Robin Mask</div></div><div class="model-card" style="position: relative;"><div class="mc-fallback">👤</div><div class="mc-label">king_-_offensive_idle</div><div title="Remove from library" style="position: absolute; top: 1px; right: 5px; color: rgb(255, 90, 58); font-size: 18px; font-weight: bold; cursor: pointer; z-index: 3; line-height: 1;">×</div></div><div class="model-card" style="position: relative;"><div class="mc-fallback">👤</div><div class="mc-label">wwe_zombie__referee_2k22</div><div title="Remove from library" style="position: absolute; top: 1px; right: 5px; color: rgb(255, 90, 58); font-size: 18px; font-weight: bold; cursor: pointer; z-index: 3; line-height: 1;">×</div></div></div>
+1554:      <div id="modelStatus" style="font-size:11px;opacity:0.85;margin:8px 2px;min-height:14px;">Tap a model to load it onto the selected fighter.</div>
+1557:      <input type="text" class="move-name-input" id="modelUrlCustom" placeholder="https://models.readyplayer.me/XXXX.glb" spellcheck="false">
+1558:      <div class="option-row"><button class="opt-chip" id="modelLoadCustom">LOAD THIS URL</button></div>
+1561:      <input type="file" id="modelFile" accept=".glb,.gltf" style="color:#ffd9a8;width:100%;margin-bottom:12px;font-size:13px;">
+1563:      <div class="option-row" id="opt-fileslot">
+1568:      <div class="option-row" id="opt-modelbind">
+1572:      <div class="field-label">MODEL SIZE — <span id="modelSizeVal">1.00×</span></div>
+1573:      <input type="range" id="modelSizeSlider" min="0.1" max="6" step="0.01" value="1" style="width:100%;height:38px;accent-color:#ff7a1a;background:transparent;">
+1575:        <button class="menu-btn gold" id="btnDoneModels">DONE</button>
+4722:    if(!el){ el=document.createElement('pre'); el.id='aiVisionDump';
+4784:    labelEl.id='aiVisionLabels';
+4942:    const id=x.getImageData(0,0,512,512), d=id.data;
+5140:    const btn=document.createElement('button'); btn.id='cawBtn'; btn.textContent='⛹ CREATE';
+5142:    const wrap=document.createElement('div'); wrap.id='cawWrap';
+11358:    const wrap=document.createElement('div'); wrap.id='bphysPanel';
+11751:function hideAll(){ OVERLAYS.forEach(id=>{ var el=document.getElementById(id); if(el){ el.classList.add('hidden'); el.classList.remove('preview-dock'); } }); if(typeof freecamExit==='function')freecamExit(); var _fb=document.getElementById('freecamBtn'); if(_fb)_fb.style.display='none'; }
+12046:      if(typeof DIRECTOR!=='undefined' && DIRECTOR.partStore && DIRECTOR.partStore[url]){ var _hid=DIRECTOR.partStore[url]; container.traverse(function(o){ if(o.isMesh && _hid[o.name]) o.visible=false; }); }
+14025:  function capturePreset(){ const o={}; TUNE_IDS.forEach(id=>{ const el=$(id); if(el) o[id]=el.value; }); return o; }
+14026:  function applyPreset(o){ if(!o) return; TUNE_IDS.forEach(id=>{ const el=$(id); if(el && o[id]!=null){ el.value=o[id]; el.dispatchEvent(new Event('input',{bubbles:true})); } }); }
+14459:  const $=id=>document.getElementById(id);
+14513:  function boneLbls(){ const g=id=>($(id)?$(id).value:0); set('dBrxV',Math.round(g('dBrx'))+'\u00b0'); set('dBryV',Math.round(g('dBry'))+'\u00b0'); set('dBrzV',Math.round(g('dBrz'))+'\u00b0'); set('dBscV',(+g('dBsc')).toFixed(2)+'\u00d7'); set('dBtxV',(+g('dBtx')).toFixed(3)); set('dBtyV',(+g('dBty')).toFixed(3)); set('dBtzV',(+g('dBtz')).toFixed(3)); set('dBsxV',(+g('dBsx')).toFixed(2)+'\u00d7'); set('dBsyV',(+g('dBsy')).toFixed(2)+'\u00d7'); set('dBszV',(+g('dBsz')).toFixed(2)+'\u00d7'); }
+14610:    ['dBrx','dBry','dBrz','dBsc','dBtx','dBty','dBtz','dBsx','dBsy','dBsz'].forEach(id=>{ const el=$(id); if(el)el.addEventListener('input',writeBone); });
+14748:    const p=document.createElement('div');p.id='mcPanel';p.style.cssText='position:fixed;left:40px;top:140px;z-index:9001;background:#140d20ee;border:1px solid #a855f7;border-radius:10px;padding:10px;width:300px;display:none;font:11px ui-monospace,monospace;color:#e9d5ff;';
+14750:      '<input type="file" id="mcFile" accept="video/*" style="width:100%;margin:6px 0;">'+
+14751:      '<video id="mcVid" controls playsinline muted style="width:100%;background:#000;border-radius:6px;"></video>'+
+14752:      '<input id="mcName" placeholder="MOVE NAME" style="width:100%;margin:6px 0;background:#1f1430;color:#fff;border:1px solid #a855f7;border-radius:5px;padding:5px;">'+
+14753:      '<button id="mcRec" style="width:49%;background:#3b0d2e;color:#ff9bd2;border:1px solid #ec4899;border-radius:5px;padding:6px;">\u25cf REC</button> '+
+14754:      '<button id="mcSave" style="width:49%;background:#0d2e1b;color:#9bffc9;border:1px solid #22c55e;border-radius:5px;padding:6px;">SAVE MOVE</button>'+
+14756:      '<div id="mcStat" style="margin-top:6px;color:#c4b5fd;">load an mp4 of the move (side view reads best)</div>';
+14771:    mkRow.innerHTML='<button id="mcMark" style="width:32%;background:#2e1d0d;color:#ffd29b;border:1px solid #f59e0b;border-radius:5px;padding:6px;">\u23f1 MARK</button> '+
+14772:      '<button id="mcGrap" style="width:64%;background:#1d0d2e;color:#d29bff;border:1px solid #a855f7;border-radius:5px;padding:6px;">SAVE GRAPPLE (4 stages)</button>'+
+14773:      '<div id="mcMarks" style="margin-top:4px;color:#fcd34d;">marks: none \u2014 tap at snatch\u2192lift\u2192carry\u2192release</div>';
+14861:    const tg=document.createElement('button'); tg.id='smoothLimbsTg';
+14928:    if(!o){ o=document.createElement('div'); o.id='bodyCheckOv';
+14938:    const b=document.createElement('button'); b.id='bodyCheckBtn'; b.textContent='BODY CHECK';
+15049:    const hdr=document.createElement('div'); hdr.id='forgeBodyHdr'; hdr.textContent='FORGE · BODY + MOTION';
+15163:    const hdr=document.createElement('div'); hdr.id='strikeValHdr'; hdr.textContent='STRIKE & VALIDATE';
+15238:    panel=document.createElement('div'); panel.id='aiSensesPanel';
+15261:  const tab=document.createElement('button'); tab.id='aiSensesTab'; tab.textContent='👁 SENSES';
+15267:    const rTab = document.createElement('button'); rTab.id='aiRoadmapTab'; rTab.textContent='📋 ROADMAP';
+15430:        if(!b){ b=document.createElement('div'); b.id='bootFailBanner';
+15541:    const hdr=document.createElement('div'); hdr.id='nexusHdr'; hdr.textContent='NEXUS · VALIDATOR + DAEMON';
+15613:    if(!o){ o=document.createElement('div'); o.id='strongerCallout';
+15657:    const hdr=document.createElement('div'); hdr.id='nexusMindHdr'; hdr.textContent='NEXUS MIND + STRONGER';
+15776:    const hdr=document.createElement('div'); hdr.id='blueprintHdr'; hdr.textContent='THE BLUEPRINT';
+15881:    const hdr=document.createElement('div'); hdr.id='manifestoHdr'; hdr.textContent='✦ THE MANIFESTO (soul)';
+15946:    const b=document.createElement('button'); b.id='ctxBtn'; b.textContent='CURATED REPORT';
+15978:    const mid=(a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:(a.z+b.z)/2});
+16024:      const vid=document.createElement('video'); vid.src=URL.createObjectURL(file); vid.muted=true; await vid.play().catch(()=>{});
+16040:    const hdr=document.createElement('div'); hdr.id='mocapHdr'; hdr.textContent='FORGE · MOCAP (video → clip)';
+16118:    const b=document.createElement('button'); b.id='vizBtn'; b.textContent='VISUAL FINGERPRINT';
+16149:    try{ let b=document.getElementById('healBanner'); if(!b){ b=document.createElement('div'); b.id='healBanner';
+16178:    const b=document.createElement('button'); b.id='healBtn'; b.textContent='SELF-HEAL STATUS';
+16815:    const b=document.createElement('button'); b.id='annBtn';
+17053:    find:id=>LIB.find(m=>m.id===id||m.nm.toLowerCase()===(id||'').toLowerCase())||null,
+17192:    const w=document.createElement('div'); w.id='adrnWrap';
+17194:    const f=document.createElement('div'); f.id='adrnFill'; f.style.cssText='height:100%;width:0%;background:linear-gradient(90deg,#ff6a00,#ffb000);transition:width 0.12s linear;';
+17936:<button id="surgeon-toggle" title="Open BANNON Self-Builder">⚕</button>
+17939:<div id="surgeon-panel">
+17940:  <div id="surgeon-header">
+17941:    <div id="surgeon-title">BANNON // SELF-BUILDER</div>
+17942:    <button id="surgeon-close">✕</button>
+17945:  <div id="surgeon-tabs">
+17952:  <div id="surgeon-body">
+17955:    <div class="s-panel active" id="tab-build">
+17960:        <div id="swarm-node-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><div style="background: rgb(4, 4, 8); border: 1px solid rgba(255, 107, 53, 0.267); border-radius: 3px; padding: 8px; cursor: pointer; transition: 0.15s; opacity: 1;">
+18032:          <input class="s-input" type="password" id="s-api-key" placeholder="sk-ant-..." autocomplete="off">
+18036:          <input class="s-input" type="text" id="s-ollama-url" placeholder="http://localhost:11434" value="http://localhost:11434">
+18040:          <input class="s-input" type="password" id="s-gemini-key" placeholder="AIza..." autocomplete="off">
+18047:        <select class="s-input" id="s-swarm-mode" style="margin-bottom:8px">
+18055:        <div id="s-openrouter-row" style="display:none;margin-top:6px">
+18057:          <input class="s-input" type="password" id="s-openrouter-key" placeholder="sk-or-...">
+18064:        <textarea class="s-textarea" id="s-directive" placeholder="Describe exactly what to fix. Reference function names if you know them."></textarea>
+18076:        <button class="s-btn s-btn-fire" id="s-run-btn" onclick="runSurgery()">⚡ EXECUTE SWARM</button>
+18077:        <button class="s-btn" style="background:#001a10;color:#00ff88;border:1px solid #00ff88" id="s-diff-btn" onclick="runDiffSurgery()">⌁ DIFF SURGERY (no chunking)</button>
+18080:        <button class="s-btn" style="background:#001520;color:#37c0ff;border:1px solid #2a6a8a" onclick="inspect()">🔍 INSPECT (live state)</button><button id="ap-btn" class="s-btn" style="background: rgb(8, 22, 8); color: rgb(124, 252, 0); border: 1px solid rgb(47, 111, 47);">🛰 AUTOPILOT: OFF (always-on builder)</button>
+18085:      <div id="s-progress-wrap" style="display:none">
+18086:        <div class="s-progress-bg"><div class="s-progress-fill" id="s-prog-fill"></div></div>
+18087:        <div style="font-size:9px;color:#555;margin-top:4px;letter-spacing:1px" id="s-prog-text">AWAITING</div>
+18088:        <div id="s-node-activity" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"></div>
+18091:      <div class="s-log" id="s-log">
+18097:      <div id="s-output-area" style="display:none">
+18098:        <div style="font-size:10px;color:#00ff88;letter-spacing:1px;margin-bottom:8px" id="s-output-stats"></div>
+18107:    <div class="s-panel" id="tab-chat">
+18109:      <div id="surgeon-chat-msgs"><div style="color:#555;font-size:10px;text-align:center;padding:20px">Ask anything about BANNON. The AI has the live game code.</div></div>
+18111:        <textarea class="s-textarea" id="s-chat-input" rows="2" placeholder="Ask the AI about BANNON physics, joints, combat..." style="min-height:50px"></textarea>
+18117:    <div class="s-panel" id="tab-scan">
+18118:      <button class="s-btn s-btn-outline" onclick="runScan()" id="s-scan-btn">▸ SCAN BANNON CODE</button>
+18119:      <div id="s-scan-results">
+18125:    <div class="s-panel" id="tab-memory">
+18128:        <div class="memory-block" id="s-memory-display">No memory yet. Build and chat sessions are remembered here.</div>
+18132:        <div id="s-version-list" style="display:flex;flex-direction:column;gap:6px"></div>
+18141:<div id="surgeon-preview">
+18142:  <div id="surgeon-preview-bar">
+18146:  <iframe id="surgeon-preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+18268:      /(<button[^>]*id="s-run-btn"[^>]*?)(\s*disabled(?:="[^"]*")?)(>[^<]*<\/button>)/g,
+18272:      /(<button[^>]*id="s-run-btn"[^>]*>)[^<]*(<\/button>)/g,
+18276:      /(<button[^>]*id="ap-btn"[^>]*>)[^<]*(<\/button>)/g,
+18556:        SWARM_NODES.find(n=>n.id==='claude').status = r.ok ? 'online' : 'offline';
+18558:      } catch(e) { SWARM_NODES.find(n=>n.id==='claude').status = 'offline'; slog('[CLAUDE] ✗ unreachable', 'err'); }
+18574:          const node = SWARM_NODES.find(n=>n.id===id); if(!node) return;
+18575:          let m = (id==='qwen' ? models.find(x=>x.toLowerCase().includes('bannon')) : null)
+18582:        ['qwen','deepseek','llama'].forEach(id => SWARM_NODES.find(n=>n.id===id).status = 'offline');
+18586:      ['qwen','deepseek','llama'].forEach(id => SWARM_NODES.find(n=>n.id===id).status = 'offline');
+18594:      const ls = SWARM_NODES.find(x=>x.id==='lmstudio');
+18597:    }catch(e){ const ls=SWARM_NODES.find(x=>x.id==='lmstudio'); if(ls) ls.status='offline'; }
+18607:        ['gemini_pro','gemini_flash'].forEach(id=>{ const n=SWARM_NODES.find(x=>x.id===id); if(n) n.status = r.ok ? 'online' : 'offline'; });
+18609:      } catch(e) { ['gemini_pro','gemini_flash'].forEach(id=>{ const n=SWARM_NODES.find(x=>x.id===id); if(n) n.status='offline'; }); slog('[GEMINI] ✗ unreachable', 'err'); }
+18632:      const node = SWARM_NODES.find(n=>n.id===nodeId);
+18674:      const node = SWARM_NODES.find(n=>n.id===nodeId);
+18841:        const mid={x:(hip.x+an.x)/2,z:(hip.z+an.z)/2}; const off={x:kn.x-mid.x,z:kn.z-mid.z};
+19493:      if(!frame){ frame=document.createElement('iframe'); frame.id='forge-verify-frame'; frame.sandbox='allow-scripts allow-same-origin'; frame.style.cssText='position:fixed;left:-9999px;top:0;width:900px;height:600px;opacity:0;pointer-events:none;'; document.body.appendChild(frame); }
+19633:    const ex = AP.queue.find(q=>q.id===id);
+19656:      pick.forEach(x=>{ const id='atlas_'+String(x.k).replace(/\W+/g,'_').slice(0,26);
+19699:    const c=document.createElement('div'); c.id='ap-chip';
+19725:    const b=document.createElement('button'); b.id='ap-btn'; b.className='s-btn';
+19854:    const hdr=document.createElement('div'); hdr.id='locoHdr'; hdr.textContent='LOCO · FOOT PLANT / STEP / ARM WASH';
+19962:    if(!b){ b=document.createElement('div'); b.id='ver-badge';
+22451:      document.querySelectorAll('button[id=annBtn], button').forEach(btn => {
+27363:          <input type="file" id="b53-file-in" accept=".fbx,.glb,.gltf" multiple
+27367:        <select id="b53-fighter-assign" style="
+27376:        <button id="b53-bridge-toggle" style="
+27382:        <button id="b53-clear-lib" style="
+27388:      <div id="b53-lib-list" style="
+27395:      <div id="b53-status" style="
+31871:        + '<span id="fbxClose" style="cursor:pointer;color:#f88;font-size:18px;line-height:1;">×</span></div>';
+31876:      indicator.innerHTML = '<span id="mocapSaveStatus">● ALL SYNCED</span><span>BANNON PROPERSIST v2</span>';
+31908:           <button id="qBtnPerf" class="opt-chip" style="flex:1; padding:6px; font-size:9px; cursor:pointer; font-family:monospace; border-radius:4px; border:1px solid #333; background:#111; color:#777;">PERFORM</button>
+31909:           <button id="qBtnBal" class="opt-chip" style="flex:1; padding:6px; font-size:9px; cursor:pointer; font-family:monospace; border-radius:4px; border:1px solid #333; background:#111; color:#777;">BALANCED</button>
+31910:           <button id="qBtnUltra" class="opt-chip" style="flex:1; padding:6px; font-size:9px; cursor:pointer; font-family:monospace; border-radius:4px; border:1px solid #333; background:#111; color:#777;">ULTRA AAA</button>
+32250:      Object.values(all).forEach(arr=>{ (arr||[]).forEach(m=>{ const id=(m.name||'')+'|'+(m.cat||''); if(!seen[id]){ seen[id]=1; out.push(Object.assign({},m)); } }); });
+32325:  function buildPanel(){ const p=document.createElement('div'); p.id='moveLibPanel';
+32331:    const tg=document.createElement('button'); tg.id='moveLibToggle'; tg.textContent='\ud83d\udcda MOVES';

@@ -1,0 +1,161 @@
+1420:          <input id="stMocapFile" type="file" accept=".glb,.gltf,.fbx,application/octet-stream" style="display:none;">
+1427:            <option value="Action Idle To Standing Idle.fbx">Action Idle To Standing Idle.fbx</option>
+1428:            <option value="Baseball Hit.fbx">Baseball Hit.fbx</option>
+1429:            <option value="Body Block.fbx">Body Block.fbx</option>
+1430:            <option value="Box Idle.fbx">Box Idle.fbx</option>
+1431:            <option value="Boxing (1).fbx">Boxing (1).fbx</option>
+1432:            <option value="Boxing (2).fbx">Boxing (2).fbx</option>
+1433:            <option value="Boxing (3).fbx">Boxing (3).fbx</option>
+1434:            <option value="Boxing.fbx">Boxing.fbx</option>
+1435:            <option value="Brooklyn Uprock.fbx">Brooklyn Uprock.fbx</option>
+1436:            <option value="Brutal Assassination.fbx">Brutal Assassination.fbx</option>
+1437:            <option value="Capoeira (1).fbx">Capoeira (1).fbx</option>
+1438:            <option value="Capoeira.fbx">Capoeira.fbx</option>
+1439:            <option value="Center Block.fbx">Center Block.fbx</option>
+1440:            <option value="Cross Jumps.fbx">Cross Jumps.fbx</option>
+1441:            <option value="Dancing.fbx">Dancing.fbx</option>
+1442:            <option value="Death From Back Headshot.fbx">Death From Back Headshot.fbx</option>
+1443:            <option value="Defender.fbx">Defender.fbx</option>
+1444:            <option value="Double Leg Takedown - Victim.fbx">Double Leg Takedown - Victim.fbx</option>
+1445:            <option value="Drop Kick.fbx">Drop Kick.fbx</option>
+1446:            <option value="Drunk Idle Variation.fbx">Drunk Idle Variation.fbx</option>
+1447:            <option value="Drunk Walk.fbx">Drunk Walk.fbx</option>
+1448:            <option value="Fist Fight A.fbx">Fist Fight A.fbx</option>
+1449:            <option value="Flair.fbx">Flair.fbx</option>
+1450:            <option value="Goalkeeper Catch.fbx">Goalkeeper Catch.fbx</option>
+1451:            <option value="Hurricane Kick.fbx">Hurricane Kick.fbx</option>
+1452:            <option value="Idle.fbx">Idle.fbx</option>
+1453:            <option value="Illegal Elbow Punch (1).fbx">Illegal Elbow Punch (1).fbx</option>
+1454:            <option value="Illegal Elbow Punch.fbx">Illegal Elbow Punch.fbx</option>
+1455:            <option value="Inverted Double Kick To Kip Up.fbx">Inverted Double Kick To Kip Up.fbx</option>
+1456:            <option value="Jogging.fbx">Jogging.fbx</option>
+1457:            <option value="Jump Attack.fbx">Jump Attack.fbx</option>
+1458:            <option value="Jump.fbx">Jump.fbx</option>
+1459:            <option value="Jumping Down.fbx">Jumping Down.fbx</option>
+1460:            <option value="Jumping.fbx">Jumping.fbx</option>
+1461:            <option value="Kick To The Groin (1).fbx">Kick To The Groin (1).fbx</option>
+1462:            <option value="Kick To The Groin.fbx">Kick To The Groin.fbx</option>
+1463:            <option value="Mma Kick.fbx">Mma Kick.fbx</option>
+1464:            <option value="Mutant Roaring.fbx">Mutant Roaring.fbx</option>
+1465:            <option value="Pivot.fbx">Pivot.fbx</option>
+1466:            <option value="Playing Drums.fbx">Playing Drums.fbx</option>
+1467:            <option value="Punching Bag.fbx">Punching Bag.fbx</option>
+1468:            <option value="Punching.fbx">Punching.fbx</option>
+1469:            <option value="Ready Idle.fbx">Ready Idle.fbx</option>
+1470:            <option value="Running (1).fbx">Running (1).fbx</option>
+1471:            <option value="Running Jump.fbx">Running Jump.fbx</option>
+1472:            <option value="Running.fbx">Running.fbx</option>
+1473:            <option value="Sad Walk.fbx">Sad Walk.fbx</option>
+1474:            <option value="Singing.fbx">Singing.fbx</option>
+1475:            <option value="Skateboarding.fbx">Skateboarding.fbx</option>
+1476:            <option value="Snake Hip Hop Dance.fbx">Snake Hip Hop Dance.fbx</option>
+1477:            <option value="Soccer Spin.fbx">Soccer Spin.fbx</option>
+1478:            <option value="Stable Sword Inward Slash.fbx">Stable Sword Inward Slash.fbx</option>
+1479:            <option value="Standard Run.fbx">Standard Run.fbx</option>
+1480:            <option value="Standing Block Start.fbx">Standing Block Start.fbx</option>
+1481:            <option value="Standing Cover To Cover.fbx">Standing Cover To Cover.fbx</option>
+1482:            <option value="Standing Melee Attack Horizontal.fbx">Standing Melee Attack Horizontal.fbx</option>
+1483:            <option value="Standing React Large From Left.fbx">Standing React Large From Left.fbx</option>
+1484:            <option value="Standing Taunt Battlecry.fbx">Standing Taunt Battlecry.fbx</option>
+1485:            <option value="Standing Turn Right 90.fbx">Standing Turn Right 90.fbx</option>
+1486:            <option value="Standing Walk Left.fbx">Standing Walk Left.fbx</option>
+1487:            <option value="Strut Walking.fbx">Strut Walking.fbx</option>
+1488:            <option value="Swinging.fbx">Swinging.fbx</option>
+1489:            <option value="Sword And Shield Attack.fbx">Sword And Shield Attack.fbx</option>
+1490:            <option value="Sword And Shield Power Up.fbx">Sword And Shield Power Up.fbx</option>
+1491:            <option value="Taunt.fbx">Taunt.fbx</option>
+1492:            <option value="Terrified.fbx">Terrified.fbx</option>
+1493:            <option value="Treadmill Running.fbx">Treadmill Running.fbx</option>
+1494:            <option value="Two Handed Sword Death.fbx">Two Handed Sword Death.fbx</option>
+1495:            <option value="Unarmed Idle Looking Ver. 2.fbx">Unarmed Idle Looking Ver. 2.fbx</option>
+1496:            <option value="Walk Backward.fbx">Walk Backward.fbx</option>
+1497:            <option value="Walk Crouching Backward Right.fbx">Walk Crouching Backward Right.fbx</option>
+1498:            <option value="Walking (1).fbx">Walking (1).fbx</option>
+1499:            <option value="Walking Backward.fbx">Walking Backward.fbx</option>
+1500:            <option value="Walking Backwards (1).fbx">Walking Backwards (1).fbx</option>
+1501:            <option value="Walking Backwards.fbx">Walking Backwards.fbx</option>
+1502:            <option value="Walking.fbx">Walking.fbx</option>
+1503:            <option value="Zombie Dying.fbx">Zombie Dying.fbx</option>
+1504:            <option value="Zombie Punching.fbx">Zombie Punching.fbx</option>
+11814:    const fbxBtn = document.createElement('button');
+11815:    fbxBtn.className = 'editor-btn';
+11816:    fbxBtn.style.background = '#ff7a1a';
+11817:    fbxBtn.style.width = '100%';
+11818:    fbxBtn.style.marginBottom = '8px';
+11819:    fbxBtn.textContent = 'LOAD 80+ FBX MOCAP LIBRARY';
+11820:    fbxBtn.onclick = () => {
+11821:       fbxBtn.textContent = 'LOADING...';
+11829:    headerRow.appendChild(fbxBtn);
+13802:    // group tracks by clean bone name (handling gltf/fbx bracket and path suffix paths)
+13874:      const fbxObj = loader.parse(arrayBuffer, '');
+13875:      if(!fbxObj.animations || !fbxObj.animations.length){
+13878:      const clip = extractClipFromGLTF(fbxObj.animations[0], fbxObj);
+14203:      if(!clipName) clipName = file.name.replace(/\.(glb|gltf|fbx)$/i,'').toUpperCase().slice(0,24);
+14207:        const isFbx = file.name.toLowerCase().endsWith('.fbx');
+14250:        const clipName = assetName.replace(/\.fbx$/i, '').toUpperCase().replace(/[^A-Z0-9]/g, '_');
+15284:        <p style="margin:4px 0 0 0;color:#aaa;">- Throat-Chin Airspace Shield (Head Node Collision Mesh): Embedded a procedural solid throat-exclusion boundary modeled as a 3D sphere of radius 0.155m in local coordinate space at the neck-chest center, preventing both standard J joints and active (and full) ragdoll physical vertices from collapsing inwards. Fully secures structural skull, throat, and chin limits under load.<br>- Asymmetric Head-Neck Spacing Boundary Checks: Implemented hard distance limits ensuring joint length segment compressions never fall below 0.125m and holding the chin vertical position safely above neck hinge height. Decimates joint-tucking clipping under high-speed kinetic strikes.<br>- Mocap Asset Harbor Migration: Translocated all loose workspace '.fbx' files into a dedicated './assets/mocap/' asset store. Configured server endpoints, upload pipelines, fallback lookups, and static delivery paths to cleanly interact with the new harbor, purging clutter completely.</p>
+27057:// { name, category, clip (THREE.AnimationClip), source:'fbx'|'gltf'|'studio', fighter:null|'P1'|'P2' }
+27109:    loader.load(url, function(fbx){
+27111:      const clips = fbx.animations || [];
+27116:      fbx.traverse(obj=>{ if(obj.isBone) boneNames.push(obj.name); });
+27135:        const entry = { name: clip.name || file.name.replace('.fbx',''), category: cat, clip, source:'fbx', fighter:null };
+27142:          const extClip = window.extractClipFromGLTF(clip, fbx);
+27143:          const rawKeyName = (clip.name || file.name.replace(/\.(fbx|glb|gltf)$/i, '')).toUpperCase().replace(/[^A-Z0-9]/g, '_');
+27198:        const rawKeyName = (clip.name || file.name.replace(/\.(fbx|glb|gltf)$/i, '')).toUpperCase().replace(/[^A-Z0-9]/g, '_');
+27352:        Drop .fbx or .glb files. Clips are auto-categorized by name.
+27363:          <input type="file" id="b53-file-in" accept=".fbx,.glb,.gltf" multiple
+27460:        if(ext==='fbx') window.importFBX(f,cb);
+27494:    key:'brick53.fbx_anim',
+28324:            'Action Idle To Standing Idle.fbx', 'Baseball Hit.fbx', 'Body Block.fbx', 'Box Idle.fbx', 
+28325:            'Boxing (1).fbx', 'Boxing (2).fbx', 'Boxing (3).fbx', 'Boxing.fbx', 'Brooklyn Uprock.fbx', 
+28326:            'Brutal Assassination.fbx', 'Capoeira (1).fbx', 'Capoeira.fbx', 'Center Block.fbx', 'Cross Jumps.fbx', 
+28327:            'Dancing.fbx', 'Death From Back Headshot.fbx', 'Defender.fbx', 'Double Leg Takedown - Victim.fbx', 
+28328:            'Drop Kick.fbx', 'Drunk Idle Variation.fbx', 'Drunk Walk.fbx', 'Fist Fight A.fbx', 'Flair.fbx', 
+28329:            'Goalkeeper Catch.fbx', 'Hurricane Kick.fbx', 'Idle.fbx', 'Illegal Elbow Punch (1).fbx', 
+28330:            'Illegal Elbow Punch.fbx', 'Inverted Double Kick To Kip Up.fbx', 'Jogging.fbx', 'Jump Attack.fbx', 
+28331:            'Jump.fbx', 'Jumping Down.fbx', 'Jumping.fbx', 'Kick To The Groin (1).fbx', 'Kick To The Groin.fbx', 
+28332:            'Mma Kick.fbx', 'Mutant Roaring.fbx', 'Pivot.fbx', 'Playing Drums.fbx', 'Punching Bag.fbx', 
+28333:            'Punching.fbx', 'Ready Idle.fbx', 'Running (1).fbx', 'Running Jump.fbx', 'Running.fbx', 
+28334:            'Sad Walk.fbx', 'Singing.fbx', 'Skateboarding.fbx', 'Snake Hip Hop Dance.fbx', 'Soccer Spin.fbx', 
+28335:            'Stable Sword Inward Slash.fbx', 'Standard Run.fbx', 'Standing Block Start.fbx', 'Standing Cover To Cover.fbx', 
+28336:            'Standing Melee Attack Horizontal.fbx', 'Standing React Large From Left.fbx', 'Standing Taunt Battlecry.fbx', 
+28337:            'Standing Turn Right 90.fbx', 'Standing Walk Left.fbx', 'Strut Walking.fbx', 'Swinging.fbx', 
+28338:            'Sword And Shield Attack.fbx', 'Sword And Shield Power Up.fbx', 'Taunt.fbx', 'Terrified.fbx', 
+28339:            'Treadmill Running.fbx', 'Two Handed Sword Death.fbx', 'Unarmed Idle Looking Ver. 2.fbx', 
+28340:            'Walk Backward.fbx', 'Walk Crouching Backward Right.fbx', 'Walking (1).fbx', 'Walking Backward.fbx', 
+28341:            'Walking Backwards (1).fbx', 'Walking Backwards.fbx', 'Walking.fbx', 'Zombie Dying.fbx', 'Zombie Punching.fbx'
+28384:                const clipName = file.replace(/\.(fbx|gltf|glb)$/i, '').toUpperCase().replace(/[^A-Z0-9]/g, '_');
+28387:                const fbxObj = loader.parse(buffer, '');
+28388:                if (fbxObj.animations && fbxObj.animations.length) {
+28389:                    const parsedClip = fbxObj.animations[0];
+28391:                        const clip = extractClipFromGLTF(parsedClip, fbxObj);
+28397:                        const finalName = (savedMeta && savedMeta.name) ? savedMeta.name : file.replace(/\.(fbx|glb|gltf)$/i, '');
+28418:                        fbxObj.traverse(obj=>{ if(obj.isBone) boneNames.push(obj.name); });
+28429:                            source: file.split('.').pop()?.toLowerCase() || 'fbx',
+28479:            summary: 'Batch loads root environment .fbx files directly into STUDIO.clips & MOVEDEX using WWE 2K category heuristics.',
+28494:            'uploads_files_2434745_ringsalefbx.fbx', 
+28495:            'uploads_files_4374447_Chair_steel.fbx'
+28507:                const fbx = loader.parse(buffer, '');
+28511:                    fbx.scale.set(0.01, 0.01, 0.01);
+28512:                    fbx.position.set(0, 0, 0);
+28513:                    if (typeof arenaGroup !== 'undefined') arenaGroup.add(fbx);
+28514:                    else if (typeof scene !== 'undefined') scene.add(fbx);
+28518:                    fbx.traverse((child) => {
+28531:                    fbx.scale.set(0.015, 0.015, 0.015);
+28532:                    fbx.position.set(4.5, 0, 4.5); // Place just outside the ropes
+28533:                    if (typeof scene !== 'undefined') scene.add(fbx);
+31822:    btn.id = 'fbxImpToggle';
+31828:    panel.id = 'fbxImpPanel';
+31833:    file.type='file'; file.accept='.fbx,.glb,.gltf'; file.multiple=true; file.style.cssText='display:none;';
+31866:      const fbxOk = (typeof THREE!=='undefined' && THREE.FBXLoader);
+31871:        + '<span id="fbxClose" style="cursor:pointer;color:#f88;font-size:18px;line-height:1;">×</span></div>';
+31880:      h.querySelector('#fbxClose').onclick=()=>{ panel.style.display='none'; };
+31888:      status.style.cssText='font-size:11px;color:'+(fbxOk?'#7a9':'#c95')+';margin-bottom:8px;line-height:1.4;';
+31889:      if(!status.textContent) status.textContent = fbxOk ? 'Loader ready. Drop clips, then set each one\u2019s category below.' : 'FBX loader warming up \u2014 import will retry automatically.';
+31963:          const origKey = e.originalFilename || e.name + '.fbx';
+31989:          const origKey = e.originalFilename || e.name + '.fbx';
+32033:          if(lower.endsWith('.fbx') && window.importFBX) {
+32252:  function fbxPool(){ const out=[]; try{ (window.ANIM_LIB||[]).forEach(e=>{
+32284:  function hookFbx(){ try{ if(window.Fighter && !Fighter.prototype.__fbxHook){ Fighter.prototype.__fbxHook=true;
+32308:    const pool=builtinPool().concat(fbxPool()).filter(m=> filter==='ALL' || m.cat===filter || (filter==='FBX'&&m.source==='FBX'));
+33125:        // --- Setup & Lift Struggle Phase (Derived from VerticalBrainBuster.fbx Reference) ---

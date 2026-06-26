@@ -1,0 +1,154 @@
+224 .pill-zone {
+230 .pill-zone.held {
+235 .pill-zone.armed {
+239 animation:zonePulse 0.9s ease-in-out infinite;
+241 @keyframes zonePulse { 0%,100%{opacity:1;} 50%{opacity:0.58;} }
+243 #zoneLabel {
+260 .touch #zoneLabel { display:block; }
+308 .sub-zone {
+518 <button id="btnZone" class="pill-btn pill-zone">ZONE<span class="pill-sub">LB · exit/pin/whip/climb<
+523 <div id="zoneLabel" style="opacity: 0;">ZONE: RING</div>
+531 <div class="sub-track"><div class="sub-zone" id="subZone"></div><div class="sub-needle" id="subNeedl
+1502 // grounded factor (1 = on the floor, 0 = top of the contact zone)
+1625 this.zone = 'RING'; this.zoneY = 0; this._zoneHold = 0;   // 2K navigation: RING / APRON / FLOOR
+1904 // never get their zone re-evaluated and any subsequent move()/knockback snaps them back to RING bou
+1910 if (this._zoneClamp) this._zoneClamp(); else this.x = clamp(this.x, -ARENA_HALF, ARENA_HALF);
+1912 if (this._zoneClamp) this._zoneClamp();
+2154 if (this.zoneY && this.root) this.root.position.y += this.zoneY;   // APRON stays at deck height; FL
+2614 // hand strike — IK-reach toward the opponent's ACTUAL target zone (head/chest/pelvis)
+2667 if (this._zoneClamp) this._zoneClamp();
+2705 if (this._zoneClamp) this._zoneClamp(); else this.x = clamp(this.x, -ARENA_HALF, ARENA_HALF);
+3063 if (f.zone && f.zone!=='RING') return;          // ropes only catch bodies that are IN the ring
+4359 if (this._zoneClamp) this._zoneClamp(); else this.x = clamp(this.x, -ARENA_HALF, ARENA_HALF);
+4463 if (this._zoneClamp) this._zoneClamp(); else this.x = clamp(px, -ARENA_HALF+0.4, ARENA_HALF-0.4);
+4878 // the victim ALWAYS lands on the floor outside the ring, regardless of attacker's zone.
+4881 opp.zone = 'FLOOR'; opp.zoneY = -0.85;
+4883 if (opp._zoneClamp) opp._zoneClamp();
+4901 opp.x = this.x + s.placeDir*0.45; opp.z = this.z; opp.zone = this.zone;
+4902 if (opp._zoneClamp) opp._zoneClamp(); else opp.x = clamp(opp.x, -ARENA_HALF, ARENA_HALF);
+4949 // sim impact: canvas dust at the landing zone, blood if it's a spike/brainbuster, cam punch
+6362 // Width ~0.28m. Fighter stands at ring-mat height (zoneY=0), just outside the rope line.
+6366 // apronSide stored as 'X+','X-','Z+','Z-' so _zoneClamp knows which edge to lock to.
+6369 // Returns the correct x,z,zoneY for the nearest apron edge from current position
+6383 if (this.grappling || this.grabbedBy || this.ragdoll || this.state==='dive' || this.state==='climb' 
+6385 this.zone = this.zone || 'RING';
+6393 if (this.zone==='RING'){
+6394 this.zoneY=0;
+6401 this._zoneHold+=dt;
+6402 if (this._zoneHold>0.22){
+6404 this.zone='APRON'; this.apronSide=ap.side;
+6405 this.x=ap.x; this.z=ap.z; this._zoneHold=0;
+6407 } else this._zoneHold=0;
+6409 } else if (this.zone==='APRON'){
+6410 this.zoneY=0;
+6419 if (inn){ this._zoneHold+=dt;
+6420 if (this._zoneHold>0.35){  // walk back in feels natural now
+6426 this.zone='RING'; this.apronSide=null; this._zoneHold=0;
+6428 } else if (out){ this._zoneHold+=dt;
+6429 if (this._zoneHold>0.45){
+6435 this.zone='FLOOR'; this.zoneY=FLY; this._zoneHold=0;
+6438 } else this._zoneHold=0;
+6441 this.zoneY=FLY;
+6448 if (pushingIn){ this._zoneHold+=dt;
+6449 if (this._zoneHold>0.45){
+6451 this.zone='APRON'; this.apronSide=ap.side;
+6452 this.x=ap.x; this.z=ap.z; this.zoneY=0; this._zoneHold=0;
+6454 } else this._zoneHold=0;
+6458 Fighter.prototype._zoneClamp = function(){
+6460 if (this.zone==='APRON'){
+6467 else if (this.zone==='FLOOR'){ this.x=clamp(this.x,-(AH+2.6),AH+2.6); this.z=clamp(this.z,-(AHZ+2.0)
+6474 // (a) whether you're holding an opponent in a grapple lockup, and (b) which zone
+6482 Fighter.prototype.zoneAction = function(){
+6490 const nearEdgeRing  = (this.zone==='RING')  && Math.abs(this.x) >= AH-1.8;   // was AH-0.55 — you ha
+6491 const onApron       = (this.zone==='APRON');
+6501 const fromZone = this.zone;
+6521 this.zone = this.zone || 'RING';
+6522 if (this.zone==='RING'){
+6525 this.zone='APRON'; this.apronSide=ap.side; this.x=ap.x; this.z=ap.z; this._zoneHold=0;
+6528 } else if (this.zone==='APRON'){
+6536 this.zone='FLOOR'; this.zoneY=FLY; this._zoneHold=0;
+6544 this.zone='APRON'; this.apronSide=ap.side; this.zoneY=0; this.x=ap.x; this.z=ap.z; this._zoneHold=0;
+6557 if (this.zone==='RING' && opp.zone!=='RING' && this.state!=='attack' && this.state!=='block'){
+6643 this._lastMoveIx = ix;  // zone system reads this to detect walking toward/away from the ropes
+6648 this.zone = this.zone || 'RING';
+6650 // regardless of zone, so any move() call snapped APRON/FLOOR fighters back inside the ropes.
+6653 if (this.zone==='APRON'){
+6658 } else if (this.zone==='FLOOR'){
+6677 const onRing = (this.zone==='RING');
+6682 // ROPE REBOUND — running into the ropes bounces you back across the ring (RING zone only)
+6692 // body push (forklift) — never freezes; bounds match this fighter's current zone
+6693 if (opp && !opp.isDown() && opp.zone===this.zone){
+7454 // read target zone from input: joystick/keys up=HEAD, neutral=BODY, down=LEGS
+7494 const zone = targetZone();
+7541 if (kind==='special') p.grappleDeliver(zone==='HIGH'?'choke':(zone==='LOW'?'vsuplex':'signature'), a
+7543 else if (kind==='jab') p.grappleDeliver(zone==='HIGH'?'german':'toss', aim);  // UP+jab = German sup
+7544 else if (kind==='cross') p.grappleDeliver(zone==='HIGH'?'choke2':'thrust', aim);  // UP+cross = 2-ha
+7558 m.height = (zone==='HIGH') ? 'GROUND' : 'GROUND'; // head vs body stomp aim
+7559 m._aimHead = (zone!=='LOW');
+7567 else if (zone==='HIGH') sdir='up'; else if (zone==='LOW') sdir='down';
+7896 var _ldz=(window.RK_LIN_DZ!=null?window.RK_LIN_DZ:0.018);                                           
+7922 var _dz=(window.RK_AROT_DZ!=null?window.RK_AROT_DZ:0.06);                                           
+7923 var wdes=(ang<=_dz)?0:Math.min((ang-_dz)*AROT, 22);                                                 
+9053 // Updates the zone label to show what will happen before you press.
+9056 const lbl = document.getElementById('zoneLabel');
+9078 if (p.zone === 'APRON') return 'ZONE: APRON MOVE / RETURN';
+9079 if (p.zone === 'FLOOR') return 'ZONE: ENTER RING';
+9101 if (!window._v77_zoneHookSet){
+9102 window._v77_zoneHookSet = true;
+9105 window._v77_zoneUpdate = function(){
+9160 if (opp.zone === 'RING'){
+9173 const did = p.zoneAction && p.zoneAction();
+9185 window._v77_zoneUpdate && window._v77_zoneUpdate();
+9284 const zone = document.getElementById('subZone');
+9287 if (!meter || !needle || !zone) return;
+9296 const zoneW = 52;
+9297 const zoneStart = 20 + Math.random() * (trackW - zoneW - 40);
+9298 zone.style.left = (zoneStart/trackW*100) + '%';
+9299 zone.style.width = (zoneW/trackW*100) + '%';
+9339 const zonePct = zoneStart / trackW;
+9340 const zoneEndPct = (zoneStart + zoneW) / trackW;
+9341 if (nPct >= zonePct - 0.02 && nPct <= zoneEndPct + 0.02){
+11712 'FORGE debt: guard styles, finish poses, zones/transitions, fall families, AI behavior, KIN paths'
+14697 arc:'The story becomes a video game inside itself. Reality renders as a game world — glitches, team-
+14702 {n:4,t:'The Daily Grind',beats:['The Pit (debuffed zone)','The Peaks (admin lounge)','The Banyan Tre
+15719 if (this.__lastZone===undefined) this.__lastZone=this.zone;
+15720 if (this.zone!==this.__lastZone && (this.state==='idle'||this.state==='walk')){
+15721 this._apronDir = (this.__lastZone==='RING' && this.zone==='APRON') ? 1
+15722 : (this.__lastZone==='APRON' && this.zone==='RING') ? -1
+15723 : (this.zone==='APRON' ? 1 : -1);
+15726 this.__lastZone=this.zone;
+15850 if (window._zoneKeyHeld) return;   // debounce — fire once per press, not every frame while held
+15851 window._zoneKeyHeld = true;
+15853 if (p && p.zoneAction) p.zoneAction();
+15855 window.addEventListener('keyup', e=>{ if ((e.key||'').toLowerCase()==='e') window._zoneKeyHeld=false
+16005 console.log('%c[ROPE CLIMB] middle-rope + top-rope perch zones wired — ROPE_CLIMB=false to revert','
+16534 zone: f.zone||'RING', ragdoll: !!f.ragdoll,
+16739 const groundY = (typeof RING!=='undefined'?RING.floorY:0) + (this.zoneY||0) + 0.018;
+16749 // Problem: _zoneHold resets if you stop pushing for even one frame.
+16755 if(this.grappling||this.grabbedBy||this.ragdoll||this.state==='dive'||this.state==='climb'||this.sta
+16759 this.zone=this.zone||'RING';
+16764 if(this.zone==='RING'){
+16765 this.zoneY=0;
+16770 if(pushingOut) this._zoneHold=(this._zoneHold||0)+dt;
+16771 else this._zoneHold=Math.max(0,(this._zoneHold||0)-dt*0.5);
+16772 if(this._zoneHold>0.38){  // was 0.55 — more responsive
+16774 this.zone='APRON'; this.apronSide=ap.side;
+16775 this.x=ap.x; this.z=ap.z; this._zoneHold=0;
+16778 } else if(this.zone==='APRON'){
+16779 this.zoneY=0;
+16786 if(inn){ this._zoneHold=(this._zoneHold||0)+dt; }
+16787 else if(out){ this._zoneHold=(this._zoneHold||0)-dt; }
+16788 else{ this._zoneHold=(this._zoneHold||0)*0.92; } // slow drain when neutral
+16789 if(this._zoneHold>0.40){  // re-enter ring: was 1.2 — much more responsive
+16794 this.zone='RING'; this.apronSide=null; this._zoneHold=0;
+16795 } else if(this._zoneHold<-0.32){ // drop to floor: was -0.45, now snappier
+16800 this.zone='FLOOR'; this.zoneY=FLY; this._zoneHold=0;
+16805 this.zoneY=FLY;
+16810 if(pushingIn) this._zoneHold=(this._zoneHold||0)+dt;
+16811 else this._zoneHold=Math.max(0,(this._zoneHold||0)-dt*0.4);
+16812 if(this._zoneHold>0.35){
+16814 this.zone='APRON'; this.apronSide=ap.side;
+16815 this.x=ap.x; this.z=ap.z; this.zoneY=0; this._zoneHold=0;
+18165 // Decay and propagate impact to standing fighters each frame via zone-update hook
+18167 const _oz = window._v77_zoneUpdate;
+18168 window._v77_zoneUpdate = function(){

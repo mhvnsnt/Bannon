@@ -1,0 +1,9 @@
+3366:    case 'flinch': this.poseFlinch(dt);       break;
+4391:Fighter.prototype.poseFlinch = function(dt){
+8550:  // poseFlinch) but NEVER touched opp.x/opp.z, so the body never actually moved on a hit — it just
+22804:// Store last hit direction on kickWobble so poseFlinch can tilt the body
+22808:if (typeof Fighter!=='undefined' && Fighter.prototype.poseFlinch && !Fighter.prototype.poseFlinch._v80){
+22809:  const _pf = Fighter.prototype.poseFlinch;
+22810:  Fighter.prototype.poseFlinch = function(dt){
+22821:  Fighter.prototype.poseFlinch._v80 = true;
+22835:} catch(e){ console.warn('[v80] poseFlinch patch failed:', e); }
