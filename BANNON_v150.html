@@ -14255,22 +14255,28 @@ init();
   if (typeof THREE==='undefined' || typeof Fighter==='undefined'){ return; }
   // reference targets (fraction of standing height) distilled from UFC/Endorphin reference
   const TGT = { heads:[7.0,7.6], shoulder:[0.22,0.28], arm:[0.40,0.47], leg:[0.46,0.54] };
-  function jp(f,n){ const j=f.J&&f.J[n]; return j&&j.pos?j.pos:null; }
   function dist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y,a.z-b.z); }
   function measure(f){
-    const head=jp(f,'head'), pel=jp(f,'pelvis'), shL=jp(f,'shL'), shR=jp(f,'shR'),
-          elL=jp(f,'elL'), haL=jp(f,'haL'), ftL=jp(f,'ftL'), ftR=jp(f,'ftR');
-    if (!head||!pel||!ftL) return null;
+    if (!f.J || !f.J.head || typeof REST==='undefined') return null;
     const hScale=(f.seg&&f.seg.head&&f.seg.head.scale)?f.seg.head.scale.x:1;
-    const headH=2*0.150*hScale;                                  // head diameter (sphere r=0.15 * head scale)
-    const footY=Math.min(ftL.y, ftR?ftR.y:ftL.y);
-    const H=(head.y+0.150*hScale)-footY;                         // crown to sole
+    // FIX: head radius here was hardcoded 0.150 (the pre-v149 sphere) even after v149 shrunk the actual
+    // head mesh to r=0.125 — every reading since v149 was graded against a head 20% bigger than the one
+    // actually rendered, permanently biasing "heads" LOW regardless of the real fix.
+    const headR=0.125*hScale, headH=2*headR;
+    // FIX: this used to read f.J[name].pos — LIVE, post-spring/post-IK joint positions. Those swing with
+    // stance/lean/strike-extension (bent guard arm vs full punch extension, crouch depth, weight shift),
+    // so the SAME unchanged skeleton graded OK one second and LOW/HIGH the next — confirmed live: re-running
+    // bodyCheck() every 1.5s during an unchanged fight produced "heads" anywhere from 5.18 to 6.03 and
+    // "shoulder" from 0.11 to 0.25 for the identical rig. That's animation noise, not a proportion signal.
+    // Measuring from the constant REST pose + the fixed bone lengths (this.uArmLen etc, set once at
+    // construction) instead gives one stable number per fighter that reflects the actual rig.
+    const H=(REST.head[1]+headR)-REST.ftR[1];                    // crown to sole, rest pose
     if (H<0.3) return {lying:true};
     const o={H:H};
     o.heads = H/headH;
-    if (shL&&shR) o.shoulder = dist(shL,shR)/H;
-    if (shL&&elL&&haL) o.arm = (dist(shL,elL)+dist(elL,haL))/H;
-    o.leg = (pel.y-footY)/H;
+    o.shoulder = dist({x:REST.shL[0],y:REST.shL[1],z:REST.shL[2]},{x:REST.shR[0],y:REST.shR[1],z:REST.shR[2]})/H;
+    o.arm = ((f.uArmLen||0)+(f.fArmLen||0))/H;
+    o.leg = ((f.thighLen||0)+(f.shinLen||0))/H;
     return o;
   }
   function grade(v,rng){ if(v==null) return '  —'; return (v>=rng[0]&&v<=rng[1])?'OK':((v<rng[0]?'LOW ':'HIGH ')); }
@@ -15450,7 +15456,7 @@ init();
     o.shoulderW = (shL&&shR)?+d(shL,shR).toFixed(2):null;
     o.hipW = (hipL&&hipR)?+d(hipL,hipR).toFixed(2):null;
     const hScale=(f.seg&&f.seg.head&&f.seg.head.scale)?f.seg.head.scale.x:1;
-    o.heads = +(heightY/(2*0.150*hScale)).toFixed(1);
+    o.heads = +(heightY/(2*0.125*hScale)).toFixed(1);   // FIX: head r was stale at pre-v149 0.150; actual mesh is r=0.125
     return o;
   }
   function report(){
