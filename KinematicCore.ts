@@ -1,4 +1,4 @@
-import { BodyConfigPayload } from '../types';
+import { BodyConfigPayload } from './types.js';
 
 export class KinematicCore {
   private _bodyConfig?: BodyConfigPayload;

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+fight_history.json
+move_fitness.json
+move_fitness.json.transitions
+learned_content.json
+fighter_profiles.json
+forged_characters.json
+mocap_metadata.json
+*.log

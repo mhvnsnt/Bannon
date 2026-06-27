@@ -753,7 +753,7 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 
 <div id="hud">
   <div class="health-wrap" id="p1-wrap">
-    <div class="fighter-tag"><span class="fighter-name">BANNON</span><span class="fighter-style">FIRE · SCORPIO</span></div>
+    <div class="fighter-tag"><span class="fighter-name" id="p1-name">BANNON</span><span class="fighter-style" id="p1-style">FIRE · SCORPIO</span></div>
     <div class="bar-frame"><div class="hp-fill delay" id="p1-hp-delay" style="width: 100%;"></div><div class="hp-fill" id="p1-hp" style="width: 100%;"></div></div>
     <div class="stam-frame"><div class="stam-fill" id="p1-stam" style="width: 100%;"></div></div>
     <div class="mom-frame"><div class="mom-fill" id="p1-mom" style="width: 6.44845%;"></div></div>
@@ -2059,6 +2059,117 @@ const ROSTER_SPEC = {
 };
 window.ROSTER_SPEC = ROSTER_SPEC;
 
+// ── ROSTER EXPANSION ───────────────────────────────────────────────────────
+// Fill in stat blocks for the weight-class-only entries (TITAN/GOLEM/RONIN) and
+// add canon book characters + non-canon originals so the select screen has a
+// real cast. Moves are drawn from the existing customMoves library (valid names
+// only). Additive via Object.assign so the literals above stay the source for
+// the originals.
+Object.assign(MOVESET_DB, {
+  // --- non-canon originals already referenced by weight class ---
+  TITAN:  { maxHp:130, stamina:160, chin:115, speedMultiplier:0.82, powerMultiplier:1.30, moves:['OVERHAND BOMB','SCORPIO HOOK','SUPLEX','STOMP'] },
+  GOLEM:  { maxHp:145, stamina:150, chin:125, speedMultiplier:0.74, powerMultiplier:1.40, moves:['OVERHAND BOMB','GROUND POUND','SUPLEX','STOMP'] },
+  RONIN:  { maxHp:100, stamina:205, chin:98,  speedMultiplier:1.08, powerMultiplier:1.05, moves:['SPINNING ELBOW','HEAD KICK','NECKBREAKER','SUPLEX'] },
+  // --- canon (Off The Top Rope books) ---
+  CAIN_ELIAS:   { maxHp:125, stamina:175, chin:118, speedMultiplier:0.88, powerMultiplier:1.28, moves:['NECKBREAKER','OVERHAND BOMB','SUPLEX','STOMP'] }, // "Final Verdict" tombstone
+  ATLAS_VANCE:  { maxHp:108, stamina:200, chin:104, speedMultiplier:1.02, powerMultiplier:1.08, moves:['CROSS COUNTER','CHECK HOOK','NECKBREAKER','SUPLEX'] }, // counter-wrestler, moral anchor
+  STICK_UP:     { maxHp:96,  stamina:225, chin:92,  speedMultiplier:1.18, powerMultiplier:0.95, moves:['FIRE JAB','SHOVEL HOOK','LIVER SHOT','SPINNING BACKFIST'] }, // street avenger
+  FINXSSE:      { maxHp:88,  stamina:240, chin:84,  speedMultiplier:1.26, powerMultiplier:0.86, moves:['FLYING KNEE','SUPERMAN PUNCH','TORNADO KICK','GAZELLE HOOK'] }, // high-flyer
+  RED_CLOUD:    { maxHp:118, stamina:195, chin:110, speedMultiplier:0.92, powerMultiplier:1.12, moves:['SUPLEX','NECKBREAKER','BODY KNEE','STOMP'] }, // contains/submits
+  CASSIAN_THORNE:{ maxHp:104, stamina:210, chin:100, speedMultiplier:1.12, powerMultiplier:1.06, moves:['QUESTION MARK KICK','SPINNING HEEL KICK','CHECK HOOK','LEAD UPPERCUT'] }, // flawless solitary perfection (the lure)
+  SOMBRA_NEGRA: { maxHp:92,  stamina:230, chin:88,  speedMultiplier:1.22, powerMultiplier:0.92, moves:['MEIA LUA','TORNADO KICK','SPIN HOOK KICK','FLYING KNEE'] }, // steals finishers
+  MAIME:        { maxHp:120, stamina:200, chin:112, speedMultiplier:1.10, powerMultiplier:1.20, moves:['SPINNING ELBOW','OVERHAND BOMB','NECKBREAKER','AXE KICK'] }  // inner antagonist made flesh (boss)
+});
+Object.assign(ROSTER_SPEC, {
+  CAIN_ELIAS:    { style:'BRAWLER',     heightScale:1.10, reachScale:1.00 },
+  ATLAS_VANCE:   { style:'TECHNICIAN',  heightScale:1.02, reachScale:1.04 },
+  STICK_UP:      { style:'BRAWLER',     heightScale:0.99, reachScale:1.01 },
+  FINXSSE:       { style:'CAPOEIRA',    heightScale:0.95, reachScale:1.00 },
+  RED_CLOUD:     { style:'TECHNICIAN',  heightScale:1.08, reachScale:1.02 },
+  CASSIAN_THORNE:{ style:'KARATE',      heightScale:1.03, reachScale:1.05 },
+  SOMBRA_NEGRA:  { style:'CAPOEIRA',    heightScale:0.96, reachScale:1.03 },
+  MAIME:         { style:'PHILLY_SHELL',heightScale:1.04, reachScale:1.04 }
+});
+
+// Display + creative metadata for every selectable character (label, colours,
+// skin tone, faction, one-line bio, forge archetype). The select screen, preview
+// panel and CharacterForge defaults all read from this single table.
+const CHAR_META = {
+  BANNON:        { label:'The Broken Architect', col:0xcc3311, accent:0xffaa00, skin:0xd9a066, faction:'Independent Variable', canon:true,  bio:'Marquis Whitacre’s defense mechanism made flesh — the free agent who adapts across every plane.', archetype:'freeAgent' },
+  VIPER:         { label:'Southpaw · Ice',       col:0x3366cc, accent:0x00ddff, skin:0xc49a6c, faction:'Agents of Chaos',      canon:false, bio:'A long, cold counter-striker who freezes the tempo and picks you apart from range.', archetype:'technician' },
+  KAGE:          { label:'Karate · Shadow',      col:0x2a2a3a, accent:0x9966ff, skin:0xd8b48c, faction:'Agents of Temptation', canon:false, bio:'A karate phantom — blitzing entries, head kicks out of the dark.', archetype:'highFlyer' },
+  BRUTUS:        { label:'Brawler · Iron',        col:0x6b5844, accent:0xffaa00, skin:0xe0a878, faction:'Corporate Structure',  canon:false, bio:'Heavy iron hands; walks through fire to land the one that ends it.', archetype:'brawler' },
+  ZEPHYR:        { label:'Capoeira · Wind',       col:0x33cc77, accent:0xeeff66, skin:0xb07a52, faction:'Agents of Chaos',      canon:false, bio:'The ginga never settles — a windstorm of inverted kicks and feints.', archetype:'highFlyer' },
+  MORTUS:        { label:'Grappler · Bone',       col:0x882244, accent:0xff44aa, skin:0xd4c0a8, faction:'Agents of Temptation', canon:false, bio:'A bone-collector grappler who turns the mat into a morgue.', archetype:'powerhouse' },
+  TITAN:         { label:'Heavyweight · Quake',   col:0x4a6070, accent:0xffd060, skin:0xc89878, faction:'Corporate Structure',  canon:false, bio:'A heavyweight earthquake — every step is a tremor, every blow a fault line.', archetype:'powerhouse' },
+  GOLEM:         { label:'The Clay Colossus',     col:0x7a6a52, accent:0xc0ff70, skin:0x9a8466, faction:'Independent Variable', canon:false, bio:'A construct of stone and clay — the biggest frame in the building, unmoved and unmaking.', archetype:'powerhouse' },
+  RONIN:         { label:'Wanderer · Steel',      col:0x99332a, accent:0xffe0a0, skin:0xcaa074, faction:'Independent Variable', canon:false, bio:'A masterless technician selling his blade match to match — clean, surgical, gone.', archetype:'technician' },
+  CAIN_ELIAS:    { label:'The Final Verdict',     col:0x1a1a22, accent:0x8a0303, skin:0xc8a080, faction:'Agents of Chaos',      canon:true,  bio:'Past trauma made physical; the Tombstone "Final Verdict" is a sentence, not a move.', archetype:'powerhouse' },
+  ATLAS_VANCE:   { label:'The Moral Anchor',      col:0x2e5e8c, accent:0xffd24a, skin:0xd2a878, faction:'Alliance',            canon:true,  bio:'The counter-wrestler who refuses to throw the first strike — and never needs to.', archetype:'technician' },
+  STICK_UP:      { label:'The Street Avenger',    col:0x394a2a, accent:0xd0ff3a, skin:0x8a6748, faction:'Alliance',            canon:true,  bio:'Andre Curtis — robs you of momentum and dignity, hands in your pockets all match.', archetype:'brawler' },
+  FINXSSE:       { label:'High-Flyer · Static',   col:0x6a2a8c, accent:0x00ffd0, skin:0x7a5a3c, faction:'Alliance',            canon:true,  bio:'Narvin Jackson — gravity is a suggestion; the top rope is his home address.', archetype:'highFlyer' },
+  RED_CLOUD:     { label:'The Containment',       col:0x7a3a1a, accent:0xffb060, skin:0xb07850, faction:'Independent Variable', canon:true,  bio:'Chief Red Cloud contains and submits rather than destroys — mercy is the weapon.', archetype:'technician' },
+  CASSIAN_THORNE:{ label:'Flawless · The Lure',   col:0xb0b0c0, accent:0xfff0c0, skin:0xe0c0a0, faction:'Corporate Structure',  canon:true,  bio:'Solitary perfection weaponized — every immaculate strike is bait toward the abyss.', archetype:'technician' },
+  SOMBRA_NEGRA:  { label:'The Finisher Thief',    col:0x101018, accent:0xff2a6a, skin:0x9a6a4a, faction:'Agents of Temptation', canon:true,  bio:'Steals your finisher mid-match and beats you with it — your best self, turned.', archetype:'highFlyer' },
+  MAIME:         { label:'The Voice Made Flesh',  col:0x500a0a, accent:0xff0040, skin:0xd0a090, faction:'Agents of Temptation', canon:true,  bio:'Bannon’s inner antagonist given a body — the boss at the bottom of every spiral.', archetype:'enigma' }
+};
+window.CHAR_META = CHAR_META;
+
+// Per-character attire so the roster reads distinctly instead of all-trunks.
+// secondary (2-tone) color defaults to the character's accent where the style uses it.
+window.CHAR_ATTIRE = {
+  BANNON:'TRUNKS', VIPER:'LONG_TIGHTS', KAGE:'MASKED_SUIT', BRUTUS:'MMA_SHORTS',
+  ZEPHYR:'SINGLET', MORTUS:'LONG_SLEEVE', TITAN:'SINGLET', GOLEM:'TRUNKS', RONIN:'STREETWEAR',
+  CAIN_ELIAS:'LONG_TIGHTS', ATLAS_VANCE:'MMA_SHORTS', STICK_UP:'STREETWEAR', FINXSSE:'BODYSUIT',
+  RED_CLOUD:'SINGLET', CASSIAN_THORNE:'LONG_SLEEVE', SOMBRA_NEGRA:'MASKED_SUIT', MAIME:'BODYSUIT'
+};
+// archetype fallback for characters with no explicit attire (e.g. forged with none set)
+window.ARCHE_ATTIRE = { powerhouse:'SINGLET', brawler:'MMA_SHORTS', technician:'LONG_SLEEVE', highFlyer:'BODYSUIT', enigma:'MASKED_SUIT', freeAgent:'LONG_TIGHTS' };
+window.attireFor = function(name){
+  const k=String(name||'').toUpperCase();
+  if(window.CHAR_ATTIRE[k]) return window.CHAR_ATTIRE[k];
+  const meta=(window.CHAR_META&&window.CHAR_META[k])||{};
+  return window.ARCHE_ATTIRE[meta.archetype||'freeAgent']||'TRUNKS';
+};
+
+// Unified roster accessor — built-in cast merged with any characters forged via
+// the daemon (so created characters auto-appear on the select screen). Each row
+// is everything the UI needs: identity, colours, stats, faction, bio.
+window.ROSTER_ALL = function(){
+  const out = [];
+  const seen = {};
+  for (const name of Object.keys(MOVESET_DB)){
+    const m = MOVESET_DB[name]; const meta = CHAR_META[name] || {};
+    seen[name] = true;
+    out.push({
+      name,
+      label: meta.label || name,
+      col: meta.col!=null?meta.col:0x888888, accent: meta.accent!=null?meta.accent:0xffffff, skin: meta.skin!=null?meta.skin:0xc8987a,
+      faction: meta.faction || 'Unaligned', canon: !!meta.canon, bio: meta.bio || '',
+      archetype: meta.archetype || 'freeAgent', forged:false,
+      style: (ROSTER_SPEC[name]&&ROSTER_SPEC[name].style)||'ORTHODOX',
+      stats: { hp:m.maxHp, stamina:m.stamina, chin:m.chin, speed:Math.round((m.speedMultiplier||1)*100), power:Math.round((m.powerMultiplier||1)*100) },
+      moves: m.moves||[]
+    });
+  }
+  // merge forged characters cached from the daemon (window.__FORGED_CACHE)
+  try {
+    const forged = window.__FORGED_CACHE || [];
+    for (const c of forged){
+      const key = (c.id||c.displayName||'').toUpperCase();
+      if (!key || seen[key]) continue;
+      out.push({
+        name:key, label:c.displayName||key, col:(c.attire&&c.attire.primaryColor)||0x888888,
+        accent:(c.attire&&c.attire.accentColor)||0xffffff, skin:(c.skin&&c.skin.baseColor)||0xc8987a,
+        faction:c.faction||'Forged', canon:false, bio:'A forged competitor from the creative suite.', archetype:c.archetype||'freeAgent',
+        forged:true, style:'ORTHODOX',
+        stats:{ hp:110, stamina:200, chin:100, speed:100, power:105 }, moves:[]
+      });
+    }
+  } catch(_){}
+  return out;
+};
+
 
 class Fighter {
   constructor(isPlayer, opts){
@@ -2788,7 +2899,15 @@ function setFootPose(mesh, kn, ank, ft, floorY, isLeft){
 }
 
 
-Fighter.prototype.opponent = function(){ return fighters[this.isPlayer?1:0]; };
+// Opponent by IDENTITY, not by isPlayer — so "play as P2" and AI-vs-AI (where
+// neither fighter is the human) still resolve the correct other fighter instead
+// of a fighter targeting itself.
+Fighter.prototype.opponent = function(){ return (this===fighters[0]) ? fighters[1] : fighters[0]; };
+// Display name for a fighter — the player is no longer hardcoded to BANNON, so
+// the announcer/UI must read the actual chosen name (set in opts.name for both
+// the human and the AI). Falls back to BANNON only if somehow unnamed.
+function fname(f){ return (f && f.opts && f.opts.name) ? f.opts.name : 'BANNON'; }
+Fighter.prototype.who = function(){ return fname(this); };
 
 Fighter.prototype.enforceBiomechanicalLimits = function() {
   if (!this._arV) return;
@@ -2844,12 +2963,19 @@ Fighter.prototype.enforceBiomechanicalLimits = function() {
       const fwd = this.forward();
       // 1. Establish the Pole Vector in space
       const sign = kneeElbowSign === 'KNEE' ? 1 : -1;
+      const isElbow = kneeElbowSign === 'ELBOW';
       const midX = (p.pos.x + c.pos.x) * 0.5;
       const midY = (p.pos.y + c.pos.y) * 0.5;
       const midZ = (p.pos.z + c.pos.z) * 0.5;
-      
+
+      // ELBOW DOWN-BIAS FIX: a purely-horizontal pole (poleY=midY) was the cause of
+      // elbows twisting sideways / upside-down in a raised guard — when the arm is up,
+      // shoulder->hand is nearly vertical, so a horizontal pole projects to a SIDEWAYS
+      // safe-bend direction and the corrector snapped the elbow out to the side.
+      // Anatomically the elbow points DOWN-and-back (boxing/guard and most strikes),
+      // so bias the elbow pole well below the joint. Knees keep their forward pole.
       const poleX = midX + fwd.x * 2.0 * sign;
-      const poleY = midY;
+      const poleY = midY - (isElbow ? 1.8 : 0);
       const poleZ = midZ + fwd.z * 2.0 * sign;
 
       // 2. Define the limb axis (Parent to Child)
@@ -3268,7 +3394,9 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
     //   through poseGuard's existing `walking` branch even with no directional input.
     //   Every other style still gets walking=false here (unchanged behavior).
   }
-  if (this.zoneY && this.root) this.root.position.y += this.zoneY;
+  // (zoneY is ALREADY applied to root.position.y at the top of this block, line ~3368.
+  //  Re-adding it here double-counted the apron/floor drop — a FLOOR fighter sank to
+  //  ~2x zoneY and clipped a metre through the ringside floor. Removed the duplicate.)
 
   let hl = 0.07;
   if (this.state==='attack') hl = 0.045;
@@ -3631,6 +3759,22 @@ Fighter.prototype.poseGuard = function(dt, walking){
     if (P.armR > 45){ const ad=clamp((P.armR-45)/55,0,1); this.J.haR.pos.y -= ad*0.18; this.J.elR.pos.y -= ad*0.12; this.J.shR.pos.y -= ad*0.04; }
     if (P.spine > 30){ const sp=clamp((P.spine-30)/70,0,1); this.J.chest.pos.x -= sp*0.08; this.J.head.pos.x -= sp*0.06; this.J.pelvis.pos.x -= sp*0.04; this.J.pelvis.pos.y -= sp*0.05; }
     if (P.head > 50){ const hd=clamp((P.head-50)/50,0,1); this.J.haL.pos.y -= hd*0.10; this.J.haR.pos.y -= hd*0.10; this.J.head.pos.x -= hd*0.04; this.J.head.pos.y -= hd*0.03; }
+  }
+  // ===== PLANTED FIGHTING STANCE (anti-marionette) =====
+  // The base pose stands at near-full leg extension, so the knees barely flex and
+  // the fighter reads like a puppet on strings. Drop the whole upper body (COM)
+  // by a fixed amount while the FEET stay planted on the ground — that compresses
+  // the legs and forces a real athletic knee bend, the difference between a planted
+  // fighter and a marionette. Tunable via window.STANCE_DROP; eases a touch in walk
+  // so the gait stays springy. Strikes/getup keep their own posture (skip then).
+  if (this.state!=='getup' && this.state!=='down' && !this.ragdoll){
+    const DROP = (window.STANCE_DROP!=null?window.STANCE_DROP:0.085) * (walking?0.78:1);
+    const chain = ['pelvis','spineLow','spineMid','chest','neck','head','shL','shR','clavL','clavR','hipL','hipR','haL','haR','elL','elR'];
+    for (let i=0;i<chain.length;i++){ const j=this.J[chain[i]]; if(j&&j.tgt) j.tgt.y -= DROP; }
+    // widen the base slightly too — a planted fighter sets his feet wider than his hips
+    const SPREAD = (window.STANCE_SPREAD!=null?window.STANCE_SPREAD:0.03);
+    if(this.J.hipL&&this.J.hipL.tgt) this.J.hipL.tgt.z += SPREAD;
+    if(this.J.hipR&&this.J.hipR.tgt) this.J.hipR.tgt.z -= SPREAD;
   }
   this.solveFootIK(dt, walking);
   this.solveArmIK();
@@ -4908,6 +5052,15 @@ window.applyFighterSpec = function(f, spec){
       ['bootL','feet'],['bootR','feet'],['ankleL','feet'],['ankleR','feet'],
       ['head','head'],['jaw','head'],['brow','head'],['nose','head'],['earL','head'],['earR','head'],['hair','head'],['eyeL','head'],['eyeR','head'] ];
     for(let i=0;i<MAP.length;i++){ const m=S[MAP[i][0]]; if(m&&m.scale){ const s=B*P(MAP[i][1]); m.scale.set(s,s,s); } }
+    // FACE SCULPT overlay — independent face-feature scaling on top of the uniform
+    // head size, so a face can actually be shaped (jaw width/length, brow ridge,
+    // nose size, cheek/ear). These persist because applyMesh only re-positions
+    // these segs (never re-scales them), so the sculpt rides the head every frame.
+    const FM=(k)=> (sh[k]!=null?+sh[k]:1);
+    if(S.jaw && S.jaw.scale){ const b=S.jaw.scale.x; S.jaw.scale.set(b*FM('faceJawW'), S.jaw.scale.y*FM('faceJawL'), b*FM('faceJawW')); }
+    if(S.brow && S.brow.scale){ S.brow.scale.y*=FM('faceBrow'); S.brow.scale.x*=FM('faceBrowW'); }
+    if(S.nose && S.nose.scale){ const n=FM('faceNose'); S.nose.scale.set(S.nose.scale.x*n, S.nose.scale.y*FM('faceNoseL'), S.nose.scale.z*n); }
+    if(S.earL && S.earL.scale){ const e=FM('faceEars'); S.earL.scale.multiplyScalar(e); if(S.earR) S.earR.scale.multiplyScalar(e); }
     const setCol=(mesh,c)=>{ if(mesh&&mesh.material&&c!=null){ try{ mesh.material.color.setHex(c); }catch(e){} } };
     if(sp.skin!=null) setCol(S.head, sp.skin);                 // skin == muscle material (whole body)
     const trunkC=(sp.trunk!=null?sp.trunk:sp.col); if(trunkC!=null) setCol(S.trunks, trunkC);
@@ -4936,6 +5089,117 @@ window.BANNON_ROSTER = [
     shape:{ height:1.04, legLen:1.16, thighs:1.1, calves:1.12, arms:0.88, chest:0.9 } }                                                  // dancer's legs
 ];
 window.applyTemplate = function(f, t){ if(!f||!t) return; f.shape = Object.assign({}, t.shape||{}); window.applyFighterSpec(f, t); };
+
+// Archetype physique presets (same shape-space as BANNON_ROSTER) so every
+// character — including the new canon cast that has no hand-authored template —
+// gets a distinct silhouette instead of the one default body in different colours.
+window.ARCHE_SHAPE = {
+  powerhouse:{ build:1.40, shape:{ height:1.12, chest:1.42, shoulders:1.50, arms:1.32, forearms:1.20, hands:1.12, waist:1.06, thighs:1.32, calves:1.20, neck:1.30 } },
+  brawler:   { build:1.20, shape:{ height:1.05, chest:1.24, shoulders:1.32, arms:1.20, forearms:1.12, waist:0.98, thighs:1.14, calves:1.06, neck:1.18 } },
+  technician:{ build:1.02, shape:{ height:1.02, chest:1.06, shoulders:1.16, arms:1.02, waist:0.86, thighs:1.04, calves:1.00 } },
+  highFlyer: { build:0.90, shape:{ height:1.00, legLen:1.12, chest:0.98, shoulders:1.06, arms:0.94, waist:0.80, thighs:1.00, calves:1.12 } },
+  enigma:    { build:1.10, shape:{ height:1.04, chest:1.14, shoulders:1.22, arms:1.08, waist:0.88, thighs:1.10, calves:1.05, neck:1.12 } },
+  freeAgent: { build:1.08, shape:{ height:1.00, chest:1.14, shoulders:1.22, arms:1.08, waist:0.85, thighs:1.08, calves:1.04 } }
+};
+
+// applyForgeMorphs — make a fighter's body actually reflect who they are. Routes
+// through the proven applyTemplate/applyFighterSpec path (so physics/hit-detection
+// stay intact). Priority: (1) a character forged in the creative suite gets its
+// real morph sliders; (2) a hand-authored BANNON_ROSTER template (GOLEM the giant,
+// TITAN the powerhouse, etc.); (3) an archetype-derived physique for everyone else.
+window.applyForgeMorphs = function(f){
+  if(!f || !window.applyFighterSpec) return;
+  const key = (typeof fname==='function' ? fname(f) : (f.opts&&f.opts.name)||'BANNON').toUpperCase();
+  // 1) forged character from the creative suite
+  let forged=null; try{ forged=(window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); }catch(_){}
+  if(forged && forged.rawShape){
+    // A character built in the CAW: replay its EXACT shape + spec so it looks in
+    // a match precisely as it did in the editor (body morph, face sculpt, colors).
+    try{ f.shape = Object.assign({}, forged.rawShape); window.applyFighterSpec(f, forged.rawSpec||{}); }catch(_){}
+    if(forged.rawSpec && forged.rawSpec.style){ try{ f.style = forged.rawSpec.style; }catch(_){} }
+    f._forgedLook=true; return;
+  }
+  if(forged){
+    const b=forged.body||{}, sk=forged.skin||{}, at=forged.attire||{}, ec=forged.engineConfig||{};
+    const m=(v,d)=>(v!=null?v:d), musc=m(b.muscularity,0.5), fat=m(b.bodyFat,0.4);
+    const t={
+      build: 0.85 + musc*0.6 + m(b.mass,0.5)*0.2,
+      skin:  (sk.baseColor!=null?sk.baseColor:undefined),
+      trunk: (at.primaryColor!=null?at.primaryColor:undefined),
+      accent:(at.accentColor!=null?at.accentColor:undefined),
+      shape:{
+        height: 0.96 + m(b.height,0.5)*0.28,
+        chest: 1.12*m(b.chest,1)*(0.9+musc*0.4), shoulders: 1.20*m(b.shoulders,1)*(0.9+musc*0.45),
+        arms: 1.05*m(b.arms,1)*(0.9+musc*0.4), forearms: m(b.forearms,1),
+        waist: 0.86*m(b.waist,1)*(0.92+fat*0.5), thighs: 1.06*m(b.thighs,1)*(0.9+musc*0.35),
+        calves: m(b.calves,1), neck: m(b.neck,1)*(0.95+musc*0.3),
+        head: (ec.facialMorphs&&ec.facialMorphs.headScale?ec.facialMorphs.headScale*0.7:0.70)
+      }
+    };
+    window.applyTemplate(f, t); f._forgedLook=true; return;
+  }
+  // 2) hand-authored roster template
+  let tpl=null; try{ tpl=(window.BANNON_ROSTER||[]).find(r=>r.name===key); }catch(_){}
+  if(tpl){ window.applyTemplate(f, tpl); return; }
+  // 3) archetype-derived physique for the rest (new canon characters)
+  const meta=(window.CHAR_META&&window.CHAR_META[key])||{};
+  const a=window.ARCHE_SHAPE[meta.archetype||'freeAgent']||window.ARCHE_SHAPE.freeAgent;
+  window.applyTemplate(f, Object.assign({}, a, { skin: meta.skin, trunk: meta.col, accent: meta.accent }));
+};
+
+// ── ATTIRE SYSTEM ───────────────────────────────────────────────────────────
+// Clothing variety so fighters aren't all in the same trunks. The muscle masses
+// share ONE skin material, so to "dress" a limb/torso we swap those segs onto a
+// per-fighter CLONED fabric material (the covered parts read as cloth, the rest
+// stay skin). A second fabric material gives 2-tone outfits. Reversible: any seg
+// not covered by the chosen style is restored to the skin material.
+window.ATTIRE_SEGS = {
+  legsUpper:['thighL','thighR','kneeL','kneeR'],
+  legsLower:['shinL','shinR','calfL','calfR','ankleL','ankleR'],
+  torso:['torso','abdomen','pecL','pecR','abs','lat','traps'],
+  arms:['uArmL','uArmR','bicepL','bicepR','fArmL','fArmR'],
+  head:['head','jaw','brow','nose']
+};
+// Each style = which regions are primary fabric / which are secondary (2-tone).
+window.ATTIRE_STYLES = {
+  TRUNKS:      { primary:[],                              secondary:[] },                 // bare — classic trunks only
+  MMA_SHORTS:  { primary:['legsUpper'],                   secondary:[] },                 // shorts to the knee
+  LONG_TIGHTS: { primary:['legsUpper','legsLower'],       secondary:[] },                 // full-length tights
+  SINGLET:     { primary:['torso','legsUpper'],           secondary:[] },                 // torso + upper-leg suit
+  LONG_SLEEVE: { primary:['torso','arms'],                secondary:[] },                 // long-sleeve shirt
+  STREETWEAR:  { primary:['torso','arms'],                secondary:['legsUpper','legsLower'] }, // shirt + pants (2-tone)
+  BODYSUIT:    { primary:['torso','arms','legsUpper','legsLower'], secondary:[] },         // full luchador suit
+  MASKED_SUIT: { primary:['torso','arms','legsUpper','legsLower'], secondary:['head'] }    // suit + mask (head = accent)
+};
+window.ATTIRE_LIST = Object.keys(window.ATTIRE_STYLES);
+
+window.applyAttire = function(f, style, primaryColor, secondaryColor){
+  if(!f || !f.seg || typeof THREE==='undefined') return;
+  const S=f.seg, skin=f.skinMat;
+  if(!skin) return;
+  try{
+    // lazily create this fighter's two fabric materials (cloned off the trunks look)
+    if(!f._fabricA){ f._fabricA = (S.trunks&&S.trunks.material&&S.trunks.material.clone)? S.trunks.material.clone() : new THREE.MeshStandardMaterial({roughness:0.62, metalness:0.04}); }
+    if(!f._fabricB){ f._fabricB = f._fabricA.clone(); }
+    if(primaryColor!=null){ try{ f._fabricA.color.setHex(primaryColor); }catch(_){ } }
+    if(secondaryColor!=null){ try{ f._fabricB.color.setHex(secondaryColor); }catch(_){ } }
+    const cfg = window.ATTIRE_STYLES[style] || window.ATTIRE_STYLES.TRUNKS;
+    const primSet=new Set(), secSet=new Set();
+    (cfg.primary||[]).forEach(r=> (window.ATTIRE_SEGS[r]||[]).forEach(s=>primSet.add(s)));
+    (cfg.secondary||[]).forEach(r=> (window.ATTIRE_SEGS[r]||[]).forEach(s=>secSet.add(s)));
+    // every clothing-capable seg: assign fabric if covered, else restore to skin
+    Object.keys(window.ATTIRE_SEGS).forEach(function(region){
+      window.ATTIRE_SEGS[region].forEach(function(name){
+        const m=S[name]; if(!m) return;
+        if(primSet.has(name)) m.material=f._fabricA;
+        else if(secSet.has(name)) m.material=f._fabricB;
+        else if(m.material===f._fabricA || m.material===f._fabricB) m.material=skin;   // only un-dress what WE dressed (don't clobber eyes/hair)
+      });
+    });
+    f._attireStyle = style;
+  }catch(_){ }
+};
+
 window._rosterIdx = window._rosterIdx||0;
 window.cycleRosterP2 = function(){
   try{
@@ -4985,7 +5249,7 @@ window.cycleRosterP2 = function(){
     const hx=document.createElement('button'); hx.textContent='\u2715 DONE'; hx.style.cssText='background:#2a1208;color:#ffd9a8;border:1px solid #ff7a1a;border-radius:6px;padding:8px 13px;cursor:pointer;font:bold 11px ui-monospace,monospace;flex:none;';
     hdr.appendChild(htl); hdr.appendChild(hx); wrap.appendChild(hdr);
     let open=false;
-    function closeDrawer(){ open=false; wrap.style.display='none'; if(typeof exitCreatePreview==='function') exitCreatePreview(); }
+    function closeDrawer(){ open=false; wrap.style.display='none'; if(typeof exitCreatePreview==='function') exitCreatePreview(); try{ if(gameState==='menu' && typeof show==='function') show('mainMenu'); }catch(e){} }
     hx.onclick=closeDrawer;
     btn.onclick=()=>{ if(open){ closeDrawer(); } else { open=true; wrap.style.display='block'; wrap.scrollTop=0; syncAll(); if(typeof enterCreatePreview==='function') enterCreatePreview(targetIdx); } };
 
@@ -5026,6 +5290,15 @@ window.cycleRosterP2 = function(){
     BODY.forEach(p=> slider(p[0],p[1],0.55,1.7,true,true));     // per-part size (visual, restyle)
     slider('neck','NECK',0.6,1.6,true,true);                    // neck thickness
     slider('fem','FRAME  MASC \u2194 FEM',0,1,true,true);        // 0 male wedge -> 1 female hourglass (ribcage/waist/pelvis/glute)
+    H('FACE SCULPT','#c084fc');
+    slider('head','HEAD SIZE',0.55,1.3,true,true);              // overall skull (reuses the head part-scale)
+    slider('faceJawW','JAW WIDTH',0.6,1.6,true,true);
+    slider('faceJawL','JAW LENGTH',0.7,1.5,true,true);
+    slider('faceBrow','BROW RIDGE',0.6,1.7,true,true);
+    slider('faceBrowW','BROW WIDTH',0.7,1.4,true,true);
+    slider('faceNose','NOSE SIZE',0.6,1.6,true,true);
+    slider('faceNoseL','NOSE LENGTH',0.7,1.6,true,true);
+    slider('faceEars','EAR SIZE',0.6,1.6,true,true);
     H('SKIN / HAIR / ATTIRE','#c084fc');
     COLZ.forEach(c=> colorRow(c[0],c[1]));
 
@@ -5040,6 +5313,12 @@ window.cycleRosterP2 = function(){
     sb.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; let i=STYLES.indexOf(f.spec.style||'allrounder'); i=(i+1)%STYLES.length; const lbl=STYLES[i]; f.spec.style=lbl; f.style=STYLE_TO_GUARD[lbl]||'ORTHODOX'; sb.textContent=lbl; };
     syncers.push(()=>{ const f=F(); sb.textContent=(f&&f.spec&&f.spec.style)||'allrounder'; });
     srow.appendChild(slab); srow.appendChild(sb); wrap.appendChild(srow);
+    // ATTIRE — cycle the outfit (trunks / shorts / tights / singlet / sleeves / streetwear / bodysuit / masked)
+    const arow=document.createElement('div'); arow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
+    const alab=document.createElement('span'); alab.textContent='ATTIRE'; const ab=document.createElement('button'); ab.style.cssText='background:#1a0e08;color:#ff7a1a;border:1px solid #ff7a1a55;border-radius:4px;padding:4px 8px;cursor:pointer;min-width:110px;';
+    ab.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=window.ATTIRE_LIST||['TRUNKS']; let i=list.indexOf(f.spec.attireStyle||'TRUNKS'); i=(i+1)%list.length; f.spec.attireStyle=list[i]; ab.textContent=list[i].replace(/_/g,' '); if(window.applyAttire) window.applyAttire(f, list[i], (f.spec.trunk!=null?f.spec.trunk:0x202028), (f.spec.accent!=null?f.spec.accent:0xffb000)); };
+    syncers.push(()=>{ const f=F(); ab.textContent=((f&&f.spec&&f.spec.attireStyle)||'TRUNKS').replace(/_/g,' '); });
+    arow.appendChild(alab); arow.appendChild(ab); wrap.appendChild(arow);
 
     // SAVE / LOAD (localStorage — persists across sessions)
     H('SAVE / LOAD');
@@ -5050,7 +5329,22 @@ window.cycleRosterP2 = function(){
     const del=document.createElement('button'); del.textContent='DELETE'; del.style.cssText='flex:1;background:#2a0e08;color:#ff7777;border:1px solid #ff4444;border-radius:5px;padding:6px;cursor:pointer;';
     function listSaved(){ try{ return JSON.parse(localStorage.getItem('bannon_caw_list')||'[]'); }catch(e){ return []; } }
     function refreshSaved(){ sel.innerHTML=''; listSaved().forEach(nm=>{ const o=document.createElement('option'); o.value=nm; o.textContent=nm; sel.appendChild(o); }); }
-    sv.onclick=()=>{ const f=F(); if(!f) return; const nm=((nin.value||f.specName||'FIGHTER').trim())||'FIGHTER'; try{ const l=listSaved(); if(l.indexOf(nm)<0) l.push(nm); localStorage.setItem('bannon_caw_list',JSON.stringify(l)); localStorage.setItem('bannon_caw_'+nm, JSON.stringify({spec:f.spec||{}, shape:f.shape||{}})); refreshSaved(); sel.value=nm; sv.textContent='✓ SAVED'; setTimeout(()=>sv.textContent='💾 SAVE FIGHTER',1000); }catch(e){} };
+    sv.onclick=()=>{ const f=F(); if(!f) return; const nm=((nin.value||f.specName||'FIGHTER').trim())||'FIGHTER'; try{ const l=listSaved(); if(l.indexOf(nm)<0) l.push(nm); localStorage.setItem('bannon_caw_list',JSON.stringify(l)); localStorage.setItem('bannon_caw_'+nm, JSON.stringify({spec:f.spec||{}, shape:f.shape||{}}));
+        // BRIDGE: register the creation into the live roster so it appears on the
+        // character-select screen and fights exactly as it was sculpted, and mirror
+        // it to the always-on daemon's forge (cloud-persisted) when reachable.
+        try{
+          const key=nm.toUpperCase().replace(/[^A-Z0-9]/g,'_'); const sp=f.spec||{}, shp=f.shape||{};
+          const styleToArche={powerhouse:'powerhouse',grappler:'powerhouse',brawler:'brawler',striker:'highFlyer',capoeira:'highFlyer',technical:'technician',allrounder:'freeAgent',luchador:'highFlyer'};
+          const entry={ id:key, displayName:nm, archetype:styleToArche[sp.style]||'freeAgent', faction:'Forged', forged:true,
+            skin:{ baseColor:(sp.skin!=null?sp.skin:0xc8987a) },
+            attire:{ primaryColor:(sp.trunk!=null?sp.trunk:0x202028), accentColor:(sp.accent!=null?sp.accent:0xffb000) },
+            rawSpec:Object.assign({},sp,{name:nm}), rawShape:Object.assign({},shp) };
+          window.__FORGED_CACHE=(window.__FORGED_CACHE||[]).filter(c=>(c.id||'').toUpperCase()!==key); window.__FORGED_CACHE.push(entry);
+          localStorage.setItem('bannonForged', JSON.stringify(window.__FORGED_CACHE));
+          if(window.BANNON_DAEMON&&window.BANNON_DAEMON.forgeCreate){ window.BANNON_DAEMON.forgeCreate({ displayName:nm, archetype:entry.archetype, faction:'Forged', skin:{baseColor:entry.skin.baseColor}, attire:entry.attire }); }
+        }catch(_){ }
+        refreshSaved(); sel.value=nm; sv.textContent='✓ SAVED → ROSTER'; setTimeout(()=>sv.textContent='💾 SAVE FIGHTER',1400); }catch(e){} };
     ld.onclick=()=>{ const nm=sel.value; if(!nm) return; try{ const d=JSON.parse(localStorage.getItem('bannon_caw_'+nm)||'null'); const f=F(); if(d&&f){ f.shape=Object.assign({},d.shape||{}); window.applyFighterSpec(f, d.spec||{}); syncAll(); } }catch(e){} };
     del.onclick=()=>{ const nm=sel.value; if(!nm) return; try{ const l=listSaved().filter(x=>x!==nm); localStorage.setItem('bannon_caw_list',JSON.stringify(l)); localStorage.removeItem('bannon_caw_'+nm); refreshSaved(); }catch(e){} };
     lrow.appendChild(ld); lrow.appendChild(del);
@@ -6885,7 +7179,7 @@ Fighter.prototype.grappleDeliver = function(type, aim){
   // are TOSS-tier inversion arcs, not slam-tier, regardless of their damage `type` classification.
   const _vsuplexFamily = (this.grapplePos==='VERTICAL_SUPLEX'||this.grapplePos==='TIGER_SUPLEX'||this.grapplePos==='DRAGON_SUPLEX');
   const _eliteCovered = (window.ELITE_MOVES && ['CANADIAN_DESTROYER','DDT','BUTTERFLY_DDT','TIGER_DRIVER','BRAINBUSTER','VERTICAL_SUPLEX','ELECTRIC_CHAIR'].indexOf(this.grapplePos)>=0);
-  if ((this.isPlayer || this.opts) && !_eliteCovered) announce(variant.label + (isBridge?' — BRIDGE':''), this.isPlayer?'BANNON':this.opts.name);
+  if ((this.isPlayer || this.opts) && !_eliteCovered) announce(variant.label + (isBridge?' — BRIDGE':''), this.who());
   let basePow, vH, vV, downImp;
   // v74 VELOCITY TIER — deliberate, named scale instead of incidental per-type numbers:
   //   DROP (lowest, lazy downward) < SLAM < THROW (decent) < TOSS (highest, full suplex arc)
@@ -7896,7 +8190,7 @@ Fighter.prototype.startDive = function(type, sb){
   this.aerialFrom = { x:this.x, y:(this.airLift||(sb?0.2:1.85)), z:this.z };
   this.aerialTo = opp ? { x:clamp(opp.x,-ARENA_HALF,ARENA_HALF), z:clamp(opp.z,-ARENA_HALF_Z,ARENA_HALF_Z) } : { x:this.x + this.dir*2.5, z:this.z };
   this._diveArc = (d.arc + (sb?DIVE.spring:0)) * DIVE.arc;
-  announce(d.label, this.isPlayer?'BANNON':this.opts.name);
+  announce(d.label, this.who());
 };
 Fighter.prototype.exitAerial = function(){
   this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
@@ -8781,7 +9075,7 @@ Fighter.prototype.zoneAction = function(){
     this._slamTarget = 1;
     this.hitKick  = { T:0.26, t:0.26, dx:throwDir, mag:0.10, reg:'b' };
     opp.hitKick   = { T:0.22, t:0.22, dx:throwDir, mag:0.09, reg:'b' };
-    if (this.isPlayer || this.opts) announce(fromZone==='APRON' ? 'OFF THE APRON!' : 'OVER THE TOP ROPE!', this.isPlayer?'BANNON':this.opts.name);
+    if (this.isPlayer || this.opts) announce(fromZone==='APRON' ? 'OFF THE APRON!' : 'OVER THE TOP ROPE!', this.who());
     camShake = Math.max(camShake||0, 0.5); triggerHitStop(0.08);
     return true;
   }
@@ -11091,7 +11385,7 @@ function loop(now){
   const _fight    = (gameState==='fight');
   const _movePrev = (gameState==='pause_creator'||gameState==='menu_creator');     // move creator auto-plays the selected strike on the edited fighter
   const _live     = _fight || _movePrev;                                            // combat / physics / round advance ONLY when fighting or actively previewing a move
-  window.EDITOR_PREVIEW = /creator|models|dir|caw|studio|lab/.test(gameState||'');   // editors render the posed/morphed skeleton (not frozen physics bodies) so edits show live
+  window.EDITOR_PREVIEW = /creator|models|dir|caw|studio|lab|select/.test(gameState||'');   // editors + the vs-screen render the posed/morphed skeleton (not frozen physics bodies) so edits/selections show live
 
   // physics world steps only while live; otherwise hold its clock so nothing jumps when you resume
   if(window.BPHYS){
@@ -11181,7 +11475,7 @@ function endRound(winner){
   if (roundTimerInterval) clearInterval(roundTimerInterval);
   if (winner.isPlayer) p1Rounds++; else p2Rounds++;
   updateRoundPips();
-  const nm = winner.isPlayer?'BANNON':winner.opts.name;
+  const nm = fname(winner);
   const decisive = (fighters[0].hp<=0 || fighters[1].hp<=0);
   gameState='roundend';
   announce(nm+(decisive?' — K.O.':' TAKES IT'), 'ROUND '+currentRound);
@@ -11211,7 +11505,7 @@ function endMatch(winner){
   gameState='winner';
   if (roundTimerInterval) clearInterval(roundTimerInterval);
   if (typeof clearActiveFightState==='function') clearActiveFightState();
-  const nm = winner.isPlayer?'BANNON':winner.opts.name;
+  const nm = fname(winner);
   document.getElementById('winnerName').textContent = nm;
   announce(nm+' WINS', p1Rounds+' — '+p2Rounds);
   setTimeout(()=>{ show('winnerMenu'); }, 1500);
@@ -11225,21 +11519,83 @@ function updateRoundPips(){
     + ' : ' + '○'.repeat(Math.max(0,ROUNDS_TO_WIN-p2Rounds)) + '●'.repeat(p2Rounds);
 }
 
+// MATCH_SETUP is written by the character-select screen. When absent (legacy /
+// rematch path) we fall back to BANNON vs the cycled OPPONENTS entry, so nothing
+// that used to work breaks.
+window.MATCH_SETUP = window.MATCH_SETUP || null;
+
+// Resolve a character name to the {col,accent,skin,style,name} opts a Fighter wants.
+function fighterOptsFor(name){
+  const key = String(name||'BANNON').toUpperCase();
+  const meta = (window.CHAR_META && window.CHAR_META[key]) || null;
+  const spec = (window.ROSTER_SPEC && window.ROSTER_SPEC[key]) || null;
+  // forged characters carry their own look in the cache
+  let forged = null;
+  try { forged = (window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); } catch(_){}
+  return {
+    name: key,
+    col:    meta ? meta.col    : (forged && forged.attire ? forged.attire.primaryColor : 0xcc3311),
+    accent: meta ? meta.accent : (forged && forged.attire ? forged.attire.accentColor  : 0xffaa00),
+    skin:   meta ? meta.skin   : (forged && forged.skin   ? forged.skin.baseColor       : 0xd9a066),
+    style:  spec ? spec.style  : 'ORTHODOX'
+  };
+}
+
+// Resolve and apply a fighter's outfit. Forged characters carry their own chosen
+// gear style + colors; built-ins use the per-character/archetype attire map.
+function dressFighter(f){
+  if(!f || typeof applyAttire!=='function') return;
+  const key = (typeof fname==='function' ? fname(f) : (f.opts&&f.opts.name)||'BANNON').toUpperCase();
+  let style, primary, secondary;
+  let forged=null; try{ forged=(window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); }catch(_){}
+  if(forged){
+    style = (forged.rawSpec&&forged.rawSpec.attireStyle) || (forged.attire&&forged.attire.gearStyle) || window.attireFor(key);
+    primary = (forged.attire&&forged.attire.primaryColor!=null)?forged.attire.primaryColor:(f.opts&&f.opts.col);
+    secondary = (forged.attire&&forged.attire.accentColor!=null)?forged.attire.accentColor:(f.opts&&f.opts.accent);
+  } else {
+    style = window.attireFor(key);
+    const meta=(window.CHAR_META&&window.CHAR_META[key])||{};
+    primary = (meta.col!=null?meta.col:(f.opts&&f.opts.col));
+    secondary = (meta.accent!=null?meta.accent:(f.opts&&f.opts.accent));
+  }
+  applyAttire(f, style, primary, secondary);
+}
+window.dressFighter = dressFighter;
+
 function startFight(){
   if (typeof clearActiveFightState==='function') clearActiveFightState();
   // (re)build fighters
   for (const f of fighters){ scene.remove(f.root); scene.remove(f.shadow); if(f.model){ try{scene.remove(f.model);}catch(e){} f.model=null; } }
   fighters = [];
-  const p1 = new Fighter(true, { col:0xcc3311, accent:0xffaa00, skin:0xd9a066, name:'BANNON' });
-  const opp = OPPONENTS[opponentIdx];
-  const p2 = new Fighter(false, { col:opp.col, accent:opp.accent, skin:opp.skin, name:opp.name, style:opp.style });
+
+  // Pull names from the select screen if it set them; otherwise legacy default.
+  const setup = window.MATCH_SETUP;
+  const p1Name = (setup && setup.p1Name) ? setup.p1Name : 'BANNON';
+  const p2Name = (setup && setup.p2Name) ? setup.p2Name : (OPPONENTS[opponentIdx] && OPPONENTS[opponentIdx].name) || 'VIPER';
+  // control flags: which side the human drives. Default = P1 human, P2 AI.
+  const p1Human = !setup || setup.p1Control !== 'CPU';
+  const p2Human = !!(setup && setup.p2Control === 'YOU');
+
+  const o1 = fighterOptsFor(p1Name);
+  const o2 = fighterOptsFor(p2Name);
+  const p1 = new Fighter(p1Human, { col:o1.col, accent:o1.accent, skin:o1.skin, name:o1.name, style:o1.style });
+  const p2 = new Fighter(!p1Human ? true : p2Human, { col:o2.col, accent:o2.accent, skin:o2.skin, name:o2.name, style:o2.style });
+  // Guarantee exactly one human-input owner unless AI-vs-AI was explicitly chosen.
+  if (setup && setup.p1Control==='AI' && setup.p2Control==='AI'){ p1.isPlayer=false; p2.isPlayer=false; }
   fighters = [p1, p2];
+
   if(typeof applyChosenModels==='function') applyChosenModels();
+  // Apply forge morphs to whichever fighters have a forged/morph spec.
+  if(typeof applyForgeMorphs==='function'){ try{ applyForgeMorphs(p1); applyForgeMorphs(p2); }catch(_){} }
+  // Dress each fighter in their own attire so the roster isn't all in trunks.
+  if(typeof applyAttire==='function'){ try{ dressFighter(p1); dressFighter(p2); }catch(_){} }
   comboCount=0; updateCombo();
   currentRound=1; p1Rounds=0; p2Rounds=0; roundEnding=false;
   updateRoundPips();
-  document.getElementById('p2-name').textContent = opp.name;
-  document.getElementById('p2-style').textContent = opp.style;
+  document.getElementById('p1-name').textContent = o1.name.replace(/_/g,' ');
+  var _p1s=document.getElementById('p1-style'); if(_p1s) _p1s.textContent = (window.CHAR_META[o1.name] && window.CHAR_META[o1.name].label) || o1.style;
+  document.getElementById('p2-name').textContent = o2.name.replace(/_/g,' ');
+  document.getElementById('p2-style').textContent = (window.CHAR_META[o2.name] && window.CHAR_META[o2.name].label) || o2.style;
   gameState='fight';
   hideAll();
   startRound();
@@ -11261,7 +11617,16 @@ function resumeGame(){ if(gameState==='pause'){ gameState='fight'; hideAll(); } 
 // ---- CREATION-SUITE PREVIEW: pause combat, focus + clean-pose the edited fighter, persist every edit live ----
 function enterCreatePreview(idx){
   if(typeof idx==='number' && typeof modelSel!=='undefined'){ modelSel = (idx===1)?'p2':'p1'; }   // freecam + preview follow the edit target
-  if(window.__cawPrevState===undefined) window.__cawPrevState = gameState;                          // remember where we came from
+  if(window.__cawPrevState===undefined) window.__cawPrevState = gameState;                          // remember where we came from (BEFORE any spawn)
+  // CREATE-FROM-MENU: if there's no live body to sculpt yet, spawn a neutral
+  // preview pair. Combat never advances in 'caw' state (the loop holds the sim),
+  // so this is purely a mannequin to morph — no match actually starts.
+  try{
+    if(typeof fighters==='undefined' || !fighters || !fighters.length){
+      if(typeof startFight==='function'){ if(!window.MATCH_SETUP) window.MATCH_SETUP={p1Name:'BANNON',p2Name:'VIPER',p1Control:'YOU',p2Control:'CPU'}; startFight(); }
+    }
+    if(typeof roundTimerInterval!=='undefined' && roundTimerInterval){ clearInterval(roundTimerInterval); roundTimerInterval=null; }   // no countdown during sculpting
+  }catch(e){}
   gameState = 'caw';                                                                                // frozen editor state — the loop holds the sim, edits stay on screen
   try{ const f=(typeof fighterFor==='function')?fighterFor(modelSel):(fighters&&fighters[0]);
        if(f && !f.ragdoll && typeof POSE!=='undefined' && POSE.stance){                              // drop into a clean neutral stance so the morph reads clearly
@@ -15899,6 +16264,18 @@ init();
     .catch(err => {
       console.warn('Win record save offline', err);
     });
+
+    // Feed the always-on daemon's evolution engine: this is what makes the
+    // winner ascend the 10 planes, collapse a new move out of their probability
+    // ocean, drift the loser's style, and leak signatures across branes — i.e.
+    // the roster actually deepens from matches you really play. Fire-and-forget;
+    // gameplay never waits on or breaks from the daemon being unreachable.
+    try {
+      if (window.BANNON_DAEMON) {
+        const seq = (winnerObj && winnerObj._moveLog && winnerObj._moveLog.slice(-6)) || undefined;
+        window.BANNON_DAEMON.reportMatch({ winner: wName, loser: lName, type: 'ko', moveSequence: seq });
+      }
+    } catch (_) {}
   }
 
   // --- Real-time Strike/Trauma Evaluator ---
@@ -16275,7 +16652,7 @@ init();
       anatomicalPhysics:[
         I('soft-body jiggle (Hooke F=-kx)','mass + spring-tension on verts via weight maps; viscoelastic damping for flesh vs rigid bone',P,'procedural BBODY skin partial; jiggle damping todo'),
         I('FEM tissue/impact deform','tetrahedral mesh; stress > yield (MPa) -> dynamic separation/dent',T,'use for impact dents/bruising sells, not gore'),
-        I('FACS facial reactions','blendshape action units fired by state (pain, effort)',T,'add grimace/effort AUs on big hits/lifts'),
+        I('FACS facial reactions','blendshape action units fired by state (pain, effort)',P,'procedural brow/lid/jaw pain+effort AUs shipped for all bodies; GLB blend-shape path still needs authored expressions'),
         I('high-bone secondary motion','driven keys: femur rotates -> muscle/tissue bones translate (Stellar Blade/Nier)',T,'derive secondary bones off primary rig'),
         I('voxel connectivity destruction','split connectivity graph -> spawn rigidbody (Teardown)',T,'for breakable tables/props later')
       ]
@@ -18716,6 +19093,66 @@ ${sessionMemory || 'First session.'}`;
     _note:'Chapter -> beat -> match spine for all 6 books, extracted from canon. Cutscene/promo scripting per beat is the next deepening pass; the playable match wiring is here.'
   };
 
+  // ---------- THE BLUEPRINT: 10 dimensions == 10 heavens ----------
+  // String theory and ancient cosmology are the same map in two languages.
+  // Physics needs 10 dimensions or the math breaks; Hermetic cosmology mapped
+  // reality into 10 heavens/spheres. Same structure, described twice. A string's
+  // vibration frequency IS the plane a thing resonates on — matter vs light is
+  // just frequency, and in here a jab vs a finisher is just frequency too.
+  // This MIRRORS the daemon's Cosmology.ts so the client and server share one
+  // blueprint: a fighter's growth is their signature frequency climbing the 10
+  // planes, and the moves they can reach are the ones vibrating in a band they
+  // have ascended into. Frequencies are a normalized 0..1 octave of reality
+  // (0 = densest matter, 1 = the crown where all possibility is one point).
+  window.COSMOS = {
+    thesis:[
+      'There is no separation between the math and the magic — they are one blueprint.',
+      'STRING THEORY: the universe needs 10 dimensions or the equations collapse. We live in 4 (3 space + time); the other 6 are curled up tight and decide how strings vibrate. Vibrate one way -> matter. Another -> light. Frequency dictates physical reality.',
+      'THE 10 HEAVENS: Hermetic cosmology mapped reality into 10 spheres, dense physical up through astral, mental, causal, divine. Each heaven is just a higher-frequency dimension. The 10 dimensions are the math proof of the 10 heavens.',
+      'BRANE THEORY: our whole cosmos is one membrane/page in a stack. Gravity is the only force weak enough to leak across the branes — so a fighting style’s "gravity" (its signature finisher) is the thing that bleeds from one fighter’s universe into the next.',
+      'THE OCEAN: the surface waves are the physical reality we measure; the deep is alien-rule quantum pressure running the whole system; the water itself is dark matter — undefinable, but it holds the structure together and gives everything inside a medium to exist.',
+      'QUANTUM: at the lowest level everything is a probability wave until something observes it. A move exists for a fighter only as a latent amplitude in their deep ocean until a WIN observes it and collapses it into their permanent moveset.'
+    ],
+    planes:[
+      {i:1, heaven:'Malkuth · Physical',    dim:'3 of space',           band:[0.00,0.10], note:'dense matter — surface waves, fast and easy to measure; raw strikes'},
+      {i:2, heaven:'Yesod · Etheric',       dim:'4th: time',            band:[0.10,0.20], note:'the vital current under the skin; conditioning and tempo'},
+      {i:3, heaven:'Hod · Astral',          dim:'5th: 1st compactified',band:[0.20,0.30], note:'emotion and momentum — the crowd, the heat, the read on fear'},
+      {i:4, heaven:'Netzach · Lower Mental',dim:'6th: compactified',    band:[0.30,0.42], note:'thought made into counters; you see the move before it lands'},
+      {i:5, heaven:'Tiphareth · Causal',    dim:'7th: compactified',    band:[0.42,0.55], note:'cause and effect — setups, chains, the deep currents running the system'},
+      {i:6, heaven:'Geburah · Buddhic',     dim:'8th: compactified',    band:[0.55,0.68], note:'unity of motion; combos flow as one continuous wave'},
+      {i:7, heaven:'Chesed · Atmic',        dim:'9th: compactified',    band:[0.68,0.80], note:'pure will — the finisher that ends arguments'},
+      {i:8, heaven:'Binah · Monadic',       dim:'10th: full space',     band:[0.80,0.90], note:'the brane itself; gravity leaks across to the page next door'},
+      {i:9, heaven:'Chokmah · Logoic',      dim:'the bulk between branes',band:[0.90,0.97],note:'the dark-matter medium — undefinable, holds the whole structure together'},
+      {i:10,heaven:'Kether · Adi / Crown',  dim:'the singular point',   band:[0.97,1.01], note:'all frequencies at once — the probability wave before anything observes it'}
+    ],
+    // the literal 2-Enoch heaven each plane maps to (the canon column — Enoch was
+    // taken through 10 ascending heavens; that IS this ladder, named in scripture).
+    enoch:[
+      '1st — storehouses of ice and snow, great seas above the clouds; angels of the stars and weather',
+      '2nd — the deep, cold, gloomy abyss; rebel angels bound in darkness awaiting judgment',
+      '3rd — Paradise (Tree of Life, rivers of milk/honey/oil/wine) beside the realm of fire and torment',
+      '4th — the astronomical order; sun, moon and stars run their tracks through the gates',
+      '5th — the Grigori / Watchers, mourning in silent grief for their sins',
+      '6th — archangels governing stars, seasons and natural laws in gentle unbroken song',
+      '7th — the Cherubim and Seraphim, highest angelic orders before the throne',
+      '8th — Muzaloth, home of the twelve constellations that turn the cycles',
+      '9th — Kuchavim, the mechanism ruling rain, drought and the moving firmament',
+      '10th — Aravoth, overwhelming burning light, the fiery throne; source of all cosmic order'
+    ],
+    // the WHY under the ladder — holographic principle + quantum contextuality (Enoch/M-theory source)
+    holographic:{
+      principle:'Every part contains the whole. Cut a hologram in half and you get two whole images, not two halves — a fighter is a small complete image of the roster, not a fragment.',
+      contextuality:'Reality requires a question. A move has no fixed value until a match measures it; the WIN is the measurement that collapses it into something real.',
+      nonLocality:'Distance is an illusion of perspective. Enoch did not travel through space to the next heaven — he shifted his resonance to access a different fold of the same fabric.',
+      ocean:'Space and the deep ocean were one thing to the ancients: the surface is measurable matter, the deep is crushing alien (quantum) pressure, and the water itself is dark matter — undefinable, but it holds everything together.'
+    },
+    // which plane a normalized frequency (0..1) resonates on
+    planeFor:function(freq){ const f=Math.max(0,Math.min(1,freq)); return this.planes.find(p=>f>=p.band[0]&&f<p.band[1]) || this.planes[this.planes.length-1]; },
+    // console reader — walk the blueprint
+    map:function(){ console.log('%cTHE BLUEPRINT — 10 DIMENSIONS == 10 HEAVENS == ENOCH','color:#ffb000;font-weight:bold'); this.thesis.forEach(t=>console.log('%c• '+t,'color:#9fd')); console.log('%c  the WHY (holographic / contextual):','color:#e8c;font-weight:bold'); Object.keys(this.holographic).forEach(k=>console.log('%c  '+k+': ','color:#c9a3ff',this.holographic[k])); console.log('%c  the ascension ladder:','color:#e8c;font-weight:bold'); this.planes.forEach((p,i)=>console.log('%c  ['+p.i+'] '+p.heaven+'  ('+p.dim+')  f='+p.band[0]+'–'+p.band[1],'color:#ff7a45','\n        '+p.note+'\n        Enoch '+this.enoch[i])); return '10 planes — string theory, the heavens, and Enoch are one map'; },
+    _note:'Mirrors the daemon Cosmology.ts. The daemon’s FighterEvolution ascends each fighter up these 10 planes as they win/lose; this is the client-side copy of that blueprint so canon, lore and mechanics all read from one structure.'
+  };
+
   // ---------- STORY MODE reader / console ----------
   window.STORY = {
     cursor:{book:1,chapter:0},
@@ -18770,6 +19207,100 @@ ${sessionMemory || 'First session.'}`;
 
   try{ if (window.MANIFESTO) window.MANIFESTO.register({key:'canon.story_graph',kind:'narrative',summary:'6-book story graph + 41-char fighting-style DNA + STORY reader + AI canon grounding + God Within mode/nexus/mlab hooks',call:'STORY / OTTR_DNA / OTTR_STORY'}); }catch(e){}
   console.log('%c[OTTR STORY] '+BOOKS.length+' books, '+window.OTTR_STORY.allMatches().length+' canon matches, '+D.length+'-char fighting DNA baked in. Try STORY.arc() / STORY.book(3) / OTTR_DNA.who("cain")','color:#ffb000');
+})();
+</script>
+
+<!-- =====================================================================
+     BANNON DAEMON CLIENT — always-on link to the BANNON SENSES daemon
+       The daemon (server.ts) is what serves this file when deployed, so by
+       default we talk to it same-origin and it is ALWAYS ON. When the game is
+       opened standalone (file:// or a plain static host) the daemon simply
+       isn't there; every call degrades gracefully and the game is fully
+       playable offline — the daemon only enriches (move-learning, the 10-plane
+       evolution roster, the proprietary character forge), it is never required.
+     ===================================================================== -->
+<script>
+(function(){
+  // Default base = same origin (the daemon serves the game). Override by setting
+  // window.BANNON_DAEMON_BASE before this script, or localStorage 'bannonDaemonBase'.
+  var base = (window.BANNON_DAEMON_BASE
+              || (function(){ try { return localStorage.getItem('bannonDaemonBase'); } catch(_){ return null; } })()
+              || '').replace(/\/$/,'');
+
+  var D = {
+    base: base,
+    connected: false,
+    autoConnect: true,           // ON by default — the daemon is meant to always be on
+    lastStatus: null,
+    _backoff: 2000,
+
+    url: function(p){ return (this.base||'') + p; },
+
+    // graceful fetch: short timeout, never throws to caller
+    _get: function(p){
+      return fetch(this.url(p), { method:'GET' }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+    },
+    _post: function(p, body){
+      return fetch(this.url(p), { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body||{}) })
+        .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+    },
+
+    ping: function(){
+      var self = this;
+      return this._get('/health').then(function(h){
+        self.connected = !!(h && h.ok);
+        if (self.connected) console.log('%c[BANNON DAEMON] online '+(self.base||'(same origin)'),'color:#7CFC00');
+        return self.connected;
+      });
+    },
+
+    // --- the always-improving loop: real played matches feed the evolution ---
+    reportMatch: function(m){
+      if (!this.autoConnect) return Promise.resolve(null);
+      var self = this;
+      return this._post('/api/match/report-result', m).then(function(res){
+        if (res && res.evolution && res.evolution.events && res.evolution.events.length){
+          res.evolution.events.forEach(function(e){ console.log('%c[EVOLUTION] '+e,'color:#ffb000'); });
+        }
+        if (res && res.newLibraryMoves && res.newLibraryMoves.length){
+          console.log('%c[FORGED MOVES] new maneuvers entered the library: '+res.newLibraryMoves.join(', '),'color:#e8c');
+        }
+        return res;
+      });
+    },
+
+    // --- reads the rest of the game can use (all null-safe when offline) ---
+    suggestMove:   function(ids, last){ return this._post('/api/learn/suggest-move', { availableMoveIds: ids, lastMoveId: last }); },
+    fighterCard:   function(id){ return this._get('/api/evolution/fighter/'+encodeURIComponent(id)); },
+    roster:        function(){ return this._get('/api/evolution/roster'); },
+    moveLibrary:   function(){ return this._get('/api/evolution/library'); },
+    planes:        function(){ return this._get('/api/cosmology/planes'); },
+    status:        function(){ var self=this; return this._get('/api/status').then(function(s){ self.lastStatus=s; return s; }); },
+
+    // --- proprietary character forge (CAW) ---
+    forgeTemplate: function(){ return this._get('/api/forge/template'); },
+    forgeCreate:   function(spec){ return this._post('/api/forge/character', spec); },
+    forgeList:     function(){ return this._get('/api/forge/characters'); },
+    forgeGet:      function(id){ return this._get('/api/forge/character/'+encodeURIComponent(id)); },
+
+    // keep trying to connect with backoff so "always on" survives a cold daemon
+    _autostart: function(){
+      var self = this;
+      this.ping().then(function(ok){
+        // mirror state onto the God Within nexus flag for the existing UI
+        try { if (window.GOD_WITHIN && window.GOD_WITHIN.nexus) window.GOD_WITHIN.nexus.connected = ok; } catch(_){}
+        if (!ok && self.autoConnect){
+          self._backoff = Math.min(self._backoff*1.6, 60000);
+          setTimeout(function(){ self._autostart(); }, self._backoff);
+        }
+      });
+    }
+  };
+
+  window.BANNON_DAEMON = D;
+  // auto-connect on load (deferred a tick so the daemon-served page is ready)
+  if (D.autoConnect) setTimeout(function(){ D._autostart(); }, 800);
+  console.log('%c[BANNON DAEMON] client armed — auto-connect '+(D.autoConnect?'ON':'OFF')+', base '+(D.base||'(same origin)'),'color:#9fd');
 })();
 </script>
 
@@ -24876,11 +25407,41 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
       if (this.seg.proceduralJaw) {
         const stamGap = 1.0 - Math.min(1.0, this.stamina / (this.maxStamina||100)); // v101
         const breatheOpen = Math.sin(this.breathPhase || 0) * 0.012 + (stamGap * 0.03);
-        
+
         this.seg.proceduralJaw.position.copy(hp)
           .addScaledVector(localForward, 0.05)
           .addScaledVector(localUp, -0.11 - breatheOpen);
         this.seg.proceduralJaw.quaternion.copy(hq);
+        this.seg.proceduralJaw.scale.set(1, 1, 1);
+      }
+
+      // AUTO-FACS MICRO-EXPRESSIONS — additive pain/effort action units layered on the procedural
+      // rig above. Reacts to combat state on every body (no authored blend shapes required), unlike
+      // the saved-expression AUTO-FACS for loaded GLB models elsewhere in the file. Brow raises and
+      // eyes/jaw squint-and-drop on hurt/stun; brow furrows and jaw clenches on attack/grapple/lift.
+      const _facsHurt = (this.state==='hurt'||this.state==='flinch'||this.state==='stun'||this.state==='stumble'||this.state==='grabbed'||this.state==='falling'||this.state==='down');
+      const _facsEffort = (this.state==='attack'||this.state==='grab'||this.state==='throw'||this.state==='deliver'||this.state==='getup');
+      const _hpPct = (this.hp||0)/(this.maxHp||1);
+      const _painTarget = Math.min(1, (_facsHurt?1:0) + (_facsHurt?0:Math.max(0,(0.3-_hpPct)/0.3)*0.4));
+      const _effortTarget = _facsEffort ? 1 : 0;
+      const _facsRate = 0.15; // applyMesh runs once per render frame; fixed-rate lerp avoids needing dt in this scope
+      this._facsPain = (this._facsPain||0) + (_painTarget - (this._facsPain||0)) * _facsRate;
+      this._facsEffort = (this._facsEffort||0) + (_effortTarget - (this._facsEffort||0)) * _facsRate;
+      const _fp = this._facsPain, _fe = this._facsEffort;
+      if (_fp > 0.01 || _fe > 0.01) {
+        if (this.seg.brow) {
+          this.seg.brow.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(_fe*0.30 - _fp*0.18, 0, 0)));
+        }
+        if (this.seg.lidL && this.seg.lidR) {
+          const squint = 1 - Math.min(0.7, _fe*0.45 + _fp*0.55);
+          this.seg.lidL.scale.y *= squint;
+          this.seg.lidR.scale.y *= squint;
+        }
+        if (this.seg.proceduralJaw) {
+          this.seg.proceduralJaw.position.addScaledVector(localUp, -_fp*0.045);
+          const clench = 1 - _fe*0.22;
+          this.seg.proceduralJaw.scale.set(clench, 1, clench);
+        }
       }
     }
 
@@ -25883,9 +26444,13 @@ function _tryEscape(defender, by){
     const speed = tgtZoneY < this._smoothZoneY ? 8.0 : 6.0;
     this._smoothZoneY = _lerp(this._smoothZoneY, tgtZoneY, _cl(dt*speed, 0, 1));
     if(_abs(this._smoothZoneY - tgtZoneY) < 0.004) this._smoothZoneY = tgtZoneY;
-    // Apply smoothed Y as an additive offset on top of whatever updateProcedural set
-    if(this._smoothZoneY !== 0 && !this.airLift){
-      this.root.position.y += this._smoothZoneY;
+    // updateProcedural's render line ALREADY put the instant zoneY into root.position.y.
+    // Apply only the DIFFERENCE (smooth - instant) so the net height is floorY+smoothZoneY:
+    //   settled -> delta 0 (no double-count, no more sinking a metre through the floor);
+    //   mid-transition -> eased delta turns the hard apron/floor SNAP into a smooth step.
+    const _zDelta = this._smoothZoneY - tgtZoneY;
+    if(_zDelta !== 0 && !this.airLift){
+      this.root.position.y += _zDelta;
     }
   };
 
@@ -30804,7 +31369,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     const btn = document.createElement('button');
     btn.id = 'fbxImpToggle';
     btn.textContent = '🎞 ANIMS';
-    btn.style.cssText = 'position:fixed;right:10px;top:118px;z-index:99998;background:#0d2e1b;color:#7CFC00;border:1px solid #7CFC00;border-radius:6px;padding:7px 10px;font-family:monospace;font-size:12px;letter-spacing:1px;cursor:pointer;';
+    btn.style.cssText = 'position:fixed;right:10px;top:214px;z-index:99998;background:#0d2e1b;color:#7CFC00;border:1px solid #7CFC00;border-radius:6px;padding:7px 10px;font-family:monospace;font-size:12px;letter-spacing:1px;cursor:pointer;';
     document.body.appendChild(btn);
 
     const panel = document.createElement('div');
@@ -31149,7 +31714,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     const x=document.createElement('button'); x.textContent='\u2715'; x.style.cssText='background:none;border:none;color:#9fb0c3;font-size:16px;cursor:pointer';
     ttl.appendChild(x); p.appendChild(ttl); host=document.createElement('div'); p.appendChild(host); document.body.appendChild(p);
     const tg=document.createElement('button'); tg.id='moveLibToggle'; tg.textContent='\ud83d\udcda MOVES';
-    tg.style.cssText='position:fixed;top:60px;right:8px;z-index:99999;font:bold 12px monospace;padding:7px 11px;border-radius:8px;border:1px solid #2a3340;background:#0c0f14;color:#7CFC00;cursor:pointer';
+    tg.style.cssText='position:fixed;top:172px;right:8px;z-index:99999;font:bold 12px monospace;padding:7px 11px;border-radius:8px;border:1px solid #2a3340;background:#0c0f14;color:#7CFC00;cursor:pointer';
     tg.onclick=()=>{ p.style.display='block'; tg.style.display='none'; render(); };
     x.onclick=()=>{ p.style.display='none'; tg.style.display='block'; };
     document.body.appendChild(tg);
@@ -32122,6 +32687,239 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   };
   window.BANNON_BRAIN = BRAIN;
   console.log('%c[v142] NEURAL BRAIN online — per-AI-fighter MLP (' + IN + '→' + NH + '→' + NOUT + '), learns from fight reward, persists. BANNON_BRAIN.report(0)', 'color:#7CFC00;background:#000;padding:2px 6px');
+})();
+</script>
+
+<!-- =====================================================================
+     CHARACTER SELECT SCREEN — Tekken/WWE-2K style pre-match flow
+       Reached by the FIGHT button. Pick ANY character for both sides (the
+       player is no longer locked to BANNON), choose control mode (player vs
+       CPU, play-as-P2, or AI vs AI), match type, and stage, with a live
+       preview (faction, bio, stat bars, signature moves). Forged characters
+       from the creative suite auto-appear. Self-contained + additive: injects
+       its own CSS/DOM and only intercepts the FIGHT button.
+     ===================================================================== -->
+<script>
+(function(){
+  // Proprietary match-type catalog — deliberately broader than the mainstream
+  // wrestling games, and named our own way (no trademarked gimmick-match names).
+  // NOTE: the engine currently runs 1-on-1; multi-competitor types are selectable
+  // and stored into MATCH_SETUP now, and start as a 1v1 until the match-engine
+  // expansion (roadmap) wires true multi-man rules. Flagged honestly below.
+  var MATCH_TYPES = [
+    { id:'ONE_ON_ONE',   label:'ONE ON ONE',          live:true  },
+    { id:'TAG',          label:'TAG TEAM',            live:false },
+    { id:'TRIPLE',       label:'TRIPLE THREAT',       live:false },
+    { id:'FOURWAY',      label:'FOUR-WAY',            live:false },
+    { id:'LADDER',       label:'LADDER MATCH',        live:false },
+    { id:'TABLES',       label:'TABLES MATCH',        live:false },
+    { id:'TLC',          label:'TABLES LADDERS CHAIRS', live:false },
+    { id:'CAGE',         label:'STEEL CAGE',          live:false },
+    { id:'LMS',          label:'LAST ONE STANDING',   live:false },
+    { id:'SUBMISSION',   label:'SUBMISSION',          live:false },
+    { id:'IRONMAN',      label:'IRON MAN (TIME)',     live:false },
+    { id:'ANYWHERE',     label:'FALLS COUNT ANYWHERE',live:false },
+    { id:'GAUNTLET',     label:'GAUNTLET',            live:false },
+    { id:'ROYALE',       label:'OPEN BATTLE ROYALE',  live:false },
+    { id:'HARDCORE',     label:'NO-RULES HARDCORE',   live:false },
+    { id:'FIRSTBLOOD',   label:'FIRST BLOOD',         live:false },
+    { id:'IQUIT',        label:'I QUIT',              live:false },
+    { id:'CASKET',       label:'CASKET',              live:false },
+    { id:'INFERNO',      label:'INFERNO',             live:false },
+    { id:'STRETCHER',    label:'STRETCHER',           live:false },
+    { id:'KOTP',         label:'KING OF THE PIT',     live:false }  // canon (Book 5)
+  ];
+  var MODES = [
+    { id:'P1', label:'PLAYER vs CPU' },
+    { id:'P2', label:'PLAY AS P2' },
+    { id:'AI', label:'AI vs AI' }
+  ];
+
+  // ---- state ----
+  var sel = { p1:'BANNON', p2:'VIPER', side:'p2', modeIdx:0, typeIdx:0, stageIdx:0, preview:'BANNON' };
+  try { var savedStage = (typeof arenaIdx!=='undefined') ? arenaIdx : 0; sel.stageIdx = savedStage; } catch(_){ }
+
+  // ---- CSS — WWE-2K/Tekken VS-SCREEN: live 3D fighters in the scene behind,
+  // name plates over each side, roster strip + match options docked at the bottom.
+  var css = document.createElement('style');
+  css.textContent = [
+   '#charSelect{position:fixed;inset:0;z-index:99990;display:none;pointer-events:none;font-family:"Share Tech Mono",monospace;color:#e8d8c0}',
+   '#charSelect.show{display:block}',
+   // subtle cinematic vignette top+bottom so the 3D fighters in the middle stay clear
+   '#csVig{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,5,12,.82) 0%,rgba(8,5,12,.10) 22%,rgba(8,5,12,0) 42%,rgba(8,5,12,0) 50%,rgba(6,4,10,.55) 74%,rgba(6,4,10,.96) 100%);pointer-events:none}',
+   // top header
+   '#csTop{position:absolute;top:0;left:0;right:0;display:flex;align-items:flex-start;justify-content:space-between;padding:12px 16px 0;pointer-events:none}',
+   '.csPlate{width:min(33%,340px);pointer-events:auto;cursor:pointer;background:linear-gradient(180deg,rgba(20,14,26,.92),rgba(12,8,18,.78));border:2px solid #3a2c44;border-radius:10px;padding:9px 12px;backdrop-filter:blur(3px)}',
+   '.csPlate.active{border-color:#ffb000;box-shadow:0 0 18px #ffb00055}',
+   '.csPlate.p2{text-align:right}',
+   '.csPlate .role{font-size:9px;letter-spacing:3px;color:#8a7}',
+   '.csPlate .pnm{font-size:21px;letter-spacing:2px;color:#fff;line-height:1.05;margin-top:1px}',
+   '.csPlate .plb{font-size:10px;color:#c9a3ff;margin-top:1px}',
+   '.csPlate .pfc{font-size:8px;letter-spacing:2px;color:#9a8;margin:3px 0 5px}',
+   '.csPlate .strip{height:6px;border-radius:4px;margin-bottom:6px}',
+   '.csStat{display:flex;align-items:center;gap:6px;margin:2px 0;font-size:8px;color:#9a8}',
+   '.csPlate.p2 .csStat{flex-direction:row-reverse}',
+   '.csStat .bn{width:42px;letter-spacing:1px}',
+   '.csStat .bar{flex:1;height:5px;background:#241a2e;border-radius:3px;overflow:hidden}',
+   '.csStat .bar i{display:block;height:100%;background:linear-gradient(90deg,#ff5a2a,#ffb000)}',
+   '#csCenter{position:absolute;top:14px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:auto}',
+   '#csCenter .vs{font-size:30px;font-weight:bold;letter-spacing:6px;color:#ffb000;text-shadow:0 2px 12px #000}',
+   '#csCenter .btns{display:flex;gap:8px;justify-content:center;margin-top:6px}',
+   '#csCenter .x{cursor:pointer;color:#a98;border:1px solid #543;border-radius:6px;padding:5px 11px;font-size:11px;background:rgba(12,8,18,.85)}',
+   '#csCenter #csCreate{border-color:#ff7a1a;color:#ffd9a8}',
+   '#csbio{position:absolute;left:50%;transform:translateX(-50%);bottom:188px;width:min(64%,560px);text-align:center;font-size:11px;color:#cdbfae;text-shadow:0 1px 4px #000;pointer-events:none}',
+   // bottom dock
+   '#csBottom{position:absolute;left:0;right:0;bottom:0;pointer-events:auto;background:linear-gradient(180deg,rgba(10,7,14,.4),rgba(8,5,11,.97));border-top:1px solid #3a2a40;padding:8px 12px calc(env(safe-area-inset-bottom,0px) + 10px)}',
+   '#csRoster{display:flex;gap:7px;overflow-x:auto;overflow-y:hidden;padding-bottom:7px;scrollbar-width:thin}',
+   '.csCard{position:relative;flex:0 0 auto;width:86px;border:1px solid #3a2c44;border-radius:8px;padding:6px;cursor:pointer;background:linear-gradient(160deg,#1e1626,#140e1c);transition:transform .08s,border-color .12s}',
+   '.csCard:hover{transform:translateY(-2px);border-color:#ffb000}',
+   '.csCard .swatch{width:100%;height:34px;border-radius:5px;margin-bottom:5px}',
+   '.csCard .nm{font-size:9px;color:#fff;letter-spacing:.5px;line-height:1.05}',
+   '.csCard .tag{position:absolute;top:3px;right:3px;font-size:6px;padding:1px 3px;border-radius:3px;background:#000a;color:#ffb000}',
+   '.csCard.canon .tag{color:#7CFC00}.csCard.forged .tag{color:#00ddff}',
+   '#csFoot{display:flex;align-items:center;gap:9px;margin-top:8px;flex-wrap:wrap}',
+   '.csOpt{display:flex;flex-direction:column;gap:2px}',
+   '.csOpt .ol{font-size:8px;color:#8a7;letter-spacing:2px}',
+   '.csCyc{cursor:pointer;border:1px solid #543a5a;border-radius:6px;padding:7px 12px;font-size:11px;color:#fff;background:#1a1226;min-width:140px;text-align:center;letter-spacing:1px}',
+   '.csCyc:hover{border-color:#ffb000}.csCyc.dim{color:#a98;opacity:.7}',
+   '#csStart{margin-left:auto;cursor:pointer;border:none;border-radius:8px;padding:12px 30px;font-size:16px;font-weight:bold;letter-spacing:3px;color:#1a0e06;background:linear-gradient(90deg,#ffb000,#ff7a2a);font-family:inherit}',
+   '#csStart:hover{filter:brightness(1.12)}'
+  ].join('\n');
+  document.head.appendChild(css);
+
+  // ---- DOM ----
+  var root = document.createElement('div'); root.id='charSelect';
+  root.innerHTML =
+    '<div id="csVig"></div>'+
+    '<div id="csTop">'+
+      '<div class="csPlate p1" id="csPlateP1" data-side="p1"></div>'+
+      '<div class="csPlate p2 active" id="csPlateP2" data-side="p2"></div>'+
+    '</div>'+
+    '<div id="csCenter"><div class="vs">VS</div><div class="btns"><div class="x" id="csCreate">⛹ CREATE</div><div class="x" id="csClose">✕ BACK</div></div></div>'+
+    '<div id="csbio"></div>'+
+    '<div id="csBottom">'+
+      '<div id="csRoster"></div>'+
+      '<div id="csFoot">'+
+        '<div class="csOpt"><div class="ol">MODE</div><div class="csCyc" id="csMode">PLAYER vs CPU</div></div>'+
+        '<div class="csOpt"><div class="ol">MATCH TYPE</div><div class="csCyc" id="csType">ONE ON ONE</div></div>'+
+        '<div class="csOpt"><div class="ol">STAGE</div><div class="csCyc" id="csStage">FIRE PIT</div></div>'+
+        '<button id="csStart">FIGHT ▶</button>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(root);
+
+  function hx(n){ return '#'+('000000'+(n>>>0).toString(16)).slice(-6); }
+  // floating HUD buttons we hide while the vs-screen is up (cleaner look), restore on exit
+  var HIDE_IDS=['moveLibToggle','fbxImpToggle','topRightBtns','cawBtn','kb-hints','hud','mobileControls'];
+  function setHud(disp){ HIDE_IDS.forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=disp; }); }
+
+  function findChar(name){ var list=(window.ROSTER_ALL?window.ROSTER_ALL():[]); return list.find(function(c){return c.name===name;})||list[0]; }
+
+  function renderRoster(){
+    var list = (window.ROSTER_ALL ? window.ROSTER_ALL() : []);
+    var grid = document.getElementById('csRoster'); grid.innerHTML='';
+    list.forEach(function(c){
+      var d = document.createElement('div');
+      d.className = 'csCard'+(c.canon?' canon':'')+(c.forged?' forged':'');
+      d.innerHTML = '<div class="swatch" style="background:linear-gradient(135deg,'+hx(c.col)+','+hx(c.accent)+')"></div>'+
+                    '<div class="nm">'+c.name.replace(/_/g,' ')+'</div>'+
+                    (c.canon?'<div class="tag">C</div>':(c.forged?'<div class="tag">F</div>':''));
+      d.addEventListener('click', function(){ assign(c.name); });
+      grid.appendChild(d);
+    });
+  }
+
+  function plateHTML(c, role){
+    function stat(n,v,max){ var p=Math.max(4,Math.min(100,Math.round(v/max*100))); return '<div class="csStat"><span class="bn">'+n+'</span><span class="bar"><i style="width:'+p+'%"></i></span></div>'; }
+    return '<div class="role">'+role+'</div><div class="pnm">'+c.name.replace(/_/g,' ')+'</div>'+
+      '<div class="plb">'+c.label+'</div><div class="pfc">'+c.faction+(c.canon?' · CANON':'')+' · '+c.style+'</div>'+
+      '<div class="strip" style="background:linear-gradient(90deg,'+hx(c.col)+','+hx(c.accent)+')"></div>'+
+      stat('PWR',c.stats.power,150)+stat('SPD',c.stats.speed,130)+stat('CHIN',c.stats.chin,130)+stat('HP',c.stats.hp,150);
+  }
+
+  function refresh(){
+    var p1=findChar(sel.p1), p2=findChar(sel.p2);
+    document.getElementById('csPlateP1').innerHTML = plateHTML(p1,'PLAYER 1');
+    document.getElementById('csPlateP2').innerHTML = plateHTML(p2,'PLAYER 2');
+    document.getElementById('csPlateP1').classList.toggle('active', sel.side==='p1');
+    document.getElementById('csPlateP2').classList.toggle('active', sel.side==='p2');
+    var act = (sel.side==='p1')?p1:p2;
+    document.getElementById('csbio').textContent = act.bio||'';
+    document.getElementById('csMode').textContent = MODES[sel.modeIdx].label;
+    var mt = MATCH_TYPES[sel.typeIdx];
+    var tEl = document.getElementById('csType'); tEl.textContent = mt.label + (mt.live?'':' (soon)'); tEl.classList.toggle('dim', !mt.live);
+    try { document.getElementById('csStage').textContent = (typeof ARENAS!=='undefined'?ARENAS[sel.stageIdx%ARENAS.length]:'FIRE PIT'); } catch(_){}
+  }
+
+  // Spawn / refresh the two live 3D fighters standing in the ring (vs-screen).
+  // Reuses the real fighter builder, then freezes it into a non-combat preview
+  // state so they just stand there, morphed and attired, as you browse.
+  function spawnPreview(){
+    try{
+      window.MATCH_SETUP = { p1Name:sel.p1, p2Name:sel.p2, p1Control:'YOU', p2Control:'CPU' };
+      if(typeof startFight==='function') startFight();
+      try{ if(typeof roundTimerInterval!=='undefined' && roundTimerInterval){ clearInterval(roundTimerInterval); roundTimerInterval=null; } }catch(_){}
+      if(typeof gameState!=='undefined') gameState='menu_select';
+      if(typeof fighters!=='undefined'){ fighters.forEach(function(f){ try{ if(typeof POSE!=='undefined'&&POSE.stance){ for(var i=0;i<JOINTS.length;i++){ var j=JOINTS[i]; f.J[j].snap(POSE.stance[j][0],POSE.stance[j][1],POSE.stance[j][2]); } } f.state='idle'; f.stateTime=0; f.vx=0; f.vz=0; f.momentum=0; }catch(_){}}); }
+      setHud('none');   // startFight re-shows the match HUD; re-hide it for the clean vs-screen
+    }catch(_){}
+  }
+
+  function assign(name){ sel[sel.side]=name; sel.side=(sel.side==='p1')?'p2':'p1'; spawnPreview(); refresh(); }
+
+  document.getElementById('csPlateP1').addEventListener('click', function(){ sel.side='p1'; refresh(); });
+  document.getElementById('csPlateP2').addEventListener('click', function(){ sel.side='p2'; refresh(); });
+  document.getElementById('csMode').addEventListener('click', function(){ sel.modeIdx=(sel.modeIdx+1)%MODES.length; refresh(); });
+  document.getElementById('csType').addEventListener('click', function(){ sel.typeIdx=(sel.typeIdx+1)%MATCH_TYPES.length; refresh(); });
+  document.getElementById('csStage').addEventListener('click', function(){ try{ sel.stageIdx=(sel.stageIdx+1)%ARENAS.length; if(typeof arenaIdx!=='undefined'){ arenaIdx=sel.stageIdx; var an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; if(typeof buildArena==='function') buildArena(); } }catch(_){} refresh(); });
+
+  function back(){ root.classList.remove('show'); setHud(''); try{ if(typeof gameState!=='undefined') gameState='menu'; }catch(_){} if(typeof show==='function') show('mainMenu'); }
+  document.getElementById('csClose').addEventListener('click', back);
+  document.getElementById('csCreate').addEventListener('click', function(){
+    root.classList.remove('show'); setHud('');
+    var cb=document.getElementById('cawBtn'); if(cb){ cb.style.display=''; cb.click(); }
+  });
+
+  document.getElementById('csStart').addEventListener('click', function(){
+    var mode = MODES[sel.modeIdx].id;
+    window.MATCH_SETUP = {
+      p1Name: sel.p1, p2Name: sel.p2,
+      p1Control: mode==='P1' ? 'YOU' : (mode==='P2' ? 'CPU' : 'AI'),
+      p2Control: mode==='P2' ? 'YOU' : (mode==='P1' ? 'CPU' : 'AI'),
+      matchType: MATCH_TYPES[sel.typeIdx].id, stage: sel.stageIdx
+    };
+    root.classList.remove('show'); setHud('');
+    if (typeof startFight==='function') startFight();
+  });
+
+  // Load any locally-saved creations first (these carry the exact sculpt/rawShape,
+  // so they must win over the leaner daemon copies), then merge in daemon-only ones.
+  try { var lf=localStorage.getItem('bannonForged'); if(lf){ window.__FORGED_CACHE = JSON.parse(lf)||[]; } } catch(_){ }
+  function mergeForged(list){
+    if(!Array.isArray(list)) return;
+    var have={}; (window.__FORGED_CACHE||[]).forEach(function(c){ have[(c.id||c.displayName||'').toUpperCase()]=true; });
+    list.forEach(function(c){ var k=(c.id||c.displayName||'').toUpperCase(); if(k && !have[k]){ window.__FORGED_CACHE.push(c); } });
+  }
+  function openSelect(){
+    try {
+      if (window.BANNON_DAEMON && window.BANNON_DAEMON.forgeList){
+        window.BANNON_DAEMON.forgeList().then(function(list){ mergeForged(list); renderRoster(); });
+      }
+    } catch(_){}
+    setHud('none');               // clear floating HUD buttons for the vs-screen
+    renderRoster(); spawnPreview(); refresh(); root.classList.add('show');
+  }
+  window.openCharacterSelect = openSelect;
+
+  // Intercept the FIGHT button: open select instead of jumping straight in.
+  function wire(){
+    var btn = document.getElementById('btnFight');
+    if (!btn) { return setTimeout(wire, 300); }
+    var fresh = btn.cloneNode(true); btn.parentNode.replaceChild(fresh, btn); // drop the old direct-startFight listener
+    fresh.addEventListener('click', openSelect);
+  }
+  if (document.readyState!=='loading') wire(); else document.addEventListener('DOMContentLoaded', wire);
+  console.log('%c[CHARACTER SELECT] armed — FIGHT opens the select screen; pick anybody for both sides','color:#ffb000');
 })();
 </script>
 
