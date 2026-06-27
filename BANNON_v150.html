@@ -5033,8 +5033,10 @@ window.BBODY = (function(){
     { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
     { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
     // LEGS: thick quad -> knee -> calf taper -> ankle -> foot
-    { cap:true, capStart:true, rings:[ [['hipL','pelvis',0.30],0.126,0.116], ['hipL',0.118,0.108], [['hipL','knL',0.35],0.114,0.102], ['knL',0.078], [['knL','ftL',0.32],0.070], ['ankL',0.048], ['ftL',0.060], [['knL','ftL',1.12],0.042] ] },
-    { cap:true, capStart:true, rings:[ [['hipR','pelvis',0.30],0.126,0.116], ['hipR',0.118,0.108], [['hipR','knR',0.35],0.114,0.102], ['knR',0.078], [['knR','ftR',0.32],0.070], ['ankR',0.048], ['ftR',0.060], [['knR','ftR',1.12],0.042] ] },
+    // foot: after the ankle the tube turns FORWARD (local +x) into an instep + toe, flattened wide/low,
+    // so it reads as a foot/boot instead of a ball stub. fy lowers it to the mat, fz widens the sole.
+    { cap:true, capStart:true, rings:[ [['hipL','pelvis',0.30],0.126,0.116], ['hipL',0.118,0.108], [['hipL','knL',0.35],0.114,0.102], ['knL',0.078], [['knL','ftL',0.30],0.070], ['ankL',0.058,0.066], [{j:'ankL',fx:0.08,fy:-0.05,fz:0.005},0.052,0.072], [{j:'ankL',fx:0.19,fy:-0.07,fz:0.005},0.038,0.060] ] },
+    { cap:true, capStart:true, rings:[ [['hipR','pelvis',0.30],0.126,0.116], ['hipR',0.118,0.108], [['hipR','knR',0.35],0.114,0.102], ['knR',0.078], [['knR','ftR',0.30],0.070], ['ankR',0.058,0.066], [{j:'ankR',fx:0.08,fy:-0.05,fz:-0.005},0.052,0.072], [{j:'ankR',fx:0.19,fy:-0.07,fz:-0.005},0.038,0.060] ] },
   ];
   // Only the FACE + hair stay as overlay segments. The old crude equipment meshes (box boots,
   // the lampshade trunks cylinder, the waistband ring, gloves, wraps) are NOT kept — they're now
@@ -5043,6 +5045,10 @@ window.BBODY = (function(){
   const FACE_KEEP={jaw:0,brow:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0,headBand:0};
   function center(f,c){ const J=f._rj; if(!J) return null;
     if(typeof c==='string'){ const v=J[c]; return v?[v.x,v.y,v.z]:null; }
+    // {j, fx, fy, fz}: a joint plus a LOCAL offset. Local +x is the character's forward (root rotation
+    // carries facing), so fx pushes a point ahead of the joint — used to grow a real forward-pointing
+    // foot out of the ankle, which has no toe joint in the rig.
+    if(c && c.j!==undefined){ const v=J[c.j]; if(!v) return null; return [v.x+(c.fx||0), v.y+(c.fy||0), v.z+(c.fz||0)]; }
     const a=J[c[0]], b=J[c[1]], t=c[2]; if(!a||!b) return null;
     return [a.x+(b.x-a.x)*t, a.y+(b.y-a.y)*t, a.z+(b.z-a.z)*t]; }
   // LONGITUDINAL SUBDIVISION — the authored rings are sparse (5-8 per limb), which is what made
