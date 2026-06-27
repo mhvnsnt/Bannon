@@ -6127,10 +6127,10 @@ const GRAPPLE_POSITIONS = {
           shL:[0.32,1.08,0.22], shR:[0.32,1.08,-0.22], elL:[0.46,0.92,0.22], elR:[0.46,0.92,-0.22],
           haL:[0.58,0.78,0.18], haR:[0.58,0.78,-0.18], hipL:[-0.14,1.04,0.14], hipR:[-0.14,1.04,-0.14],
           knL:[-0.40,1.06,0.16], knR:[-0.40,1.06,-0.16], ftL:[-0.62,1.00,0.17], ftR:[-0.62,1.00,-0.17] }) },
-      { t:1.00, pose: slavePose({ pelvis:[0,1.00,0], chest:[0.28,1.04,0], head:[0.52,1.02,0], // SHOULDER — final straddle, ready to drop (= original slave shape)
-          shL:[0.24,1.06,0.20], shR:[0.24,1.06,-0.20], elL:[0.36,0.86,0.24], elR:[0.36,0.86,-0.24],
-          haL:[0.50,0.70,0.22], haR:[0.50,0.70,-0.22], hipL:[-0.18,1.00,0.13], hipR:[-0.18,1.00,-0.13],
-          knL:[-0.46,1.02,0.14], knR:[-0.46,1.02,-0.14], ftL:[-0.72,0.98,0.15], ftR:[-0.72,0.98,-0.15] }) }
+      { t:1.00, pose: slavePose({ pelvis:[0,0.92,0], chest:[-0.10,1.28,0], head:[-0.16,1.52,0], // SEATED — rotated UP onto the shoulders (= the carry slave, so st2->st3 is continuous, no torso pop)
+          shL:[-0.08,1.30,0.20], shR:[-0.08,1.30,-0.20], elL:[0.0,1.10,0.22], elR:[0.0,1.10,-0.22],
+          haL:[0.08,0.94,0.22], haR:[0.08,0.94,-0.22], hipL:[0.18,0.96,0.13], hipR:[0.18,0.96,-0.13],
+          knL:[0.42,1.08,0.14], knR:[0.42,1.08,-0.14], ftL:[0.60,0.96,0.15], ftR:[0.60,0.96,-0.15] }) }
     ],
     slave: slavePose({ pelvis:[0,0.92,0], chest:[-0.10,1.28,0], head:[-0.16,1.52,0],
       shL:[-0.08,1.30,0.20], shR:[-0.08,1.30,-0.20], elL:[0.0,1.10,0.22], elR:[0.0,1.10,-0.22],
@@ -6164,7 +6164,31 @@ const GRAPPLE_POSITIONS = {
   // v83: REMOVED liftPoses for VERTICAL_SUPLEX — the 3-keyframe hard lerp (facelock -> waistlock -> inverted)
   // felt snappy/canned compared to the old continuous sine-driven hoist. Falls back to the smooth
   // gp2==='VERTICAL_SUPLEX' branch in the st===2 lift block below, same physical feel as before, IK grip kept.
-  VERTICAL_SUPLEX: { label:"VERTICAL SUPLEX", off:0.14, oppYaw:Math.PI, delivery:'slam', basePow:100, lift0:0.0, liftDur:0.62,
+  // v151: VERTICAL SUPLEX — restored the SETUP sub-phases the user asked for, but smoothly.
+  // The v83 removal was right that a HARD 3-keyframe lerp felt snappy; the lift now interpolates each
+  // segment through smoothstep() (see the st===2 liftPoses block), so the setup reads as one continuous
+  // hoist, not three snaps. Phases: FACELOCK (head pulled down into the front facelock, feet planted) ->
+  // LOAD (driven up off the mat, body tipping toward vertical) -> INVERTED (= the original slave, head
+  // straight down / feet straight up). The endpoint is byte-for-byte the old slave, so the TOP of the
+  // hoist + the carry are unchanged — only the previously-missing setup/rise is added.
+  VERTICAL_SUPLEX: { label:"VERTICAL SUPLEX", off:0.14, oppYaw:Math.PI, delivery:'slam', basePow:100, lift0:0.0, liftDur:0.68,
+    liftPoses: [
+      { t:0.00, pose: slavePose({ // FACELOCK — bent forward ~45° into the front facelock, feet still down
+          pelvis:[0.10,0.86,0], chest:[0.22,1.10,0], head:[0.34,1.30,0],
+          shL:[0.20,1.12,0.20], shR:[0.20,1.12,-0.20], elL:[0.28,0.92,0.22], elR:[0.28,0.92,-0.22],
+          haL:[0.36,0.72,0.20], haR:[0.36,0.72,-0.20], hipL:[0.06,0.86,0.13], hipR:[0.06,0.86,-0.13],
+          knL:[0.10,0.50,0.14], knR:[0.10,0.50,-0.14], ftL:[0.16,0.05,0.15], ftR:[0.16,0.05,-0.15] }) },
+      { t:0.45, pose: slavePose({ // LOAD — driven up off the mat, body tipping past horizontal toward vertical
+          pelvis:[0.04,1.04,0], chest:[0.06,0.86,0], head:[0.05,0.66,0],
+          shL:[0.05,0.82,0.20], shR:[0.05,0.82,-0.20], elL:[0.05,0.62,0.22], elR:[0.05,0.62,-0.22],
+          haL:[0.05,0.42,0.20], haR:[0.05,0.42,-0.20], hipL:[0.03,1.06,0.13], hipR:[0.03,1.06,-0.13],
+          knL:[0.02,1.30,0.14], knR:[0.02,1.30,-0.14], ftL:[0.0,1.55,0.15], ftR:[0.0,1.55,-0.15] }) },
+      { t:1.00, pose: slavePose({ // INVERTED — = original slave (unchanged top of the hoist)
+          pelvis:[0,1.18,0], chest:[0,0.82,0], head:[0,0.46,0],
+          shL:[0,0.78,0.20], shR:[0,0.78,-0.20], elL:[0,0.52,0.22], elR:[0,0.52,-0.22],
+          haL:[0,0.26,0.20], haR:[0,0.26,-0.20], hipL:[0,1.22,0.13], hipR:[0,1.22,-0.13],
+          knL:[0,1.58,0.14], knR:[0,1.58,-0.14], ftL:[0,1.88,0.15], ftR:[0,1.88,-0.15] }) }
+    ],
     slave: slavePose({ pelvis:[0,1.18,0], chest:[0,0.82,0], head:[0,0.46,0],
       shL:[0,0.78,0.20], shR:[0,0.78,-0.20], elL:[0,0.52,0.22], elR:[0,0.52,-0.22],
       haL:[0,0.26,0.20], haR:[0,0.26,-0.20], hipL:[0,1.22,0.13], hipR:[0,1.22,-0.13],
@@ -6240,7 +6264,28 @@ const GRAPPLE_POSITIONS = {
     slave: slavePose({ pelvis:[0,1.28,0.0], chest:[0.28,1.30,0], head:[0.52,1.28,0],
       hipL:[-0.28,1.28,0.10], hipR:[-0.28,1.28,-0.10], knL:[-0.52,1.28,0.12], knR:[-0.52,1.28,-0.12],
       ftL:[-0.76,1.26,0.13], ftR:[-0.76,1.26,-0.13] }) },
-  BRAINBUSTER: { label:"BRAINBUSTER", off:0.14, oppYaw:Math.PI, delivery:'spike', basePow:114, lift0:0.0, land:'head',
+  // v151: BRAINBUSTER — a front vertical suplex that drops the victim straight down on the head/neck.
+  // Same FACELOCK -> LOAD setup as the vertical suplex (it IS that hoist), held a touch more suspended/
+  // vertical at the top (the brainbuster's defining "hang" before the head-down spike). Final phase = the
+  // original inverted slave so the carry/spike landing is unchanged; only the missing setup is added.
+  BRAINBUSTER: { label:"BRAINBUSTER", off:0.14, oppYaw:Math.PI, delivery:'spike', basePow:114, lift0:0.0, land:'head', liftDur:0.72,
+    liftPoses: [
+      { t:0.00, pose: slavePose({ // FACELOCK — bent forward into the front facelock, feet down
+          pelvis:[0.10,0.86,0], chest:[0.22,1.10,0], head:[0.34,1.30,0],
+          shL:[0.20,1.12,0.20], shR:[0.20,1.12,-0.20], elL:[0.28,0.92,0.22], elR:[0.28,0.92,-0.22],
+          haL:[0.36,0.72,0.20], haR:[0.36,0.72,-0.20], hipL:[0.06,0.86,0.13], hipR:[0.06,0.86,-0.13],
+          knL:[0.10,0.50,0.14], knR:[0.10,0.50,-0.14], ftL:[0.16,0.05,0.15], ftR:[0.16,0.05,-0.15] }) },
+      { t:0.50, pose: slavePose({ // LOAD — driven up off the mat, tipping toward vertical
+          pelvis:[0.03,1.06,0], chest:[0.05,0.88,0], head:[0.04,0.68,0],
+          shL:[0.04,0.84,0.20], shR:[0.04,0.84,-0.20], elL:[0.04,0.64,0.22], elR:[0.04,0.64,-0.22],
+          haL:[0.04,0.44,0.20], haR:[0.04,0.44,-0.20], hipL:[0.02,1.10,0.13], hipR:[0.02,1.10,-0.13],
+          knL:[0.01,1.34,0.14], knR:[0.01,1.34,-0.14], ftL:[0.0,1.60,0.15], ftR:[0.0,1.60,-0.15] }) },
+      { t:1.00, pose: slavePose({ // INVERTED SUSPEND — = original slave (head straight down for the spike)
+          pelvis:[0,1.22,0], chest:[0,0.85,0], head:[0,0.50,0],
+          shL:[0,0.80,0.20], shR:[0,0.80,-0.20], elL:[0,0.56,0.22], elR:[0,0.56,-0.22],
+          haL:[0,0.32,0.20], haR:[0,0.32,-0.20], hipL:[0,1.26,0.13], hipR:[0,1.26,-0.13],
+          knL:[0,1.62,0.14], knR:[0,1.62,-0.14], ftL:[0,1.92,0.15], ftR:[0,1.92,-0.15] }) }
+    ],
     slave: slavePose({ pelvis:[0,1.22,0], chest:[0,0.85,0], head:[0,0.50,0],
       shL:[0,0.80,0.20], shR:[0,0.80,-0.20], elL:[0,0.56,0.22], elR:[0,0.56,-0.22],
       haL:[0,0.32,0.20], haR:[0,0.32,-0.20], hipL:[0,1.26,0.13], hipR:[0,1.26,-0.13],
@@ -7313,6 +7358,7 @@ Fighter.prototype.startGrab = function(){
   // STAGE 1: LOCKUP
   this.state='grab'; this.stateTime=0; this.grappling=true;
   this.grappleStage=1;            // 1 lockup, 2 lift, 3 carry/rotate, 4 release
+  this._aiGrapChosen=false;       // AI re-picks its move at the START of this lockup (so the setup pose plays)
   this.grappleAim=0;
   this.grappleTwist=0;
   this.grappleMode='front';       // 'front' tie-up or 'rear' waistlock (press GRAB again to go behind)
@@ -7815,10 +7861,27 @@ Fighter.prototype.poseGrab = function(dt){
         this.craneLift  = clamp(this.craneLift + this._aiSteerBias*dt*0.45, -1, 1);
         this.craneTwist = clamp((this.craneTwist||0) + this._aiSteerBias*dt*0.5, -1.5, 1.5);
       } }
-    if (st===1 && this.stateTime>0.5){
-      if (Math.random()<0.75){ this.grapplePos = GRAPPLE_POS_NAMES[Math.floor(Math.random()*GRAPPLE_POS_NAMES.length)]; }
-      this.grappleStage=2; this.stateTime=0;
-    } else if (st===2 && this.stateTime>0.6){ this.grappleStage=3; this.stateTime=0; }
+    if (st===1){
+      // SETUP PHASE — choose the move at the START of the lockup, not at the lift. This is the
+      // fix for "missing the setup phase between lockup and lift": the move-specific setup pose
+      // (facelock secured / rear waistlock / scoop load) in the st===1 branches below only plays
+      // when this.grapplePos is already the real move. Previously the AI kept STANDARD through the
+      // whole lockup and only rolled the move at the instant it flipped to st===2, so the body
+      // snapped from a generic collar tie straight into the hoist with no visible setup. Picking
+      // here lets the lockup actually SHOW the hold being secured before the lift begins.
+      if (!this._aiGrapChosen){
+        this._aiGrapChosen = true;
+        if (Math.random()<0.85){ this.grapplePos = GRAPPLE_POS_NAMES[Math.floor(Math.random()*GRAPPLE_POS_NAMES.length)]; }
+      }
+      if (this.stateTime>0.55){ this.grappleStage=2; this.stateTime=0; }   // slightly longer lockup so the setup reads
+    } else if (st===2){
+      // Hold the LIFT until the hoist's sub-phases actually finish (its liftDur), not a fixed 0.6s.
+      // Previously the AI flipped to the carry at 0.6s even when a move's liftDur was longer (POWERBOMB
+      // 1.15s, etc.), so the carry snapped to the final slave pose mid-hoist — the lift visibly never
+      // completed. Capped at 1.2s so a mis-tuned move can never hang the grapple.
+      const _ld = (GRAPPLE_POSITIONS[this.grapplePos]||{}).liftDur || 0.55;
+      if (this.stateTime > Math.min(Math.max(_ld, 0.55), 1.2)){ this.grappleStage=3; this.stateTime=0; }
+    }
     else if (st===3 && this.stateTime>1.2){ this.grappleDeliver('signature', Math.random()<0.5?this.dir:0); }
   }
 
@@ -7928,8 +7991,10 @@ Fighter.prototype.poseGrab = function(dt){
       this.J.elR.set(0.22 + p*0.06, 0.96 + p*0.44, -0.24);
       this.J.knL.set(0.14, 0.40 - sq*0.12, 0.16);
       this.J.knR.set(0.14, 0.40 - sq*0.12, -0.16);
-    } else if (gp==='VERTICAL_SUPLEX'){
+    } else if (gp==='VERTICAL_SUPLEX' || gp==='BRAINBUSTER'){
       // VERTICAL HOIST: face-to-face facelock, attacker stays UPRIGHT — leg/hip drive
+      // (BRAINBUSTER shares this hoist — it IS a front vertical suplex that drops on the head;
+      //  previously it fell to the generic default squat-hoist, which read as a different, wrong move.)
       // sends the opponent straight up overhead. This is mechanically distinct from
       // GERMAN/BACK_SUPLEX (attacker behind, waistlock, continuous backward arch IS
       // the throw). Vertical Suplex's own name comes from the attacker's torso staying
@@ -8029,8 +8094,8 @@ Fighter.prototype.poseGrab = function(dt){
       this.J.shR.set(0.06, 1.34, -0.22);
       this.J.knL.set(0.10, 0.44, 0.15);
       this.J.knR.set(0.10, 0.44, -0.15);
-    } else if (gp==='VERTICAL_SUPLEX'){
-      // VERTICAL SUPLEX CARRY: victim inverted above, attacker arched backward
+    } else if (gp==='VERTICAL_SUPLEX' || gp==='BRAINBUSTER'){
+      // VERTICAL SUPLEX / BRAINBUSTER CARRY: victim held inverted above, attacker braced under it
       this.J.pelvis.set(-lean*0.4 - _bias + _sw, 0.90 + dipY, _swZ*0.4);
       this.J.chest.set(-lean*1.0 - _bias*1.4 + _sw*1.3, 1.28 + dipY*1.2, _swZ);
       this.J.head.set(-lean*1.4 - _bias*1.2 + _sw*1.6, 1.62 + dipY*1.2, _swZ*1.2);
@@ -8472,7 +8537,7 @@ Fighter.prototype.poseGrabbed = function(dt){
         const a=W('shL'), b=W('shR');                       // seated on the shoulders — hands BRACE on them, pushing back
         this.J.haL.set(a.x+0.04,a.y+0.06,a.z+0.08); this.J.haR.set(b.x+0.04,b.y+0.06,b.z-0.08);
         this.J.elL.set(a.x*0.6,(a.y+1.1)*0.5,0.22);  this.J.elR.set(b.x*0.6,(b.y+1.1)*0.5,-0.22); _vg=true;
-      } else if (gpv==='VERTICAL_SUPLEX'||gpv==='TIGER_SUPLEX'||gpv==='DRAGON_SUPLEX'){
+      } else if (gpv==='VERTICAL_SUPLEX'||gpv==='TIGER_SUPLEX'||gpv==='DRAGON_SUPLEX'||gpv==='BRAINBUSTER'){
         const a=W('hipL'), b=W('hipR');                     // inverted — grabbing the attacker's thighs/waistband
         this.J.haL.set(a.x,a.y,a.z+0.08); this.J.haR.set(b.x,b.y,b.z-0.08);
         this.J.elL.set(a.x*0.55,(a.y+0.9)*0.5,0.18); this.J.elR.set(b.x*0.55,(b.y+0.9)*0.5,-0.18); _vg=true;
@@ -8484,7 +8549,7 @@ Fighter.prototype.poseGrabbed = function(dt){
         const a=W('haL'), b=W('haR');                       // flat overhead — arms reach down to the press hands for balance
         this.J.haL.set(a.x,a.y-0.06,a.z+0.05); this.J.haR.set(b.x,b.y-0.06,b.z-0.05);
         this.J.elL.set(a.x*0.6,(a.y+1.1)*0.5,0.22); this.J.elR.set(b.x*0.6,(b.y+1.1)*0.5,-0.22); _vg=true;
-      } else if (gpv==='DDT'||gpv==='BUTTERFLY_DDT'||gpv==='BRAINBUSTER'){
+      } else if (gpv==='DDT'||gpv==='BUTTERFLY_DDT'){
         const a=W('hipR');                                  // facelock — one arm hooks the attacker's waist, free arm braces
         this.J.haL.set(a.x+0.08,a.y,a.z+0.10); this.J.haR.set(-0.10,0.80,-0.18);
         this.J.elL.set(a.x*0.5+0.10,(a.y+0.9)*0.5,0.22); _vg=true;
@@ -8505,7 +8570,7 @@ Fighter.prototype.poseGrabbed = function(dt){
       this.J.hipL.set(0,0.92,0.20); this.J.hipR.set(0,0.92,-0.20);
       this.J.knL.set(-0.10,0.62,0.22); this.J.knR.set(-0.10,0.62,-0.22);
       this.J.ftL.set(-0.24,0.35,0.24); this.J.ftR.set(-0.24,0.35,-0.24);   // legs spread for overhead balance
-    } else if (gpv==='VERTICAL_SUPLEX'){
+    } else if (gpv==='VERTICAL_SUPLEX' || gpv==='BRAINBUSTER'){
       // FIX: this branch used to write hip/knee/foot targets in LOCAL (unrotated) space AFTER the
       // pitch-rotation block above had already correctly rotated those same joints from the progressive
       // sp blend — so the legs got set TWICE per frame: once correctly (rotated, progress-driven), then
