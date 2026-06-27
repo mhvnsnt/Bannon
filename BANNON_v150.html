@@ -2844,12 +2844,19 @@ Fighter.prototype.enforceBiomechanicalLimits = function() {
       const fwd = this.forward();
       // 1. Establish the Pole Vector in space
       const sign = kneeElbowSign === 'KNEE' ? 1 : -1;
+      const isElbow = kneeElbowSign === 'ELBOW';
       const midX = (p.pos.x + c.pos.x) * 0.5;
       const midY = (p.pos.y + c.pos.y) * 0.5;
       const midZ = (p.pos.z + c.pos.z) * 0.5;
-      
+
+      // ELBOW DOWN-BIAS FIX: a purely-horizontal pole (poleY=midY) was the cause of
+      // elbows twisting sideways / upside-down in a raised guard — when the arm is up,
+      // shoulder->hand is nearly vertical, so a horizontal pole projects to a SIDEWAYS
+      // safe-bend direction and the corrector snapped the elbow out to the side.
+      // Anatomically the elbow points DOWN-and-back (boxing/guard and most strikes),
+      // so bias the elbow pole well below the joint. Knees keep their forward pole.
       const poleX = midX + fwd.x * 2.0 * sign;
-      const poleY = midY;
+      const poleY = midY - (isElbow ? 1.8 : 0);
       const poleZ = midZ + fwd.z * 2.0 * sign;
 
       // 2. Define the limb axis (Parent to Child)
