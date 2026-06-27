@@ -2908,6 +2908,12 @@ Fighter.prototype.opponent = function(){ return (this===fighters[0]) ? fighters[
 // the human and the AI). Falls back to BANNON only if somehow unnamed.
 function fname(f){ return (f && f.opts && f.opts.name) ? f.opts.name : 'BANNON'; }
 Fighter.prototype.who = function(){ return fname(this); };
+// VISUAL look key — usually the character's own name, but an ALT ATTIRE (e.g. Bannon
+// wearing the "Maime" look) renders a DIFFERENT character's appearance while keeping
+// this fighter's real name/moves. So all appearance code (body comp, attire, hair,
+// physique) reads vlook(); moves/stats/announcer keep reading fname()/opts.name.
+function vlook(f){ return (f && f._lookKey) ? f._lookKey : fname(f); }
+window.vlook = vlook;
 
 Fighter.prototype.enforceBiomechanicalLimits = function() {
   if (!this._arV) return;
@@ -5050,7 +5056,63 @@ window.BBODY = (function(){
     if(ti===5||ti===6) return (i<=1)? _part(f,'thighs',1.06,true) : _part(f,'calves',1.0,true);   // legs
     return 1;
   }
+  // BODY COMPOSITION — three independent axes so the roster spans real 2026 body
+  // types, not just "cut fighter": muscularity (muscle definition), bodyFat (soft
+  // mass + suppresses the cut), and fem (female shaping). Read off f.shape with
+  // sensible defaults; the create-a-fighter sliders + per-character map drive them.
+  function _bodyComp(f){ const sh=f.shape||{};
+    return {
+      musc: (sh.muscularity!=null?+sh.muscularity:(sh.musc!=null?+sh.musc:0.55)),
+      fat:  (sh.bodyFat!=null?+sh.bodyFat:0.32),
+      fem:  (sh.fem!=null?clamp(+sh.fem,0,1):0)
+    };
+  }
+  // ANATOMICAL RELIEF — muscle carved into the smooth tube: pecs + sternum split, ab
+  // blocks with a linea-alba groove, spine valley + erector ridges, bicep/tricep, quad/
+  // calf. Only as visible as the fighter is muscular AND lean (abs vanish under fat),
+  // and softened on female frames. a=PI -> front, a=0 -> back (vertical torso).
+  function _relief(ti, i, M, a){
+    const cs=Math.cos(a); const front=Math.max(0,-cs), back=Math.max(0,cs);
+    const center=Math.exp(-Math.pow(a-Math.PI,2)/0.018);
+    const spine =Math.exp(-Math.pow(((a+Math.PI)%(2*Math.PI))-Math.PI,2)/0.03);
+    if(ti===0){ let r=0;
+      if(i>=Math.floor(M*0.55)){ r += front*0.030 - center*0.020*front; }
+      else { r += front*0.014*(0.5+0.5*Math.cos(i*3.4)) - center*0.013*front; }
+      r -= spine*0.020;
+      r += back*0.012*Math.exp(-Math.pow(Math.abs(a)-0.34,2)/0.02);
+      return r;
+    }
+    if(ti===1) return -spine*0.010;
+    if(ti===3||ti===4) return front*0.016 + back*0.012;
+    if(ti===5||ti===6){ let r=front*0.016; if(i>=3) r += back*0.014; return r; }
+    return 0;
+  }
+  // SOFT MASS — body fat rounds the silhouette: belly bulge (low-front torso, strongest
+  // near the waist), flank/love-handles, fuller hips/seat, softer limbs. Independent of
+  // muscle, so a heavyweight can be soft-powerful and a cruiserweight lean-cut.
+  function _fat(f, ti, i, M, a){ const fat=_bodyComp(f).fat; if(fat<=0.02) return 0;
+    const front=Math.max(0,-Math.cos(a)), side=Math.abs(Math.sin(a)), low=1-i/Math.max(1,M-1);
+    if(ti===0) return fat*front*(0.05*low+0.014) + fat*side*0.016*low;   // gut + flanks
+    if(ti===1) return fat*0.028;                                          // seat/hips
+    if(ti===3||ti===4) return fat*0.013;                                  // softer arms
+    if(ti===5||ti===6) return fat*0.020*(i<=2?1:0.5);                     // thighs > calves
+    return 0;
+  }
+  // FEMALE SHAPING — chest (soft front lobes instead of pec slabs), narrower waist with
+  // fuller hips/glutes. Scales with fem (0=male .. 1=female), blends with everything else.
+  function _fem(f, ti, i, M, a){ const fem=_bodyComp(f).fem; if(fem<=0.02) return 0;
+    const front=Math.max(0,-Math.cos(a)), side=Math.abs(Math.sin(a));
+    if(ti===0){ if(i>=Math.floor(M*0.55)) return fem*0.05*front*(0.55+0.45*Math.cos((a-Math.PI)*3)); // bust lobes
+      return -fem*0.012*side; }                                          // nipped waist
+    if(ti===1) return fem*0.034*side + fem*0.012;                        // hips/glutes
+    if((ti===5||ti===6)&&i<=2) return fem*0.020;                         // upper-thigh
+    return 0;
+  }
+  // Muscle definition is only as strong as (muscularity x leanness), softened for women.
+  function reliefScale(f){ const c=_bodyComp(f); return Math.max(0, c.musc*(1 - c.fat*0.85)) * (1 - c.fem*0.4); }
+
   function update(f){ if(!f._bmesh||!f._rj) return; const L=layout(), pos=f._bgeo.attributes.position.array;
+    const _def = (window.MUSCLE_RELIEF===false)?0:reliefScale(f);
     for(let ti=0;ti<L.tubes.length;ti++){ const T=TUBES[ti], TB=L.tubes[ti], M=T.rings.length, start=TB.start; const C=[],R=[];
       for(let i=0;i<M;i++){ const c=center(f,T.rings[i][0]); if(!c) return; C.push(c); const rr=T.rings[i]; const mg=ringGirth(f,ti,i,M); R.push([rr[1]*mg, (rr[2]!=null?rr[2]:rr[1])*mg]); }
       for(let i=0;i<M;i++){ let ax,ay,az;
@@ -5061,7 +5123,10 @@ window.BBODY = (function(){
         if(Math.abs(_d.y)>0.9)_ref.set(1,0,0); else _ref.set(0,1,0);
         _u.crossVectors(_d,_ref); if(_u.lengthSq()<1e-9)_u.set(1,0,0); _u.normalize(); _v.crossVectors(_u,_d).normalize();
         const rS=R[i][0], rD=R[i][1], cx=C[i][0], cy=C[i][1], cz=C[i][2], vo=(start+i*N)*3;
-        for(let k=0;k<N;k++){ const a=k/N*6.2831853, ca=Math.cos(a)*rS, sa=Math.sin(a)*rD;
+        for(let k=0;k<N;k++){ const a=k/N*6.2831853;
+          // muscle (scaled by definition) + soft fat mass + female shaping, all per-vertex
+          const rel = _def*_relief(ti,i,M,a) + _fat(f,ti,i,M,a) + _fem(f,ti,i,M,a);
+          const ca=Math.cos(a)*(rS+rel), sa=Math.sin(a)*(rD+rel);
           pos[vo+k*3]=cx+_u.x*ca+_v.x*sa; pos[vo+k*3+1]=cy+_u.y*ca+_v.y*sa; pos[vo+k*3+2]=cz+_u.z*ca+_v.z*sa; } }
       if(TB.apex>=0){ const i=M-1, ao=TB.apex*3; _d.set(C[i][0]-C[i-1][0],C[i][1]-C[i-1][1],C[i][2]-C[i-1][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
         const rA=R[i][0]; pos[ao]=C[i][0]+_d.x*rA*0.9; pos[ao+1]=C[i][1]+_d.y*rA*0.9; pos[ao+2]=C[i][2]+_d.z*rA*0.9; } }
@@ -5167,7 +5232,7 @@ window.ARCHE_SHAPE = {
 // TITAN the powerhouse, etc.); (3) an archetype-derived physique for everyone else.
 window.applyForgeMorphs = function(f){
   if(!f || !window.applyFighterSpec) return;
-  const key = (typeof fname==='function' ? fname(f) : (f.opts&&f.opts.name)||'BANNON').toUpperCase();
+  const key = (typeof vlook==='function' ? vlook(f) : (f.opts&&f.opts.name)||'BANNON').toUpperCase();
   // 1) forged character from the creative suite
   let forged=null; try{ forged=(window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); }catch(_){}
   if(forged && forged.rawShape){
@@ -5299,6 +5364,53 @@ window.hairFor = function(name){
   return ({powerhouse:'BALD',brawler:'FADE',technician:'CAESAR',highFlyer:'AFRO',enigma:'LONG',freeAgent:'SHORT'})[meta.archetype||'freeAgent']||'SHORT';
 };
 
+// ── BODY COMPOSITION — every fighter a distinct real body type, not all shredded.
+// musc = muscle definition, fat = soft mass (rounds the body, hides abs),
+// fem = female shaping (0 male .. 1 female). Mix freely for infinite body types.
+window.CHAR_BODY = {
+  BANNON:{musc:0.72,fat:0.18}, VIPER:{musc:0.6,fat:0.14}, KAGE:{musc:0.55,fat:0.12},
+  BRUTUS:{musc:0.55,fat:0.44},                 // beefy bruiser — soft power, not cut
+  ZEPHYR:{musc:0.5,fat:0.14}, MORTUS:{musc:0.62,fat:0.3},
+  TITAN:{musc:0.7,fat:0.3},                     // big and muscular
+  GOLEM:{musc:0.42,fat:0.52},                   // massive soft colossus
+  RONIN:{musc:0.6,fat:0.2},
+  CAIN_ELIAS:{musc:0.76,fat:0.22}, ATLAS_VANCE:{musc:0.66,fat:0.2}, STICK_UP:{musc:0.55,fat:0.26},
+  FINXSSE:{musc:0.72,fat:0.1},                  // ripped high-flyer
+  RED_CLOUD:{musc:0.6,fat:0.36},                // big-bodied
+  CASSIAN_THORNE:{musc:0.8,fat:0.12},           // flawless physique
+  SOMBRA_NEGRA:{musc:0.62,fat:0.15},
+  MAIME:{musc:0.72,fat:0.14}                    // Bannon's unhinged alter-ego — harder, leaner version of the same frame
+};
+// ALT ATTIRES — a character can be played in a different character's LOOK while
+// keeping their own moves (canon: Bannon can wear the "Maime" unhinged alter-ego
+// look). Maime also remains a standalone selectable character with his own moves.
+window.CHAR_ALTS = {
+  BANNON: [ { id:'MAIME', label:'Maime · Unhinged' } ]
+};
+window.altsFor = function(name){
+  const k=String(name||'').toUpperCase();
+  return [{ id:null, label:'Default' }].concat(window.CHAR_ALTS[k]||[]);
+};
+
+window.bodyCompFor = function(name){
+  const k=String(name||'').toUpperCase();
+  if(window.CHAR_BODY[k]) return window.CHAR_BODY[k];
+  const meta=(window.CHAR_META&&window.CHAR_META[k])||{};
+  return ({powerhouse:{musc:0.62,fat:0.3},brawler:{musc:0.55,fat:0.38},technician:{musc:0.62,fat:0.2},highFlyer:{musc:0.68,fat:0.12},enigma:{musc:0.55,fat:0.2},freeAgent:{musc:0.65,fat:0.2}})[meta.archetype||'freeAgent']||{musc:0.6,fat:0.22};
+};
+// Seed a fighter's body-composition onto f.shape (defaults only — never overrides a
+// value the create-a-fighter sliders or a forged spec already set).
+window.applyBodyComp = function(f){
+  if(!f) return; f.shape=f.shape||{};
+  const key=(typeof vlook==='function'?vlook(f):(f.opts&&f.opts.name)||'BANNON').toUpperCase();
+  let forged=null; try{ forged=(window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); }catch(_){}
+  const b=(forged&&forged.body)||null;
+  if(f.shape.muscularity==null) f.shape.muscularity=(b&&b.muscularity!=null)?b.muscularity:window.bodyCompFor(key).musc;
+  if(f.shape.bodyFat==null)     f.shape.bodyFat   =(b&&b.bodyFat!=null)?b.bodyFat:window.bodyCompFor(key).fat;
+  const femV=(b&&b.fem!=null)?b.fem:window.bodyCompFor(key).fem;
+  if(femV!=null && f.shape.fem==null) f.shape.fem=femV;
+};
+
 window._rosterIdx = window._rosterIdx||0;
 window.cycleRosterP2 = function(){
   try{
@@ -5388,6 +5500,8 @@ window.cycleRosterP2 = function(){
     slider('build','OVERALL BUILD',0.7,1.6,false,true);
     BODY.forEach(p=> slider(p[0],p[1],0.55,1.7,true,true));     // per-part size (visual, restyle)
     slider('neck','NECK',0.6,1.6,true,true);                    // neck thickness
+    slider('muscularity','MUSCULARITY  (definition)',0,1,true,true);   // abs/pecs/cuts \u2014 only show when lean
+    slider('bodyFat','BODY FAT  (soft mass)',0,1,true,true);            // belly/softness, hides the cut
     slider('fem','FRAME  MASC \u2194 FEM',0,1,true,true);        // 0 male wedge -> 1 female hourglass (ribcage/waist/pelvis/glute)
     H('FACE SCULPT','#c084fc');
     slider('head','HEAD SIZE',0.55,1.3,true,true);              // overall skull (reuses the head part-scale)
@@ -11653,7 +11767,7 @@ function fighterOptsFor(name){
 // gear style + colors; built-ins use the per-character/archetype attire map.
 function dressFighter(f){
   if(!f || typeof applyAttire!=='function') return;
-  const key = (typeof fname==='function' ? fname(f) : (f.opts&&f.opts.name)||'BANNON').toUpperCase();
+  const key = (typeof vlook==='function' ? vlook(f) : (f.opts&&f.opts.name)||'BANNON').toUpperCase();
   let style, primary, secondary;
   let forged=null; try{ forged=(window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); }catch(_){}
   let hairStyle, hairColor;
@@ -11670,6 +11784,7 @@ function dressFighter(f){
     secondary = (meta.accent!=null?meta.accent:(f.opts&&f.opts.accent));
     hairStyle = window.hairFor(key);
   }
+  if(typeof applyBodyComp==='function') applyBodyComp(f);   // seed muscularity/fat/fem -> drives the continuous-body shaping
   applyAttire(f, style, primary, secondary);
   if(typeof applyHair==='function') applyHair(f, hairStyle, hairColor);
 }
@@ -11689,10 +11804,15 @@ function startFight(){
   const p1Human = !setup || setup.p1Control !== 'CPU';
   const p2Human = !!(setup && setup.p2Control === 'YOU');
 
-  const o1 = fighterOptsFor(p1Name);
-  const o2 = fighterOptsFor(p2Name);
-  const p1 = new Fighter(p1Human, { col:o1.col, accent:o1.accent, skin:o1.skin, name:o1.name, style:o1.style });
-  const p2 = new Fighter(!p1Human ? true : p2Human, { col:o2.col, accent:o2.accent, skin:o2.skin, name:o2.name, style:o2.style });
+  // ALT ATTIRE: a fighter keeps their own NAME/moves but can wear another character's
+  // LOOK (e.g. Bannon in the "Maime" alt attire). p1Alt/p2Alt hold the look key.
+  const p1Look = (setup && setup.p1Alt) ? setup.p1Alt : p1Name;
+  const p2Look = (setup && setup.p2Alt) ? setup.p2Alt : p2Name;
+  const o1 = fighterOptsFor(p1Look);   // colours/skin/style come from the LOOK
+  const o2 = fighterOptsFor(p2Look);
+  const p1 = new Fighter(p1Human, { col:o1.col, accent:o1.accent, skin:o1.skin, name:p1Name, style:o1.style }); // NAME/moves from the character
+  const p2 = new Fighter(!p1Human ? true : p2Human, { col:o2.col, accent:o2.accent, skin:o2.skin, name:p2Name, style:o2.style });
+  p1._lookKey = p1Look; p2._lookKey = p2Look;   // appearance code reads this; moves read opts.name
   // Guarantee exactly one human-input owner unless AI-vs-AI was explicitly chosen.
   if (setup && setup.p1Control==='AI' && setup.p2Control==='AI'){ p1.isPlayer=false; p2.isPlayer=false; }
   fighters = [p1, p2];
@@ -32849,7 +32969,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   ];
 
   // ---- state ----
-  var sel = { p1:'BANNON', p2:'VIPER', side:'p2', modeIdx:0, typeIdx:0, stageIdx:0, preview:'BANNON' };
+  var sel = { p1:'BANNON', p2:'VIPER', p1Alt:null, p2Alt:null, side:'p2', modeIdx:0, typeIdx:0, stageIdx:0, preview:'BANNON' };
   try { var savedStage = (typeof arenaIdx!=='undefined') ? arenaIdx : 0; sel.stageIdx = savedStage; } catch(_){ }
 
   // ---- CSS — WWE-2K/Tekken VS-SCREEN: live 3D fighters in the scene behind,
@@ -32915,6 +33035,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       '<div id="csFoot">'+
         '<div class="csOpt"><div class="ol">MODE</div><div class="csCyc" id="csMode">PLAYER vs CPU</div></div>'+
         '<div class="csOpt"><div class="ol">MATCH TYPE</div><div class="csCyc" id="csType">ONE ON ONE</div></div>'+
+        '<div class="csOpt"><div class="ol">ATTIRE</div><div class="csCyc" id="csAttire">Default</div></div>'+
         '<div class="csOpt"><div class="ol">STAGE</div><div class="csCyc" id="csStage">FIRE PIT</div></div>'+
         '<button id="csStart">FIGHT ▶</button>'+
       '</div>'+
@@ -32962,6 +33083,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     var mt = MATCH_TYPES[sel.typeIdx];
     var tEl = document.getElementById('csType'); tEl.textContent = mt.label + (mt.live?'':' (soon)'); tEl.classList.toggle('dim', !mt.live);
     try { document.getElementById('csStage').textContent = (typeof ARENAS!=='undefined'?ARENAS[sel.stageIdx%ARENAS.length]:'FIRE PIT'); } catch(_){}
+    try { var aSide=sel.side, aChar=sel[aSide], aCur=sel[aSide+'Alt']||null, aList=(window.altsFor?window.altsFor(aChar):[{id:null,label:'Default'}]); var aMatch=aList.find(function(a){return a.id===aCur;}); var aEl=document.getElementById('csAttire'); aEl.textContent=(aMatch?aMatch.label:'Default'); aEl.classList.toggle('dim', aList.length<=1); } catch(_){}
   }
 
   // Spawn / refresh the two live 3D fighters standing in the ring (vs-screen).
@@ -32969,7 +33091,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   // state so they just stand there, morphed and attired, as you browse.
   function spawnPreview(){
     try{
-      window.MATCH_SETUP = { p1Name:sel.p1, p2Name:sel.p2, p1Control:'YOU', p2Control:'CPU' };
+      window.MATCH_SETUP = { p1Name:sel.p1, p2Name:sel.p2, p1Alt:sel.p1Alt, p2Alt:sel.p2Alt, p1Control:'YOU', p2Control:'CPU' };
       if(typeof startFight==='function') startFight();
       try{ if(typeof roundTimerInterval!=='undefined' && roundTimerInterval){ clearInterval(roundTimerInterval); roundTimerInterval=null; } }catch(_){}
       if(typeof gameState!=='undefined') gameState='menu_select';
@@ -32978,13 +33100,22 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     }catch(_){}
   }
 
-  function assign(name){ sel[sel.side]=name; sel.side=(sel.side==='p1')?'p2':'p1'; spawnPreview(); refresh(); }
+  function assign(name){ sel[sel.side]=name; sel[sel.side+'Alt']=null; sel.side=(sel.side==='p1')?'p2':'p1'; spawnPreview(); refresh(); }
 
   document.getElementById('csPlateP1').addEventListener('click', function(){ sel.side='p1'; refresh(); });
   document.getElementById('csPlateP2').addEventListener('click', function(){ sel.side='p2'; refresh(); });
   document.getElementById('csMode').addEventListener('click', function(){ sel.modeIdx=(sel.modeIdx+1)%MODES.length; refresh(); });
   document.getElementById('csType').addEventListener('click', function(){ sel.typeIdx=(sel.typeIdx+1)%MATCH_TYPES.length; refresh(); });
   document.getElementById('csStage').addEventListener('click', function(){ try{ sel.stageIdx=(sel.stageIdx+1)%ARENAS.length; if(typeof arenaIdx!=='undefined'){ arenaIdx=sel.stageIdx; var an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; if(typeof buildArena==='function') buildArena(); } }catch(_){} refresh(); });
+  // ATTIRE — cycle the active side's alt looks (e.g. Bannon -> Maime), keeping moves.
+  document.getElementById('csAttire').addEventListener('click', function(){
+    var side=sel.side, charName=sel[side];
+    var alts=(window.altsFor?window.altsFor(charName):[{id:null,label:'Default'}]);
+    var cur=sel[side+'Alt']||null;
+    var idx=alts.findIndex(function(a){return a.id===cur;}); idx=(idx+1)%alts.length;
+    sel[side+'Alt']=alts[idx].id;
+    spawnPreview(); refresh();
+  });
 
   function back(){ root.classList.remove('show'); setHud(''); try{ if(typeof gameState!=='undefined') gameState='menu'; }catch(_){} if(typeof show==='function') show('mainMenu'); }
   document.getElementById('csClose').addEventListener('click', back);
@@ -32996,7 +33127,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   document.getElementById('csStart').addEventListener('click', function(){
     var mode = MODES[sel.modeIdx].id;
     window.MATCH_SETUP = {
-      p1Name: sel.p1, p2Name: sel.p2,
+      p1Name: sel.p1, p2Name: sel.p2, p1Alt: sel.p1Alt, p2Alt: sel.p2Alt,
       p1Control: mode==='P1' ? 'YOU' : (mode==='P2' ? 'CPU' : 'AI'),
       p2Control: mode==='P2' ? 'YOU' : (mode==='P1' ? 'CPU' : 'AI'),
       matchType: MATCH_TYPES[sel.typeIdx].id, stage: sel.stageIdx
