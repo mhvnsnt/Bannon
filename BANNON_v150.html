@@ -6082,8 +6082,34 @@ function slavePose(over){
 const GRAPPLE_POSITIONS = {
   // lift0 = default arc (-1 fwd/down-front ... 0 overhead ... +1 back/down-behind)
   // off = forward distance from attacker chest to opponent pelvis. MUST be tight. Negative = behind.
-  STANDARD: { label:"SCOOP",        off:0.08, oppYaw:Math.PI, delivery:'slam',  basePow:90,  lift0:0.0,
-    slave: slavePose() },
+  // SCOOP SLAM — totally different technique from a powerbomb: the attacker dips, hooks
+  // ONE arm under the thighs and the other around the back, and SCOOPS the opponent up
+  // HORIZONTAL, belly-up, cradled across the chest (head to one side, feet to the other),
+  // then slams them down on their back. 3 real sub-phases: HOOK (dip+reach under) ->
+  // SCOOP (lift off, body tilts to horizontal) -> CRADLE (held flat across the chest).
+  STANDARD: { label:"SCOOP",        off:0.08, oppYaw:Math.PI, delivery:'slam',  basePow:90,  lift0:0.0, land:'back', liftDur:0.7,
+    liftPoses: [
+      { t:0.00, pose: slavePose({ // HOOK — opponent bent forward into the scoop, weight breaking, feet still down
+          pelvis:[0.18,0.92,0], chest:[0.32,1.02,0.04], head:[0.48,1.04,0.07],
+          shL:[0.28,1.04,0.24], shR:[0.26,0.98,-0.18], elL:[0.36,0.88,0.26], elR:[0.30,0.84,-0.20],
+          haL:[0.46,0.74,0.26], haR:[0.40,0.70,-0.18], hipL:[0.16,0.92,0.14], hipR:[0.16,0.92,-0.12],
+          knL:[0.30,0.56,0.16], knR:[0.30,0.56,-0.14], ftL:[0.34,0.08,0.17], ftR:[0.34,0.08,-0.15] }) },
+      { t:0.50, pose: slavePose({ // SCOOP — lifted clear, body rotating up toward horizontal, cradled to one side
+          pelvis:[0.12,1.05,0.02], chest:[0.18,1.10,0.18], head:[0.20,1.12,0.40],
+          shL:[0.16,1.12,0.30], shR:[0.16,1.08,-0.04], elL:[0.18,1.06,0.42], elR:[0.14,1.0,0.0],
+          haL:[0.20,1.02,0.52], haR:[0.16,0.96,0.04], hipL:[0.08,1.04,-0.10], hipR:[0.08,1.02,-0.22],
+          knL:[0.06,1.0,-0.30], knR:[0.06,0.98,-0.38], ftL:[0.04,0.96,-0.46], ftR:[0.04,0.94,-0.52] }) },
+      { t:1.00, pose: slavePose({ // CRADLE — fully horizontal across the chest, belly up, head +z / feet -z
+          pelvis:[0.12,1.12,0], chest:[0.14,1.14,0.20], head:[0.16,1.15,0.46],
+          shL:[0.14,1.16,0.32], shR:[0.14,1.12,0.06], elL:[0.16,1.12,0.46], elR:[0.12,1.08,0.08],
+          haL:[0.18,1.10,0.58], haR:[0.14,1.06,0.12], hipL:[0.10,1.10,-0.12], hipR:[0.10,1.08,-0.24],
+          knL:[0.08,1.08,-0.34], knR:[0.08,1.06,-0.42], ftL:[0.06,1.05,-0.52], ftR:[0.06,1.03,-0.58] }) }
+    ],
+    slave: slavePose({ // final cradle (= last liftPose) for any single-pose fallback path
+      pelvis:[0.12,1.12,0], chest:[0.14,1.14,0.20], head:[0.16,1.15,0.46],
+      shL:[0.14,1.16,0.32], shR:[0.14,1.12,0.06], elL:[0.16,1.12,0.46], elR:[0.12,1.08,0.08],
+      haL:[0.18,1.10,0.58], haR:[0.14,1.06,0.12], hipL:[0.10,1.10,-0.12], hipR:[0.10,1.08,-0.24],
+      knL:[0.08,1.08,-0.34], knR:[0.08,1.06,-0.42], ftL:[0.06,1.05,-0.52], ftR:[0.06,1.03,-0.58] }) },
   // POWERBOMB: opponent bent double, face INTO the attacker's gut. off nearly zero — they're folded INTO you.
   // v74: real 3-phase hoist sequence instead of one static slave pose eased in — matches the actual technique:
   //  TUCK   - opponent bent forward 90°, head trapped between attacker's legs/thighs (standing headscissors)
