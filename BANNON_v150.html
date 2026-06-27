@@ -19897,6 +19897,11 @@ ${sessionMemory || 'First session.'}`;
     forgeList:     function(){ return this._get('/api/forge/characters'); },
     forgeGet:      function(id){ return this._get('/api/forge/character/'+encodeURIComponent(id)); },
 
+    // --- AI model generation (prompt -> unique rigged fighter model via Meshy/Tripo) ---
+    genConfig:     function(){ return this._get('/api/gen/config'); },
+    genStart:      function(prompt, opts){ return this._post('/api/gen/character', Object.assign({ prompt: prompt }, opts||{})); },
+    genJob:        function(id){ return this._get('/api/gen/job/'+encodeURIComponent(id)); },
+
     // keep trying to connect with backoff so "always on" survives a cold daemon
     _autostart: function(){
       var self = this;
@@ -19912,6 +19917,41 @@ ${sessionMemory || 'First session.'}`;
   };
 
   window.BANNON_DAEMON = D;
+
+  // ===== PROMPT -> UNIQUE CHARACTER: type a description, the daemon generates a one-of-one rigged
+  // GLB (Meshy/Tripo), then we import it (binds to the fight rig + morphs) and bind it to the
+  // character so it's THEIRS. side: 'p1'/'p2' to show it live; characterKey to persist per-character.
+  window.generateCharacterModel = function(prompt, opts){
+    opts = opts || {};
+    var side = opts.side || (typeof modelSel!=='undefined' ? modelSel : 'p1');
+    var status = function(t){ try{ if(typeof setModelStatus==='function') setModelStatus(side, t); }catch(_){} if(opts.onProgress) opts.onProgress(t); };
+    if(!window.BANNON_DAEMON){ status('⚠ Daemon offline — connect it to generate.'); return Promise.resolve(null); }
+    status('⏳ Generating "'+prompt.slice(0,40)+'"…');
+    return D.genStart(prompt, { provider: opts.provider, characterId: opts.characterKey }).then(function(job){
+      if(!job || !job.id){ status('⚠ Generator not available (needs MESHY_API_KEY/TRIPO_API_KEY on the daemon).'); return null; }
+      if(job.status==='failed'){ status('⚠ '+(job.error||'generation failed')); return null; }
+      return new Promise(function(resolve){
+        var tries=0;
+        (function poll(){
+          D.genJob(job.id).then(function(j){
+            tries++;
+            if(!j){ status('⚠ Lost the job.'); return resolve(null); }
+            if(j.status==='running'||j.status==='queued'){ status('⏳ '+(j.progress||0)+'% — building model…'); if(tries<120) return setTimeout(poll, 4000); status('⚠ Timed out.'); return resolve(null); }
+            if(j.status==='failed'){ status('⚠ '+(j.error||'failed')); return resolve(null); }
+            if(j.status==='succeeded' && j.glbUrl){
+              status('✓ Model ready — importing…');
+              try{ loadFighterModel(side, j.glbUrl, prompt.slice(0,24)); }catch(e){}
+              var ck = opts.characterKey || (typeof charModelKey==='function' && fighterFor ? charModelKey(fighterFor(side)) : null);
+              if(ck && typeof assignCharModel==='function'){ assignCharModel(ck, j.glbUrl, prompt.slice(0,24)); status('★ Bound to '+ck+'.'); }
+              return resolve(j.glbUrl);
+            }
+            status('⚠ Unexpected job state.'); resolve(null);
+          }).catch(function(){ if(tries<120) setTimeout(poll, 4000); else resolve(null); });
+        })();
+      });
+    });
+  };
+
   // auto-connect on load (deferred a tick so the daemon-served page is ready)
   if (D.autoConnect) setTimeout(function(){ D._autostart(); }, 800);
   console.log('%c[BANNON DAEMON] client armed — auto-connect '+(D.autoConnect?'ON':'OFF')+', base '+(D.base||'(same origin)'),'color:#9fd');

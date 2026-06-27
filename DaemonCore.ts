@@ -8,6 +8,7 @@ import { PhysicsCollider } from './PhysicsCollider.js';
 import { SpatialEnvironment } from './SpatialEnvironment.js';
 import { FighterEvolution } from './FighterEvolution.js';
 import { CharacterForge } from './CharacterForge.js';
+import { CharacterModelGen } from './CharacterModelGen.js';
 import { PLANES, HOLOGRAPHIC } from './Cosmology.js';
 
 /**
@@ -26,6 +27,7 @@ export class DaemonCore {
   public spatial: SpatialEnvironment;
   public evolution: FighterEvolution;
   public forge: CharacterForge;
+  public modelGen: CharacterModelGen;
   private inputMatrices: Map<string, InputMatrix> = new Map();
 
   constructor() {
@@ -38,6 +40,7 @@ export class DaemonCore {
     this.spatial = new SpatialEnvironment();
     this.evolution = new FighterEvolution();
     this.forge = new CharacterForge(this.evolution);
+    this.modelGen = new CharacterModelGen();
     this.router = express.Router();
     this.setupRoutes();
   }
@@ -233,6 +236,27 @@ export class DaemonCore {
       const updated = this.forge.update(req.params.id, req.body || {});
       if (!updated) return res.status(404).json({ error: 'no such character' });
       res.json(updated);
+    });
+
+    // ---- CharacterModelGen: in-game "prompt -> unique rigged fighter model" (Meshy/Tripo proxy) ----
+    // The client posts a description (+ optional characterId); the daemon runs the text->3D->auto-rig
+    // pipeline and returns a job. Poll /status until it has a glbUrl, then the game imports that GLB
+    // (binds to the fight rig, drives morphs) and binds it to the character. Key stays server-side.
+    this.router.get('/api/gen/config', (_req, res) => {
+      res.json(this.modelGen.configured());
+    });
+    this.router.post('/api/gen/character', (req, res) => {
+      const { prompt, provider, characterId, rig } = req.body || {};
+      if (!prompt || typeof prompt !== 'string') return res.status(400).json({ error: 'prompt (string) required' });
+      res.json(this.modelGen.start(prompt, { provider, characterId, rig }));
+    });
+    this.router.get('/api/gen/job/:id', (req, res) => {
+      const j = this.modelGen.getJob(req.params.id);
+      if (!j) return res.status(404).json({ error: 'no such job' });
+      res.json(j);
+    });
+    this.router.get('/api/gen/jobs', (_req, res) => {
+      res.json(this.modelGen.listJobs());
     });
 
     // The holographic/quantum-contextuality layer (the WHY under the cosmology).
