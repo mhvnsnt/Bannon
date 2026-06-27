@@ -2115,6 +2115,23 @@ const CHAR_META = {
 };
 window.CHAR_META = CHAR_META;
 
+// Per-character attire so the roster reads distinctly instead of all-trunks.
+// secondary (2-tone) color defaults to the character's accent where the style uses it.
+window.CHAR_ATTIRE = {
+  BANNON:'TRUNKS', VIPER:'LONG_TIGHTS', KAGE:'MASKED_SUIT', BRUTUS:'MMA_SHORTS',
+  ZEPHYR:'SINGLET', MORTUS:'LONG_SLEEVE', TITAN:'SINGLET', GOLEM:'TRUNKS', RONIN:'STREETWEAR',
+  CAIN_ELIAS:'LONG_TIGHTS', ATLAS_VANCE:'MMA_SHORTS', STICK_UP:'STREETWEAR', FINXSSE:'BODYSUIT',
+  RED_CLOUD:'SINGLET', CASSIAN_THORNE:'LONG_SLEEVE', SOMBRA_NEGRA:'MASKED_SUIT', MAIME:'BODYSUIT'
+};
+// archetype fallback for characters with no explicit attire (e.g. forged with none set)
+window.ARCHE_ATTIRE = { powerhouse:'SINGLET', brawler:'MMA_SHORTS', technician:'LONG_SLEEVE', highFlyer:'BODYSUIT', enigma:'MASKED_SUIT', freeAgent:'LONG_TIGHTS' };
+window.attireFor = function(name){
+  const k=String(name||'').toUpperCase();
+  if(window.CHAR_ATTIRE[k]) return window.CHAR_ATTIRE[k];
+  const meta=(window.CHAR_META&&window.CHAR_META[k])||{};
+  return window.ARCHE_ATTIRE[meta.archetype||'freeAgent']||'TRUNKS';
+};
+
 // Unified roster accessor — built-in cast merged with any characters forged via
 // the daemon (so created characters auto-appear on the select screen). Each row
 // is everything the UI needs: identity, colours, stats, faction, bio.
@@ -5111,6 +5128,60 @@ window.applyForgeMorphs = function(f){
   const a=window.ARCHE_SHAPE[meta.archetype||'freeAgent']||window.ARCHE_SHAPE.freeAgent;
   window.applyTemplate(f, Object.assign({}, a, { skin: meta.skin, trunk: meta.col, accent: meta.accent }));
 };
+
+// ── ATTIRE SYSTEM ───────────────────────────────────────────────────────────
+// Clothing variety so fighters aren't all in the same trunks. The muscle masses
+// share ONE skin material, so to "dress" a limb/torso we swap those segs onto a
+// per-fighter CLONED fabric material (the covered parts read as cloth, the rest
+// stay skin). A second fabric material gives 2-tone outfits. Reversible: any seg
+// not covered by the chosen style is restored to the skin material.
+window.ATTIRE_SEGS = {
+  legsUpper:['thighL','thighR','kneeL','kneeR'],
+  legsLower:['shinL','shinR','calfL','calfR','ankleL','ankleR'],
+  torso:['torso','abdomen','pecL','pecR','abs','lat','traps'],
+  arms:['uArmL','uArmR','bicepL','bicepR','fArmL','fArmR'],
+  head:['head','jaw','brow','nose']
+};
+// Each style = which regions are primary fabric / which are secondary (2-tone).
+window.ATTIRE_STYLES = {
+  TRUNKS:      { primary:[],                              secondary:[] },                 // bare — classic trunks only
+  MMA_SHORTS:  { primary:['legsUpper'],                   secondary:[] },                 // shorts to the knee
+  LONG_TIGHTS: { primary:['legsUpper','legsLower'],       secondary:[] },                 // full-length tights
+  SINGLET:     { primary:['torso','legsUpper'],           secondary:[] },                 // torso + upper-leg suit
+  LONG_SLEEVE: { primary:['torso','arms'],                secondary:[] },                 // long-sleeve shirt
+  STREETWEAR:  { primary:['torso','arms'],                secondary:['legsUpper','legsLower'] }, // shirt + pants (2-tone)
+  BODYSUIT:    { primary:['torso','arms','legsUpper','legsLower'], secondary:[] },         // full luchador suit
+  MASKED_SUIT: { primary:['torso','arms','legsUpper','legsLower'], secondary:['head'] }    // suit + mask (head = accent)
+};
+window.ATTIRE_LIST = Object.keys(window.ATTIRE_STYLES);
+
+window.applyAttire = function(f, style, primaryColor, secondaryColor){
+  if(!f || !f.seg || typeof THREE==='undefined') return;
+  const S=f.seg, skin=f.skinMat;
+  if(!skin) return;
+  try{
+    // lazily create this fighter's two fabric materials (cloned off the trunks look)
+    if(!f._fabricA){ f._fabricA = (S.trunks&&S.trunks.material&&S.trunks.material.clone)? S.trunks.material.clone() : new THREE.MeshStandardMaterial({roughness:0.62, metalness:0.04}); }
+    if(!f._fabricB){ f._fabricB = f._fabricA.clone(); }
+    if(primaryColor!=null){ try{ f._fabricA.color.setHex(primaryColor); }catch(_){ } }
+    if(secondaryColor!=null){ try{ f._fabricB.color.setHex(secondaryColor); }catch(_){ } }
+    const cfg = window.ATTIRE_STYLES[style] || window.ATTIRE_STYLES.TRUNKS;
+    const primSet=new Set(), secSet=new Set();
+    (cfg.primary||[]).forEach(r=> (window.ATTIRE_SEGS[r]||[]).forEach(s=>primSet.add(s)));
+    (cfg.secondary||[]).forEach(r=> (window.ATTIRE_SEGS[r]||[]).forEach(s=>secSet.add(s)));
+    // every clothing-capable seg: assign fabric if covered, else restore to skin
+    Object.keys(window.ATTIRE_SEGS).forEach(function(region){
+      window.ATTIRE_SEGS[region].forEach(function(name){
+        const m=S[name]; if(!m) return;
+        if(primSet.has(name)) m.material=f._fabricA;
+        else if(secSet.has(name)) m.material=f._fabricB;
+        else if(m.material===f._fabricA || m.material===f._fabricB) m.material=skin;   // only un-dress what WE dressed (don't clobber eyes/hair)
+      });
+    });
+    f._attireStyle = style;
+  }catch(_){ }
+};
+
 window._rosterIdx = window._rosterIdx||0;
 window.cycleRosterP2 = function(){
   try{
@@ -5224,6 +5295,12 @@ window.cycleRosterP2 = function(){
     sb.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; let i=STYLES.indexOf(f.spec.style||'allrounder'); i=(i+1)%STYLES.length; const lbl=STYLES[i]; f.spec.style=lbl; f.style=STYLE_TO_GUARD[lbl]||'ORTHODOX'; sb.textContent=lbl; };
     syncers.push(()=>{ const f=F(); sb.textContent=(f&&f.spec&&f.spec.style)||'allrounder'; });
     srow.appendChild(slab); srow.appendChild(sb); wrap.appendChild(srow);
+    // ATTIRE — cycle the outfit (trunks / shorts / tights / singlet / sleeves / streetwear / bodysuit / masked)
+    const arow=document.createElement('div'); arow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
+    const alab=document.createElement('span'); alab.textContent='ATTIRE'; const ab=document.createElement('button'); ab.style.cssText='background:#1a0e08;color:#ff7a1a;border:1px solid #ff7a1a55;border-radius:4px;padding:4px 8px;cursor:pointer;min-width:110px;';
+    ab.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=window.ATTIRE_LIST||['TRUNKS']; let i=list.indexOf(f.spec.attireStyle||'TRUNKS'); i=(i+1)%list.length; f.spec.attireStyle=list[i]; ab.textContent=list[i].replace(/_/g,' '); if(window.applyAttire) window.applyAttire(f, list[i], (f.spec.trunk!=null?f.spec.trunk:0x202028), (f.spec.accent!=null?f.spec.accent:0xffb000)); };
+    syncers.push(()=>{ const f=F(); ab.textContent=((f&&f.spec&&f.spec.attireStyle)||'TRUNKS').replace(/_/g,' '); });
+    arow.appendChild(alab); arow.appendChild(ab); wrap.appendChild(arow);
 
     // SAVE / LOAD (localStorage — persists across sessions)
     H('SAVE / LOAD');
@@ -11446,6 +11523,27 @@ function fighterOptsFor(name){
   };
 }
 
+// Resolve and apply a fighter's outfit. Forged characters carry their own chosen
+// gear style + colors; built-ins use the per-character/archetype attire map.
+function dressFighter(f){
+  if(!f || typeof applyAttire!=='function') return;
+  const key = (typeof fname==='function' ? fname(f) : (f.opts&&f.opts.name)||'BANNON').toUpperCase();
+  let style, primary, secondary;
+  let forged=null; try{ forged=(window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); }catch(_){}
+  if(forged){
+    style = (forged.rawSpec&&forged.rawSpec.attireStyle) || (forged.attire&&forged.attire.gearStyle) || window.attireFor(key);
+    primary = (forged.attire&&forged.attire.primaryColor!=null)?forged.attire.primaryColor:(f.opts&&f.opts.col);
+    secondary = (forged.attire&&forged.attire.accentColor!=null)?forged.attire.accentColor:(f.opts&&f.opts.accent);
+  } else {
+    style = window.attireFor(key);
+    const meta=(window.CHAR_META&&window.CHAR_META[key])||{};
+    primary = (meta.col!=null?meta.col:(f.opts&&f.opts.col));
+    secondary = (meta.accent!=null?meta.accent:(f.opts&&f.opts.accent));
+  }
+  applyAttire(f, style, primary, secondary);
+}
+window.dressFighter = dressFighter;
+
 function startFight(){
   if (typeof clearActiveFightState==='function') clearActiveFightState();
   // (re)build fighters
@@ -11471,6 +11569,8 @@ function startFight(){
   if(typeof applyChosenModels==='function') applyChosenModels();
   // Apply forge morphs to whichever fighters have a forged/morph spec.
   if(typeof applyForgeMorphs==='function'){ try{ applyForgeMorphs(p1); applyForgeMorphs(p2); }catch(_){} }
+  // Dress each fighter in their own attire so the roster isn't all in trunks.
+  if(typeof applyAttire==='function'){ try{ dressFighter(p1); dressFighter(p2); }catch(_){} }
   comboCount=0; updateCombo();
   currentRound=1; p1Rounds=0; p2Rounds=0; roundEnding=false;
   updateRoundPips();
