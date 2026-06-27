@@ -19,7 +19,7 @@
  * daemon stays up and the game just falls back to import-your-own-glb.
  */
 
-export type GenProvider = 'meshy' | 'tripo';
+export type GenProvider = 'self' | 'meshy' | 'tripo';
 export interface GenJob {
   id: string;
   provider: GenProvider;
@@ -42,11 +42,11 @@ export class CharacterModelGen {
 
   constructor() {
     const has = (k: string) => !!process.env[k];
-    console.log(`[Node 13] Character Model Gen — meshy:${has('MESHY_API_KEY')} tripo:${has('TRIPO_API_KEY')}`);
+    console.log(`[Node 13] Character Model Gen — self:${has('OWN_GEN_URL')} meshy:${has('MESHY_API_KEY')} tripo:${has('TRIPO_API_KEY')}`);
   }
 
-  public configured(): { meshy: boolean; tripo: boolean } {
-    return { meshy: !!process.env.MESHY_API_KEY, tripo: !!process.env.TRIPO_API_KEY };
+  public configured(): { self: boolean; meshy: boolean; tripo: boolean } {
+    return { self: !!process.env.OWN_GEN_URL, meshy: !!process.env.MESHY_API_KEY, tripo: !!process.env.TRIPO_API_KEY };
   }
 
   public getJob(id: string): GenJob | null {
@@ -63,7 +63,9 @@ export class CharacterModelGen {
    * given, is just carried through so the client can auto-bind the result to that character.
    */
   public start(prompt: string, opts: { provider?: GenProvider; characterId?: string; rig?: boolean } = {}): GenJob {
-    const provider: GenProvider = opts.provider || (process.env.MESHY_API_KEY ? 'meshy' : 'tripo');
+    // Prefer OUR OWN backend when configured, so it's the BANNON forge by default — not a 3rd party.
+    const provider: GenProvider = opts.provider ||
+      (process.env.OWN_GEN_URL ? 'self' : (process.env.MESHY_API_KEY ? 'meshy' : 'tripo'));
     const now = new Date().toISOString();
     const job: GenJob = {
       id: 'gen_' + Math.random().toString(36).slice(2, 10),
@@ -72,7 +74,7 @@ export class CharacterModelGen {
     };
     this.jobs.set(job.id, job);
 
-    const keyName = provider === 'meshy' ? 'MESHY_API_KEY' : 'TRIPO_API_KEY';
+    const keyName = provider === 'self' ? 'OWN_GEN_URL' : (provider === 'meshy' ? 'MESHY_API_KEY' : 'TRIPO_API_KEY');
     if (!process.env[keyName]) {
       job.status = 'failed';
       job.error = `${provider} not configured — set ${keyName} on the daemon to enable in-game generation.`;
@@ -81,8 +83,10 @@ export class CharacterModelGen {
     }
 
     // run the pipeline without blocking the request
-    (provider === 'meshy' ? this.runMeshy(job, opts.rig !== false) : this.runTripo(job, opts.rig !== false))
-      .catch((e: any) => { this.fail(job, e?.message || String(e)); });
+    const runner = provider === 'self' ? this.runSelf(job, opts.rig !== false)
+      : provider === 'meshy' ? this.runMeshy(job, opts.rig !== false)
+      : this.runTripo(job, opts.rig !== false);
+    runner.catch((e: any) => { this.fail(job, e?.message || String(e)); });
     return job;
   }
 
@@ -102,6 +106,42 @@ export class CharacterModelGen {
       await new Promise(res => setTimeout(res, 4000));
     }
     throw new Error(`${label} timed out`);
+  }
+
+  // ---- OUR OWN backend: a generic adapter to a GPU endpoint WE control (a TRELLIS/Hunyuan + UniRig
+  // server, or an HF Space wrapper). Contract is deliberately simple so any host fits:
+  //   POST OWN_GEN_URL  { prompt, rig }                -> { glbUrl }  (synchronous), OR
+  //                                                    -> { id }      (async)
+  //   GET  OWN_GEN_URL + '/' + id                       -> { status:'running'|'succeeded'|'failed',
+  //                                                          progress, glbUrl, error }
+  // OWN_GEN_KEY (optional) is sent as a Bearer token. This is the "BANNON forge" hook: stand up the
+  // model anywhere with this contract and the in-game prompt flow runs entirely on our own stack. ----
+  private async runSelf(job: GenJob, rig: boolean) {
+    const url = process.env.OWN_GEN_URL!.replace(/\/$/, '');
+    const H: Record<string, string> = { 'Content-Type': 'application/json' };
+    if (process.env.OWN_GEN_KEY) H['Authorization'] = `Bearer ${process.env.OWN_GEN_KEY}`;
+    this.touch(job, { status: 'running', progress: 2 });
+
+    const sub = await fetch(url, {
+      method: 'POST', headers: H,
+      body: JSON.stringify({ prompt: job.prompt, rig, characterId: job.characterId }),
+    }).then(r => r.json() as any);
+
+    // synchronous host: a glb came straight back
+    let glb = sub?.glbUrl || sub?.glb || sub?.model_url;
+    if (glb) { this.touch(job, { status: 'succeeded', progress: 100, glbUrl: glb, thumbnailUrl: sub?.thumbnailUrl }); return; }
+
+    // async host: poll the job
+    const id = sub?.id || sub?.task_id;
+    if (!id) throw new Error('own backend returned neither glbUrl nor job id: ' + JSON.stringify(sub).slice(0, 200));
+    const done = await this.poll(async () => {
+      const s = await fetch(`${url}/${encodeURIComponent(id)}`, { headers: H }).then(r => r.json() as any);
+      const st = (s?.status || '').toLowerCase();
+      return { done: st === 'succeeded' || st === 'success' || !!s?.glbUrl, failed: st === 'failed' || st === 'error', progress: s?.progress, value: s, error: s?.error };
+    }, job, 'own backend', 2, 98) as any;
+    glb = done?.glbUrl || done?.glb || done?.model_url;
+    if (!glb) throw new Error('own backend finished without a glb');
+    this.touch(job, { status: 'succeeded', progress: 100, glbUrl: glb, thumbnailUrl: done?.thumbnailUrl });
   }
 
   // ---- Meshy: text-to-3d (preview -> refine) then auto-rig ----
