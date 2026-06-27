@@ -25,7 +25,24 @@ export interface Plane {
   band: [number, number]; // normalized frequency band [lo, hi) this plane occupies
   resonantCategories: string[]; // move categories that "vibrate" naturally here
   note: string;           // one-line gloss tying the two languages together
+  enoch: string;          // the literal 2-Enoch heaven this plane maps to (the canon column)
 }
+
+/**
+ * The holographic / quantum-contextuality layer — the WHY under the ladder.
+ * From the Enoch + M-theory source material: reality is a hologram (every part
+ * contains the whole), it is non-local (distance is an illusion of perspective),
+ * and it only resolves into something definite when a question is asked of it
+ * (quantum contextuality — "reality requires a question"). In the engine this is
+ * literal: a fighter's latent moves are a smear of probability until a WIN asks
+ * the question and collapses one into a solid maneuver.
+ */
+export const HOLOGRAPHIC = {
+  principle: 'Every part contains the whole. A fighter is a small, complete image of the roster, not a fragment of it — cut the hologram and you get two whole images, not two halves.',
+  contextuality: 'Reality requires a question. A move has no fixed value until the context of a match measures it; the win is the measurement that makes it real.',
+  nonLocality: 'Distance is an illusion of perspective. A signature can entangle two fighters across the roster — Enoch did not travel through space to the next heaven, he shifted his resonance to access a different fold of the same fabric.',
+  ocean: 'Space and the deep ocean were the same thing to the ancients: the surface is measurable matter, the deep is crushing alien (quantum) pressure, and the water itself is dark matter — undefinable, but it holds everything together and gives the wildlife a medium to exist.',
+};
 
 /**
  * The 10 planes, dense -> divine. Each is one octave of the same reality:
@@ -33,16 +50,16 @@ export interface Plane {
  * structure described twice.
  */
 export const PLANES: Plane[] = [
-  { index: 1,  heaven: 'Malkuth · Physical',     dimension: '3 of space',                band: [0.00, 0.10], resonantCategories: ['strike'],                 note: 'dense matter — waves crashing on the surface, fast and easy to measure' },
-  { index: 2,  heaven: 'Yesod · Etheric',        dimension: '4th: time',                 band: [0.10, 0.20], resonantCategories: ['strike', 'grapple'],      note: 'the vital current under the skin; conditioning and tempo' },
-  { index: 3,  heaven: 'Hod · Astral',           dimension: '5th: 1st compactified',     band: [0.20, 0.30], resonantCategories: ['grapple'],                note: 'emotion and momentum — the crowd, the heat, the read on fear' },
-  { index: 4,  heaven: 'Netzach · Lower Mental',  dimension: '6th: compactified',         band: [0.30, 0.42], resonantCategories: ['grapple', 'submission'],  note: 'thought made into counters; you see the move before it lands' },
-  { index: 5,  heaven: 'Tiphareth · Causal',     dimension: '7th: compactified',         band: [0.42, 0.55], resonantCategories: ['submission', 'slam'],     note: 'cause and effect — setups, chains, the deep currents running the system' },
-  { index: 6,  heaven: 'Geburah · Buddhic',      dimension: '8th: compactified',         band: [0.55, 0.68], resonantCategories: ['slam'],                   note: 'unity of motion; combos flow as one continuous wave' },
-  { index: 7,  heaven: 'Chesed · Atmic',         dimension: '9th: compactified',         band: [0.68, 0.80], resonantCategories: ['slam', 'aerial'],         note: 'pure will — the finisher that ends arguments' },
-  { index: 8,  heaven: 'Binah · Monadic',        dimension: '10th: full space',          band: [0.80, 0.90], resonantCategories: ['aerial'],                 note: 'the brane itself; gravity leaks across to the page next door' },
-  { index: 9,  heaven: 'Chokmah · Logoic',       dimension: 'the bulk between branes',   band: [0.90, 0.97], resonantCategories: ['aerial', 'submission'],   note: 'the dark-matter medium — undefinable, but it holds the whole structure together' },
-  { index: 10, heaven: 'Kether · Adi / Crown',   dimension: 'the singular point',        band: [0.97, 1.01], resonantCategories: ['strike','grapple','slam','aerial','submission'], note: 'all frequencies at once — the probability wave before anything observes it' },
+  { index: 1,  heaven: 'Malkuth · Physical',     dimension: '3 of space',                band: [0.00, 0.10], resonantCategories: ['strike'],                 note: 'dense matter — waves crashing on the surface, fast and easy to measure', enoch: '1st Heaven — storehouses of ice and snow, great seas above the clouds; the angels of the stars and the weather' },
+  { index: 2,  heaven: 'Yesod · Etheric',        dimension: '4th: time',                 band: [0.10, 0.20], resonantCategories: ['strike', 'grapple'],      note: 'the vital current under the skin; conditioning and tempo', enoch: '2nd Heaven — the deep, cold, gloomy abyss; rebel angels bound in darkness awaiting judgment' },
+  { index: 3,  heaven: 'Hod · Astral',           dimension: '5th: 1st compactified',     band: [0.20, 0.30], resonantCategories: ['grapple'],                note: 'emotion and momentum — the crowd, the heat, the read on fear', enoch: '3rd Heaven — Paradise (Tree of Life, rivers of milk/honey/oil/wine) on one side, the realm of fire and torment on the other' },
+  { index: 4,  heaven: 'Netzach · Lower Mental',  dimension: '6th: compactified',         band: [0.30, 0.42], resonantCategories: ['grapple', 'submission'],  note: 'thought made into counters; you see the move before it lands', enoch: '4th Heaven — the astronomical order; sun, moon and stars run their precise tracks through the gates' },
+  { index: 5,  heaven: 'Tiphareth · Causal',     dimension: '7th: compactified',         band: [0.42, 0.55], resonantCategories: ['submission', 'slam'],     note: 'cause and effect — setups, chains, the deep currents running the system', enoch: '5th Heaven — the Grigori / Watchers, mourning in silent grief for their sins' },
+  { index: 6,  heaven: 'Geburah · Buddhic',      dimension: '8th: compactified',         band: [0.55, 0.68], resonantCategories: ['slam'],                   note: 'unity of motion; combos flow as one continuous wave', enoch: '6th Heaven — archangels governing the stars, seasons and natural laws in gentle unbroken song' },
+  { index: 7,  heaven: 'Chesed · Atmic',         dimension: '9th: compactified',         band: [0.68, 0.80], resonantCategories: ['slam', 'aerial'],         note: 'pure will — the finisher that ends arguments', enoch: '7th Heaven — the Cherubim and Seraphim, the highest angelic orders before the throne' },
+  { index: 8,  heaven: 'Binah · Monadic',        dimension: '10th: full space',          band: [0.80, 0.90], resonantCategories: ['aerial'],                 note: 'the brane itself; gravity leaks across to the page next door', enoch: '8th Heaven — Muzaloth, home of the twelve constellations that turn the cycles' },
+  { index: 9,  heaven: 'Chokmah · Logoic',       dimension: 'the bulk between branes',   band: [0.90, 0.97], resonantCategories: ['aerial', 'submission'],   note: 'the dark-matter medium — undefinable, but it holds the whole structure together', enoch: '9th Heaven — Kuchavim, the celestial mechanism ruling rain, drought and the movement of the firmament' },
+  { index: 10, heaven: 'Kether · Adi / Crown',   dimension: 'the singular point',        band: [0.97, 1.01], resonantCategories: ['strike','grapple','slam','aerial','submission'], note: 'all frequencies at once — the probability wave before anything observes it', enoch: '10th Heaven — Aravoth, overwhelming burning light, the fiery throne; the source of all cosmic order' },
 ];
 
 /** Which plane a given normalized frequency resonates on. */

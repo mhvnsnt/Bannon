@@ -76,10 +76,23 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
 
+  // CORS: the game may be opened from a different origin (file://, a static host,
+  // or the Railway URL) than wherever the daemon lives. Allow it so the always-on
+  // daemon client can reach these routes from anywhere. Read-only/learning API.
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
   // BANNON SENSES: mount the daemon's own routes (move-learning, match director,
-  // fx cue decisions, input normalization, spatial/physics queries).
+  // fx cue decisions, input normalization, spatial/physics queries, evolution).
   const daemon = new DaemonCore();
   app.use(daemon.router);
+  // Always-on: keep self-improving on a cadence even with no traffic.
+  daemon.startHeartbeat();
 
   // API: Get history data
   app.get('/api/commentary/history', (req, res) => {
@@ -350,5 +363,14 @@ async function startServer() {
     console.log(`BANNON Monolithic Engine Booted on port ${PORT}`);
   });
 }
+
+// Always-on: a single uncaught error must never take the daemon down. Log and
+// keep serving; Railway's restart policy is the backstop if the process truly dies.
+process.on('uncaughtException', (err) => {
+  console.error('[BANNON] uncaughtException (kept alive):', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[BANNON] unhandledRejection (kept alive):', reason);
+});
 
 startServer();

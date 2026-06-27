@@ -15899,6 +15899,18 @@ init();
     .catch(err => {
       console.warn('Win record save offline', err);
     });
+
+    // Feed the always-on daemon's evolution engine: this is what makes the
+    // winner ascend the 10 planes, collapse a new move out of their probability
+    // ocean, drift the loser's style, and leak signatures across branes — i.e.
+    // the roster actually deepens from matches you really play. Fire-and-forget;
+    // gameplay never waits on or breaks from the daemon being unreachable.
+    try {
+      if (window.BANNON_DAEMON) {
+        const seq = (winnerObj && winnerObj._moveLog && winnerObj._moveLog.slice(-6)) || undefined;
+        window.BANNON_DAEMON.reportMatch({ winner: wName, loser: lName, type: 'ko', moveSequence: seq });
+      }
+    } catch (_) {}
   }
 
   // --- Real-time Strike/Trauma Evaluator ---
@@ -18748,10 +18760,31 @@ ${sessionMemory || 'First session.'}`;
       {i:9, heaven:'Chokmah · Logoic',      dim:'the bulk between branes',band:[0.90,0.97],note:'the dark-matter medium — undefinable, holds the whole structure together'},
       {i:10,heaven:'Kether · Adi / Crown',  dim:'the singular point',   band:[0.97,1.01], note:'all frequencies at once — the probability wave before anything observes it'}
     ],
+    // the literal 2-Enoch heaven each plane maps to (the canon column — Enoch was
+    // taken through 10 ascending heavens; that IS this ladder, named in scripture).
+    enoch:[
+      '1st — storehouses of ice and snow, great seas above the clouds; angels of the stars and weather',
+      '2nd — the deep, cold, gloomy abyss; rebel angels bound in darkness awaiting judgment',
+      '3rd — Paradise (Tree of Life, rivers of milk/honey/oil/wine) beside the realm of fire and torment',
+      '4th — the astronomical order; sun, moon and stars run their tracks through the gates',
+      '5th — the Grigori / Watchers, mourning in silent grief for their sins',
+      '6th — archangels governing stars, seasons and natural laws in gentle unbroken song',
+      '7th — the Cherubim and Seraphim, highest angelic orders before the throne',
+      '8th — Muzaloth, home of the twelve constellations that turn the cycles',
+      '9th — Kuchavim, the mechanism ruling rain, drought and the moving firmament',
+      '10th — Aravoth, overwhelming burning light, the fiery throne; source of all cosmic order'
+    ],
+    // the WHY under the ladder — holographic principle + quantum contextuality (Enoch/M-theory source)
+    holographic:{
+      principle:'Every part contains the whole. Cut a hologram in half and you get two whole images, not two halves — a fighter is a small complete image of the roster, not a fragment.',
+      contextuality:'Reality requires a question. A move has no fixed value until a match measures it; the WIN is the measurement that collapses it into something real.',
+      nonLocality:'Distance is an illusion of perspective. Enoch did not travel through space to the next heaven — he shifted his resonance to access a different fold of the same fabric.',
+      ocean:'Space and the deep ocean were one thing to the ancients: the surface is measurable matter, the deep is crushing alien (quantum) pressure, and the water itself is dark matter — undefinable, but it holds everything together.'
+    },
     // which plane a normalized frequency (0..1) resonates on
     planeFor:function(freq){ const f=Math.max(0,Math.min(1,freq)); return this.planes.find(p=>f>=p.band[0]&&f<p.band[1]) || this.planes[this.planes.length-1]; },
     // console reader — walk the blueprint
-    map:function(){ console.log('%cTHE BLUEPRINT — 10 DIMENSIONS == 10 HEAVENS','color:#ffb000;font-weight:bold'); this.thesis.forEach(t=>console.log('%c• '+t,'color:#9fd')); console.log('%c  the ascension ladder:','color:#e8c;font-weight:bold'); this.planes.forEach(p=>console.log('%c  ['+p.i+'] '+p.heaven+'  ('+p.dim+')  f='+p.band[0]+'–'+p.band[1],'color:#ff7a45','\n        '+p.note)); return '10 planes — string theory and the heavens are one map'; },
+    map:function(){ console.log('%cTHE BLUEPRINT — 10 DIMENSIONS == 10 HEAVENS == ENOCH','color:#ffb000;font-weight:bold'); this.thesis.forEach(t=>console.log('%c• '+t,'color:#9fd')); console.log('%c  the WHY (holographic / contextual):','color:#e8c;font-weight:bold'); Object.keys(this.holographic).forEach(k=>console.log('%c  '+k+': ','color:#c9a3ff',this.holographic[k])); console.log('%c  the ascension ladder:','color:#e8c;font-weight:bold'); this.planes.forEach((p,i)=>console.log('%c  ['+p.i+'] '+p.heaven+'  ('+p.dim+')  f='+p.band[0]+'–'+p.band[1],'color:#ff7a45','\n        '+p.note+'\n        Enoch '+this.enoch[i])); return '10 planes — string theory, the heavens, and Enoch are one map'; },
     _note:'Mirrors the daemon Cosmology.ts. The daemon’s FighterEvolution ascends each fighter up these 10 planes as they win/lose; this is the client-side copy of that blueprint so canon, lore and mechanics all read from one structure.'
   };
 
@@ -18809,6 +18842,100 @@ ${sessionMemory || 'First session.'}`;
 
   try{ if (window.MANIFESTO) window.MANIFESTO.register({key:'canon.story_graph',kind:'narrative',summary:'6-book story graph + 41-char fighting-style DNA + STORY reader + AI canon grounding + God Within mode/nexus/mlab hooks',call:'STORY / OTTR_DNA / OTTR_STORY'}); }catch(e){}
   console.log('%c[OTTR STORY] '+BOOKS.length+' books, '+window.OTTR_STORY.allMatches().length+' canon matches, '+D.length+'-char fighting DNA baked in. Try STORY.arc() / STORY.book(3) / OTTR_DNA.who("cain")','color:#ffb000');
+})();
+</script>
+
+<!-- =====================================================================
+     BANNON DAEMON CLIENT — always-on link to the BANNON SENSES daemon
+       The daemon (server.ts) is what serves this file when deployed, so by
+       default we talk to it same-origin and it is ALWAYS ON. When the game is
+       opened standalone (file:// or a plain static host) the daemon simply
+       isn't there; every call degrades gracefully and the game is fully
+       playable offline — the daemon only enriches (move-learning, the 10-plane
+       evolution roster, the proprietary character forge), it is never required.
+     ===================================================================== -->
+<script>
+(function(){
+  // Default base = same origin (the daemon serves the game). Override by setting
+  // window.BANNON_DAEMON_BASE before this script, or localStorage 'bannonDaemonBase'.
+  var base = (window.BANNON_DAEMON_BASE
+              || (function(){ try { return localStorage.getItem('bannonDaemonBase'); } catch(_){ return null; } })()
+              || '').replace(/\/$/,'');
+
+  var D = {
+    base: base,
+    connected: false,
+    autoConnect: true,           // ON by default — the daemon is meant to always be on
+    lastStatus: null,
+    _backoff: 2000,
+
+    url: function(p){ return (this.base||'') + p; },
+
+    // graceful fetch: short timeout, never throws to caller
+    _get: function(p){
+      return fetch(this.url(p), { method:'GET' }).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+    },
+    _post: function(p, body){
+      return fetch(this.url(p), { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body||{}) })
+        .then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
+    },
+
+    ping: function(){
+      var self = this;
+      return this._get('/health').then(function(h){
+        self.connected = !!(h && h.ok);
+        if (self.connected) console.log('%c[BANNON DAEMON] online '+(self.base||'(same origin)'),'color:#7CFC00');
+        return self.connected;
+      });
+    },
+
+    // --- the always-improving loop: real played matches feed the evolution ---
+    reportMatch: function(m){
+      if (!this.autoConnect) return Promise.resolve(null);
+      var self = this;
+      return this._post('/api/match/report-result', m).then(function(res){
+        if (res && res.evolution && res.evolution.events && res.evolution.events.length){
+          res.evolution.events.forEach(function(e){ console.log('%c[EVOLUTION] '+e,'color:#ffb000'); });
+        }
+        if (res && res.newLibraryMoves && res.newLibraryMoves.length){
+          console.log('%c[FORGED MOVES] new maneuvers entered the library: '+res.newLibraryMoves.join(', '),'color:#e8c');
+        }
+        return res;
+      });
+    },
+
+    // --- reads the rest of the game can use (all null-safe when offline) ---
+    suggestMove:   function(ids, last){ return this._post('/api/learn/suggest-move', { availableMoveIds: ids, lastMoveId: last }); },
+    fighterCard:   function(id){ return this._get('/api/evolution/fighter/'+encodeURIComponent(id)); },
+    roster:        function(){ return this._get('/api/evolution/roster'); },
+    moveLibrary:   function(){ return this._get('/api/evolution/library'); },
+    planes:        function(){ return this._get('/api/cosmology/planes'); },
+    status:        function(){ var self=this; return this._get('/api/status').then(function(s){ self.lastStatus=s; return s; }); },
+
+    // --- proprietary character forge (CAW) ---
+    forgeTemplate: function(){ return this._get('/api/forge/template'); },
+    forgeCreate:   function(spec){ return this._post('/api/forge/character', spec); },
+    forgeList:     function(){ return this._get('/api/forge/characters'); },
+    forgeGet:      function(id){ return this._get('/api/forge/character/'+encodeURIComponent(id)); },
+
+    // keep trying to connect with backoff so "always on" survives a cold daemon
+    _autostart: function(){
+      var self = this;
+      this.ping().then(function(ok){
+        // mirror state onto the God Within nexus flag for the existing UI
+        try { if (window.GOD_WITHIN && window.GOD_WITHIN.nexus) window.GOD_WITHIN.nexus.connected = ok; } catch(_){}
+        if (!ok && self.autoConnect){
+          self._backoff = Math.min(self._backoff*1.6, 60000);
+          setTimeout(function(){ self._autostart(); }, self._backoff);
+        }
+      });
+    }
+  };
+
+  window.BANNON_DAEMON = D;
+  // auto-connect on load (deferred a tick so the daemon-served page is ready)
+  if (D.autoConnect) setTimeout(function(){ D._autostart(); }, 800);
+  console.log('%c[BANNON DAEMON] client armed — auto-connect '+(D.autoConnect?'ON':'OFF')+', base '+(D.base||'(same origin)'),'color:#9fd');
 })();
 </script>
 

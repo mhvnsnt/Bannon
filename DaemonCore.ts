@@ -7,7 +7,8 @@ import { InputMatrix } from './InputMatrix.js';
 import { PhysicsCollider } from './PhysicsCollider.js';
 import { SpatialEnvironment } from './SpatialEnvironment.js';
 import { FighterEvolution } from './FighterEvolution.js';
-import { PLANES } from './Cosmology.js';
+import { CharacterForge } from './CharacterForge.js';
+import { PLANES, HOLOGRAPHIC } from './Cosmology.js';
 
 /**
  * DaemonCore — "BANNON SENSES" heartbeat. Owns one instance of every other
@@ -24,6 +25,7 @@ export class DaemonCore {
   public physics: PhysicsCollider;
   public spatial: SpatialEnvironment;
   public evolution: FighterEvolution;
+  public forge: CharacterForge;
   private inputMatrices: Map<string, InputMatrix> = new Map();
 
   constructor() {
@@ -35,13 +37,57 @@ export class DaemonCore {
     this.physics = new PhysicsCollider();
     this.spatial = new SpatialEnvironment();
     this.evolution = new FighterEvolution();
+    this.forge = new CharacterForge(this.evolution);
     this.router = express.Router();
     this.setupRoutes();
   }
 
+  private heartbeatTimer: NodeJS.Timeout | null = null;
+  private heartbeats = 0;
+
   private getInputMatrix(fighterId: string): InputMatrix {
     if (!this.inputMatrices.has(fighterId)) this.inputMatrices.set(fighterId, new InputMatrix());
     return this.inputMatrices.get(fighterId)!;
+  }
+
+  /**
+   * Always-on self-improvement loop. The daemon is meant to keep running and
+   * keep getting better even when no one is calling it — so on a steady cadence
+   * it runs the genetic evolution pass (breeding new combos/styles from whatever
+   * the bandit has learned so far) and registers anything new into the growing
+   * library. This is the "daemon is always running AND improving the game" part:
+   * leave it deployed on Railway and the roster keeps deepening on its own.
+   */
+  public startHeartbeat(intervalMs = 5 * 60 * 1000) {
+    if (this.heartbeatTimer) return;
+    const tick = () => {
+      this.heartbeats++;
+      try {
+        const evolved = this.combatAI.evolveContent();
+        const fresh = [...evolved.newCombos];
+        for (const combo of fresh) this.evolution.registerSynthesizedMove(combo);
+        if (fresh.length || evolved.newStyles.length) {
+          console.log(`[Heartbeat #${this.heartbeats}] daemon self-improved: +${fresh.length} combos, +${evolved.newStyles.length} styles`);
+        }
+      } catch (err: any) {
+        console.warn(`[Heartbeat #${this.heartbeats}] evolution pass skipped:`, err?.message);
+      }
+    };
+    // unref so the timer never keeps the process alive on its own, but fires while it lives.
+    this.heartbeatTimer = setInterval(tick, intervalMs);
+    if (typeof this.heartbeatTimer.unref === 'function') this.heartbeatTimer.unref();
+    console.log(`[Node 12] Self-improvement heartbeat armed (every ${Math.round(intervalMs / 1000)}s)`);
+  }
+
+  public getStatus() {
+    return {
+      online: true,
+      heartbeats: this.heartbeats,
+      roster: this.evolution.getRoster().length,
+      librarySize: this.evolution.getLibrary().length,
+      learned: this.combatAI.getLearnedContent(),
+      uptimeSec: Math.round(process.uptime()),
+    };
   }
 
   private setupRoutes() {
@@ -163,6 +209,45 @@ export class DaemonCore {
     // moves currently surfacing out of their probability ocean toward being learned.
     this.router.get('/api/evolution/fighter/:id', (req, res) => {
       res.json(this.evolution.getFighterCard(req.params.id));
+    });
+
+    // ---- CharacterForge: proprietary AAA "create a wrestler" ----
+    // Blank template (all slider banks + option lists) to render the CAW UI from.
+    this.router.get('/api/forge/template', (_req, res) => {
+      res.json(this.forge.blankTemplate());
+    });
+    this.router.get('/api/forge/characters', (_req, res) => {
+      res.json(this.forge.list());
+    });
+    this.router.get('/api/forge/character/:id', (req, res) => {
+      const c = this.forge.get(req.params.id);
+      if (!c) return res.status(404).json({ error: 'no such character' });
+      res.json(c);
+    });
+    this.router.post('/api/forge/character', (req, res) => {
+      const body = req.body || {};
+      if (!body.displayName) return res.status(400).json({ error: 'displayName required' });
+      res.json(this.forge.create(body));
+    });
+    this.router.post('/api/forge/character/:id', (req, res) => {
+      const updated = this.forge.update(req.params.id, req.body || {});
+      if (!updated) return res.status(404).json({ error: 'no such character' });
+      res.json(updated);
+    });
+
+    // The holographic/quantum-contextuality layer (the WHY under the cosmology).
+    this.router.get('/api/cosmology/holographic', (_req, res) => {
+      res.json(HOLOGRAPHIC);
+    });
+
+    // ---- Liveness: /health is what the game (and Railway) ping to confirm the
+    // daemon is up. /api/status is the richer "what has the daemon learned" view. ----
+    this.router.get('/health', (_req, res) => {
+      res.json({ ok: true, service: 'bannon-daemon', uptimeSec: Math.round(process.uptime()) });
+    });
+
+    this.router.get('/api/status', (_req, res) => {
+      res.json(this.getStatus());
     });
   }
 }
