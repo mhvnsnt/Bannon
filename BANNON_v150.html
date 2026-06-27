@@ -709,6 +709,7 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 #craneKnob { position:absolute; width:46px; height:46px; left:29px; top:29px; border-radius:50%; background:radial-gradient(#ffd24a, #ff9500); box-shadow:0 0 18px #ffb000, inset 0 -4px 8px rgba(0,0,0,0.5); }
 #craneLabel { position:absolute; bottom:-16px; left:0; right:0; text-align:center; font-size:9px; letter-spacing:1px; color:#ffb000; opacity:0.85; }
 .touch.grappling #craneStick { display:block; }
+.touch.airborne #craneStick { display:block; }   /* APEX stick also appears midair (dives) for flip/twist control */
 @media (orientation:portrait) { .touch.grappling #craneStick { right:24px; bottom:calc(260px + var(--safe-bot)); } }
 .touch .action-grid { display:grid; }
 /* pill btn already defined above in new WWE 2K26 block */
@@ -5287,11 +5288,20 @@ window.ATTIRE_SEGS = {
 window.ATTIRE_STYLES = {
   TRUNKS:      { primary:[],                              secondary:[] },                 // bare — classic trunks only
   MMA_SHORTS:  { primary:['legsUpper'],                   secondary:[] },                 // shorts to the knee
+  CARGO_PANTS: { primary:['legsUpper','legsLower'],       secondary:[] },                 // full pants, bare top
   LONG_TIGHTS: { primary:['legsUpper','legsLower'],       secondary:[] },                 // full-length tights
+  TIGHTS_2TONE:{ primary:['legsUpper'],                   secondary:['legsLower'] },       // 2-tone tights (thigh/shin split)
+  VEST:        { primary:['torso'],                       secondary:[] },                 // bare arms, vest/tank top
+  RASHGUARD:   { primary:['torso','arms'],                secondary:[] },                 // MMA rashguard (alias of long-sleeve, distinct name)
   SINGLET:     { primary:['torso','legsUpper'],           secondary:[] },                 // torso + upper-leg suit
+  SINGLET_2TONE:{primary:['torso'],                       secondary:['legsUpper','legsLower'] }, // amateur singlet, 2-tone tights
   LONG_SLEEVE: { primary:['torso','arms'],                secondary:[] },                 // long-sleeve shirt
+  JACKET:      { primary:['torso','arms'],                secondary:['legsUpper','legsLower'] }, // jacket over pants (2-tone)
   STREETWEAR:  { primary:['torso','arms'],                secondary:['legsUpper','legsLower'] }, // shirt + pants (2-tone)
+  GI:          { primary:['torso','arms','legsUpper'],    secondary:['legsLower'] },       // martial-arts gi (jacket + pants)
   BODYSUIT:    { primary:['torso','arms','legsUpper','legsLower'], secondary:[] },         // full luchador suit
+  BODYSUIT_2TONE:{primary:['torso','legsUpper'],          secondary:['arms','legsLower'] },// 2-tone full suit
+  MASKED_VEST: { primary:['torso'],                       secondary:['head'] },            // vest + mask
   MASKED_SUIT: { primary:['torso','arms','legsUpper','legsLower'], secondary:['head'] }    // suit + mask (head = accent)
 };
 window.ATTIRE_LIST = Object.keys(window.ATTIRE_STYLES);
@@ -5332,12 +5342,20 @@ window.HAIRSTYLES = {
   BALD:    { vis:false, s:[1,1,1] },
   BUZZ:    { vis:true,  s:[1.02,0.48,1.02] },
   FADE:    { vis:true,  s:[1.0,0.6,1.0] },
+  CREW:    { vis:true,  s:[1.0,0.68,1.0] },
   SHORT:   { vis:true,  s:[1.06,0.8,1.06] },
   CAESAR:  { vis:true,  s:[1.1,0.74,1.1] },
+  FLATTOP: { vis:true,  s:[1.06,1.0,1.04] },
+  SLICKBACK:{vis:true,  s:[1.0,0.82,1.12] },
   POMPADOUR:{vis:true,  s:[1.0,1.05,0.92] },
+  SPIKY:   { vis:true,  s:[1.08,1.12,1.08] },
+  CURLY:   { vis:true,  s:[1.28,1.16,1.28] },
   AFRO:    { vis:true,  s:[1.42,1.34,1.42] },
   MOHAWK:  { vis:true,  s:[0.4,1.45,1.18] },
   TOPKNOT: { vis:true,  s:[0.82,1.12,0.82] },
+  MANBUN:  { vis:true,  s:[0.9,1.06,0.95] },
+  PONYTAIL:{ vis:true,  s:[0.92,1.1,1.05] },
+  CORNROWS:{ vis:true,  s:[1.06,0.62,1.08] },
   LONG:    { vis:true,  s:[1.14,1.22,1.2] },
   DREADS:  { vis:true,  s:[1.2,1.3,1.2] }
 };
@@ -10787,6 +10805,16 @@ function updateHUD(){
   const mom = document.getElementById('p1-mom');
   if (mom){ mom.style.width = (a.momentum||0)+'%'; mom.classList.toggle('full', (a.momentum||0)>=100); }
   document.body.classList.toggle('grappling', !!(a.grappling && a.grappleStage>=2));
+  // APEX stick midair: a dive/airborne player gets the same right-stick to drive
+  // flip (pitch) + twist (spin) on aerial moves — the forklift/twist control isn't
+  // grapple-only. The existing midair gyro already reads joy2 when airborne; this
+  // just surfaces the control + relabels it so you can actually use it.
+  const _airborne = !!(a && (a.state==='dive' || a.state==='perch' || (a.airLift!=null && a.airLift>0.15)));
+  document.body.classList.toggle('airborne', _airborne && !(a.grappling && a.grappleStage>=2));
+  if (_airborne && !(a.grappling && a.grappleStage>=2)){
+    const lbl = document.getElementById('craneLabel');
+    if (lbl){ lbl.textContent = (a.state==='perch') ? 'AIM DIVE' : 'FLIP / TWIST'; }
+  }
   if (a.grappling && a.grappleStage>=2){
     const lbl = document.getElementById('craneLabel');
     if (lbl){ const cl=a.craneLift||0;
