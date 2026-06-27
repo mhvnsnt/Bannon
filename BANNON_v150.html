@@ -2079,9 +2079,14 @@ Object.assign(MOVESET_DB, {
   RED_CLOUD:    { maxHp:118, stamina:195, chin:110, speedMultiplier:0.92, powerMultiplier:1.12, moves:['SUPLEX','NECKBREAKER','BODY KNEE','STOMP'] }, // contains/submits
   CASSIAN_THORNE:{ maxHp:104, stamina:210, chin:100, speedMultiplier:1.12, powerMultiplier:1.06, moves:['QUESTION MARK KICK','SPINNING HEEL KICK','CHECK HOOK','LEAD UPPERCUT'] }, // flawless solitary perfection (the lure)
   SOMBRA_NEGRA: { maxHp:92,  stamina:230, chin:88,  speedMultiplier:1.22, powerMultiplier:0.92, moves:['MEIA LUA','TORNADO KICK','SPIN HOOK KICK','FLYING KNEE'] }, // steals finishers
-  MAIME:        { maxHp:120, stamina:200, chin:112, speedMultiplier:1.10, powerMultiplier:1.20, moves:['SPINNING ELBOW','OVERHAND BOMB','NECKBREAKER','AXE KICK'] }  // inner antagonist made flesh (boss)
+  MAIME:        { maxHp:120, stamina:200, chin:112, speedMultiplier:1.10, powerMultiplier:1.20, moves:['SPINNING ELBOW','OVERHAND BOMB','NECKBREAKER','AXE KICK'] },  // inner antagonist made flesh (boss)
+  // --- canon women (so the roster's female body types aren't a single mould) ---
+  QUEEN_TYNESHIA:{ maxHp:112, stamina:205, chin:104, speedMultiplier:1.05, powerMultiplier:1.14, moves:['NECKBREAKER','SUPLEX','SPINNING ELBOW','AXE KICK'] }, // regal powerhouse queen
+  KARMA:        { maxHp:96,  stamina:230, chin:92,  speedMultiplier:1.2,  powerMultiplier:0.95, moves:['QUESTION MARK KICK','SPINNING HEEL KICK','CHECK HOOK','FLYING KNEE'] } // fast striker
 });
 Object.assign(ROSTER_SPEC, {
+  QUEEN_TYNESHIA:{ style:'TECHNICIAN',  heightScale:1.0,  reachScale:1.02 },
+  KARMA:         { style:'KARATE',      heightScale:0.96, reachScale:1.02 },
   CAIN_ELIAS:    { style:'BRAWLER',     heightScale:1.10, reachScale:1.00 },
   ATLAS_VANCE:   { style:'TECHNICIAN',  heightScale:1.02, reachScale:1.04 },
   STICK_UP:      { style:'BRAWLER',     heightScale:0.99, reachScale:1.01 },
@@ -2112,7 +2117,9 @@ const CHAR_META = {
   RED_CLOUD:     { label:'The Containment',       col:0x7a3a1a, accent:0xffb060, skin:0xb07850, faction:'Independent Variable', canon:true,  bio:'Chief Red Cloud contains and submits rather than destroys — mercy is the weapon.', archetype:'technician' },
   CASSIAN_THORNE:{ label:'Flawless · The Lure',   col:0xb0b0c0, accent:0xfff0c0, skin:0xe0c0a0, faction:'Corporate Structure',  canon:true,  bio:'Solitary perfection weaponized — every immaculate strike is bait toward the abyss.', archetype:'technician' },
   SOMBRA_NEGRA:  { label:'The Finisher Thief',    col:0x101018, accent:0xff2a6a, skin:0x9a6a4a, faction:'Agents of Temptation', canon:true,  bio:'Steals your finisher mid-match and beats you with it — your best self, turned.', archetype:'highFlyer' },
-  MAIME:         { label:'The Voice Made Flesh',  col:0x500a0a, accent:0xff0040, skin:0xd0a090, faction:'Agents of Temptation', canon:true,  bio:'Bannon’s inner antagonist given a body — the boss at the bottom of every spiral.', archetype:'enigma' }
+  MAIME:         { label:'The Voice Made Flesh',  col:0x500a0a, accent:0xff0040, skin:0xd0a090, faction:'Agents of Temptation', canon:true,  bio:'Bannon’s inner antagonist given a body — the boss at the bottom of every spiral.', archetype:'enigma' },
+  QUEEN_TYNESHIA:{ label:'The Queen',             col:0x5a1a6a, accent:0xffd24a, skin:0x7a5236, faction:'Alliance',            canon:true,  bio:'Queen Tyneshia — regal, dominant, and the heart of the Alliance; she rules the ring she stands in.', archetype:'powerhouse' },
+  KARMA:         { label:'What Comes Around',      col:0x1a6a5a, accent:0xff7acc, skin:0x6a4830, faction:'Independent Variable', canon:true,  bio:'Karma — a lightning-fast striker who collects every debt the ring owes, with interest.', archetype:'highFlyer' }
 };
 window.CHAR_META = CHAR_META;
 
@@ -2122,7 +2129,8 @@ window.CHAR_ATTIRE = {
   BANNON:'TRUNKS', VIPER:'LONG_TIGHTS', KAGE:'MASKED_SUIT', BRUTUS:'MMA_SHORTS',
   ZEPHYR:'SINGLET', MORTUS:'LONG_SLEEVE', TITAN:'SINGLET', GOLEM:'TRUNKS', RONIN:'STREETWEAR',
   CAIN_ELIAS:'LONG_TIGHTS', ATLAS_VANCE:'MMA_SHORTS', STICK_UP:'STREETWEAR', FINXSSE:'BODYSUIT',
-  RED_CLOUD:'SINGLET', CASSIAN_THORNE:'LONG_SLEEVE', SOMBRA_NEGRA:'MASKED_SUIT', MAIME:'BODYSUIT'
+  RED_CLOUD:'SINGLET', CASSIAN_THORNE:'LONG_SLEEVE', SOMBRA_NEGRA:'MASKED_SUIT', MAIME:'BODYSUIT',
+  QUEEN_TYNESHIA:'SINGLET', KARMA:'SINGLET_2TONE'
 };
 // archetype fallback for characters with no explicit attire (e.g. forged with none set)
 window.ARCHE_ATTIRE = { powerhouse:'SINGLET', brawler:'MMA_SHORTS', technician:'LONG_SLEEVE', highFlyer:'BODYSUIT', enigma:'MASKED_SUIT', freeAgent:'LONG_TIGHTS' };
@@ -5026,23 +5034,66 @@ window.BBODY = (function(){
     if(ti===5||ti===6) return (i<=1)?'legsUpper':'legsLower';
     return 'skin';
   }
-  // Paint skin + attire into the vertex colours from the fighter's spec + attire style.
+  // TATTOO ink coverage 0..1 for a vertex, by placement style (which body zones it covers).
+  function _ink(style, ti, i, M, a){
+    if(!style || style==='NONE') return 0;
+    const front=Math.max(0,-Math.cos(a)), back=Math.max(0,Math.cos(a));
+    switch(style){
+      case 'LEFT_SLEEVE':  return ti===3?1:0;
+      case 'RIGHT_SLEEVE': return ti===4?1:0;
+      case 'SLEEVES':      return (ti===3||ti===4)?1:0;
+      case 'HALF_SLEEVE':  return (ti===3 && i<=Math.floor(M*0.55))?1:0;
+      case 'CHEST':        return (ti===0 && i>=Math.floor(M*0.55) && front>0.25)?1:0;
+      case 'BACK':         return (ti===0 && i>=Math.floor(M*0.4)  && back>0.25)?1:0;
+      case 'CHEST_BACK':   return (ti===0 && i>=Math.floor(M*0.45) && (front>0.25||back>0.25))?1:0;
+      case 'TORSO':        return ti===0?1:0;
+      case 'LEGS':         return (ti===5||ti===6)?1:0;
+      case 'NECK':         return (ti===2 && i<=2)?1:0;
+      case 'FULL':         return (ti===0||ti===3||ti===4||ti===5||ti===6)?0.92:0;
+      default: return 0;
+    }
+  }
+  // SCAR mark 0..1 — narrow lines (a few adjacent verts) so they read as cuts not patches.
+  function _scar(style, ti, i, M, a, k){
+    if(!style || style==='NONE') return 0;
+    const front=Math.max(0,-Math.cos(a)), kk=((k%N)+N)%N;
+    if(style==='FACE')  return (ti===2 && i>=M-2 && front>0.35 && kk>=Math.floor(N*0.46) && kk<=Math.floor(N*0.56))?1:0; // cheek/brow slash
+    if(style==='CHEST') return (ti===0 && i===Math.floor(M*0.72) && front>0.3 && kk<=2)?1:0;                            // pec slash
+    if(style==='BACK')  return (ti===0 && i>=Math.floor(M*0.45) && Math.max(0,Math.cos(a))>0.3 && (kk%6)===0)?1:0;       // back lashes
+    if(style==='BODY')  return ((ti===0 && i===Math.floor(M*0.5) && front>0.3 && (kk%5)===0) || (ti===3 && i===2 && kk<=1))?1:0;
+    return 0;
+  }
+  // Paint skin + attire + tattoos/scars into the vertex colours.
   function paint(f){
     if(!f._bgeo) return; const col=f._bgeo.attributes.color; if(!col) return; const arr=col.array; const L=layout();
     const sp=f.spec||{};
     const skin=new THREE.Color(sp.skin!=null?sp.skin:(f.opts&&f.opts.skin!=null?f.opts.skin:0xc99873));
     const prim=new THREE.Color(sp.trunk!=null?sp.trunk:(f.opts&&f.opts.col!=null?f.opts.col:0x202028));
     const sec =new THREE.Color(sp.accent!=null?sp.accent:(f.opts&&f.opts.accent!=null?f.opts.accent:0xffb000));
+    const ink =new THREE.Color(sp.tattooColor!=null?sp.tattooColor:0x141019);
+    const scarC=new THREE.Color(sp.scarColor!=null?sp.scarColor:0xd8a98f);
+    const tat=sp.tattooStyle||'NONE', tInt=(sp.tattooStrength!=null?sp.tattooStrength:0.72);
+    const scr=sp.scarStyle||'NONE';
     const style=f._attireStyle||'TRUNKS';
     const cfg=(window.ATTIRE_STYLES&&window.ATTIRE_STYLES[style])||{primary:[],secondary:[]};
     const primR=new Set(cfg.primary||[]), secR=new Set(cfg.secondary||[]);
     const colorFor=(reg)=> primR.has(reg)?prim : (secR.has(reg)?sec : skin);
+    function setV(vi, ti, i, M, k){
+      const reg=regionForTube(ti,i,M); const c=colorFor(reg); let r=c.r,g=c.g,b=c.b;
+      if(c===skin){   // tattoos/scars only on bare skin (hidden under fabric)
+        const a=k/N*6.2831853;
+        const ia=_ink(tat,ti,i,M,a); if(ia>0){ const t=ia*tInt; r=r*(1-t)+ink.r*t; g=g*(1-t)+ink.g*t; b=b*(1-t)+ink.b*t; }
+        const sa=_scar(scr,ti,i,M,a,k); if(sa>0){ const t=sa*0.6; r=r*(1-t)+scarC.r*t; g=g*(1-t)+scarC.g*t; b=b*(1-t)+scarC.b*t; }
+      }
+      arr[vi]=r; arr[vi+1]=g; arr[vi+2]=b;
+    }
     for(let ti=0;ti<L.tubes.length;ti++){ const TB=L.tubes[ti], M=(TUBES[ti].rings.length), start=TB.start;
-      for(let i=0;i<M;i++){ const c=colorFor(regionForTube(ti,i,M));
-        for(let k=0;k<N;k++){ const vi=(start+i*N+k)*3; arr[vi]=c.r; arr[vi+1]=c.g; arr[vi+2]=c.b; } }
-      if(TB.apex>=0){ const c=colorFor(regionForTube(ti,M-1,M)); const vi=TB.apex*3; arr[vi]=c.r; arr[vi+1]=c.g; arr[vi+2]=c.b; } }
+      for(let i=0;i<M;i++){ for(let k=0;k<N;k++){ setV((start+i*N+k)*3, ti,i,M,k); } }
+      if(TB.apex>=0){ setV(TB.apex*3, ti, M-1, M, 0); } }
     col.needsUpdate=true;
   }
+  window.TATTOO_LIST=['NONE','LEFT_SLEEVE','RIGHT_SLEEVE','HALF_SLEEVE','SLEEVES','CHEST','BACK','CHEST_BACK','TORSO','LEGS','NECK','FULL'];
+  window.SCAR_LIST=['NONE','FACE','CHEST','BACK','BODY'];
   const _u=new THREE.Vector3(), _v=new THREE.Vector3(), _d=new THREE.Vector3(), _ref=new THREE.Vector3();
   // GIRTH MORPH — make the CONTINUOUS skin actually respond to the create-a-fighter
   // sliders (build + per-part size in f.shape). Without this the visible body ignored
@@ -5373,13 +5424,21 @@ window.CHAR_HAIR = {
   BANNON:'SHORT', VIPER:'FADE', KAGE:'TOPKNOT', BRUTUS:'BALD', ZEPHYR:'AFRO', MORTUS:'LONG',
   TITAN:'FADE', GOLEM:'BALD', RONIN:'TOPKNOT', CAIN_ELIAS:'LONG', ATLAS_VANCE:'CAESAR',
   STICK_UP:'DREADS', FINXSSE:'AFRO', RED_CLOUD:'LONG', CASSIAN_THORNE:'POMPADOUR',
-  SOMBRA_NEGRA:'BUZZ', MAIME:'LONG'
+  SOMBRA_NEGRA:'BUZZ', MAIME:'LONG', QUEEN_TYNESHIA:'LONG', KARMA:'PONYTAIL'
 };
 window.hairFor = function(name){
   const k=String(name||'').toUpperCase();
   if(window.CHAR_HAIR[k]) return window.CHAR_HAIR[k];
   const meta=(window.CHAR_META&&window.CHAR_META[k])||{};
   return ({powerhouse:'BALD',brawler:'FADE',technician:'CAESAR',highFlyer:'AFRO',enigma:'LONG',freeAgent:'SHORT'})[meta.archetype||'freeAgent']||'SHORT';
+};
+
+// Signature ink/scars per character so the roster reads lived-in, not blank.
+window.CHAR_INK = {
+  BANNON:{tattoo:'RIGHT_SLEEVE'}, MAIME:{tattoo:'FULL',scar:'FACE'},   // Maime: covered + scarred, unhinged
+  STICK_UP:{tattoo:'SLEEVES'}, FINXSSE:{tattoo:'LEFT_SLEEVE'}, CAIN_ELIAS:{tattoo:'CHEST_BACK',scar:'BACK'},
+  SOMBRA_NEGRA:{tattoo:'BACK'}, RONIN:{tattoo:'HALF_SLEEVE'}, BRUTUS:{scar:'CHEST'}, GOLEM:{scar:'BODY'},
+  TITAN:{tattoo:'CHEST'}, ATLAS_VANCE:{tattoo:'NECK'}
 };
 
 // ── BODY COMPOSITION — every fighter a distinct real body type, not all shredded.
@@ -5397,7 +5456,9 @@ window.CHAR_BODY = {
   RED_CLOUD:{musc:0.6,fat:0.36},                // big-bodied
   CASSIAN_THORNE:{musc:0.8,fat:0.12},           // flawless physique
   SOMBRA_NEGRA:{musc:0.62,fat:0.15},
-  MAIME:{musc:0.72,fat:0.14}                    // Bannon's unhinged alter-ego — harder, leaner version of the same frame
+  MAIME:{musc:0.72,fat:0.14},                   // Bannon's unhinged alter-ego — harder, leaner version of the same frame
+  QUEEN_TYNESHIA:{musc:0.5,fat:0.28,fem:1},     // strong, powerful female frame
+  KARMA:{musc:0.58,fat:0.16,fem:1}              // lean athletic female frame (distinct from Tyneshia)
 };
 // ALT ATTIRES — a character can be played in a different character's LOOK while
 // keeping their own moves (canon: Bannon can wear the "Maime" unhinged alter-ego
@@ -5559,6 +5620,22 @@ window.cycleRosterP2 = function(){
     hb.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=window.HAIR_LIST||['SHORT']; let i=list.indexOf(f.spec.hairStyle||'SHORT'); i=(i+1)%list.length; f.spec.hairStyle=list[i]; hb.textContent=list[i]; if(window.applyHair) window.applyHair(f, list[i], (f.spec.hair!=null?f.spec.hair:undefined)); };
     syncers.push(()=>{ const f=F(); hb.textContent=(f&&f.spec&&f.spec.hairStyle)||'SHORT'; });
     hrow.appendChild(hlab); hrow.appendChild(hb); wrap.appendChild(hrow);
+    // TATTOOS / SCARS — vertex-painted ink + scar marks on bare skin
+    H('TATTOOS / SCARS','#c084fc');
+    const mkCycle=(label,specKey,listGetter,dflt)=>{
+      const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
+      const lb=document.createElement('span'); lb.textContent=label; const bt=document.createElement('button'); bt.style.cssText='background:#1a0e08;color:#ff7a1a;border:1px solid #ff7a1a55;border-radius:4px;padding:4px 8px;cursor:pointer;min-width:120px;';
+      bt.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=listGetter()||[dflt]; let i=list.indexOf(f.spec[specKey]||dflt); i=(i+1)%list.length; f.spec[specKey]=list[i]; bt.textContent=list[i].replace(/_/g,' '); if(window.restyleFighter) window.restyleFighter(f); };
+      syncers.push(()=>{ const f=F(); bt.textContent=((f&&f.spec&&f.spec[specKey])||dflt).replace(/_/g,' '); });
+      row.appendChild(lb); row.appendChild(bt); wrap.appendChild(row);
+    };
+    mkCycle('TATTOO PLACEMENT','tattooStyle',()=>window.TATTOO_LIST,'NONE');
+    const tcRow=document.createElement('div'); tcRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
+    const tcLab=document.createElement('span'); tcLab.textContent='TATTOO COLOR'; const tc=document.createElement('input'); tc.type='color'; tc.style.cssText='width:46px;height:24px;border:1px solid #ff7a1a55;background:none;cursor:pointer;';
+    tc.oninput=()=>{ const f=F(); if(f){ if(!f.spec)f.spec={}; f.spec.tattooColor=int(tc.value); if(window.restyleFighter) window.restyleFighter(f); } };
+    syncers.push(()=>{ const f=F(); tc.value=hex((f&&f.spec&&f.spec.tattooColor!=null)?f.spec.tattooColor:0x141019); });
+    tcRow.appendChild(tcLab); tcRow.appendChild(tc); wrap.appendChild(tcRow);
+    mkCycle('SCARS','scarStyle',()=>window.SCAR_LIST,'NONE');
 
     // SAVE / LOAD (localStorage — persists across sessions)
     H('SAVE / LOAD');
@@ -11813,6 +11890,11 @@ function dressFighter(f){
     hairStyle = window.hairFor(key);
   }
   if(typeof applyBodyComp==='function') applyBodyComp(f);   // seed muscularity/fat/fem -> drives the continuous-body shaping
+  // signature ink/scars (only if a forged spec / CAW hasn't set its own)
+  try{ f.spec=f.spec||{}; const ink=(window.CHAR_INK&&window.CHAR_INK[key])||null;
+    if(f.spec.tattooStyle==null) f.spec.tattooStyle=(ink&&ink.tattoo)||'NONE';
+    if(f.spec.scarStyle==null)   f.spec.scarStyle  =(ink&&ink.scar)||'NONE';
+  }catch(_){}
   applyAttire(f, style, primary, secondary);
   if(typeof applyHair==='function') applyHair(f, hairStyle, hairColor);
 }
