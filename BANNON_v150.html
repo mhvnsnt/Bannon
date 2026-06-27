@@ -16275,7 +16275,7 @@ init();
       anatomicalPhysics:[
         I('soft-body jiggle (Hooke F=-kx)','mass + spring-tension on verts via weight maps; viscoelastic damping for flesh vs rigid bone',P,'procedural BBODY skin partial; jiggle damping todo'),
         I('FEM tissue/impact deform','tetrahedral mesh; stress > yield (MPa) -> dynamic separation/dent',T,'use for impact dents/bruising sells, not gore'),
-        I('FACS facial reactions','blendshape action units fired by state (pain, effort)',T,'add grimace/effort AUs on big hits/lifts'),
+        I('FACS facial reactions','blendshape action units fired by state (pain, effort)',P,'procedural brow/lid/jaw pain+effort AUs shipped for all bodies; GLB blend-shape path still needs authored expressions'),
         I('high-bone secondary motion','driven keys: femur rotates -> muscle/tissue bones translate (Stellar Blade/Nier)',T,'derive secondary bones off primary rig'),
         I('voxel connectivity destruction','split connectivity graph -> spawn rigidbody (Teardown)',T,'for breakable tables/props later')
       ]
@@ -24876,11 +24876,41 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
       if (this.seg.proceduralJaw) {
         const stamGap = 1.0 - Math.min(1.0, this.stamina / (this.maxStamina||100)); // v101
         const breatheOpen = Math.sin(this.breathPhase || 0) * 0.012 + (stamGap * 0.03);
-        
+
         this.seg.proceduralJaw.position.copy(hp)
           .addScaledVector(localForward, 0.05)
           .addScaledVector(localUp, -0.11 - breatheOpen);
         this.seg.proceduralJaw.quaternion.copy(hq);
+        this.seg.proceduralJaw.scale.set(1, 1, 1);
+      }
+
+      // AUTO-FACS MICRO-EXPRESSIONS — additive pain/effort action units layered on the procedural
+      // rig above. Reacts to combat state on every body (no authored blend shapes required), unlike
+      // the saved-expression AUTO-FACS for loaded GLB models elsewhere in the file. Brow raises and
+      // eyes/jaw squint-and-drop on hurt/stun; brow furrows and jaw clenches on attack/grapple/lift.
+      const _facsHurt = (this.state==='hurt'||this.state==='flinch'||this.state==='stun'||this.state==='stumble'||this.state==='grabbed'||this.state==='falling'||this.state==='down');
+      const _facsEffort = (this.state==='attack'||this.state==='grab'||this.state==='throw'||this.state==='deliver'||this.state==='getup');
+      const _hpPct = (this.hp||0)/(this.maxHp||1);
+      const _painTarget = Math.min(1, (_facsHurt?1:0) + (_facsHurt?0:Math.max(0,(0.3-_hpPct)/0.3)*0.4));
+      const _effortTarget = _facsEffort ? 1 : 0;
+      const _facsRate = 0.15; // applyMesh runs once per render frame; fixed-rate lerp avoids needing dt in this scope
+      this._facsPain = (this._facsPain||0) + (_painTarget - (this._facsPain||0)) * _facsRate;
+      this._facsEffort = (this._facsEffort||0) + (_effortTarget - (this._facsEffort||0)) * _facsRate;
+      const _fp = this._facsPain, _fe = this._facsEffort;
+      if (_fp > 0.01 || _fe > 0.01) {
+        if (this.seg.brow) {
+          this.seg.brow.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(_fe*0.30 - _fp*0.18, 0, 0)));
+        }
+        if (this.seg.lidL && this.seg.lidR) {
+          const squint = 1 - Math.min(0.7, _fe*0.45 + _fp*0.55);
+          this.seg.lidL.scale.y *= squint;
+          this.seg.lidR.scale.y *= squint;
+        }
+        if (this.seg.proceduralJaw) {
+          this.seg.proceduralJaw.position.addScaledVector(localUp, -_fp*0.045);
+          const clench = 1 - _fe*0.22;
+          this.seg.proceduralJaw.scale.set(clench, 1, clench);
+        }
       }
     }
 
