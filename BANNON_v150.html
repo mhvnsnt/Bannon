@@ -3381,7 +3381,13 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
     this.faceOpponent(dt);
 
   this.root.position.set(this.x, RING.floorY + (this.zoneY||0), this.z);
-  this.root.rotation.y = this.facing;
+  // Reset the FULL orientation each grounded frame. Airborne flip/twist (apex stick) bakes pitch
+  // into rotation.x and roll/spin into rotation.z (applyShape). Previously we only reassigned .y
+  // here, so a move that DIDN'T complete a full rotation left stale pitch/roll on the root after
+  // landing — the body stayed tilted / off in world space. When airborne, applyShape overwrites
+  // this with the live pitch/facing/spin, so clearing x/z here only affects grounded frames.
+  if (this.airLift) this.root.rotation.y = this.facing;
+  else this.root.rotation.set(0, this.facing, 0, 'YXZ');
   this.root.scale.set(1,1,1);
   if (this.airLift) this.root.position.y = RING.floorY + (this.zoneY||0) + this.airLift;
 
@@ -8629,7 +8635,7 @@ Fighter.prototype.startDive = function(type, sb){
   announce(d.label, this.who());
 };
 Fighter.prototype.exitAerial = function(){
-  this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
+  this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this._airPitch=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
 };
 Fighter.prototype.diveImpact = function(opp){ try{
   const d = DIVE_TYPES[this.diveType] || DIVE_TYPES.CROSSBODY;
@@ -8637,7 +8643,7 @@ Fighter.prototype.diveImpact = function(opp){ try{
   camShake=Math.max(camShake,0.8); triggerHitStop(0.12); chromAb=0.7; flashScreen&&flashScreen(0.3);
   spawnDust(this.x, this.z, 1.8 + (d.pow||100)/80);
   // attacker tumbles down beside them, then recovers
-  this.airLift=0; this.spin=0; this.state='idle'; this.stateTime=0;
+  this.airLift=0; this.spin=0; this._airPitch=0; this.state='idle'; this.stateTime=0;
   if (d.sell){                                                       // SELL MOVE: the crash costs YOU — wrestling psychology
     this.hp = clamp(this.hp - Math.round(d.pow*(window.SELL_COST!=null?window.SELL_COST:0.16)), 1, this.maxHp);   // live SELL COST control
     this.hitKick = { T:0.5, t:0.5, dx:-this.dir, mag:0.14, reg:'h' };           // grabbing the head
@@ -8651,7 +8657,7 @@ Fighter.prototype.diveImpact = function(opp){ try{
 }catch(e){ window.__logErr&&window.__logErr('diveImpact:'+this.diveType, e); this.state='idle'; this.airLift=0; this.diveType=null; } };
 Fighter.prototype.diveCrash = function(){
   // missed the dive — crash to the mat
-  this.airLift=0; this.spin=0; this.diveType=null;
+  this.airLift=0; this.spin=0; this._airPitch=0; this.diveType=null;
   this.vx = this.dir*1.0; this.crumple=1; this.triggerKnockdown(this.dir, 1.0);
   camShake=Math.max(camShake,0.4); spawnDust(this.x,this.z,1.2);
   // auto-zone: a missed dive may land anywhere
@@ -8681,6 +8687,16 @@ Fighter.prototype.updateAerial = function(dt){
     this.z = lerp(this.aerialFrom.z, this.aerialTo.z, t);
     this.airLift = Math.max(0, this.aerialFrom.y*(1-t) + Math.sin(t*Math.PI)*(this._diveArc||0.7));
     this.spin += this.spinVel*dt;                         // flip rotation
+    // LANDING RESOLVE — if the flip/twist (apex stick or the move's own spin) wasn't carried to a
+    // whole rotation, ease it to the nearest clean landing orientation over the last fifth of the
+    // flight so the body touches down level in world space instead of frozen mid-rotation. Spin goes
+    // to its nearest full turn (a near-complete flip finishes; a small wobble unwinds); the apex-stick
+    // pitch levels out. On a connecting dive, diveImpact fires earlier and takes over before this.
+    if (t > 0.8){
+      const k = clamp((t-0.8)/0.2, 0, 1), TWO = Math.PI*2;
+      this.spin = lerp(this.spin||0, Math.round((this.spin||0)/TWO)*TWO, k);
+      if (this._airPitch) this._airPitch = lerp(this._airPitch, 0, k);
+    }
     // face the travel direction
     const dx=this.aerialTo.x-this.aerialFrom.x, dz=this.aerialTo.z-this.aerialFrom.z;
     if (Math.abs(dx)>0.01||Math.abs(dz)>0.01) this.facing = Math.atan2(-dz,dx);
