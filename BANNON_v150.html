@@ -2400,7 +2400,7 @@ class Fighter {
     this.seg.hair = add(new THREE.Mesh(new THREE.SphereGeometry(0.162,28,24), hairMat));
     this.seg.eyeL = mkBox(0.045,0.03,0.02, M(0x0c0c0c, isP?0xff3300:0x00ddff, 100));
     this.seg.eyeR = mkBox(0.045,0.03,0.02, M(0x0c0c0c, isP?0xff3300:0x00ddff, 100));
-    this.seg.eyeL.material.emissiveIntensity = 2.1; this.seg.eyeR.material.emissiveIntensity = 2.1; // push eyes above bloom threshold
+    this.seg.eyeL.material.emissiveIntensity = 0.55; this.seg.eyeR.material.emissiveIntensity = 0.55; // a lit iris, not a blown-out white bloom dot
     this.seg.neck = mkCyl(0.085,0.10, skinMat);
 
     // ARMS — deltoid -> bicep -> forearm -> wrap -> glove
@@ -5042,7 +5042,9 @@ window.BBODY = (function(){
   // the lampshade trunks cylinder, the waistband ring, gloves, wraps) are NOT kept — they're now
   // PAINTED onto the smooth body as trunk/boot regions (see regionForTube/paint), so the silhouette
   // is one clean continuous body instead of the smooth mesh poking through stamped-on crude shapes.
-  const FACE_KEEP={jaw:0,brow:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0,headBand:0};
+  // brow + headBand are flat box panels that read as a visor stuck on the forehead — drop them on the
+  // smooth body (the head's own form + a subtle brow can come from sculpt later). Keep eyes/nose/mouth/ears/hair.
+  const FACE_KEEP={jaw:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0};
   function center(f,c){ const J=f._rj; if(!J) return null;
     if(typeof c==='string'){ const v=J[c]; return v?[v.x,v.y,v.z]:null; }
     // {j, fx, fy, fz}: a joint plus a LOCAL offset. Local +x is the character's forward (root rotation
@@ -6035,9 +6037,9 @@ Fighter.prototype.applyMesh = function(){
   put(s.brow, h,  0.075*_hs,  0.05*_hs, 0);
   put(s.nose, h,  0.150*_hs, -0.02*_hs, 0);
   put(s.earL, h, -0.02*_hs,   0.0,  0.135*_hs); put(s.earR, h, -0.02*_hs, 0.0, -0.135*_hs);
-  put(s.mouth,h,  0.145*_hs, -0.105*_hs, 0);
-  put(s.eyeL, h,  0.135*_hs,  0.04*_hs,  0.07*_hs); put(s.eyeR, h, 0.135*_hs, 0.04*_hs, -0.07*_hs);
-  put(s.hair, h, -0.03*_hs,   0.05*_hs,  0);
+  put(s.mouth,h,  0.150*_hs, -0.050*_hs, 0);                                                          // mouth on the lower FACE, not down on the chin/neck
+  put(s.eyeL, h,  0.140*_hs,  0.020*_hs,  0.062*_hs); put(s.eyeR, h, 0.140*_hs, 0.020*_hs, -0.062*_hs); // eyes mid-face, set a touch closer
+  put(s.hair, h, -0.060*_hs,   0.120*_hs,  0);                                                         // hair RAISED into a cap on top/back so the forehead + face are clear (was a helmet to the brow)
   orientCyl(s.neck, c.x,c.y,c.z, h.x,h.y,h.z, 1);
   s.neck.scale.y = Math.max(0.12, Math.hypot(h.x-c.x,h.y-c.y,h.z-c.z)*0.62);
   { const _nh=(this.shape&&this.shape.height)?+this.shape.height:1; const _nk=(this.shape&&this.shape.neck!=null)?+this.shape.neck:1; s.neck.scale.x=s.neck.scale.z=_nh*_nk; }  // neck thickness = height x its own NECK slider
@@ -25842,6 +25844,8 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
         this.seg.hair.visible = false;
       } else if (bScale.hairStyle === 'long') {
         this.seg.hair.scale.set(1.08, 1.45, 1.18);
+      } else {
+        this.seg.hair.scale.set(1.0, 0.92, 1.06);   // default/spiky: a skull-hugging cap, not a tall engulfing dome
       }
     }
 
