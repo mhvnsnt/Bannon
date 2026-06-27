@@ -5290,9 +5290,15 @@ window.BBODY = (function(){
           const ca=Math.cos(a)*(rS+rel), sa=Math.sin(a)*(rD+rel);
           pos[vo+k*3]=cx+_u.x*ca+_v.x*sa; pos[vo+k*3+1]=cy+_u.y*ca+_v.y*sa; pos[vo+k*3+2]=cz+_u.z*ca+_v.z*sa; } }
       if(TB.apex>=0){ const d=DM-1, ao=TB.apex*3; _d.set(DC[d][0]-DC[d-1][0],DC[d][1]-DC[d-1][1],DC[d][2]-DC[d-1][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
-        const rA=DR[d][0]; pos[ao]=DC[d][0]+_d.x*rA*0.9; pos[ao+1]=DC[d][1]+_d.y*rA*0.9; pos[ao+2]=DC[d][2]+_d.z*rA*0.9; } }
+        // rounder end-cap: extend the apex only ~half a radius so hands/feet read as a soft dome
+        // instead of a sharp cone-spike (the points that poked out at the hands in a tight guard).
+        const rA=DR[d][0]*0.5; pos[ao]=DC[d][0]+_d.x*rA; pos[ao+1]=DC[d][1]+_d.y*rA; pos[ao+2]=DC[d][2]+_d.z*rA; } }
     f._bgeo.attributes.position.needsUpdate=true; f._bgeo.computeVertexNormals(); }
-  function setHidden(f,hide){ if(!f.seg) return; for(const k in f.seg){ if(k==='aura'||k in FACE_KEEP) continue; const m=f.seg[k]; if(m) m.visible=!hide; } }
+  function setHidden(f,hide){ if(!f.seg) return; for(const k in f.seg){ if(k==='aura'||k in FACE_KEEP) continue; const m=f.seg[k]; if(!m) continue;
+    // finger/thumb chains live in (possibly nested) arrays — plain `m.visible=` skipped them, so the
+    // crude little cylinders stayed visible over the smooth hand and read as a grid blob. Recurse.
+    if(Array.isArray(m)){ const walk=(x)=>{ if(Array.isArray(x)) x.forEach(walk); else if(x&&x.visible!==undefined) x.visible=!hide; }; walk(m); continue; }
+    if(m.visible!==undefined) m.visible=!hide; } }
   return {
     sync:function(f){ const on=!!window.SMOOTH_BODY;
       if(on && !f._bmesh) build(f);
