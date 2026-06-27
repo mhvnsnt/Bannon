@@ -3394,7 +3394,9 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
     //   through poseGuard's existing `walking` branch even with no directional input.
     //   Every other style still gets walking=false here (unchanged behavior).
   }
-  if (this.zoneY && this.root) this.root.position.y += this.zoneY;
+  // (zoneY is ALREADY applied to root.position.y at the top of this block, line ~3368.
+  //  Re-adding it here double-counted the apron/floor drop — a FLOOR fighter sank to
+  //  ~2x zoneY and clipped a metre through the ringside floor. Removed the duplicate.)
 
   let hl = 0.07;
   if (this.state==='attack') hl = 0.045;
@@ -26442,9 +26444,13 @@ function _tryEscape(defender, by){
     const speed = tgtZoneY < this._smoothZoneY ? 8.0 : 6.0;
     this._smoothZoneY = _lerp(this._smoothZoneY, tgtZoneY, _cl(dt*speed, 0, 1));
     if(_abs(this._smoothZoneY - tgtZoneY) < 0.004) this._smoothZoneY = tgtZoneY;
-    // Apply smoothed Y as an additive offset on top of whatever updateProcedural set
-    if(this._smoothZoneY !== 0 && !this.airLift){
-      this.root.position.y += this._smoothZoneY;
+    // updateProcedural's render line ALREADY put the instant zoneY into root.position.y.
+    // Apply only the DIFFERENCE (smooth - instant) so the net height is floorY+smoothZoneY:
+    //   settled -> delta 0 (no double-count, no more sinking a metre through the floor);
+    //   mid-transition -> eased delta turns the hard apron/floor SNAP into a smooth step.
+    const _zDelta = this._smoothZoneY - tgtZoneY;
+    if(_zDelta !== 0 && !this.airLift){
+      this.root.position.y += _zDelta;
     }
   };
 
