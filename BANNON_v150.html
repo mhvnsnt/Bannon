@@ -5017,6 +5017,15 @@ window.applyFighterSpec = function(f, spec){
       ['bootL','feet'],['bootR','feet'],['ankleL','feet'],['ankleR','feet'],
       ['head','head'],['jaw','head'],['brow','head'],['nose','head'],['earL','head'],['earR','head'],['hair','head'],['eyeL','head'],['eyeR','head'] ];
     for(let i=0;i<MAP.length;i++){ const m=S[MAP[i][0]]; if(m&&m.scale){ const s=B*P(MAP[i][1]); m.scale.set(s,s,s); } }
+    // FACE SCULPT overlay — independent face-feature scaling on top of the uniform
+    // head size, so a face can actually be shaped (jaw width/length, brow ridge,
+    // nose size, cheek/ear). These persist because applyMesh only re-positions
+    // these segs (never re-scales them), so the sculpt rides the head every frame.
+    const FM=(k)=> (sh[k]!=null?+sh[k]:1);
+    if(S.jaw && S.jaw.scale){ const b=S.jaw.scale.x; S.jaw.scale.set(b*FM('faceJawW'), S.jaw.scale.y*FM('faceJawL'), b*FM('faceJawW')); }
+    if(S.brow && S.brow.scale){ S.brow.scale.y*=FM('faceBrow'); S.brow.scale.x*=FM('faceBrowW'); }
+    if(S.nose && S.nose.scale){ const n=FM('faceNose'); S.nose.scale.set(S.nose.scale.x*n, S.nose.scale.y*FM('faceNoseL'), S.nose.scale.z*n); }
+    if(S.earL && S.earL.scale){ const e=FM('faceEars'); S.earL.scale.multiplyScalar(e); if(S.earR) S.earR.scale.multiplyScalar(e); }
     const setCol=(mesh,c)=>{ if(mesh&&mesh.material&&c!=null){ try{ mesh.material.color.setHex(c); }catch(e){} } };
     if(sp.skin!=null) setCol(S.head, sp.skin);                 // skin == muscle material (whole body)
     const trunkC=(sp.trunk!=null?sp.trunk:sp.col); if(trunkC!=null) setCol(S.trunks, trunkC);
@@ -5068,6 +5077,13 @@ window.applyForgeMorphs = function(f){
   const key = (typeof fname==='function' ? fname(f) : (f.opts&&f.opts.name)||'BANNON').toUpperCase();
   // 1) forged character from the creative suite
   let forged=null; try{ forged=(window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); }catch(_){}
+  if(forged && forged.rawShape){
+    // A character built in the CAW: replay its EXACT shape + spec so it looks in
+    // a match precisely as it did in the editor (body morph, face sculpt, colors).
+    try{ f.shape = Object.assign({}, forged.rawShape); window.applyFighterSpec(f, forged.rawSpec||{}); }catch(_){}
+    if(forged.rawSpec && forged.rawSpec.style){ try{ f.style = forged.rawSpec.style; }catch(_){} }
+    f._forgedLook=true; return;
+  }
   if(forged){
     const b=forged.body||{}, sk=forged.skin||{}, at=forged.attire||{}, ec=forged.engineConfig||{};
     const m=(v,d)=>(v!=null?v:d), musc=m(b.muscularity,0.5), fat=m(b.bodyFat,0.4);
@@ -5144,7 +5160,7 @@ window.cycleRosterP2 = function(){
     const hx=document.createElement('button'); hx.textContent='\u2715 DONE'; hx.style.cssText='background:#2a1208;color:#ffd9a8;border:1px solid #ff7a1a;border-radius:6px;padding:8px 13px;cursor:pointer;font:bold 11px ui-monospace,monospace;flex:none;';
     hdr.appendChild(htl); hdr.appendChild(hx); wrap.appendChild(hdr);
     let open=false;
-    function closeDrawer(){ open=false; wrap.style.display='none'; if(typeof exitCreatePreview==='function') exitCreatePreview(); }
+    function closeDrawer(){ open=false; wrap.style.display='none'; if(typeof exitCreatePreview==='function') exitCreatePreview(); try{ if(gameState==='menu' && typeof show==='function') show('mainMenu'); }catch(e){} }
     hx.onclick=closeDrawer;
     btn.onclick=()=>{ if(open){ closeDrawer(); } else { open=true; wrap.style.display='block'; wrap.scrollTop=0; syncAll(); if(typeof enterCreatePreview==='function') enterCreatePreview(targetIdx); } };
 
@@ -5185,6 +5201,15 @@ window.cycleRosterP2 = function(){
     BODY.forEach(p=> slider(p[0],p[1],0.55,1.7,true,true));     // per-part size (visual, restyle)
     slider('neck','NECK',0.6,1.6,true,true);                    // neck thickness
     slider('fem','FRAME  MASC \u2194 FEM',0,1,true,true);        // 0 male wedge -> 1 female hourglass (ribcage/waist/pelvis/glute)
+    H('FACE SCULPT','#c084fc');
+    slider('head','HEAD SIZE',0.55,1.3,true,true);              // overall skull (reuses the head part-scale)
+    slider('faceJawW','JAW WIDTH',0.6,1.6,true,true);
+    slider('faceJawL','JAW LENGTH',0.7,1.5,true,true);
+    slider('faceBrow','BROW RIDGE',0.6,1.7,true,true);
+    slider('faceBrowW','BROW WIDTH',0.7,1.4,true,true);
+    slider('faceNose','NOSE SIZE',0.6,1.6,true,true);
+    slider('faceNoseL','NOSE LENGTH',0.7,1.6,true,true);
+    slider('faceEars','EAR SIZE',0.6,1.6,true,true);
     H('SKIN / HAIR / ATTIRE','#c084fc');
     COLZ.forEach(c=> colorRow(c[0],c[1]));
 
@@ -5209,7 +5234,22 @@ window.cycleRosterP2 = function(){
     const del=document.createElement('button'); del.textContent='DELETE'; del.style.cssText='flex:1;background:#2a0e08;color:#ff7777;border:1px solid #ff4444;border-radius:5px;padding:6px;cursor:pointer;';
     function listSaved(){ try{ return JSON.parse(localStorage.getItem('bannon_caw_list')||'[]'); }catch(e){ return []; } }
     function refreshSaved(){ sel.innerHTML=''; listSaved().forEach(nm=>{ const o=document.createElement('option'); o.value=nm; o.textContent=nm; sel.appendChild(o); }); }
-    sv.onclick=()=>{ const f=F(); if(!f) return; const nm=((nin.value||f.specName||'FIGHTER').trim())||'FIGHTER'; try{ const l=listSaved(); if(l.indexOf(nm)<0) l.push(nm); localStorage.setItem('bannon_caw_list',JSON.stringify(l)); localStorage.setItem('bannon_caw_'+nm, JSON.stringify({spec:f.spec||{}, shape:f.shape||{}})); refreshSaved(); sel.value=nm; sv.textContent='✓ SAVED'; setTimeout(()=>sv.textContent='💾 SAVE FIGHTER',1000); }catch(e){} };
+    sv.onclick=()=>{ const f=F(); if(!f) return; const nm=((nin.value||f.specName||'FIGHTER').trim())||'FIGHTER'; try{ const l=listSaved(); if(l.indexOf(nm)<0) l.push(nm); localStorage.setItem('bannon_caw_list',JSON.stringify(l)); localStorage.setItem('bannon_caw_'+nm, JSON.stringify({spec:f.spec||{}, shape:f.shape||{}}));
+        // BRIDGE: register the creation into the live roster so it appears on the
+        // character-select screen and fights exactly as it was sculpted, and mirror
+        // it to the always-on daemon's forge (cloud-persisted) when reachable.
+        try{
+          const key=nm.toUpperCase().replace(/[^A-Z0-9]/g,'_'); const sp=f.spec||{}, shp=f.shape||{};
+          const styleToArche={powerhouse:'powerhouse',grappler:'powerhouse',brawler:'brawler',striker:'highFlyer',capoeira:'highFlyer',technical:'technician',allrounder:'freeAgent',luchador:'highFlyer'};
+          const entry={ id:key, displayName:nm, archetype:styleToArche[sp.style]||'freeAgent', faction:'Forged', forged:true,
+            skin:{ baseColor:(sp.skin!=null?sp.skin:0xc8987a) },
+            attire:{ primaryColor:(sp.trunk!=null?sp.trunk:0x202028), accentColor:(sp.accent!=null?sp.accent:0xffb000) },
+            rawSpec:Object.assign({},sp,{name:nm}), rawShape:Object.assign({},shp) };
+          window.__FORGED_CACHE=(window.__FORGED_CACHE||[]).filter(c=>(c.id||'').toUpperCase()!==key); window.__FORGED_CACHE.push(entry);
+          localStorage.setItem('bannonForged', JSON.stringify(window.__FORGED_CACHE));
+          if(window.BANNON_DAEMON&&window.BANNON_DAEMON.forgeCreate){ window.BANNON_DAEMON.forgeCreate({ displayName:nm, archetype:entry.archetype, faction:'Forged', skin:{baseColor:entry.skin.baseColor}, attire:entry.attire }); }
+        }catch(_){ }
+        refreshSaved(); sel.value=nm; sv.textContent='✓ SAVED → ROSTER'; setTimeout(()=>sv.textContent='💾 SAVE FIGHTER',1400); }catch(e){} };
     ld.onclick=()=>{ const nm=sel.value; if(!nm) return; try{ const d=JSON.parse(localStorage.getItem('bannon_caw_'+nm)||'null'); const f=F(); if(d&&f){ f.shape=Object.assign({},d.shape||{}); window.applyFighterSpec(f, d.spec||{}); syncAll(); } }catch(e){} };
     del.onclick=()=>{ const nm=sel.value; if(!nm) return; try{ const l=listSaved().filter(x=>x!==nm); localStorage.setItem('bannon_caw_list',JSON.stringify(l)); localStorage.removeItem('bannon_caw_'+nm); refreshSaved(); }catch(e){} };
     lrow.appendChild(ld); lrow.appendChild(del);
@@ -11459,7 +11499,16 @@ function resumeGame(){ if(gameState==='pause'){ gameState='fight'; hideAll(); } 
 // ---- CREATION-SUITE PREVIEW: pause combat, focus + clean-pose the edited fighter, persist every edit live ----
 function enterCreatePreview(idx){
   if(typeof idx==='number' && typeof modelSel!=='undefined'){ modelSel = (idx===1)?'p2':'p1'; }   // freecam + preview follow the edit target
-  if(window.__cawPrevState===undefined) window.__cawPrevState = gameState;                          // remember where we came from
+  if(window.__cawPrevState===undefined) window.__cawPrevState = gameState;                          // remember where we came from (BEFORE any spawn)
+  // CREATE-FROM-MENU: if there's no live body to sculpt yet, spawn a neutral
+  // preview pair. Combat never advances in 'caw' state (the loop holds the sim),
+  // so this is purely a mannequin to morph — no match actually starts.
+  try{
+    if(typeof fighters==='undefined' || !fighters || !fighters.length){
+      if(typeof startFight==='function'){ if(!window.MATCH_SETUP) window.MATCH_SETUP={p1Name:'BANNON',p2Name:'VIPER',p1Control:'YOU',p2Control:'CPU'}; startFight(); }
+    }
+    if(typeof roundTimerInterval!=='undefined' && roundTimerInterval){ clearInterval(roundTimerInterval); roundTimerInterval=null; }   // no countdown during sculpting
+  }catch(e){}
   gameState = 'caw';                                                                                // frozen editor state — the loop holds the sim, edits stay on screen
   try{ const f=(typeof fighterFor==='function')?fighterFor(modelSel):(fighters&&fighters[0]);
        if(f && !f.ragdoll && typeof POSE!=='undefined' && POSE.stance){                              // drop into a clean neutral stance so the morph reads clearly
@@ -31198,7 +31247,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     const btn = document.createElement('button');
     btn.id = 'fbxImpToggle';
     btn.textContent = '🎞 ANIMS';
-    btn.style.cssText = 'position:fixed;right:10px;top:118px;z-index:99998;background:#0d2e1b;color:#7CFC00;border:1px solid #7CFC00;border-radius:6px;padding:7px 10px;font-family:monospace;font-size:12px;letter-spacing:1px;cursor:pointer;';
+    btn.style.cssText = 'position:fixed;right:10px;top:214px;z-index:99998;background:#0d2e1b;color:#7CFC00;border:1px solid #7CFC00;border-radius:6px;padding:7px 10px;font-family:monospace;font-size:12px;letter-spacing:1px;cursor:pointer;';
     document.body.appendChild(btn);
 
     const panel = document.createElement('div');
@@ -31543,7 +31592,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     const x=document.createElement('button'); x.textContent='\u2715'; x.style.cssText='background:none;border:none;color:#9fb0c3;font-size:16px;cursor:pointer';
     ttl.appendChild(x); p.appendChild(ttl); host=document.createElement('div'); p.appendChild(host); document.body.appendChild(p);
     const tg=document.createElement('button'); tg.id='moveLibToggle'; tg.textContent='\ud83d\udcda MOVES';
-    tg.style.cssText='position:fixed;top:60px;right:8px;z-index:99999;font:bold 12px monospace;padding:7px 11px;border-radius:8px;border:1px solid #2a3340;background:#0c0f14;color:#7CFC00;cursor:pointer';
+    tg.style.cssText='position:fixed;top:172px;right:8px;z-index:99999;font:bold 12px monospace;padding:7px 11px;border-radius:8px;border:1px solid #2a3340;background:#0c0f14;color:#7CFC00;cursor:pointer';
     tg.onclick=()=>{ p.style.display='block'; tg.style.display='none'; render(); };
     x.onclick=()=>{ p.style.display='none'; tg.style.display='block'; };
     document.body.appendChild(tg);
@@ -32619,7 +32668,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   // ---- DOM ----
   var root = document.createElement('div'); root.id='charSelect';
   root.innerHTML =
-    '<div id="csHead"><div class="t">SELECT FIGHTERS</div><div class="x" id="csClose">✕ BACK</div></div>'+
+    '<div id="csHead"><div class="t">SELECT FIGHTERS</div><div style="display:flex;gap:8px;align-items:center"><div class="x" id="csCreate" style="border-color:#ff7a1a;color:#ffd9a8">⛹ CREATE</div><div class="x" id="csClose">✕ BACK</div></div></div>'+
     '<div id="csBody">'+
       '<div id="csRosterWrap"><div class="lbl">ROSTER — click to assign to the active slot</div><div id="csRoster"></div></div>'+
       '<div id="csSide">'+
@@ -32703,6 +32752,15 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 
   function close(){ root.classList.remove('show'); }
   document.getElementById('csClose').addEventListener('click', close);
+  // CREATE -> open the Create-A-Wrestler drawer. Close the select so the live 3D
+  // preview is visible; re-render the roster when they come back so the new
+  // creation appears immediately.
+  document.getElementById('csCreate').addEventListener('click', function(){
+    close();
+    var cb=document.getElementById('cawBtn');
+    if(cb){ cb.click(); }
+    // when the CAW drawer closes, refreshing the select will pick up the save
+  });
 
   document.getElementById('csStart').addEventListener('click', function(){
     var mode = MODES[sel.modeIdx].id;
@@ -32717,12 +32775,18 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     if (typeof startFight==='function') startFight();
   });
 
-  // refresh the forged-character cache from the always-on daemon so created
-  // wrestlers show up here automatically, then open.
+  // Load any locally-saved creations first (these carry the exact sculpt/rawShape,
+  // so they must win over the leaner daemon copies), then merge in daemon-only ones.
+  try { var lf=localStorage.getItem('bannonForged'); if(lf){ window.__FORGED_CACHE = JSON.parse(lf)||[]; } } catch(_){ }
+  function mergeForged(list){
+    if(!Array.isArray(list)) return;
+    var have={}; (window.__FORGED_CACHE||[]).forEach(function(c){ have[(c.id||c.displayName||'').toUpperCase()]=true; });
+    list.forEach(function(c){ var k=(c.id||c.displayName||'').toUpperCase(); if(k && !have[k]){ window.__FORGED_CACHE.push(c); } });
+  }
   function openSelect(){
     try {
       if (window.BANNON_DAEMON && window.BANNON_DAEMON.forgeList){
-        window.BANNON_DAEMON.forgeList().then(function(list){ if(Array.isArray(list)){ window.__FORGED_CACHE=list; renderRoster(); } });
+        window.BANNON_DAEMON.forgeList().then(function(list){ mergeForged(list); renderRoster(); });
       }
     } catch(_){}
     renderRoster(); refresh(); root.classList.add('show');
