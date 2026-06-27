@@ -6,6 +6,8 @@ import { FXRenderer } from './FXRenderer.js';
 import { InputMatrix } from './InputMatrix.js';
 import { PhysicsCollider } from './PhysicsCollider.js';
 import { SpatialEnvironment } from './SpatialEnvironment.js';
+import { FighterEvolution } from './FighterEvolution.js';
+import { PLANES } from './Cosmology.js';
 
 /**
  * DaemonCore — "BANNON SENSES" heartbeat. Owns one instance of every other
@@ -21,6 +23,7 @@ export class DaemonCore {
   public fxRenderer: FXRenderer;
   public physics: PhysicsCollider;
   public spatial: SpatialEnvironment;
+  public evolution: FighterEvolution;
   private inputMatrices: Map<string, InputMatrix> = new Map();
 
   constructor() {
@@ -31,6 +34,7 @@ export class DaemonCore {
     this.fxRenderer = new FXRenderer();
     this.physics = new PhysicsCollider();
     this.spatial = new SpatialEnvironment();
+    this.evolution = new FighterEvolution();
     this.router = express.Router();
     this.setupRoutes();
   }
@@ -73,14 +77,32 @@ export class DaemonCore {
       res.json(this.combatAI.evolveContent());
     });
 
-    // ---- MatchDirector: narrative pacing / rivalry heat, also drives evolution cadence ----
+    // ---- MatchDirector + FighterEvolution: one match result drives BOTH the global
+    // move-learning (bandit/genetic) AND the per-fighter ascension/style evolution. ----
     this.router.post('/api/match/report-result', (req, res) => {
-      const { winner, loser, date, type, moveSequence } = req.body || {};
+      const { winner, loser, date, type, moveSequence, dominantCategory } = req.body || {};
       if (!winner || !loser) return res.status(400).json({ error: 'winner and loser required' });
       const result = this.matchDirector.reportFightResult({
         winner, loser, date: date || new Date().toISOString().split('T')[0], type: type || 'ko', moveSequence,
       });
-      res.json(result);
+
+      // Per-fighter evolution: winner ascends the planes + collapses a new move,
+      // loser drifts toward what beat them, signatures leak across branes.
+      const evo = this.evolution.processMatchResult({
+        winnerId: winner, loserId: loser, winnerMoveSeq: moveSequence, dominantCategoryUsed: dominantCategory,
+      });
+
+      // Any brand-new combos the genetic layer just bred become permanent named
+      // library moves, credited to the winner as their signature.
+      const registered: string[] = [];
+      if (result.evolved && result.newContent?.newCombos?.length) {
+        for (const combo of result.newContent.newCombos) {
+          const lib = this.evolution.registerSynthesizedMove(combo, winner);
+          registered.push(lib.name);
+        }
+      }
+
+      res.json({ ...result, evolution: evo, newLibraryMoves: registered });
     });
 
     this.router.get('/api/match/rivalry-heat', (req, res) => {
@@ -119,6 +141,28 @@ export class DaemonCore {
       const { a, b, range } = req.body || {};
       if (!a || !b) return res.status(400).json({ error: 'a and b (Vec3) required' });
       res.json({ inRange: this.physics.inGrappleRange(a, b, range != null ? Number(range) : undefined) });
+    });
+
+    // ---- FighterEvolution: persistent roster that ascends the 10 planes ----
+    // The cosmology blueprint itself (string-theory dimensions <-> Hermetic heavens).
+    this.router.get('/api/cosmology/planes', (_req, res) => {
+      res.json(PLANES);
+    });
+
+    // Full roster with current planes/records/movesets.
+    this.router.get('/api/evolution/roster', (_req, res) => {
+      res.json(this.evolution.getRoster());
+    });
+
+    // The growing move library (primitives + synthesized combos + brane-leaked moves).
+    this.router.get('/api/evolution/library', (_req, res) => {
+      res.json(this.evolution.getLibrary());
+    });
+
+    // One fighter's progression card: plane, unlocked moveset, signatures, and the
+    // moves currently surfacing out of their probability ocean toward being learned.
+    this.router.get('/api/evolution/fighter/:id', (req, res) => {
+      res.json(this.evolution.getFighterCard(req.params.id));
     });
   }
 }

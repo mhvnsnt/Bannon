@@ -18716,6 +18716,45 @@ ${sessionMemory || 'First session.'}`;
     _note:'Chapter -> beat -> match spine for all 6 books, extracted from canon. Cutscene/promo scripting per beat is the next deepening pass; the playable match wiring is here.'
   };
 
+  // ---------- THE BLUEPRINT: 10 dimensions == 10 heavens ----------
+  // String theory and ancient cosmology are the same map in two languages.
+  // Physics needs 10 dimensions or the math breaks; Hermetic cosmology mapped
+  // reality into 10 heavens/spheres. Same structure, described twice. A string's
+  // vibration frequency IS the plane a thing resonates on — matter vs light is
+  // just frequency, and in here a jab vs a finisher is just frequency too.
+  // This MIRRORS the daemon's Cosmology.ts so the client and server share one
+  // blueprint: a fighter's growth is their signature frequency climbing the 10
+  // planes, and the moves they can reach are the ones vibrating in a band they
+  // have ascended into. Frequencies are a normalized 0..1 octave of reality
+  // (0 = densest matter, 1 = the crown where all possibility is one point).
+  window.COSMOS = {
+    thesis:[
+      'There is no separation between the math and the magic — they are one blueprint.',
+      'STRING THEORY: the universe needs 10 dimensions or the equations collapse. We live in 4 (3 space + time); the other 6 are curled up tight and decide how strings vibrate. Vibrate one way -> matter. Another -> light. Frequency dictates physical reality.',
+      'THE 10 HEAVENS: Hermetic cosmology mapped reality into 10 spheres, dense physical up through astral, mental, causal, divine. Each heaven is just a higher-frequency dimension. The 10 dimensions are the math proof of the 10 heavens.',
+      'BRANE THEORY: our whole cosmos is one membrane/page in a stack. Gravity is the only force weak enough to leak across the branes — so a fighting style’s "gravity" (its signature finisher) is the thing that bleeds from one fighter’s universe into the next.',
+      'THE OCEAN: the surface waves are the physical reality we measure; the deep is alien-rule quantum pressure running the whole system; the water itself is dark matter — undefinable, but it holds the structure together and gives everything inside a medium to exist.',
+      'QUANTUM: at the lowest level everything is a probability wave until something observes it. A move exists for a fighter only as a latent amplitude in their deep ocean until a WIN observes it and collapses it into their permanent moveset.'
+    ],
+    planes:[
+      {i:1, heaven:'Malkuth · Physical',    dim:'3 of space',           band:[0.00,0.10], note:'dense matter — surface waves, fast and easy to measure; raw strikes'},
+      {i:2, heaven:'Yesod · Etheric',       dim:'4th: time',            band:[0.10,0.20], note:'the vital current under the skin; conditioning and tempo'},
+      {i:3, heaven:'Hod · Astral',          dim:'5th: 1st compactified',band:[0.20,0.30], note:'emotion and momentum — the crowd, the heat, the read on fear'},
+      {i:4, heaven:'Netzach · Lower Mental',dim:'6th: compactified',    band:[0.30,0.42], note:'thought made into counters; you see the move before it lands'},
+      {i:5, heaven:'Tiphareth · Causal',    dim:'7th: compactified',    band:[0.42,0.55], note:'cause and effect — setups, chains, the deep currents running the system'},
+      {i:6, heaven:'Geburah · Buddhic',     dim:'8th: compactified',    band:[0.55,0.68], note:'unity of motion; combos flow as one continuous wave'},
+      {i:7, heaven:'Chesed · Atmic',        dim:'9th: compactified',    band:[0.68,0.80], note:'pure will — the finisher that ends arguments'},
+      {i:8, heaven:'Binah · Monadic',       dim:'10th: full space',     band:[0.80,0.90], note:'the brane itself; gravity leaks across to the page next door'},
+      {i:9, heaven:'Chokmah · Logoic',      dim:'the bulk between branes',band:[0.90,0.97],note:'the dark-matter medium — undefinable, holds the whole structure together'},
+      {i:10,heaven:'Kether · Adi / Crown',  dim:'the singular point',   band:[0.97,1.01], note:'all frequencies at once — the probability wave before anything observes it'}
+    ],
+    // which plane a normalized frequency (0..1) resonates on
+    planeFor:function(freq){ const f=Math.max(0,Math.min(1,freq)); return this.planes.find(p=>f>=p.band[0]&&f<p.band[1]) || this.planes[this.planes.length-1]; },
+    // console reader — walk the blueprint
+    map:function(){ console.log('%cTHE BLUEPRINT — 10 DIMENSIONS == 10 HEAVENS','color:#ffb000;font-weight:bold'); this.thesis.forEach(t=>console.log('%c• '+t,'color:#9fd')); console.log('%c  the ascension ladder:','color:#e8c;font-weight:bold'); this.planes.forEach(p=>console.log('%c  ['+p.i+'] '+p.heaven+'  ('+p.dim+')  f='+p.band[0]+'–'+p.band[1],'color:#ff7a45','\n        '+p.note)); return '10 planes — string theory and the heavens are one map'; },
+    _note:'Mirrors the daemon Cosmology.ts. The daemon’s FighterEvolution ascends each fighter up these 10 planes as they win/lose; this is the client-side copy of that blueprint so canon, lore and mechanics all read from one structure.'
+  };
+
   // ---------- STORY MODE reader / console ----------
   window.STORY = {
     cursor:{book:1,chapter:0},
