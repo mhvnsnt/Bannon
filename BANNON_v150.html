@@ -753,7 +753,7 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 
 <div id="hud">
   <div class="health-wrap" id="p1-wrap">
-    <div class="fighter-tag"><span class="fighter-name">BANNON</span><span class="fighter-style">FIRE · SCORPIO</span></div>
+    <div class="fighter-tag"><span class="fighter-name" id="p1-name">BANNON</span><span class="fighter-style" id="p1-style">FIRE · SCORPIO</span></div>
     <div class="bar-frame"><div class="hp-fill delay" id="p1-hp-delay" style="width: 100%;"></div><div class="hp-fill" id="p1-hp" style="width: 100%;"></div></div>
     <div class="stam-frame"><div class="stam-fill" id="p1-stam" style="width: 100%;"></div></div>
     <div class="mom-frame"><div class="mom-fill" id="p1-mom" style="width: 6.44845%;"></div></div>
@@ -2059,6 +2059,100 @@ const ROSTER_SPEC = {
 };
 window.ROSTER_SPEC = ROSTER_SPEC;
 
+// ── ROSTER EXPANSION ───────────────────────────────────────────────────────
+// Fill in stat blocks for the weight-class-only entries (TITAN/GOLEM/RONIN) and
+// add canon book characters + non-canon originals so the select screen has a
+// real cast. Moves are drawn from the existing customMoves library (valid names
+// only). Additive via Object.assign so the literals above stay the source for
+// the originals.
+Object.assign(MOVESET_DB, {
+  // --- non-canon originals already referenced by weight class ---
+  TITAN:  { maxHp:130, stamina:160, chin:115, speedMultiplier:0.82, powerMultiplier:1.30, moves:['OVERHAND BOMB','SCORPIO HOOK','SUPLEX','STOMP'] },
+  GOLEM:  { maxHp:145, stamina:150, chin:125, speedMultiplier:0.74, powerMultiplier:1.40, moves:['OVERHAND BOMB','GROUND POUND','SUPLEX','STOMP'] },
+  RONIN:  { maxHp:100, stamina:205, chin:98,  speedMultiplier:1.08, powerMultiplier:1.05, moves:['SPINNING ELBOW','HEAD KICK','NECKBREAKER','SUPLEX'] },
+  // --- canon (Off The Top Rope books) ---
+  CAIN_ELIAS:   { maxHp:125, stamina:175, chin:118, speedMultiplier:0.88, powerMultiplier:1.28, moves:['NECKBREAKER','OVERHAND BOMB','SUPLEX','STOMP'] }, // "Final Verdict" tombstone
+  ATLAS_VANCE:  { maxHp:108, stamina:200, chin:104, speedMultiplier:1.02, powerMultiplier:1.08, moves:['CROSS COUNTER','CHECK HOOK','NECKBREAKER','SUPLEX'] }, // counter-wrestler, moral anchor
+  STICK_UP:     { maxHp:96,  stamina:225, chin:92,  speedMultiplier:1.18, powerMultiplier:0.95, moves:['FIRE JAB','SHOVEL HOOK','LIVER SHOT','SPINNING BACKFIST'] }, // street avenger
+  FINXSSE:      { maxHp:88,  stamina:240, chin:84,  speedMultiplier:1.26, powerMultiplier:0.86, moves:['FLYING KNEE','SUPERMAN PUNCH','TORNADO KICK','GAZELLE HOOK'] }, // high-flyer
+  RED_CLOUD:    { maxHp:118, stamina:195, chin:110, speedMultiplier:0.92, powerMultiplier:1.12, moves:['SUPLEX','NECKBREAKER','BODY KNEE','STOMP'] }, // contains/submits
+  CASSIAN_THORNE:{ maxHp:104, stamina:210, chin:100, speedMultiplier:1.12, powerMultiplier:1.06, moves:['QUESTION MARK KICK','SPINNING HEEL KICK','CHECK HOOK','LEAD UPPERCUT'] }, // flawless solitary perfection (the lure)
+  SOMBRA_NEGRA: { maxHp:92,  stamina:230, chin:88,  speedMultiplier:1.22, powerMultiplier:0.92, moves:['MEIA LUA','TORNADO KICK','SPIN HOOK KICK','FLYING KNEE'] }, // steals finishers
+  MAIME:        { maxHp:120, stamina:200, chin:112, speedMultiplier:1.10, powerMultiplier:1.20, moves:['SPINNING ELBOW','OVERHAND BOMB','NECKBREAKER','AXE KICK'] }  // inner antagonist made flesh (boss)
+});
+Object.assign(ROSTER_SPEC, {
+  CAIN_ELIAS:    { style:'BRAWLER',     heightScale:1.10, reachScale:1.00 },
+  ATLAS_VANCE:   { style:'TECHNICIAN',  heightScale:1.02, reachScale:1.04 },
+  STICK_UP:      { style:'BRAWLER',     heightScale:0.99, reachScale:1.01 },
+  FINXSSE:       { style:'CAPOEIRA',    heightScale:0.95, reachScale:1.00 },
+  RED_CLOUD:     { style:'TECHNICIAN',  heightScale:1.08, reachScale:1.02 },
+  CASSIAN_THORNE:{ style:'KARATE',      heightScale:1.03, reachScale:1.05 },
+  SOMBRA_NEGRA:  { style:'CAPOEIRA',    heightScale:0.96, reachScale:1.03 },
+  MAIME:         { style:'PHILLY_SHELL',heightScale:1.04, reachScale:1.04 }
+});
+
+// Display + creative metadata for every selectable character (label, colours,
+// skin tone, faction, one-line bio, forge archetype). The select screen, preview
+// panel and CharacterForge defaults all read from this single table.
+const CHAR_META = {
+  BANNON:        { label:'The Broken Architect', col:0xcc3311, accent:0xffaa00, skin:0xd9a066, faction:'Independent Variable', canon:true,  bio:'Marquis Whitacre’s defense mechanism made flesh — the free agent who adapts across every plane.', archetype:'freeAgent' },
+  VIPER:         { label:'Southpaw · Ice',       col:0x3366cc, accent:0x00ddff, skin:0xc49a6c, faction:'Agents of Chaos',      canon:false, bio:'A long, cold counter-striker who freezes the tempo and picks you apart from range.', archetype:'technician' },
+  KAGE:          { label:'Karate · Shadow',      col:0x2a2a3a, accent:0x9966ff, skin:0xd8b48c, faction:'Agents of Temptation', canon:false, bio:'A karate phantom — blitzing entries, head kicks out of the dark.', archetype:'highFlyer' },
+  BRUTUS:        { label:'Brawler · Iron',        col:0x6b5844, accent:0xffaa00, skin:0xe0a878, faction:'Corporate Structure',  canon:false, bio:'Heavy iron hands; walks through fire to land the one that ends it.', archetype:'brawler' },
+  ZEPHYR:        { label:'Capoeira · Wind',       col:0x33cc77, accent:0xeeff66, skin:0xb07a52, faction:'Agents of Chaos',      canon:false, bio:'The ginga never settles — a windstorm of inverted kicks and feints.', archetype:'highFlyer' },
+  MORTUS:        { label:'Grappler · Bone',       col:0x882244, accent:0xff44aa, skin:0xd4c0a8, faction:'Agents of Temptation', canon:false, bio:'A bone-collector grappler who turns the mat into a morgue.', archetype:'powerhouse' },
+  TITAN:         { label:'Heavyweight · Quake',   col:0x4a6070, accent:0xffd060, skin:0xc89878, faction:'Corporate Structure',  canon:false, bio:'A heavyweight earthquake — every step is a tremor, every blow a fault line.', archetype:'powerhouse' },
+  GOLEM:         { label:'The Clay Colossus',     col:0x7a6a52, accent:0xc0ff70, skin:0x9a8466, faction:'Independent Variable', canon:false, bio:'A construct of stone and clay — the biggest frame in the building, unmoved and unmaking.', archetype:'powerhouse' },
+  RONIN:         { label:'Wanderer · Steel',      col:0x99332a, accent:0xffe0a0, skin:0xcaa074, faction:'Independent Variable', canon:false, bio:'A masterless technician selling his blade match to match — clean, surgical, gone.', archetype:'technician' },
+  CAIN_ELIAS:    { label:'The Final Verdict',     col:0x1a1a22, accent:0x8a0303, skin:0xc8a080, faction:'Agents of Chaos',      canon:true,  bio:'Past trauma made physical; the Tombstone "Final Verdict" is a sentence, not a move.', archetype:'powerhouse' },
+  ATLAS_VANCE:   { label:'The Moral Anchor',      col:0x2e5e8c, accent:0xffd24a, skin:0xd2a878, faction:'Alliance',            canon:true,  bio:'The counter-wrestler who refuses to throw the first strike — and never needs to.', archetype:'technician' },
+  STICK_UP:      { label:'The Street Avenger',    col:0x394a2a, accent:0xd0ff3a, skin:0x8a6748, faction:'Alliance',            canon:true,  bio:'Andre Curtis — robs you of momentum and dignity, hands in your pockets all match.', archetype:'brawler' },
+  FINXSSE:       { label:'High-Flyer · Static',   col:0x6a2a8c, accent:0x00ffd0, skin:0x7a5a3c, faction:'Alliance',            canon:true,  bio:'Narvin Jackson — gravity is a suggestion; the top rope is his home address.', archetype:'highFlyer' },
+  RED_CLOUD:     { label:'The Containment',       col:0x7a3a1a, accent:0xffb060, skin:0xb07850, faction:'Independent Variable', canon:true,  bio:'Chief Red Cloud contains and submits rather than destroys — mercy is the weapon.', archetype:'technician' },
+  CASSIAN_THORNE:{ label:'Flawless · The Lure',   col:0xb0b0c0, accent:0xfff0c0, skin:0xe0c0a0, faction:'Corporate Structure',  canon:true,  bio:'Solitary perfection weaponized — every immaculate strike is bait toward the abyss.', archetype:'technician' },
+  SOMBRA_NEGRA:  { label:'The Finisher Thief',    col:0x101018, accent:0xff2a6a, skin:0x9a6a4a, faction:'Agents of Temptation', canon:true,  bio:'Steals your finisher mid-match and beats you with it — your best self, turned.', archetype:'highFlyer' },
+  MAIME:         { label:'The Voice Made Flesh',  col:0x500a0a, accent:0xff0040, skin:0xd0a090, faction:'Agents of Temptation', canon:true,  bio:'Bannon’s inner antagonist given a body — the boss at the bottom of every spiral.', archetype:'enigma' }
+};
+window.CHAR_META = CHAR_META;
+
+// Unified roster accessor — built-in cast merged with any characters forged via
+// the daemon (so created characters auto-appear on the select screen). Each row
+// is everything the UI needs: identity, colours, stats, faction, bio.
+window.ROSTER_ALL = function(){
+  const out = [];
+  const seen = {};
+  for (const name of Object.keys(MOVESET_DB)){
+    const m = MOVESET_DB[name]; const meta = CHAR_META[name] || {};
+    seen[name] = true;
+    out.push({
+      name,
+      label: meta.label || name,
+      col: meta.col!=null?meta.col:0x888888, accent: meta.accent!=null?meta.accent:0xffffff, skin: meta.skin!=null?meta.skin:0xc8987a,
+      faction: meta.faction || 'Unaligned', canon: !!meta.canon, bio: meta.bio || '',
+      archetype: meta.archetype || 'freeAgent', forged:false,
+      style: (ROSTER_SPEC[name]&&ROSTER_SPEC[name].style)||'ORTHODOX',
+      stats: { hp:m.maxHp, stamina:m.stamina, chin:m.chin, speed:Math.round((m.speedMultiplier||1)*100), power:Math.round((m.powerMultiplier||1)*100) },
+      moves: m.moves||[]
+    });
+  }
+  // merge forged characters cached from the daemon (window.__FORGED_CACHE)
+  try {
+    const forged = window.__FORGED_CACHE || [];
+    for (const c of forged){
+      const key = (c.id||c.displayName||'').toUpperCase();
+      if (!key || seen[key]) continue;
+      out.push({
+        name:key, label:c.displayName||key, col:(c.attire&&c.attire.primaryColor)||0x888888,
+        accent:(c.attire&&c.attire.accentColor)||0xffffff, skin:(c.skin&&c.skin.baseColor)||0xc8987a,
+        faction:c.faction||'Forged', canon:false, bio:'A forged competitor from the creative suite.', archetype:c.archetype||'freeAgent',
+        forged:true, style:'ORTHODOX',
+        stats:{ hp:110, stamina:200, chin:100, speed:100, power:105 }, moves:[]
+      });
+    }
+  } catch(_){}
+  return out;
+};
+
 
 class Fighter {
   constructor(isPlayer, opts){
@@ -2788,7 +2882,15 @@ function setFootPose(mesh, kn, ank, ft, floorY, isLeft){
 }
 
 
-Fighter.prototype.opponent = function(){ return fighters[this.isPlayer?1:0]; };
+// Opponent by IDENTITY, not by isPlayer — so "play as P2" and AI-vs-AI (where
+// neither fighter is the human) still resolve the correct other fighter instead
+// of a fighter targeting itself.
+Fighter.prototype.opponent = function(){ return (this===fighters[0]) ? fighters[1] : fighters[0]; };
+// Display name for a fighter — the player is no longer hardcoded to BANNON, so
+// the announcer/UI must read the actual chosen name (set in opts.name for both
+// the human and the AI). Falls back to BANNON only if somehow unnamed.
+function fname(f){ return (f && f.opts && f.opts.name) ? f.opts.name : 'BANNON'; }
+Fighter.prototype.who = function(){ return fname(this); };
 
 Fighter.prototype.enforceBiomechanicalLimits = function() {
   if (!this._arV) return;
@@ -6892,7 +6994,7 @@ Fighter.prototype.grappleDeliver = function(type, aim){
   // are TOSS-tier inversion arcs, not slam-tier, regardless of their damage `type` classification.
   const _vsuplexFamily = (this.grapplePos==='VERTICAL_SUPLEX'||this.grapplePos==='TIGER_SUPLEX'||this.grapplePos==='DRAGON_SUPLEX');
   const _eliteCovered = (window.ELITE_MOVES && ['CANADIAN_DESTROYER','DDT','BUTTERFLY_DDT','TIGER_DRIVER','BRAINBUSTER','VERTICAL_SUPLEX','ELECTRIC_CHAIR'].indexOf(this.grapplePos)>=0);
-  if ((this.isPlayer || this.opts) && !_eliteCovered) announce(variant.label + (isBridge?' — BRIDGE':''), this.isPlayer?'BANNON':this.opts.name);
+  if ((this.isPlayer || this.opts) && !_eliteCovered) announce(variant.label + (isBridge?' — BRIDGE':''), this.who());
   let basePow, vH, vV, downImp;
   // v74 VELOCITY TIER — deliberate, named scale instead of incidental per-type numbers:
   //   DROP (lowest, lazy downward) < SLAM < THROW (decent) < TOSS (highest, full suplex arc)
@@ -7903,7 +8005,7 @@ Fighter.prototype.startDive = function(type, sb){
   this.aerialFrom = { x:this.x, y:(this.airLift||(sb?0.2:1.85)), z:this.z };
   this.aerialTo = opp ? { x:clamp(opp.x,-ARENA_HALF,ARENA_HALF), z:clamp(opp.z,-ARENA_HALF_Z,ARENA_HALF_Z) } : { x:this.x + this.dir*2.5, z:this.z };
   this._diveArc = (d.arc + (sb?DIVE.spring:0)) * DIVE.arc;
-  announce(d.label, this.isPlayer?'BANNON':this.opts.name);
+  announce(d.label, this.who());
 };
 Fighter.prototype.exitAerial = function(){
   this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
@@ -8788,7 +8890,7 @@ Fighter.prototype.zoneAction = function(){
     this._slamTarget = 1;
     this.hitKick  = { T:0.26, t:0.26, dx:throwDir, mag:0.10, reg:'b' };
     opp.hitKick   = { T:0.22, t:0.22, dx:throwDir, mag:0.09, reg:'b' };
-    if (this.isPlayer || this.opts) announce(fromZone==='APRON' ? 'OFF THE APRON!' : 'OVER THE TOP ROPE!', this.isPlayer?'BANNON':this.opts.name);
+    if (this.isPlayer || this.opts) announce(fromZone==='APRON' ? 'OFF THE APRON!' : 'OVER THE TOP ROPE!', this.who());
     camShake = Math.max(camShake||0, 0.5); triggerHitStop(0.08);
     return true;
   }
@@ -11188,7 +11290,7 @@ function endRound(winner){
   if (roundTimerInterval) clearInterval(roundTimerInterval);
   if (winner.isPlayer) p1Rounds++; else p2Rounds++;
   updateRoundPips();
-  const nm = winner.isPlayer?'BANNON':winner.opts.name;
+  const nm = fname(winner);
   const decisive = (fighters[0].hp<=0 || fighters[1].hp<=0);
   gameState='roundend';
   announce(nm+(decisive?' — K.O.':' TAKES IT'), 'ROUND '+currentRound);
@@ -11218,7 +11320,7 @@ function endMatch(winner){
   gameState='winner';
   if (roundTimerInterval) clearInterval(roundTimerInterval);
   if (typeof clearActiveFightState==='function') clearActiveFightState();
-  const nm = winner.isPlayer?'BANNON':winner.opts.name;
+  const nm = fname(winner);
   document.getElementById('winnerName').textContent = nm;
   announce(nm+' WINS', p1Rounds+' — '+p2Rounds);
   setTimeout(()=>{ show('winnerMenu'); }, 1500);
@@ -11232,21 +11334,59 @@ function updateRoundPips(){
     + ' : ' + '○'.repeat(Math.max(0,ROUNDS_TO_WIN-p2Rounds)) + '●'.repeat(p2Rounds);
 }
 
+// MATCH_SETUP is written by the character-select screen. When absent (legacy /
+// rematch path) we fall back to BANNON vs the cycled OPPONENTS entry, so nothing
+// that used to work breaks.
+window.MATCH_SETUP = window.MATCH_SETUP || null;
+
+// Resolve a character name to the {col,accent,skin,style,name} opts a Fighter wants.
+function fighterOptsFor(name){
+  const key = String(name||'BANNON').toUpperCase();
+  const meta = (window.CHAR_META && window.CHAR_META[key]) || null;
+  const spec = (window.ROSTER_SPEC && window.ROSTER_SPEC[key]) || null;
+  // forged characters carry their own look in the cache
+  let forged = null;
+  try { forged = (window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); } catch(_){}
+  return {
+    name: key,
+    col:    meta ? meta.col    : (forged && forged.attire ? forged.attire.primaryColor : 0xcc3311),
+    accent: meta ? meta.accent : (forged && forged.attire ? forged.attire.accentColor  : 0xffaa00),
+    skin:   meta ? meta.skin   : (forged && forged.skin   ? forged.skin.baseColor       : 0xd9a066),
+    style:  spec ? spec.style  : 'ORTHODOX'
+  };
+}
+
 function startFight(){
   if (typeof clearActiveFightState==='function') clearActiveFightState();
   // (re)build fighters
   for (const f of fighters){ scene.remove(f.root); scene.remove(f.shadow); if(f.model){ try{scene.remove(f.model);}catch(e){} f.model=null; } }
   fighters = [];
-  const p1 = new Fighter(true, { col:0xcc3311, accent:0xffaa00, skin:0xd9a066, name:'BANNON' });
-  const opp = OPPONENTS[opponentIdx];
-  const p2 = new Fighter(false, { col:opp.col, accent:opp.accent, skin:opp.skin, name:opp.name, style:opp.style });
+
+  // Pull names from the select screen if it set them; otherwise legacy default.
+  const setup = window.MATCH_SETUP;
+  const p1Name = (setup && setup.p1Name) ? setup.p1Name : 'BANNON';
+  const p2Name = (setup && setup.p2Name) ? setup.p2Name : (OPPONENTS[opponentIdx] && OPPONENTS[opponentIdx].name) || 'VIPER';
+  // control flags: which side the human drives. Default = P1 human, P2 AI.
+  const p1Human = !setup || setup.p1Control !== 'CPU';
+  const p2Human = !!(setup && setup.p2Control === 'YOU');
+
+  const o1 = fighterOptsFor(p1Name);
+  const o2 = fighterOptsFor(p2Name);
+  const p1 = new Fighter(p1Human, { col:o1.col, accent:o1.accent, skin:o1.skin, name:o1.name, style:o1.style });
+  const p2 = new Fighter(!p1Human ? true : p2Human, { col:o2.col, accent:o2.accent, skin:o2.skin, name:o2.name, style:o2.style });
+  // Guarantee exactly one human-input owner unless AI-vs-AI was explicitly chosen.
+  if (setup && setup.p1Control==='AI' && setup.p2Control==='AI'){ p1.isPlayer=false; p2.isPlayer=false; }
   fighters = [p1, p2];
+
   if(typeof applyChosenModels==='function') applyChosenModels();
+  // Apply forge morphs to whichever fighters have a forged/morph spec.
+  if(typeof applyForgeMorphs==='function'){ try{ applyForgeMorphs(p1); applyForgeMorphs(p2); }catch(_){} }
   comboCount=0; updateCombo();
   currentRound=1; p1Rounds=0; p2Rounds=0; roundEnding=false;
   updateRoundPips();
-  document.getElementById('p2-name').textContent = opp.name;
-  document.getElementById('p2-style').textContent = opp.style;
+  document.getElementById('p1-name').textContent = o1.name;
+  document.getElementById('p2-name').textContent = o2.name;
+  document.getElementById('p2-style').textContent = (window.CHAR_META[o2.name] && window.CHAR_META[o2.name].label) || o2.style;
   gameState='fight';
   hideAll();
   startRound();
@@ -32325,6 +32465,228 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   };
   window.BANNON_BRAIN = BRAIN;
   console.log('%c[v142] NEURAL BRAIN online — per-AI-fighter MLP (' + IN + '→' + NH + '→' + NOUT + '), learns from fight reward, persists. BANNON_BRAIN.report(0)', 'color:#7CFC00;background:#000;padding:2px 6px');
+})();
+</script>
+
+<!-- =====================================================================
+     CHARACTER SELECT SCREEN — Tekken/WWE-2K style pre-match flow
+       Reached by the FIGHT button. Pick ANY character for both sides (the
+       player is no longer locked to BANNON), choose control mode (player vs
+       CPU, play-as-P2, or AI vs AI), match type, and stage, with a live
+       preview (faction, bio, stat bars, signature moves). Forged characters
+       from the creative suite auto-appear. Self-contained + additive: injects
+       its own CSS/DOM and only intercepts the FIGHT button.
+     ===================================================================== -->
+<script>
+(function(){
+  // Proprietary match-type catalog — deliberately broader than the mainstream
+  // wrestling games, and named our own way (no trademarked gimmick-match names).
+  // NOTE: the engine currently runs 1-on-1; multi-competitor types are selectable
+  // and stored into MATCH_SETUP now, and start as a 1v1 until the match-engine
+  // expansion (roadmap) wires true multi-man rules. Flagged honestly below.
+  var MATCH_TYPES = [
+    { id:'ONE_ON_ONE',   label:'ONE ON ONE',          live:true  },
+    { id:'TAG',          label:'TAG TEAM',            live:false },
+    { id:'TRIPLE',       label:'TRIPLE THREAT',       live:false },
+    { id:'FOURWAY',      label:'FOUR-WAY',            live:false },
+    { id:'LADDER',       label:'LADDER MATCH',        live:false },
+    { id:'TABLES',       label:'TABLES MATCH',        live:false },
+    { id:'TLC',          label:'TABLES LADDERS CHAIRS', live:false },
+    { id:'CAGE',         label:'STEEL CAGE',          live:false },
+    { id:'LMS',          label:'LAST ONE STANDING',   live:false },
+    { id:'SUBMISSION',   label:'SUBMISSION',          live:false },
+    { id:'IRONMAN',      label:'IRON MAN (TIME)',     live:false },
+    { id:'ANYWHERE',     label:'FALLS COUNT ANYWHERE',live:false },
+    { id:'GAUNTLET',     label:'GAUNTLET',            live:false },
+    { id:'ROYALE',       label:'OPEN BATTLE ROYALE',  live:false },
+    { id:'HARDCORE',     label:'NO-RULES HARDCORE',   live:false },
+    { id:'FIRSTBLOOD',   label:'FIRST BLOOD',         live:false },
+    { id:'IQUIT',        label:'I QUIT',              live:false },
+    { id:'CASKET',       label:'CASKET',              live:false },
+    { id:'INFERNO',      label:'INFERNO',             live:false },
+    { id:'STRETCHER',    label:'STRETCHER',           live:false },
+    { id:'KOTP',         label:'KING OF THE PIT',     live:false }  // canon (Book 5)
+  ];
+  var MODES = [
+    { id:'P1', label:'PLAYER vs CPU' },
+    { id:'P2', label:'PLAY AS P2' },
+    { id:'AI', label:'AI vs AI' }
+  ];
+
+  // ---- state ----
+  var sel = { p1:'BANNON', p2:'VIPER', side:'p2', modeIdx:0, typeIdx:0, stageIdx:0, preview:'BANNON' };
+  try { var savedStage = (typeof arenaIdx!=='undefined') ? arenaIdx : 0; sel.stageIdx = savedStage; } catch(_){ }
+
+  // ---- CSS ----
+  var css = document.createElement('style');
+  css.textContent = [
+   '#charSelect{position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at 50% 30%,#1a1320 0%,#0a0710 70%,#050308 100%);display:none;flex-direction:column;font-family:"Share Tech Mono",monospace;color:#e8d8c0;overflow:hidden}',
+   '#charSelect.show{display:flex}',
+   '#csHead{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid #3a2a40}',
+   '#csHead .t{font-size:20px;letter-spacing:6px;color:#ffb000;font-weight:bold}',
+   '#csHead .x{cursor:pointer;color:#a98;border:1px solid #543;border-radius:6px;padding:6px 12px;font-size:12px}',
+   '#csBody{flex:1;display:flex;min-height:0}',
+   '#csRosterWrap{flex:1.4;display:flex;flex-direction:column;min-width:0;padding:12px 16px}',
+   '#csRosterWrap .lbl{font-size:10px;letter-spacing:3px;color:#8a7;margin-bottom:8px}',
+   '#csRoster{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;overflow-y:auto;padding-right:6px;align-content:start}',
+   '.csCard{position:relative;border:1px solid #3a2c44;border-radius:8px;padding:8px;cursor:pointer;background:linear-gradient(160deg,#1e1626,#140e1c);transition:transform .08s,border-color .12s;min-height:74px}',
+   '.csCard:hover{transform:translateY(-2px);border-color:#ffb000}',
+   '.csCard .swatch{width:100%;height:26px;border-radius:5px;margin-bottom:6px}',
+   '.csCard .nm{font-size:11px;color:#fff;letter-spacing:1px;line-height:1.1}',
+   '.csCard .fc{font-size:8px;color:#9a8;margin-top:2px}',
+   '.csCard .tag{position:absolute;top:5px;right:5px;font-size:7px;padding:1px 4px;border-radius:3px;background:#000a;color:#ffb000}',
+   '.csCard.canon .tag{color:#7CFC00}.csCard.forged .tag{color:#00ddff}',
+   '#csSide{flex:1;display:flex;flex-direction:column;border-left:1px solid #3a2a40;padding:12px 16px;min-width:280px;max-width:380px}',
+   '.csSlots{display:flex;gap:10px;margin-bottom:10px}',
+   '.csSlot{flex:1;border:2px solid #3a2c44;border-radius:8px;padding:8px;text-align:center;cursor:pointer;background:#140e1c}',
+   '.csSlot.active{border-color:#ffb000;box-shadow:0 0 12px #ffb00055}',
+   '.csSlot .role{font-size:9px;color:#8a7;letter-spacing:2px}',
+   '.csSlot .who{font-size:14px;color:#fff;margin-top:3px;letter-spacing:1px}',
+   '.csSlot .swatch{height:8px;border-radius:4px;margin-top:6px}',
+   '#csPrev{flex:1;border:1px solid #2e2238;border-radius:8px;padding:12px;overflow-y:auto;background:#0e0a16}',
+   '#csPrev .pnm{font-size:18px;color:#ffb000;letter-spacing:2px}',
+   '#csPrev .plb{font-size:10px;color:#c9a3ff;margin:2px 0 6px}',
+   '#csPrev .pfc{font-size:9px;color:#8a7;letter-spacing:2px;margin-bottom:8px}',
+   '#csPrev .pbio{font-size:11px;color:#c8b8a8;line-height:1.45;margin-bottom:10px}',
+   '.csStat{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:9px;color:#9a8}',
+   '.csStat .bn{width:46px;text-align:right;letter-spacing:1px}',
+   '.csStat .bar{flex:1;height:7px;background:#241a2e;border-radius:4px;overflow:hidden}',
+   '.csStat .bar i{display:block;height:100%;background:linear-gradient(90deg,#ff5a2a,#ffb000)}',
+   '#csPrev .pmv{font-size:9px;color:#8a7;margin-top:8px;letter-spacing:1px}',
+   '#csPrev .pmv b{color:#e8d8c0;font-weight:normal}',
+   '#csFoot{display:flex;align-items:center;gap:10px;padding:12px 18px;border-top:1px solid #3a2a40;flex-wrap:wrap}',
+   '.csOpt{display:flex;flex-direction:column;gap:2px}',
+   '.csOpt .ol{font-size:8px;color:#8a7;letter-spacing:2px}',
+   '.csCyc{cursor:pointer;border:1px solid #543a5a;border-radius:6px;padding:7px 12px;font-size:11px;color:#fff;background:#1a1226;min-width:150px;text-align:center;letter-spacing:1px}',
+   '.csCyc:hover{border-color:#ffb000}',
+   '.csCyc.dim{color:#a98;opacity:.7}',
+   '#csStart{margin-left:auto;cursor:pointer;border:none;border-radius:8px;padding:12px 30px;font-size:16px;font-weight:bold;letter-spacing:3px;color:#1a0e06;background:linear-gradient(90deg,#ffb000,#ff7a2a);font-family:inherit}',
+   '#csStart:hover{filter:brightness(1.12)}'
+  ].join('\n');
+  document.head.appendChild(css);
+
+  // ---- DOM ----
+  var root = document.createElement('div'); root.id='charSelect';
+  root.innerHTML =
+    '<div id="csHead"><div class="t">SELECT FIGHTERS</div><div class="x" id="csClose">✕ BACK</div></div>'+
+    '<div id="csBody">'+
+      '<div id="csRosterWrap"><div class="lbl">ROSTER — click to assign to the active slot</div><div id="csRoster"></div></div>'+
+      '<div id="csSide">'+
+        '<div class="csSlots">'+
+          '<div class="csSlot" id="csSlotP1" data-side="p1"><div class="role">PLAYER 1</div><div class="who" id="csWhoP1">BANNON</div><div class="swatch" id="csSwP1"></div></div>'+
+          '<div class="csSlot active" id="csSlotP2" data-side="p2"><div class="role">PLAYER 2</div><div class="who" id="csWhoP2">VIPER</div><div class="swatch" id="csSwP2"></div></div>'+
+        '</div>'+
+        '<div id="csPrev"></div>'+
+      '</div>'+
+    '</div>'+
+    '<div id="csFoot">'+
+      '<div class="csOpt"><div class="ol">MODE</div><div class="csCyc" id="csMode">PLAYER vs CPU</div></div>'+
+      '<div class="csOpt"><div class="ol">MATCH TYPE</div><div class="csCyc" id="csType">ONE ON ONE</div></div>'+
+      '<div class="csOpt"><div class="ol">STAGE</div><div class="csCyc" id="csStage">FIRE PIT</div></div>'+
+      '<button id="csStart">FIGHT ▶</button>'+
+    '</div>';
+  document.body.appendChild(root);
+
+  function hx(n){ return '#'+('000000'+(n>>>0).toString(16)).slice(-6); }
+
+  function renderRoster(){
+    var list = (window.ROSTER_ALL ? window.ROSTER_ALL() : []);
+    var grid = document.getElementById('csRoster'); grid.innerHTML='';
+    list.forEach(function(c){
+      var d = document.createElement('div');
+      d.className = 'csCard'+(c.canon?' canon':'')+(c.forged?' forged':'');
+      d.innerHTML = '<div class="swatch" style="background:linear-gradient(135deg,'+hx(c.col)+','+hx(c.accent)+')"></div>'+
+                    '<div class="nm">'+c.name.replace(/_/g,' ')+'</div>'+
+                    '<div class="fc">'+c.faction+'</div>'+
+                    (c.canon?'<div class="tag">CANON</div>':(c.forged?'<div class="tag">FORGED</div>':'<div class="tag">★</div>'));
+      d.addEventListener('click', function(){
+        sel[sel.side] = c.name; sel.preview = c.name;
+        sel.side = (sel.side==='p1') ? 'p2' : 'p1'; // auto-advance for speed
+        refresh();
+      });
+      d.addEventListener('mouseenter', function(){ sel.preview=c.name; renderPreview(); });
+      grid.appendChild(d);
+    });
+  }
+
+  function findChar(name){
+    var list = (window.ROSTER_ALL ? window.ROSTER_ALL() : []);
+    return list.find(function(c){ return c.name===name; }) || list[0];
+  }
+
+  function renderPreview(){
+    var c = findChar(sel.preview); if(!c) return;
+    function stat(n,v,max){ var p=Math.max(4,Math.min(100,Math.round(v/max*100))); return '<div class="csStat"><span class="bn">'+n+'</span><span class="bar"><i style="width:'+p+'%"></i></span></div>'; }
+    var moves = (c.moves&&c.moves.length)? c.moves.join(' · ') : '—';
+    document.getElementById('csPrev').innerHTML =
+      '<div class="pnm">'+c.name.replace(/_/g,' ')+'</div>'+
+      '<div class="plb">'+c.label+'</div>'+
+      '<div class="pfc">'+c.faction+(c.canon?'  ·  CANON':'')+'  ·  '+c.style+'</div>'+
+      '<div class="pbio">'+c.bio+'</div>'+
+      stat('HP',c.stats.hp,150)+stat('STAM',c.stats.stamina,260)+stat('CHIN',c.stats.chin,130)+stat('SPEED',c.stats.speed,130)+stat('POWER',c.stats.power,150)+
+      '<div class="pmv">SIGNATURE MOVES<br><b>'+moves+'</b></div>';
+  }
+
+  function refresh(){
+    var p1=findChar(sel.p1), p2=findChar(sel.p2);
+    document.getElementById('csWhoP1').textContent = sel.p1.replace(/_/g,' ');
+    document.getElementById('csWhoP2').textContent = sel.p2.replace(/_/g,' ');
+    document.getElementById('csSwP1').style.background = 'linear-gradient(90deg,'+hx(p1.col)+','+hx(p1.accent)+')';
+    document.getElementById('csSwP2').style.background = 'linear-gradient(90deg,'+hx(p2.col)+','+hx(p2.accent)+')';
+    document.getElementById('csSlotP1').classList.toggle('active', sel.side==='p1');
+    document.getElementById('csSlotP2').classList.toggle('active', sel.side==='p2');
+    document.getElementById('csMode').textContent = MODES[sel.modeIdx].label;
+    var mt = MATCH_TYPES[sel.typeIdx];
+    var tEl = document.getElementById('csType'); tEl.textContent = mt.label + (mt.live?'':' (soon)'); tEl.classList.toggle('dim', !mt.live);
+    try { document.getElementById('csStage').textContent = (typeof ARENAS!=='undefined'?ARENAS[sel.stageIdx%ARENAS.length]:'FIRE PIT'); } catch(_){}
+    renderPreview();
+  }
+
+  // slot focus
+  document.getElementById('csSlotP1').addEventListener('click', function(){ sel.side='p1'; sel.preview=sel.p1; refresh(); });
+  document.getElementById('csSlotP2').addEventListener('click', function(){ sel.side='p2'; sel.preview=sel.p2; refresh(); });
+  // cyclers
+  document.getElementById('csMode').addEventListener('click', function(){ sel.modeIdx=(sel.modeIdx+1)%MODES.length; refresh(); });
+  document.getElementById('csType').addEventListener('click', function(){ sel.typeIdx=(sel.typeIdx+1)%MATCH_TYPES.length; refresh(); });
+  document.getElementById('csStage').addEventListener('click', function(){ try{ sel.stageIdx=(sel.stageIdx+1)%ARENAS.length; if(typeof arenaIdx!=='undefined'){ arenaIdx=sel.stageIdx; var an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; if(typeof buildArena==='function') buildArena(); } }catch(_){} refresh(); });
+
+  function close(){ root.classList.remove('show'); }
+  document.getElementById('csClose').addEventListener('click', close);
+
+  document.getElementById('csStart').addEventListener('click', function(){
+    var mode = MODES[sel.modeIdx].id;
+    window.MATCH_SETUP = {
+      p1Name: sel.p1, p2Name: sel.p2,
+      p1Control: mode==='P1' ? 'YOU' : (mode==='P2' ? 'CPU' : 'AI'),
+      p2Control: mode==='P2' ? 'YOU' : (mode==='P1' ? 'CPU' : 'AI'),
+      matchType: MATCH_TYPES[sel.typeIdx].id,
+      stage: sel.stageIdx
+    };
+    close();
+    if (typeof startFight==='function') startFight();
+  });
+
+  // refresh the forged-character cache from the always-on daemon so created
+  // wrestlers show up here automatically, then open.
+  function openSelect(){
+    try {
+      if (window.BANNON_DAEMON && window.BANNON_DAEMON.forgeList){
+        window.BANNON_DAEMON.forgeList().then(function(list){ if(Array.isArray(list)){ window.__FORGED_CACHE=list; renderRoster(); } });
+      }
+    } catch(_){}
+    renderRoster(); refresh(); root.classList.add('show');
+  }
+  window.openCharacterSelect = openSelect;
+
+  // Intercept the FIGHT button: open select instead of jumping straight in.
+  function wire(){
+    var btn = document.getElementById('btnFight');
+    if (!btn) { return setTimeout(wire, 300); }
+    var fresh = btn.cloneNode(true); btn.parentNode.replaceChild(fresh, btn); // drop the old direct-startFight listener
+    fresh.addEventListener('click', openSelect);
+  }
+  if (document.readyState!=='loading') wire(); else document.addEventListener('DOMContentLoaded', wire);
+  console.log('%c[CHARACTER SELECT] armed — FIGHT opens the select screen; pick anybody for both sides','color:#ffb000');
 })();
 </script>
 
