@@ -4965,7 +4965,7 @@ if (window.SMOOTH_BODY===undefined) {
   window.SMOOTH_BODY = (_savedSkinPref===null) ? true : (_savedSkinPref==='1');   // continuous anatomical skin is the default (toggle with the SKIN button); remembers your choice after that
 }
 window.BBODY = (function(){
-  const N=10;
+  const N=20;   // ring resolution — 10 read as a faceted blob; 20 gives a smooth, rounded AAA silhouette (still trivial vert count)
   // rings: [centerSpec, rSide] = circular, or [centerSpec, rSide, rDepth] = ELLIPTICAL (rSide = side-to-side girth, rDepth = front-to-back).
   // Athletic build from the walking-sim ratios: broad chest, flatter depth, narrow waist (real V-taper), arms with bicep/forearm mass.
   const TUBES=[
@@ -5002,8 +5002,11 @@ window.BBODY = (function(){
     let mat; try{
       // vertexColors drives the actual albedo now (skin on bare regions, fabric on
       // clothed regions) so attire shows on the continuous body, not just hidden segs.
-      mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true, roughness:0.62, metalness:0.0, emissive:new THREE.Color(0x120a06), emissiveIntensity:0.5, envMapIntensity:0.7});
-      const st=window.__bannonSkinTex&&window.__bannonSkinTex(); if(st) mat.map=st; }catch(e){ mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true}); }
+      // Skin-grade PBR: low-ish roughness with a warm subsurface emissive so shadowed
+      // flesh reads as translucent (the cheap-SSS look) rather than flat plastic; flatShading
+      // off so the bumped ring resolution actually reads smooth.
+      mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true, roughness:0.52, metalness:0.0, emissive:new THREE.Color(0x1a0c07), emissiveIntensity:0.42, envMapIntensity:0.95, flatShading:false});
+      const st=window.__bannonSkinTex&&window.__bannonSkinTex(); if(st){ mat.map=st; mat.roughness=0.55; } }catch(e){ mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true}); }
     const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true; mesh.frustumCulled=false; mesh.visible=false;
     f.root.add(mesh); f._bmesh=mesh; f._bgeo=geo; f._needPaint=true; }
 
@@ -5099,7 +5102,9 @@ window.applyFighterSpec = function(f, spec){
       ['quadL','thighs'],['quadR','thighs'],['kneeL','thighs'],['kneeR','thighs'],
       ['calfL','calves'],['calfR','calves'],
       ['bootL','feet'],['bootR','feet'],['ankleL','feet'],['ankleR','feet'],
-      ['head','head'],['jaw','head'],['brow','head'],['nose','head'],['earL','head'],['earR','head'],['hair','head'],['eyeL','head'],['eyeR','head'] ];
+      ['head','head'],['jaw','head'],['brow','head'],['nose','head'],['earL','head'],['earR','head'],['eyeL','head'],['eyeR','head'] ];
+      // NOTE: 'hair' deliberately NOT scaled here — the hairstyle system (applyHair)
+      // owns the hair mesh shape so styles aren't flattened back to a uniform blob.
     for(let i=0;i<MAP.length;i++){ const m=S[MAP[i][0]]; if(m&&m.scale){ const s=B*P(MAP[i][1]); m.scale.set(s,s,s); } }
     // FACE SCULPT overlay — independent face-feature scaling on top of the uniform
     // head size, so a face can actually be shaped (jaw width/length, brow ridge,
@@ -5252,6 +5257,46 @@ window.applyAttire = function(f, style, primaryColor, secondaryColor){
   }catch(_){ }
 };
 
+// ── HAIRSTYLE SYSTEM ────────────────────────────────────────────────────────
+// The hair is a sphere over the skull (kept visible over the continuous body).
+// Reshaping its scale + visibility gives distinct silhouettes — bald, buzz, afro,
+// mohawk, long, etc. applyFighterSpec no longer touches hair scale, so these stick.
+window.HAIRSTYLES = {
+  BALD:    { vis:false, s:[1,1,1] },
+  BUZZ:    { vis:true,  s:[1.02,0.48,1.02] },
+  FADE:    { vis:true,  s:[1.0,0.6,1.0] },
+  SHORT:   { vis:true,  s:[1.06,0.8,1.06] },
+  CAESAR:  { vis:true,  s:[1.1,0.74,1.1] },
+  POMPADOUR:{vis:true,  s:[1.0,1.05,0.92] },
+  AFRO:    { vis:true,  s:[1.42,1.34,1.42] },
+  MOHAWK:  { vis:true,  s:[0.4,1.45,1.18] },
+  TOPKNOT: { vis:true,  s:[0.82,1.12,0.82] },
+  LONG:    { vis:true,  s:[1.14,1.22,1.2] },
+  DREADS:  { vis:true,  s:[1.2,1.3,1.2] }
+};
+window.HAIR_LIST = Object.keys(window.HAIRSTYLES);
+window.applyHair = function(f, style, hairColor){
+  if(!f || !f.seg || !f.seg.hair) return;
+  const h = window.HAIRSTYLES[style] || window.HAIRSTYLES.SHORT;
+  f.seg.hair.visible = h.vis !== false;
+  f.seg.hair.scale.set(h.s[0]*0.95, h.s[1]*0.95, h.s[2]*0.95);   // ~skull-hugging base
+  if(hairColor!=null && f.seg.hair.material){ try{ f.seg.hair.material.color.setHex(hairColor); }catch(_){ } }
+  f._hairStyle = style;
+};
+// Per-character hairstyles so the roster reads distinctly; archetype fallback for the rest.
+window.CHAR_HAIR = {
+  BANNON:'SHORT', VIPER:'FADE', KAGE:'TOPKNOT', BRUTUS:'BALD', ZEPHYR:'AFRO', MORTUS:'LONG',
+  TITAN:'FADE', GOLEM:'BALD', RONIN:'TOPKNOT', CAIN_ELIAS:'LONG', ATLAS_VANCE:'CAESAR',
+  STICK_UP:'DREADS', FINXSSE:'AFRO', RED_CLOUD:'LONG', CASSIAN_THORNE:'POMPADOUR',
+  SOMBRA_NEGRA:'BUZZ', MAIME:'LONG'
+};
+window.hairFor = function(name){
+  const k=String(name||'').toUpperCase();
+  if(window.CHAR_HAIR[k]) return window.CHAR_HAIR[k];
+  const meta=(window.CHAR_META&&window.CHAR_META[k])||{};
+  return ({powerhouse:'BALD',brawler:'FADE',technician:'CAESAR',highFlyer:'AFRO',enigma:'LONG',freeAgent:'SHORT'})[meta.archetype||'freeAgent']||'SHORT';
+};
+
 window._rosterIdx = window._rosterIdx||0;
 window.cycleRosterP2 = function(){
   try{
@@ -5371,6 +5416,12 @@ window.cycleRosterP2 = function(){
     ab.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=window.ATTIRE_LIST||['TRUNKS']; let i=list.indexOf(f.spec.attireStyle||'TRUNKS'); i=(i+1)%list.length; f.spec.attireStyle=list[i]; ab.textContent=list[i].replace(/_/g,' '); if(window.applyAttire) window.applyAttire(f, list[i], (f.spec.trunk!=null?f.spec.trunk:0x202028), (f.spec.accent!=null?f.spec.accent:0xffb000)); };
     syncers.push(()=>{ const f=F(); ab.textContent=((f&&f.spec&&f.spec.attireStyle)||'TRUNKS').replace(/_/g,' '); });
     arow.appendChild(alab); arow.appendChild(ab); wrap.appendChild(arow);
+    // HAIRSTYLE — cycle bald / buzz / fade / afro / mohawk / long / dreads / etc.
+    const hrow=document.createElement('div'); hrow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
+    const hlab=document.createElement('span'); hlab.textContent='HAIRSTYLE'; const hb=document.createElement('button'); hb.style.cssText='background:#1a0e08;color:#ff7a1a;border:1px solid #ff7a1a55;border-radius:4px;padding:4px 8px;cursor:pointer;min-width:110px;';
+    hb.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=window.HAIR_LIST||['SHORT']; let i=list.indexOf(f.spec.hairStyle||'SHORT'); i=(i+1)%list.length; f.spec.hairStyle=list[i]; hb.textContent=list[i]; if(window.applyHair) window.applyHair(f, list[i], (f.spec.hair!=null?f.spec.hair:undefined)); };
+    syncers.push(()=>{ const f=F(); hb.textContent=(f&&f.spec&&f.spec.hairStyle)||'SHORT'; });
+    hrow.appendChild(hlab); hrow.appendChild(hb); wrap.appendChild(hrow);
 
     // SAVE / LOAD (localStorage — persists across sessions)
     H('SAVE / LOAD');
@@ -11600,17 +11651,22 @@ function dressFighter(f){
   const key = (typeof fname==='function' ? fname(f) : (f.opts&&f.opts.name)||'BANNON').toUpperCase();
   let style, primary, secondary;
   let forged=null; try{ forged=(window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); }catch(_){}
+  let hairStyle, hairColor;
   if(forged){
     style = (forged.rawSpec&&forged.rawSpec.attireStyle) || (forged.attire&&forged.attire.gearStyle) || window.attireFor(key);
     primary = (forged.attire&&forged.attire.primaryColor!=null)?forged.attire.primaryColor:(f.opts&&f.opts.col);
     secondary = (forged.attire&&forged.attire.accentColor!=null)?forged.attire.accentColor:(f.opts&&f.opts.accent);
+    hairStyle = (forged.rawSpec&&forged.rawSpec.hairStyle) || window.hairFor(key);
+    hairColor = (forged.rawSpec&&forged.rawSpec.hair!=null)?forged.rawSpec.hair:undefined;
   } else {
     style = window.attireFor(key);
     const meta=(window.CHAR_META&&window.CHAR_META[key])||{};
     primary = (meta.col!=null?meta.col:(f.opts&&f.opts.col));
     secondary = (meta.accent!=null?meta.accent:(f.opts&&f.opts.accent));
+    hairStyle = window.hairFor(key);
   }
   applyAttire(f, style, primary, secondary);
+  if(typeof applyHair==='function') applyHair(f, hairStyle, hairColor);
 }
 window.dressFighter = dressFighter;
 
