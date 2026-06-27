@@ -5100,13 +5100,32 @@ window.BBODY = (function(){
   // every morph because it was built from fixed tube radii — the whole reason the
   // creation suite looked like it did nothing. neutral (shape=default, build=1) -> 1.0.
   function _part(f, part, dflt, useBuild){ const sh=f.shape||{}; const B=useBuild?((f.spec&&f.spec.build!=null)?+f.spec.build:1):1; const v=(sh[part]!=null?+sh[part]:dflt); return B*(v/dflt); }
+  function _mul(f, part){ const sh=f.shape||{}; return (sh[part]!=null?+sh[part]:1); }   // free multiplier, default 1 (no build)
+  // Per-axis girth: returns {s:sideWidth, d:frontDepth} so a part can be wide-but-flat
+  // (broad shoulders, wide hips) or thick (a gut) independently — the deep WWE-2K/
+  // Cyberpunk knobs. Every part is its OWN value: make a guy with huge arms and a
+  // tiny waist, or a small-waist/big-hips/big-thigh frame, freely.
   function ringGirth(f, ti, i, M){
-    if(ti===0){ if(i<=1) return _part(f,'waist',0.86,true); if(i>=M-1) return _part(f,'shoulders',1.20,true); return _part(f,'chest',1.12,true); } // torso
-    if(ti===1) return _part(f,'waist',0.86,true);                                              // pelvic basin
-    if(ti===2) return (i>=M-2)? _part(f,'head',0.70,false) : _part(f,'neck',1.0,false);        // neck -> head
-    if(ti===3||ti===4) return (i<=1)? _part(f,'shoulders',1.20,true) : _part(f,'arms',1.05,true); // arms
-    if(ti===5||ti===6) return (i<=1)? _part(f,'thighs',1.06,true) : _part(f,'calves',1.0,true);   // legs
-    return 1;
+    if(ti===0){ // torso: lower=waist, top=shoulders/traps, mid=chest
+      if(i<=1){ const w=_part(f,'waist',0.86,true); return {s:w*_mul(f,'waistW'), d:w*_mul(f,'waistD')}; }
+      if(i>=M-1){ const s=_part(f,'shoulders',1.20,true); return {s:s*_mul(f,'shoulderW'), d:s}; }
+      const c=_part(f,'chest',1.12,true); return {s:c*_mul(f,'chestW'), d:c*_mul(f,'chestD')};
+    }
+    if(ti===1){ const h=_part(f,'hips',1.0,true); return {s:h*_mul(f,'hipW'), d:h*_mul(f,'hipD')}; }  // pelvis -> HIPS (own axis)
+    if(ti===2){ const n=(i>=M-2)?_part(f,'head',0.70,false):_part(f,'neck',1.0,false); return {s:n,d:n}; }
+    if(ti===3||ti===4){ const a=(i<=1)?_part(f,'shoulders',1.20,true):_part(f,'arms',1.05,true); return {s:a,d:a}; }
+    if(ti===5||ti===6){ const l=(i<=1)?_part(f,'thighs',1.06,true):_part(f,'calves',1.0,true); return {s:l*((i<=1)?_mul(f,'thighW'):1),d:l}; }
+    return {s:1,d:1};
+  }
+  // GLUTES / SEAT — projects the back of the pelvis (and upper-thigh backs) outward.
+  // Scales with the 'glutes' slider (1=neutral) and rounds higher/perkier on female
+  // frames, so BBL / curvy / venusian builds are reachable; men get a normal seat.
+  function _glute(f, ti, i, M, a){
+    const g=_mul(f,'glutes'); const back=Math.max(0,Math.cos(a)); if(back<=0) return 0;
+    const fem=_bodyComp(f).fem;
+    if(ti===1){ const round=back*back; return (0.030*g + 0.030*(g-1) + fem*0.035*g) * round; }   // seat on the pelvic basin
+    if((ti===5||ti===6) && i<=1){ return (0.018*(g-1) + fem*0.018*g) * back; }                    // upper-ham fullness
+    return 0;
   }
   // BODY COMPOSITION — three independent axes so the roster spans real 2026 body
   // types, not just "cut fighter": muscularity (muscle definition), bodyFat (soft
@@ -5166,7 +5185,7 @@ window.BBODY = (function(){
   function update(f){ if(!f._bmesh||!f._rj) return; const L=layout(), pos=f._bgeo.attributes.position.array;
     const _def = (window.MUSCLE_RELIEF===false)?0:reliefScale(f);
     for(let ti=0;ti<L.tubes.length;ti++){ const T=TUBES[ti], TB=L.tubes[ti], M=T.rings.length, start=TB.start; const C=[],R=[];
-      for(let i=0;i<M;i++){ const c=center(f,T.rings[i][0]); if(!c) return; C.push(c); const rr=T.rings[i]; const mg=ringGirth(f,ti,i,M); R.push([rr[1]*mg, (rr[2]!=null?rr[2]:rr[1])*mg]); }
+      for(let i=0;i<M;i++){ const c=center(f,T.rings[i][0]); if(!c) return; C.push(c); const rr=T.rings[i]; const mg=ringGirth(f,ti,i,M); R.push([rr[1]*mg.s, (rr[2]!=null?rr[2]:rr[1])*mg.d]); }
       for(let i=0;i<M;i++){ let ax,ay,az;
         if(i===0){ ax=C[1][0]-C[0][0]; ay=C[1][1]-C[0][1]; az=C[1][2]-C[0][2]; }
         else if(i===M-1){ ax=C[i][0]-C[i-1][0]; ay=C[i][1]-C[i-1][1]; az=C[i][2]-C[i-1][2]; }
@@ -5176,8 +5195,8 @@ window.BBODY = (function(){
         _u.crossVectors(_d,_ref); if(_u.lengthSq()<1e-9)_u.set(1,0,0); _u.normalize(); _v.crossVectors(_u,_d).normalize();
         const rS=R[i][0], rD=R[i][1], cx=C[i][0], cy=C[i][1], cz=C[i][2], vo=(start+i*N)*3;
         for(let k=0;k<N;k++){ const a=k/N*6.2831853;
-          // muscle (scaled by definition) + soft fat mass + female shaping, all per-vertex
-          const rel = _def*_relief(ti,i,M,a) + _fat(f,ti,i,M,a) + _fem(f,ti,i,M,a);
+          // muscle (scaled by definition) + soft fat mass + female shaping + glutes/seat, per-vertex
+          const rel = _def*_relief(ti,i,M,a) + _fat(f,ti,i,M,a) + _fem(f,ti,i,M,a) + _glute(f,ti,i,M,a);
           const ca=Math.cos(a)*(rS+rel), sa=Math.sin(a)*(rD+rel);
           pos[vo+k*3]=cx+_u.x*ca+_v.x*sa; pos[vo+k*3+1]=cy+_u.y*ca+_v.y*sa; pos[vo+k*3+2]=cz+_u.z*ca+_v.z*sa; } }
       if(TB.apex>=0){ const i=M-1, ao=TB.apex*3; _d.set(C[i][0]-C[i-1][0],C[i][1]-C[i-1][1],C[i][2]-C[i-1][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
@@ -5457,8 +5476,8 @@ window.CHAR_BODY = {
   CASSIAN_THORNE:{musc:0.8,fat:0.12},           // flawless physique
   SOMBRA_NEGRA:{musc:0.62,fat:0.15},
   MAIME:{musc:0.72,fat:0.14},                   // Bannon's unhinged alter-ego — harder, leaner version of the same frame
-  QUEEN_TYNESHIA:{musc:0.5,fat:0.28,fem:1},     // strong, powerful female frame
-  KARMA:{musc:0.58,fat:0.16,fem:1}              // lean athletic female frame (distinct from Tyneshia)
+  QUEEN_TYNESHIA:{musc:0.5,fat:0.28,fem:1,hips:1.4,glutes:1.55,waist:0.78},  // curvy powerful queen — small waist, big hips/seat
+  KARMA:{musc:0.58,fat:0.16,fem:1,hips:1.18,glutes:1.28,waist:0.82}          // lean athletic female (distinct from Tyneshia)
 };
 // ALT ATTIRES — a character can be played in a different character's LOOK while
 // keeping their own moves (canon: Bannon can wear the "Maime" unhinged alter-ego
@@ -5486,8 +5505,13 @@ window.applyBodyComp = function(f){
   const b=(forged&&forged.body)||null;
   if(f.shape.muscularity==null) f.shape.muscularity=(b&&b.muscularity!=null)?b.muscularity:window.bodyCompFor(key).musc;
   if(f.shape.bodyFat==null)     f.shape.bodyFat   =(b&&b.bodyFat!=null)?b.bodyFat:window.bodyCompFor(key).fat;
-  const femV=(b&&b.fem!=null)?b.fem:window.bodyCompFor(key).fem;
+  const bc=window.bodyCompFor(key);
+  const femV=(b&&b.fem!=null)?b.fem:bc.fem;
   if(femV!=null && f.shape.fem==null) f.shape.fem=femV;
+  // hips/glutes/waist: the character's OWN composition wins over the generic archetype
+  // template (so a curvy/BBL queen keeps her small waist + big hips, not the powerhouse
+  // default). src = forged spec, else CHAR_BODY entry; only override when explicitly set.
+  ['hips','glutes','waist'].forEach(function(k){ const v=(b&&b[k]!=null)?b[k]:bc[k]; if(v!=null) f.shape[k]=v; });
 };
 
 window._rosterIdx = window._rosterIdx||0;
@@ -5507,7 +5531,10 @@ window.cycleRosterP2 = function(){
 // fighters persist to localStorage (works from the downloaded HTML in a browser). Hidden drawer; covers no existing gameplay UI.
 (function(){
   const PROP=[['height','HEIGHT',0.75,1.35],['armLen','ARM LENGTH',0.7,1.4],['legLen','LEG LENGTH',0.7,1.4],['torsoLen','TORSO LENGTH',0.7,1.4]];
-  const BODY=[['shoulders','SHOULDERS'],['chest','CHEST'],['arms','UPPER ARMS'],['forearms','FOREARMS'],['hands','HANDS'],['waist','WAIST / GUT'],['thighs','THIGHS'],['calves','CALVES'],['feet','FEET'],['head','HEAD']];
+  const BODY=[['shoulders','SHOULDERS'],['chest','CHEST'],['arms','UPPER ARMS'],['forearms','FOREARMS'],['hands','HANDS'],['waist','WAIST / GUT'],['hips','HIPS'],['glutes','GLUTES / SEAT'],['thighs','THIGHS'],['calves','CALVES'],['feet','FEET'],['head','HEAD']];
+  // per-axis WIDTH vs DEPTH knobs (default 1 = neutral) — wide-but-flat shoulders,
+  // wide hips, tiny-deep waist, etc. The "disproportionate body" controls.
+  const AXES=[['shoulderW','SHOULDER WIDTH'],['chestW','CHEST WIDTH'],['chestD','CHEST DEPTH'],['waistW','WAIST WIDTH'],['waistD','WAIST DEPTH'],['hipW','HIP WIDTH'],['hipD','HIP DEPTH'],['thighW','THIGH WIDTH']];
   const COLZ=[['skin','SKIN'],['hair','HAIR'],['trunk','TRUNKS'],['accent','GLOVES/ACCENT'],['band','WAISTBAND'],['boot','BOOTS'],['eye','EYE GLOW']];
   const STYLES=['allrounder','powerhouse','striker','grappler','technical','capoeira','brawler','luchador'];
   // STYLES above are cosmetic archetype LABELS shown on the button — they are not
@@ -5577,7 +5604,8 @@ window.cycleRosterP2 = function(){
     PROP.forEach(p=> slider(p[0],p[1],p[2],p[3],true,false));   // skeletal (per-frame applyShape)
     H('BODY MORPH');
     slider('build','OVERALL BUILD',0.7,1.6,false,true);
-    BODY.forEach(p=> slider(p[0],p[1],0.55,1.7,true,true));     // per-part size (visual, restyle)
+    BODY.forEach(p=> slider(p[0],p[1],0.4,2.3,true,true));      // per-part size — wide range for huge arms / disproportionate builds
+    AXES.forEach(p=> slider(p[0],p[1],0.55,1.9,true,true));     // per-axis width/depth (default 1)
     slider('neck','NECK',0.6,1.6,true,true);                    // neck thickness
     slider('muscularity','MUSCULARITY  (definition)',0,1,true,true);   // abs/pecs/cuts \u2014 only show when lean
     slider('bodyFat','BODY FAT  (soft mass)',0,1,true,true);            // belly/softness, hides the cut
