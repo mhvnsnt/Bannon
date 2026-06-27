@@ -5021,16 +5021,20 @@ window.BBODY = (function(){
   // Athletic build from the walking-sim ratios: broad chest, flatter depth, narrow waist (real V-taper), arms with bicep/forearm mass.
   const TUBES=[
     // TORSO: pelvis -> NARROW WAIST -> broad chest -> traps to the neck (elliptical = ribcage, not a cylinder)
-    { cap:false, rings:[ ['pelvis',0.175,0.145], [['pelvis','chest',0.40],0.140,0.115], [['pelvis','chest',0.72],0.205,0.150], ['chest',0.265,0.165], [['chest','neck',0.45],0.165,0.130] ] },
-    { cap:true,  rings:[ [['pelvis','chest',0.12],0.165,0.135], ['pelvis',0.185,0.150], [['hipL','hipR',0.5],0.175,0.150], [['chest','pelvis',1.22],0.120,0.105] ] }, // pelvic basin
+    // cap = close the far (last-ring) end; capStart = close the near (ring-0) end. EVERY tube is now
+    // closed at both visible ends so you can't see into the hollow interior ("mushroom cup") where a
+    // limb meets the torso/pelvis or at the neck — the open sockets get buried inside the adjacent
+    // volume by overlap, so the caps seal the seam instead of reading as stubs.
+    { cap:true, capStart:true, rings:[ ['pelvis',0.175,0.145], [['pelvis','chest',0.40],0.140,0.115], [['pelvis','chest',0.72],0.205,0.150], ['chest',0.265,0.165], [['chest','neck',0.45],0.165,0.130] ] },
+    { cap:true, capStart:true, rings:[ [['pelvis','chest',0.12],0.165,0.135], ['pelvis',0.185,0.150], [['hipL','hipR',0.5],0.175,0.150], [['chest','pelvis',1.22],0.120,0.105] ] }, // pelvic basin
     // NECK: cervical column through the real joint -> head ball
-    { cap:true,  rings:[ [['chest','neck',0.55],0.095,0.085], ['neck',0.072], [['neck','head',0.45],0.078], ['head',0.118], [['neck','head',1.32],0.085] ] },
+    { cap:true, capStart:true, rings:[ [['chest','neck',0.55],0.095,0.085], ['neck',0.072], [['neck','head',0.45],0.078], ['head',0.118], [['neck','head',1.32],0.085] ] },
     // ARMS: broad deltoid cap -> THICK biceps -> elbow -> forearm -> wrist -> hand (more mass + taper)
-    { cap:true,  rings:[ ['shL',0.094], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
-    { cap:true,  rings:[ ['shR',0.094], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
+    { cap:true, capStart:true, rings:[ ['shL',0.094], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
+    { cap:true, capStart:true, rings:[ ['shR',0.094], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
     // LEGS: thick quad -> knee -> calf taper -> ankle -> foot
-    { cap:true,  rings:[ ['hipL',0.118,0.108], [['hipL','knL',0.35],0.114,0.102], ['knL',0.078], [['knL','ftL',0.32],0.070], ['ankL',0.048], ['ftL',0.060], [['knL','ftL',1.12],0.042] ] },
-    { cap:true,  rings:[ ['hipR',0.118,0.108], [['hipR','knR',0.35],0.114,0.102], ['knR',0.078], [['knR','ftR',0.32],0.070], ['ankR',0.048], ['ftR',0.060], [['knR','ftR',1.12],0.042] ] },
+    { cap:true, capStart:true, rings:[ ['hipL',0.118,0.108], [['hipL','knL',0.35],0.114,0.102], ['knL',0.078], [['knL','ftL',0.32],0.070], ['ankL',0.048], ['ftL',0.060], [['knL','ftL',1.12],0.042] ] },
+    { cap:true, capStart:true, rings:[ ['hipR',0.118,0.108], [['hipR','knR',0.35],0.114,0.102], ['knR',0.078], [['knR','ftR',0.32],0.070], ['ankR',0.048], ['ftR',0.060], [['knR','ftR',1.12],0.042] ] },
   ];
   // Only the FACE + hair stay as overlay segments. The old crude equipment meshes (box boots,
   // the lampshade trunks cylinder, the waistband ring, gloves, wraps) are NOT kept — they're now
@@ -5054,9 +5058,10 @@ window.BBODY = (function(){
     for(let ti=0;ti<TUBES.length;ti++){ const T=TUBES[ti], M=T.rings.length, DM=(M-1)*SUB+1, start=off;
       for(let i=0;i<DM-1;i++){ const a=start+i*N, b=start+(i+1)*N;
         for(let k=0;k<N;k++){ const k2=(k+1)%N; idx.push(a+k,a+k2,b+k2, a+k,b+k2,b+k); } }
-      off+=DM*N; let apex=-1;
+      off+=DM*N; let apex=-1, apex0=-1;
       if(T.cap){ apex=off; off++; const last=start+(DM-1)*N; for(let k=0;k<N;k++){ const k2=(k+1)%N; idx.push(last+k,last+k2,apex); } }
-      tubes.push({start:start,M:M,DM:DM,apex:apex}); }
+      if(T.capStart){ apex0=off; off++; const first=start; for(let k=0;k<N;k++){ const k2=(k+1)%N; idx.push(first+k2,first+k,apex0); } }   // reversed winding so the near-end cap faces outward
+      tubes.push({start:start,M:M,DM:DM,apex:apex,apex0:apex0}); }
     LAYOUT={tubes:tubes,count:off,index:idx,SUB:SUB}; return LAYOUT; }
   function build(f){ if(f._bmesh) return; const L=layout(); const geo=new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(L.count*3),3)); geo.setIndex(L.index.slice());
@@ -5068,14 +5073,15 @@ window.BBODY = (function(){
     { const uv=new Float32Array(L.count*2);
       for(let ti=0;ti<L.tubes.length;ti++){ const TB=L.tubes[ti], DM=TB.DM, start=TB.start;
         for(let d=0;d<DM;d++){ const vv=d/Math.max(1,DM-1); for(let k=0;k<N;k++){ const vi=(start+d*N+k)*2; uv[vi]=k/N; uv[vi+1]=vv; } }
-        if(TB.apex>=0){ uv[TB.apex*2]=0.5; uv[TB.apex*2+1]=1; } }
+        if(TB.apex>=0){ uv[TB.apex*2]=0.5; uv[TB.apex*2+1]=1; }
+        if(TB.apex0>=0){ uv[TB.apex0*2]=0.5; uv[TB.apex0*2+1]=0; } }
       geo.setAttribute('uv', new THREE.BufferAttribute(uv,2)); }
     let mat; try{
       // vertexColors drives the actual albedo (skin on bare regions, fabric on clothed regions) so
       // attire shows on the continuous body. Skin-grade PBR: warm subsurface emissive so shadowed
       // flesh reads translucent (cheap SSS) not plastic; a procedural NORMAL MAP adds pore/skin
       // micro-relief that catches the lights, the single biggest "plastic -> flesh" upgrade.
-      mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true, roughness:0.58, metalness:0.0, emissive:new THREE.Color(0x1a0c07), emissiveIntensity:0.42, envMapIntensity:0.95, flatShading:false});
+      mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true, roughness:0.58, metalness:0.0, emissive:new THREE.Color(0x1a0c07), emissiveIntensity:0.42, envMapIntensity:0.95, flatShading:false, side:THREE.DoubleSide});
       const st=window.__bannonSkinTex&&window.__bannonSkinTex(); if(st){ mat.map=st; mat.roughness=0.6; }
       const nm=window.__bannonSkinNormal&&window.__bannonSkinNormal(); if(nm){ mat.normalMap=nm; mat.normalScale=new THREE.Vector2(0.5,0.5); }
     }catch(e){ mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true}); }
@@ -5155,7 +5161,8 @@ window.BBODY = (function(){
     }
     for(let ti=0;ti<L.tubes.length;ti++){ const TB=L.tubes[ti], M=(TUBES[ti].rings.length), DM=TB.DM, start=TB.start;
       for(let d=0;d<DM;d++){ const ai=d/L.SUB; for(let k=0;k<N;k++){ setV((start+d*N+k)*3, ti,ai,M,k); } }
-      if(TB.apex>=0){ setV(TB.apex*3, ti, M-1, M, 0); } }
+      if(TB.apex>=0){ setV(TB.apex*3, ti, M-1, M, 0); }
+      if(TB.apex0>=0){ setV(TB.apex0*3, ti, 0, M, 0); } }
     col.needsUpdate=true;
   }
   window.TATTOO_LIST=['NONE','LEFT_SLEEVE','RIGHT_SLEEVE','HALF_SLEEVE','SLEEVES','CHEST','BACK','CHEST_BACK','TORSO','LEGS','NECK','FULL'];
@@ -5292,7 +5299,9 @@ window.BBODY = (function(){
       if(TB.apex>=0){ const d=DM-1, ao=TB.apex*3; _d.set(DC[d][0]-DC[d-1][0],DC[d][1]-DC[d-1][1],DC[d][2]-DC[d-1][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
         // rounder end-cap: extend the apex only ~half a radius so hands/feet read as a soft dome
         // instead of a sharp cone-spike (the points that poked out at the hands in a tight guard).
-        const rA=DR[d][0]*0.5; pos[ao]=DC[d][0]+_d.x*rA; pos[ao+1]=DC[d][1]+_d.y*rA; pos[ao+2]=DC[d][2]+_d.z*rA; } }
+        const rA=DR[d][0]*0.5; pos[ao]=DC[d][0]+_d.x*rA; pos[ao+1]=DC[d][1]+_d.y*rA; pos[ao+2]=DC[d][2]+_d.z*rA; }
+      if(TB.apex0>=0){ const ao=TB.apex0*3; _d.set(DC[1][0]-DC[0][0],DC[1][1]-DC[0][1],DC[1][2]-DC[0][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
+        const rA=DR[0][0]*0.5; pos[ao]=DC[0][0]-_d.x*rA; pos[ao+1]=DC[0][1]-_d.y*rA; pos[ao+2]=DC[0][2]-_d.z*rA; } }   // near-end cap: extend backward from ring 0
     f._bgeo.attributes.position.needsUpdate=true; f._bgeo.computeVertexNormals(); }
   function setHidden(f,hide){ if(!f.seg) return; for(const k in f.seg){ if(k==='aura'||k in FACE_KEEP) continue; const m=f.seg[k]; if(!m) continue;
     // finger/thumb chains live in (possibly nested) arrays — plain `m.visible=` skipped them, so the
