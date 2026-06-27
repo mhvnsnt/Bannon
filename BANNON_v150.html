@@ -5115,6 +5115,8 @@ window.applyFighterSpec = function(f, spec){
     if(S.brow && S.brow.scale){ S.brow.scale.y*=FM('faceBrow'); S.brow.scale.x*=FM('faceBrowW'); }
     if(S.nose && S.nose.scale){ const n=FM('faceNose'); S.nose.scale.set(S.nose.scale.x*n, S.nose.scale.y*FM('faceNoseL'), S.nose.scale.z*n); }
     if(S.earL && S.earL.scale){ const e=FM('faceEars'); S.earL.scale.multiplyScalar(e); if(S.earR) S.earR.scale.multiplyScalar(e); }
+    if(S.eyeL && S.eyeL.scale){ const e=FM('faceEye'); S.eyeL.scale.multiplyScalar(e); if(S.eyeR) S.eyeR.scale.multiplyScalar(e); }
+    if(S.mouth && S.mouth.scale){ S.mouth.scale.x *= FM('faceMouthW'); S.mouth.scale.z *= FM('faceLips'); }
     const setCol=(mesh,c)=>{ if(mesh&&mesh.material&&c!=null){ try{ mesh.material.color.setHex(c); }catch(e){} } };
     if(sp.skin!=null) setCol(S.head, sp.skin);                 // skin == muscle material (whole body)
     const trunkC=(sp.trunk!=null?sp.trunk:sp.col); if(trunkC!=null) setCol(S.trunks, trunkC);
@@ -5396,6 +5398,9 @@ window.cycleRosterP2 = function(){
     slider('faceNose','NOSE SIZE',0.6,1.6,true,true);
     slider('faceNoseL','NOSE LENGTH',0.7,1.6,true,true);
     slider('faceEars','EAR SIZE',0.6,1.6,true,true);
+    slider('faceEye','EYE SIZE',0.6,1.7,true,true);
+    slider('faceMouthW','MOUTH WIDTH',0.6,1.6,true,true);
+    slider('faceLips','LIP FULLNESS',0.7,1.8,true,true);
     H('SKIN / HAIR / ATTIRE','#c084fc');
     COLZ.forEach(c=> colorRow(c[0],c[1]));
 
