@@ -5032,8 +5032,11 @@ window.BBODY = (function(){
     { cap:true,  rings:[ ['hipL',0.118,0.108], [['hipL','knL',0.35],0.114,0.102], ['knL',0.078], [['knL','ftL',0.32],0.070], ['ankL',0.048], ['ftL',0.060], [['knL','ftL',1.12],0.042] ] },
     { cap:true,  rings:[ ['hipR',0.118,0.108], [['hipR','knR',0.35],0.114,0.102], ['knR',0.078], [['knR','ftR',0.32],0.070], ['ankR',0.048], ['ftR',0.060], [['knR','ftR',1.12],0.042] ] },
   ];
-  const FACE_KEEP={jaw:0,brow:0,nose:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0,
-    gloveL:0,gloveR:0,thumbL:0,thumbR:0,wrapL:0,wrapR:0,bootL:0,bootR:0,ankleL:0,ankleR:0,trunks:0,band:0};   // face + equipment (gloves/wraps/boots/shorts) stay over the skin
+  // Only the FACE + hair stay as overlay segments. The old crude equipment meshes (box boots,
+  // the lampshade trunks cylinder, the waistband ring, gloves, wraps) are NOT kept — they're now
+  // PAINTED onto the smooth body as trunk/boot regions (see regionForTube/paint), so the silhouette
+  // is one clean continuous body instead of the smooth mesh poking through stamped-on crude shapes.
+  const FACE_KEEP={jaw:0,brow:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0,headBand:0};
   function center(f,c){ const J=f._rj; if(!J) return null;
     if(typeof c==='string'){ const v=J[c]; return v?[v.x,v.y,v.z]:null; }
     const a=J[c[0]], b=J[c[1]], t=c[2]; if(!a||!b) return null;
@@ -5082,10 +5085,13 @@ window.BBODY = (function(){
   // Region a continuous-body tube/ring belongs to — matches the ATTIRE_SEGS region
   // keys so the same attire styles dress both the segmented and continuous bodies.
   function regionForTube(ti, i, M){
-    if(ti===0||ti===1) return 'torso';
+    if(ti===1) return 'trunks';                          // pelvic basin tube = briefs/trunks
+    if(ti===0) return 'torso';
     if(ti===2) return 'head';
     if(ti===3||ti===4) return 'arms';
-    if(ti===5||ti===6) return (i<=1)?'legsUpper':'legsLower';
+    if(ti===5||ti===6){ if(i<=0.5) return 'trunks';      // very top of the thigh = leg of the trunks
+      if(i>=4) return 'boots';                           // ankle + foot rings = the boot
+      return (i<=1.5)?'legsUpper':'legsLower'; }
     return 'skin';
   }
   // TATTOO ink coverage 0..1 for a vertex, by placement style (which body zones it covers).
@@ -5131,7 +5137,13 @@ window.BBODY = (function(){
     const style=f._attireStyle||'TRUNKS';
     const cfg=(window.ATTIRE_STYLES&&window.ATTIRE_STYLES[style])||{primary:[],secondary:[]};
     const primR=new Set(cfg.primary||[]), secR=new Set(cfg.secondary||[]);
-    const colorFor=(reg)=> primR.has(reg)?prim : (secR.has(reg)?sec : skin);
+    // trunks/briefs always wear the primary colour (the waist + leg of the gear); boots are a dark
+    // rubber unless the style explicitly recolours the lower leg. Everything else falls through to
+    // the style's primary/secondary region sets, then bare skin.
+    const bootC=new THREE.Color(sp.bootColor!=null?sp.bootColor:0x14141a);
+    const colorFor=(reg)=> reg==='trunks' ? prim
+      : reg==='boots' ? (secR.has('legsLower')?sec:bootC)
+      : (primR.has(reg)?prim : (secR.has(reg)?sec : skin));
     function setV(vi, ti, i, M, k){
       const reg=regionForTube(ti,i,M); const c=colorFor(reg); let r=c.r,g=c.g,b=c.b;
       if(c===skin){   // tattoos/scars only on bare skin (hidden under fabric)
@@ -5248,14 +5260,28 @@ window.BBODY = (function(){
         DC.push([ C[s][0]+(C[s+1][0]-C[s][0])*tt, C[s][1]+(C[s+1][1]-C[s][1])*tt, C[s][2]+(C[s+1][2]-C[s][2])*tt ]);
         DR.push([ R[s][0]+(R[s+1][0]-R[s][0])*ss, R[s][1]+(R[s+1][1]-R[s][1])*ss ]);
         DAI.push(fi); }
-      // 3) emit each dense ring (frame from dense neighbours -> smooth tangents)
+      // 3) emit each dense ring. PARALLEL-TRANSPORT FRAME: instead of recomputing the ring basis
+      // from a world reference each ring (which snaps 90° when a limb crosses the vertical/horizontal
+      // threshold — the starburst/twist spikes you saw on bent arms), seed the frame once at the base
+      // ring, then carry it forward by removing the new tangent's component from the previous frame
+      // (Gram-Schmidt). The cross-section then rotates minimally and continuously along the tube.
+      let pux=0,puy=0,puz=0,haveFrame=false;
       for(let d=0;d<DM;d++){ let ax,ay,az;
         if(d===0){ ax=DC[1][0]-DC[0][0]; ay=DC[1][1]-DC[0][1]; az=DC[1][2]-DC[0][2]; }
         else if(d===DM-1){ ax=DC[d][0]-DC[d-1][0]; ay=DC[d][1]-DC[d-1][1]; az=DC[d][2]-DC[d-1][2]; }
         else { ax=DC[d+1][0]-DC[d-1][0]; ay=DC[d+1][1]-DC[d-1][1]; az=DC[d+1][2]-DC[d-1][2]; }
         _d.set(ax,ay,az); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
-        if(Math.abs(_d.y)>0.9)_ref.set(1,0,0); else _ref.set(0,1,0);
-        _u.crossVectors(_d,_ref); if(_u.lengthSq()<1e-9)_u.set(1,0,0); _u.normalize(); _v.crossVectors(_u,_d).normalize();
+        if(!haveFrame){
+          if(Math.abs(_d.y)>0.9)_ref.set(1,0,0); else _ref.set(0,1,0);
+          _u.crossVectors(_d,_ref); if(_u.lengthSq()<1e-9)_u.set(1,0,0); _u.normalize(); haveFrame=true;
+        } else {
+          _u.set(pux,puy,puz); const dot=_u.x*_d.x+_u.y*_d.y+_u.z*_d.z;
+          _u.x-=_d.x*dot; _u.y-=_d.y*dot; _u.z-=_d.z*dot;
+          if(_u.lengthSq()<1e-9){ if(Math.abs(_d.y)>0.9)_ref.set(1,0,0); else _ref.set(0,1,0); _u.crossVectors(_d,_ref); }
+          _u.normalize();
+        }
+        _v.crossVectors(_u,_d).normalize();
+        pux=_u.x; puy=_u.y; puz=_u.z;
         const rS=DR[d][0], rD=DR[d][1], cx=DC[d][0], cy=DC[d][1], cz=DC[d][2], vo=(start+d*N)*3, ai=DAI[d];
         for(let k=0;k<N;k++){ const a=k/N*6.2831853;
           // muscle (scaled by definition) + soft fat mass + female shaping + glutes/seat — sampled in
@@ -25851,15 +25877,15 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
     }
     this._cloths = [];
 
-    // Front loincloth flap (pelvis anchored)
-    this._cloths.push(new VerletCloth(this, 'pelvis', 6, 4, 0.05, new THREE.Vector3(0, -0.15, 0.1)));
-    // Back loincloth flap (pelvis anchored)
-    this._cloths.push(new VerletCloth(this, 'pelvis', 6, 4, 0.05, new THREE.Vector3(0, -0.15, -0.1)));
-
-    // Cape structure for long hair / slick hairline visual classes
-    if (bScale.hairStyle === 'slick' || bScale.hairStyle === 'long' || bScale.hairStyle === 'bald') {
-      this._cloths.push(new VerletCloth(this, 'chest', 11, 7, 0.065, new THREE.Vector3(0, 0, -0.14)));
-    }
+    // DISABLED — the pelvis "loincloth" flaps and chest cape defaulted to bright red (0xff0000) and
+    // collapsed into broken red arrow/ribbon shapes hanging off the hip. The trunks are now painted
+    // directly onto the smooth body, so these are redundant; a real cloth accessory can be re-added
+    // later as an opt-in attire piece with proper colour + anchoring.
+    // this._cloths.push(new VerletCloth(this, 'pelvis', 6, 4, 0.05, new THREE.Vector3(0, -0.15, 0.1)));
+    // this._cloths.push(new VerletCloth(this, 'pelvis', 6, 4, 0.05, new THREE.Vector3(0, -0.15, -0.1)));
+    // if (bScale.hairStyle === 'slick' || bScale.hairStyle === 'long' || bScale.hairStyle === 'bald') {
+    //   this._cloths.push(new VerletCloth(this, 'chest', 11, 7, 0.065, new THREE.Vector3(0, 0, -0.14)));
+    // }
   };
 
   // Intercept applyMesh to render local anatomical segments, fingers, eyes, sags, joint corrections
