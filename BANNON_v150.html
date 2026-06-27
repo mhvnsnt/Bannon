@@ -5004,9 +5004,22 @@ window.BBODY = (function(){
     const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true; mesh.frustumCulled=false; mesh.visible=false;
     f.root.add(mesh); f._bmesh=mesh; f._bgeo=geo; }
   const _u=new THREE.Vector3(), _v=new THREE.Vector3(), _d=new THREE.Vector3(), _ref=new THREE.Vector3();
+  // GIRTH MORPH — make the CONTINUOUS skin actually respond to the create-a-fighter
+  // sliders (build + per-part size in f.shape). Without this the visible body ignored
+  // every morph because it was built from fixed tube radii — the whole reason the
+  // creation suite looked like it did nothing. neutral (shape=default, build=1) -> 1.0.
+  function _part(f, part, dflt, useBuild){ const sh=f.shape||{}; const B=useBuild?((f.spec&&f.spec.build!=null)?+f.spec.build:1):1; const v=(sh[part]!=null?+sh[part]:dflt); return B*(v/dflt); }
+  function ringGirth(f, ti, i, M){
+    if(ti===0){ if(i<=1) return _part(f,'waist',0.86,true); if(i>=M-1) return _part(f,'shoulders',1.20,true); return _part(f,'chest',1.12,true); } // torso
+    if(ti===1) return _part(f,'waist',0.86,true);                                              // pelvic basin
+    if(ti===2) return (i>=M-2)? _part(f,'head',0.70,false) : _part(f,'neck',1.0,false);        // neck -> head
+    if(ti===3||ti===4) return (i<=1)? _part(f,'shoulders',1.20,true) : _part(f,'arms',1.05,true); // arms
+    if(ti===5||ti===6) return (i<=1)? _part(f,'thighs',1.06,true) : _part(f,'calves',1.0,true);   // legs
+    return 1;
+  }
   function update(f){ if(!f._bmesh||!f._rj) return; const L=layout(), pos=f._bgeo.attributes.position.array;
     for(let ti=0;ti<L.tubes.length;ti++){ const T=TUBES[ti], TB=L.tubes[ti], M=T.rings.length, start=TB.start; const C=[],R=[];
-      for(let i=0;i<M;i++){ const c=center(f,T.rings[i][0]); if(!c) return; C.push(c); const rr=T.rings[i]; R.push([rr[1], rr[2]!=null?rr[2]:rr[1]]); }
+      for(let i=0;i<M;i++){ const c=center(f,T.rings[i][0]); if(!c) return; C.push(c); const rr=T.rings[i]; const mg=ringGirth(f,ti,i,M); R.push([rr[1]*mg, (rr[2]!=null?rr[2]:rr[1])*mg]); }
       for(let i=0;i<M;i++){ let ax,ay,az;
         if(i===0){ ax=C[1][0]-C[0][0]; ay=C[1][1]-C[0][1]; az=C[1][2]-C[0][2]; }
         else if(i===M-1){ ax=C[i][0]-C[i-1][0]; ay=C[i][1]-C[i-1][1]; az=C[i][2]-C[i-1][2]; }
