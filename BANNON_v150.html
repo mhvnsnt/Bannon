@@ -5030,11 +5030,11 @@ window.BBODY = (function(){
     // NECK: cervical column through the real joint -> head ball
     { cap:true, capStart:true, rings:[ [['chest','neck',0.55],0.095,0.085], ['neck',0.072], [['neck','head',0.45],0.078], ['head',0.118], [['neck','head',1.32],0.085] ] },
     // ARMS: broad deltoid cap -> THICK biceps -> elbow -> forearm -> wrist -> hand (more mass + taper)
-    { cap:true, capStart:true, rings:[ ['shL',0.094], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
-    { cap:true, capStart:true, rings:[ ['shR',0.094], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
+    { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
+    { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
     // LEGS: thick quad -> knee -> calf taper -> ankle -> foot
-    { cap:true, capStart:true, rings:[ ['hipL',0.118,0.108], [['hipL','knL',0.35],0.114,0.102], ['knL',0.078], [['knL','ftL',0.32],0.070], ['ankL',0.048], ['ftL',0.060], [['knL','ftL',1.12],0.042] ] },
-    { cap:true, capStart:true, rings:[ ['hipR',0.118,0.108], [['hipR','knR',0.35],0.114,0.102], ['knR',0.078], [['knR','ftR',0.32],0.070], ['ankR',0.048], ['ftR',0.060], [['knR','ftR',1.12],0.042] ] },
+    { cap:true, capStart:true, rings:[ [['hipL','pelvis',0.30],0.126,0.116], ['hipL',0.118,0.108], [['hipL','knL',0.35],0.114,0.102], ['knL',0.078], [['knL','ftL',0.32],0.070], ['ankL',0.048], ['ftL',0.060], [['knL','ftL',1.12],0.042] ] },
+    { cap:true, capStart:true, rings:[ [['hipR','pelvis',0.30],0.126,0.116], ['hipR',0.118,0.108], [['hipR','knR',0.35],0.114,0.102], ['knR',0.078], [['knR','ftR',0.32],0.070], ['ankR',0.048], ['ftR',0.060], [['knR','ftR',1.12],0.042] ] },
   ];
   // Only the FACE + hair stay as overlay segments. The old crude equipment meshes (box boots,
   // the lampshade trunks cylinder, the waistband ring, gloves, wraps) are NOT kept — they're now
@@ -5095,9 +5095,10 @@ window.BBODY = (function(){
     if(ti===0) return 'torso';
     if(ti===2) return 'head';
     if(ti===3||ti===4) return 'arms';
-    if(ti===5||ti===6){ if(i<=0.5) return 'trunks';      // very top of the thigh = leg of the trunks
-      if(i>=4) return 'boots';                           // ankle + foot rings = the boot
-      return (i<=1.5)?'legsUpper':'legsLower'; }
+    if(ti===5||ti===6){ const r=i/Math.max(1,M-1);       // ratio so it's robust to ring count
+      if(r<=0.12) return 'trunks';                       // very top of the thigh = leg of the trunks
+      if(r>=0.60) return 'boots';                        // ankle + foot region = the boot
+      return (r<=0.34)?'legsUpper':'legsLower'; }
     return 'skin';
   }
   // TATTOO ink coverage 0..1 for a vertex, by placement style (which body zones it covers).
