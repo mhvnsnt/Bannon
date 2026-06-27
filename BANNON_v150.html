@@ -4976,6 +4976,36 @@ window.__bannonSkinTex = function(){
   }catch(e){ window.__skinTex=null; return null; }
 };
 
+// procedural SKIN NORMAL MAP (cached, shared) — pore dimples + fine grain baked into a tangent-space
+// normal map so the smooth body surface catches the key/rim/IBL lights as real skin micro-relief
+// instead of a flat sheen. No image asset: a height field is built from pore/grain noise, then
+// converted to normals via a Sobel gradient. This is the single biggest "plastic -> flesh" upgrade
+// once the body finally has UVs to sample it with.
+window.__bannonSkinNormal = function(){
+  if(window.__skinNrm!==undefined) return window.__skinNrm;
+  try{
+    const S=256, c=document.createElement('canvas'); c.width=c.height=S; const x=c.getContext('2d');
+    // HEIGHT FIELD — mid-grey base, pore dimples (darker = lower), fine grain
+    x.fillStyle='#808080'; x.fillRect(0,0,S,S);
+    for(let i=0;i<3000;i++){ const r=1+Math.random()*4, px=Math.random()*S, py=Math.random()*S, d=Math.round(60+Math.random()*40);
+      const g=x.createRadialGradient(px,py,0,px,py,r); g.addColorStop(0,'rgba('+d+','+d+','+d+',0.55)'); g.addColorStop(1,'rgba(128,128,128,0)');
+      x.fillStyle=g; x.beginPath(); x.arc(px,py,r,0,7); x.fill(); }
+    { const hid=x.getImageData(0,0,S,S), hd=hid.data; for(let i=0;i<hd.length;i+=4){ const n=(Math.random()*2-1)*11; hd[i]+=n; hd[i+1]+=n; hd[i+2]+=n; } x.putImageData(hid,0,0); }
+    // HEIGHT -> NORMAL via Sobel (wrap at edges so the tiling stays seamless)
+    const src=x.getImageData(0,0,S,S).data, out=x.createImageData(S,S), od=out.data;
+    const Hh=(ix,iy)=>{ ix=(ix+S)%S; iy=(iy+S)%S; return src[(iy*S+ix)*4]/255; };
+    const strength=2.4;
+    for(let iy=0;iy<S;iy++) for(let ix=0;ix<S;ix++){
+      const dx=(Hh(ix-1,iy)-Hh(ix+1,iy))*strength, dy=(Hh(ix,iy-1)-Hh(ix,iy+1))*strength;
+      let nx=dx, ny=dy, nz=1; const il=1/Math.hypot(nx,ny,nz); nx*=il; ny*=il; nz*=il;
+      const o=(iy*S+ix)*4; od[o]=Math.round((nx*0.5+0.5)*255); od[o+1]=Math.round((ny*0.5+0.5)*255); od[o+2]=Math.round((nz*0.5+0.5)*255); od[o+3]=255;
+    }
+    x.putImageData(out,0,0);
+    const t=new THREE.Texture(c); t.needsUpdate=true; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(3,4); t.anisotropy=4;
+    window.__skinNrm=t; return t;
+  }catch(e){ window.__skinNrm=null; return null; }
+};
+
 // ============================ CONTINUOUS BODY — one procedural skin surface deformed by the rig (no GLB) ============================
 // Vertices are recomputed every frame straight from the corrected joints (fighter._rj) — no skeleton binding, so it renders
 // predictably. Tapered tubes (V-torso, limbs, neck->head) form one smooth flesh-shaded mesh that bends with the fighter and
@@ -5028,14 +5058,24 @@ window.BBODY = (function(){
   function build(f){ if(f._bmesh) return; const L=layout(); const geo=new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(L.count*3),3)); geo.setIndex(L.index.slice());
     geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(L.count*3).fill(0.8),3));   // per-vertex skin/attire colour
+    // UVs (topological, set once): u wraps around each ring, v runs the length of the tube. Without
+    // these the skin albedo + normal maps had no coordinates and sampled a single texel — which is a
+    // big reason the body read as flat plastic. Now pore/grain/SSS detail and the normal map actually
+    // project onto the surface and catch the rim/key lights as skin.
+    { const uv=new Float32Array(L.count*2);
+      for(let ti=0;ti<L.tubes.length;ti++){ const TB=L.tubes[ti], DM=TB.DM, start=TB.start;
+        for(let d=0;d<DM;d++){ const vv=d/Math.max(1,DM-1); for(let k=0;k<N;k++){ const vi=(start+d*N+k)*2; uv[vi]=k/N; uv[vi+1]=vv; } }
+        if(TB.apex>=0){ uv[TB.apex*2]=0.5; uv[TB.apex*2+1]=1; } }
+      geo.setAttribute('uv', new THREE.BufferAttribute(uv,2)); }
     let mat; try{
-      // vertexColors drives the actual albedo now (skin on bare regions, fabric on
-      // clothed regions) so attire shows on the continuous body, not just hidden segs.
-      // Skin-grade PBR: low-ish roughness with a warm subsurface emissive so shadowed
-      // flesh reads as translucent (the cheap-SSS look) rather than flat plastic; flatShading
-      // off so the bumped ring resolution actually reads smooth.
-      mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true, roughness:0.52, metalness:0.0, emissive:new THREE.Color(0x1a0c07), emissiveIntensity:0.42, envMapIntensity:0.95, flatShading:false});
-      const st=window.__bannonSkinTex&&window.__bannonSkinTex(); if(st){ mat.map=st; mat.roughness=0.55; } }catch(e){ mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true}); }
+      // vertexColors drives the actual albedo (skin on bare regions, fabric on clothed regions) so
+      // attire shows on the continuous body. Skin-grade PBR: warm subsurface emissive so shadowed
+      // flesh reads translucent (cheap SSS) not plastic; a procedural NORMAL MAP adds pore/skin
+      // micro-relief that catches the lights, the single biggest "plastic -> flesh" upgrade.
+      mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true, roughness:0.58, metalness:0.0, emissive:new THREE.Color(0x1a0c07), emissiveIntensity:0.42, envMapIntensity:0.95, flatShading:false});
+      const st=window.__bannonSkinTex&&window.__bannonSkinTex(); if(st){ mat.map=st; mat.roughness=0.6; }
+      const nm=window.__bannonSkinNormal&&window.__bannonSkinNormal(); if(nm){ mat.normalMap=nm; mat.normalScale=new THREE.Vector2(0.5,0.5); }
+    }catch(e){ mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true}); }
     const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true; mesh.frustumCulled=false; mesh.visible=false;
     f.root.add(mesh); f._bmesh=mesh; f._bgeo=geo; f._needPaint=true; }
 
