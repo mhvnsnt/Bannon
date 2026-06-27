@@ -4998,11 +4998,41 @@ window.BBODY = (function(){
     LAYOUT={tubes:tubes,count:off,index:idx}; return LAYOUT; }
   function build(f){ if(f._bmesh) return; const L=layout(); const geo=new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(L.count*3),3)); geo.setIndex(L.index.slice());
-    let mat; try{ const skin=(f.spec&&f.spec.skin!=null)?f.spec.skin:(f.opts&&f.opts.skin!=null?f.opts.skin:0xc99873);
-      mat=new THREE.MeshStandardMaterial({color:skin, roughness:0.62, metalness:0.0, emissive:new THREE.Color(0x150b06), emissiveIntensity:0.55, envMapIntensity:0.7});
-      const st=window.__bannonSkinTex&&window.__bannonSkinTex(); if(st) mat.map=st; }catch(e){ mat=new THREE.MeshStandardMaterial({color:0xc99873}); }
+    geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(L.count*3).fill(0.8),3));   // per-vertex skin/attire colour
+    let mat; try{
+      // vertexColors drives the actual albedo now (skin on bare regions, fabric on
+      // clothed regions) so attire shows on the continuous body, not just hidden segs.
+      mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true, roughness:0.62, metalness:0.0, emissive:new THREE.Color(0x120a06), emissiveIntensity:0.5, envMapIntensity:0.7});
+      const st=window.__bannonSkinTex&&window.__bannonSkinTex(); if(st) mat.map=st; }catch(e){ mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true}); }
     const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true; mesh.frustumCulled=false; mesh.visible=false;
-    f.root.add(mesh); f._bmesh=mesh; f._bgeo=geo; }
+    f.root.add(mesh); f._bmesh=mesh; f._bgeo=geo; f._needPaint=true; }
+
+  // Region a continuous-body tube/ring belongs to — matches the ATTIRE_SEGS region
+  // keys so the same attire styles dress both the segmented and continuous bodies.
+  function regionForTube(ti, i, M){
+    if(ti===0||ti===1) return 'torso';
+    if(ti===2) return 'head';
+    if(ti===3||ti===4) return 'arms';
+    if(ti===5||ti===6) return (i<=1)?'legsUpper':'legsLower';
+    return 'skin';
+  }
+  // Paint skin + attire into the vertex colours from the fighter's spec + attire style.
+  function paint(f){
+    if(!f._bgeo) return; const col=f._bgeo.attributes.color; if(!col) return; const arr=col.array; const L=layout();
+    const sp=f.spec||{};
+    const skin=new THREE.Color(sp.skin!=null?sp.skin:(f.opts&&f.opts.skin!=null?f.opts.skin:0xc99873));
+    const prim=new THREE.Color(sp.trunk!=null?sp.trunk:(f.opts&&f.opts.col!=null?f.opts.col:0x202028));
+    const sec =new THREE.Color(sp.accent!=null?sp.accent:(f.opts&&f.opts.accent!=null?f.opts.accent:0xffb000));
+    const style=f._attireStyle||'TRUNKS';
+    const cfg=(window.ATTIRE_STYLES&&window.ATTIRE_STYLES[style])||{primary:[],secondary:[]};
+    const primR=new Set(cfg.primary||[]), secR=new Set(cfg.secondary||[]);
+    const colorFor=(reg)=> primR.has(reg)?prim : (secR.has(reg)?sec : skin);
+    for(let ti=0;ti<L.tubes.length;ti++){ const TB=L.tubes[ti], M=(TUBES[ti].rings.length), start=TB.start;
+      for(let i=0;i<M;i++){ const c=colorFor(regionForTube(ti,i,M));
+        for(let k=0;k<N;k++){ const vi=(start+i*N+k)*3; arr[vi]=c.r; arr[vi+1]=c.g; arr[vi+2]=c.b; } }
+      if(TB.apex>=0){ const c=colorFor(regionForTube(ti,M-1,M)); const vi=TB.apex*3; arr[vi]=c.r; arr[vi+1]=c.g; arr[vi+2]=c.b; } }
+    col.needsUpdate=true;
+  }
   const _u=new THREE.Vector3(), _v=new THREE.Vector3(), _d=new THREE.Vector3(), _ref=new THREE.Vector3();
   // GIRTH MORPH — make the CONTINUOUS skin actually respond to the create-a-fighter
   // sliders (build + per-part size in f.shape). Without this the visible body ignored
@@ -5039,8 +5069,9 @@ window.BBODY = (function(){
       if(on && !f._bmesh) build(f);
       if(f._bmesh) f._bmesh.visible=on;
       setHidden(f, on && !!f._bmesh);
-      if(on && f._bmesh) update(f); },
-    recolor:function(f){ if(f._bmesh && f.spec && f.spec.skin!=null){ try{ f._bmesh.material.color.setHex(f.spec.skin); }catch(e){} } }
+      if(on && f._bmesh){ update(f); if(f._needPaint || f._attireDirty){ paint(f); f._needPaint=false; f._attireDirty=false; } } },
+    paint:function(f){ paint(f); },
+    recolor:function(f){ if(f._bmesh){ f._attireDirty=true; } }   // repaint vertex colours on next sync
   };
 })();
 
@@ -5088,7 +5119,9 @@ window.applyFighterSpec = function(f, spec){
     if(sp.hair!=null) setCol(S.hair, sp.hair);
     if(sp.eye!=null && S.eyeL && S.eyeL.material){ try{ S.eyeL.material.emissive.setHex(sp.eye); }catch(e){} }
     f._specBuild=B; if(sp.name!=null) f.specName=sp.name;
-    if(f._bmesh && sp.skin!=null){ try{ f._bmesh.material.color.setHex(sp.skin); }catch(e){} }   // keep continuous body in sync
+    // continuous body colour now lives in vertex colours (skin + attire) — flag for repaint
+    // instead of tinting the whole material (which would override the per-region attire).
+    if(f._bmesh){ f._attireDirty=true; }
   }catch(e){ console.warn('[BANNON] applyFighterSpec failed', e); }
 };
 window.restyleFighter = function(f){ window.applyFighterSpec(f, {}); };   // re-apply current spec+shape (live slider hook)
@@ -5215,6 +5248,7 @@ window.applyAttire = function(f, style, primaryColor, secondaryColor){
       });
     });
     f._attireStyle = style;
+    f._attireDirty = true;   // repaint the continuous body's vertex colours to match
   }catch(_){ }
 };
 
