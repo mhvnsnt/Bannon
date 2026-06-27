@@ -5045,6 +5045,56 @@ window.BANNON_ROSTER = [
     shape:{ height:1.04, legLen:1.16, thighs:1.1, calves:1.12, arms:0.88, chest:0.9 } }                                                  // dancer's legs
 ];
 window.applyTemplate = function(f, t){ if(!f||!t) return; f.shape = Object.assign({}, t.shape||{}); window.applyFighterSpec(f, t); };
+
+// Archetype physique presets (same shape-space as BANNON_ROSTER) so every
+// character — including the new canon cast that has no hand-authored template —
+// gets a distinct silhouette instead of the one default body in different colours.
+window.ARCHE_SHAPE = {
+  powerhouse:{ build:1.40, shape:{ height:1.12, chest:1.42, shoulders:1.50, arms:1.32, forearms:1.20, hands:1.12, waist:1.06, thighs:1.32, calves:1.20, neck:1.30 } },
+  brawler:   { build:1.20, shape:{ height:1.05, chest:1.24, shoulders:1.32, arms:1.20, forearms:1.12, waist:0.98, thighs:1.14, calves:1.06, neck:1.18 } },
+  technician:{ build:1.02, shape:{ height:1.02, chest:1.06, shoulders:1.16, arms:1.02, waist:0.86, thighs:1.04, calves:1.00 } },
+  highFlyer: { build:0.90, shape:{ height:1.00, legLen:1.12, chest:0.98, shoulders:1.06, arms:0.94, waist:0.80, thighs:1.00, calves:1.12 } },
+  enigma:    { build:1.10, shape:{ height:1.04, chest:1.14, shoulders:1.22, arms:1.08, waist:0.88, thighs:1.10, calves:1.05, neck:1.12 } },
+  freeAgent: { build:1.08, shape:{ height:1.00, chest:1.14, shoulders:1.22, arms:1.08, waist:0.85, thighs:1.08, calves:1.04 } }
+};
+
+// applyForgeMorphs — make a fighter's body actually reflect who they are. Routes
+// through the proven applyTemplate/applyFighterSpec path (so physics/hit-detection
+// stay intact). Priority: (1) a character forged in the creative suite gets its
+// real morph sliders; (2) a hand-authored BANNON_ROSTER template (GOLEM the giant,
+// TITAN the powerhouse, etc.); (3) an archetype-derived physique for everyone else.
+window.applyForgeMorphs = function(f){
+  if(!f || !window.applyFighterSpec) return;
+  const key = (typeof fname==='function' ? fname(f) : (f.opts&&f.opts.name)||'BANNON').toUpperCase();
+  // 1) forged character from the creative suite
+  let forged=null; try{ forged=(window.__FORGED_CACHE||[]).find(c=>(c.id||c.displayName||'').toUpperCase()===key); }catch(_){}
+  if(forged){
+    const b=forged.body||{}, sk=forged.skin||{}, at=forged.attire||{}, ec=forged.engineConfig||{};
+    const m=(v,d)=>(v!=null?v:d), musc=m(b.muscularity,0.5), fat=m(b.bodyFat,0.4);
+    const t={
+      build: 0.85 + musc*0.6 + m(b.mass,0.5)*0.2,
+      skin:  (sk.baseColor!=null?sk.baseColor:undefined),
+      trunk: (at.primaryColor!=null?at.primaryColor:undefined),
+      accent:(at.accentColor!=null?at.accentColor:undefined),
+      shape:{
+        height: 0.96 + m(b.height,0.5)*0.28,
+        chest: 1.12*m(b.chest,1)*(0.9+musc*0.4), shoulders: 1.20*m(b.shoulders,1)*(0.9+musc*0.45),
+        arms: 1.05*m(b.arms,1)*(0.9+musc*0.4), forearms: m(b.forearms,1),
+        waist: 0.86*m(b.waist,1)*(0.92+fat*0.5), thighs: 1.06*m(b.thighs,1)*(0.9+musc*0.35),
+        calves: m(b.calves,1), neck: m(b.neck,1)*(0.95+musc*0.3),
+        head: (ec.facialMorphs&&ec.facialMorphs.headScale?ec.facialMorphs.headScale*0.7:0.70)
+      }
+    };
+    window.applyTemplate(f, t); f._forgedLook=true; return;
+  }
+  // 2) hand-authored roster template
+  let tpl=null; try{ tpl=(window.BANNON_ROSTER||[]).find(r=>r.name===key); }catch(_){}
+  if(tpl){ window.applyTemplate(f, tpl); return; }
+  // 3) archetype-derived physique for the rest (new canon characters)
+  const meta=(window.CHAR_META&&window.CHAR_META[key])||{};
+  const a=window.ARCHE_SHAPE[meta.archetype||'freeAgent']||window.ARCHE_SHAPE.freeAgent;
+  window.applyTemplate(f, Object.assign({}, a, { skin: meta.skin, trunk: meta.col, accent: meta.accent }));
+};
 window._rosterIdx = window._rosterIdx||0;
 window.cycleRosterP2 = function(){
   try{
@@ -11384,8 +11434,9 @@ function startFight(){
   comboCount=0; updateCombo();
   currentRound=1; p1Rounds=0; p2Rounds=0; roundEnding=false;
   updateRoundPips();
-  document.getElementById('p1-name').textContent = o1.name;
-  document.getElementById('p2-name').textContent = o2.name;
+  document.getElementById('p1-name').textContent = o1.name.replace(/_/g,' ');
+  var _p1s=document.getElementById('p1-style'); if(_p1s) _p1s.textContent = (window.CHAR_META[o1.name] && window.CHAR_META[o1.name].label) || o1.style;
+  document.getElementById('p2-name').textContent = o2.name.replace(/_/g,' ');
   document.getElementById('p2-style').textContent = (window.CHAR_META[o2.name] && window.CHAR_META[o2.name].label) || o2.style;
   gameState='fight';
   hideAll();
