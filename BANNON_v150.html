@@ -12182,7 +12182,8 @@ function startFight(){
   if (setup && setup.p1Control==='AI' && setup.p2Control==='AI'){ p1.isPlayer=false; p2.isPlayer=false; }
   fighters = [p1, p2];
 
-  if(typeof applyChosenModels==='function') applyChosenModels();
+  if(typeof applyCharModels==='function') applyCharModels();      // unique per-character models first
+  if(typeof applyChosenModels==='function') applyChosenModels();  // then per-side fallback for any unset
   // Apply forge morphs to whichever fighters have a forged/morph spec.
   if(typeof applyForgeMorphs==='function'){ try{ applyForgeMorphs(p1); applyForgeMorphs(p2); }catch(_){} }
   // Dress each fighter in their own attire so the roster isn't all in trunks.
@@ -12419,6 +12420,21 @@ function removeFighterModel(side){
   f.modelUrl=null; if(f.seg) setProcVisible(f,true);
 }
 function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MODEL&&CHOSEN_MODEL[sd]; var f=fighterFor(sd); if(f && !f.model && ch && ch.url){ try{ loadFighterModel(sd, ch.url, ch.name); }catch(e){} } }); }
+
+// ===== UNIQUE PER-CHARACTER MODELS — each character carries its OWN .glb so the roster isn't a set
+// of generic shared bodies. Keyed by character identity (name), persisted, and auto-loaded whenever
+// that character fights on EITHER side. A model imported or AI-generated for "BANNON" then follows
+// Bannon everywhere; another character gets a different unique model. Takes priority over the per-side
+// CHOSEN_MODEL fallback. =====
+let CHAR_MODEL = (function(){ try{ var r=localStorage.getItem('bannonCharModels'); if(r) return JSON.parse(r); }catch(e){} return {}; })();
+function charModelKey(f){ var n=(typeof fname==='function'?fname(f):(f&&f.opts&&f.opts.name))||''; return String(n).toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
+function applyCharModels(){ ['p1','p2'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; var ck=charModelKey(f); var cm=ck&&CHAR_MODEL[ck]; if(cm&&cm.url){ try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
+function assignCharModel(charKey, url, name){ if(!charKey) return; charKey=charKey.toUpperCase(); try{ if(url){ CHAR_MODEL[charKey]={url:url,name:name||charKey}; } else { delete CHAR_MODEL[charKey]; } localStorage.setItem('bannonCharModels',JSON.stringify(CHAR_MODEL)); }catch(e){} }
+// Bind the model currently shown on a side to that side's CHARACTER so it persists as theirs.
+function assignCurrentModelToChar(side){ var f=fighterFor(side); if(!f) return; var ck=charModelKey(f);
+  if(f.model&&f.modelUrl){ assignCharModel(ck, f.modelUrl, (CHOSEN_MODEL[side]&&CHOSEN_MODEL[side].name)||ck); setModelStatus(side,'★ Bound to '+ck+' — loads for this character everywhere.'); }
+  else { assignCharModel(ck,null); setModelStatus(side,'Cleared '+ck+'’s model.'); } }
+window.assignCurrentModelToChar=assignCurrentModelToChar; window.CHAR_MODEL=CHAR_MODEL;
 function applyModelChoice(side, url, name){
   try{ CHOSEN_MODEL[side]= url?{url:url,name:name||''}:null; localStorage.setItem('bannonChosenModels',JSON.stringify(CHOSEN_MODEL)); }catch(e){}
   if(!url){ removeFighterModel(side); setModelStatus(side,'Built-in body.'); return; }
