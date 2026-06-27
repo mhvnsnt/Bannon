@@ -2400,7 +2400,7 @@ class Fighter {
     this.seg.hair = add(new THREE.Mesh(new THREE.SphereGeometry(0.162,28,24), hairMat));
     this.seg.eyeL = mkBox(0.045,0.03,0.02, M(0x0c0c0c, isP?0xff3300:0x00ddff, 100));
     this.seg.eyeR = mkBox(0.045,0.03,0.02, M(0x0c0c0c, isP?0xff3300:0x00ddff, 100));
-    this.seg.eyeL.material.emissiveIntensity = 2.1; this.seg.eyeR.material.emissiveIntensity = 2.1; // push eyes above bloom threshold
+    this.seg.eyeL.material.emissiveIntensity = 0.55; this.seg.eyeR.material.emissiveIntensity = 0.55; // a lit iris, not a blown-out white bloom dot
     this.seg.neck = mkCyl(0.085,0.10, skinMat);
 
     // ARMS — deltoid -> bicep -> forearm -> wrap -> glove
@@ -3381,7 +3381,13 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
     this.faceOpponent(dt);
 
   this.root.position.set(this.x, RING.floorY + (this.zoneY||0), this.z);
-  this.root.rotation.y = this.facing;
+  // Reset the FULL orientation each grounded frame. Airborne flip/twist (apex stick) bakes pitch
+  // into rotation.x and roll/spin into rotation.z (applyShape). Previously we only reassigned .y
+  // here, so a move that DIDN'T complete a full rotation left stale pitch/roll on the root after
+  // landing — the body stayed tilted / off in world space. When airborne, applyShape overwrites
+  // this with the live pitch/facing/spin, so clearing x/z here only affects grounded frames.
+  if (this.airLift) this.root.rotation.y = this.facing;
+  else this.root.rotation.set(0, this.facing, 0, 'YXZ');
   this.root.scale.set(1,1,1);
   if (this.airLift) this.root.position.y = RING.floorY + (this.zoneY||0) + this.airLift;
 
@@ -4970,6 +4976,36 @@ window.__bannonSkinTex = function(){
   }catch(e){ window.__skinTex=null; return null; }
 };
 
+// procedural SKIN NORMAL MAP (cached, shared) — pore dimples + fine grain baked into a tangent-space
+// normal map so the smooth body surface catches the key/rim/IBL lights as real skin micro-relief
+// instead of a flat sheen. No image asset: a height field is built from pore/grain noise, then
+// converted to normals via a Sobel gradient. This is the single biggest "plastic -> flesh" upgrade
+// once the body finally has UVs to sample it with.
+window.__bannonSkinNormal = function(){
+  if(window.__skinNrm!==undefined) return window.__skinNrm;
+  try{
+    const S=256, c=document.createElement('canvas'); c.width=c.height=S; const x=c.getContext('2d');
+    // HEIGHT FIELD — mid-grey base, pore dimples (darker = lower), fine grain
+    x.fillStyle='#808080'; x.fillRect(0,0,S,S);
+    for(let i=0;i<3000;i++){ const r=1+Math.random()*4, px=Math.random()*S, py=Math.random()*S, d=Math.round(60+Math.random()*40);
+      const g=x.createRadialGradient(px,py,0,px,py,r); g.addColorStop(0,'rgba('+d+','+d+','+d+',0.55)'); g.addColorStop(1,'rgba(128,128,128,0)');
+      x.fillStyle=g; x.beginPath(); x.arc(px,py,r,0,7); x.fill(); }
+    { const hid=x.getImageData(0,0,S,S), hd=hid.data; for(let i=0;i<hd.length;i+=4){ const n=(Math.random()*2-1)*11; hd[i]+=n; hd[i+1]+=n; hd[i+2]+=n; } x.putImageData(hid,0,0); }
+    // HEIGHT -> NORMAL via Sobel (wrap at edges so the tiling stays seamless)
+    const src=x.getImageData(0,0,S,S).data, out=x.createImageData(S,S), od=out.data;
+    const Hh=(ix,iy)=>{ ix=(ix+S)%S; iy=(iy+S)%S; return src[(iy*S+ix)*4]/255; };
+    const strength=2.4;
+    for(let iy=0;iy<S;iy++) for(let ix=0;ix<S;ix++){
+      const dx=(Hh(ix-1,iy)-Hh(ix+1,iy))*strength, dy=(Hh(ix,iy-1)-Hh(ix,iy+1))*strength;
+      let nx=dx, ny=dy, nz=1; const il=1/Math.hypot(nx,ny,nz); nx*=il; ny*=il; nz*=il;
+      const o=(iy*S+ix)*4; od[o]=Math.round((nx*0.5+0.5)*255); od[o+1]=Math.round((ny*0.5+0.5)*255); od[o+2]=Math.round((nz*0.5+0.5)*255); od[o+3]=255;
+    }
+    x.putImageData(out,0,0);
+    const t=new THREE.Texture(c); t.needsUpdate=true; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.repeat.set(3,4); t.anisotropy=4;
+    window.__skinNrm=t; return t;
+  }catch(e){ window.__skinNrm=null; return null; }
+};
+
 // ============================ CONTINUOUS BODY — one procedural skin surface deformed by the rig (no GLB) ============================
 // Vertices are recomputed every frame straight from the corrected joints (fighter._rj) — no skeleton binding, so it renders
 // predictably. Tapered tubes (V-torso, limbs, neck->head) form one smooth flesh-shaded mesh that bends with the fighter and
@@ -4985,53 +5021,92 @@ window.BBODY = (function(){
   // Athletic build from the walking-sim ratios: broad chest, flatter depth, narrow waist (real V-taper), arms with bicep/forearm mass.
   const TUBES=[
     // TORSO: pelvis -> NARROW WAIST -> broad chest -> traps to the neck (elliptical = ribcage, not a cylinder)
-    { cap:false, rings:[ ['pelvis',0.175,0.145], [['pelvis','chest',0.40],0.140,0.115], [['pelvis','chest',0.72],0.205,0.150], ['chest',0.265,0.165], [['chest','neck',0.45],0.165,0.130] ] },
-    { cap:true,  rings:[ [['pelvis','chest',0.12],0.165,0.135], ['pelvis',0.185,0.150], [['hipL','hipR',0.5],0.175,0.150], [['chest','pelvis',1.22],0.120,0.105] ] }, // pelvic basin
+    // cap = close the far (last-ring) end; capStart = close the near (ring-0) end. EVERY tube is now
+    // closed at both visible ends so you can't see into the hollow interior ("mushroom cup") where a
+    // limb meets the torso/pelvis or at the neck — the open sockets get buried inside the adjacent
+    // volume by overlap, so the caps seal the seam instead of reading as stubs.
+    { cap:true, capStart:true, rings:[ ['pelvis',0.175,0.145], [['pelvis','chest',0.40],0.140,0.115], [['pelvis','chest',0.72],0.205,0.150], ['chest',0.265,0.165], [['chest','neck',0.45],0.165,0.130] ] },
+    { cap:true, capStart:true, rings:[ [['pelvis','chest',0.12],0.165,0.135], ['pelvis',0.185,0.150], [['hipL','hipR',0.5],0.175,0.150], [['chest','pelvis',1.22],0.120,0.105] ] }, // pelvic basin
     // NECK: cervical column through the real joint -> head ball
-    { cap:true,  rings:[ [['chest','neck',0.55],0.095,0.085], ['neck',0.072], [['neck','head',0.45],0.078], ['head',0.118], [['neck','head',1.32],0.085] ] },
+    { cap:true, capStart:true, rings:[ [['chest','neck',0.55],0.095,0.085], ['neck',0.072], [['neck','head',0.45],0.078], ['head',0.118], [['neck','head',1.32],0.085] ] },
     // ARMS: broad deltoid cap -> THICK biceps -> elbow -> forearm -> wrist -> hand (more mass + taper)
-    { cap:true,  rings:[ ['shL',0.094], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
-    { cap:true,  rings:[ ['shR',0.094], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
+    { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
+    { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
     // LEGS: thick quad -> knee -> calf taper -> ankle -> foot
-    { cap:true,  rings:[ ['hipL',0.118,0.108], [['hipL','knL',0.35],0.114,0.102], ['knL',0.078], [['knL','ftL',0.32],0.070], ['ankL',0.048], ['ftL',0.060], [['knL','ftL',1.12],0.042] ] },
-    { cap:true,  rings:[ ['hipR',0.118,0.108], [['hipR','knR',0.35],0.114,0.102], ['knR',0.078], [['knR','ftR',0.32],0.070], ['ankR',0.048], ['ftR',0.060], [['knR','ftR',1.12],0.042] ] },
+    // foot: after the ankle the tube turns FORWARD (local +x) into an instep + toe, flattened wide/low,
+    // so it reads as a foot/boot instead of a ball stub. fy lowers it to the mat, fz widens the sole.
+    { cap:true, capStart:true, rings:[ [['hipL','pelvis',0.30],0.126,0.116], ['hipL',0.118,0.108], [['hipL','knL',0.35],0.114,0.102], ['knL',0.078], [['knL','ftL',0.30],0.070], ['ankL',0.058,0.066], [{j:'ankL',fx:0.08,fy:-0.05,fz:0.005},0.052,0.072], [{j:'ankL',fx:0.19,fy:-0.07,fz:0.005},0.038,0.060] ] },
+    { cap:true, capStart:true, rings:[ [['hipR','pelvis',0.30],0.126,0.116], ['hipR',0.118,0.108], [['hipR','knR',0.35],0.114,0.102], ['knR',0.078], [['knR','ftR',0.30],0.070], ['ankR',0.058,0.066], [{j:'ankR',fx:0.08,fy:-0.05,fz:-0.005},0.052,0.072], [{j:'ankR',fx:0.19,fy:-0.07,fz:-0.005},0.038,0.060] ] },
   ];
-  const FACE_KEEP={jaw:0,brow:0,nose:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0,
-    gloveL:0,gloveR:0,thumbL:0,thumbR:0,wrapL:0,wrapR:0,bootL:0,bootR:0,ankleL:0,ankleR:0,trunks:0,band:0};   // face + equipment (gloves/wraps/boots/shorts) stay over the skin
+  // Only the FACE + hair stay as overlay segments. The old crude equipment meshes (box boots,
+  // the lampshade trunks cylinder, the waistband ring, gloves, wraps) are NOT kept — they're now
+  // PAINTED onto the smooth body as trunk/boot regions (see regionForTube/paint), so the silhouette
+  // is one clean continuous body instead of the smooth mesh poking through stamped-on crude shapes.
+  // brow + headBand are flat box panels that read as a visor stuck on the forehead — drop them on the
+  // smooth body (the head's own form + a subtle brow can come from sculpt later). Keep eyes/nose/mouth/ears/hair.
+  const FACE_KEEP={jaw:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0};
   function center(f,c){ const J=f._rj; if(!J) return null;
     if(typeof c==='string'){ const v=J[c]; return v?[v.x,v.y,v.z]:null; }
+    // {j, fx, fy, fz}: a joint plus a LOCAL offset. Local +x is the character's forward (root rotation
+    // carries facing), so fx pushes a point ahead of the joint — used to grow a real forward-pointing
+    // foot out of the ankle, which has no toe joint in the rig.
+    if(c && c.j!==undefined){ const v=J[c.j]; if(!v) return null; return [v.x+(c.fx||0), v.y+(c.fy||0), v.z+(c.fz||0)]; }
     const a=J[c[0]], b=J[c[1]], t=c[2]; if(!a||!b) return null;
     return [a.x+(b.x-a.x)*t, a.y+(b.y-a.y)*t, a.z+(b.z-a.z)*t]; }
+  // LONGITUDINAL SUBDIVISION — the authored rings are sparse (5-8 per limb), which is what made
+  // the body read as faceted tubes. We tessellate SUB extra rings between every authored pair at
+  // build time (linear centerline so limbs stay true to the skeleton, smoothstep radius so the
+  // taper is continuous), then computeVertexNormals over the denser surface — turning the blocky
+  // tubes into smooth anatomy. All the shaping functions (relief/fat/fem/ink/scar/region) are still
+  // sampled in AUTHORED ring-space via a fractional index (d/SUB), so every CAW morph is unchanged,
+  // just evaluated at finer resolution. Cheap: ~3k verts total across the whole body.
+  const SUB=4;
   let LAYOUT=null;
   function layout(){ if(LAYOUT) return LAYOUT; const tubes=[]; let off=0; const idx=[];
-    for(let ti=0;ti<TUBES.length;ti++){ const T=TUBES[ti], M=T.rings.length, start=off;
-      for(let i=0;i<M-1;i++){ const a=start+i*N, b=start+(i+1)*N;
+    for(let ti=0;ti<TUBES.length;ti++){ const T=TUBES[ti], M=T.rings.length, DM=(M-1)*SUB+1, start=off;
+      for(let i=0;i<DM-1;i++){ const a=start+i*N, b=start+(i+1)*N;
         for(let k=0;k<N;k++){ const k2=(k+1)%N; idx.push(a+k,a+k2,b+k2, a+k,b+k2,b+k); } }
-      off+=M*N; let apex=-1;
-      if(T.cap){ apex=off; off++; const last=start+(M-1)*N; for(let k=0;k<N;k++){ const k2=(k+1)%N; idx.push(last+k,last+k2,apex); } }
-      tubes.push({start:start,M:M,apex:apex}); }
-    LAYOUT={tubes:tubes,count:off,index:idx}; return LAYOUT; }
+      off+=DM*N; let apex=-1, apex0=-1;
+      if(T.cap){ apex=off; off++; const last=start+(DM-1)*N; for(let k=0;k<N;k++){ const k2=(k+1)%N; idx.push(last+k,last+k2,apex); } }
+      if(T.capStart){ apex0=off; off++; const first=start; for(let k=0;k<N;k++){ const k2=(k+1)%N; idx.push(first+k2,first+k,apex0); } }   // reversed winding so the near-end cap faces outward
+      tubes.push({start:start,M:M,DM:DM,apex:apex,apex0:apex0}); }
+    LAYOUT={tubes:tubes,count:off,index:idx,SUB:SUB}; return LAYOUT; }
   function build(f){ if(f._bmesh) return; const L=layout(); const geo=new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(L.count*3),3)); geo.setIndex(L.index.slice());
     geo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(L.count*3).fill(0.8),3));   // per-vertex skin/attire colour
+    // UVs (topological, set once): u wraps around each ring, v runs the length of the tube. Without
+    // these the skin albedo + normal maps had no coordinates and sampled a single texel — which is a
+    // big reason the body read as flat plastic. Now pore/grain/SSS detail and the normal map actually
+    // project onto the surface and catch the rim/key lights as skin.
+    { const uv=new Float32Array(L.count*2);
+      for(let ti=0;ti<L.tubes.length;ti++){ const TB=L.tubes[ti], DM=TB.DM, start=TB.start;
+        for(let d=0;d<DM;d++){ const vv=d/Math.max(1,DM-1); for(let k=0;k<N;k++){ const vi=(start+d*N+k)*2; uv[vi]=k/N; uv[vi+1]=vv; } }
+        if(TB.apex>=0){ uv[TB.apex*2]=0.5; uv[TB.apex*2+1]=1; }
+        if(TB.apex0>=0){ uv[TB.apex0*2]=0.5; uv[TB.apex0*2+1]=0; } }
+      geo.setAttribute('uv', new THREE.BufferAttribute(uv,2)); }
     let mat; try{
-      // vertexColors drives the actual albedo now (skin on bare regions, fabric on
-      // clothed regions) so attire shows on the continuous body, not just hidden segs.
-      // Skin-grade PBR: low-ish roughness with a warm subsurface emissive so shadowed
-      // flesh reads as translucent (the cheap-SSS look) rather than flat plastic; flatShading
-      // off so the bumped ring resolution actually reads smooth.
-      mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true, roughness:0.52, metalness:0.0, emissive:new THREE.Color(0x1a0c07), emissiveIntensity:0.42, envMapIntensity:0.95, flatShading:false});
-      const st=window.__bannonSkinTex&&window.__bannonSkinTex(); if(st){ mat.map=st; mat.roughness=0.55; } }catch(e){ mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true}); }
+      // vertexColors drives the actual albedo (skin on bare regions, fabric on clothed regions) so
+      // attire shows on the continuous body. Skin-grade PBR: warm subsurface emissive so shadowed
+      // flesh reads translucent (cheap SSS) not plastic; a procedural NORMAL MAP adds pore/skin
+      // micro-relief that catches the lights, the single biggest "plastic -> flesh" upgrade.
+      mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true, roughness:0.58, metalness:0.0, emissive:new THREE.Color(0x1a0c07), emissiveIntensity:0.42, envMapIntensity:0.95, flatShading:false, side:THREE.DoubleSide});
+      const st=window.__bannonSkinTex&&window.__bannonSkinTex(); if(st){ mat.map=st; mat.roughness=0.6; }
+      const nm=window.__bannonSkinNormal&&window.__bannonSkinNormal(); if(nm){ mat.normalMap=nm; mat.normalScale=new THREE.Vector2(0.5,0.5); }
+    }catch(e){ mat=new THREE.MeshStandardMaterial({color:0xffffff, vertexColors:true}); }
     const mesh=new THREE.Mesh(geo,mat); mesh.castShadow=true; mesh.frustumCulled=false; mesh.visible=false;
     f.root.add(mesh); f._bmesh=mesh; f._bgeo=geo; f._needPaint=true; }
 
   // Region a continuous-body tube/ring belongs to — matches the ATTIRE_SEGS region
   // keys so the same attire styles dress both the segmented and continuous bodies.
   function regionForTube(ti, i, M){
-    if(ti===0||ti===1) return 'torso';
+    if(ti===1) return 'trunks';                          // pelvic basin tube = briefs/trunks
+    if(ti===0) return 'torso';
     if(ti===2) return 'head';
     if(ti===3||ti===4) return 'arms';
-    if(ti===5||ti===6) return (i<=1)?'legsUpper':'legsLower';
+    if(ti===5||ti===6){ const r=i/Math.max(1,M-1);       // ratio so it's robust to ring count
+      if(r<=0.12) return 'trunks';                       // very top of the thigh = leg of the trunks
+      if(r>=0.60) return 'boots';                        // ankle + foot region = the boot
+      return (r<=0.34)?'legsUpper':'legsLower'; }
     return 'skin';
   }
   // TATTOO ink coverage 0..1 for a vertex, by placement style (which body zones it covers).
@@ -5058,9 +5133,9 @@ window.BBODY = (function(){
     if(!style || style==='NONE') return 0;
     const front=Math.max(0,-Math.cos(a)), kk=((k%N)+N)%N;
     if(style==='FACE')  return (ti===2 && i>=M-2 && front>0.35 && kk>=Math.floor(N*0.46) && kk<=Math.floor(N*0.56))?1:0; // cheek/brow slash
-    if(style==='CHEST') return (ti===0 && i===Math.floor(M*0.72) && front>0.3 && kk<=2)?1:0;                            // pec slash
+    if(style==='CHEST') return (ti===0 && Math.round(i)===Math.floor(M*0.72) && front>0.3 && kk<=2)?1:0;                 // pec slash
     if(style==='BACK')  return (ti===0 && i>=Math.floor(M*0.45) && Math.max(0,Math.cos(a))>0.3 && (kk%6)===0)?1:0;       // back lashes
-    if(style==='BODY')  return ((ti===0 && i===Math.floor(M*0.5) && front>0.3 && (kk%5)===0) || (ti===3 && i===2 && kk<=1))?1:0;
+    if(style==='BODY')  return ((ti===0 && Math.round(i)===Math.floor(M*0.5) && front>0.3 && (kk%5)===0) || (ti===3 && Math.round(i)===2 && kk<=1))?1:0;
     return 0;
   }
   // Paint skin + attire + tattoos/scars into the vertex colours.
@@ -5077,7 +5152,13 @@ window.BBODY = (function(){
     const style=f._attireStyle||'TRUNKS';
     const cfg=(window.ATTIRE_STYLES&&window.ATTIRE_STYLES[style])||{primary:[],secondary:[]};
     const primR=new Set(cfg.primary||[]), secR=new Set(cfg.secondary||[]);
-    const colorFor=(reg)=> primR.has(reg)?prim : (secR.has(reg)?sec : skin);
+    // trunks/briefs always wear the primary colour (the waist + leg of the gear); boots are a dark
+    // rubber unless the style explicitly recolours the lower leg. Everything else falls through to
+    // the style's primary/secondary region sets, then bare skin.
+    const bootC=new THREE.Color(sp.bootColor!=null?sp.bootColor:0x14141a);
+    const colorFor=(reg)=> reg==='trunks' ? prim
+      : reg==='boots' ? (secR.has('legsLower')?sec:bootC)
+      : (primR.has(reg)?prim : (secR.has(reg)?sec : skin));
     function setV(vi, ti, i, M, k){
       const reg=regionForTube(ti,i,M); const c=colorFor(reg); let r=c.r,g=c.g,b=c.b;
       if(c===skin){   // tattoos/scars only on bare skin (hidden under fabric)
@@ -5087,9 +5168,10 @@ window.BBODY = (function(){
       }
       arr[vi]=r; arr[vi+1]=g; arr[vi+2]=b;
     }
-    for(let ti=0;ti<L.tubes.length;ti++){ const TB=L.tubes[ti], M=(TUBES[ti].rings.length), start=TB.start;
-      for(let i=0;i<M;i++){ for(let k=0;k<N;k++){ setV((start+i*N+k)*3, ti,i,M,k); } }
-      if(TB.apex>=0){ setV(TB.apex*3, ti, M-1, M, 0); } }
+    for(let ti=0;ti<L.tubes.length;ti++){ const TB=L.tubes[ti], M=(TUBES[ti].rings.length), DM=TB.DM, start=TB.start;
+      for(let d=0;d<DM;d++){ const ai=d/L.SUB; for(let k=0;k<N;k++){ setV((start+d*N+k)*3, ti,ai,M,k); } }
+      if(TB.apex>=0){ setV(TB.apex*3, ti, M-1, M, 0); }
+      if(TB.apex0>=0){ setV(TB.apex0*3, ti, 0, M, 0); } }
     col.needsUpdate=true;
   }
   window.TATTOO_LIST=['NONE','LEFT_SLEEVE','RIGHT_SLEEVE','HALF_SLEEVE','SLEEVES','CHEST','BACK','CHEST_BACK','TORSO','LEGS','NECK','FULL'];
@@ -5182,29 +5264,73 @@ window.BBODY = (function(){
   // Muscle definition is only as strong as (muscularity x leanness), softened for women.
   function reliefScale(f){ const c=_bodyComp(f); return Math.max(0, c.musc*(1 - c.fat*0.85)) * (1 - c.fem*0.4); }
 
-  function update(f){ if(!f._bmesh||!f._rj) return; const L=layout(), pos=f._bgeo.attributes.position.array;
+  function update(f){ if(!f._bmesh||!f._rj) return; const L=layout(), pos=f._bgeo.attributes.position.array, SB=L.SUB;
     const _def = (window.MUSCLE_RELIEF===false)?0:reliefScale(f);
-    for(let ti=0;ti<L.tubes.length;ti++){ const T=TUBES[ti], TB=L.tubes[ti], M=T.rings.length, start=TB.start; const C=[],R=[];
+    for(let ti=0;ti<L.tubes.length;ti++){ const T=TUBES[ti], TB=L.tubes[ti], M=T.rings.length, DM=TB.DM, start=TB.start;
+      // 1) AUTHORED rings: real skeleton centers + morph-scaled radii (one per authored ring)
+      const C=[],R=[];
       for(let i=0;i<M;i++){ const c=center(f,T.rings[i][0]); if(!c) return; C.push(c); const rr=T.rings[i]; const mg=ringGirth(f,ti,i,M); R.push([rr[1]*mg.s, (rr[2]!=null?rr[2]:rr[1])*mg.d]); }
-      for(let i=0;i<M;i++){ let ax,ay,az;
-        if(i===0){ ax=C[1][0]-C[0][0]; ay=C[1][1]-C[0][1]; az=C[1][2]-C[0][2]; }
-        else if(i===M-1){ ax=C[i][0]-C[i-1][0]; ay=C[i][1]-C[i-1][1]; az=C[i][2]-C[i-1][2]; }
-        else { ax=C[i+1][0]-C[i-1][0]; ay=C[i+1][1]-C[i-1][1]; az=C[i+1][2]-C[i-1][2]; }
+      // 2) DENSE rings: linear center (limbs stay true to bone) + smoothstep radius (continuous taper)
+      const DC=[],DR=[],DAI=[];
+      for(let d=0;d<DM;d++){ const fi=d/SB, s=Math.min(M-2,Math.floor(fi)), tt=fi-s, ss=tt*tt*(3-2*tt);
+        DC.push([ C[s][0]+(C[s+1][0]-C[s][0])*tt, C[s][1]+(C[s+1][1]-C[s][1])*tt, C[s][2]+(C[s+1][2]-C[s][2])*tt ]);
+        DR.push([ R[s][0]+(R[s+1][0]-R[s][0])*ss, R[s][1]+(R[s+1][1]-R[s][1])*ss ]);
+        DAI.push(fi); }
+      // 3) emit each dense ring. PARALLEL-TRANSPORT FRAME: instead of recomputing the ring basis
+      // from a world reference each ring (which snaps 90° when a limb crosses the vertical/horizontal
+      // threshold — the starburst/twist spikes you saw on bent arms), seed the frame once at the base
+      // ring, then carry it forward by removing the new tangent's component from the previous frame
+      // (Gram-Schmidt). The cross-section then rotates minimally and continuously along the tube.
+      let pux=0,puy=0,puz=0,haveFrame=false;
+      for(let d=0;d<DM;d++){ let ax,ay,az;
+        if(d===0){ ax=DC[1][0]-DC[0][0]; ay=DC[1][1]-DC[0][1]; az=DC[1][2]-DC[0][2]; }
+        else if(d===DM-1){ ax=DC[d][0]-DC[d-1][0]; ay=DC[d][1]-DC[d-1][1]; az=DC[d][2]-DC[d-1][2]; }
+        else { ax=DC[d+1][0]-DC[d-1][0]; ay=DC[d+1][1]-DC[d-1][1]; az=DC[d+1][2]-DC[d-1][2]; }
         _d.set(ax,ay,az); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
-        if(Math.abs(_d.y)>0.9)_ref.set(1,0,0); else _ref.set(0,1,0);
-        _u.crossVectors(_d,_ref); if(_u.lengthSq()<1e-9)_u.set(1,0,0); _u.normalize(); _v.crossVectors(_u,_d).normalize();
-        const rS=R[i][0], rD=R[i][1], cx=C[i][0], cy=C[i][1], cz=C[i][2], vo=(start+i*N)*3;
+        if(!haveFrame){
+          if(Math.abs(_d.y)>0.9)_ref.set(1,0,0); else _ref.set(0,1,0);
+          _u.crossVectors(_d,_ref); if(_u.lengthSq()<1e-9)_u.set(1,0,0); _u.normalize(); haveFrame=true;
+        } else {
+          _u.set(pux,puy,puz); const dot=_u.x*_d.x+_u.y*_d.y+_u.z*_d.z;
+          _u.x-=_d.x*dot; _u.y-=_d.y*dot; _u.z-=_d.z*dot;
+          if(_u.lengthSq()<1e-9){ if(Math.abs(_d.y)>0.9)_ref.set(1,0,0); else _ref.set(0,1,0); _u.crossVectors(_d,_ref); }
+          _u.normalize();
+        }
+        _v.crossVectors(_u,_d).normalize();
+        pux=_u.x; puy=_u.y; puz=_u.z;
+        const rS=DR[d][0], rD=DR[d][1], cx=DC[d][0], cy=DC[d][1], cz=DC[d][2], vo=(start+d*N)*3, ai=DAI[d];
         for(let k=0;k<N;k++){ const a=k/N*6.2831853;
-          // muscle (scaled by definition) + soft fat mass + female shaping + glutes/seat, per-vertex
-          const rel = _def*_relief(ti,i,M,a) + _fat(f,ti,i,M,a) + _fem(f,ti,i,M,a) + _glute(f,ti,i,M,a);
+          // muscle (scaled by definition) + soft fat mass + female shaping + glutes/seat — sampled in
+          // AUTHORED ring-space (ai = fractional authored index) so every CAW morph is unchanged.
+          const rel = _def*_relief(ti,ai,M,a) + _fat(f,ti,ai,M,a) + _fem(f,ti,ai,M,a) + _glute(f,ti,ai,M,a);
           const ca=Math.cos(a)*(rS+rel), sa=Math.sin(a)*(rD+rel);
           pos[vo+k*3]=cx+_u.x*ca+_v.x*sa; pos[vo+k*3+1]=cy+_u.y*ca+_v.y*sa; pos[vo+k*3+2]=cz+_u.z*ca+_v.z*sa; } }
-      if(TB.apex>=0){ const i=M-1, ao=TB.apex*3; _d.set(C[i][0]-C[i-1][0],C[i][1]-C[i-1][1],C[i][2]-C[i-1][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
-        const rA=R[i][0]; pos[ao]=C[i][0]+_d.x*rA*0.9; pos[ao+1]=C[i][1]+_d.y*rA*0.9; pos[ao+2]=C[i][2]+_d.z*rA*0.9; } }
+      if(TB.apex>=0){ const d=DM-1, ao=TB.apex*3; _d.set(DC[d][0]-DC[d-1][0],DC[d][1]-DC[d-1][1],DC[d][2]-DC[d-1][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
+        // rounder end-cap: extend the apex only ~half a radius so hands/feet read as a soft dome
+        // instead of a sharp cone-spike (the points that poked out at the hands in a tight guard).
+        const rA=DR[d][0]*0.5; pos[ao]=DC[d][0]+_d.x*rA; pos[ao+1]=DC[d][1]+_d.y*rA; pos[ao+2]=DC[d][2]+_d.z*rA; }
+      if(TB.apex0>=0){ const ao=TB.apex0*3; _d.set(DC[1][0]-DC[0][0],DC[1][1]-DC[0][1],DC[1][2]-DC[0][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
+        const rA=DR[0][0]*0.5; pos[ao]=DC[0][0]-_d.x*rA; pos[ao+1]=DC[0][1]-_d.y*rA; pos[ao+2]=DC[0][2]-_d.z*rA; } }   // near-end cap: extend backward from ring 0
     f._bgeo.attributes.position.needsUpdate=true; f._bgeo.computeVertexNormals(); }
-  function setHidden(f,hide){ if(!f.seg) return; for(const k in f.seg){ if(k==='aura'||k in FACE_KEEP) continue; const m=f.seg[k]; if(m) m.visible=!hide; } }
+  function setHidden(f,hide){ if(!f.seg) return; for(const k in f.seg){ if(k==='aura'||k in FACE_KEEP) continue; const m=f.seg[k]; if(!m) continue;
+    // finger/thumb chains live in (possibly nested) arrays — plain `m.visible=` skipped them, so the
+    // crude little cylinders stayed visible over the smooth hand and read as a grid blob. Recurse.
+    if(Array.isArray(m)){ const walk=(x)=>{ if(Array.isArray(x)) x.forEach(walk); else if(x&&x.visible!==undefined) x.visible=!hide; }; walk(m); continue; }
+    if(m.visible!==undefined) m.visible=!hide; } }
+  // Hide EVERYTHING procedural (continuous body + every seg incl face + finger arrays). Used when a
+  // GLB model replaces this fighter — otherwise the procedural body renders INSIDE the imported model
+  // and you see it poking through ("the glb gets ate up by the in-game model").
+  function hideAllProc(f){
+    if(f._bmesh) f._bmesh.visible=false;
+    if(!f.seg) return;
+    for(const k in f.seg){ if(k==='aura') continue; const m=f.seg[k]; if(!m) continue;
+      if(Array.isArray(m)){ const walk=(x)=>{ if(Array.isArray(x)) x.forEach(walk); else if(x&&x.visible!==undefined) x.visible=false; }; walk(m); continue; }
+      if(m.visible!==undefined) m.visible=false; }
+  }
   return {
-    sync:function(f){ const on=!!window.SMOOTH_BODY;
+    sync:function(f){
+      if(f.model){ hideAllProc(f); return; }   // imported GLB fully REPLACES the procedural body
+      const on=!!window.SMOOTH_BODY;
       if(on && !f._bmesh) build(f);
       if(f._bmesh) f._bmesh.visible=on;
       setHidden(f, on && !!f._bmesh);
@@ -5923,9 +6049,9 @@ Fighter.prototype.applyMesh = function(){
   put(s.brow, h,  0.075*_hs,  0.05*_hs, 0);
   put(s.nose, h,  0.150*_hs, -0.02*_hs, 0);
   put(s.earL, h, -0.02*_hs,   0.0,  0.135*_hs); put(s.earR, h, -0.02*_hs, 0.0, -0.135*_hs);
-  put(s.mouth,h,  0.145*_hs, -0.105*_hs, 0);
-  put(s.eyeL, h,  0.135*_hs,  0.04*_hs,  0.07*_hs); put(s.eyeR, h, 0.135*_hs, 0.04*_hs, -0.07*_hs);
-  put(s.hair, h, -0.03*_hs,   0.05*_hs,  0);
+  put(s.mouth,h,  0.150*_hs, -0.050*_hs, 0);                                                          // mouth on the lower FACE, not down on the chin/neck
+  put(s.eyeL, h,  0.140*_hs,  0.020*_hs,  0.062*_hs); put(s.eyeR, h, 0.140*_hs, 0.020*_hs, -0.062*_hs); // eyes mid-face, set a touch closer
+  put(s.hair, h, -0.060*_hs,   0.120*_hs,  0);                                                         // hair RAISED into a cap on top/back so the forehead + face are clear (was a helmet to the brow)
   orientCyl(s.neck, c.x,c.y,c.z, h.x,h.y,h.z, 1);
   s.neck.scale.y = Math.max(0.12, Math.hypot(h.x-c.x,h.y-c.y,h.z-c.z)*0.62);
   { const _nh=(this.shape&&this.shape.height)?+this.shape.height:1; const _nk=(this.shape&&this.shape.neck!=null)?+this.shape.neck:1; s.neck.scale.x=s.neck.scale.z=_nh*_nk; }  // neck thickness = height x its own NECK slider
@@ -6127,10 +6253,10 @@ const GRAPPLE_POSITIONS = {
           shL:[0.32,1.08,0.22], shR:[0.32,1.08,-0.22], elL:[0.46,0.92,0.22], elR:[0.46,0.92,-0.22],
           haL:[0.58,0.78,0.18], haR:[0.58,0.78,-0.18], hipL:[-0.14,1.04,0.14], hipR:[-0.14,1.04,-0.14],
           knL:[-0.40,1.06,0.16], knR:[-0.40,1.06,-0.16], ftL:[-0.62,1.00,0.17], ftR:[-0.62,1.00,-0.17] }) },
-      { t:1.00, pose: slavePose({ pelvis:[0,1.00,0], chest:[0.28,1.04,0], head:[0.52,1.02,0], // SHOULDER — final straddle, ready to drop (= original slave shape)
-          shL:[0.24,1.06,0.20], shR:[0.24,1.06,-0.20], elL:[0.36,0.86,0.24], elR:[0.36,0.86,-0.24],
-          haL:[0.50,0.70,0.22], haR:[0.50,0.70,-0.22], hipL:[-0.18,1.00,0.13], hipR:[-0.18,1.00,-0.13],
-          knL:[-0.46,1.02,0.14], knR:[-0.46,1.02,-0.14], ftL:[-0.72,0.98,0.15], ftR:[-0.72,0.98,-0.15] }) }
+      { t:1.00, pose: slavePose({ pelvis:[0,0.92,0], chest:[-0.10,1.28,0], head:[-0.16,1.52,0], // SEATED — rotated UP onto the shoulders (= the carry slave, so st2->st3 is continuous, no torso pop)
+          shL:[-0.08,1.30,0.20], shR:[-0.08,1.30,-0.20], elL:[0.0,1.10,0.22], elR:[0.0,1.10,-0.22],
+          haL:[0.08,0.94,0.22], haR:[0.08,0.94,-0.22], hipL:[0.18,0.96,0.13], hipR:[0.18,0.96,-0.13],
+          knL:[0.42,1.08,0.14], knR:[0.42,1.08,-0.14], ftL:[0.60,0.96,0.15], ftR:[0.60,0.96,-0.15] }) }
     ],
     slave: slavePose({ pelvis:[0,0.92,0], chest:[-0.10,1.28,0], head:[-0.16,1.52,0],
       shL:[-0.08,1.30,0.20], shR:[-0.08,1.30,-0.20], elL:[0.0,1.10,0.22], elR:[0.0,1.10,-0.22],
@@ -6164,7 +6290,31 @@ const GRAPPLE_POSITIONS = {
   // v83: REMOVED liftPoses for VERTICAL_SUPLEX — the 3-keyframe hard lerp (facelock -> waistlock -> inverted)
   // felt snappy/canned compared to the old continuous sine-driven hoist. Falls back to the smooth
   // gp2==='VERTICAL_SUPLEX' branch in the st===2 lift block below, same physical feel as before, IK grip kept.
-  VERTICAL_SUPLEX: { label:"VERTICAL SUPLEX", off:0.14, oppYaw:Math.PI, delivery:'slam', basePow:100, lift0:0.0, liftDur:0.62,
+  // v151: VERTICAL SUPLEX — restored the SETUP sub-phases the user asked for, but smoothly.
+  // The v83 removal was right that a HARD 3-keyframe lerp felt snappy; the lift now interpolates each
+  // segment through smoothstep() (see the st===2 liftPoses block), so the setup reads as one continuous
+  // hoist, not three snaps. Phases: FACELOCK (head pulled down into the front facelock, feet planted) ->
+  // LOAD (driven up off the mat, body tipping toward vertical) -> INVERTED (= the original slave, head
+  // straight down / feet straight up). The endpoint is byte-for-byte the old slave, so the TOP of the
+  // hoist + the carry are unchanged — only the previously-missing setup/rise is added.
+  VERTICAL_SUPLEX: { label:"VERTICAL SUPLEX", off:0.14, oppYaw:Math.PI, delivery:'slam', basePow:100, lift0:0.0, liftDur:0.68,
+    liftPoses: [
+      { t:0.00, pose: slavePose({ // FACELOCK — bent forward ~45° into the front facelock, feet still down
+          pelvis:[0.10,0.86,0], chest:[0.22,1.10,0], head:[0.34,1.30,0],
+          shL:[0.20,1.12,0.20], shR:[0.20,1.12,-0.20], elL:[0.28,0.92,0.22], elR:[0.28,0.92,-0.22],
+          haL:[0.36,0.72,0.20], haR:[0.36,0.72,-0.20], hipL:[0.06,0.86,0.13], hipR:[0.06,0.86,-0.13],
+          knL:[0.10,0.50,0.14], knR:[0.10,0.50,-0.14], ftL:[0.16,0.05,0.15], ftR:[0.16,0.05,-0.15] }) },
+      { t:0.45, pose: slavePose({ // LOAD — driven up off the mat, body tipping past horizontal toward vertical
+          pelvis:[0.04,1.04,0], chest:[0.06,0.86,0], head:[0.05,0.66,0],
+          shL:[0.05,0.82,0.20], shR:[0.05,0.82,-0.20], elL:[0.05,0.62,0.22], elR:[0.05,0.62,-0.22],
+          haL:[0.05,0.42,0.20], haR:[0.05,0.42,-0.20], hipL:[0.03,1.06,0.13], hipR:[0.03,1.06,-0.13],
+          knL:[0.02,1.30,0.14], knR:[0.02,1.30,-0.14], ftL:[0.0,1.55,0.15], ftR:[0.0,1.55,-0.15] }) },
+      { t:1.00, pose: slavePose({ // INVERTED — = original slave (unchanged top of the hoist)
+          pelvis:[0,1.18,0], chest:[0,0.82,0], head:[0,0.46,0],
+          shL:[0,0.78,0.20], shR:[0,0.78,-0.20], elL:[0,0.52,0.22], elR:[0,0.52,-0.22],
+          haL:[0,0.26,0.20], haR:[0,0.26,-0.20], hipL:[0,1.22,0.13], hipR:[0,1.22,-0.13],
+          knL:[0,1.58,0.14], knR:[0,1.58,-0.14], ftL:[0,1.88,0.15], ftR:[0,1.88,-0.15] }) }
+    ],
     slave: slavePose({ pelvis:[0,1.18,0], chest:[0,0.82,0], head:[0,0.46,0],
       shL:[0,0.78,0.20], shR:[0,0.78,-0.20], elL:[0,0.52,0.22], elR:[0,0.52,-0.22],
       haL:[0,0.26,0.20], haR:[0,0.26,-0.20], hipL:[0,1.22,0.13], hipR:[0,1.22,-0.13],
@@ -6240,7 +6390,28 @@ const GRAPPLE_POSITIONS = {
     slave: slavePose({ pelvis:[0,1.28,0.0], chest:[0.28,1.30,0], head:[0.52,1.28,0],
       hipL:[-0.28,1.28,0.10], hipR:[-0.28,1.28,-0.10], knL:[-0.52,1.28,0.12], knR:[-0.52,1.28,-0.12],
       ftL:[-0.76,1.26,0.13], ftR:[-0.76,1.26,-0.13] }) },
-  BRAINBUSTER: { label:"BRAINBUSTER", off:0.14, oppYaw:Math.PI, delivery:'spike', basePow:114, lift0:0.0, land:'head',
+  // v151: BRAINBUSTER — a front vertical suplex that drops the victim straight down on the head/neck.
+  // Same FACELOCK -> LOAD setup as the vertical suplex (it IS that hoist), held a touch more suspended/
+  // vertical at the top (the brainbuster's defining "hang" before the head-down spike). Final phase = the
+  // original inverted slave so the carry/spike landing is unchanged; only the missing setup is added.
+  BRAINBUSTER: { label:"BRAINBUSTER", off:0.14, oppYaw:Math.PI, delivery:'spike', basePow:114, lift0:0.0, land:'head', liftDur:0.72,
+    liftPoses: [
+      { t:0.00, pose: slavePose({ // FACELOCK — bent forward into the front facelock, feet down
+          pelvis:[0.10,0.86,0], chest:[0.22,1.10,0], head:[0.34,1.30,0],
+          shL:[0.20,1.12,0.20], shR:[0.20,1.12,-0.20], elL:[0.28,0.92,0.22], elR:[0.28,0.92,-0.22],
+          haL:[0.36,0.72,0.20], haR:[0.36,0.72,-0.20], hipL:[0.06,0.86,0.13], hipR:[0.06,0.86,-0.13],
+          knL:[0.10,0.50,0.14], knR:[0.10,0.50,-0.14], ftL:[0.16,0.05,0.15], ftR:[0.16,0.05,-0.15] }) },
+      { t:0.50, pose: slavePose({ // LOAD — driven up off the mat, tipping toward vertical
+          pelvis:[0.03,1.06,0], chest:[0.05,0.88,0], head:[0.04,0.68,0],
+          shL:[0.04,0.84,0.20], shR:[0.04,0.84,-0.20], elL:[0.04,0.64,0.22], elR:[0.04,0.64,-0.22],
+          haL:[0.04,0.44,0.20], haR:[0.04,0.44,-0.20], hipL:[0.02,1.10,0.13], hipR:[0.02,1.10,-0.13],
+          knL:[0.01,1.34,0.14], knR:[0.01,1.34,-0.14], ftL:[0.0,1.60,0.15], ftR:[0.0,1.60,-0.15] }) },
+      { t:1.00, pose: slavePose({ // INVERTED SUSPEND — = original slave (head straight down for the spike)
+          pelvis:[0,1.22,0], chest:[0,0.85,0], head:[0,0.50,0],
+          shL:[0,0.80,0.20], shR:[0,0.80,-0.20], elL:[0,0.56,0.22], elR:[0,0.56,-0.22],
+          haL:[0,0.32,0.20], haR:[0,0.32,-0.20], hipL:[0,1.26,0.13], hipR:[0,1.26,-0.13],
+          knL:[0,1.62,0.14], knR:[0,1.62,-0.14], ftL:[0,1.92,0.15], ftR:[0,1.92,-0.15] }) }
+    ],
     slave: slavePose({ pelvis:[0,1.22,0], chest:[0,0.85,0], head:[0,0.50,0],
       shL:[0,0.80,0.20], shR:[0,0.80,-0.20], elL:[0,0.56,0.22], elR:[0,0.56,-0.22],
       haL:[0,0.32,0.20], haR:[0,0.32,-0.20], hipL:[0,1.26,0.13], hipR:[0,1.26,-0.13],
@@ -7313,6 +7484,7 @@ Fighter.prototype.startGrab = function(){
   // STAGE 1: LOCKUP
   this.state='grab'; this.stateTime=0; this.grappling=true;
   this.grappleStage=1;            // 1 lockup, 2 lift, 3 carry/rotate, 4 release
+  this._aiGrapChosen=false;       // AI re-picks its move at the START of this lockup (so the setup pose plays)
   this.grappleAim=0;
   this.grappleTwist=0;
   this.grappleMode='front';       // 'front' tie-up or 'rear' waistlock (press GRAB again to go behind)
@@ -7815,10 +7987,27 @@ Fighter.prototype.poseGrab = function(dt){
         this.craneLift  = clamp(this.craneLift + this._aiSteerBias*dt*0.45, -1, 1);
         this.craneTwist = clamp((this.craneTwist||0) + this._aiSteerBias*dt*0.5, -1.5, 1.5);
       } }
-    if (st===1 && this.stateTime>0.5){
-      if (Math.random()<0.75){ this.grapplePos = GRAPPLE_POS_NAMES[Math.floor(Math.random()*GRAPPLE_POS_NAMES.length)]; }
-      this.grappleStage=2; this.stateTime=0;
-    } else if (st===2 && this.stateTime>0.6){ this.grappleStage=3; this.stateTime=0; }
+    if (st===1){
+      // SETUP PHASE — choose the move at the START of the lockup, not at the lift. This is the
+      // fix for "missing the setup phase between lockup and lift": the move-specific setup pose
+      // (facelock secured / rear waistlock / scoop load) in the st===1 branches below only plays
+      // when this.grapplePos is already the real move. Previously the AI kept STANDARD through the
+      // whole lockup and only rolled the move at the instant it flipped to st===2, so the body
+      // snapped from a generic collar tie straight into the hoist with no visible setup. Picking
+      // here lets the lockup actually SHOW the hold being secured before the lift begins.
+      if (!this._aiGrapChosen){
+        this._aiGrapChosen = true;
+        if (Math.random()<0.85){ this.grapplePos = GRAPPLE_POS_NAMES[Math.floor(Math.random()*GRAPPLE_POS_NAMES.length)]; }
+      }
+      if (this.stateTime>0.55){ this.grappleStage=2; this.stateTime=0; }   // slightly longer lockup so the setup reads
+    } else if (st===2){
+      // Hold the LIFT until the hoist's sub-phases actually finish (its liftDur), not a fixed 0.6s.
+      // Previously the AI flipped to the carry at 0.6s even when a move's liftDur was longer (POWERBOMB
+      // 1.15s, etc.), so the carry snapped to the final slave pose mid-hoist — the lift visibly never
+      // completed. Capped at 1.2s so a mis-tuned move can never hang the grapple.
+      const _ld = (GRAPPLE_POSITIONS[this.grapplePos]||{}).liftDur || 0.55;
+      if (this.stateTime > Math.min(Math.max(_ld, 0.55), 1.2)){ this.grappleStage=3; this.stateTime=0; }
+    }
     else if (st===3 && this.stateTime>1.2){ this.grappleDeliver('signature', Math.random()<0.5?this.dir:0); }
   }
 
@@ -7928,8 +8117,10 @@ Fighter.prototype.poseGrab = function(dt){
       this.J.elR.set(0.22 + p*0.06, 0.96 + p*0.44, -0.24);
       this.J.knL.set(0.14, 0.40 - sq*0.12, 0.16);
       this.J.knR.set(0.14, 0.40 - sq*0.12, -0.16);
-    } else if (gp==='VERTICAL_SUPLEX'){
+    } else if (gp==='VERTICAL_SUPLEX' || gp==='BRAINBUSTER'){
       // VERTICAL HOIST: face-to-face facelock, attacker stays UPRIGHT — leg/hip drive
+      // (BRAINBUSTER shares this hoist — it IS a front vertical suplex that drops on the head;
+      //  previously it fell to the generic default squat-hoist, which read as a different, wrong move.)
       // sends the opponent straight up overhead. This is mechanically distinct from
       // GERMAN/BACK_SUPLEX (attacker behind, waistlock, continuous backward arch IS
       // the throw). Vertical Suplex's own name comes from the attacker's torso staying
@@ -8029,8 +8220,8 @@ Fighter.prototype.poseGrab = function(dt){
       this.J.shR.set(0.06, 1.34, -0.22);
       this.J.knL.set(0.10, 0.44, 0.15);
       this.J.knR.set(0.10, 0.44, -0.15);
-    } else if (gp==='VERTICAL_SUPLEX'){
-      // VERTICAL SUPLEX CARRY: victim inverted above, attacker arched backward
+    } else if (gp==='VERTICAL_SUPLEX' || gp==='BRAINBUSTER'){
+      // VERTICAL SUPLEX / BRAINBUSTER CARRY: victim held inverted above, attacker braced under it
       this.J.pelvis.set(-lean*0.4 - _bias + _sw, 0.90 + dipY, _swZ*0.4);
       this.J.chest.set(-lean*1.0 - _bias*1.4 + _sw*1.3, 1.28 + dipY*1.2, _swZ);
       this.J.head.set(-lean*1.4 - _bias*1.2 + _sw*1.6, 1.62 + dipY*1.2, _swZ*1.2);
@@ -8472,7 +8663,7 @@ Fighter.prototype.poseGrabbed = function(dt){
         const a=W('shL'), b=W('shR');                       // seated on the shoulders — hands BRACE on them, pushing back
         this.J.haL.set(a.x+0.04,a.y+0.06,a.z+0.08); this.J.haR.set(b.x+0.04,b.y+0.06,b.z-0.08);
         this.J.elL.set(a.x*0.6,(a.y+1.1)*0.5,0.22);  this.J.elR.set(b.x*0.6,(b.y+1.1)*0.5,-0.22); _vg=true;
-      } else if (gpv==='VERTICAL_SUPLEX'||gpv==='TIGER_SUPLEX'||gpv==='DRAGON_SUPLEX'){
+      } else if (gpv==='VERTICAL_SUPLEX'||gpv==='TIGER_SUPLEX'||gpv==='DRAGON_SUPLEX'||gpv==='BRAINBUSTER'){
         const a=W('hipL'), b=W('hipR');                     // inverted — grabbing the attacker's thighs/waistband
         this.J.haL.set(a.x,a.y,a.z+0.08); this.J.haR.set(b.x,b.y,b.z-0.08);
         this.J.elL.set(a.x*0.55,(a.y+0.9)*0.5,0.18); this.J.elR.set(b.x*0.55,(b.y+0.9)*0.5,-0.18); _vg=true;
@@ -8484,7 +8675,7 @@ Fighter.prototype.poseGrabbed = function(dt){
         const a=W('haL'), b=W('haR');                       // flat overhead — arms reach down to the press hands for balance
         this.J.haL.set(a.x,a.y-0.06,a.z+0.05); this.J.haR.set(b.x,b.y-0.06,b.z-0.05);
         this.J.elL.set(a.x*0.6,(a.y+1.1)*0.5,0.22); this.J.elR.set(b.x*0.6,(b.y+1.1)*0.5,-0.22); _vg=true;
-      } else if (gpv==='DDT'||gpv==='BUTTERFLY_DDT'||gpv==='BRAINBUSTER'){
+      } else if (gpv==='DDT'||gpv==='BUTTERFLY_DDT'){
         const a=W('hipR');                                  // facelock — one arm hooks the attacker's waist, free arm braces
         this.J.haL.set(a.x+0.08,a.y,a.z+0.10); this.J.haR.set(-0.10,0.80,-0.18);
         this.J.elL.set(a.x*0.5+0.10,(a.y+0.9)*0.5,0.22); _vg=true;
@@ -8505,7 +8696,7 @@ Fighter.prototype.poseGrabbed = function(dt){
       this.J.hipL.set(0,0.92,0.20); this.J.hipR.set(0,0.92,-0.20);
       this.J.knL.set(-0.10,0.62,0.22); this.J.knR.set(-0.10,0.62,-0.22);
       this.J.ftL.set(-0.24,0.35,0.24); this.J.ftR.set(-0.24,0.35,-0.24);   // legs spread for overhead balance
-    } else if (gpv==='VERTICAL_SUPLEX'){
+    } else if (gpv==='VERTICAL_SUPLEX' || gpv==='BRAINBUSTER'){
       // FIX: this branch used to write hip/knee/foot targets in LOCAL (unrotated) space AFTER the
       // pitch-rotation block above had already correctly rotated those same joints from the progressive
       // sp blend — so the legs got set TWICE per frame: once correctly (rotated, progress-driven), then
@@ -8564,7 +8755,7 @@ Fighter.prototype.startDive = function(type, sb){
   announce(d.label, this.who());
 };
 Fighter.prototype.exitAerial = function(){
-  this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
+  this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this._airPitch=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
 };
 Fighter.prototype.diveImpact = function(opp){ try{
   const d = DIVE_TYPES[this.diveType] || DIVE_TYPES.CROSSBODY;
@@ -8572,7 +8763,7 @@ Fighter.prototype.diveImpact = function(opp){ try{
   camShake=Math.max(camShake,0.8); triggerHitStop(0.12); chromAb=0.7; flashScreen&&flashScreen(0.3);
   spawnDust(this.x, this.z, 1.8 + (d.pow||100)/80);
   // attacker tumbles down beside them, then recovers
-  this.airLift=0; this.spin=0; this.state='idle'; this.stateTime=0;
+  this.airLift=0; this.spin=0; this._airPitch=0; this.state='idle'; this.stateTime=0;
   if (d.sell){                                                       // SELL MOVE: the crash costs YOU — wrestling psychology
     this.hp = clamp(this.hp - Math.round(d.pow*(window.SELL_COST!=null?window.SELL_COST:0.16)), 1, this.maxHp);   // live SELL COST control
     this.hitKick = { T:0.5, t:0.5, dx:-this.dir, mag:0.14, reg:'h' };           // grabbing the head
@@ -8586,7 +8777,7 @@ Fighter.prototype.diveImpact = function(opp){ try{
 }catch(e){ window.__logErr&&window.__logErr('diveImpact:'+this.diveType, e); this.state='idle'; this.airLift=0; this.diveType=null; } };
 Fighter.prototype.diveCrash = function(){
   // missed the dive — crash to the mat
-  this.airLift=0; this.spin=0; this.diveType=null;
+  this.airLift=0; this.spin=0; this._airPitch=0; this.diveType=null;
   this.vx = this.dir*1.0; this.crumple=1; this.triggerKnockdown(this.dir, 1.0);
   camShake=Math.max(camShake,0.4); spawnDust(this.x,this.z,1.2);
   // auto-zone: a missed dive may land anywhere
@@ -8616,6 +8807,16 @@ Fighter.prototype.updateAerial = function(dt){
     this.z = lerp(this.aerialFrom.z, this.aerialTo.z, t);
     this.airLift = Math.max(0, this.aerialFrom.y*(1-t) + Math.sin(t*Math.PI)*(this._diveArc||0.7));
     this.spin += this.spinVel*dt;                         // flip rotation
+    // LANDING RESOLVE — if the flip/twist (apex stick or the move's own spin) wasn't carried to a
+    // whole rotation, ease it to the nearest clean landing orientation over the last fifth of the
+    // flight so the body touches down level in world space instead of frozen mid-rotation. Spin goes
+    // to its nearest full turn (a near-complete flip finishes; a small wobble unwinds); the apex-stick
+    // pitch levels out. On a connecting dive, diveImpact fires earlier and takes over before this.
+    if (t > 0.8){
+      const k = clamp((t-0.8)/0.2, 0, 1), TWO = Math.PI*2;
+      this.spin = lerp(this.spin||0, Math.round((this.spin||0)/TWO)*TWO, k);
+      if (this._airPitch) this._airPitch = lerp(this._airPitch, 0, k);
+    }
     // face the travel direction
     const dx=this.aerialTo.x-this.aerialFrom.x, dz=this.aerialTo.z-this.aerialFrom.z;
     if (Math.abs(dx)>0.01||Math.abs(dz)>0.01) this.facing = Math.atan2(-dz,dx);
@@ -11981,7 +12182,8 @@ function startFight(){
   if (setup && setup.p1Control==='AI' && setup.p2Control==='AI'){ p1.isPlayer=false; p2.isPlayer=false; }
   fighters = [p1, p2];
 
-  if(typeof applyChosenModels==='function') applyChosenModels();
+  if(typeof applyCharModels==='function') applyCharModels();      // unique per-character models first
+  if(typeof applyChosenModels==='function') applyChosenModels();  // then per-side fallback for any unset
   // Apply forge morphs to whichever fighters have a forged/morph spec.
   if(typeof applyForgeMorphs==='function'){ try{ applyForgeMorphs(p1); applyForgeMorphs(p2); }catch(_){} }
   // Dress each fighter in their own attire so the roster isn't all in trunks.
@@ -12218,6 +12420,21 @@ function removeFighterModel(side){
   f.modelUrl=null; if(f.seg) setProcVisible(f,true);
 }
 function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MODEL&&CHOSEN_MODEL[sd]; var f=fighterFor(sd); if(f && !f.model && ch && ch.url){ try{ loadFighterModel(sd, ch.url, ch.name); }catch(e){} } }); }
+
+// ===== UNIQUE PER-CHARACTER MODELS — each character carries its OWN .glb so the roster isn't a set
+// of generic shared bodies. Keyed by character identity (name), persisted, and auto-loaded whenever
+// that character fights on EITHER side. A model imported or AI-generated for "BANNON" then follows
+// Bannon everywhere; another character gets a different unique model. Takes priority over the per-side
+// CHOSEN_MODEL fallback. =====
+let CHAR_MODEL = (function(){ try{ var r=localStorage.getItem('bannonCharModels'); if(r) return JSON.parse(r); }catch(e){} return {}; })();
+function charModelKey(f){ var n=(typeof fname==='function'?fname(f):(f&&f.opts&&f.opts.name))||''; return String(n).toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
+function applyCharModels(){ ['p1','p2'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; var ck=charModelKey(f); var cm=ck&&CHAR_MODEL[ck]; if(cm&&cm.url){ try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
+function assignCharModel(charKey, url, name){ if(!charKey) return; charKey=charKey.toUpperCase(); try{ if(url){ CHAR_MODEL[charKey]={url:url,name:name||charKey}; } else { delete CHAR_MODEL[charKey]; } localStorage.setItem('bannonCharModels',JSON.stringify(CHAR_MODEL)); }catch(e){} }
+// Bind the model currently shown on a side to that side's CHARACTER so it persists as theirs.
+function assignCurrentModelToChar(side){ var f=fighterFor(side); if(!f) return; var ck=charModelKey(f);
+  if(f.model&&f.modelUrl){ assignCharModel(ck, f.modelUrl, (CHOSEN_MODEL[side]&&CHOSEN_MODEL[side].name)||ck); setModelStatus(side,'★ Bound to '+ck+' — loads for this character everywhere.'); }
+  else { assignCharModel(ck,null); setModelStatus(side,'Cleared '+ck+'’s model.'); } }
+window.assignCurrentModelToChar=assignCurrentModelToChar; window.CHAR_MODEL=CHAR_MODEL;
 function applyModelChoice(side, url, name){
   try{ CHOSEN_MODEL[side]= url?{url:url,name:name||''}:null; localStorage.setItem('bannonChosenModels',JSON.stringify(CHOSEN_MODEL)); }catch(e){}
   if(!url){ removeFighterModel(side); setModelStatus(side,'Built-in body.'); return; }
@@ -19680,6 +19897,11 @@ ${sessionMemory || 'First session.'}`;
     forgeList:     function(){ return this._get('/api/forge/characters'); },
     forgeGet:      function(id){ return this._get('/api/forge/character/'+encodeURIComponent(id)); },
 
+    // --- AI model generation (prompt -> unique rigged fighter model via Meshy/Tripo) ---
+    genConfig:     function(){ return this._get('/api/gen/config'); },
+    genStart:      function(prompt, opts){ return this._post('/api/gen/character', Object.assign({ prompt: prompt }, opts||{})); },
+    genJob:        function(id){ return this._get('/api/gen/job/'+encodeURIComponent(id)); },
+
     // keep trying to connect with backoff so "always on" survives a cold daemon
     _autostart: function(){
       var self = this;
@@ -19695,6 +19917,41 @@ ${sessionMemory || 'First session.'}`;
   };
 
   window.BANNON_DAEMON = D;
+
+  // ===== PROMPT -> UNIQUE CHARACTER: type a description, the daemon generates a one-of-one rigged
+  // GLB (Meshy/Tripo), then we import it (binds to the fight rig + morphs) and bind it to the
+  // character so it's THEIRS. side: 'p1'/'p2' to show it live; characterKey to persist per-character.
+  window.generateCharacterModel = function(prompt, opts){
+    opts = opts || {};
+    var side = opts.side || (typeof modelSel!=='undefined' ? modelSel : 'p1');
+    var status = function(t){ try{ if(typeof setModelStatus==='function') setModelStatus(side, t); }catch(_){} if(opts.onProgress) opts.onProgress(t); };
+    if(!window.BANNON_DAEMON){ status('⚠ Daemon offline — connect it to generate.'); return Promise.resolve(null); }
+    status('⏳ Generating "'+prompt.slice(0,40)+'"…');
+    return D.genStart(prompt, { provider: opts.provider, characterId: opts.characterKey }).then(function(job){
+      if(!job || !job.id){ status('⚠ Generator not available (needs MESHY_API_KEY/TRIPO_API_KEY on the daemon).'); return null; }
+      if(job.status==='failed'){ status('⚠ '+(job.error||'generation failed')); return null; }
+      return new Promise(function(resolve){
+        var tries=0;
+        (function poll(){
+          D.genJob(job.id).then(function(j){
+            tries++;
+            if(!j){ status('⚠ Lost the job.'); return resolve(null); }
+            if(j.status==='running'||j.status==='queued'){ status('⏳ '+(j.progress||0)+'% — building model…'); if(tries<120) return setTimeout(poll, 4000); status('⚠ Timed out.'); return resolve(null); }
+            if(j.status==='failed'){ status('⚠ '+(j.error||'failed')); return resolve(null); }
+            if(j.status==='succeeded' && j.glbUrl){
+              status('✓ Model ready — importing…');
+              try{ loadFighterModel(side, j.glbUrl, prompt.slice(0,24)); }catch(e){}
+              var ck = opts.characterKey || (typeof charModelKey==='function' && fighterFor ? charModelKey(fighterFor(side)) : null);
+              if(ck && typeof assignCharModel==='function'){ assignCharModel(ck, j.glbUrl, prompt.slice(0,24)); status('★ Bound to '+ck+'.'); }
+              return resolve(j.glbUrl);
+            }
+            status('⚠ Unexpected job state.'); resolve(null);
+          }).catch(function(){ if(tries<120) setTimeout(poll, 4000); else resolve(null); });
+        })();
+      });
+    });
+  };
+
   // auto-connect on load (deferred a tick so the daemon-served page is ready)
   if (D.autoConnect) setTimeout(function(){ D._autostart(); }, 800);
   console.log('%c[BANNON DAEMON] client armed — auto-connect '+(D.autoConnect?'ON':'OFF')+', base '+(D.base||'(same origin)'),'color:#9fd');
@@ -25655,6 +25912,8 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
         this.seg.hair.visible = false;
       } else if (bScale.hairStyle === 'long') {
         this.seg.hair.scale.set(1.08, 1.45, 1.18);
+      } else {
+        this.seg.hair.scale.set(1.0, 0.92, 1.06);   // default/spiky: a skull-hugging cap, not a tall engulfing dome
       }
     }
 
@@ -25712,15 +25971,15 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
     }
     this._cloths = [];
 
-    // Front loincloth flap (pelvis anchored)
-    this._cloths.push(new VerletCloth(this, 'pelvis', 6, 4, 0.05, new THREE.Vector3(0, -0.15, 0.1)));
-    // Back loincloth flap (pelvis anchored)
-    this._cloths.push(new VerletCloth(this, 'pelvis', 6, 4, 0.05, new THREE.Vector3(0, -0.15, -0.1)));
-
-    // Cape structure for long hair / slick hairline visual classes
-    if (bScale.hairStyle === 'slick' || bScale.hairStyle === 'long' || bScale.hairStyle === 'bald') {
-      this._cloths.push(new VerletCloth(this, 'chest', 11, 7, 0.065, new THREE.Vector3(0, 0, -0.14)));
-    }
+    // DISABLED — the pelvis "loincloth" flaps and chest cape defaulted to bright red (0xff0000) and
+    // collapsed into broken red arrow/ribbon shapes hanging off the hip. The trunks are now painted
+    // directly onto the smooth body, so these are redundant; a real cloth accessory can be re-added
+    // later as an opt-in attire piece with proper colour + anchoring.
+    // this._cloths.push(new VerletCloth(this, 'pelvis', 6, 4, 0.05, new THREE.Vector3(0, -0.15, 0.1)));
+    // this._cloths.push(new VerletCloth(this, 'pelvis', 6, 4, 0.05, new THREE.Vector3(0, -0.15, -0.1)));
+    // if (bScale.hairStyle === 'slick' || bScale.hairStyle === 'long' || bScale.hairStyle === 'bald') {
+    //   this._cloths.push(new VerletCloth(this, 'chest', 11, 7, 0.065, new THREE.Vector3(0, 0, -0.14)));
+    // }
   };
 
   // Intercept applyMesh to render local anatomical segments, fingers, eyes, sags, joint corrections
