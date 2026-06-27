@@ -3758,6 +3758,22 @@ Fighter.prototype.poseGuard = function(dt, walking){
     if (P.spine > 30){ const sp=clamp((P.spine-30)/70,0,1); this.J.chest.pos.x -= sp*0.08; this.J.head.pos.x -= sp*0.06; this.J.pelvis.pos.x -= sp*0.04; this.J.pelvis.pos.y -= sp*0.05; }
     if (P.head > 50){ const hd=clamp((P.head-50)/50,0,1); this.J.haL.pos.y -= hd*0.10; this.J.haR.pos.y -= hd*0.10; this.J.head.pos.x -= hd*0.04; this.J.head.pos.y -= hd*0.03; }
   }
+  // ===== PLANTED FIGHTING STANCE (anti-marionette) =====
+  // The base pose stands at near-full leg extension, so the knees barely flex and
+  // the fighter reads like a puppet on strings. Drop the whole upper body (COM)
+  // by a fixed amount while the FEET stay planted on the ground — that compresses
+  // the legs and forces a real athletic knee bend, the difference between a planted
+  // fighter and a marionette. Tunable via window.STANCE_DROP; eases a touch in walk
+  // so the gait stays springy. Strikes/getup keep their own posture (skip then).
+  if (this.state!=='getup' && this.state!=='down' && !this.ragdoll){
+    const DROP = (window.STANCE_DROP!=null?window.STANCE_DROP:0.085) * (walking?0.78:1);
+    const chain = ['pelvis','spineLow','spineMid','chest','neck','head','shL','shR','clavL','clavR','hipL','hipR','haL','haR','elL','elR'];
+    for (let i=0;i<chain.length;i++){ const j=this.J[chain[i]]; if(j&&j.tgt) j.tgt.y -= DROP; }
+    // widen the base slightly too — a planted fighter sets his feet wider than his hips
+    const SPREAD = (window.STANCE_SPREAD!=null?window.STANCE_SPREAD:0.03);
+    if(this.J.hipL&&this.J.hipL.tgt) this.J.hipL.tgt.z += SPREAD;
+    if(this.J.hipR&&this.J.hipR.tgt) this.J.hipR.tgt.z -= SPREAD;
+  }
   this.solveFootIK(dt, walking);
   this.solveArmIK();
 };
