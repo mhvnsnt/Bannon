@@ -3398,6 +3398,27 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
   //  Re-adding it here double-counted the apron/floor drop — a FLOOR fighter sank to
   //  ~2x zoneY and clipped a metre through the ringside floor. Removed the duplicate.)
 
+  // ===== PLANTED FIGHTING STANCE (anti-marionette) — applied UNIFORMLY across states =====
+  // The base poses stand at near-full leg extension, so the knees barely flex and the
+  // body reads like a puppet. Drop the upper-body chain (COM) a fixed amount while the
+  // FEET stay planted — that compresses the legs into a real athletic knee bend. Doing it
+  // HERE (after every pose function, before the spring step + leg IK at ~3464/3502) keeps
+  // the height consistent in idle/walk/attack/block/reactions, so strikes no longer bob the
+  // body up and back down. Special states with their own ground/air logic are skipped.
+  {
+    const _ss = this.state;
+    const _skipStance = (_ss==='getup'||_ss==='down'||_ss==='grabbed'||_ss==='grab'||_ss==='throw'||_ss==='deliver'||_ss==='dive'||_ss==='climb'||_ss==='perch'||_ss==='midrope'||_ss==='ropeexit'||_ss==='ropeclimb'||_ss==='ropeperch'||_ss==='apron'||_ss==='studio'||this.ragdoll||this.airLift);
+    if (!_skipStance && this.J){
+      const DROP = (window.STANCE_DROP!=null?window.STANCE_DROP:0.085) * ((_ss==='walk')?0.8:1);
+      const chain = ['pelvis','spineLow','spineMid','chest','neck','head','shL','shR','clavL','clavR','hipL','hipR','haL','haR','elL','elR'];
+      for (let i=0;i<chain.length;i++){ const j=this.J[chain[i]]; if(j&&j.tgt) j.tgt.y -= DROP; }
+      // widen the base a touch — a planted fighter sets his feet wider than his hips
+      const SPREAD = (window.STANCE_SPREAD!=null?window.STANCE_SPREAD:0.03);
+      if(this.J.hipL&&this.J.hipL.tgt) this.J.hipL.tgt.z += SPREAD;
+      if(this.J.hipR&&this.J.hipR.tgt) this.J.hipR.tgt.z -= SPREAD;
+    }
+  }
+
   let hl = 0.07;
   if (this.state==='attack') hl = 0.045;
   else if (this.state==='flinch') hl = 0.06;
@@ -3759,22 +3780,6 @@ Fighter.prototype.poseGuard = function(dt, walking){
     if (P.armR > 45){ const ad=clamp((P.armR-45)/55,0,1); this.J.haR.pos.y -= ad*0.18; this.J.elR.pos.y -= ad*0.12; this.J.shR.pos.y -= ad*0.04; }
     if (P.spine > 30){ const sp=clamp((P.spine-30)/70,0,1); this.J.chest.pos.x -= sp*0.08; this.J.head.pos.x -= sp*0.06; this.J.pelvis.pos.x -= sp*0.04; this.J.pelvis.pos.y -= sp*0.05; }
     if (P.head > 50){ const hd=clamp((P.head-50)/50,0,1); this.J.haL.pos.y -= hd*0.10; this.J.haR.pos.y -= hd*0.10; this.J.head.pos.x -= hd*0.04; this.J.head.pos.y -= hd*0.03; }
-  }
-  // ===== PLANTED FIGHTING STANCE (anti-marionette) =====
-  // The base pose stands at near-full leg extension, so the knees barely flex and
-  // the fighter reads like a puppet on strings. Drop the whole upper body (COM)
-  // by a fixed amount while the FEET stay planted on the ground — that compresses
-  // the legs and forces a real athletic knee bend, the difference between a planted
-  // fighter and a marionette. Tunable via window.STANCE_DROP; eases a touch in walk
-  // so the gait stays springy. Strikes/getup keep their own posture (skip then).
-  if (this.state!=='getup' && this.state!=='down' && !this.ragdoll){
-    const DROP = (window.STANCE_DROP!=null?window.STANCE_DROP:0.085) * (walking?0.78:1);
-    const chain = ['pelvis','spineLow','spineMid','chest','neck','head','shL','shR','clavL','clavR','hipL','hipR','haL','haR','elL','elR'];
-    for (let i=0;i<chain.length;i++){ const j=this.J[chain[i]]; if(j&&j.tgt) j.tgt.y -= DROP; }
-    // widen the base slightly too — a planted fighter sets his feet wider than his hips
-    const SPREAD = (window.STANCE_SPREAD!=null?window.STANCE_SPREAD:0.03);
-    if(this.J.hipL&&this.J.hipL.tgt) this.J.hipL.tgt.z += SPREAD;
-    if(this.J.hipR&&this.J.hipR.tgt) this.J.hipR.tgt.z -= SPREAD;
   }
   this.solveFootIK(dt, walking);
   this.solveArmIK();
