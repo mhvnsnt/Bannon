@@ -5317,8 +5317,20 @@ window.BBODY = (function(){
     // crude little cylinders stayed visible over the smooth hand and read as a grid blob. Recurse.
     if(Array.isArray(m)){ const walk=(x)=>{ if(Array.isArray(x)) x.forEach(walk); else if(x&&x.visible!==undefined) x.visible=!hide; }; walk(m); continue; }
     if(m.visible!==undefined) m.visible=!hide; } }
+  // Hide EVERYTHING procedural (continuous body + every seg incl face + finger arrays). Used when a
+  // GLB model replaces this fighter — otherwise the procedural body renders INSIDE the imported model
+  // and you see it poking through ("the glb gets ate up by the in-game model").
+  function hideAllProc(f){
+    if(f._bmesh) f._bmesh.visible=false;
+    if(!f.seg) return;
+    for(const k in f.seg){ if(k==='aura') continue; const m=f.seg[k]; if(!m) continue;
+      if(Array.isArray(m)){ const walk=(x)=>{ if(Array.isArray(x)) x.forEach(walk); else if(x&&x.visible!==undefined) x.visible=false; }; walk(m); continue; }
+      if(m.visible!==undefined) m.visible=false; }
+  }
   return {
-    sync:function(f){ const on=!!window.SMOOTH_BODY;
+    sync:function(f){
+      if(f.model){ hideAllProc(f); return; }   // imported GLB fully REPLACES the procedural body
+      const on=!!window.SMOOTH_BODY;
       if(on && !f._bmesh) build(f);
       if(f._bmesh) f._bmesh.visible=on;
       setHidden(f, on && !!f._bmesh);
