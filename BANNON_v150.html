@@ -11290,7 +11290,7 @@ function loop(now){
   const _fight    = (gameState==='fight');
   const _movePrev = (gameState==='pause_creator'||gameState==='menu_creator');     // move creator auto-plays the selected strike on the edited fighter
   const _live     = _fight || _movePrev;                                            // combat / physics / round advance ONLY when fighting or actively previewing a move
-  window.EDITOR_PREVIEW = /creator|models|dir|caw|studio|lab/.test(gameState||'');   // editors render the posed/morphed skeleton (not frozen physics bodies) so edits show live
+  window.EDITOR_PREVIEW = /creator|models|dir|caw|studio|lab|select/.test(gameState||'');   // editors + the vs-screen render the posed/morphed skeleton (not frozen physics bodies) so edits/selections show live
 
   // physics world steps only while live; otherwise hold its clock so nothing jumps when you resume
   if(window.BPHYS){
@@ -32617,49 +32617,49 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   var sel = { p1:'BANNON', p2:'VIPER', side:'p2', modeIdx:0, typeIdx:0, stageIdx:0, preview:'BANNON' };
   try { var savedStage = (typeof arenaIdx!=='undefined') ? arenaIdx : 0; sel.stageIdx = savedStage; } catch(_){ }
 
-  // ---- CSS ----
+  // ---- CSS — WWE-2K/Tekken VS-SCREEN: live 3D fighters in the scene behind,
+  // name plates over each side, roster strip + match options docked at the bottom.
   var css = document.createElement('style');
   css.textContent = [
-   '#charSelect{position:fixed;inset:0;z-index:99999;background:radial-gradient(ellipse at 50% 30%,#1a1320 0%,#0a0710 70%,#050308 100%);display:none;flex-direction:column;font-family:"Share Tech Mono",monospace;color:#e8d8c0;overflow:hidden}',
-   '#charSelect.show{display:flex}',
-   '#csHead{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;border-bottom:1px solid #3a2a40}',
-   '#csHead .t{font-size:20px;letter-spacing:6px;color:#ffb000;font-weight:bold}',
-   '#csHead .x{cursor:pointer;color:#a98;border:1px solid #543;border-radius:6px;padding:6px 12px;font-size:12px}',
-   '#csBody{flex:1;display:flex;min-height:0}',
-   '#csRosterWrap{flex:1.4;display:flex;flex-direction:column;min-width:0;padding:12px 16px}',
-   '#csRosterWrap .lbl{font-size:10px;letter-spacing:3px;color:#8a7;margin-bottom:8px}',
-   '#csRoster{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:8px;overflow-y:auto;padding-right:6px;align-content:start}',
-   '.csCard{position:relative;border:1px solid #3a2c44;border-radius:8px;padding:8px;cursor:pointer;background:linear-gradient(160deg,#1e1626,#140e1c);transition:transform .08s,border-color .12s;min-height:74px}',
-   '.csCard:hover{transform:translateY(-2px);border-color:#ffb000}',
-   '.csCard .swatch{width:100%;height:26px;border-radius:5px;margin-bottom:6px}',
-   '.csCard .nm{font-size:11px;color:#fff;letter-spacing:1px;line-height:1.1}',
-   '.csCard .fc{font-size:8px;color:#9a8;margin-top:2px}',
-   '.csCard .tag{position:absolute;top:5px;right:5px;font-size:7px;padding:1px 4px;border-radius:3px;background:#000a;color:#ffb000}',
-   '.csCard.canon .tag{color:#7CFC00}.csCard.forged .tag{color:#00ddff}',
-   '#csSide{flex:1;display:flex;flex-direction:column;border-left:1px solid #3a2a40;padding:12px 16px;min-width:280px;max-width:380px}',
-   '.csSlots{display:flex;gap:10px;margin-bottom:10px}',
-   '.csSlot{flex:1;border:2px solid #3a2c44;border-radius:8px;padding:8px;text-align:center;cursor:pointer;background:#140e1c}',
-   '.csSlot.active{border-color:#ffb000;box-shadow:0 0 12px #ffb00055}',
-   '.csSlot .role{font-size:9px;color:#8a7;letter-spacing:2px}',
-   '.csSlot .who{font-size:14px;color:#fff;margin-top:3px;letter-spacing:1px}',
-   '.csSlot .swatch{height:8px;border-radius:4px;margin-top:6px}',
-   '#csPrev{flex:1;border:1px solid #2e2238;border-radius:8px;padding:12px;overflow-y:auto;background:#0e0a16}',
-   '#csPrev .pnm{font-size:18px;color:#ffb000;letter-spacing:2px}',
-   '#csPrev .plb{font-size:10px;color:#c9a3ff;margin:2px 0 6px}',
-   '#csPrev .pfc{font-size:9px;color:#8a7;letter-spacing:2px;margin-bottom:8px}',
-   '#csPrev .pbio{font-size:11px;color:#c8b8a8;line-height:1.45;margin-bottom:10px}',
-   '.csStat{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:9px;color:#9a8}',
-   '.csStat .bn{width:46px;text-align:right;letter-spacing:1px}',
-   '.csStat .bar{flex:1;height:7px;background:#241a2e;border-radius:4px;overflow:hidden}',
+   '#charSelect{position:fixed;inset:0;z-index:99990;display:none;pointer-events:none;font-family:"Share Tech Mono",monospace;color:#e8d8c0}',
+   '#charSelect.show{display:block}',
+   // subtle cinematic vignette top+bottom so the 3D fighters in the middle stay clear
+   '#csVig{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,5,12,.82) 0%,rgba(8,5,12,.10) 22%,rgba(8,5,12,0) 42%,rgba(8,5,12,0) 50%,rgba(6,4,10,.55) 74%,rgba(6,4,10,.96) 100%);pointer-events:none}',
+   // top header
+   '#csTop{position:absolute;top:0;left:0;right:0;display:flex;align-items:flex-start;justify-content:space-between;padding:12px 16px 0;pointer-events:none}',
+   '.csPlate{width:min(33%,340px);pointer-events:auto;cursor:pointer;background:linear-gradient(180deg,rgba(20,14,26,.92),rgba(12,8,18,.78));border:2px solid #3a2c44;border-radius:10px;padding:9px 12px;backdrop-filter:blur(3px)}',
+   '.csPlate.active{border-color:#ffb000;box-shadow:0 0 18px #ffb00055}',
+   '.csPlate.p2{text-align:right}',
+   '.csPlate .role{font-size:9px;letter-spacing:3px;color:#8a7}',
+   '.csPlate .pnm{font-size:21px;letter-spacing:2px;color:#fff;line-height:1.05;margin-top:1px}',
+   '.csPlate .plb{font-size:10px;color:#c9a3ff;margin-top:1px}',
+   '.csPlate .pfc{font-size:8px;letter-spacing:2px;color:#9a8;margin:3px 0 5px}',
+   '.csPlate .strip{height:6px;border-radius:4px;margin-bottom:6px}',
+   '.csStat{display:flex;align-items:center;gap:6px;margin:2px 0;font-size:8px;color:#9a8}',
+   '.csPlate.p2 .csStat{flex-direction:row-reverse}',
+   '.csStat .bn{width:42px;letter-spacing:1px}',
+   '.csStat .bar{flex:1;height:5px;background:#241a2e;border-radius:3px;overflow:hidden}',
    '.csStat .bar i{display:block;height:100%;background:linear-gradient(90deg,#ff5a2a,#ffb000)}',
-   '#csPrev .pmv{font-size:9px;color:#8a7;margin-top:8px;letter-spacing:1px}',
-   '#csPrev .pmv b{color:#e8d8c0;font-weight:normal}',
-   '#csFoot{display:flex;align-items:center;gap:10px;padding:12px 18px;border-top:1px solid #3a2a40;flex-wrap:wrap}',
+   '#csCenter{position:absolute;top:14px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:auto}',
+   '#csCenter .vs{font-size:30px;font-weight:bold;letter-spacing:6px;color:#ffb000;text-shadow:0 2px 12px #000}',
+   '#csCenter .btns{display:flex;gap:8px;justify-content:center;margin-top:6px}',
+   '#csCenter .x{cursor:pointer;color:#a98;border:1px solid #543;border-radius:6px;padding:5px 11px;font-size:11px;background:rgba(12,8,18,.85)}',
+   '#csCenter #csCreate{border-color:#ff7a1a;color:#ffd9a8}',
+   '#csbio{position:absolute;left:50%;transform:translateX(-50%);bottom:188px;width:min(64%,560px);text-align:center;font-size:11px;color:#cdbfae;text-shadow:0 1px 4px #000;pointer-events:none}',
+   // bottom dock
+   '#csBottom{position:absolute;left:0;right:0;bottom:0;pointer-events:auto;background:linear-gradient(180deg,rgba(10,7,14,.4),rgba(8,5,11,.97));border-top:1px solid #3a2a40;padding:8px 12px calc(env(safe-area-inset-bottom,0px) + 10px)}',
+   '#csRoster{display:flex;gap:7px;overflow-x:auto;overflow-y:hidden;padding-bottom:7px;scrollbar-width:thin}',
+   '.csCard{position:relative;flex:0 0 auto;width:86px;border:1px solid #3a2c44;border-radius:8px;padding:6px;cursor:pointer;background:linear-gradient(160deg,#1e1626,#140e1c);transition:transform .08s,border-color .12s}',
+   '.csCard:hover{transform:translateY(-2px);border-color:#ffb000}',
+   '.csCard .swatch{width:100%;height:34px;border-radius:5px;margin-bottom:5px}',
+   '.csCard .nm{font-size:9px;color:#fff;letter-spacing:.5px;line-height:1.05}',
+   '.csCard .tag{position:absolute;top:3px;right:3px;font-size:6px;padding:1px 3px;border-radius:3px;background:#000a;color:#ffb000}',
+   '.csCard.canon .tag{color:#7CFC00}.csCard.forged .tag{color:#00ddff}',
+   '#csFoot{display:flex;align-items:center;gap:9px;margin-top:8px;flex-wrap:wrap}',
    '.csOpt{display:flex;flex-direction:column;gap:2px}',
    '.csOpt .ol{font-size:8px;color:#8a7;letter-spacing:2px}',
-   '.csCyc{cursor:pointer;border:1px solid #543a5a;border-radius:6px;padding:7px 12px;font-size:11px;color:#fff;background:#1a1226;min-width:150px;text-align:center;letter-spacing:1px}',
-   '.csCyc:hover{border-color:#ffb000}',
-   '.csCyc.dim{color:#a98;opacity:.7}',
+   '.csCyc{cursor:pointer;border:1px solid #543a5a;border-radius:6px;padding:7px 12px;font-size:11px;color:#fff;background:#1a1226;min-width:140px;text-align:center;letter-spacing:1px}',
+   '.csCyc:hover{border-color:#ffb000}.csCyc.dim{color:#a98;opacity:.7}',
    '#csStart{margin-left:auto;cursor:pointer;border:none;border-radius:8px;padding:12px 30px;font-size:16px;font-weight:bold;letter-spacing:3px;color:#1a0e06;background:linear-gradient(90deg,#ffb000,#ff7a2a);font-family:inherit}',
    '#csStart:hover{filter:brightness(1.12)}'
   ].join('\n');
@@ -32668,26 +32668,30 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   // ---- DOM ----
   var root = document.createElement('div'); root.id='charSelect';
   root.innerHTML =
-    '<div id="csHead"><div class="t">SELECT FIGHTERS</div><div style="display:flex;gap:8px;align-items:center"><div class="x" id="csCreate" style="border-color:#ff7a1a;color:#ffd9a8">⛹ CREATE</div><div class="x" id="csClose">✕ BACK</div></div></div>'+
-    '<div id="csBody">'+
-      '<div id="csRosterWrap"><div class="lbl">ROSTER — click to assign to the active slot</div><div id="csRoster"></div></div>'+
-      '<div id="csSide">'+
-        '<div class="csSlots">'+
-          '<div class="csSlot" id="csSlotP1" data-side="p1"><div class="role">PLAYER 1</div><div class="who" id="csWhoP1">BANNON</div><div class="swatch" id="csSwP1"></div></div>'+
-          '<div class="csSlot active" id="csSlotP2" data-side="p2"><div class="role">PLAYER 2</div><div class="who" id="csWhoP2">VIPER</div><div class="swatch" id="csSwP2"></div></div>'+
-        '</div>'+
-        '<div id="csPrev"></div>'+
-      '</div>'+
+    '<div id="csVig"></div>'+
+    '<div id="csTop">'+
+      '<div class="csPlate p1" id="csPlateP1" data-side="p1"></div>'+
+      '<div class="csPlate p2 active" id="csPlateP2" data-side="p2"></div>'+
     '</div>'+
-    '<div id="csFoot">'+
-      '<div class="csOpt"><div class="ol">MODE</div><div class="csCyc" id="csMode">PLAYER vs CPU</div></div>'+
-      '<div class="csOpt"><div class="ol">MATCH TYPE</div><div class="csCyc" id="csType">ONE ON ONE</div></div>'+
-      '<div class="csOpt"><div class="ol">STAGE</div><div class="csCyc" id="csStage">FIRE PIT</div></div>'+
-      '<button id="csStart">FIGHT ▶</button>'+
+    '<div id="csCenter"><div class="vs">VS</div><div class="btns"><div class="x" id="csCreate">⛹ CREATE</div><div class="x" id="csClose">✕ BACK</div></div></div>'+
+    '<div id="csbio"></div>'+
+    '<div id="csBottom">'+
+      '<div id="csRoster"></div>'+
+      '<div id="csFoot">'+
+        '<div class="csOpt"><div class="ol">MODE</div><div class="csCyc" id="csMode">PLAYER vs CPU</div></div>'+
+        '<div class="csOpt"><div class="ol">MATCH TYPE</div><div class="csCyc" id="csType">ONE ON ONE</div></div>'+
+        '<div class="csOpt"><div class="ol">STAGE</div><div class="csCyc" id="csStage">FIRE PIT</div></div>'+
+        '<button id="csStart">FIGHT ▶</button>'+
+      '</div>'+
     '</div>';
   document.body.appendChild(root);
 
   function hx(n){ return '#'+('000000'+(n>>>0).toString(16)).slice(-6); }
+  // floating HUD buttons we hide while the vs-screen is up (cleaner look), restore on exit
+  var HIDE_IDS=['moveLibToggle','fbxImpToggle','topRightBtns','cawBtn','kb-hints','hud','mobileControls'];
+  function setHud(disp){ HIDE_IDS.forEach(function(id){ var e=document.getElementById(id); if(e) e.style.display=disp; }); }
+
+  function findChar(name){ var list=(window.ROSTER_ALL?window.ROSTER_ALL():[]); return list.find(function(c){return c.name===name;})||list[0]; }
 
   function renderRoster(){
     var list = (window.ROSTER_ALL ? window.ROSTER_ALL() : []);
@@ -32697,69 +32701,61 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       d.className = 'csCard'+(c.canon?' canon':'')+(c.forged?' forged':'');
       d.innerHTML = '<div class="swatch" style="background:linear-gradient(135deg,'+hx(c.col)+','+hx(c.accent)+')"></div>'+
                     '<div class="nm">'+c.name.replace(/_/g,' ')+'</div>'+
-                    '<div class="fc">'+c.faction+'</div>'+
-                    (c.canon?'<div class="tag">CANON</div>':(c.forged?'<div class="tag">FORGED</div>':'<div class="tag">★</div>'));
-      d.addEventListener('click', function(){
-        sel[sel.side] = c.name; sel.preview = c.name;
-        sel.side = (sel.side==='p1') ? 'p2' : 'p1'; // auto-advance for speed
-        refresh();
-      });
-      d.addEventListener('mouseenter', function(){ sel.preview=c.name; renderPreview(); });
+                    (c.canon?'<div class="tag">C</div>':(c.forged?'<div class="tag">F</div>':''));
+      d.addEventListener('click', function(){ assign(c.name); });
       grid.appendChild(d);
     });
   }
 
-  function findChar(name){
-    var list = (window.ROSTER_ALL ? window.ROSTER_ALL() : []);
-    return list.find(function(c){ return c.name===name; }) || list[0];
-  }
-
-  function renderPreview(){
-    var c = findChar(sel.preview); if(!c) return;
+  function plateHTML(c, role){
     function stat(n,v,max){ var p=Math.max(4,Math.min(100,Math.round(v/max*100))); return '<div class="csStat"><span class="bn">'+n+'</span><span class="bar"><i style="width:'+p+'%"></i></span></div>'; }
-    var moves = (c.moves&&c.moves.length)? c.moves.join(' · ') : '—';
-    document.getElementById('csPrev').innerHTML =
-      '<div class="pnm">'+c.name.replace(/_/g,' ')+'</div>'+
-      '<div class="plb">'+c.label+'</div>'+
-      '<div class="pfc">'+c.faction+(c.canon?'  ·  CANON':'')+'  ·  '+c.style+'</div>'+
-      '<div class="pbio">'+c.bio+'</div>'+
-      stat('HP',c.stats.hp,150)+stat('STAM',c.stats.stamina,260)+stat('CHIN',c.stats.chin,130)+stat('SPEED',c.stats.speed,130)+stat('POWER',c.stats.power,150)+
-      '<div class="pmv">SIGNATURE MOVES<br><b>'+moves+'</b></div>';
+    return '<div class="role">'+role+'</div><div class="pnm">'+c.name.replace(/_/g,' ')+'</div>'+
+      '<div class="plb">'+c.label+'</div><div class="pfc">'+c.faction+(c.canon?' · CANON':'')+' · '+c.style+'</div>'+
+      '<div class="strip" style="background:linear-gradient(90deg,'+hx(c.col)+','+hx(c.accent)+')"></div>'+
+      stat('PWR',c.stats.power,150)+stat('SPD',c.stats.speed,130)+stat('CHIN',c.stats.chin,130)+stat('HP',c.stats.hp,150);
   }
 
   function refresh(){
     var p1=findChar(sel.p1), p2=findChar(sel.p2);
-    document.getElementById('csWhoP1').textContent = sel.p1.replace(/_/g,' ');
-    document.getElementById('csWhoP2').textContent = sel.p2.replace(/_/g,' ');
-    document.getElementById('csSwP1').style.background = 'linear-gradient(90deg,'+hx(p1.col)+','+hx(p1.accent)+')';
-    document.getElementById('csSwP2').style.background = 'linear-gradient(90deg,'+hx(p2.col)+','+hx(p2.accent)+')';
-    document.getElementById('csSlotP1').classList.toggle('active', sel.side==='p1');
-    document.getElementById('csSlotP2').classList.toggle('active', sel.side==='p2');
+    document.getElementById('csPlateP1').innerHTML = plateHTML(p1,'PLAYER 1');
+    document.getElementById('csPlateP2').innerHTML = plateHTML(p2,'PLAYER 2');
+    document.getElementById('csPlateP1').classList.toggle('active', sel.side==='p1');
+    document.getElementById('csPlateP2').classList.toggle('active', sel.side==='p2');
+    var act = (sel.side==='p1')?p1:p2;
+    document.getElementById('csbio').textContent = act.bio||'';
     document.getElementById('csMode').textContent = MODES[sel.modeIdx].label;
     var mt = MATCH_TYPES[sel.typeIdx];
     var tEl = document.getElementById('csType'); tEl.textContent = mt.label + (mt.live?'':' (soon)'); tEl.classList.toggle('dim', !mt.live);
     try { document.getElementById('csStage').textContent = (typeof ARENAS!=='undefined'?ARENAS[sel.stageIdx%ARENAS.length]:'FIRE PIT'); } catch(_){}
-    renderPreview();
   }
 
-  // slot focus
-  document.getElementById('csSlotP1').addEventListener('click', function(){ sel.side='p1'; sel.preview=sel.p1; refresh(); });
-  document.getElementById('csSlotP2').addEventListener('click', function(){ sel.side='p2'; sel.preview=sel.p2; refresh(); });
-  // cyclers
+  // Spawn / refresh the two live 3D fighters standing in the ring (vs-screen).
+  // Reuses the real fighter builder, then freezes it into a non-combat preview
+  // state so they just stand there, morphed and attired, as you browse.
+  function spawnPreview(){
+    try{
+      window.MATCH_SETUP = { p1Name:sel.p1, p2Name:sel.p2, p1Control:'YOU', p2Control:'CPU' };
+      if(typeof startFight==='function') startFight();
+      try{ if(typeof roundTimerInterval!=='undefined' && roundTimerInterval){ clearInterval(roundTimerInterval); roundTimerInterval=null; } }catch(_){}
+      if(typeof gameState!=='undefined') gameState='menu_select';
+      if(typeof fighters!=='undefined'){ fighters.forEach(function(f){ try{ if(typeof POSE!=='undefined'&&POSE.stance){ for(var i=0;i<JOINTS.length;i++){ var j=JOINTS[i]; f.J[j].snap(POSE.stance[j][0],POSE.stance[j][1],POSE.stance[j][2]); } } f.state='idle'; f.stateTime=0; f.vx=0; f.vz=0; f.momentum=0; }catch(_){}}); }
+      setHud('none');   // startFight re-shows the match HUD; re-hide it for the clean vs-screen
+    }catch(_){}
+  }
+
+  function assign(name){ sel[sel.side]=name; sel.side=(sel.side==='p1')?'p2':'p1'; spawnPreview(); refresh(); }
+
+  document.getElementById('csPlateP1').addEventListener('click', function(){ sel.side='p1'; refresh(); });
+  document.getElementById('csPlateP2').addEventListener('click', function(){ sel.side='p2'; refresh(); });
   document.getElementById('csMode').addEventListener('click', function(){ sel.modeIdx=(sel.modeIdx+1)%MODES.length; refresh(); });
   document.getElementById('csType').addEventListener('click', function(){ sel.typeIdx=(sel.typeIdx+1)%MATCH_TYPES.length; refresh(); });
   document.getElementById('csStage').addEventListener('click', function(){ try{ sel.stageIdx=(sel.stageIdx+1)%ARENAS.length; if(typeof arenaIdx!=='undefined'){ arenaIdx=sel.stageIdx; var an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; if(typeof buildArena==='function') buildArena(); } }catch(_){} refresh(); });
 
-  function close(){ root.classList.remove('show'); }
-  document.getElementById('csClose').addEventListener('click', close);
-  // CREATE -> open the Create-A-Wrestler drawer. Close the select so the live 3D
-  // preview is visible; re-render the roster when they come back so the new
-  // creation appears immediately.
+  function back(){ root.classList.remove('show'); setHud(''); try{ if(typeof gameState!=='undefined') gameState='menu'; }catch(_){} if(typeof show==='function') show('mainMenu'); }
+  document.getElementById('csClose').addEventListener('click', back);
   document.getElementById('csCreate').addEventListener('click', function(){
-    close();
-    var cb=document.getElementById('cawBtn');
-    if(cb){ cb.click(); }
-    // when the CAW drawer closes, refreshing the select will pick up the save
+    root.classList.remove('show'); setHud('');
+    var cb=document.getElementById('cawBtn'); if(cb){ cb.style.display=''; cb.click(); }
   });
 
   document.getElementById('csStart').addEventListener('click', function(){
@@ -32768,10 +32764,9 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       p1Name: sel.p1, p2Name: sel.p2,
       p1Control: mode==='P1' ? 'YOU' : (mode==='P2' ? 'CPU' : 'AI'),
       p2Control: mode==='P2' ? 'YOU' : (mode==='P1' ? 'CPU' : 'AI'),
-      matchType: MATCH_TYPES[sel.typeIdx].id,
-      stage: sel.stageIdx
+      matchType: MATCH_TYPES[sel.typeIdx].id, stage: sel.stageIdx
     };
-    close();
+    root.classList.remove('show'); setHud('');
     if (typeof startFight==='function') startFight();
   });
 
@@ -32789,7 +32784,8 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         window.BANNON_DAEMON.forgeList().then(function(list){ mergeForged(list); renderRoster(); });
       }
     } catch(_){}
-    renderRoster(); refresh(); root.classList.add('show');
+    setHud('none');               // clear floating HUD buttons for the vs-screen
+    renderRoster(); spawnPreview(); refresh(); root.classList.add('show');
   }
   window.openCharacterSelect = openSelect;
 
