@@ -2402,6 +2402,24 @@ class Fighter {
     this.seg.eyeR = mkBox(0.045,0.03,0.02, M(0x0c0c0c, isP?0xff3300:0x00ddff, 100));
     this.seg.eyeL.material.emissiveIntensity = 0.55; this.seg.eyeR.material.emissiveIntensity = 0.55; // a lit iris, not a blown-out white bloom dot
     this.seg.neck = mkCyl(0.085,0.10, skinMat);
+    // ===== FACE GEAR (canon: assets/reference/bannon_sketches) — Bannon's METALLIC 3/4 UPPER MASK
+    // with a FREE-FLOATING JAW/CHIN PLATE ("U" plate), plus hanging DREADLOCK strands. Built for every
+    // fighter (cheap), hidden by default; dressFighter turns them on per character look. Front = +x. =====
+    { const maskMat = new THREE.MeshStandardMaterial({ color:0x7e8fc0, metalness:0.72, roughness:0.34, envMapIntensity:1.2 });
+      // upper 3/4 mask: FACE-HUGGING front shell (tight radius, pulled forward) from brow-crown down
+      // past the nose (theta 0.10π..0.62π) — not a dome swallowing the skull
+      this.seg.maskUpper = add(new THREE.Mesh(new THREE.SphereGeometry(0.127, 28, 20, Math.PI*0.5, Math.PI, Math.PI*0.20, Math.PI*0.42), maskMat));   // brow/hairline -> below the nose: the UPPER-FACE 3/4 mask; hair + dreads own the crown
+      // floating jaw/chin plate: a lower front band with a visible slot between it and the mask
+      this.seg.maskJaw = add(new THREE.Mesh(new THREE.SphereGeometry(0.136, 24, 8, Math.PI*0.60, Math.PI*0.80, Math.PI*0.70, Math.PI*0.24), maskMat.clone()));
+      this.seg.maskUpper.visible=false; this.seg.maskJaw.visible=false;
+      this.seg.maskUpper.material.side=THREE.DoubleSide; this.seg.maskJaw.material.side=THREE.DoubleSide;
+      // dreadlocks: hanging strands around the back/sides of the skull (face arc left open for the mask)
+      const dreadMat = new THREE.MeshStandardMaterial({ color:0xa8854a, roughness:0.85, metalness:0.0 });
+      this.seg.dreads=[];
+      for(let i=0;i<14;i++){ const len=0.26+(i%3)*0.075;
+        const d=add(new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.011,len,6), dreadMat));
+        d.visible=false; d.userData.dreadLen=len; d.userData.dreadIdx=i; this.seg.dreads.push(d); }
+    }
 
     // ARMS — deltoid -> bicep -> forearm -> wrap -> glove
     // Deltoids larger to fill the wider shoulder span; bicep/forearm scaled up proportionally
@@ -5028,7 +5046,11 @@ window.BBODY = (function(){
     { cap:true, capStart:true, rings:[ ['pelvis',0.175,0.145], [['pelvis','chest',0.40],0.140,0.115], [['pelvis','chest',0.72],0.205,0.150], ['chest',0.265,0.165], [['chest','neck',0.45],0.165,0.130] ] },
     { cap:true, capStart:true, rings:[ [['pelvis','chest',0.12],0.165,0.135], ['pelvis',0.185,0.150], [['hipL','hipR',0.5],0.175,0.150], [['chest','pelvis',1.22],0.120,0.105] ] }, // pelvic basin
     // NECK: cervical column through the real joint -> head ball
-    { cap:true, capStart:true, rings:[ [['chest','neck',0.55],0.095,0.085], ['neck',0.072], [['neck','head',0.45],0.078], ['head',0.118], [['neck','head',1.32],0.085] ] },
+    // NECK+TRAPEZIUS YOKE: the base ring flares WIDE (0.155) into the traps so the neck grows out of a
+    // sloping trapezius instead of sitting on a flat shoulder shelf ("neck stuck on"). It narrows fast
+    // to a real neck (0.078) then the head. Elliptical (wider side-to-side than front-back) = a yoke,
+    // not a cone. This is the neck->shoulder->torso anatomy that was missing.
+    { cap:true, capStart:true, rings:[ [['chest','neck',0.42],0.170,0.140], [['chest','neck',0.62],0.110,0.098], ['neck',0.080,0.076], [['neck','head',0.45],0.082], ['head',0.118], [['neck','head',1.32],0.085] ] },
     // ARMS: broad deltoid cap -> THICK biceps -> elbow -> forearm -> wrist -> hand (more mass + taper)
     { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
     { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
@@ -5044,7 +5066,7 @@ window.BBODY = (function(){
   // is one clean continuous body instead of the smooth mesh poking through stamped-on crude shapes.
   // brow + headBand are flat box panels that read as a visor stuck on the forehead — drop them on the
   // smooth body (the head's own form + a subtle brow can come from sculpt later). Keep eyes/nose/mouth/ears/hair.
-  const FACE_KEEP={jaw:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0};
+  const FACE_KEEP={jaw:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0,maskUpper:0,maskJaw:0,dreads:0};
   function center(f,c){ const J=f._rj; if(!J) return null;
     if(typeof c==='string'){ const v=J[c]; return v?[v.x,v.y,v.z]:null; }
     // {j, fx, fy, fz}: a joint plus a LOCAL offset. Local +x is the character's forward (root rotation
@@ -5228,11 +5250,15 @@ window.BBODY = (function(){
     const cs=Math.cos(a); const front=Math.max(0,-cs), back=Math.max(0,cs);
     const center=Math.exp(-Math.pow(a-Math.PI,2)/0.018);
     const spine =Math.exp(-Math.pow(((a+Math.PI)%(2*Math.PI))-Math.PI,2)/0.03);
-    if(ti===0){ let r=0;
+    if(ti===0){ let r=0; const side=Math.abs(Math.sin(a));
       if(i>=Math.floor(M*0.55)){ r += front*0.030 - center*0.020*front; }
       else { r += front*0.014*(0.5+0.5*Math.cos(i*3.4)) - center*0.013*front; }
       r -= spine*0.020;
       r += back*0.012*Math.exp(-Math.pow(Math.abs(a)-0.34,2)/0.02);
+      // TRAPEZIUS: on the top ring(s), pack mass at the BACK + SIDES so the shoulder shelf slopes up
+      // into the neck yoke instead of the neck sitting on a flat plate. This is the delt/trap surface
+      // blend — the connective anatomy between neck, shoulder and torso.
+      if(i>=M-1.6){ const trap=back*0.55 + side*0.45; r += trap*(0.010+0.045*(i-(M-1.6))/1.6); }
       return r;
     }
     if(ti===1) return -spine*0.010;
@@ -6052,6 +6078,20 @@ Fighter.prototype.applyMesh = function(){
   put(s.mouth,h,  0.150*_hs, -0.050*_hs, 0);                                                          // mouth on the lower FACE, not down on the chin/neck
   put(s.eyeL, h,  0.140*_hs,  0.020*_hs,  0.062*_hs); put(s.eyeR, h, 0.140*_hs, 0.020*_hs, -0.062*_hs); // eyes mid-face, set a touch closer
   put(s.hair, h, -0.060*_hs,   0.120*_hs,  0);                                                         // hair RAISED into a cap on top/back so the forehead + face are clear (was a helmet to the brow)
+  // FACE GEAR placement (canon sketch): metallic 3/4 mask hugs the face; jaw plate floats BELOW it
+  // with a visible slot; dread strands hang from the back/side of the skull, leaving the face arc open.
+  if (s.maskUpper && s.maskUpper.visible){ const _ms=_hs/0.70;
+    put(s.maskUpper, h, 0.040*_hs, 0.005*_hs, 0); s.maskUpper.scale.setScalar(_ms);
+    put(s.maskJaw,   h, 0.052*_hs, -0.040*_hs, 0); s.maskJaw.scale.setScalar(_ms);
+    // dark eye SOCKETS sit ON the mask shell (sketch: big black almond openings in the metal)
+    put(s.eyeL, h, 0.238*_hs, 0.020*_hs, 0.058*_hs); put(s.eyeR, h, 0.238*_hs, 0.020*_hs, -0.058*_hs);   // proud of the shell surface (mask front ≈0.22*_hs at eye height)
+    s.eyeL.scale.set(_ms*0.45,_ms*0.85,_ms*1.7); s.eyeR.scale.set(_ms*0.45,_ms*0.85,_ms*1.7); }   // thin fwd, WIDE across -> horizontal almond sockets, not vertical slits
+  if (s.dreads && s.dreads.length && s.dreads[0].visible){ const _ms=_hs/0.70, rr=0.118*_ms;
+    for(let i=0;i<s.dreads.length;i++){ const d=s.dreads[i], n=s.dreads.length;
+      const a=(50 + i*(260/(n-1)))*Math.PI/180;                       // arc that skips the ±50° face cone (+x forward)
+      const ax=Math.cos(a)*rr, az=Math.sin(a)*rr, len=d.userData.dreadLen||0.3;
+      d.position.set(h.x + ax, h.y + 0.055*_ms - len*0.5, h.z + az);  // a=0 is +x(face); 50°..310° arc = beside the face, wrapping the BACK
+      d.rotation.set(0,0,0); d.scale.setScalar(_ms); } }
   orientCyl(s.neck, c.x,c.y,c.z, h.x,h.y,h.z, 1);
   s.neck.scale.y = Math.max(0.12, Math.hypot(h.x-c.x,h.y-c.y,h.z-c.z)*0.62);
   { const _nh=(this.shape&&this.shape.height)?+this.shape.height:1; const _nk=(this.shape&&this.shape.neck!=null)?+this.shape.neck:1; s.neck.scale.x=s.neck.scale.z=_nh*_nk; }  // neck thickness = height x its own NECK slider
@@ -12152,8 +12192,23 @@ function dressFighter(f){
   }catch(_){}
   applyAttire(f, style, primary, secondary);
   if(typeof applyHair==='function') applyHair(f, hairStyle, hairColor);
+  // FACE GEAR per look (canon: assets/reference/bannon_sketches — Bannon's metallic 3/4 mask +
+  // floating jaw plate + dreadlocks). Gated by CHAR_FACEGEAR so any character/alt can wear gear.
+  try{ const fg=(window.CHAR_FACEGEAR&&window.CHAR_FACEGEAR[key])||null; const S=f.seg;
+    if(S && S.maskUpper){ const on=!!(fg&&fg.mask);
+      S.maskUpper.visible=on; S.maskJaw.visible=on;
+      if(on&&fg.maskColor!=null){ S.maskUpper.material.color.setHex(fg.maskColor); S.maskJaw.material.color.setHex(fg.maskColor); } }
+    if(S && S.dreads){ const on=!!(fg&&fg.dreads);
+      for(const d of S.dreads){ d.visible=on; if(on&&fg.dreadColor!=null) d.material.color.setHex(fg.dreadColor); } }
+  }catch(_){}
 }
 window.dressFighter = dressFighter;
+// canon face gear registry — sketch: metallic steel-blue 3/4 upper mask, free-floating jaw/chin "U"
+// plate, blond-brown dreads. MAIME (Bannon's alter-ego alt) inherits the gear with a darker mask.
+window.CHAR_FACEGEAR = {
+  BANNON: { mask:1, maskColor:0x93a0bd, dreads:1, dreadColor:0xa8854a },
+  MAIME:  { mask:1, maskColor:0x4a5164, dreads:1, dreadColor:0x2a2118 }
+};
 
 function startFight(){
   if (typeof clearActiveFightState==='function') clearActiveFightState();
@@ -15240,7 +15295,14 @@ init();
     // FIX: head radius here was hardcoded 0.150 (the pre-v149 sphere) even after v149 shrunk the actual
     // head mesh to r=0.125 — every reading since v149 was graded against a head 20% bigger than the one
     // actually rendered, permanently biasing "heads" LOW regardless of the real fix.
-    const headR=0.125*hScale, headH=2*headR;
+    // FIX (v152): when the continuous SMOOTH body is on (the default), the head the player SEES is the
+    // head-TUBE ball (base ring radius ~0.118 x the HEAD morph), NOT the hidden segmented head sphere
+    // (0.125*hScale, which the smooth body suppresses). Grading the hidden sphere read every fighter
+    // ~2 heads TOO TALL (Bannon 9.76 "HIGH" while the rendered body is ~7.4, in target). Measure the
+    // head that is actually on screen so the proportion sense is honest.
+    let headR=0.125*hScale;
+    if (window.SMOOTH_BODY){ const hm=(f.shape&&f.shape.head!=null)?(+f.shape.head/0.70):1; headR=0.118*hm; }
+    const headH=2*headR;
     // FIX: this used to read f.J[name].pos — LIVE, post-spring/post-IK joint positions. Those swing with
     // stance/lean/strike-extension (bent guard arm vs full punch extension, crouch depth, weight shift),
     // so the SAME unchanged skeleton graded OK one second and LOW/HIGH the next — confirmed live: re-running
