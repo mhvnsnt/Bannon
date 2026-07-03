@@ -5028,7 +5028,11 @@ window.BBODY = (function(){
     { cap:true, capStart:true, rings:[ ['pelvis',0.175,0.145], [['pelvis','chest',0.40],0.140,0.115], [['pelvis','chest',0.72],0.205,0.150], ['chest',0.265,0.165], [['chest','neck',0.45],0.165,0.130] ] },
     { cap:true, capStart:true, rings:[ [['pelvis','chest',0.12],0.165,0.135], ['pelvis',0.185,0.150], [['hipL','hipR',0.5],0.175,0.150], [['chest','pelvis',1.22],0.120,0.105] ] }, // pelvic basin
     // NECK: cervical column through the real joint -> head ball
-    { cap:true, capStart:true, rings:[ [['chest','neck',0.55],0.095,0.085], ['neck',0.072], [['neck','head',0.45],0.078], ['head',0.118], [['neck','head',1.32],0.085] ] },
+    // NECK+TRAPEZIUS YOKE: the base ring flares WIDE (0.155) into the traps so the neck grows out of a
+    // sloping trapezius instead of sitting on a flat shoulder shelf ("neck stuck on"). It narrows fast
+    // to a real neck (0.078) then the head. Elliptical (wider side-to-side than front-back) = a yoke,
+    // not a cone. This is the neck->shoulder->torso anatomy that was missing.
+    { cap:true, capStart:true, rings:[ [['chest','neck',0.42],0.170,0.140], [['chest','neck',0.62],0.110,0.098], ['neck',0.080,0.076], [['neck','head',0.45],0.082], ['head',0.118], [['neck','head',1.32],0.085] ] },
     // ARMS: broad deltoid cap -> THICK biceps -> elbow -> forearm -> wrist -> hand (more mass + taper)
     { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
     { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
@@ -5228,11 +5232,15 @@ window.BBODY = (function(){
     const cs=Math.cos(a); const front=Math.max(0,-cs), back=Math.max(0,cs);
     const center=Math.exp(-Math.pow(a-Math.PI,2)/0.018);
     const spine =Math.exp(-Math.pow(((a+Math.PI)%(2*Math.PI))-Math.PI,2)/0.03);
-    if(ti===0){ let r=0;
+    if(ti===0){ let r=0; const side=Math.abs(Math.sin(a));
       if(i>=Math.floor(M*0.55)){ r += front*0.030 - center*0.020*front; }
       else { r += front*0.014*(0.5+0.5*Math.cos(i*3.4)) - center*0.013*front; }
       r -= spine*0.020;
       r += back*0.012*Math.exp(-Math.pow(Math.abs(a)-0.34,2)/0.02);
+      // TRAPEZIUS: on the top ring(s), pack mass at the BACK + SIDES so the shoulder shelf slopes up
+      // into the neck yoke instead of the neck sitting on a flat plate. This is the delt/trap surface
+      // blend — the connective anatomy between neck, shoulder and torso.
+      if(i>=M-1.6){ const trap=back*0.55 + side*0.45; r += trap*(0.010+0.045*(i-(M-1.6))/1.6); }
       return r;
     }
     if(ti===1) return -spine*0.010;
