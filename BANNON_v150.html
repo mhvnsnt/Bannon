@@ -15240,7 +15240,14 @@ init();
     // FIX: head radius here was hardcoded 0.150 (the pre-v149 sphere) even after v149 shrunk the actual
     // head mesh to r=0.125 — every reading since v149 was graded against a head 20% bigger than the one
     // actually rendered, permanently biasing "heads" LOW regardless of the real fix.
-    const headR=0.125*hScale, headH=2*headR;
+    // FIX (v152): when the continuous SMOOTH body is on (the default), the head the player SEES is the
+    // head-TUBE ball (base ring radius ~0.118 x the HEAD morph), NOT the hidden segmented head sphere
+    // (0.125*hScale, which the smooth body suppresses). Grading the hidden sphere read every fighter
+    // ~2 heads TOO TALL (Bannon 9.76 "HIGH" while the rendered body is ~7.4, in target). Measure the
+    // head that is actually on screen so the proportion sense is honest.
+    let headR=0.125*hScale;
+    if (window.SMOOTH_BODY){ const hm=(f.shape&&f.shape.head!=null)?(+f.shape.head/0.70):1; headR=0.118*hm; }
+    const headH=2*headR;
     // FIX: this used to read f.J[name].pos — LIVE, post-spring/post-IK joint positions. Those swing with
     // stance/lean/strike-extension (bent guard arm vs full punch extension, crouch depth, weight shift),
     // so the SAME unchanged skeleton graded OK one second and LOW/HIGH the next — confirmed live: re-running
