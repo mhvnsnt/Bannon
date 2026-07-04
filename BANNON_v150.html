@@ -7564,6 +7564,31 @@ function pickGrapplePosition(mode, kind, dir5, powerMod){
   return (powerMod ? tbl[dir5+'_M'] : tbl[dir5]) || tbl[dir5] || tbl.neutral || 'STANDARD';
 }
 
+// ============================================================================
+// POSITION / ZONING TAXONOMY (WWE-2K26-grade) — the master map of every combat
+// context the engine must serve moves from. This is the ANCHOR for the moveset-
+// library buildout: each context lists its move families and the engine hook that
+// owns it today ('live') or still needs building ('todo'). MANIFESTO-registered so
+// BLUEPRINT/senses can audit coverage; the AI zoning pick + grapple matrix already
+// respect front/rear; remaining 'todo' rows are the in-between animation debt
+// (rope vaulting from apron/mid/top, grounded side-vs-head zoning, corner states).
+// ============================================================================
+window.POSITION_TAXONOMY = {
+  STAND_FRONT:   { families:['strike','front grapple: scoop/suplex/DDT/powerbomb/chokeslam families'], hook:'GRAPPLE_MATRIX.front + poseGrab', status:'live' },
+  STAND_REAR:    { families:['rear grapple: German/back suplex, backbreaker, atomic drop, reverse DDT'], hook:'GRAPPLE_MATRIX.rear + go-behind', status:'live' },
+  GROUND_HEAD:   { families:['mounted strikes, head-side submissions, leg drops/elbows'],               hook:'groundAttack (head-side zoning)', status:'todo' },
+  GROUND_SIDE:   { families:['side submissions, pins, stomps'],                                          hook:'groundAttack (side zoning)',      status:'todo' },
+  GROUND_FEET:   { families:['leg-side submissions (locks), catapults, stomps'],                         hook:'groundAttack (leg-side zoning)',  status:'todo' },
+  CORNER_FACING: { families:['corner strikes, splashes, tree-of-woe setups, top-rope seat'],             hook:'zone CORNER + climb',             status:'partial' },
+  ROPE_REBOUND:  { families:['rebound strikes (lariat/dropkick), leapfrog/duck in-betweens'],            hook:'reboundT + runCharge',            status:'partial' },
+  APRON:         { families:['apron strikes, slingshot entries, apron-to-floor dives'],                  hook:'zone APRON + ropeexit',           status:'partial' },
+  MID_ROPE:      { families:['middle-rope dives/axe handles, springboard from mid'],                     hook:'midrope state',                   status:'partial' },
+  TOP_ROPE:      { families:['top-rope dive families (splash/moonsault/senton/swanton...)'],             hook:'perch + DIVE_TYPES',              status:'live' },
+  SPRINGBOARD:   { families:['springboard dives + in-between VAULT animation off the ropes'],           hook:'startDive(sb) — vault anim todo', status:'partial' },
+  RUNNING:       { families:['running strikes/grapples (bulldog, spear, running knees)'],               hook:'running + momentum',              status:'live' }
+};
+try{ if(window.MANIFESTO) window.MANIFESTO.register({key:'combat.positionTaxonomy',kind:'gameplay',summary:'2K26-grade position/zoning map; AI grapple picks are front/rear-correct (go-behind gated)',call:'window.POSITION_TAXONOMY'}); }catch(e){}
+
 // player advances the grapple (GRAB cycles lockup->lift->carry); deliveries fire from carry
 Fighter.prototype.grappleAdvance = function(aim, slam){
   if (!this.grappling) return;
@@ -8037,7 +8062,23 @@ Fighter.prototype.poseGrab = function(dt){
       // here lets the lockup actually SHOW the hold being secured before the lift begins.
       if (!this._aiGrapChosen){
         this._aiGrapChosen = true;
-        if (Math.random()<0.85){ this.grapplePos = GRAPPLE_POS_NAMES[Math.floor(Math.random()*GRAPPLE_POS_NAMES.length)]; }
+        // POSITION/ZONING-CORRECT pick (WWE-2K taxonomy): a FRONT tie-up can only yield FRONT-entry
+        // holds; REAR-entry holds (German/back suplex, backbreaker, atomic drop...) require the
+        // go-behind first. The AI now either stays front (78%) or performs the go-behind (22%) and
+        // picks from the rear family — no more German suplexes teleporting out of a collar tie.
+        if (Math.random()<0.85){
+          if(!window.__GP_FRONT){ window.__GP_FRONT=[]; window.__GP_REAR=[];
+            for(const k of GRAPPLE_POS_NAMES){ ((GRAPPLE_POSITIONS[k]&&GRAPPLE_POSITIONS[k].rear)?window.__GP_REAR:window.__GP_FRONT).push(k); } }
+          const goBehind = Math.random()<0.22 && window.__GP_REAR.length;
+          const pool = goBehind ? window.__GP_REAR : window.__GP_FRONT;
+          this.grappleMode = goBehind ? 'rear' : 'front';
+          this.grapplePos = pool[Math.floor(Math.random()*pool.length)] || 'STANDARD';
+        } else if (GRAPPLE_POSITIONS[this.grapplePos] && GRAPPLE_POSITIONS[this.grapplePos].rear){
+          // kept the previous hold (no re-pick) but it's a REAR-entry position and startGrab reset
+          // the mode to front — make the mode follow the held position (a repeated go-behind) so a
+          // stale German can never fire out of a front tie-up.
+          this.grappleMode = 'rear';
+        }
       }
       if (this.stateTime>0.55){ this.grappleStage=2; this.stateTime=0; }   // slightly longer lockup so the setup reads
     } else if (st===2){
