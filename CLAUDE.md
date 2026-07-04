@@ -97,15 +97,27 @@ Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (mas
 ## Combat roadmap (task #21, from BLUEPRINT.next)
 SHIPPED: springboard rope-plant VAULT in-between (state 'vault' -> dive from rope height); grounded
 HEAD/FEET/SIDE zoning (groundZoneOf: verlet head-vs-midfeet axis, backward-fall facing fallback)
-flavoring grounded strikes' target/damage/name; biomech sweat (spec §C). NEXT: two-body joint-coupled
-grapples (use godmode/daemon/pd_torque_controller.py as PD-torque reference) + grab-event vertex
-bulge (spec §B) at grip points; UFC weight-strike tuning; vault variants from apron/mid/top; running
-strike expansion; unique grounded anims per zone.
+flavoring grounded strikes' target/damage/name; biomech sweat (spec §C). PHASE 3 SHIPPED: two-body
+PD load coupling (poseGrab st 2/3 reads victim `_loadErr/_loadVel` from poseGrabbed telemetry,
+tau=0.55·err−0.07·vel clamped ±0.085 into attacker pelvis/chest/head/knees — attacker visibly bears
+the load) + grab-event vertex bulge (spec §B: victim `_gripPts` at attacker palms, BBODY.update digs
+−0.045·amp·Φ inside R=0.15 w/ rim bulge to 1.6R + somatic pulse sin(9t)·S_t); RUNNING/REBOUND strike
+family in playerAttack (shoulder block/lariat/knee/big boot, power ×(1+0.45·momentum+0.30·rebound));
+per-zone grounded traj/power/name (OVERHAND·HEAD / STRAIGHT·LEGS / HOOKING·RIBS). Verified via
+phase3b.js: stages hold 1→2→3 w/ loadErr+grip live, gripNearestVert 0.088 (<R dig-in), pelvisVar
+0.0097, RUNNING LARIAT@96, STOMP·LEGS. GOTCHA: v72 weight-class wrapper turns stage-1 grappleAdvance
+into instant `grappleDeliver('drop')` when !canLiftOpponent — heavy victims (GOLEM) skip lift/carry
+BY DESIGN; stub `canLiftOpponent` in tests. NEXT: UFC weight-strike tuning; vault variants from
+apron/mid/top; unique grounded ANIMATIONS per zone (beyond traj flavor); wire CHAR_FINISHERS into
+MOVESET_DB.
 
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
-faceSkullW/L (ringGirth ti===2). window.CHAR_FACE = per-character skull/jaw signatures (every named
-character has a distinct head). Independent BUST slider (0.6 flat..1.6 pronounced) x fem, seeded per
-female: Tyneshia 1.35 / Karma 1.0 / Tightrope 0.72 — the "some sexy, some regular" diversity axis.
+faceSkullW/L (ringGirth ti===2). NEW `_face` relief (gaussians on the head tube r∈[0.55,1]):
+faceCheek/faceChin/faceBrow/faceNose sculpt real geometry (verified cheek delta 0.0266); FACE SCULPT
+CAW section + `traps` (trapezius relief mult) + `bust` sliders. window.CHAR_FACE = per-character
+skull/jaw/cheek/chin signatures (~26 named heads, merged after applyBodyComp so explicit shape wins).
+Independent BUST slider (0.6 flat..1.6 pronounced) x fem, seeded per female: Tyneshia 1.35 /
+Karma 1.0 / Tightrope 0.72 — the "some sexy, some regular" diversity axis.
 Network allowlist is LIVE for curl fetches (cdnjs/github-raw/HF 200) — pull assets directly; the
 Playwright harness stays on the vendored copies (Chromium proxies differ).

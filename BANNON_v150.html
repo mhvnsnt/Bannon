@@ -5272,8 +5272,18 @@ window.BBODY = (function(){
       if(r<0.75) return {s:hd*FM('faceJawW'), d:hd*FM('faceJawL')};                     // jaw/lower face
       return {s:hd*FM('faceSkullW'), d:hd*FM('faceSkullL')};                            // cranium/crown
     }
-    if(ti===3||ti===4){ const a=(i<=1)?_part(f,'shoulders',1.20,true):_part(f,'arms',1.05,true); return {s:a,d:a}; }
-    if(ti===5||ti===6){ const l=(i<=1)?_part(f,'thighs',1.06,true):_part(f,'calves',1.0,true); return {s:l*((i<=1)?_mul(f,'thighW'):1),d:l}; }
+    if(ti===3||ti===4){ const r=i/Math.max(1,M-1);              // arm: delt -> bicep -> forearm -> hand, each its own slider
+      let v; if(r<=0.18) v=_part(f,'shoulders',1.20,true);
+      else if(r<=0.50) v=_part(f,'arms',1.05,true);
+      else if(r<=0.80) v=_part(f,'forearms',1.0,true);
+      else v=_part(f,'hands',0.82,false);
+      return {s:v,d:v}; }
+    if(ti===5||ti===6){ const r=i/Math.max(1,M-1);              // leg: thigh -> knee blend -> calf -> foot
+      if(r<=0.30){ const b=_part(f,'thighs',1.06,true); return {s:b*_mul(f,'thighW'), d:b}; }   // thigh keeps its own W axis
+      let v; if(r<=0.45) v=(_part(f,'thighs',1.06,true)+_part(f,'calves',1.0,true))*0.5;         // knee = smooth thigh/calf blend
+      else if(r<=0.68) v=_part(f,'calves',1.0,true);
+      else v=_part(f,'feet',1.0,false);
+      return {s:v,d:v}; }
     return {s:1,d:1};
   }
   // GLUTES / SEAT — projects the back of the pelvis (and upper-thigh backs) outward.
@@ -5301,7 +5311,7 @@ window.BBODY = (function(){
   // blocks with a linea-alba groove, spine valley + erector ridges, bicep/tricep, quad/
   // calf. Only as visible as the fighter is muscular AND lean (abs vanish under fat),
   // and softened on female frames. a=PI -> front, a=0 -> back (vertical torso).
-  function _relief(ti, i, M, a){
+  function _relief(f, ti, i, M, a){
     const cs=Math.cos(a); const front=Math.max(0,-cs), back=Math.max(0,cs);
     const center=Math.exp(-Math.pow(a-Math.PI,2)/0.018);
     const spine =Math.exp(-Math.pow(((a+Math.PI)%(2*Math.PI))-Math.PI,2)/0.03);
@@ -5312,8 +5322,8 @@ window.BBODY = (function(){
       r += back*0.012*Math.exp(-Math.pow(Math.abs(a)-0.34,2)/0.02);
       // TRAPEZIUS: on the top ring(s), pack mass at the BACK + SIDES so the shoulder shelf slopes up
       // into the neck yoke instead of the neck sitting on a flat plate. This is the delt/trap surface
-      // blend — the connective anatomy between neck, shoulder and torso.
-      if(i>=M-1.6){ const trap=back*0.55 + side*0.45; r += trap*(0.010+0.045*(i-(M-1.6))/1.6); }
+      // blend — the connective anatomy between neck, shoulder and torso. TRAPS slider scales the yoke.
+      if(i>=M-1.6){ const trap=back*0.55 + side*0.45; r += trap*(0.010+0.045*(i-(M-1.6))/1.6)*_mul(f,'traps'); }
       return r;
     }
     if(ti===1) return -spine*0.010;
@@ -5341,6 +5351,20 @@ window.BBODY = (function(){
     if(ti===1) return fem*0.034*side + fem*0.012;                        // hips/glutes
     if((ti===5||ti===6)&&i<=2) return fem*0.020;                         // upper-thigh
     return 0;
+  }
+  // FACE SCULPT relief — features carved INTO the skull surface (2K-style), not stuck-on boxes:
+  // cheekbone side bulges, chin projection, brow ridge, nose-bridge mass. All default-1 sliders
+  // (zero effect at neutral); r = position along the neck tube (0 traps .. 1 crown).
+  function _face(f,ti,i,M,a){ if(ti!==2) return 0; const r=i/Math.max(1,M-1); if(r<0.55) return 0;
+    const FM=k=>{const sh=f.shape||{};return sh[k]!=null?+sh[k]:1;};
+    const front=Math.max(0,-Math.cos(a)), side=Math.abs(Math.sin(a));
+    const g=(c,w)=>Math.exp(-((r-c)*(r-c))/(w*w));
+    let v=0;
+    v += side *g(0.74,0.10)*0.032*(FM('faceCheek')-1);          // zygomatic cheekbones
+    v += front*g(0.62,0.08)*0.036*(FM('faceChin')-1);           // chin point fwd/receding
+    v += front*g(0.88,0.07)*0.028*(FM('faceBrow')-1);           // brow ridge shelf
+    v += front*g(0.80,0.06)*0.016*(FM('faceNose')-1);           // nose-bridge mass
+    return v;
   }
   // Muscle definition is only as strong as (muscularity x leanness), softened for women.
   function reliefScale(f){ const c=_bodyComp(f); return Math.max(0, c.musc*(1 - c.fat*0.85)) * (1 - c.fem*0.4); }
@@ -5383,7 +5407,7 @@ window.BBODY = (function(){
         for(let k=0;k<N;k++){ const a=k/N*6.2831853;
           // muscle (scaled by definition) + soft fat mass + female shaping + glutes/seat — sampled in
           // AUTHORED ring-space (ai = fractional authored index) so every CAW morph is unchanged.
-          const rel = _def*_relief(ti,ai,M,a) + _fat(f,ti,ai,M,a) + _fem(f,ti,ai,M,a) + _glute(f,ti,ai,M,a);
+          const rel = _def*_relief(f,ti,ai,M,a) + _fat(f,ti,ai,M,a) + _fem(f,ti,ai,M,a) + _glute(f,ti,ai,M,a) + _face(f,ti,ai,M,a);
           const ca=Math.cos(a)*(rS+rel), sa=Math.sin(a)*(rD+rel);
           pos[vo+k*3]=cx+_u.x*ca+_v.x*sa; pos[vo+k*3+1]=cy+_u.y*ca+_v.y*sa; pos[vo+k*3+2]=cz+_u.z*ca+_v.z*sa; } }
       if(TB.apex>=0){ const d=DM-1, ao=TB.apex*3; _d.set(DC[d][0]-DC[d-1][0],DC[d][1]-DC[d-1][1],DC[d][2]-DC[d-1][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
@@ -5392,6 +5416,25 @@ window.BBODY = (function(){
         const rA=DR[d][0]*0.5; pos[ao]=DC[d][0]+_d.x*rA; pos[ao+1]=DC[d][1]+_d.y*rA; pos[ao+2]=DC[d][2]+_d.z*rA; }
       if(TB.apex0>=0){ const ao=TB.apex0*3; _d.set(DC[1][0]-DC[0][0],DC[1][1]-DC[0][1],DC[1][2]-DC[0][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
         const rA=DR[0][0]*0.5; pos[ao]=DC[0][0]-_d.x*rA; pos[ao+1]=DC[0][1]-_d.y*rA; pos[ao+2]=DC[0][2]-_d.z*rA; } }   // near-end cap: extend backward from ring 0
+    // GRAB-EVENT VOLUMETRIC DEFORMATION (biomech spec §B): while held, the attacker's hands press
+    // INTO the flesh — vertices inside the grip radius compress toward the contact point (radial
+    // falloff Φ(d)=1-d/R), an annulus around it bulges out (displaced tissue), and the somatic pulse
+    // Ψ = sin(ωt)·S_t rides on top (cardiac spikes under stress). Cleared the frame the hold ends.
+    if (f.state!=='grabbed' && f._gripPts) f._gripPts=null;
+    if (f.state==='grabbed' && f._gripPts && f._gripPts.p){
+      const G=f._gripPts, R=0.15, RO=R*1.6, RO2=RO*RO;
+      const pulse=Math.sin(G.t*9.0)*0.010*(0.3+0.7*G.St);
+      for(const g of G.p){ if(!g) continue;
+        for(let vi=0;vi<L.count;vi++){ const o=vi*3;
+          const dx=pos[o]-g.x, dy=pos[o+1]-g.y, dz=pos[o+2]-g.z; const d2=dx*dx+dy*dy+dz*dz;
+          if(d2>=RO2 || d2<1e-8) continue;
+          const d=Math.sqrt(d2), ux=dx/d, uy=dy/d, uz=dz/d;
+          let k;
+          if(d<R){ const phi=1-d/R; k = -(0.045*G.amp*phi) + pulse*phi; }          // dig: compress toward the grip
+          else   { const t=(d-R)/(RO-R); k = 0.016*G.amp*(1-t) + pulse*(1-t)*0.5; } // rim: displaced-tissue bulge
+          pos[o]+=ux*k; pos[o+1]+=uy*k; pos[o+2]+=uz*k;
+        } }
+    }
     f._bgeo.attributes.position.needsUpdate=true; f._bgeo.computeVertexNormals(); }
   function setHidden(f,hide){ if(!f.seg) return; for(const k in f.seg){ if(k==='aura'||k in FACE_KEEP) continue; const m=f.seg[k]; if(!m) continue;
     if(m.userData && m.userData.keepVisible){ m.visible=true; continue; }   // explicit keep (e.g. Maime's painted face shell)
@@ -5773,7 +5816,7 @@ window.cycleRosterP2 = function(){
 // fighters persist to localStorage (works from the downloaded HTML in a browser). Hidden drawer; covers no existing gameplay UI.
 (function(){
   const PROP=[['height','HEIGHT',0.75,1.35],['armLen','ARM LENGTH',0.7,1.4],['legLen','LEG LENGTH',0.7,1.4],['torsoLen','TORSO LENGTH',0.7,1.4]];
-  const BODY=[['shoulders','SHOULDERS'],['chest','CHEST'],['arms','UPPER ARMS'],['forearms','FOREARMS'],['hands','HANDS'],['waist','WAIST / GUT'],['hips','HIPS'],['glutes','GLUTES / SEAT'],['thighs','THIGHS'],['calves','CALVES'],['feet','FEET'],['head','HEAD']];
+  const BODY=[['shoulders','SHOULDERS'],['traps','TRAPS / YOKE'],['chest','CHEST'],['bust','BUST'],['arms','UPPER ARMS'],['forearms','FOREARMS'],['hands','HANDS'],['waist','WAIST / GUT'],['hips','HIPS'],['glutes','GLUTES / SEAT'],['thighs','THIGHS'],['calves','CALVES'],['feet','FEET'],['head','HEAD']];
   // per-axis WIDTH vs DEPTH knobs (default 1 = neutral) — wide-but-flat shoulders,
   // wide hips, tiny-deep waist, etc. The "disproportionate body" controls.
   const AXES=[['shoulderW','SHOULDER WIDTH'],['chestW','CHEST WIDTH'],['chestD','CHEST DEPTH'],['waistW','WAIST WIDTH'],['waistD','WAIST DEPTH'],['hipW','HIP WIDTH'],['hipD','HIP DEPTH'],['thighW','THIGH WIDTH']];
@@ -5854,8 +5897,12 @@ window.cycleRosterP2 = function(){
     slider('fem','FRAME  MASC \u2194 FEM',0,1,true,true);        // 0 male wedge -> 1 female hourglass (ribcage/waist/pelvis/glute)
     H('FACE SCULPT','#c084fc');
     slider('head','HEAD SIZE',0.55,1.3,true,true);              // overall skull (reuses the head part-scale)
+    slider('faceSkullW','SKULL WIDTH',0.7,1.4,true,true);       // cranium side-to-side (real ring geometry)
+    slider('faceSkullL','SKULL LENGTH',0.7,1.4,true,true);      // cranium front-to-back
     slider('faceJawW','JAW WIDTH',0.6,1.6,true,true);
     slider('faceJawL','JAW LENGTH',0.7,1.5,true,true);
+    slider('faceCheek','CHEEKBONES',0.6,1.7,true,true);         // zygomatic side bulge, sculpted into the skull surface
+    slider('faceChin','CHIN PROJECTION',0.6,1.7,true,true);     // chin point forward/receding
     slider('faceBrow','BROW RIDGE',0.6,1.7,true,true);
     slider('faceBrowW','BROW WIDTH',0.7,1.4,true,true);
     slider('faceNose','NOSE SIZE',0.6,1.6,true,true);
@@ -8482,6 +8529,20 @@ Fighter.prototype.poseGrab = function(dt){
     this.poseGuard(dt,false);
     if (this.stateTime>0.4){ if(window.BPHYS&&window.BPHYS.unlink) window.BPHYS.unlink(this,true); this.state='idle'; this.stateTime=0; this.grappling=false; this.grabTarget=null; }
   }
+  // ===== TWO-BODY PD LOAD COUPLING (godmode/daemon/pd_torque_controller.py: τ = Kp·err − Kd·vel) =====
+  // The victim's coupling-spring error is the LOAD the attacker actually carries. Render its torque
+  // on the attacker: when the mass sags below the hoist target the attacker sinks + tips toward it;
+  // when the spring whips it upward the attacker gets pulled tall. The two bodies now breathe as one
+  // coupled system instead of the attacker posing through a weightless carry.
+  { const _v=this.grabTarget;
+    if((st===2||st===3) && _v && _v._loadErr!=null){
+      const Kp=0.55, Kd=0.07;
+      let tau = Kp*_v._loadErr - Kd*(_v._loadVel||0);
+      tau = clamp(tau, -0.085, 0.085);
+      this.J.pelvis.y += tau*0.55; this.J.chest.y += tau*0.40; this.J.head.y += tau*0.30;
+      this.J.chest.x  += Math.abs(tau)*0.35;                    // tip INTO the load (never away)
+      this.J.knL.y += tau*0.30; this.J.knR.y += tau*0.30;       // knees give under the sag
+    } }
   this.solveArmIK();
 };
 
@@ -8803,6 +8864,17 @@ Fighter.prototype.poseGrabbed = function(dt){
       if (this._lockY < _grpAnchor.y-1.15) this._lockY = _grpAnchor.y-1.15;
     }catch(e){}
     this.root.position.set(this.x, Math.max(_restY, this._lockY), this.z); this.root.rotation.y = this.facing;
+    // TWO-BODY TELEMETRY: expose the coupling-spring state so the ATTACKER's pose can react to the
+    // load (PD coupling in poseGrab), and record the attacker's grip points in OUR local space so
+    // the flesh deforms under the grip (grab-event vertex bulge, biomech spec §B).
+    this._loadErr = this._lockY - _tgtY; this._loadVel = this._lockVy;
+    try{ this.root.updateMatrixWorld(true);
+      const _gp=[]; const _W=(n)=>{ _grabGrip.copy(by.worldJoint(n)); this.root.worldToLocal(_grabGrip); return {x:_grabGrip.x,y:_grabGrip.y,z:_grabGrip.z}; };
+      _gp.push(_W('haL')); _gp.push(_W('haR'));
+      const _St=Math.min(1,Math.max(0,1-(this.stamina||100)/(this.maxStamina||100)));
+      this._gripT=(this._gripT||0)+dt;
+      this._gripPts={ p:_gp, amp:(st>=3?1:0.7), t:this._gripT, St:_St };
+    }catch(e){}
     // apply the slave-pose SHAPE, pitched by the arc so the body tips through the swing (flatter at the bridge)
     // ===== VICTIM-SIDE MOCAP: your captured victim performance drives the held body (path/tether/grips stay engine-true) =====
     let _vDone=false;
@@ -11349,11 +11421,29 @@ function playerAttack(kind){
       const gz = (typeof groundZoneOf==='function') ? groundZoneOf(p, opp) : 'SIDE';
       m._groundZone = gz;
       m.height = 'GROUND';
-      if (gz==='HEAD'){ m._aimHead=true;  m.power=Math.round((m.power||50)*1.15); m.name=(gm.name||'GROUND')+' · HEAD'; }
-      else if (gz==='FEET'){ m._aimHead=false; m._aimLegs=true; m.power=Math.round((m.power||50)*0.95); m.name=(gm.name||'GROUND')+' · LEGS'; }
-      else { m._aimHead=(zone!=='LOW'); m.power=Math.round((m.power||50)*1.05); m.name=(gm.name||'GROUND')+' · RIBS'; }
+      // distinct arc per zone: HEAD = dropping overhand (elbow/axe read), FEET = straight low drive
+      // into the legs, SIDE = hooking swing across the ribs — three visibly different deliveries.
+      if (gz==='HEAD'){ m._aimHead=true;  m.power=Math.round((m.power||50)*1.15); m.traj='OVERHAND'; m.name=(gm.name||'GROUND')+' · HEAD'; }
+      else if (gz==='FEET'){ m._aimHead=false; m._aimLegs=true; m.power=Math.round((m.power||50)*0.95); m.traj='STRAIGHT'; m.name=(gm.name||'GROUND')+' · LEGS'; }
+      else { m._aimHead=(zone!=='LOW'); m.power=Math.round((m.power||50)*1.05); m.traj='HOOKING'; m.name=(gm.name||'GROUND')+' · RIBS'; }
       p.startAttack(m); return;
     }
+  }
+
+  // RUNNING STRIKE FAMILY (POSITION_TAXONOMY.RUNNING deepened): momentum is a weapon. At a run — or
+  // off an Irish-whip rope REBOUND — strikes swap to the running family (lariat / shoulder block /
+  // running knee / rebound big boot), with power scaled by live momentum and a rebound bonus.
+  if ((p.running || (p.reboundT||0)>0) && (kind==='jab'||kind==='cross'||kind==='kick')){
+    const _reb=(p.reboundT||0)>0;
+    const RUN={
+      jab:  { name:_reb?'REBOUND SHOULDER BLOCK':'RUNNING SHOULDER BLOCK', cat:'STRIKE', limb:'RIGHT CROSS', traj:'STRAIGHT', height:'MID',  power:58, speed:88 },
+      cross:{ name:_reb?'REBOUND LARIAT':'RUNNING LARIAT',                 cat:'STRIKE', limb:'RIGHT CROSS', traj:'HOOKING',  height:'HIGH', power:66, speed:82 },
+      kick: { name:_reb?'REBOUND BIG BOOT':'RUNNING KNEE',                 cat:'STRIKE', limb:_reb?'RIGHT KICK':'KNEE', traj:'STRAIGHT', height:'HIGH', power:64, speed:85 }
+    };
+    const rm=Object.assign({ style:p.style||'BRAWLER', follow:'RESET STANCE' }, RUN[kind]);
+    rm.power=Math.round(rm.power*(1 + 0.45*Math.min(1,(p.momentum||0)/3) + (_reb?0.30:0)));
+    rm._running=true;
+    p.startAttack(rm); return;
   }
 
   // DIRECTIONAL + NEUTRAL: resolve the stick into one strike direction, then pick the mapped strike.
