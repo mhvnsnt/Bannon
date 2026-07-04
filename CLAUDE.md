@@ -36,7 +36,13 @@ Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (mas
   (Sting visual nod; Mankind/Cactus Jack psychology). Black tattered button-up w/ torn sleeves, long
   necktie (incl. the "Pooh Bear tie"), taped wrists, long dark jogging pants. Raw/manic/high-pitched
   voice ("Verbal Leakage"). Usable BOTH as Bannon alt attire (same moves) and standalone character
-  (own moves). Face-paint reference photo from the owner is PENDING — apply when it lands.
+  (own moves). Reference photos: `assets/reference/maime_photos/` (shot in RED stage light —
+  correct to normal light: WHITE paint, near-black locs, black studded gear). Painted look is LIVE
+  in-engine via `__maimePaintTex` + `CHAR_FACEGEAR.MAIME{facepaint:1}`: jagged black "M" forehead,
+  blacked sockets + tear drips, downturned black lips. JACKET STATES (owner spec): enters WITH the
+  studded jacket, REMOVES it for battle (battle look = shirtless + dark pants); casual cutscenes wear
+  a casual jacket. Today: alt looks MAIME_JACKET (ring) / MAIME_CASUAL; auto entrance/cutscene swap
+  lands with the entrance system.
 - **SOLARIS JUSTICE** — the "golden hero" persona (gold/solar palette), currently a symbolic
   hologram in Book 4; owner will detail the look later. Do not design ahead of the owner's spec.
 - Other canon characters: `canon/00_cast_and_world.md` + `Off The Top Rope cast and characters .txt`.
@@ -60,6 +66,13 @@ Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (mas
   Railway hosts the daemon (CPU); the model runs on a GPU host (HF Space/Modal/RunPod).
 - NEXT (task #20): feed the sketch images as image-to-3D seeds; per-character curated prompts;
   in-game GENERATE + attire-per-prompt + full EDIT panel.
+
+## Raw asset drops (repo root zips, from the owner — Blender-side pipeline fuel)
+- `Action Adventure Pack.zip` — Mixamo X Bot + animation FBXs (idle/walk/run/cover): convert to GLB
+  (BlenderGoodies convert.py) -> STUDIO mocap clips.
+- `BlenderGoodies.zip` — rigged CharacterAndRig.blend + convert/retarget scripts + Auto-Rig Pro.
+- `rig_tools_3.67.12.zip` — Auto-Rig Pro (Blender addon; teammate installs in Blender).
+- `uploads_files_147201_Steel_Steps.zip` — ringside steel steps (3MF -> convert to GLB prop).
 
 ## Combat roadmap (task #21, from BLUEPRINT.next)
 Two-body joint-coupled grapple kinematics (Phase 3, validate w/ MOTION CHECK); UFC weight-strike

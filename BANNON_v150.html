@@ -5024,6 +5024,46 @@ window.__bannonSkinNormal = function(){
   }catch(e){ window.__skinNrm=null; return null; }
 };
 
+// MAIME FACE PAINT (canon: assets/reference/maime_photos, corrected out of the red stage light) —
+// hand-painted white base, black jagged "M" on the forehead, blacked-out eye sockets with tear/drip
+// streaks down the cheeks, black lips with downturned corners. Drawn rough on purpose: the photos are
+// smeared grease paint, not vinyl. Mapped to the head sphere's UVs (face centre at u=0.5).
+window.__maimePaintTex = function(){
+  if(window.__maimeTex!==undefined) return window.__maimeTex;
+  try{
+    const W=512,H=256,c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+    // white base with patchy coverage (grease-paint streaks) over a skin-ish under tone
+    x.fillStyle='#caa27e'; x.fillRect(0,0,W,H);
+    x.fillStyle='#e6e1d6'; x.fillRect(W*0.28,0,W*0.44,H);                       // painted zone = front of the head
+    for(let i=0;i<260;i++){ const px=W*0.28+Math.random()*W*0.44, py=Math.random()*H, r=3+Math.random()*10;
+      x.fillStyle='rgba(255,252,245,'+(0.10+Math.random()*0.22)+')'; x.beginPath(); x.arc(px,py,r,0,7); x.fill(); }
+    x.strokeStyle='rgba(120,100,84,0.20)';
+    for(let i=0;i<24;i++){ x.beginPath(); const sx=W*0.30+Math.random()*W*0.40, sy=Math.random()*H; x.moveTo(sx,sy); x.lineTo(sx+(Math.random()*30-15), sy+30+Math.random()*40); x.stroke(); }
+    const ink=(a)=>{ x.fillStyle='rgba(16,12,12,'+a+')'; x.strokeStyle='rgba(16,12,12,'+a+')'; };
+    // sphere v: 1=crown. forehead band ~v0.24-0.34 of canvas from top; eyes ~0.40; lips ~0.62 (canvas y = (1-v)*H)
+    // jagged "M" on the forehead
+    ink(0.92); x.lineWidth=7; x.lineJoin='miter'; x.beginPath();
+    x.moveTo(W*0.455,H*0.30); x.lineTo(W*0.475,H*0.22); x.lineTo(W*0.50,H*0.30); x.lineTo(W*0.525,H*0.22); x.lineTo(W*0.545,H*0.30); x.stroke();
+    // brows: heavy asymmetric slashes
+    x.lineWidth=11; x.beginPath(); x.moveTo(W*0.40,H*0.40); x.lineTo(W*0.475,H*0.365); x.stroke();
+    x.beginPath(); x.moveTo(W*0.525,H*0.36); x.lineTo(W*0.60,H*0.40); x.stroke();
+    // eye sockets: rough black patches
+    const socket=(cx)=>{ x.beginPath(); x.ellipse(cx,H*0.455,W*0.043,H*0.058,0,0,7); x.fill();
+      for(let i=0;i<5;i++){ x.beginPath(); x.ellipse(cx+(Math.random()*14-7),H*0.455+(Math.random()*8-4),W*0.03,H*0.04,Math.random(),0,7); x.fill(); } };
+    ink(0.95); socket(W*0.44); socket(W*0.56);
+    // tear/drip streaks down the cheeks (2-3 per eye, wobbling, thinning)
+    const drip=(sx,len,w0)=>{ let px=sx, py=H*0.50; x.lineCap='round';
+      for(let s=0;s<6;s++){ const ny=py+len/6, nx=px+(Math.random()*8-4); x.lineWidth=Math.max(1.5,w0*(1-s/6)); x.beginPath(); x.moveTo(px,py); x.lineTo(nx,ny); x.stroke(); px=nx; py=ny; } };
+    ink(0.9); drip(W*0.425,H*0.30,6); drip(W*0.455,H*0.22,4); drip(W*0.555,H*0.34,6); drip(W*0.585,H*0.20,4);
+    // lips: wide black smear, corners dragged DOWN, chin shadow
+    ink(0.95); x.beginPath(); x.ellipse(W*0.50,H*0.635,W*0.052,H*0.030,0,0,7); x.fill();
+    x.lineWidth=8; x.beginPath(); x.moveTo(W*0.448,H*0.635); x.lineTo(W*0.425,H*0.695); x.stroke();
+    x.beginPath(); x.moveTo(W*0.552,H*0.635); x.lineTo(W*0.575,H*0.695); x.stroke();
+    ink(0.35); x.beginPath(); x.ellipse(W*0.50,H*0.71,W*0.03,H*0.02,0,0,7); x.fill();
+    const t=new THREE.CanvasTexture(c); window.__maimeTex=t; return t;
+  }catch(e){ window.__maimeTex=null; return null; }
+};
+
 // ============================ CONTINUOUS BODY — one procedural skin surface deformed by the rig (no GLB) ============================
 // Vertices are recomputed every frame straight from the corrected joints (fighter._rj) — no skeleton binding, so it renders
 // predictably. Tapered tubes (V-torso, limbs, neck->head) form one smooth flesh-shaded mesh that bends with the fighter and
@@ -5339,6 +5379,7 @@ window.BBODY = (function(){
         const rA=DR[0][0]*0.5; pos[ao]=DC[0][0]-_d.x*rA; pos[ao+1]=DC[0][1]-_d.y*rA; pos[ao+2]=DC[0][2]-_d.z*rA; } }   // near-end cap: extend backward from ring 0
     f._bgeo.attributes.position.needsUpdate=true; f._bgeo.computeVertexNormals(); }
   function setHidden(f,hide){ if(!f.seg) return; for(const k in f.seg){ if(k==='aura'||k in FACE_KEEP) continue; const m=f.seg[k]; if(!m) continue;
+    if(m.userData && m.userData.keepVisible){ m.visible=true; continue; }   // explicit keep (e.g. Maime's painted face shell)
     // finger/thumb chains live in (possibly nested) arrays — plain `m.visible=` skipped them, so the
     // crude little cylinders stayed visible over the smooth hand and read as a grid blob. Recurse.
     if(Array.isArray(m)){ const walk=(x)=>{ if(Array.isArray(x)) x.forEach(walk); else if(x&&x.visible!==undefined) x.visible=!hide; }; walk(m); continue; }
@@ -6080,13 +6121,20 @@ Fighter.prototype.applyMesh = function(){
   put(s.hair, h, -0.060*_hs,   0.120*_hs,  0);                                                         // hair RAISED into a cap on top/back so the forehead + face are clear (was a helmet to the brow)
   // FACE GEAR placement (canon sketch): metallic 3/4 mask hugs the face; jaw plate floats BELOW it
   // with a visible slot; dread strands hang from the back/side of the skull, leaving the face arc open.
-  if (s.maskUpper && s.maskUpper.visible){ const _ms=_hs/0.70;
-    put(s.maskUpper, h, 0.040*_hs, 0.005*_hs, 0); s.maskUpper.scale.setScalar(_ms);
-    put(s.maskJaw,   h, 0.052*_hs, -0.040*_hs, 0); s.maskJaw.scale.setScalar(_ms);
+  // gear scale from the SPEC (build x head slider), NOT seg.head.scale — Maime's painted face SHELL
+  // inflates the head mesh 1.5x, which was blowing the dreads up into planks and shoving the eyes out.
+  const _hsg=(((this.spec&&this.spec.build!=null)?+this.spec.build:1) * ((this.shape&&this.shape.head!=null)?+this.shape.head:0.70));
+  if (s.maskUpper && s.maskUpper.visible){ const _ms=_hsg/0.70;
+    put(s.maskUpper, h, 0.040*_hsg, 0.005*_hsg, 0); s.maskUpper.scale.setScalar(_ms);
+    put(s.maskJaw,   h, 0.052*_hsg, -0.040*_hsg, 0); s.maskJaw.scale.setScalar(_ms);
     // dark eye SOCKETS sit ON the mask shell (sketch: big black almond openings in the metal)
-    put(s.eyeL, h, 0.238*_hs, 0.020*_hs, 0.058*_hs); put(s.eyeR, h, 0.238*_hs, 0.020*_hs, -0.058*_hs);   // proud of the shell surface (mask front ≈0.22*_hs at eye height)
-    s.eyeL.scale.set(_ms*0.45,_ms*0.85,_ms*1.7); s.eyeR.scale.set(_ms*0.45,_ms*0.85,_ms*1.7); }   // thin fwd, WIDE across -> horizontal almond sockets, not vertical slits
-  if (s.dreads && s.dreads.length && s.dreads[0].visible){ const _ms=_hs/0.70, rr=0.118*_ms;
+    put(s.eyeL, h, 0.238*_hsg, 0.020*_hsg, 0.058*_hsg); put(s.eyeR, h, 0.238*_hsg, 0.020*_hsg, -0.058*_hsg);   // proud of the shell surface
+    s.eyeL.scale.set(_ms*0.45,_ms*0.85,_ms*1.7); s.eyeR.scale.set(_ms*0.45,_ms*0.85,_ms*1.7); }   // thin fwd, WIDE across -> horizontal almond sockets
+  else if (s.head && s.head.userData && s.head.userData.keepVisible){ const _ms=_hsg/0.70;
+    // FACE PAINT (no mask): eyes sit ON the painted shell inside the black sockets
+    put(s.eyeL, h, 0.176*_hsg, 0.018*_hsg, 0.052*_hsg); put(s.eyeR, h, 0.176*_hsg, 0.018*_hsg, -0.052*_hsg);
+    s.eyeL.scale.set(_ms*0.4,_ms*0.7,_ms*1.1); s.eyeR.scale.set(_ms*0.4,_ms*0.7,_ms*1.1); }
+  if (s.dreads && s.dreads.length && s.dreads[0].visible){ const _ms=_hsg/0.70, rr=0.118*_ms;
     for(let i=0;i<s.dreads.length;i++){ const d=s.dreads[i], n=s.dreads.length;
       const a=(50 + i*(260/(n-1)))*Math.PI/180;                       // arc that skips the ±50° face cone (+x forward)
       const ax=Math.cos(a)*rr, az=Math.sin(a)*rr, len=d.userData.dreadLen||0.3;
@@ -12250,6 +12298,24 @@ function dressFighter(f){
           f._dreadCapMat.color.setRGB(r/255,g/255,b/255); }
         S.hair.scale.set(0.92,0.66,0.98); }                                   // skull-hugging root cap
     }
+    // FACE PAINT (Maime): the head sphere becomes a painted face SHELL sitting proud of the smooth
+    // head tube (tube r≈0.118; shell = 0.125 * scale below). Painted lips/sockets replace the crude
+    // nose/mouth boxes, which hide; eye boxes stay (they poke through as the dark iris in the socket).
+    { const on=!!(fg&&fg.facepaint); const S2=f.seg;
+      if(S2 && S2.head){
+        S2.head.userData.keepVisible = on;
+        if(on){
+          if(!f._paintMat){ try{ f._paintMat=S2.head.material.clone(); }catch(_){ } }
+          if(f._paintMat){ const tx=(window.__maimePaintTex&&window.__maimePaintTex()); if(tx){ f._paintMat.map=tx; }
+            f._paintMat.color.setHex(0xffffff); f._paintMat.roughness=0.85; S2.head.material=f._paintMat; }
+          // deterministic shell size (mirrors applyFighterSpec: build * headSlider), 1.5x to clear the tube
+          const _b=(f.spec&&f.spec.build!=null)?+f.spec.build:1, _hd=(f.shape&&f.shape.head!=null)?+f.shape.head:0.70;
+          S2.head.scale.setScalar(_b*_hd*1.5);
+          S2.head.visible=true;
+        } else if(f._paintMat && S2.head.material===f._paintMat){ try{ S2.head.material=f.skinMat||S2.head.material; }catch(_){ } }
+        for(const nm of ['nose','noseBridge','mouth','jaw','earL','earR']){ const m=S2[nm]; if(m){ m.userData.paintHide=on; m.visible=!on; } }   // painted features replace the boxes (ears live under the locs); restore on un-paint
+      }
+    }
   }catch(_){}
 }
 window.dressFighter = dressFighter;
@@ -12258,11 +12324,28 @@ window.dressFighter = dressFighter;
 window.CHAR_FACEGEAR = {
   BANNON:      { mask:1, maskColor:0x93a0bd, dreads:1, dreadColor:0xa8854a },
   BANNON_NOIR: { mask:1, maskColor:0x6b7488, dreads:1, dreadColor:0x121014 },   // alt: gunmetal mask, BLACK dreads
-  // MAIME (canon, Book 3): NO metal mask — white face paint overlaid with black skull/psychotic-clown
-  // (Sting nod), black tattered shirt, necktie, taped wrists. Face-paint texture lands when the
-  // reference photo arrives; until then: bare face + dark dreads, NOT Bannon's mask.
-  MAIME:       { dreads:1, dreadColor:0x2a2118 }
+  // MAIME (canon, Book 3 + owner reference photos in assets/reference/maime_photos): NO metal mask —
+  // WHITE FACE PAINT w/ black jagged "M" forehead, blacked-out sockets + tear drips, black downturned
+  // lips (painted via __maimePaintTex). Near-black freeform locs. Jacket states are alt looks below.
+  MAIME:        { facepaint:1, dreads:1, dreadColor:0x17120e },
+  MAIME_JACKET: { facepaint:1, dreads:1, dreadColor:0x17120e },
+  MAIME_CASUAL: { facepaint:1, dreads:1, dreadColor:0x17120e }
 };
+// MAIME JACKET STATES (owner spec): enters WITH the studded jacket and REMOVES it for battle; wears
+// a jacket in casual cutscenes too. Battle default = shirtless + black pants; the jackets are alt
+// LOOKS today and become automatic entrance/cutscene swaps when the entrance/cutscene system lands.
+try{
+  window.CHAR_META.MAIME_JACKET = Object.assign({}, window.CHAR_META.MAIME||{}, { label:'The Executioner of Injustice · Ring Jacket', col:0x141416, accent:0xc8ccd4 });
+  window.CHAR_META.MAIME_CASUAL = Object.assign({}, window.CHAR_META.MAIME||{}, { label:'Maime · Casual', col:0x1a1a1e, accent:0x9aa0aa });
+  window.CHAR_ATTIRE.MAIME        = 'CARGO_PANTS';   // battle: jacket OFF — bare chest + long dark pants (photos)
+  window.CHAR_ATTIRE.MAIME_JACKET = 'JACKET';        // studded ring jacket worn open
+  window.CHAR_ATTIRE.MAIME_CASUAL = 'STREETWEAR';    // casual jacket + pants
+  window.CHAR_HAIR.MAIME_JACKET = window.CHAR_HAIR.MAIME_CASUAL = (window.CHAR_HAIR.MAIME||'SHORT');
+  if(window.CHAR_BODY){ window.CHAR_BODY.MAIME_JACKET = window.CHAR_BODY.MAIME_CASUAL = Object.assign({}, window.CHAR_BODY.MAIME||{musc:0.72,fat:0.14}); }
+  if(window.CHAR_ALTS){ window.CHAR_ALTS.MAIME = (window.CHAR_ALTS.MAIME||[]);
+    for(const a of [{id:'MAIME_JACKET',label:'Ring Jacket'},{id:'MAIME_CASUAL',label:'Casual · Jacket'}]){
+      if(!window.CHAR_ALTS.MAIME.some(x=>x.id===a.id)) window.CHAR_ALTS.MAIME.push(a); } }
+}catch(_){}
 // BANNON · NOIR — alternate attire (black dreads, gunmetal mask, blacked-out gear). A LOOK key only:
 // moves/announcer stay Bannon's. Registered across the look registries so vlook resolves it fully.
 try{
