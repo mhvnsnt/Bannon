@@ -1,0 +1,6 @@
+{
+  "name": "Wrestling Game Dev Suite",
+  "description": "A comprehensive suite for prototyping wrestling games, featuring real-time physics simulation, a moveset database, and an AI game design assistant.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

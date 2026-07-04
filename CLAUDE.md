@@ -39,13 +39,33 @@ Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (mas
   (own moves). Reference photos: `assets/reference/maime_photos/` (shot in RED stage light —
   correct to normal light: WHITE paint, near-black locs, black studded gear). Painted look is LIVE
   in-engine via `__maimePaintTex` + `CHAR_FACEGEAR.MAIME{facepaint:1}`: jagged black "M" forehead,
-  blacked sockets + tear drips, downturned black lips. JACKET STATES (owner spec): enters WITH the
-  studded jacket, REMOVES it for battle (battle look = shirtless + dark pants); casual cutscenes wear
-  a casual jacket. Today: alt looks MAIME_JACKET (ring) / MAIME_CASUAL; auto entrance/cutscene swap
-  lands with the entrance system.
+  blacked sockets + tear drips, downturned black lips. HAIR = freeform twist SPIKES standing UP from
+  the crown (CHAR_FACEGEAR hairUp:1, NOT hanging locs — that's Bannon). JACKET STATES (owner spec):
+  enters WITH the studded jacket, REMOVES it for battle (battle look = shirtless + dark jogging
+  pants); casual cutscenes wear a casual jacket. Alt looks: MAIME_JACKET (ring) / MAIME_CASUAL /
+  MAIME_TATTERED (black tattered button-up + blue Pooh tie via the seg.tie mesh + jogging pants;
+  torn sleeves + wrist tape = texture debt). Auto entrance/cutscene swap lands with the entrance
+  system.
 - **SOLARIS JUSTICE** — the "golden hero" persona (gold/solar palette), currently a symbolic
   hologram in Book 4; owner will detail the look later. Do not design ahead of the owner's spec.
-- Other canon characters: `canon/00_cast_and_world.md` + `Off The Top Rope cast and characters .txt`.
+- Other canon characters: `canon/00_cast_and_world.md` + `Off The Top Rope cast and characters .txt`
+  + `canon/characters/` dossiers (Stan Combs overlord, Edwin Kennedy/AWE chairman, Stick Up/Jackboy
+  w/ finishers, Finxsse match notes, free agents incl. TIGHTROPE the female flyer). Finisher specs
+  live in `window.CHAR_FINISHERS` (Finxsse: CHAINSNATCHER backstabber + GETBACKK F5-class; Stick Up:
+  LEAP OF FAITH swanton family, FIRE THUNDER DRIVER, twisting cutter) — wire into MOVESET_DB in the
+  moveset-library pass. Body diversity: CHAR_BODY axes (musc/fat/fem/hips/glutes/waist) span curvy
+  (Tyneshia), athletic-lean female (Tightrope, Karma), heavy-soft (Yorkshire Grit, Stan), suits.
+
+## God-Mode OS (godmode/ — extracted from the owner's newest remix zip; older zips at repo root)
+- The owner's AI-OS layer: daemon/, app/, src/server/EvolutionDaemon.ts, training_data/*.jsonl,
+  vault/rag_vault.db, Bannon.Modelfile (Ollama persona), Railway/Firebase configs.
+- `godmode/BIOMECHANICAL_SIMULATION_SPEC.md` = the biomech grid (autonomic saturation ODE, grab-event
+  volumetric mesh bulge, thermodynamic sweat shader, procedural breath audio, FACS mapping). FIRST
+  INTEGRATION LANDED: thermodynamic sweat (BBODY.sync roughness 0.58->~0.18 with exertion S_t).
+  NEXT from spec: grab-event vertex bulge at grapple grips (ties into two-body Phase 3), breath audio.
+- `blender-mcp-main.zip` (repo root) = Blender MCP server: owner installs addon.py in Blender +
+  registers the MCP server with Claude; then I can drive Blender directly (FBX->GLB conversions,
+  Auto-Rig Pro retargets, shape-key authoring).
 
 ## Verification harness (works headless in this sandbox)
 - `scratchpad/pwtest/`: local server + vendored three.js/GLTFLoader (`test.html` rebuilt from

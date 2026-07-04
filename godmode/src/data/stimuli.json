@@ -1,0 +1,56 @@
+{
+  "acoustic": [
+    {
+      "id": "delta_entrainment_01",
+      "name": "Low Frequency Delta Entrainment",
+      "frequency": "1-4 Hz",
+      "wave_type": "Binaural Phase Shift",
+      "expected_neuro_proxy": "Parasympathetic Dominance",
+      "decay_constant": 0.05
+    },
+    {
+      "id": "theta_entrainment_01",
+      "name": "Theta Band Harmonic Intervals",
+      "frequency": "4-8 Hz",
+      "wave_type": "Microtonal Intervals",
+      "expected_neuro_proxy": "Limbic Resonance",
+      "decay_constant": 0.08
+    },
+    {
+      "id": "beta_spike_01",
+      "name": "High Frequency Beta Spikes",
+      "frequency": "15-30 Hz",
+      "wave_type": "Sharp Acoustic Geometry",
+      "expected_neuro_proxy": "Adrenaline Proxy",
+      "decay_constant": 0.12
+    }
+  ],
+  "photonic": [
+    {
+      "id": "cinematic_chiaroscuro_01",
+      "name": "Cinematic Chiaroscuro Environment",
+      "wavelength": "580-700 nm",
+      "wave_type": "High Contrast Low Kelvin",
+      "expected_neuro_proxy": "Melatonin Onset",
+      "decay_constant": 0.02
+    },
+    {
+      "id": "sub_saccadic_blue_01",
+      "name": "Sub-Saccadic Blue Light Flicker",
+      "wavelength": "460-480 nm",
+      "wave_type": "High Refresh Rate Alternating",
+      "expected_neuro_proxy": "Dopamine Pursuit Loop",
+      "decay_constant": 0.15
+    }
+  ],
+  "chemical": [
+    {
+      "id": "oxytocin_proxy_01",
+      "name": "Simulated Oxytocin Analogue",
+      "concentration": "0.05 ppm",
+      "wave_type": "Microfluidic Vapor",
+      "expected_neuro_proxy": "Total Amygdala Suppression",
+      "decay_constant": 0.01
+    }
+  ]
+}

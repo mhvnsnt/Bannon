@@ -5406,7 +5406,14 @@ window.BBODY = (function(){
       if(on && !f._bmesh) build(f);
       if(f._bmesh) f._bmesh.visible=on;
       setHidden(f, on && !!f._bmesh);
-      if(on && f._bmesh){ update(f); if(f._needPaint || f._attireDirty){ paint(f); f._needPaint=false; f._attireDirty=false; } } },
+      if(on && f._bmesh){ update(f);
+        // THERMODYNAMIC EXUDATION (godmode/BIOMECHANICAL_SIMULATION_SPEC.md §C): autonomic saturation
+        // S_t from exertion (drained stamina) + damage; sweat-slick skin = roughness mixed toward wet
+        // (0.58 -> ~0.18) with specular/env pop rising — hot organic tissue instead of constant matte.
+        try{ const St = Math.min(1, Math.max(0, 1-(f.stamina||100)/(f.maxStamina||100))*0.7 + Math.max(0, 1-(f.hp||1)/(f.maxHp||1))*0.3);
+          f._bmesh.material.roughness = 0.58 - 0.40*St;
+          f._bmesh.material.envMapIntensity = 0.95 + 0.65*St; }catch(_){}
+        if(f._needPaint || f._attireDirty){ paint(f); f._needPaint=false; f._attireDirty=false; } } },
     paint:function(f){ paint(f); },
     recolor:function(f){ if(f._bmesh){ f._attireDirty=true; } }   // repaint vertex colours on next sync
   };
@@ -12364,6 +12371,7 @@ window.CHAR_FACEGEAR = {
 // a jacket in casual cutscenes too. Battle default = shirtless + black pants; the jackets are alt
 // LOOKS today and become automatic entrance/cutscene swaps when the entrance/cutscene system lands.
 try{
+  if(window.CHAR_META.MAIME){ window.CHAR_META.MAIME.col=0x18181c; window.CHAR_META.MAIME.accent=0x8a8f9a; }   // photos: LONG DARK jogging pants, not the old red palette
   window.CHAR_META.MAIME_JACKET = Object.assign({}, window.CHAR_META.MAIME||{}, { label:'The Executioner of Injustice · Ring Jacket', col:0x141416, accent:0xc8ccd4 });
   window.CHAR_META.MAIME_CASUAL = Object.assign({}, window.CHAR_META.MAIME||{}, { label:'Maime · Casual', col:0x1a1a1e, accent:0x9aa0aa });
   window.CHAR_ATTIRE.MAIME        = 'CARGO_PANTS';   // battle: jacket OFF — bare chest + long dark pants (photos)
