@@ -2419,6 +2419,11 @@ class Fighter {
       for(let i=0;i<14;i++){ const len=0.26+(i%3)*0.075;
         const d=add(new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.011,len,6), dreadMat));
         d.visible=false; d.userData.dreadLen=len; d.userData.dreadIdx=i; this.seg.dreads.push(d); }
+      // NECKTIE (Maime's tattered look, canon Book 3 — incl. the blue "Pooh Bear tie"): a thin strip
+      // hanging from the collar down the chest; per-look color via CHAR_FACEGEAR[look].tieColor.
+      this.seg.tie = add(new THREE.Mesh(new THREE.BoxGeometry(0.055,0.30,0.014),
+        new THREE.MeshStandardMaterial({ color:0x2a4a8a, roughness:0.7, metalness:0.02 })));
+      this.seg.tie.visible=false;
     }
 
     // ARMS — deltoid -> bicep -> forearm -> wrap -> glove
@@ -5106,7 +5111,7 @@ window.BBODY = (function(){
   // is one clean continuous body instead of the smooth mesh poking through stamped-on crude shapes.
   // brow + headBand are flat box panels that read as a visor stuck on the forehead — drop them on the
   // smooth body (the head's own form + a subtle brow can come from sculpt later). Keep eyes/nose/mouth/ears/hair.
-  const FACE_KEEP={jaw:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0,maskUpper:0,maskJaw:0,dreads:0};
+  const FACE_KEEP={jaw:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0,maskUpper:0,maskJaw:0,dreads:0,tie:0};
   function center(f,c){ const J=f._rj; if(!J) return null;
     if(typeof c==='string'){ const v=J[c]; return v?[v.x,v.y,v.z]:null; }
     // {j, fx, fy, fz}: a joint plus a LOCAL offset. Local +x is the character's forward (root rotation
@@ -6135,11 +6140,29 @@ Fighter.prototype.applyMesh = function(){
     put(s.eyeL, h, 0.176*_hsg, 0.018*_hsg, 0.052*_hsg); put(s.eyeR, h, 0.176*_hsg, 0.018*_hsg, -0.052*_hsg);
     s.eyeL.scale.set(_ms*0.4,_ms*0.7,_ms*1.1); s.eyeR.scale.set(_ms*0.4,_ms*0.7,_ms*1.1); }
   if (s.dreads && s.dreads.length && s.dreads[0].visible){ const _ms=_hsg/0.70, rr=0.118*_ms;
-    for(let i=0;i<s.dreads.length;i++){ const d=s.dreads[i], n=s.dreads.length;
-      const a=(50 + i*(260/(n-1)))*Math.PI/180;                       // arc that skips the ±50° face cone (+x forward)
-      const ax=Math.cos(a)*rr, az=Math.sin(a)*rr, len=d.userData.dreadLen||0.3;
-      d.position.set(h.x + ax, h.y + 0.055*_ms - len*0.5, h.z + az);  // a=0 is +x(face); 50°..310° arc = beside the face, wrapping the BACK
-      d.rotation.set(0,0,0); d.scale.setScalar(_ms); } }
+    if (this._dreadsUp){
+      // MAIME (photos): freeform twist SPIKES standing UP/outward from the crown — messy, varied
+      // lean + length per strand — instead of hanging locs. Deterministic per-index jitter.
+      for(let i=0;i<s.dreads.length;i++){ const d=s.dreads[i], n=s.dreads.length;
+        const a=(i/n)*Math.PI*2 + (i%3)*0.35;
+        const lean=0.34 + ((i*2654435761)%97)/97*0.55;                 // 0.34..0.89 rad outward lean
+        const L=(d.userData.dreadLen||0.3)*0.62*_ms;                   // shorter than the hanging locs
+        const sx=Math.cos(a)*Math.sin(lean), sz=Math.sin(a)*Math.sin(lean), sy=Math.cos(lean);
+        d.position.set(h.x + Math.cos(a)*0.05*_ms + sx*L*0.5, h.y + 0.085*_ms + sy*L*0.5, h.z + Math.sin(a)*0.05*_ms + sz*L*0.5);
+        d.rotation.set(Math.sin(a)*lean, 0, -Math.cos(a)*lean);
+        d.scale.set(_ms*0.85, _ms*0.62, _ms*0.85); }
+    } else {
+      for(let i=0;i<s.dreads.length;i++){ const d=s.dreads[i], n=s.dreads.length;
+        const a=(50 + i*(260/(n-1)))*Math.PI/180;                       // arc that skips the ±50° face cone (+x forward)
+        const ax=Math.cos(a)*rr, az=Math.sin(a)*rr, len=d.userData.dreadLen||0.3;
+        d.position.set(h.x + ax, h.y + 0.055*_ms - len*0.5, h.z + az);  // a=0 is +x(face); 50°..310° arc = beside the face, wrapping the BACK
+        d.rotation.set(0,0,0); d.scale.setScalar(_ms); } } }
+  // NECKTIE: hangs from the collar down the chest front, riding the torso (chest -> pelvis line)
+  if (s.tie && s.tie.visible){
+    const tx=(c.x+p.x)*0.5 + 0.155, ty=c.y*0.62 + p.y*0.38, tz=(c.z+p.z)*0.5;
+    put(s.tie, {x:tx, y:ty, z:tz});
+    s.tie.scale.y = Math.max(0.6, (c.y-p.y)*2.4);
+    s.tie.rotation.set(0, 0, (p.x-c.x)*0.4); }
   orientCyl(s.neck, c.x,c.y,c.z, h.x,h.y,h.z, 1);
   s.neck.scale.y = Math.max(0.12, Math.hypot(h.x-c.x,h.y-c.y,h.z-c.z)*0.62);
   { const _nh=(this.shape&&this.shape.height)?+this.shape.height:1; const _nk=(this.shape&&this.shape.neck!=null)?+this.shape.neck:1; s.neck.scale.x=s.neck.scale.z=_nh*_nk; }  // neck thickness = height x its own NECK slider
@@ -12292,12 +12315,17 @@ function dressFighter(f){
       // ROOTS, not a wig: with dreads on, the hair cap was still the brown helmet floating OVER the
       // strands. Shrink it skull-tight and recolor it as the dreads' root mass (slightly darker than
       // the strands) so crown + strands read as ONE head of locs.
+      f._dreadsUp = !!(on && fg && fg.hairUp);                                // spiked-up twists (Maime) vs hanging locs (Bannon)
       if(on && S.hair){ if(!f._dreadCapMat){ try{ f._dreadCapMat=S.hair.material.clone(); }catch(_){ } }
         if(f._dreadCapMat){ S.hair.material=f._dreadCapMat;
           const dc=(fg.dreadColor!=null?fg.dreadColor:0x2a2118), r=((dc>>16)&255)*0.72, g=((dc>>8)&255)*0.72, b=(dc&255)*0.72;
           f._dreadCapMat.color.setRGB(r/255,g/255,b/255); }
-        S.hair.scale.set(0.92,0.66,0.98); }                                   // skull-hugging root cap
+        if(f._dreadsUp) S.hair.scale.set(0.86,0.46,0.90);                     // spikes: LOW root pad only — no dome over the twists
+        else S.hair.scale.set(0.92,0.66,0.98); }                              // hanging locs: skull-hugging root cap
     }
+    // necktie (tattered look): per-look tie + color (canon: the blue Pooh Bear tie)
+    if(f.seg && f.seg.tie){ const tOn=!!(fg&&fg.tie); f.seg.tie.visible=tOn;
+      if(tOn){ try{ f.seg.tie.material.color.setHex(fg.tieColor!=null?fg.tieColor:0x2a4a8a); }catch(_){ } } }
     // FACE PAINT (Maime): the head sphere becomes a painted face SHELL sitting proud of the smooth
     // head tube (tube r≈0.118; shell = 0.125 * scale below). Painted lips/sockets replace the crude
     // nose/mouth boxes, which hide; eye boxes stay (they poke through as the dark iris in the socket).
@@ -12327,9 +12355,10 @@ window.CHAR_FACEGEAR = {
   // MAIME (canon, Book 3 + owner reference photos in assets/reference/maime_photos): NO metal mask —
   // WHITE FACE PAINT w/ black jagged "M" forehead, blacked-out sockets + tear drips, black downturned
   // lips (painted via __maimePaintTex). Near-black freeform locs. Jacket states are alt looks below.
-  MAIME:        { facepaint:1, dreads:1, dreadColor:0x17120e },
-  MAIME_JACKET: { facepaint:1, dreads:1, dreadColor:0x17120e },
-  MAIME_CASUAL: { facepaint:1, dreads:1, dreadColor:0x17120e }
+  MAIME:          { facepaint:1, dreads:1, hairUp:1, dreadColor:0x17120e },
+  MAIME_JACKET:   { facepaint:1, dreads:1, hairUp:1, dreadColor:0x17120e },
+  MAIME_CASUAL:   { facepaint:1, dreads:1, hairUp:1, dreadColor:0x17120e },
+  MAIME_TATTERED: { facepaint:1, dreads:1, hairUp:1, dreadColor:0x17120e, tie:1, tieColor:0x2a4a8a }
 };
 // MAIME JACKET STATES (owner spec): enters WITH the studded jacket and REMOVES it for battle; wears
 // a jacket in casual cutscenes too. Battle default = shirtless + black pants; the jackets are alt
@@ -12342,9 +12371,35 @@ try{
   window.CHAR_ATTIRE.MAIME_CASUAL = 'STREETWEAR';    // casual jacket + pants
   window.CHAR_HAIR.MAIME_JACKET = window.CHAR_HAIR.MAIME_CASUAL = (window.CHAR_HAIR.MAIME||'SHORT');
   if(window.CHAR_BODY){ window.CHAR_BODY.MAIME_JACKET = window.CHAR_BODY.MAIME_CASUAL = Object.assign({}, window.CHAR_BODY.MAIME||{musc:0.72,fat:0.14}); }
+  // MAIME_TATTERED (canon Book 1/3 look): black tattered button-up w/ torn sleeves, long necktie
+  // (the blue Pooh Bear tie), taped wrists, jogging pants. STREETWEAR paints shirt+pants; torn
+  // sleeves + wrist tape are texture debt for the GLB/forge pass.
+  window.CHAR_META.MAIME_TATTERED = Object.assign({}, window.CHAR_META.MAIME||{}, { label:'The Executioner of Injustice · Tattered', col:0x121216, accent:0x1c1c22 });
+  window.CHAR_ATTIRE.MAIME_TATTERED = 'STREETWEAR';
+  window.CHAR_HAIR.MAIME_TATTERED = (window.CHAR_HAIR.MAIME||'SHORT');
+  if(window.CHAR_BODY) window.CHAR_BODY.MAIME_TATTERED = Object.assign({}, window.CHAR_BODY.MAIME||{musc:0.72,fat:0.14});
   if(window.CHAR_ALTS){ window.CHAR_ALTS.MAIME = (window.CHAR_ALTS.MAIME||[]);
-    for(const a of [{id:'MAIME_JACKET',label:'Ring Jacket'},{id:'MAIME_CASUAL',label:'Casual · Jacket'}]){
+    for(const a of [{id:'MAIME_JACKET',label:'Ring Jacket'},{id:'MAIME_CASUAL',label:'Casual · Jacket'},{id:'MAIME_TATTERED',label:'Tattered · Pooh Tie'}]){
       if(!window.CHAR_ALTS.MAIME.some(x=>x.id===a.id)) window.CHAR_ALTS.MAIME.push(a); } }
+
+  // ── canon/characters dossier integration: bosses + free agents + finisher specs ──
+  const _addChar=(k,meta,attire,hair,body)=>{ if(!window.CHAR_META[k]){ window.CHAR_META[k]=meta; }
+    if(attire) window.CHAR_ATTIRE[k]=window.CHAR_ATTIRE[k]||attire;
+    if(hair) window.CHAR_HAIR[k]=window.CHAR_HAIR[k]||hair;
+    if(body&&window.CHAR_BODY) window.CHAR_BODY[k]=window.CHAR_BODY[k]||body; };
+  _addChar('STAN_COMBS',   { label:'Honey · The Overlord',      col:0x23232b, accent:0xd4af37, skin:0xe8c9a8, faction:'Corporate Structure', canon:true, bio:'LP8 executive deviance — the shadow overlord who buys loyalty and builds weapons out of chaos.', archetype:'powerhouse' }, 'JACKET', 'BUZZ', {musc:0.5,fat:0.42});
+  _addChar('EDWIN_KENNEDY',{ label:'The Chairman of AWE',       col:0x1c1c24, accent:0x8899aa, skin:0xe2b892, faction:'Corporate Structure', canon:true, bio:'LP33/6 imperious promoter — Apex Wrestling Entertainment is his family, his possession, his religion.', archetype:'powerhouse' }, 'JACKET', 'CAESAR', {musc:0.55,fat:0.3});
+  _addChar('TIGHTROPE',    { label:'Reckless Freedom Seeker',   col:0xcc2255, accent:0x22ccee, skin:0xd9a066, faction:'Agents of Chaos', canon:true, bio:'A wire-walker with no net and no plan — chaos as an art form.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.55,fat:0.12,fem:1,hips:1.02,glutes:1.08,waist:0.86});
+  _addChar('AKON_WARRIOR', { label:'Man of Honor',              col:0x8a5a1a, accent:0xffd700, skin:0x7a4a2e, faction:'Free Agent', canon:true, bio:'The ethical challenge — honor as a weapon.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.82,fat:0.2});
+  _addChar('HEATH_BROKER', { label:'The London Broker',         col:0x24262e, accent:0x9fb4cc, skin:0xe6c8a8, faction:'Corporate Structure', canon:true, bio:'Corporate technician — every hold is a contract clause.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.5,fat:0.22});
+  _addChar('CAPTAIN_UNITY',{ label:'Corporate Propaganda',      col:0x1a3a8a, accent:0xd42a2a, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'A manufactured hero — unity as a slogan, not a promise.', archetype:'brawler' }, 'SINGLET', 'BUZZ', {musc:0.72,fat:0.18});
+  _addChar('YORKSHIRE_GRIT',{ label:'Hardcore Independent',     col:0x3a2e24, accent:0xc8b090, skin:0xe0b890, faction:'Free Agent', canon:true, bio:'The wildcard — pints, bricks and a chin made of quarry stone.', archetype:'brawler' }, 'CARGO_PANTS', 'BALD', {musc:0.6,fat:0.4});
+  // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
+  window.CHAR_FINISHERS = Object.assign(window.CHAR_FINISHERS||{}, {
+    FINXSSE:  { style:'Lesnar/Guerrero hybrid — speed+power showman', sig:'CHAINSNATCHER — jumping double-knee backstabber', fin:'GETBACKK — fireman-carry tornado slam (F5-class violence)', props:['gold jeweled diamond cross (stolen from Chainlink)'] },
+    STICK_UP: { fin:['LEAP OF FAITH — swanton bomb','SUPER LEAP OF FAITH — swanton 450 splash','FIRE THUNDER DRIVER','TWIST OF FATE — theatrical twisting cutter/stunner'] }
+  });
+  try{ if(window.MANIFESTO) window.MANIFESTO.register({key:'roster.dossiers',kind:'gameplay',summary:'canon/characters dossiers wired: bosses (Combs/Kennedy-AWE), free agents (Tightrope female flyer, Akon, Heath, Unity, Grit), CHAR_FINISHERS specs (Finxsse Chainsnatcher/Getbackk, Stick Up Leap of Faith...)',call:'window.CHAR_FINISHERS'}); }catch(e){}
 }catch(_){}
 // BANNON · NOIR — alternate attire (black dreads, gunmetal mask, blacked-out gear). A LOOK key only:
 // moves/announcer stay Bannon's. Registered across the look registries so vlook resolves it fully.
