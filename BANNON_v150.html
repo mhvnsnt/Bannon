@@ -12199,16 +12199,39 @@ function dressFighter(f){
       S.maskUpper.visible=on; S.maskJaw.visible=on;
       if(on&&fg.maskColor!=null){ S.maskUpper.material.color.setHex(fg.maskColor); S.maskJaw.material.color.setHex(fg.maskColor); } }
     if(S && S.dreads){ const on=!!(fg&&fg.dreads);
-      for(const d of S.dreads){ d.visible=on; if(on&&fg.dreadColor!=null) d.material.color.setHex(fg.dreadColor); } }
+      for(const d of S.dreads){ d.visible=on; if(on&&fg.dreadColor!=null) d.material.color.setHex(fg.dreadColor); }
+      // ROOTS, not a wig: with dreads on, the hair cap was still the brown helmet floating OVER the
+      // strands. Shrink it skull-tight and recolor it as the dreads' root mass (slightly darker than
+      // the strands) so crown + strands read as ONE head of locs.
+      if(on && S.hair){ if(!f._dreadCapMat){ try{ f._dreadCapMat=S.hair.material.clone(); }catch(_){ } }
+        if(f._dreadCapMat){ S.hair.material=f._dreadCapMat;
+          const dc=(fg.dreadColor!=null?fg.dreadColor:0x2a2118), r=((dc>>16)&255)*0.72, g=((dc>>8)&255)*0.72, b=(dc&255)*0.72;
+          f._dreadCapMat.color.setRGB(r/255,g/255,b/255); }
+        S.hair.scale.set(0.92,0.66,0.98); }                                   // skull-hugging root cap
+    }
   }catch(_){}
 }
 window.dressFighter = dressFighter;
 // canon face gear registry — sketch: metallic steel-blue 3/4 upper mask, free-floating jaw/chin "U"
 // plate, blond-brown dreads. MAIME (Bannon's alter-ego alt) inherits the gear with a darker mask.
 window.CHAR_FACEGEAR = {
-  BANNON: { mask:1, maskColor:0x93a0bd, dreads:1, dreadColor:0xa8854a },
-  MAIME:  { mask:1, maskColor:0x4a5164, dreads:1, dreadColor:0x2a2118 }
+  BANNON:      { mask:1, maskColor:0x93a0bd, dreads:1, dreadColor:0xa8854a },
+  BANNON_NOIR: { mask:1, maskColor:0x6b7488, dreads:1, dreadColor:0x121014 },   // alt: gunmetal mask, BLACK dreads
+  // MAIME (canon, Book 3): NO metal mask — white face paint overlaid with black skull/psychotic-clown
+  // (Sting nod), black tattered shirt, necktie, taped wrists. Face-paint texture lands when the
+  // reference photo arrives; until then: bare face + dark dreads, NOT Bannon's mask.
+  MAIME:       { dreads:1, dreadColor:0x2a2118 }
 };
+// BANNON · NOIR — alternate attire (black dreads, gunmetal mask, blacked-out gear). A LOOK key only:
+// moves/announcer stay Bannon's. Registered across the look registries so vlook resolves it fully.
+try{
+  window.CHAR_META.BANNON_NOIR   = { label:'The Broken Architect · Noir', col:0x16161c, accent:0x8a94b8, skin:0xd9a066, faction:'Independent Variable', canon:true, bio:'Bannon in blackout — same architect, lights off.', archetype:'freeAgent' };
+  window.CHAR_ATTIRE.BANNON_NOIR = 'TRUNKS';
+  window.CHAR_HAIR.BANNON_NOIR   = 'SHORT';
+  if(window.CHAR_BODY) window.CHAR_BODY.BANNON_NOIR = Object.assign({}, window.CHAR_BODY.BANNON||{musc:0.72,fat:0.18});
+  if(window.CHAR_ALTS){ window.CHAR_ALTS.BANNON = (window.CHAR_ALTS.BANNON||[]);
+    if(!window.CHAR_ALTS.BANNON.some(a=>a.id==='BANNON_NOIR')) window.CHAR_ALTS.BANNON.push({ id:'BANNON_NOIR', label:'Noir · Black Dreads' }); }
+}catch(_){}
 
 function startFight(){
   if (typeof clearActiveFightState==='function') clearActiveFightState();
