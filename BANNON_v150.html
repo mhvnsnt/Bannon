@@ -3399,8 +3399,9 @@ try {
   if (this.state==='apron'){ this.poseApronTransition(dt); this.stateTime+=dt; return; }
 if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; return; }
   if (this.state==='ropeperch'){ this.poseRopePerch(dt); this.stateTime+=dt; return; }
+  if (this.state==='vault'){ this.poseVault(dt); this.stateTime+=dt; return; }   // springboard rope-plant in-between
   if (this.state !== 'getup' && this.state !== 'grabbed' && this.state !== 'down' && this.state !== 'grab'
-      && this.state !== 'climb' && this.state !== 'perch' && this.state !== 'dive' && this.state !== 'deliver' && this.state !== 'studio')
+      && this.state !== 'climb' && this.state !== 'perch' && this.state !== 'dive' && this.state !== 'vault' && this.state !== 'deliver' && this.state !== 'studio')
     this.faceOpponent(dt);
 
   this.root.position.set(this.x, RING.floorY + (this.zoneY||0), this.z);
@@ -3451,7 +3452,7 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
   // body up and back down. Special states with their own ground/air logic are skipped.
   {
     const _ss = this.state;
-    const _skipStance = (_ss==='getup'||_ss==='down'||_ss==='grabbed'||_ss==='grab'||_ss==='throw'||_ss==='deliver'||_ss==='dive'||_ss==='climb'||_ss==='perch'||_ss==='midrope'||_ss==='ropeexit'||_ss==='ropeclimb'||_ss==='ropeperch'||_ss==='apron'||_ss==='studio'||this.ragdoll||this.airLift);
+    const _skipStance = (_ss==='getup'||_ss==='down'||_ss==='grabbed'||_ss==='grab'||_ss==='throw'||_ss==='deliver'||_ss==='dive'||_ss==='vault'||_ss==='climb'||_ss==='perch'||_ss==='midrope'||_ss==='ropeexit'||_ss==='ropeclimb'||_ss==='ropeperch'||_ss==='apron'||_ss==='studio'||this.ragdoll||this.airLift);
     if (!_skipStance && this.J){
       const DROP = (window.STANCE_DROP!=null?window.STANCE_DROP:0.085) * ((_ss==='walk')?0.8:1);
       const chain = ['pelvis','spineLow','spineMid','chest','neck','head','shL','shR','clavL','clavR','hipL','hipR','haL','haR','elL','elR'];
@@ -5095,7 +5096,10 @@ window.BBODY = (function(){
     // sloping trapezius instead of sitting on a flat shoulder shelf ("neck stuck on"). It narrows fast
     // to a real neck (0.078) then the head. Elliptical (wider side-to-side than front-back) = a yoke,
     // not a cone. This is the neck->shoulder->torso anatomy that was missing.
-    { cap:true, capStart:true, rings:[ [['chest','neck',0.42],0.170,0.140], [['chest','neck',0.62],0.110,0.098], ['neck',0.080,0.076], [['neck','head',0.45],0.082], ['head',0.118], [['neck','head',1.32],0.085] ] },
+    // ...then a REAL SKULL: jaw ring (narrower side-to-side, deeper front-back), cranium ring (width <
+    // depth — skulls are oval, not spheres), tapering crown. Face morphs scale these per-ring (see
+    // ringGirth ti===2): jaw width/length and skull width/length are now honest sliders.
+    { cap:true, capStart:true, rings:[ [['chest','neck',0.42],0.170,0.140], [['chest','neck',0.62],0.110,0.098], ['neck',0.080,0.076], [['neck','head',0.45],0.084,0.082], [['neck','head',0.78],0.096,0.108], ['head',0.106,0.124], [['neck','head',1.32],0.080,0.092] ] },
     // ARMS: broad deltoid cap -> THICK biceps -> elbow -> forearm -> wrist -> hand (more mass + taper)
     { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
     { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
@@ -5261,7 +5265,13 @@ window.BBODY = (function(){
       const c=_part(f,'chest',1.12,true); return {s:c*_mul(f,'chestW'), d:c*_mul(f,'chestD')};
     }
     if(ti===1){ const h=_part(f,'hips',1.0,true); return {s:h*_mul(f,'hipW'), d:h*_mul(f,'hipD')}; }  // pelvis -> HIPS (own axis)
-    if(ti===2){ const n=(i>=M-2)?_part(f,'head',0.70,false):_part(f,'neck',1.0,false); return {s:n,d:n}; }
+    if(ti===2){ const r=i/Math.max(1,M-1);                         // neck tube: 0=trap yoke .. 1=crown
+      const FM=(k)=>{ const sh=f.shape||{}; return sh[k]!=null?+sh[k]:1; };
+      if(r<0.55){ const n=_part(f,'neck',1.0,false); return {s:n,d:n}; }               // traps/neck
+      const hd=_part(f,'head',0.70,false);
+      if(r<0.75) return {s:hd*FM('faceJawW'), d:hd*FM('faceJawL')};                     // jaw/lower face
+      return {s:hd*FM('faceSkullW'), d:hd*FM('faceSkullL')};                            // cranium/crown
+    }
     if(ti===3||ti===4){ const a=(i<=1)?_part(f,'shoulders',1.20,true):_part(f,'arms',1.05,true); return {s:a,d:a}; }
     if(ti===5||ti===6){ const l=(i<=1)?_part(f,'thighs',1.06,true):_part(f,'calves',1.0,true); return {s:l*((i<=1)?_mul(f,'thighW'):1),d:l}; }
     return {s:1,d:1};
@@ -5326,7 +5336,7 @@ window.BBODY = (function(){
   // fuller hips/glutes. Scales with fem (0=male .. 1=female), blends with everything else.
   function _fem(f, ti, i, M, a){ const fem=_bodyComp(f).fem; if(fem<=0.02) return 0;
     const front=Math.max(0,-Math.cos(a)), side=Math.abs(Math.sin(a));
-    if(ti===0){ if(i>=Math.floor(M*0.55)) return fem*0.05*front*(0.55+0.45*Math.cos((a-Math.PI)*3)); // bust lobes
+    if(ti===0){ if(i>=Math.floor(M*0.55)) return fem*0.05*_mul(f,'bust')*front*(0.55+0.45*Math.cos((a-Math.PI)*3)); // bust lobes x independent BUST slider (0.6 athletic-flat .. 1.6 pronounced)
       return -fem*0.012*side; }                                          // nipped waist
     if(ti===1) return fem*0.034*side + fem*0.012;                        // hips/glutes
     if((ti===5||ti===6)&&i<=2) return fem*0.020;                         // upper-thigh
@@ -5716,8 +5726,35 @@ window.applyBodyComp = function(f){
   // hips/glutes/waist: the character's OWN composition wins over the generic archetype
   // template (so a curvy/BBL queen keeps her small waist + big hips, not the powerhouse
   // default). src = forged spec, else CHAR_BODY entry; only override when explicitly set.
-  ['hips','glutes','waist'].forEach(function(k){ const v=(b&&b[k]!=null)?b[k]:bc[k]; if(v!=null) f.shape[k]=v; });
+  ['hips','glutes','waist','bust'].forEach(function(k){ const v=(b&&b[k]!=null)?b[k]:bc[k]; if(v!=null) f.shape[k]=v; });
+  // PER-CHARACTER FACE: each roster member's skull/jaw signature (CHAR_FACE) seeds the face sliders
+  // so no two heads are the same shape — CAW/forged values still win when explicitly set.
+  try{ const cf=(window.CHAR_FACE&&window.CHAR_FACE[key])||null;
+    if(cf) for(const k in cf){ if(f.shape[k]==null) f.shape[k]=cf[k]; } }catch(_){}
 };
+// Face-shape signatures (jaw width/length, skull width/length, brow/nose accents where set): a
+// distinct skull for every named character instead of one shared ball head.
+window.CHAR_FACE = {
+  BANNON:{faceJawW:1.10,faceJawL:1.06,faceSkullW:1.0,faceSkullL:1.04},  MAIME:{faceJawW:1.04,faceJawL:1.10,faceSkullW:0.97,faceSkullL:1.06},
+  GOLEM:{faceJawW:1.28,faceJawL:1.12,faceSkullW:1.18,faceSkullL:1.0},   TITAN:{faceJawW:1.22,faceJawL:1.05,faceSkullW:1.12,faceSkullL:1.02},
+  VIPER:{faceJawW:0.90,faceJawL:1.05,faceSkullW:0.94,faceSkullL:1.10},  KAGE:{faceJawW:0.92,faceJawL:0.98,faceSkullW:0.95,faceSkullL:1.05},
+  BRUTUS:{faceJawW:1.25,faceJawL:1.15,faceSkullW:1.10,faceSkullL:0.98}, ZEPHYR:{faceJawW:0.94,faceJawL:1.0,faceSkullW:0.96,faceSkullL:1.08},
+  MORTUS:{faceJawW:1.08,faceJawL:1.18,faceSkullW:1.0,faceSkullL:1.12},  RONIN:{faceJawW:1.0,faceJawL:1.02,faceSkullW:0.98,faceSkullL:1.06},
+  CAIN_ELIAS:{faceJawW:1.12,faceJawL:1.08,faceSkullW:1.04,faceSkullL:1.05}, ATLAS_VANCE:{faceJawW:1.16,faceJawL:1.04,faceSkullW:1.08,faceSkullL:1.0},
+  STICK_UP:{faceJawW:0.96,faceJawL:1.06,faceSkullW:0.96,faceSkullL:1.08}, FINXSSE:{faceJawW:1.02,faceJawL:1.0,faceSkullW:1.0,faceSkullL:1.05},
+  RED_CLOUD:{faceJawW:1.14,faceJawL:1.10,faceSkullW:1.05,faceSkullL:1.06}, CASSIAN_THORNE:{faceJawW:0.98,faceJawL:1.08,faceSkullW:0.97,faceSkullL:1.10},
+  SOMBRA_NEGRA:{faceJawW:1.06,faceJawL:1.02,faceSkullW:1.0,faceSkullL:1.03},
+  QUEEN_TYNESHIA:{faceJawW:0.88,faceJawL:0.98,faceSkullW:0.94,faceSkullL:1.05}, KARMA:{faceJawW:0.86,faceJawL:0.96,faceSkullW:0.92,faceSkullL:1.06},
+  TIGHTROPE:{faceJawW:0.85,faceJawL:0.95,faceSkullW:0.92,faceSkullL:1.08},
+  STAN_COMBS:{faceJawW:1.18,faceJawL:1.14,faceSkullW:1.10,faceSkullL:1.0}, EDWIN_KENNEDY:{faceJawW:1.20,faceJawL:1.10,faceSkullW:1.06,faceSkullL:1.02},
+  AKON_WARRIOR:{faceJawW:1.15,faceJawL:1.06,faceSkullW:1.06,faceSkullL:1.02}, HEATH_BROKER:{faceJawW:0.94,faceJawL:1.08,faceSkullW:0.96,faceSkullL:1.10},
+  CAPTAIN_UNITY:{faceJawW:1.12,faceJawL:1.0,faceSkullW:1.04,faceSkullL:1.0}, YORKSHIRE_GRIT:{faceJawW:1.20,faceJawL:1.16,faceSkullW:1.08,faceSkullL:0.98}
+};
+// body diversity: female builds get their OWN bust values (pronounced .. athletic-flat), per the
+// owner's "some sexy, some regular, less pronounced" direction. Seeded via CHAR_BODY.
+try{ if(window.CHAR_BODY){ if(window.CHAR_BODY.QUEEN_TYNESHIA) window.CHAR_BODY.QUEEN_TYNESHIA.bust=1.35;
+  if(window.CHAR_BODY.KARMA) window.CHAR_BODY.KARMA.bust=1.0;
+  if(window.CHAR_BODY.TIGHTROPE) window.CHAR_BODY.TIGHTROPE.bust=0.72; } }catch(_){}
 
 window._rosterIdx = window._rosterIdx||0;
 window.cycleRosterP2 = function(){
@@ -7665,7 +7702,32 @@ window.POSITION_TAXONOMY = {
   SPRINGBOARD:   { families:['springboard dives + in-between VAULT animation off the ropes'],           hook:'startDive(sb) — vault anim todo', status:'partial' },
   RUNNING:       { families:['running strikes/grapples (bulldog, spear, running knees)'],               hook:'running + momentum',              status:'live' }
 };
-try{ if(window.MANIFESTO) window.MANIFESTO.register({key:'combat.positionTaxonomy',kind:'gameplay',summary:'2K26-grade position/zoning map; AI grapple picks are front/rear-correct (go-behind gated)',call:'window.POSITION_TAXONOMY'}); }catch(e){}
+// Which zone of a DOWNED body the attacker is standing at: their offset projected on the body's
+// pelvis->head axis. HEAD side / FEET side / SIDE drive the grounded move family + damage target.
+function groundZoneOf(att, opp){
+  try{ // a DOWNED body's true layout lives in the verlet ragdoll points, not the rig joints.
+    // Axis = HEAD vs MID-FEET (pelvis->head collapses when the body curls fetal); reference point
+    // for the attacker's offset = the pelvis.
+    const useV = !!(opp.V && opp.V.pelvis && opp.V.head && opp.V.ftL && opp.V.ftR);
+    const ph = useV ? opp.V.pelvis.pos : opp.worldJoint('pelvis');
+    const hd = useV ? opp.V.head.pos   : opp.worldJoint('head');
+    const fl = useV ? opp.V.ftL.pos    : opp.worldJoint('ftL');
+    const fr = useV ? opp.V.ftR.pos    : opp.worldJoint('ftR');
+    const mfx=(fl.x+fr.x)*0.5, mfz=(fl.z+fr.z)*0.5;
+    let ax=hd.x-mfx, az=hd.z-mfz; const L=Math.hypot(ax,az);
+    if (L<0.35){ ax=-Math.cos(opp.facing||0); az=Math.sin(opp.facing||0); }  // not laid out yet: backward-fall default (head lands OPPOSITE facing)
+    else { ax/=L; az/=L; }
+    const dx=att.x-ph.x, dz=att.z-ph.z, d=Math.hypot(dx,dz)||1;
+    const dot=(dx*ax+dz*az)/d;
+    return dot>0.45 ? 'HEAD' : (dot<-0.45 ? 'FEET' : 'SIDE');
+  }catch(e){ return 'SIDE'; }
+}
+window.groundZoneOf = groundZoneOf;
+window.POSITION_TAXONOMY.GROUND_HEAD.status='partial';   // zoned damage/aim live; unique anims next
+window.POSITION_TAXONOMY.GROUND_SIDE.status='partial';
+window.POSITION_TAXONOMY.GROUND_FEET.status='partial';
+window.POSITION_TAXONOMY.SPRINGBOARD.status='live';      // rope-plant VAULT in-between shipped
+try{ if(window.MANIFESTO) window.MANIFESTO.register({key:'combat.positionTaxonomy',kind:'gameplay',summary:'2K26-grade position/zoning map; AI grapple picks front/rear-correct; grounded HEAD/SIDE/FEET zoning live; springboard VAULT in-between live',call:'window.POSITION_TAXONOMY'}); }catch(e){}
 
 // player advances the grapple (GRAB cycles lockup->lift->carry); deliveries fire from carry
 Fighter.prototype.grappleAdvance = function(aim, slam){
@@ -8904,6 +8966,14 @@ Fighter.prototype.startClimb = function(corner, target){
   return true;
 };
 Fighter.prototype.startDive = function(type, sb){
+  // SPRINGBOARD VAULT IN-BETWEEN (2K26 reference): a springboard dive no longer teleports airborne —
+  // it plays the actual rope-plant first (hands/foot to the top rope, hips kicking over) and THEN
+  // launches from rope height. The vault stores the dive and hands off to the normal path when done.
+  if (sb && !this._vaultPending && !this.ragdoll){
+    this._vaultPending = { type: type };
+    this.state='vault'; this.stateTime=0; this.spin=0; this.diveType=null;
+    return;
+  }
   const d = DIVE_TYPES[type] || DIVE_TYPES.CROSSBODY;
   const opp = this.opponent();
   this.state='dive'; this.stateTime=0; this.airT=0; this.diveType=type; this.airDur=d.dur*DIVE.dur;
@@ -8915,6 +8985,33 @@ Fighter.prototype.startDive = function(type, sb){
 };
 Fighter.prototype.exitAerial = function(){
   this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this._airPitch=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
+};
+// SPRINGBOARD VAULT — the rope-plant in-between: dip toward the ropes, hands plant on the top rope,
+// hips kick up and over, then the stored dive launches from rope height. One continuous motion
+// (smoothstep phases), not a keyframe snap; physics keeps stepping underneath.
+Fighter.prototype.poseVault = function(dt){
+  const T=0.30, t=Math.min(1, this.stateTime/T);
+  const s=t*t*(3-2*t);                                    // eased master phase
+  const plant=Math.min(1, s/0.5), kick=Math.max(0,(s-0.45)/0.55);   // A: dip+plant  B: hips over
+  this.airLift = 0.15*plant + 0.75*kick;                  // body carries up onto the rope line
+  this.root.position.set(this.x, RING.floorY + (this.zoneY||0) + this.airLift, this.z);
+  this.root.rotation.set(0, this.facing, 0, 'YXZ');
+  const J=this.J, dip=0.14*plant*(1-kick);
+  J.pelvis.set(0.06+0.10*kick, 0.92-dip+0.10*kick, 0);
+  J.chest.set(0.16+0.06*kick, 1.26-dip*1.2+0.02*kick, 0);
+  J.head.set(0.22, 1.58-dip*1.1-0.06*kick, 0);
+  // hands PLANT on the top rope line ahead (the visible contact of the vault)
+  J.haL.set(0.42+0.10*plant, 1.06-0.04*plant, 0.20); J.haR.set(0.42+0.10*plant, 1.06-0.04*plant, -0.20);
+  J.elL.set(0.30, 1.12, 0.22); J.elR.set(0.30, 1.12, -0.22);
+  // legs: load in the dip, then SWEEP up behind as the hips kick over the hands
+  J.hipL.set(-0.02-0.16*kick, 0.86+0.16*kick, 0.13); J.hipR.set(-0.02-0.16*kick, 0.86+0.16*kick, -0.13);
+  J.knL.set(0.10-0.34*kick, 0.48+0.44*kick, 0.15); J.knR.set(0.10-0.30*kick, 0.48+0.38*kick, -0.15);
+  J.ftL.set(0.16-0.52*kick, 0.06+0.72*kick, 0.16); J.ftR.set(0.16-0.46*kick, 0.06+0.62*kick, -0.16);
+  if (this.stateTime>=T){
+    const p=this._vaultPending; this._vaultPending=null;
+    this.airLift=0.95;                                     // launch height = off the top rope
+    if(p) this.startDive(p.type,false); else this.exitAerial();
+  }
 };
 Fighter.prototype.diveImpact = function(opp){ try{
   const d = DIVE_TYPES[this.diveType] || DIVE_TYPES.CROSSBODY;
@@ -11239,15 +11336,22 @@ function playerAttack(kind){
   }
   if (kind==='grab'){ p.startGrab(); return; }
 
-  // ground game — stomp (kick) or ground punch (jab/cross) when opponent is down
+  // ground game — GROUNDED ZONING (2K26 taxonomy): where you STAND around the downed body decides
+  // the attack. Attacker position vs the body's pelvis->head axis => HEAD side / FEET side / SIDE,
+  // which flavors target part, damage and the announced name (mounted head shots hit harder; feet-
+  // side works the legs; side works the ribs).
   if (opp && opp.isDown()){
     let gm;
     if (kind==='kick') gm = set.find(m=>m.name==='STOMP') || set.find(m=>m.cat==='GROUND');
     else gm = set.find(m=>m.cat==='GROUND'&&m.name!=='STOMP') || set.find(m=>m.cat==='GROUND');
     if (gm){
       const m = Object.assign({}, gm);
-      m.height = (zone==='HIGH') ? 'GROUND' : 'GROUND'; // head vs body stomp aim
-      m._aimHead = (zone!=='LOW');
+      const gz = (typeof groundZoneOf==='function') ? groundZoneOf(p, opp) : 'SIDE';
+      m._groundZone = gz;
+      m.height = 'GROUND';
+      if (gz==='HEAD'){ m._aimHead=true;  m.power=Math.round((m.power||50)*1.15); m.name=(gm.name||'GROUND')+' · HEAD'; }
+      else if (gz==='FEET'){ m._aimHead=false; m._aimLegs=true; m.power=Math.round((m.power||50)*0.95); m.name=(gm.name||'GROUND')+' · LEGS'; }
+      else { m._aimHead=(zone!=='LOW'); m.power=Math.round((m.power||50)*1.05); m.name=(gm.name||'GROUND')+' · RIBS'; }
       p.startAttack(m); return;
     }
   }
@@ -12397,7 +12501,10 @@ try{
     if(body&&window.CHAR_BODY) window.CHAR_BODY[k]=window.CHAR_BODY[k]||body; };
   _addChar('STAN_COMBS',   { label:'Honey · The Overlord',      col:0x23232b, accent:0xd4af37, skin:0xe8c9a8, faction:'Corporate Structure', canon:true, bio:'LP8 executive deviance — the shadow overlord who buys loyalty and builds weapons out of chaos.', archetype:'powerhouse' }, 'JACKET', 'BUZZ', {musc:0.5,fat:0.42});
   _addChar('EDWIN_KENNEDY',{ label:'The Chairman of AWE',       col:0x1c1c24, accent:0x8899aa, skin:0xe2b892, faction:'Corporate Structure', canon:true, bio:'LP33/6 imperious promoter — Apex Wrestling Entertainment is his family, his possession, his religion.', archetype:'powerhouse' }, 'JACKET', 'CAESAR', {musc:0.55,fat:0.3});
-  _addChar('TIGHTROPE',    { label:'Reckless Freedom Seeker',   col:0xcc2255, accent:0x22ccee, skin:0xd9a066, faction:'Agents of Chaos', canon:true, bio:'A wire-walker with no net and no plan — chaos as an art form.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.55,fat:0.12,fem:1,hips:1.02,glutes:1.08,waist:0.86});
+  _addChar('TIGHTROPE',    { label:'Reckless Freedom Seeker',   col:0xcc2255, accent:0x22ccee, skin:0xd9a066, faction:'Agents of Chaos', canon:true, bio:'A wire-walker with no net and no plan — chaos as an art form.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.55,fat:0.12,fem:1,hips:1.02,glutes:1.08,waist:0.86,bust:0.72});
+  // body diversity re-seed (runs AFTER the roster exists — the early block fires too soon for new chars)
+  if(window.CHAR_BODY){ if(window.CHAR_BODY.QUEEN_TYNESHIA&&window.CHAR_BODY.QUEEN_TYNESHIA.bust==null) window.CHAR_BODY.QUEEN_TYNESHIA.bust=1.35;
+    if(window.CHAR_BODY.KARMA&&window.CHAR_BODY.KARMA.bust==null) window.CHAR_BODY.KARMA.bust=1.0; }
   _addChar('AKON_WARRIOR', { label:'Man of Honor',              col:0x8a5a1a, accent:0xffd700, skin:0x7a4a2e, faction:'Free Agent', canon:true, bio:'The ethical challenge — honor as a weapon.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.82,fat:0.2});
   _addChar('HEATH_BROKER', { label:'The London Broker',         col:0x24262e, accent:0x9fb4cc, skin:0xe6c8a8, faction:'Corporate Structure', canon:true, bio:'Corporate technician — every hold is a contract clause.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.5,fat:0.22});
   _addChar('CAPTAIN_UNITY',{ label:'Corporate Propaganda',      col:0x1a3a8a, accent:0xd42a2a, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'A manufactured hero — unity as a slogan, not a promise.', archetype:'brawler' }, 'SINGLET', 'BUZZ', {musc:0.72,fat:0.18});

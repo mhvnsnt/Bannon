@@ -95,6 +95,17 @@ Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (mas
 - `uploads_files_147201_Steel_Steps.zip` — ringside steel steps (3MF -> convert to GLB prop).
 
 ## Combat roadmap (task #21, from BLUEPRINT.next)
-Two-body joint-coupled grapple kinematics (Phase 3, validate w/ MOTION CHECK); UFC weight-strike
-tuning; springboard/dive families + rope-vault in-between animations from ALL positions (apron,
-middle rope, top rope, rebound); WWE-2K26-style position/zoning taxonomy driving move availability.
+SHIPPED: springboard rope-plant VAULT in-between (state 'vault' -> dive from rope height); grounded
+HEAD/FEET/SIDE zoning (groundZoneOf: verlet head-vs-midfeet axis, backward-fall facing fallback)
+flavoring grounded strikes' target/damage/name; biomech sweat (spec §C). NEXT: two-body joint-coupled
+grapples (use godmode/daemon/pd_torque_controller.py as PD-torque reference) + grab-event vertex
+bulge (spec §B) at grip points; UFC weight-strike tuning; vault variants from apron/mid/top; running
+strike expansion; unique grounded anims per zone.
+
+## Morph system state (refined this pass)
+Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
+faceSkullW/L (ringGirth ti===2). window.CHAR_FACE = per-character skull/jaw signatures (every named
+character has a distinct head). Independent BUST slider (0.6 flat..1.6 pronounced) x fem, seeded per
+female: Tyneshia 1.35 / Karma 1.0 / Tightrope 0.72 — the "some sexy, some regular" diversity axis.
+Network allowlist is LIVE for curl fetches (cdnjs/github-raw/HF 200) — pull assets directly; the
+Playwright harness stays on the vendored copies (Chromium proxies differ).
