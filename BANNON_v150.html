@@ -2419,6 +2419,11 @@ class Fighter {
       for(let i=0;i<14;i++){ const len=0.26+(i%3)*0.075;
         const d=add(new THREE.Mesh(new THREE.CylinderGeometry(0.014,0.011,len,6), dreadMat));
         d.visible=false; d.userData.dreadLen=len; d.userData.dreadIdx=i; this.seg.dreads.push(d); }
+      // NECKTIE (Maime's tattered look, canon Book 3 — incl. the blue "Pooh Bear tie"): a thin strip
+      // hanging from the collar down the chest; per-look color via CHAR_FACEGEAR[look].tieColor.
+      this.seg.tie = add(new THREE.Mesh(new THREE.BoxGeometry(0.055,0.30,0.014),
+        new THREE.MeshStandardMaterial({ color:0x2a4a8a, roughness:0.7, metalness:0.02 })));
+      this.seg.tie.visible=false;
     }
 
     // ARMS — deltoid -> bicep -> forearm -> wrap -> glove
@@ -3394,8 +3399,9 @@ try {
   if (this.state==='apron'){ this.poseApronTransition(dt); this.stateTime+=dt; return; }
 if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; return; }
   if (this.state==='ropeperch'){ this.poseRopePerch(dt); this.stateTime+=dt; return; }
+  if (this.state==='vault'){ this.poseVault(dt); this.stateTime+=dt; return; }   // springboard rope-plant in-between
   if (this.state !== 'getup' && this.state !== 'grabbed' && this.state !== 'down' && this.state !== 'grab'
-      && this.state !== 'climb' && this.state !== 'perch' && this.state !== 'dive' && this.state !== 'deliver' && this.state !== 'studio')
+      && this.state !== 'climb' && this.state !== 'perch' && this.state !== 'dive' && this.state !== 'vault' && this.state !== 'deliver' && this.state !== 'studio')
     this.faceOpponent(dt);
 
   this.root.position.set(this.x, RING.floorY + (this.zoneY||0), this.z);
@@ -3446,7 +3452,7 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
   // body up and back down. Special states with their own ground/air logic are skipped.
   {
     const _ss = this.state;
-    const _skipStance = (_ss==='getup'||_ss==='down'||_ss==='grabbed'||_ss==='grab'||_ss==='throw'||_ss==='deliver'||_ss==='dive'||_ss==='climb'||_ss==='perch'||_ss==='midrope'||_ss==='ropeexit'||_ss==='ropeclimb'||_ss==='ropeperch'||_ss==='apron'||_ss==='studio'||this.ragdoll||this.airLift);
+    const _skipStance = (_ss==='getup'||_ss==='down'||_ss==='grabbed'||_ss==='grab'||_ss==='throw'||_ss==='deliver'||_ss==='dive'||_ss==='vault'||_ss==='climb'||_ss==='perch'||_ss==='midrope'||_ss==='ropeexit'||_ss==='ropeclimb'||_ss==='ropeperch'||_ss==='apron'||_ss==='studio'||this.ragdoll||this.airLift);
     if (!_skipStance && this.J){
       const DROP = (window.STANCE_DROP!=null?window.STANCE_DROP:0.085) * ((_ss==='walk')?0.8:1);
       const chain = ['pelvis','spineLow','spineMid','chest','neck','head','shL','shR','clavL','clavR','hipL','hipR','haL','haR','elL','elR'];
@@ -5090,7 +5096,10 @@ window.BBODY = (function(){
     // sloping trapezius instead of sitting on a flat shoulder shelf ("neck stuck on"). It narrows fast
     // to a real neck (0.078) then the head. Elliptical (wider side-to-side than front-back) = a yoke,
     // not a cone. This is the neck->shoulder->torso anatomy that was missing.
-    { cap:true, capStart:true, rings:[ [['chest','neck',0.42],0.170,0.140], [['chest','neck',0.62],0.110,0.098], ['neck',0.080,0.076], [['neck','head',0.45],0.082], ['head',0.118], [['neck','head',1.32],0.085] ] },
+    // ...then a REAL SKULL: jaw ring (narrower side-to-side, deeper front-back), cranium ring (width <
+    // depth — skulls are oval, not spheres), tapering crown. Face morphs scale these per-ring (see
+    // ringGirth ti===2): jaw width/length and skull width/length are now honest sliders.
+    { cap:true, capStart:true, rings:[ [['chest','neck',0.42],0.170,0.140], [['chest','neck',0.62],0.110,0.098], ['neck',0.080,0.076], [['neck','head',0.45],0.084,0.082], [['neck','head',0.78],0.096,0.108], ['head',0.106,0.124], [['neck','head',1.32],0.080,0.092] ] },
     // ARMS: broad deltoid cap -> THICK biceps -> elbow -> forearm -> wrist -> hand (more mass + taper)
     { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
     { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
@@ -5106,7 +5115,7 @@ window.BBODY = (function(){
   // is one clean continuous body instead of the smooth mesh poking through stamped-on crude shapes.
   // brow + headBand are flat box panels that read as a visor stuck on the forehead — drop them on the
   // smooth body (the head's own form + a subtle brow can come from sculpt later). Keep eyes/nose/mouth/ears/hair.
-  const FACE_KEEP={jaw:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0,maskUpper:0,maskJaw:0,dreads:0};
+  const FACE_KEEP={jaw:0,nose:0,noseBridge:0,earL:0,earR:0,mouth:0,eyeL:0,eyeR:0,hair:0,maskUpper:0,maskJaw:0,dreads:0,tie:0};
   function center(f,c){ const J=f._rj; if(!J) return null;
     if(typeof c==='string'){ const v=J[c]; return v?[v.x,v.y,v.z]:null; }
     // {j, fx, fy, fz}: a joint plus a LOCAL offset. Local +x is the character's forward (root rotation
@@ -5256,9 +5265,25 @@ window.BBODY = (function(){
       const c=_part(f,'chest',1.12,true); return {s:c*_mul(f,'chestW'), d:c*_mul(f,'chestD')};
     }
     if(ti===1){ const h=_part(f,'hips',1.0,true); return {s:h*_mul(f,'hipW'), d:h*_mul(f,'hipD')}; }  // pelvis -> HIPS (own axis)
-    if(ti===2){ const n=(i>=M-2)?_part(f,'head',0.70,false):_part(f,'neck',1.0,false); return {s:n,d:n}; }
-    if(ti===3||ti===4){ const a=(i<=1)?_part(f,'shoulders',1.20,true):_part(f,'arms',1.05,true); return {s:a,d:a}; }
-    if(ti===5||ti===6){ const l=(i<=1)?_part(f,'thighs',1.06,true):_part(f,'calves',1.0,true); return {s:l*((i<=1)?_mul(f,'thighW'):1),d:l}; }
+    if(ti===2){ const r=i/Math.max(1,M-1);                         // neck tube: 0=trap yoke .. 1=crown
+      const FM=(k)=>{ const sh=f.shape||{}; return sh[k]!=null?+sh[k]:1; };
+      if(r<0.55){ const n=_part(f,'neck',1.0,false); return {s:n,d:n}; }               // traps/neck
+      const hd=_part(f,'head',0.70,false);
+      if(r<0.75) return {s:hd*FM('faceJawW'), d:hd*FM('faceJawL')};                     // jaw/lower face
+      return {s:hd*FM('faceSkullW'), d:hd*FM('faceSkullL')};                            // cranium/crown
+    }
+    if(ti===3||ti===4){ const r=i/Math.max(1,M-1);              // arm: delt -> bicep -> forearm -> hand, each its own slider
+      let v; if(r<=0.18) v=_part(f,'shoulders',1.20,true);
+      else if(r<=0.50) v=_part(f,'arms',1.05,true);
+      else if(r<=0.80) v=_part(f,'forearms',1.0,true);
+      else v=_part(f,'hands',0.82,false);
+      return {s:v,d:v}; }
+    if(ti===5||ti===6){ const r=i/Math.max(1,M-1);              // leg: thigh -> knee blend -> calf -> foot
+      if(r<=0.30){ const b=_part(f,'thighs',1.06,true); return {s:b*_mul(f,'thighW'), d:b}; }   // thigh keeps its own W axis
+      let v; if(r<=0.45) v=(_part(f,'thighs',1.06,true)+_part(f,'calves',1.0,true))*0.5;         // knee = smooth thigh/calf blend
+      else if(r<=0.68) v=_part(f,'calves',1.0,true);
+      else v=_part(f,'feet',1.0,false);
+      return {s:v,d:v}; }
     return {s:1,d:1};
   }
   // GLUTES / SEAT — projects the back of the pelvis (and upper-thigh backs) outward.
@@ -5286,7 +5311,7 @@ window.BBODY = (function(){
   // blocks with a linea-alba groove, spine valley + erector ridges, bicep/tricep, quad/
   // calf. Only as visible as the fighter is muscular AND lean (abs vanish under fat),
   // and softened on female frames. a=PI -> front, a=0 -> back (vertical torso).
-  function _relief(ti, i, M, a){
+  function _relief(f, ti, i, M, a){
     const cs=Math.cos(a); const front=Math.max(0,-cs), back=Math.max(0,cs);
     const center=Math.exp(-Math.pow(a-Math.PI,2)/0.018);
     const spine =Math.exp(-Math.pow(((a+Math.PI)%(2*Math.PI))-Math.PI,2)/0.03);
@@ -5297,8 +5322,8 @@ window.BBODY = (function(){
       r += back*0.012*Math.exp(-Math.pow(Math.abs(a)-0.34,2)/0.02);
       // TRAPEZIUS: on the top ring(s), pack mass at the BACK + SIDES so the shoulder shelf slopes up
       // into the neck yoke instead of the neck sitting on a flat plate. This is the delt/trap surface
-      // blend — the connective anatomy between neck, shoulder and torso.
-      if(i>=M-1.6){ const trap=back*0.55 + side*0.45; r += trap*(0.010+0.045*(i-(M-1.6))/1.6); }
+      // blend — the connective anatomy between neck, shoulder and torso. TRAPS slider scales the yoke.
+      if(i>=M-1.6){ const trap=back*0.55 + side*0.45; r += trap*(0.010+0.045*(i-(M-1.6))/1.6)*_mul(f,'traps'); }
       return r;
     }
     if(ti===1) return -spine*0.010;
@@ -5321,11 +5346,25 @@ window.BBODY = (function(){
   // fuller hips/glutes. Scales with fem (0=male .. 1=female), blends with everything else.
   function _fem(f, ti, i, M, a){ const fem=_bodyComp(f).fem; if(fem<=0.02) return 0;
     const front=Math.max(0,-Math.cos(a)), side=Math.abs(Math.sin(a));
-    if(ti===0){ if(i>=Math.floor(M*0.55)) return fem*0.05*front*(0.55+0.45*Math.cos((a-Math.PI)*3)); // bust lobes
+    if(ti===0){ if(i>=Math.floor(M*0.55)) return fem*0.05*_mul(f,'bust')*front*(0.55+0.45*Math.cos((a-Math.PI)*3)); // bust lobes x independent BUST slider (0.6 athletic-flat .. 1.6 pronounced)
       return -fem*0.012*side; }                                          // nipped waist
     if(ti===1) return fem*0.034*side + fem*0.012;                        // hips/glutes
     if((ti===5||ti===6)&&i<=2) return fem*0.020;                         // upper-thigh
     return 0;
+  }
+  // FACE SCULPT relief — features carved INTO the skull surface (2K-style), not stuck-on boxes:
+  // cheekbone side bulges, chin projection, brow ridge, nose-bridge mass. All default-1 sliders
+  // (zero effect at neutral); r = position along the neck tube (0 traps .. 1 crown).
+  function _face(f,ti,i,M,a){ if(ti!==2) return 0; const r=i/Math.max(1,M-1); if(r<0.55) return 0;
+    const FM=k=>{const sh=f.shape||{};return sh[k]!=null?+sh[k]:1;};
+    const front=Math.max(0,-Math.cos(a)), side=Math.abs(Math.sin(a));
+    const g=(c,w)=>Math.exp(-((r-c)*(r-c))/(w*w));
+    let v=0;
+    v += side *g(0.74,0.10)*0.032*(FM('faceCheek')-1);          // zygomatic cheekbones
+    v += front*g(0.62,0.08)*0.036*(FM('faceChin')-1);           // chin point fwd/receding
+    v += front*g(0.88,0.07)*0.028*(FM('faceBrow')-1);           // brow ridge shelf
+    v += front*g(0.80,0.06)*0.016*(FM('faceNose')-1);           // nose-bridge mass
+    return v;
   }
   // Muscle definition is only as strong as (muscularity x leanness), softened for women.
   function reliefScale(f){ const c=_bodyComp(f); return Math.max(0, c.musc*(1 - c.fat*0.85)) * (1 - c.fem*0.4); }
@@ -5368,7 +5407,7 @@ window.BBODY = (function(){
         for(let k=0;k<N;k++){ const a=k/N*6.2831853;
           // muscle (scaled by definition) + soft fat mass + female shaping + glutes/seat — sampled in
           // AUTHORED ring-space (ai = fractional authored index) so every CAW morph is unchanged.
-          const rel = _def*_relief(ti,ai,M,a) + _fat(f,ti,ai,M,a) + _fem(f,ti,ai,M,a) + _glute(f,ti,ai,M,a);
+          const rel = _def*_relief(f,ti,ai,M,a) + _fat(f,ti,ai,M,a) + _fem(f,ti,ai,M,a) + _glute(f,ti,ai,M,a) + _face(f,ti,ai,M,a);
           const ca=Math.cos(a)*(rS+rel), sa=Math.sin(a)*(rD+rel);
           pos[vo+k*3]=cx+_u.x*ca+_v.x*sa; pos[vo+k*3+1]=cy+_u.y*ca+_v.y*sa; pos[vo+k*3+2]=cz+_u.z*ca+_v.z*sa; } }
       if(TB.apex>=0){ const d=DM-1, ao=TB.apex*3; _d.set(DC[d][0]-DC[d-1][0],DC[d][1]-DC[d-1][1],DC[d][2]-DC[d-1][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
@@ -5377,6 +5416,25 @@ window.BBODY = (function(){
         const rA=DR[d][0]*0.5; pos[ao]=DC[d][0]+_d.x*rA; pos[ao+1]=DC[d][1]+_d.y*rA; pos[ao+2]=DC[d][2]+_d.z*rA; }
       if(TB.apex0>=0){ const ao=TB.apex0*3; _d.set(DC[1][0]-DC[0][0],DC[1][1]-DC[0][1],DC[1][2]-DC[0][2]); if(_d.lengthSq()<1e-9)_d.set(0,1,0); _d.normalize();
         const rA=DR[0][0]*0.5; pos[ao]=DC[0][0]-_d.x*rA; pos[ao+1]=DC[0][1]-_d.y*rA; pos[ao+2]=DC[0][2]-_d.z*rA; } }   // near-end cap: extend backward from ring 0
+    // GRAB-EVENT VOLUMETRIC DEFORMATION (biomech spec §B): while held, the attacker's hands press
+    // INTO the flesh — vertices inside the grip radius compress toward the contact point (radial
+    // falloff Φ(d)=1-d/R), an annulus around it bulges out (displaced tissue), and the somatic pulse
+    // Ψ = sin(ωt)·S_t rides on top (cardiac spikes under stress). Cleared the frame the hold ends.
+    if (f.state!=='grabbed' && f._gripPts) f._gripPts=null;
+    if (f.state==='grabbed' && f._gripPts && f._gripPts.p){
+      const G=f._gripPts, R=0.15, RO=R*1.6, RO2=RO*RO;
+      const pulse=Math.sin(G.t*9.0)*0.010*(0.3+0.7*G.St);
+      for(const g of G.p){ if(!g) continue;
+        for(let vi=0;vi<L.count;vi++){ const o=vi*3;
+          const dx=pos[o]-g.x, dy=pos[o+1]-g.y, dz=pos[o+2]-g.z; const d2=dx*dx+dy*dy+dz*dz;
+          if(d2>=RO2 || d2<1e-8) continue;
+          const d=Math.sqrt(d2), ux=dx/d, uy=dy/d, uz=dz/d;
+          let k;
+          if(d<R){ const phi=1-d/R; k = -(0.045*G.amp*phi) + pulse*phi; }          // dig: compress toward the grip
+          else   { const t=(d-R)/(RO-R); k = 0.016*G.amp*(1-t) + pulse*(1-t)*0.5; } // rim: displaced-tissue bulge
+          pos[o]+=ux*k; pos[o+1]+=uy*k; pos[o+2]+=uz*k;
+        } }
+    }
     f._bgeo.attributes.position.needsUpdate=true; f._bgeo.computeVertexNormals(); }
   function setHidden(f,hide){ if(!f.seg) return; for(const k in f.seg){ if(k==='aura'||k in FACE_KEEP) continue; const m=f.seg[k]; if(!m) continue;
     if(m.userData && m.userData.keepVisible){ m.visible=true; continue; }   // explicit keep (e.g. Maime's painted face shell)
@@ -5401,7 +5459,14 @@ window.BBODY = (function(){
       if(on && !f._bmesh) build(f);
       if(f._bmesh) f._bmesh.visible=on;
       setHidden(f, on && !!f._bmesh);
-      if(on && f._bmesh){ update(f); if(f._needPaint || f._attireDirty){ paint(f); f._needPaint=false; f._attireDirty=false; } } },
+      if(on && f._bmesh){ update(f);
+        // THERMODYNAMIC EXUDATION (godmode/BIOMECHANICAL_SIMULATION_SPEC.md §C): autonomic saturation
+        // S_t from exertion (drained stamina) + damage; sweat-slick skin = roughness mixed toward wet
+        // (0.58 -> ~0.18) with specular/env pop rising — hot organic tissue instead of constant matte.
+        try{ const St = Math.min(1, Math.max(0, 1-(f.stamina||100)/(f.maxStamina||100))*0.7 + Math.max(0, 1-(f.hp||1)/(f.maxHp||1))*0.3);
+          f._bmesh.material.roughness = 0.58 - 0.40*St;
+          f._bmesh.material.envMapIntensity = 0.95 + 0.65*St; }catch(_){}
+        if(f._needPaint || f._attireDirty){ paint(f); f._needPaint=false; f._attireDirty=false; } } },
     paint:function(f){ paint(f); },
     recolor:function(f){ if(f._bmesh){ f._attireDirty=true; } }   // repaint vertex colours on next sync
   };
@@ -5704,8 +5769,35 @@ window.applyBodyComp = function(f){
   // hips/glutes/waist: the character's OWN composition wins over the generic archetype
   // template (so a curvy/BBL queen keeps her small waist + big hips, not the powerhouse
   // default). src = forged spec, else CHAR_BODY entry; only override when explicitly set.
-  ['hips','glutes','waist'].forEach(function(k){ const v=(b&&b[k]!=null)?b[k]:bc[k]; if(v!=null) f.shape[k]=v; });
+  ['hips','glutes','waist','bust'].forEach(function(k){ const v=(b&&b[k]!=null)?b[k]:bc[k]; if(v!=null) f.shape[k]=v; });
+  // PER-CHARACTER FACE: each roster member's skull/jaw signature (CHAR_FACE) seeds the face sliders
+  // so no two heads are the same shape — CAW/forged values still win when explicitly set.
+  try{ const cf=(window.CHAR_FACE&&window.CHAR_FACE[key])||null;
+    if(cf) for(const k in cf){ if(f.shape[k]==null) f.shape[k]=cf[k]; } }catch(_){}
 };
+// Face-shape signatures (jaw width/length, skull width/length, brow/nose accents where set): a
+// distinct skull for every named character instead of one shared ball head.
+window.CHAR_FACE = {
+  BANNON:{faceJawW:1.10,faceJawL:1.06,faceSkullW:1.0,faceSkullL:1.04},  MAIME:{faceJawW:1.04,faceJawL:1.10,faceSkullW:0.97,faceSkullL:1.06},
+  GOLEM:{faceJawW:1.28,faceJawL:1.12,faceSkullW:1.18,faceSkullL:1.0},   TITAN:{faceJawW:1.22,faceJawL:1.05,faceSkullW:1.12,faceSkullL:1.02},
+  VIPER:{faceJawW:0.90,faceJawL:1.05,faceSkullW:0.94,faceSkullL:1.10},  KAGE:{faceJawW:0.92,faceJawL:0.98,faceSkullW:0.95,faceSkullL:1.05},
+  BRUTUS:{faceJawW:1.25,faceJawL:1.15,faceSkullW:1.10,faceSkullL:0.98}, ZEPHYR:{faceJawW:0.94,faceJawL:1.0,faceSkullW:0.96,faceSkullL:1.08},
+  MORTUS:{faceJawW:1.08,faceJawL:1.18,faceSkullW:1.0,faceSkullL:1.12},  RONIN:{faceJawW:1.0,faceJawL:1.02,faceSkullW:0.98,faceSkullL:1.06},
+  CAIN_ELIAS:{faceJawW:1.12,faceJawL:1.08,faceSkullW:1.04,faceSkullL:1.05}, ATLAS_VANCE:{faceJawW:1.16,faceJawL:1.04,faceSkullW:1.08,faceSkullL:1.0},
+  STICK_UP:{faceJawW:0.96,faceJawL:1.06,faceSkullW:0.96,faceSkullL:1.08}, FINXSSE:{faceJawW:1.02,faceJawL:1.0,faceSkullW:1.0,faceSkullL:1.05},
+  RED_CLOUD:{faceJawW:1.14,faceJawL:1.10,faceSkullW:1.05,faceSkullL:1.06}, CASSIAN_THORNE:{faceJawW:0.98,faceJawL:1.08,faceSkullW:0.97,faceSkullL:1.10},
+  SOMBRA_NEGRA:{faceJawW:1.06,faceJawL:1.02,faceSkullW:1.0,faceSkullL:1.03},
+  QUEEN_TYNESHIA:{faceJawW:0.88,faceJawL:0.98,faceSkullW:0.94,faceSkullL:1.05}, KARMA:{faceJawW:0.86,faceJawL:0.96,faceSkullW:0.92,faceSkullL:1.06},
+  TIGHTROPE:{faceJawW:0.85,faceJawL:0.95,faceSkullW:0.92,faceSkullL:1.08},
+  STAN_COMBS:{faceJawW:1.18,faceJawL:1.14,faceSkullW:1.10,faceSkullL:1.0}, EDWIN_KENNEDY:{faceJawW:1.20,faceJawL:1.10,faceSkullW:1.06,faceSkullL:1.02},
+  AKON_WARRIOR:{faceJawW:1.15,faceJawL:1.06,faceSkullW:1.06,faceSkullL:1.02}, HEATH_BROKER:{faceJawW:0.94,faceJawL:1.08,faceSkullW:0.96,faceSkullL:1.10},
+  CAPTAIN_UNITY:{faceJawW:1.12,faceJawL:1.0,faceSkullW:1.04,faceSkullL:1.0}, YORKSHIRE_GRIT:{faceJawW:1.20,faceJawL:1.16,faceSkullW:1.08,faceSkullL:0.98}
+};
+// body diversity: female builds get their OWN bust values (pronounced .. athletic-flat), per the
+// owner's "some sexy, some regular, less pronounced" direction. Seeded via CHAR_BODY.
+try{ if(window.CHAR_BODY){ if(window.CHAR_BODY.QUEEN_TYNESHIA) window.CHAR_BODY.QUEEN_TYNESHIA.bust=1.35;
+  if(window.CHAR_BODY.KARMA) window.CHAR_BODY.KARMA.bust=1.0;
+  if(window.CHAR_BODY.TIGHTROPE) window.CHAR_BODY.TIGHTROPE.bust=0.72; } }catch(_){}
 
 window._rosterIdx = window._rosterIdx||0;
 window.cycleRosterP2 = function(){
@@ -5724,7 +5816,7 @@ window.cycleRosterP2 = function(){
 // fighters persist to localStorage (works from the downloaded HTML in a browser). Hidden drawer; covers no existing gameplay UI.
 (function(){
   const PROP=[['height','HEIGHT',0.75,1.35],['armLen','ARM LENGTH',0.7,1.4],['legLen','LEG LENGTH',0.7,1.4],['torsoLen','TORSO LENGTH',0.7,1.4]];
-  const BODY=[['shoulders','SHOULDERS'],['chest','CHEST'],['arms','UPPER ARMS'],['forearms','FOREARMS'],['hands','HANDS'],['waist','WAIST / GUT'],['hips','HIPS'],['glutes','GLUTES / SEAT'],['thighs','THIGHS'],['calves','CALVES'],['feet','FEET'],['head','HEAD']];
+  const BODY=[['shoulders','SHOULDERS'],['traps','TRAPS / YOKE'],['chest','CHEST'],['bust','BUST'],['arms','UPPER ARMS'],['forearms','FOREARMS'],['hands','HANDS'],['waist','WAIST / GUT'],['hips','HIPS'],['glutes','GLUTES / SEAT'],['thighs','THIGHS'],['calves','CALVES'],['feet','FEET'],['head','HEAD']];
   // per-axis WIDTH vs DEPTH knobs (default 1 = neutral) — wide-but-flat shoulders,
   // wide hips, tiny-deep waist, etc. The "disproportionate body" controls.
   const AXES=[['shoulderW','SHOULDER WIDTH'],['chestW','CHEST WIDTH'],['chestD','CHEST DEPTH'],['waistW','WAIST WIDTH'],['waistD','WAIST DEPTH'],['hipW','HIP WIDTH'],['hipD','HIP DEPTH'],['thighW','THIGH WIDTH']];
@@ -5805,8 +5897,12 @@ window.cycleRosterP2 = function(){
     slider('fem','FRAME  MASC \u2194 FEM',0,1,true,true);        // 0 male wedge -> 1 female hourglass (ribcage/waist/pelvis/glute)
     H('FACE SCULPT','#c084fc');
     slider('head','HEAD SIZE',0.55,1.3,true,true);              // overall skull (reuses the head part-scale)
+    slider('faceSkullW','SKULL WIDTH',0.7,1.4,true,true);       // cranium side-to-side (real ring geometry)
+    slider('faceSkullL','SKULL LENGTH',0.7,1.4,true,true);      // cranium front-to-back
     slider('faceJawW','JAW WIDTH',0.6,1.6,true,true);
     slider('faceJawL','JAW LENGTH',0.7,1.5,true,true);
+    slider('faceCheek','CHEEKBONES',0.6,1.7,true,true);         // zygomatic side bulge, sculpted into the skull surface
+    slider('faceChin','CHIN PROJECTION',0.6,1.7,true,true);     // chin point forward/receding
     slider('faceBrow','BROW RIDGE',0.6,1.7,true,true);
     slider('faceBrowW','BROW WIDTH',0.7,1.4,true,true);
     slider('faceNose','NOSE SIZE',0.6,1.6,true,true);
@@ -6135,11 +6231,29 @@ Fighter.prototype.applyMesh = function(){
     put(s.eyeL, h, 0.176*_hsg, 0.018*_hsg, 0.052*_hsg); put(s.eyeR, h, 0.176*_hsg, 0.018*_hsg, -0.052*_hsg);
     s.eyeL.scale.set(_ms*0.4,_ms*0.7,_ms*1.1); s.eyeR.scale.set(_ms*0.4,_ms*0.7,_ms*1.1); }
   if (s.dreads && s.dreads.length && s.dreads[0].visible){ const _ms=_hsg/0.70, rr=0.118*_ms;
-    for(let i=0;i<s.dreads.length;i++){ const d=s.dreads[i], n=s.dreads.length;
-      const a=(50 + i*(260/(n-1)))*Math.PI/180;                       // arc that skips the ±50° face cone (+x forward)
-      const ax=Math.cos(a)*rr, az=Math.sin(a)*rr, len=d.userData.dreadLen||0.3;
-      d.position.set(h.x + ax, h.y + 0.055*_ms - len*0.5, h.z + az);  // a=0 is +x(face); 50°..310° arc = beside the face, wrapping the BACK
-      d.rotation.set(0,0,0); d.scale.setScalar(_ms); } }
+    if (this._dreadsUp){
+      // MAIME (photos): freeform twist SPIKES standing UP/outward from the crown — messy, varied
+      // lean + length per strand — instead of hanging locs. Deterministic per-index jitter.
+      for(let i=0;i<s.dreads.length;i++){ const d=s.dreads[i], n=s.dreads.length;
+        const a=(i/n)*Math.PI*2 + (i%3)*0.35;
+        const lean=0.34 + ((i*2654435761)%97)/97*0.55;                 // 0.34..0.89 rad outward lean
+        const L=(d.userData.dreadLen||0.3)*0.62*_ms;                   // shorter than the hanging locs
+        const sx=Math.cos(a)*Math.sin(lean), sz=Math.sin(a)*Math.sin(lean), sy=Math.cos(lean);
+        d.position.set(h.x + Math.cos(a)*0.05*_ms + sx*L*0.5, h.y + 0.085*_ms + sy*L*0.5, h.z + Math.sin(a)*0.05*_ms + sz*L*0.5);
+        d.rotation.set(Math.sin(a)*lean, 0, -Math.cos(a)*lean);
+        d.scale.set(_ms*0.85, _ms*0.62, _ms*0.85); }
+    } else {
+      for(let i=0;i<s.dreads.length;i++){ const d=s.dreads[i], n=s.dreads.length;
+        const a=(50 + i*(260/(n-1)))*Math.PI/180;                       // arc that skips the ±50° face cone (+x forward)
+        const ax=Math.cos(a)*rr, az=Math.sin(a)*rr, len=d.userData.dreadLen||0.3;
+        d.position.set(h.x + ax, h.y + 0.055*_ms - len*0.5, h.z + az);  // a=0 is +x(face); 50°..310° arc = beside the face, wrapping the BACK
+        d.rotation.set(0,0,0); d.scale.setScalar(_ms); } } }
+  // NECKTIE: hangs from the collar down the chest front, riding the torso (chest -> pelvis line)
+  if (s.tie && s.tie.visible){
+    const tx=(c.x+p.x)*0.5 + 0.155, ty=c.y*0.62 + p.y*0.38, tz=(c.z+p.z)*0.5;
+    put(s.tie, {x:tx, y:ty, z:tz});
+    s.tie.scale.y = Math.max(0.6, (c.y-p.y)*2.4);
+    s.tie.rotation.set(0, 0, (p.x-c.x)*0.4); }
   orientCyl(s.neck, c.x,c.y,c.z, h.x,h.y,h.z, 1);
   s.neck.scale.y = Math.max(0.12, Math.hypot(h.x-c.x,h.y-c.y,h.z-c.z)*0.62);
   { const _nh=(this.shape&&this.shape.height)?+this.shape.height:1; const _nk=(this.shape&&this.shape.neck!=null)?+this.shape.neck:1; s.neck.scale.x=s.neck.scale.z=_nh*_nk; }  // neck thickness = height x its own NECK slider
@@ -7635,7 +7749,32 @@ window.POSITION_TAXONOMY = {
   SPRINGBOARD:   { families:['springboard dives + in-between VAULT animation off the ropes'],           hook:'startDive(sb) — vault anim todo', status:'partial' },
   RUNNING:       { families:['running strikes/grapples (bulldog, spear, running knees)'],               hook:'running + momentum',              status:'live' }
 };
-try{ if(window.MANIFESTO) window.MANIFESTO.register({key:'combat.positionTaxonomy',kind:'gameplay',summary:'2K26-grade position/zoning map; AI grapple picks are front/rear-correct (go-behind gated)',call:'window.POSITION_TAXONOMY'}); }catch(e){}
+// Which zone of a DOWNED body the attacker is standing at: their offset projected on the body's
+// pelvis->head axis. HEAD side / FEET side / SIDE drive the grounded move family + damage target.
+function groundZoneOf(att, opp){
+  try{ // a DOWNED body's true layout lives in the verlet ragdoll points, not the rig joints.
+    // Axis = HEAD vs MID-FEET (pelvis->head collapses when the body curls fetal); reference point
+    // for the attacker's offset = the pelvis.
+    const useV = !!(opp.V && opp.V.pelvis && opp.V.head && opp.V.ftL && opp.V.ftR);
+    const ph = useV ? opp.V.pelvis.pos : opp.worldJoint('pelvis');
+    const hd = useV ? opp.V.head.pos   : opp.worldJoint('head');
+    const fl = useV ? opp.V.ftL.pos    : opp.worldJoint('ftL');
+    const fr = useV ? opp.V.ftR.pos    : opp.worldJoint('ftR');
+    const mfx=(fl.x+fr.x)*0.5, mfz=(fl.z+fr.z)*0.5;
+    let ax=hd.x-mfx, az=hd.z-mfz; const L=Math.hypot(ax,az);
+    if (L<0.35){ ax=-Math.cos(opp.facing||0); az=Math.sin(opp.facing||0); }  // not laid out yet: backward-fall default (head lands OPPOSITE facing)
+    else { ax/=L; az/=L; }
+    const dx=att.x-ph.x, dz=att.z-ph.z, d=Math.hypot(dx,dz)||1;
+    const dot=(dx*ax+dz*az)/d;
+    return dot>0.45 ? 'HEAD' : (dot<-0.45 ? 'FEET' : 'SIDE');
+  }catch(e){ return 'SIDE'; }
+}
+window.groundZoneOf = groundZoneOf;
+window.POSITION_TAXONOMY.GROUND_HEAD.status='partial';   // zoned damage/aim live; unique anims next
+window.POSITION_TAXONOMY.GROUND_SIDE.status='partial';
+window.POSITION_TAXONOMY.GROUND_FEET.status='partial';
+window.POSITION_TAXONOMY.SPRINGBOARD.status='live';      // rope-plant VAULT in-between shipped
+try{ if(window.MANIFESTO) window.MANIFESTO.register({key:'combat.positionTaxonomy',kind:'gameplay',summary:'2K26-grade position/zoning map; AI grapple picks front/rear-correct; grounded HEAD/SIDE/FEET zoning live; springboard VAULT in-between live',call:'window.POSITION_TAXONOMY'}); }catch(e){}
 
 // player advances the grapple (GRAB cycles lockup->lift->carry); deliveries fire from carry
 Fighter.prototype.grappleAdvance = function(aim, slam){
@@ -8390,6 +8529,20 @@ Fighter.prototype.poseGrab = function(dt){
     this.poseGuard(dt,false);
     if (this.stateTime>0.4){ if(window.BPHYS&&window.BPHYS.unlink) window.BPHYS.unlink(this,true); this.state='idle'; this.stateTime=0; this.grappling=false; this.grabTarget=null; }
   }
+  // ===== TWO-BODY PD LOAD COUPLING (godmode/daemon/pd_torque_controller.py: τ = Kp·err − Kd·vel) =====
+  // The victim's coupling-spring error is the LOAD the attacker actually carries. Render its torque
+  // on the attacker: when the mass sags below the hoist target the attacker sinks + tips toward it;
+  // when the spring whips it upward the attacker gets pulled tall. The two bodies now breathe as one
+  // coupled system instead of the attacker posing through a weightless carry.
+  { const _v=this.grabTarget;
+    if((st===2||st===3) && _v && _v._loadErr!=null){
+      const Kp=0.55, Kd=0.07;
+      let tau = Kp*_v._loadErr - Kd*(_v._loadVel||0);
+      tau = clamp(tau, -0.085, 0.085);
+      this.J.pelvis.y += tau*0.55; this.J.chest.y += tau*0.40; this.J.head.y += tau*0.30;
+      this.J.chest.x  += Math.abs(tau)*0.35;                    // tip INTO the load (never away)
+      this.J.knL.y += tau*0.30; this.J.knR.y += tau*0.30;       // knees give under the sag
+    } }
   this.solveArmIK();
 };
 
@@ -8711,6 +8864,17 @@ Fighter.prototype.poseGrabbed = function(dt){
       if (this._lockY < _grpAnchor.y-1.15) this._lockY = _grpAnchor.y-1.15;
     }catch(e){}
     this.root.position.set(this.x, Math.max(_restY, this._lockY), this.z); this.root.rotation.y = this.facing;
+    // TWO-BODY TELEMETRY: expose the coupling-spring state so the ATTACKER's pose can react to the
+    // load (PD coupling in poseGrab), and record the attacker's grip points in OUR local space so
+    // the flesh deforms under the grip (grab-event vertex bulge, biomech spec §B).
+    this._loadErr = this._lockY - _tgtY; this._loadVel = this._lockVy;
+    try{ this.root.updateMatrixWorld(true);
+      const _gp=[]; const _W=(n)=>{ _grabGrip.copy(by.worldJoint(n)); this.root.worldToLocal(_grabGrip); return {x:_grabGrip.x,y:_grabGrip.y,z:_grabGrip.z}; };
+      _gp.push(_W('haL')); _gp.push(_W('haR'));
+      const _St=Math.min(1,Math.max(0,1-(this.stamina||100)/(this.maxStamina||100)));
+      this._gripT=(this._gripT||0)+dt;
+      this._gripPts={ p:_gp, amp:(st>=3?1:0.7), t:this._gripT, St:_St };
+    }catch(e){}
     // apply the slave-pose SHAPE, pitched by the arc so the body tips through the swing (flatter at the bridge)
     // ===== VICTIM-SIDE MOCAP: your captured victim performance drives the held body (path/tether/grips stay engine-true) =====
     let _vDone=false;
@@ -8874,6 +9038,14 @@ Fighter.prototype.startClimb = function(corner, target){
   return true;
 };
 Fighter.prototype.startDive = function(type, sb){
+  // SPRINGBOARD VAULT IN-BETWEEN (2K26 reference): a springboard dive no longer teleports airborne —
+  // it plays the actual rope-plant first (hands/foot to the top rope, hips kicking over) and THEN
+  // launches from rope height. The vault stores the dive and hands off to the normal path when done.
+  if (sb && !this._vaultPending && !this.ragdoll){
+    this._vaultPending = { type: type };
+    this.state='vault'; this.stateTime=0; this.spin=0; this.diveType=null;
+    return;
+  }
   const d = DIVE_TYPES[type] || DIVE_TYPES.CROSSBODY;
   const opp = this.opponent();
   this.state='dive'; this.stateTime=0; this.airT=0; this.diveType=type; this.airDur=d.dur*DIVE.dur;
@@ -8885,6 +9057,33 @@ Fighter.prototype.startDive = function(type, sb){
 };
 Fighter.prototype.exitAerial = function(){
   this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this._airPitch=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
+};
+// SPRINGBOARD VAULT — the rope-plant in-between: dip toward the ropes, hands plant on the top rope,
+// hips kick up and over, then the stored dive launches from rope height. One continuous motion
+// (smoothstep phases), not a keyframe snap; physics keeps stepping underneath.
+Fighter.prototype.poseVault = function(dt){
+  const T=0.30, t=Math.min(1, this.stateTime/T);
+  const s=t*t*(3-2*t);                                    // eased master phase
+  const plant=Math.min(1, s/0.5), kick=Math.max(0,(s-0.45)/0.55);   // A: dip+plant  B: hips over
+  this.airLift = 0.15*plant + 0.75*kick;                  // body carries up onto the rope line
+  this.root.position.set(this.x, RING.floorY + (this.zoneY||0) + this.airLift, this.z);
+  this.root.rotation.set(0, this.facing, 0, 'YXZ');
+  const J=this.J, dip=0.14*plant*(1-kick);
+  J.pelvis.set(0.06+0.10*kick, 0.92-dip+0.10*kick, 0);
+  J.chest.set(0.16+0.06*kick, 1.26-dip*1.2+0.02*kick, 0);
+  J.head.set(0.22, 1.58-dip*1.1-0.06*kick, 0);
+  // hands PLANT on the top rope line ahead (the visible contact of the vault)
+  J.haL.set(0.42+0.10*plant, 1.06-0.04*plant, 0.20); J.haR.set(0.42+0.10*plant, 1.06-0.04*plant, -0.20);
+  J.elL.set(0.30, 1.12, 0.22); J.elR.set(0.30, 1.12, -0.22);
+  // legs: load in the dip, then SWEEP up behind as the hips kick over the hands
+  J.hipL.set(-0.02-0.16*kick, 0.86+0.16*kick, 0.13); J.hipR.set(-0.02-0.16*kick, 0.86+0.16*kick, -0.13);
+  J.knL.set(0.10-0.34*kick, 0.48+0.44*kick, 0.15); J.knR.set(0.10-0.30*kick, 0.48+0.38*kick, -0.15);
+  J.ftL.set(0.16-0.52*kick, 0.06+0.72*kick, 0.16); J.ftR.set(0.16-0.46*kick, 0.06+0.62*kick, -0.16);
+  if (this.stateTime>=T){
+    const p=this._vaultPending; this._vaultPending=null;
+    this.airLift=0.95;                                     // launch height = off the top rope
+    if(p) this.startDive(p.type,false); else this.exitAerial();
+  }
 };
 Fighter.prototype.diveImpact = function(opp){ try{
   const d = DIVE_TYPES[this.diveType] || DIVE_TYPES.CROSSBODY;
@@ -11209,17 +11408,42 @@ function playerAttack(kind){
   }
   if (kind==='grab'){ p.startGrab(); return; }
 
-  // ground game — stomp (kick) or ground punch (jab/cross) when opponent is down
+  // ground game — GROUNDED ZONING (2K26 taxonomy): where you STAND around the downed body decides
+  // the attack. Attacker position vs the body's pelvis->head axis => HEAD side / FEET side / SIDE,
+  // which flavors target part, damage and the announced name (mounted head shots hit harder; feet-
+  // side works the legs; side works the ribs).
   if (opp && opp.isDown()){
     let gm;
     if (kind==='kick') gm = set.find(m=>m.name==='STOMP') || set.find(m=>m.cat==='GROUND');
     else gm = set.find(m=>m.cat==='GROUND'&&m.name!=='STOMP') || set.find(m=>m.cat==='GROUND');
     if (gm){
       const m = Object.assign({}, gm);
-      m.height = (zone==='HIGH') ? 'GROUND' : 'GROUND'; // head vs body stomp aim
-      m._aimHead = (zone!=='LOW');
+      const gz = (typeof groundZoneOf==='function') ? groundZoneOf(p, opp) : 'SIDE';
+      m._groundZone = gz;
+      m.height = 'GROUND';
+      // distinct arc per zone: HEAD = dropping overhand (elbow/axe read), FEET = straight low drive
+      // into the legs, SIDE = hooking swing across the ribs — three visibly different deliveries.
+      if (gz==='HEAD'){ m._aimHead=true;  m.power=Math.round((m.power||50)*1.15); m.traj='OVERHAND'; m.name=(gm.name||'GROUND')+' · HEAD'; }
+      else if (gz==='FEET'){ m._aimHead=false; m._aimLegs=true; m.power=Math.round((m.power||50)*0.95); m.traj='STRAIGHT'; m.name=(gm.name||'GROUND')+' · LEGS'; }
+      else { m._aimHead=(zone!=='LOW'); m.power=Math.round((m.power||50)*1.05); m.traj='HOOKING'; m.name=(gm.name||'GROUND')+' · RIBS'; }
       p.startAttack(m); return;
     }
+  }
+
+  // RUNNING STRIKE FAMILY (POSITION_TAXONOMY.RUNNING deepened): momentum is a weapon. At a run — or
+  // off an Irish-whip rope REBOUND — strikes swap to the running family (lariat / shoulder block /
+  // running knee / rebound big boot), with power scaled by live momentum and a rebound bonus.
+  if ((p.running || (p.reboundT||0)>0) && (kind==='jab'||kind==='cross'||kind==='kick')){
+    const _reb=(p.reboundT||0)>0;
+    const RUN={
+      jab:  { name:_reb?'REBOUND SHOULDER BLOCK':'RUNNING SHOULDER BLOCK', cat:'STRIKE', limb:'RIGHT CROSS', traj:'STRAIGHT', height:'MID',  power:58, speed:88 },
+      cross:{ name:_reb?'REBOUND LARIAT':'RUNNING LARIAT',                 cat:'STRIKE', limb:'RIGHT CROSS', traj:'HOOKING',  height:'HIGH', power:66, speed:82 },
+      kick: { name:_reb?'REBOUND BIG BOOT':'RUNNING KNEE',                 cat:'STRIKE', limb:_reb?'RIGHT KICK':'KNEE', traj:'STRAIGHT', height:'HIGH', power:64, speed:85 }
+    };
+    const rm=Object.assign({ style:p.style||'BRAWLER', follow:'RESET STANCE' }, RUN[kind]);
+    rm.power=Math.round(rm.power*(1 + 0.45*Math.min(1,(p.momentum||0)/3) + (_reb?0.30:0)));
+    rm._running=true;
+    p.startAttack(rm); return;
   }
 
   // DIRECTIONAL + NEUTRAL: resolve the stick into one strike direction, then pick the mapped strike.
@@ -12292,12 +12516,17 @@ function dressFighter(f){
       // ROOTS, not a wig: with dreads on, the hair cap was still the brown helmet floating OVER the
       // strands. Shrink it skull-tight and recolor it as the dreads' root mass (slightly darker than
       // the strands) so crown + strands read as ONE head of locs.
+      f._dreadsUp = !!(on && fg && fg.hairUp);                                // spiked-up twists (Maime) vs hanging locs (Bannon)
       if(on && S.hair){ if(!f._dreadCapMat){ try{ f._dreadCapMat=S.hair.material.clone(); }catch(_){ } }
         if(f._dreadCapMat){ S.hair.material=f._dreadCapMat;
           const dc=(fg.dreadColor!=null?fg.dreadColor:0x2a2118), r=((dc>>16)&255)*0.72, g=((dc>>8)&255)*0.72, b=(dc&255)*0.72;
           f._dreadCapMat.color.setRGB(r/255,g/255,b/255); }
-        S.hair.scale.set(0.92,0.66,0.98); }                                   // skull-hugging root cap
+        if(f._dreadsUp) S.hair.scale.set(0.86,0.46,0.90);                     // spikes: LOW root pad only — no dome over the twists
+        else S.hair.scale.set(0.92,0.66,0.98); }                              // hanging locs: skull-hugging root cap
     }
+    // necktie (tattered look): per-look tie + color (canon: the blue Pooh Bear tie)
+    if(f.seg && f.seg.tie){ const tOn=!!(fg&&fg.tie); f.seg.tie.visible=tOn;
+      if(tOn){ try{ f.seg.tie.material.color.setHex(fg.tieColor!=null?fg.tieColor:0x2a4a8a); }catch(_){ } } }
     // FACE PAINT (Maime): the head sphere becomes a painted face SHELL sitting proud of the smooth
     // head tube (tube r≈0.118; shell = 0.125 * scale below). Painted lips/sockets replace the crude
     // nose/mouth boxes, which hide; eye boxes stay (they poke through as the dark iris in the socket).
@@ -12327,14 +12556,16 @@ window.CHAR_FACEGEAR = {
   // MAIME (canon, Book 3 + owner reference photos in assets/reference/maime_photos): NO metal mask —
   // WHITE FACE PAINT w/ black jagged "M" forehead, blacked-out sockets + tear drips, black downturned
   // lips (painted via __maimePaintTex). Near-black freeform locs. Jacket states are alt looks below.
-  MAIME:        { facepaint:1, dreads:1, dreadColor:0x17120e },
-  MAIME_JACKET: { facepaint:1, dreads:1, dreadColor:0x17120e },
-  MAIME_CASUAL: { facepaint:1, dreads:1, dreadColor:0x17120e }
+  MAIME:          { facepaint:1, dreads:1, hairUp:1, dreadColor:0x17120e },
+  MAIME_JACKET:   { facepaint:1, dreads:1, hairUp:1, dreadColor:0x17120e },
+  MAIME_CASUAL:   { facepaint:1, dreads:1, hairUp:1, dreadColor:0x17120e },
+  MAIME_TATTERED: { facepaint:1, dreads:1, hairUp:1, dreadColor:0x17120e, tie:1, tieColor:0x2a4a8a }
 };
 // MAIME JACKET STATES (owner spec): enters WITH the studded jacket and REMOVES it for battle; wears
 // a jacket in casual cutscenes too. Battle default = shirtless + black pants; the jackets are alt
 // LOOKS today and become automatic entrance/cutscene swaps when the entrance/cutscene system lands.
 try{
+  if(window.CHAR_META.MAIME){ window.CHAR_META.MAIME.col=0x18181c; window.CHAR_META.MAIME.accent=0x8a8f9a; }   // photos: LONG DARK jogging pants, not the old red palette
   window.CHAR_META.MAIME_JACKET = Object.assign({}, window.CHAR_META.MAIME||{}, { label:'The Executioner of Injustice · Ring Jacket', col:0x141416, accent:0xc8ccd4 });
   window.CHAR_META.MAIME_CASUAL = Object.assign({}, window.CHAR_META.MAIME||{}, { label:'Maime · Casual', col:0x1a1a1e, accent:0x9aa0aa });
   window.CHAR_ATTIRE.MAIME        = 'CARGO_PANTS';   // battle: jacket OFF — bare chest + long dark pants (photos)
@@ -12342,9 +12573,38 @@ try{
   window.CHAR_ATTIRE.MAIME_CASUAL = 'STREETWEAR';    // casual jacket + pants
   window.CHAR_HAIR.MAIME_JACKET = window.CHAR_HAIR.MAIME_CASUAL = (window.CHAR_HAIR.MAIME||'SHORT');
   if(window.CHAR_BODY){ window.CHAR_BODY.MAIME_JACKET = window.CHAR_BODY.MAIME_CASUAL = Object.assign({}, window.CHAR_BODY.MAIME||{musc:0.72,fat:0.14}); }
+  // MAIME_TATTERED (canon Book 1/3 look): black tattered button-up w/ torn sleeves, long necktie
+  // (the blue Pooh Bear tie), taped wrists, jogging pants. STREETWEAR paints shirt+pants; torn
+  // sleeves + wrist tape are texture debt for the GLB/forge pass.
+  window.CHAR_META.MAIME_TATTERED = Object.assign({}, window.CHAR_META.MAIME||{}, { label:'The Executioner of Injustice · Tattered', col:0x121216, accent:0x1c1c22 });
+  window.CHAR_ATTIRE.MAIME_TATTERED = 'STREETWEAR';
+  window.CHAR_HAIR.MAIME_TATTERED = (window.CHAR_HAIR.MAIME||'SHORT');
+  if(window.CHAR_BODY) window.CHAR_BODY.MAIME_TATTERED = Object.assign({}, window.CHAR_BODY.MAIME||{musc:0.72,fat:0.14});
   if(window.CHAR_ALTS){ window.CHAR_ALTS.MAIME = (window.CHAR_ALTS.MAIME||[]);
-    for(const a of [{id:'MAIME_JACKET',label:'Ring Jacket'},{id:'MAIME_CASUAL',label:'Casual · Jacket'}]){
+    for(const a of [{id:'MAIME_JACKET',label:'Ring Jacket'},{id:'MAIME_CASUAL',label:'Casual · Jacket'},{id:'MAIME_TATTERED',label:'Tattered · Pooh Tie'}]){
       if(!window.CHAR_ALTS.MAIME.some(x=>x.id===a.id)) window.CHAR_ALTS.MAIME.push(a); } }
+
+  // ── canon/characters dossier integration: bosses + free agents + finisher specs ──
+  const _addChar=(k,meta,attire,hair,body)=>{ if(!window.CHAR_META[k]){ window.CHAR_META[k]=meta; }
+    if(attire) window.CHAR_ATTIRE[k]=window.CHAR_ATTIRE[k]||attire;
+    if(hair) window.CHAR_HAIR[k]=window.CHAR_HAIR[k]||hair;
+    if(body&&window.CHAR_BODY) window.CHAR_BODY[k]=window.CHAR_BODY[k]||body; };
+  _addChar('STAN_COMBS',   { label:'Honey · The Overlord',      col:0x23232b, accent:0xd4af37, skin:0xe8c9a8, faction:'Corporate Structure', canon:true, bio:'LP8 executive deviance — the shadow overlord who buys loyalty and builds weapons out of chaos.', archetype:'powerhouse' }, 'JACKET', 'BUZZ', {musc:0.5,fat:0.42});
+  _addChar('EDWIN_KENNEDY',{ label:'The Chairman of AWE',       col:0x1c1c24, accent:0x8899aa, skin:0xe2b892, faction:'Corporate Structure', canon:true, bio:'LP33/6 imperious promoter — Apex Wrestling Entertainment is his family, his possession, his religion.', archetype:'powerhouse' }, 'JACKET', 'CAESAR', {musc:0.55,fat:0.3});
+  _addChar('TIGHTROPE',    { label:'Reckless Freedom Seeker',   col:0xcc2255, accent:0x22ccee, skin:0xd9a066, faction:'Agents of Chaos', canon:true, bio:'A wire-walker with no net and no plan — chaos as an art form.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.55,fat:0.12,fem:1,hips:1.02,glutes:1.08,waist:0.86,bust:0.72});
+  // body diversity re-seed (runs AFTER the roster exists — the early block fires too soon for new chars)
+  if(window.CHAR_BODY){ if(window.CHAR_BODY.QUEEN_TYNESHIA&&window.CHAR_BODY.QUEEN_TYNESHIA.bust==null) window.CHAR_BODY.QUEEN_TYNESHIA.bust=1.35;
+    if(window.CHAR_BODY.KARMA&&window.CHAR_BODY.KARMA.bust==null) window.CHAR_BODY.KARMA.bust=1.0; }
+  _addChar('AKON_WARRIOR', { label:'Man of Honor',              col:0x8a5a1a, accent:0xffd700, skin:0x7a4a2e, faction:'Free Agent', canon:true, bio:'The ethical challenge — honor as a weapon.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.82,fat:0.2});
+  _addChar('HEATH_BROKER', { label:'The London Broker',         col:0x24262e, accent:0x9fb4cc, skin:0xe6c8a8, faction:'Corporate Structure', canon:true, bio:'Corporate technician — every hold is a contract clause.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.5,fat:0.22});
+  _addChar('CAPTAIN_UNITY',{ label:'Corporate Propaganda',      col:0x1a3a8a, accent:0xd42a2a, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'A manufactured hero — unity as a slogan, not a promise.', archetype:'brawler' }, 'SINGLET', 'BUZZ', {musc:0.72,fat:0.18});
+  _addChar('YORKSHIRE_GRIT',{ label:'Hardcore Independent',     col:0x3a2e24, accent:0xc8b090, skin:0xe0b890, faction:'Free Agent', canon:true, bio:'The wildcard — pints, bricks and a chin made of quarry stone.', archetype:'brawler' }, 'CARGO_PANTS', 'BALD', {musc:0.6,fat:0.4});
+  // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
+  window.CHAR_FINISHERS = Object.assign(window.CHAR_FINISHERS||{}, {
+    FINXSSE:  { style:'Lesnar/Guerrero hybrid — speed+power showman', sig:'CHAINSNATCHER — jumping double-knee backstabber', fin:'GETBACKK — fireman-carry tornado slam (F5-class violence)', props:['gold jeweled diamond cross (stolen from Chainlink)'] },
+    STICK_UP: { fin:['LEAP OF FAITH — swanton bomb','SUPER LEAP OF FAITH — swanton 450 splash','FIRE THUNDER DRIVER','TWIST OF FATE — theatrical twisting cutter/stunner'] }
+  });
+  try{ if(window.MANIFESTO) window.MANIFESTO.register({key:'roster.dossiers',kind:'gameplay',summary:'canon/characters dossiers wired: bosses (Combs/Kennedy-AWE), free agents (Tightrope female flyer, Akon, Heath, Unity, Grit), CHAR_FINISHERS specs (Finxsse Chainsnatcher/Getbackk, Stick Up Leap of Faith...)',call:'window.CHAR_FINISHERS'}); }catch(e){}
 }catch(_){}
 // BANNON · NOIR — alternate attire (black dreads, gunmetal mask, blacked-out gear). A LOOK key only:
 // moves/announcer stay Bannon's. Registered across the look registries so vlook resolves it fully.

@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>My Google AI Studio App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Global reload blocker to prevent infinite reload loops in the game engine
+      // (Removed as window.location is read-only)
+      
+      // Ouroboros Telemetry Hook for Local Cognitive Core
+      window.Ouroboros_Telemetry = {
+        getLiveMatrix: function(fighter) {
+          if (!fighter) return null;
+          return {
+            state: fighter.state,
+            blend: fighter._physBlend || 0,
+            velocity: { x: fighter.vx || 0, z: fighter.vz || 0 },
+            anomalies: fighter.J ? fighter.JOINTS.filter(j => {
+              if (!fighter.J[j]) return false;
+              const pos = fighter.J[j].pos;
+              return !isFinite(pos.x) || !isFinite(pos.y) || !isFinite(pos.z);
+            }) : []
+          };
+        }
+      };
+    </script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

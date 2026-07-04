@@ -1,0 +1,1 @@
+[PROXY ROTATOR] No base proxy provided. Simulating residential pool.

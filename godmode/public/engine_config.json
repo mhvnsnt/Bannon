@@ -1,0 +1,18 @@
+{
+  "PHYSICS": {
+    "GRAVITY": -9.81,
+    "HEFT": 1.0,
+    "RAGDOLL_PULL": 0.8,
+    "FRICTION": 0.5,
+    "RESTITUTION": 0.2
+  },
+  "COMBAT": {
+    "STRIKE_FORCE": 150.0,
+    "STAMINA_DRAIN_PER_STRIKE": 10.0,
+    "POISE_DAMAGE_MULTIPLIER": 1.2
+  },
+  "ROUTING": {
+    "AUTO_BRANCH_ON_FAIL": true,
+    "VALIDATION_STRICTNESS": "HIGH"
+  }
+}

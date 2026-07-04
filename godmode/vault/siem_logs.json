@@ -1,0 +1,58 @@
+[
+  {
+    "id": "log-1782191489454-189",
+    "event": "MARKET SWEEP INITIATED",
+    "detail": "Swarm activating to probe global targets.",
+    "ip": "0.0.0.0",
+    "timestamp": "2026-06-23T05:11:29.454Z",
+    "status": "MONITORED"
+  },
+  {
+    "id": "log-1782191489444-787",
+    "event": "AUTONOMOUS SWARM ONLINE",
+    "detail": "Neural bridge initialized. Market swarm standing by.",
+    "ip": "0.0.0.0",
+    "timestamp": "2026-06-23T05:11:29.444Z",
+    "status": "SECURE"
+  },
+  {
+    "id": "log-1782169547186-292",
+    "event": "DFS EDGE SCANNED",
+    "detail": "Found DFS lag edge on Kirk Cousins UNDER 6.4 PTS/AST",
+    "ip": "PrizePicks/Sharp Consensus",
+    "timestamp": "2026-06-22T23:05:47.186Z",
+    "status": "MONITORED"
+  },
+  {
+    "id": "log-1782169546502-782",
+    "event": "MARKET SWEEP INITIATED",
+    "detail": "Swarm activating to probe global targets.",
+    "ip": "0.0.0.0",
+    "timestamp": "2026-06-22T23:05:46.502Z",
+    "status": "MONITORED"
+  },
+  {
+    "id": "log-1782169546492-302",
+    "event": "AUTONOMOUS SWARM ONLINE",
+    "detail": "Neural bridge initialized. Market swarm standing by.",
+    "ip": "0.0.0.0",
+    "timestamp": "2026-06-22T23:05:46.492Z",
+    "status": "SECURE"
+  },
+  {
+    "id": "log-1782164764657-436",
+    "event": "MARKET SWEEP INITIATED",
+    "detail": "Swarm activating to probe global targets.",
+    "ip": "0.0.0.0",
+    "timestamp": "2026-06-22T21:46:04.657Z",
+    "status": "MONITORED"
+  },
+  {
+    "id": "log-1782164764648-626",
+    "event": "AUTONOMOUS SWARM ONLINE",
+    "detail": "Neural bridge initialized. Market swarm standing by.",
+    "ip": "0.0.0.0",
+    "timestamp": "2026-06-22T21:46:04.648Z",
+    "status": "SECURE"
+  }
+]
