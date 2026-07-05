@@ -148,7 +148,7 @@ Analyze the error. Output EXACTLY a JSON HypothesesReport:
 }`;
 
                 const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-pro',
+                    model: 'gemini-1.5-pro',
                     contents: prompt,
                     config: {
                         systemInstruction: "You are the HEALING_ENGINE_INTAKE supervisor. Output only valid JSON with the exact structures specified."

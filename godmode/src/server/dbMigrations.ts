@@ -318,6 +318,28 @@ export function runImmortalityMigrations() {
       id TEXT PRIMARY KEY,
       content TEXT NOT NULL,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS system_notifications (
+      id TEXT PRIMARY KEY,
+      agent TEXT,
+      type TEXT,
+      text TEXT,
+      payload TEXT,
+      status TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS ap2_intent_mandates (
+      id TEXT PRIMARY KEY,
+      daily_limit REAL,
+      tx_limit REAL,
+      alert_threshold REAL,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`,
+    `CREATE TABLE IF NOT EXISTS rejection_signals (
+      txHash TEXT PRIMARY KEY,
+      prompt TEXT,
+      rejectedOutput TEXT,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
     )`
   ];
 
@@ -380,6 +402,10 @@ export function runImmortalityMigrations() {
   try { memoryVault.prepare(`ALTER TABLE autonomous_tasks ADD COLUMN started_at DATETIME`).run(); } catch(e) {}
   try { memoryVault.prepare(`ALTER TABLE autonomous_tasks ADD COLUMN completed_at DATETIME`).run(); } catch(e) {}
   try { memoryVault.prepare(`ALTER TABLE autonomous_tasks ADD COLUMN retry_count INTEGER DEFAULT 0`).run(); } catch(e) {}
+
+  try {
+    memoryVault.prepare("INSERT OR IGNORE INTO ap2_intent_mandates (id, daily_limit, tx_limit, alert_threshold) VALUES ('MASTER_MANDATE', 200, 50, 100)").run();
+  } catch(e) {}
 
   console.log('[dbMigrations] Immortality Schema Sync finished.');
 }

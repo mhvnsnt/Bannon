@@ -1,6 +1,7 @@
 import { Pinecone } from '@pinecone-database/pinecone';
 import { GoogleGenAI } from '@google/genai';
 import { sendPushAlert } from './notifications/pushService';
+import { queryPineconeWithCache } from './memory/pineconeNexus';
 
 let pc: Pinecone | null = null;
 if (process.env.PINECONE_API_KEY) {
@@ -20,10 +21,9 @@ export async function runPredictModeEngine() {
   
   try {
     const indexName = process.env.PINECONE_INDEX_NAME || 'default';
-    const index = pc.index(indexName);
     
     // 1. Query Pinecone for the latest scraped market asymmetry matrices
-    const queryResponse = await index.query({
+    const queryResponse = await queryPineconeWithCache(indexName, {
       topK: 15,
       includeMetadata: true,
       vector: new Array(768).fill(0.1) // Sample vector signature array
@@ -35,7 +35,7 @@ export async function runPredictModeEngine() {
 
     // 2. Compute predictive models using reasoning AI loops
     const predictionResult = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
+      model: 'gemini-1.5-flash',
       contents: `[WORLD MODEL CONTEXT LOGS]:
       ${rawContextData}
       

@@ -24,7 +24,7 @@ export class ForgeHardwareBridge extends EventEmitter {
     try {
       // In a physical environment we import the native onoff library dynamically
       // @ts-ignore
-      const { Gpio } = require("onoff");
+      const { Gpio } = await import("onoff");
       
       const forgeButton = new Gpio(23, "in", "rising", { debounceTimeout: 10 });
       const runButton = new Gpio(24, "in", "rising", { debounceTimeout: 10 });

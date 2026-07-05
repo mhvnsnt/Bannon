@@ -24,7 +24,7 @@ export async function processSystemSelfEvolution() {
   try {
       // Feed system performance logs back into the AI brain to evaluate inefficiencies
       const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: 'gemini-1.5-flash',
         contents: `Analyze these system logs for execution anomalies, failed scraping nodes, or changing data structures:
         ${executionLogs}
         

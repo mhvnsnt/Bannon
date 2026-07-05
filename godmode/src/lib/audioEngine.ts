@@ -78,7 +78,7 @@ export const initializeGlobalAudio = (audioElement: HTMLAudioElement) => {
 
 export const analyzeFrequencies = () => {
     if (!analyser || !dataArray) return;
-    analyser.getByteFrequencyData(dataArray);
+    analyser.getByteFrequencyData(dataArray as any);
     
     let bassSum = 0;
     const bassLimit = Math.floor(dataArray.length * 0.10);

@@ -44,7 +44,7 @@ python3 daemon/swarm_self_healing_core.py &
 PID_LIST+=($!)
 
 echo "[4/6] Starting Web OS Engine and Socket.io communication bridge..."
-npx ts-node server.ts &
+npm run dev &
 PID_LIST+=($!)
 
 echo "[5/6] Hooking Vulkan capture handles and setting up container environments..."

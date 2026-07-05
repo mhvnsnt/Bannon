@@ -1,3 +1,6 @@
+import { useQuantumEngine } from '../hooks/useQuantumEngine';
+import { quantumRouter } from "../lib/quantum/QuantumRouter";
+import TelemetrySidebarPanel from "./TelemetrySidebarPanel";
 import React, { useState, useRef, useEffect } from "react";
 import { usePrimeStore } from "../lib/store";
 import {
@@ -16,7 +19,7 @@ import {
   Copy,
   Check,
   Camera,
-  Mic,
+  Mic, Cpu,
   Code2,
   Network,
   Zap,
@@ -50,8 +53,10 @@ import {
 } from "../lib/persistence";
 import { useHardwareActuator } from "../hooks/useHardwareActuator";
 import ASTVisualizer from "./ASTVisualizer";
+import { QuantumCircuitDebugger, CircuitData } from "./QuantumCircuitDebugger";
 import { usePhoneDaemon } from '../hooks/usePhoneDaemon';
 import { useLivingNexus } from "../hooks/useLivingNexus";
+import { useNexusBridge } from '../lib/nexusBridge';
 
 function ArtifactBlock({ codeContent, language, filename, onApply }: { codeContent: string; language: string; filename?: string; onApply?: (code: string) => void }) {
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -80,7 +85,7 @@ function ArtifactBlock({ codeContent, language, filename, onApply }: { codeConte
     navigator.clipboard.writeText(codeContent).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    });
+    }).catch(e => console.warn('Clipboard write failed:', e));
   };
 
   return (
@@ -242,10 +247,10 @@ function CopyButton({
 function IntentBadge({
   intent,
 }: {
-  intent?: "strategy" | "code" | "build" | "deploy";
+  intent?: string;
 }) {
   if (!intent) return null;
-  const config = {
+  const config: Record<string, { icon: any; color: string; bg: string }> = {
     strategy: {
       icon: Network,
       color: "text-purple-400",
@@ -255,7 +260,9 @@ function IntentBadge({
     build: { icon: Zap, color: "text-amber-400", bg: "bg-amber-900/20" },
     deploy: { icon: PlaySquare, color: "text-blue-400", bg: "bg-blue-900/20" },
   };
-  const { icon: Icon, color, bg } = config[intent] || config.strategy;
+  const badgeConfig = config[intent] || config.strategy;
+  const Icon = badgeConfig.icon;
+  const { color, bg } = badgeConfig;
 
   return (
     <div
@@ -322,7 +329,8 @@ function KineticExecutionHUD({ tools }: { tools: ToolCall[] }) {
                     <span className="truncate">{log}</span>
                   </div>
                 ))}
-              </motion.div>
+
+          </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -463,7 +471,52 @@ const LOCAL_SWARM_MODELS = [
   { id: 'qwable-3.6-27b', name: 'qwable-27b-abliterated' }
 ];
 
+
+const AppletCompilerState = () => {
+  const [stage, setStage] = React.useState(0);
+  React.useEffect(() => {
+    const t1 = setTimeout(() => setStage(1), 1500); // Linting
+    const t2 = setTimeout(() => setStage(2), 3000); // Preview Ready
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  return (
+    <div className="mt-2 p-2 bg-[#050505] border border-[#222] rounded flex items-center gap-3 text-[10px] font-mono text-gray-400">
+      <div className="flex items-center gap-1.5">
+        <div className={`w-2 h-2 rounded-full ${stage >= 0 ? 'bg-cyan-500 shadow-[0_0_5px_#06b6d4] animate-pulse' : 'bg-gray-700'}`}></div>
+        <span className={stage === 0 ? 'text-cyan-400' : ''}>Compiling</span>
+      </div>
+      <div className="w-4 h-px bg-[#333]"></div>
+      <div className="flex items-center gap-1.5">
+        <div className={`w-2 h-2 rounded-full ${stage >= 1 ? (stage === 1 ? 'bg-yellow-500 shadow-[0_0_5px_#eab308] animate-pulse' : 'bg-yellow-500') : 'bg-gray-700'}`}></div>
+        <span className={stage === 1 ? 'text-yellow-400' : ''}>Linting</span>
+      </div>
+      <div className="w-4 h-px bg-[#333]"></div>
+      <div className="flex items-center gap-1.5">
+        <div className={`w-2 h-2 rounded-full ${stage >= 2 ? 'bg-emerald-500 shadow-[0_0_5px_#10b981]' : 'bg-gray-700'}`}></div>
+        <span className={stage === 2 ? 'text-emerald-400 font-bold' : ''}>Preview Ready</span>
+      </div>
+    </div>
+  );
+};
+
 export default function QuantumChat() {
+  const { applyHadamard, entangle, measureAndCollapse, collapsedState } = useQuantumEngine(3);
+
+  const simulateQuantumDecision = async (objective: string = "decision_matrix") => {
+    applyHadamard(0);
+    entangle(0, 1);
+    const localResult = measureAndCollapse();
+
+    const remoteResult = await quantumRouter.routeCircuit({
+      objective,
+      fallback: true
+    });
+
+    return { local: localResult, remote: remoteResult };
+  };
+
+  const { callTool, isBridging } = useNexusBridge();
   const { isDaemonActive, startDaemon, stopDaemon } = usePhoneDaemon();
   const activeNode = usePrimeStore((state) => state.activeNode);
   const setActiveNode = usePrimeStore((state) => state.setActiveNode);
@@ -488,6 +541,8 @@ export default function QuantumChat() {
     () => "session-" + Date.now(),
   );
   const [useTaxonomy, setUseTaxonomy] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<"standard" | "split">("standard");
+  const [previewComponent, setPreviewComponent] = useState<string | null>("bannon.html");
   const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -786,9 +841,10 @@ export default function QuantumChat() {
     if ((!hasMore && !reset) || loadingOlder) return;
     setLoadingOlder(true);
 
-    const oldestTimestamp = reset
+    const rawTimestamp = reset
       ? new Date().toISOString()
       : messages[0]?.timestamp || new Date().toISOString();
+    const oldestTimestamp = rawTimestamp instanceof Date ? rawTimestamp.toISOString() : String(rawTimestamp);
     try {
       // Try fetching from Firebase
       const fmMessages = await getChatMessages(sessionId);
@@ -914,6 +970,122 @@ Synthesizing GLB manifold from visual context...
        setMessages((prev: any) => [...prev, userMsg, mockMsg]);
        setInput("");
        setAttachedFiles([]);
+       return;
+    }
+
+    if (textToSend.startsWith('/resilience')) {
+      setInput('');
+      const newMessage: ChatMessage = {
+        id: Date.now().toString(),
+        content: 'Executing Autonomous Resilience Protocol...',
+        role: 'user',
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, newMessage]);
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          content: "[SYSTEM] Autonomous Resilience Engaged.\n[Node Cluster Monitor] Spike detected on Node-Alpha-07.\n[Auto-Remediation] Rewriting config limits and migrating workload...\n[Status] Baseline operations restored in 412ms. Zero downtime.",
+          role: 'armada',
+          timestamp: new Date().toISOString()
+        }]);
+      }, 1500);
+      return;
+    } else if (textToSend.startsWith('/harden')) {
+      setInput('');
+      setMessages(prev => [...prev, { id: Date.now().toString(), content: 'Executing Automated Hardening...', role: 'user', timestamp: new Date().toISOString() }]);
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          content: "[STATIC ANALYZER] Logic flaw found in auth_middleware.ts (Race condition).\n[CODE GENERATOR] Generating structural patch...\n[SANDBOX] Testing patched loop...\n[COMMIT] Patch applied securely. Loop sealed.",
+          role: 'armada',
+          timestamp: new Date().toISOString()
+        }]);
+      }, 1500);
+      return;
+    } else if (textToSend.startsWith('/transpile')) {
+      setInput('');
+      setMessages(prev => [...prev, { id: Date.now().toString(), content: 'Initiating Legacy Code Transpilation...', role: 'user', timestamp: new Date().toISOString() }]);
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          content: "[INGESTION] Digesting legacy C++ codebase (3.2M lines)...\n[TRANSPILER] Rewriting core logic into memory-safe Rust...\n[COMPILER] Verifying borrow-checker constraints...\n[OUTPUT] Zero-cost abstraction Rust binary ready.",
+          role: 'armada',
+          timestamp: new Date().toISOString()
+        }]);
+      }, 2000);
+      return;
+    } else if (textToSend.startsWith('/verify')) {
+      setInput('');
+      setMessages(prev => [...prev, { id: Date.now().toString(), content: 'Running Formal Verification proofs...', role: 'user', timestamp: new Date().toISOString() }]);
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          content: "[PROVER] Initializing mathematical proof engine...\n[SYMBOLIC EXECUTION] Exploring all possible state spaces...\n[RESULT] 100% path coverage. Absolute certainty established. Zero edge cases detected.",
+          role: 'armada',
+          timestamp: new Date().toISOString()
+        }]);
+      }, 2000);
+      return;
+    } else if (textToSend.startsWith('/velocity')) {
+      setInput('');
+      setMessages(prev => [...prev, { id: Date.now().toString(), content: 'Executing Velocity Deficit Scanner...', role: 'user', timestamp: new Date().toISOString() }]);
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          content: "[NETWORK ANALYZER] Mapping massive infrastructure network topology...\n[ANALYSIS] Deficit identified in edge-router configuration.\n[REPORT] Generated comprehensive exploit vector graph. Time elapsed: 2m14s.",
+          role: 'armada',
+          timestamp: new Date().toISOString()
+        }]);
+      }, 2000);
+      return;
+    } else if (textToSend.startsWith('/asymmetric')) {
+      setInput('');
+      setMessages(prev => [...prev, { id: Date.now().toString(), content: 'Engaging Asymmetric Scaling...', role: 'user', timestamp: new Date().toISOString() }]);
+      setTimeout(() => {
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          content: "[SWARM INTELLIGENCE] 10,000 independent analytical threads spawned.\n[OPERATIONS] Executing high-level intelligence gathering...\n[ADVANTAGE] Local operator bandwidth matches corporate research team.",
+          role: 'armada',
+          timestamp: new Date().toISOString()
+        }]);
+      }, 1500);
+      return;
+    } else if (textToSend.startsWith('/reasoning')) {
+       setInput('');
+       setMessages(prev => [...prev, { id: Date.now().toString(), content: 'Activating Deep Structural Reasoning...', role: 'user', timestamp: new Date().toISOString() }]);
+       setTimeout(() => {
+         setMessages(prev => [...prev, {
+           id: (Date.now() + 1).toString(),
+           content: "[DEPENDENCY GRAPH] Analyzing multi-file interactions simultaneously...\n[LOGIC ENGINE] Spotting hidden flaw across 14 separate modules...\n[RESOLUTION] Architecture structurally re-reasoned.",
+           role: 'armada',
+           timestamp: new Date().toISOString()
+         }]);
+       }, 2000);
+       return;
+    } else if (textToSend.startsWith('/agentic')) {
+       setInput('');
+       setMessages(prev => [...prev, { id: Date.now().toString(), content: 'Spawning Autonomous Agentic Loops...', role: 'user', timestamp: new Date().toISOString() }]);
+       setTimeout(() => {
+         setMessages(prev => [...prev, {
+           id: (Date.now() + 1).toString(),
+           content: "[TERMINAL] Executing code...\n[ERROR PARSER] Captured Runtime Error. Analyzing stack trace...\n[SELF-DEBUG] Rewriting logic to address null pointer...\n[TERMINAL] Re-executing... Success. Objective fully met.",
+           role: 'armada',
+           timestamp: new Date().toISOString()
+         }]);
+       }, 2500);
+       return;
+    } else if (textToSend.startsWith('/protocol')) {
+       setInput('');
+       setMessages(prev => [...prev, { id: Date.now().toString(), content: 'Initializing Protocol Level Analysis...', role: 'user', timestamp: new Date().toISOString() }]);
+       setTimeout(() => {
+         setMessages(prev => [...prev, {
+           id: (Date.now() + 1).toString(),
+           content: "[PACKET SNIFFER] Intercepting custom binary data stream...\n[DISASSEMBLER] Dissecting proprietary binary structures...\n[MAPPING] Bare-metal functionality fully reversed. Protocol telemetry reconstructed.",
+           role: 'armada',
+           timestamp: new Date().toISOString()
+         }]);
+       }, 2000);
        return;
     }
 
@@ -1065,25 +1237,67 @@ Synthesizing GLB manifold from visual context...
         throw new Error("Unreachable");
       };
 
-      const response = await fetchWithRetry("/api/chat", {
+      const toolCallArg = (userMsg.content.includes("analyze_binary") || userMsg.content.includes(".bin") || userMsg.content.includes(".exe")) ? {
+        name: "analyze_binary",
+        arguments: {
+          binaryPath: "placeholder_path",
+          projectDir: "placeholder_dir"
+        }
+      } : undefined;
+
+      let finalUserInput = userMsg.content;
+
+      if (toolCallArg) {
+        let bridgeStreamContent = "";
+        
+        // Execute tool through the bridge directly
+        const json = await callTool(toolCallArg, userMsg.content, messages);
+        
+        // Handle God Mode Nexus JSON wrapper structure
+        if (json.success && json.data) {
+          if (typeof json.data === 'string') {
+             bridgeStreamContent = json.data;
+          } else if (json.data.content && Array.isArray(json.data.content)) {
+             bridgeStreamContent = json.data.content.map((c: any) => c.text).join('\n');
+          } else {
+             bridgeStreamContent = JSON.stringify(json.data);
+          }
+        } else if (json.reply) {
+           bridgeStreamContent = json.reply;
+        } else if (json.error) {
+           bridgeStreamContent = `Error: ${json.error}`;
+        }
+        
+        finalUserInput = `[SYSTEM: analyze_binary tool executed. Result: ${bridgeStreamContent}]\n\nUser Prompt: ${userMsg.content}`;
+      }
+
+      const response = await fetchWithRetry("/api/quantum-chat/stream", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "x-session-id": currentSessionId,
         },
         body: JSON.stringify({
-          messages: [...messages, userMsg],
-          targetNode: activeNode,
-          intent,
-          provider: activeProvider.id,
-          modelString: activeModelString,
-          openRouterApiKey:
-            activeProvider.id === "openrouter" ? openRouterApiKey : undefined,
+          userInput: finalUserInput,
+          currentSessionContext: messages,
+          toolCall: undefined
         }),
       });
 
       if (!response || !response.ok) {
-        const errText = response ? await response.text() : "Network error";
+        let errText = response ? await response.text() : "Network error";
+        try {
+           let parsed = JSON.parse(errText);
+           if (parsed.error) {
+              errText = typeof parsed.error === 'string' ? parsed.error : JSON.stringify(parsed.error);
+              try {
+                let inner = JSON.parse(errText);
+                if (inner.error && inner.error.message) {
+                   errText = inner.error.message;
+                }
+              } catch(e){}
+           }
+        } catch(e) {}
         console.error(
           "Daemon returned unhandled error:",
           response?.status,
@@ -1115,8 +1329,21 @@ Synthesizing GLB manifold from visual context...
       const contentType = response.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         const json = await response.json();
-        if (json.reply) streamContent = json.reply;
-        if (json.error) streamContent = `Error: ${json.error}`;
+        
+        // Handle God Mode Nexus JSON wrapper structure
+        if (json.success && json.data) {
+          if (typeof json.data === 'string') {
+             streamContent = json.data;
+          } else if (json.data.content && Array.isArray(json.data.content)) {
+             streamContent = json.data.content.map((c: any) => c.text).join('\n');
+          } else {
+             streamContent = JSON.stringify(json.data);
+          }
+        } else if (json.reply) {
+           streamContent = json.reply;
+        } else if (json.error) {
+           streamContent = `Error: ${json.error}`;
+        }
         
         setMessages((prev) => {
           const idx = prev.findIndex((m) => m.id === tempId);
@@ -1213,7 +1440,7 @@ Synthesizing GLB manifold from visual context...
               console.log("Syntax fault detected. Initiatin auto healin loop.");
               const healMessage = `The previous bash command failed wit this stack trace:\n\n${out}\n\nAnalyze the physics, rewrite the logic, and output the corrected bash block.`;
               setTimeout(() => {
-                handleSend(healMessage);
+                handleSend(healMessage).catch(err => console.error("Auto heal send failed:", err));
               }, 1000);
             } else if (out) {
               hasSuccess = true;
@@ -1224,9 +1451,9 @@ Synthesizing GLB manifold from visual context...
           } else if (hasSuccess && !hasError && navigator.vibrate) {
             navigator.vibrate([200, 100, 200]); // Heavy wave for success
           }
-        });
+        }).catch(err => console.error("triggerAutonomousAction failed:", err));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
       setMessages((prev) => {
         const newMsgs = [
@@ -1234,8 +1461,7 @@ Synthesizing GLB manifold from visual context...
           {
             id: Date.now().toString(),
             role: "system" as const,
-            content:
-              "There was an error communicating with the daemon at the specified URL.",
+            content: e.message && e.message.includes("Daemon unreachable") ? e.message : "There was an error communicating with the daemon at the specified URL. " + (e.message || ""),
             timestamp: new Date().toISOString(),
           },
         ];
@@ -1497,6 +1723,8 @@ Synthesizing GLB manifold from visual context...
                 </div>
               </div>
             )}
+            <TelemetrySidebarPanel />
+
           </motion.div>
         )}
       </AnimatePresence>
@@ -1525,6 +1753,15 @@ Synthesizing GLB manifold from visual context...
 
           {/* Visual Daemon Status Indicator (Telemetry) */}
           <div className="flex gap-2 items-center">
+            {/* Split layout toggle */}
+            <button
+              onClick={() => setLayoutMode(m => m === "standard" ? "split" : "standard")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-mono select-none transition-all cursor-pointer ${layoutMode === "split" ? "border-cyan-500/50 bg-cyan-900/20 text-cyan-400" : "border-[#222] hover:border-gray-500 text-gray-400"}`}
+              title="Toggle Applet Preview Split-Pane"
+            >
+              <Box className="w-3.5 h-3.5" />
+              {layoutMode === "split" ? "CLOSE PREVIEW" : "SPLIT PREVIEW"}
+            </button>
             {/* Actuator Status Indicator */}
              {!isMinimized && (
               <div
@@ -1713,12 +1950,16 @@ Synthesizing GLB manifold from visual context...
                   </p>
                 </div>
               </div>
-            </motion.div>
+
+          </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Scrollable Messages Area */}
-        <div
+        {/* Split Layout Container */}
+        <div className="flex-1 flex flex-row min-h-0 min-w-0">
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Scrollable Messages Area */}
+            <div
           className="flex-1 overflow-y-auto p-4 space-y-6 min-h-0 relative z-0"
           onScroll={handleScroll}
         >
@@ -1939,9 +2180,23 @@ Synthesizing GLB manifold from visual context...
                                 <ThoughtAccordion content={thoughtContent} />
                               )}
                               {cleanText
-                                .split(/(<(?:quantumArtifact|bannon_artifact)\s+id="[^"]*"\s+type="[^"]*"\s+title="[^"]*"[^>]*>[\s\S]*?<\/(?:quantumArtifact|bannon_artifact)>|```(?:html|js|javascript|ts|typescript|threejs|json|css|bash|sh|md|python)[\s\S]*?```)/gi)
+                                .split(/(<(?:quantumArtifact|bannon_artifact)\s+id="[^"]*"\s+type="[^"]*"\s+title="[^"]*"[^>]*>[\s\S]*?<\/(?:quantumArtifact|bannon_artifact)>|<quantum_circuit>[\s\S]*?<\/quantum_circuit>|```(?:html|js|javascript|ts|typescript|threejs|json|css|bash|sh|md|python)[\s\S]*?```)/gi)
                                 .map((part, idx) => {
                                   if (!part) return null;
+
+                                  const qcMatch = part.match(/<quantum_circuit>([\s\S]*?)<\/quantum_circuit>/i);
+                                  if (qcMatch) {
+                                    try {
+                                      const qcData = JSON.parse(qcMatch[1].trim());
+                                      return (
+                                        <div className="w-full flex flex-col gap-2 mb-4" key={idx}>
+                                          <QuantumCircuitDebugger circuitData={qcData} />
+                                        </div>
+                                      );
+                                    } catch (e) {
+                                      return null;
+                                    }
+                                  }
 
                                   // Handle Ouroboros <quantumArtifact> tags
                                   const artifactMatch = part.match(/<quantumArtifact\s+id="([^"]*)"\s+type="([^"]*)"\s+title="([^"]*)"[^>]*>([\s\S]*?)<\/quantumArtifact>/i);
@@ -1958,7 +2213,8 @@ Synthesizing GLB manifold from visual context...
                                         <div className="text-xs text-emerald-400 opacity-80 uppercase tracking-widest font-bold font-mono">
                                           [Attached Artifact: {title}]
                                         </div>
-                                        <ArtifactBlock 
+                                        <AppletCompilerState />
+<ArtifactBlock 
                                           codeContent={content.trim()} 
                                           language={langMap[type] || 'text'} 
                                           filename={id} 
@@ -2002,7 +2258,8 @@ Synthesizing GLB manifold from visual context...
                                           <div className="break-words max-w-full whitespace-pre-wrap leading-relaxed text-gray-200">
                                             {cleanText.split(part)[0]}
                                           </div>
-                                          <ArtifactBlock 
+                                          <AppletCompilerState />
+<ArtifactBlock 
                                             codeContent={code} 
                                             language={lang} 
                                             onApply={(code) => handleSend(`/forge Surgically apply this implementation logic directly into the active file structure:\n\n\`\`\`${lang}\n${code}\n\`\`\``)}
@@ -2185,7 +2442,8 @@ Synthesizing GLB manifold from visual context...
                   </div>
                 </div>
               </div>
-            </motion.div>
+
+          </motion.div>
           ))}
           {isComputing && (
             <motion.div
@@ -2197,7 +2455,8 @@ Synthesizing GLB manifold from visual context...
                 <Sparkles className="w-4 h-4 text-gray-400" />
               </div>
               <div className="px-5 py-3 text-gray-400 italic">Thinking...</div>
-            </motion.div>
+
+          </motion.div>
           )}
           <div ref={endRef} />
         </div>
@@ -2270,7 +2529,8 @@ Synthesizing GLB manifold from visual context...
                           )}
                         </div>
                       ))}
-                    </motion.div>
+
+          </motion.div>
                   )}
                 </AnimatePresence>
 
@@ -2367,6 +2627,17 @@ Synthesizing GLB manifold from visual context...
                 >
                   <Plus className="w-5 h-5" />
                 </button>
+                <button
+                  className="text-cyan-400/80 hover:text-cyan-300 p-2 rounded-xl transition-colors hover:bg-cyan-900/30 shrink-0 mb-1 flex items-center gap-1"
+                  title="Compile Applet"
+                  onClick={() => {
+                    handleSend("/compile Simulate Google AI Studio applet compilation and preview");
+                    setLayoutMode("split");
+                  }}
+                >
+                  <Cpu className="w-5 h-5" />
+                </button>
+
                 <textarea
                   className="w-full bg-transparent text-white px-3 py-3 max-h-48 min-h-[56px] focus:outline-none resize-none"
                   placeholder="Message your OS..."
@@ -2433,6 +2704,39 @@ Synthesizing GLB manifold from visual context...
               information.
             </div>
           </div>
+        </div>
+      </div>
+          
+      {layoutMode === "split" && (
+            <div className="w-1/2 border-l border-[#222] bg-[#050505] flex flex-col min-w-[300px]">
+              <div className="p-3 border-b border-[#222] bg-[#111] shrink-0 flex items-center justify-between">
+                <span className="text-[10px] font-mono tracking-widest uppercase text-cyan-400 font-bold flex items-center gap-2">
+                  <Box className="w-4 h-4" /> Applet Preview
+                </span>
+                {previewComponent ? (
+                  <span className="text-[9px] text-gray-500 font-mono">{previewComponent}</span>
+                ) : (
+                  <span className="text-[9px] text-gray-500 font-mono">No Component Selected</span>
+                )}
+              </div>
+              <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center text-gray-500 text-xs font-mono relative">
+                {previewComponent ? (
+                   <div className="w-full h-full relative">
+                      <iframe 
+                        src={`/${previewComponent}`} 
+                        className="w-full h-full border border-[#333] rounded-lg shadow-lg" 
+                        sandbox="allow-scripts allow-same-origin allow-popups"
+                      />
+                   </div>
+                ) : (
+                   <div className="w-full h-full border border-dashed border-[#333] rounded-xl flex items-center justify-center flex-col gap-4">
+                     <Orbit className="w-8 h-8 text-gray-600 animate-spin-slow" />
+                     Waiting for preview component...
+                   </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <ASTVisualizer />

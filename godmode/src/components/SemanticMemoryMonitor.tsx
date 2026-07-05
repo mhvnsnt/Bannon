@@ -192,48 +192,18 @@ export default function SemanticMemoryMonitor() {
   };
 
   // Run a real client-side simulation test of embedding model metrics
-  const runEmbeddingHealthTests = () => {
+  const runEmbeddingHealthTests = async () => {
     setTestingHealth(true);
     setHealthReport(null);
-    setTimeout(() => {
-      // Measure real CPU calculation latency for cosine sim of large dimensions
-      const start = performance.now();
-      const dims = 768; // nomic dimension size
-      let acc = 0;
-      for (let i = 0; i < 500; i++) {
-        const v1 = Array.from({ length: dims }, () => Math.random());
-        const v2 = Array.from({ length: dims }, () => Math.random());
-        let dot = 0, norm1 = 0, norm2 = 0;
-        for (let j = 0; j < dims; j++) {
-          dot += v1[j] * v2[j];
-          norm1 += v1[j] * v1[j];
-          norm2 += v2[j] * v2[j];
-        }
-        acc += dot / (Math.sqrt(norm1) * Math.sqrt(norm2));
-      }
-      const dur = performance.now() - start;
-
-      // Mock LRU hits/misses based on 500 queries
-      const simulatedHits = Math.floor(Math.random() * 150) + 300;
-      const simulatedMisses = 500 - simulatedHits;
-
-      setHealthReport({
-        cacheHits: simulatedHits,
-        cacheMisses: simulatedMisses,
-        hitRatio: (simulatedHits / 500) * 100,
-        similarityAccuracy: 99.98,
-        fallbackActive: false,
-        latencies: [
-          Math.floor(Math.random() * 10) + 70,
-          Math.floor(Math.random() * 15) + 75,
-          Math.floor(Math.random() * 8) + 80,
-          Math.floor(dur / 5) + 65,
-          Math.floor(Math.random() * 12) + 78,
-          Math.floor(Math.random() * 20) + 82
-        ]
-      });
+    try {
+      const res = await fetch('/api/armada/semantic/health', { method: 'POST' });
+      const data = await res.json();
+      setHealthReport(data);
+    } catch (e) {
+      console.error("Health check error", e);
+    } finally {
       setTestingHealth(false);
-    }, 1200);
+    }
   };
 
   useEffect(() => {

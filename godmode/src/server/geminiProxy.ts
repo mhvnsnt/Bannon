@@ -62,9 +62,9 @@ export class GoogleGenAI extends OriginalGoogleGenAI {
       const origGenerateContent = (this as any).models.generateContent.bind((this as any).models);
       (this as any).models.generateContent = async (params: any, ...args: any[]) => {
         if (params && params.model) {
-          if (params.model === 'gemini-1.5-flash' || params.model === 'gemini-2.0-flash' || params.model === 'gemini-2.0-flash-thinking' || params.model === 'gemini-3.5-flash') {
-            console.log(`[GoogleGenAI Proxy] Mapping model ${params.model} -> gemini-3.5-flash`);
-            params.model = 'gemini-3.5-flash';
+          if (params.model === 'gemini-1.5-flash' || params.model === 'gemini-2.0-flash' || params.model === 'gemini-2.0-flash-thinking' || params.model === 'gemini-1.5-flash') {
+            console.log(`[GoogleGenAI Proxy] Mapping model ${params.model} -> gemini-1.5-flash`);
+            params.model = 'gemini-1.5-flash';
           } else if (params.model === 'gemini-1.5-pro' || params.model === 'gemini-2.0-pro' || params.model === 'gemini-pro-1.5' || params.pro === 'gemini-pro' || params.model === 'gemini-3.1-pro-preview') {
             console.log(`[GoogleGenAI Proxy] Mapping model ${params.model} -> gemini-3.1-pro-preview`);
             params.model = 'gemini-3.1-pro-preview';
@@ -76,9 +76,9 @@ export class GoogleGenAI extends OriginalGoogleGenAI {
       const origGenerateContentStream = (this as any).models.generateContentStream.bind((this as any).models);
       (this as any).models.generateContentStream = async (params: any, ...args: any[]) => {
         if (params && params.model) {
-          if (params.model === 'gemini-1.5-flash' || params.model === 'gemini-2.0-flash' || params.model === 'gemini-2.0-flash-thinking' || params.model === 'gemini-3.5-flash') {
-            console.log(`[GoogleGenAI Proxy] Mapping stream model ${params.model} -> gemini-3.5-flash`);
-            params.model = 'gemini-3.5-flash';
+          if (params.model === 'gemini-1.5-flash' || params.model === 'gemini-2.0-flash' || params.model === 'gemini-2.0-flash-thinking' || params.model === 'gemini-1.5-flash') {
+            console.log(`[GoogleGenAI Proxy] Mapping stream model ${params.model} -> gemini-1.5-flash`);
+            params.model = 'gemini-1.5-flash';
           } else if (params.model === 'gemini-1.5-pro' || params.model === 'gemini-2.0-pro' || params.model === 'gemini-pro-1.5' || params.pro === 'gemini-pro' || params.model === 'gemini-3.1-pro-preview') {
             console.log(`[GoogleGenAI Proxy] Mapping stream model ${params.model} -> gemini-3.1-pro-preview`);
             params.model = 'gemini-3.1-pro-preview';

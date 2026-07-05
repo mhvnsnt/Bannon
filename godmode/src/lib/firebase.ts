@@ -46,27 +46,32 @@ function setOfflineMode(value: boolean) {
 
 function wrapAuthMethods() {
   if (!auth) return;
-  const originalOnAuthStateChanged = auth.onAuthStateChanged.bind(auth);
-  auth.onAuthStateChanged = (cb: any) => {
-    activeAuthListeners.push(cb);
-    const unsub = originalOnAuthStateChanged(cb);
-    return () => {
-      const idx = activeAuthListeners.indexOf(cb);
-      if (idx > -1) activeAuthListeners.splice(idx, 1);
-      try { unsub(); } catch (e) {}
+  
+  if (typeof auth.onAuthStateChanged === 'function') {
+    const originalOnAuthStateChanged = auth.onAuthStateChanged.bind(auth);
+    auth.onAuthStateChanged = (cb: any) => {
+      activeAuthListeners.push(cb);
+      const unsub = originalOnAuthStateChanged(cb);
+      return () => {
+        const idx = activeAuthListeners.indexOf(cb);
+        if (idx > -1) activeAuthListeners.splice(idx, 1);
+        try { unsub(); } catch (e) {}
+      };
     };
-  };
+  }
 
-  const originalOnIdTokenChanged = auth.onIdTokenChanged.bind(auth);
-  auth.onIdTokenChanged = (cb: any) => {
-    activeIdTokenListeners.push(cb);
-    const unsub = originalOnIdTokenChanged(cb);
-    return () => {
-      const idx = activeIdTokenListeners.indexOf(cb);
-      if (idx > -1) activeIdTokenListeners.splice(idx, 1);
-      try { unsub(); } catch (e) {}
+  if (typeof auth.onIdTokenChanged === 'function') {
+    const originalOnIdTokenChanged = auth.onIdTokenChanged.bind(auth);
+    auth.onIdTokenChanged = (cb: any) => {
+      activeIdTokenListeners.push(cb);
+      const unsub = originalOnIdTokenChanged(cb);
+      return () => {
+        const idx = activeIdTokenListeners.indexOf(cb);
+        if (idx > -1) activeIdTokenListeners.splice(idx, 1);
+        try { unsub(); } catch (e) {}
+      };
     };
-  };
+  }
 }
 
 // In sandboxed environments or if initialization fails, use custom non-crashing mocks to support hooks

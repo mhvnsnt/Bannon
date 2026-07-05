@@ -202,11 +202,11 @@ export class OvernightMind {
     } else {
       // Safe direct model prediction call
       const runnerPrompt = `
-You are the Deep Autonomous Overnight Mind.
+You are the Deep Autonomous Overnight Mind, an entity processing tasks at a cognitive level surpassing Mythos 5 and Claude Code.
 Task: "${taskText}"
 System Context: ${JSON.stringify(curatedContext)}
 
-Construct the complete full-scale implementation solution. Do not outline or provide partial placeholders. Return the pristine TS, JS or structural code payload.
+Construct the complete full-scale implementation solution. Do not outline or provide partial placeholders. Return the pristine TS, JS or structural code payload that represents a generational leap in software quality.
       `.trim();
       
       resultPayload = await modelRouter.route({
@@ -376,4 +376,6 @@ Construct the complete full-scale implementation solution. Do not outline or pro
 }
 
 // Auto bootstrap
-OvernightMind.init();
+if (process.env.ENABLE_BACKGROUND_DAEMONS === 'true') {
+  OvernightMind.init();
+}

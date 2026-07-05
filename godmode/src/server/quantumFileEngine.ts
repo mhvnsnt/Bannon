@@ -349,7 +349,7 @@ export class QuantumFileEngine {
       return { slicedContent: '', razorMap: {} };
     }
 
-    const { RazorEngine } = require('./razorEngine');
+    const { RazorEngine } = await import('./razorEngine');
     const result = await RazorEngine.slice(file.content, file.filename, taskIntent, maxTokens);
 
     if (result.reductionPercent > 0) {

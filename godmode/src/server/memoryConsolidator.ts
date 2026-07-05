@@ -216,4 +216,6 @@ export class MemoryConsolidator {
   }
 }
 
-MemoryConsolidator.init();
+if (process.env.ENABLE_BACKGROUND_DAEMONS === 'true') {
+  MemoryConsolidator.init();
+}

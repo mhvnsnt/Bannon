@@ -48,7 +48,7 @@ Translate this user vision: "${rawCommand}"`;
 
     try {
       const response = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: 'gemini-1.5-flash',
         contents: systemPrompt,
         config: {
           responseMimeType: 'application/json'

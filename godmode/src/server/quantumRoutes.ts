@@ -36,9 +36,9 @@ quantumRoutes.get('/versions/:fileId', (req, res) => {
   }
 });
 
-quantumRoutes.get('/session/:sessionId/:fileId', (req, res) => {
+quantumRoutes.get('/session/:sessionId/:fileId', async (req, res) => {
   try {
-    const session = QuantumContextManager.getSession(req.params.sessionId, req.params.fileId);
+    const session = await QuantumContextManager.getSession(req.params.sessionId, req.params.fileId);
     res.json({ success: true, messages: session.messages });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -76,7 +76,7 @@ quantumRoutes.post('/message', async (req, res) => {
   try {
     const { sessionId, fileId, message, directiveContext, useRazor, taskIntent } = req.body;
     
-    QuantumContextManager.saveMessage(sessionId, fileId, 'user', message);
+    await QuantumContextManager.saveMessage(sessionId, fileId, 'user', message);
     
     const { prompt, tokenCount, razorMap } = await QuantumContextManager.buildPrompt(sessionId, fileId, message, taskIntent, useRazor);
     
@@ -87,7 +87,7 @@ quantumRoutes.post('/message', async (req, res) => {
       context: { razorMap }
     });
 
-    QuantumContextManager.saveMessage(sessionId, fileId, 'assistant', aiResponseText);
+    await QuantumContextManager.saveMessage(sessionId, fileId, 'assistant', aiResponseText);
 
     let fileUpdated = false;
     let newVersionNumber = 0;

@@ -72,7 +72,7 @@ Analyze whether this represents a systemic architectural issue or a one-time pro
     nexusBus.on('INDEX_COVERAGE_LOW', async (event: { table: string; coveragePct: number }) => {
       console.log(`[SpineWiring] [SYNAPSE 14] INDEX_COVERAGE_LOW observed on table '${event.table}' (${event.coveragePct.toFixed(1)}%). Launching automatic full sweep...`);
       try {
-        const { SemanticSearch } = require('./semanticSearch');
+        const { SemanticSearch } = await import('./semanticSearch');
         const report = await SemanticSearch.indexAll();
         console.log(`[SpineWiring] Automated sweep complete: indexing dur=${report.durationMs}ms, added=${report.rowsAdded}, engine=${report.engine}`);
       } catch (e: any) {
@@ -90,4 +90,6 @@ Analyze whether this represents a systemic architectural issue or a one-time pro
 import crypto from 'crypto';
 
 // Auto init
-SpineWiring.init();
+if (process.env.ENABLE_BACKGROUND_DAEMONS === 'true') {
+  SpineWiring.init();
+}

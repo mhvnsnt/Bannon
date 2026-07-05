@@ -1,7 +1,5 @@
 import path from 'path';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
+import Database from 'better-sqlite3';
 
 export function runProjectMigrations() {
   console.log('[ProjectMigrations] Starting Project ID schema synchronization...');
@@ -10,16 +8,15 @@ export function runProjectMigrations() {
   const bannonPhysicsDbPath = path.join(process.cwd(), 'bannon_physics.db');
   const memoryVaultDbPath = path.join(process.cwd(), 'memory_vault.db');
 
-  let Database;
+  let bannonDb;
+  let memoryDb;
   try {
-    Database = require('better-sqlite3');
+    bannonDb = new Database(bannonPhysicsDbPath);
+    memoryDb = new Database(memoryVaultDbPath);
   } catch(e) {
     console.log('[ProjectMigrations] better-sqlite3 not available. Skipping schema synchronization.');
     return;
   }
-
-  const bannonDb = new Database(bannonPhysicsDbPath);
-  const memoryDb = new Database(memoryVaultDbPath);
 
   // Helper to safely add project_id column
   const ensureProjectIdColumn = (db: any, tableName: string) => {

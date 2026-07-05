@@ -334,5 +334,7 @@ Formulate your response as a JSON block with two fields:
   }
 }
 
-// Self boot
-NexusMind.init();
+// Self boot if enabled
+if (process.env.ENABLE_BACKGROUND_DAEMONS === 'true') {
+  NexusMind.init();
+}

@@ -1,3 +1,5 @@
+import { EntangledAgentMemory } from './EntangledAgentMemory';
+import { useQuantumEngine } from '../hooks/useQuantumEngine';
 import React, { useState, useEffect } from 'react';
 import { PANELS } from '../App';
 import { motion } from 'framer-motion';
@@ -24,6 +26,20 @@ interface ASTEngineMetrics {
 }
 
 export default function GodModeOS({ onNavigate }: { onNavigate: (id: string, isRightPanel: boolean) => void }) {
+  const { applyHadamard, entangle, measureAndCollapse, collapsedState } = useQuantumEngine(4);
+
+  useEffect(() => {
+    // Entangle agents 0, 1, 2 periodically
+    const iv = setInterval(() => {
+      applyHadamard(0);
+      entangle(0, 1);
+      entangle(1, 2);
+      const path = measureAndCollapse();
+      // console.log("GodModeOS: Agents Quantum Collapsed to logic path:", path);
+    }, 5000);
+    return () => clearInterval(iv);
+  }, [applyHadamard, entangle, measureAndCollapse]);
+
   const [systemTime, setSystemTime] = useState("");
   const [activeTab, setActiveTab] = useState<'dashboard_monitor' | 'live_stream_logs' | 'modules'>('dashboard_monitor');
   const [ipcLogs, setIpcLogs] = useState<IPCLog[]>([]);
@@ -158,6 +174,11 @@ export default function GodModeOS({ onNavigate }: { onNavigate: (id: string, isR
             initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} 
             style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}
           >
+
+            <div style={{ border: '1px solid #00ff66', padding: '20px', background: '#0c0c10', gridColumn: 'span 2' }}>
+              <EntangledAgentMemory />
+            </div>
+
             <div style={{ border: '1px solid #00ff66', padding: '20px', background: '#0c0c10' }}>
               <h3 style={{ margin: '0 0 14px 0', borderBottom: '1px solid #222', paddingBottom: '6px' }}>[ LOCAL PARSING ENGINE DATA ]</h3>
               <p>System Loop Execution Latency: <span style={{ color: '#fff' }}>{astEngineMetrics.latency}ms</span></p>

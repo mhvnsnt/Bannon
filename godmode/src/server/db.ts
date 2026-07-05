@@ -1,12 +1,9 @@
 import path from 'path';
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
+import Database from 'better-sqlite3';
 
 export let memoryVault: any;
 
 try {
-  const Database = require('better-sqlite3');
   const dbPath = path.resolve('bannon_physics.db');
   memoryVault = new Database(dbPath, { verbose: null });
   memoryVault.pragma('foreign_keys = ON');

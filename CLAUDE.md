@@ -94,6 +94,28 @@ Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (mas
 - `rig_tools_3.67.12.zip` — Auto-Rig Pro (Blender addon; teammate installs in Blender).
 - `uploads_files_147201_Steel_Steps.zip` — ringside steel steps (3MF -> convert to GLB prop).
 
+## Integrated drops (2026-07-05 pass — zips opened, gold extracted into the repo)
+- **`docs/mocap_orientation_master_prompt.md` — BINDING owner rules for ALL move/mocap/pose work.**
+  Orientation before magnitude: verify body up-vector, facing vs opponent, attacker side, and joint
+  bend direction via full-FK world transforms BEFORE trusting any rotation number. Documented failure
+  modes: frog splash built like a dropkick, swanton/moonsault mirrored, suplex families wrongly
+  merged. READ IT before authoring/judging any move.
+- `assets/mocap/mocap_data_partial.json` — first extracted two-fighter clip (AlternatingForearms,
+  144 joints, 97 frames, phases + joint_curves + hip_height_curve). `tools/extract_anim.py` = the
+  extractor. Feed into STUDIO clips / grapple mocap slots (poseGrabbed LIFT/CARRY hooks exist).
+- `godmode/` REFRESHED from `God-Mode-OS-D3MN-V2-main (4).zip` (newest; (3) older, superseded).
+  New: `BANNON_AAA_v21_2K_mocap_2.html` (owner's 2K-mocap game snapshot, 41 STUDIO.clips refs —
+  HARVEST TARGET for v150 clip import), `BANNON_SWARM_BUILDER_v50_1.html`, `orchestrator-core.ts`,
+  new daemon components (AP2SpendControls/ActuatorControlPanel/DynamicToolForge/…), scripts for
+  cloudflare-tunnel + termux daemon. Kept our extra `app/`, `vault/`, `check_db.cjs`.
+- `spatial-command-architecture-(sca) (7).zip` — owner's AI-Studio (Gemini) scaffold of the same
+  architecture (DaemonCore/CombatAI/MatchDirector TS mirrors — we already have better in-repo).
+  Gold extracted (mocap json/extractor/rules doc above); rest is reference only.
+- `harness-main.zip` + `claude-plugins-official-main.zip` — Claude Code plugin tooling (reference
+  for making me more autonomous; marketplace format). `palmier-pro-main.zip` — Metal shader effects
+  (ChromaKey/Clarity/Glow) reference. `ai-website-cloner-template-master.zip` — agent skill template
+  reference. None need in-repo integration beyond this note.
+
 ## Combat roadmap (task #21, from BLUEPRINT.next)
 SHIPPED: springboard rope-plant VAULT in-between (state 'vault' -> dive from rope height); grounded
 HEAD/FEET/SIDE zoning (groundZoneOf: verlet head-vs-midfeet axis, backward-fall facing fallback)

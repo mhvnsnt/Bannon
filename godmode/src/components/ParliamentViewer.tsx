@@ -42,8 +42,8 @@ export default function ParliamentViewer() {
     const [simulationLog, setSimulationLog] = useState<string[]>([]);
     const [seatConfig, setSeatConfig] = useState({
         proposer: 'anthropic/claude-3-5-sonnet',
-        critic: 'google/gemini-2.5-pro',
-        validator: 'google/gemini-3.5-flash',
+        critic: 'google/gemini-1.5-pro',
+        validator: 'google/gemini-1.5-flash',
         profile: 'DEFAULT',
         autoSelect: true
     });
@@ -189,9 +189,9 @@ export class GrapplePhysicsEngine {
 
     const handleProfileChange = (profile: string) => {
         const specs: any = {
-            DEFAULT: { proposer: 'anthropic/claude-3-5-sonnet', critic: 'google/gemini-2.5-pro', validator: 'google/gemini-3.5-flash' },
-            GAME_BUILD: { proposer: 'anthropic/claude-3-5-sonnet', critic: 'anthropic/claude-3-5-sonnet', validator: 'google/gemini-3.5-flash' },
-            FAST: { proposer: 'google/gemini-3.5-flash', critic: 'google/gemini-3.5-flash', validator: 'google/gemini-3.5-flash' },
+            DEFAULT: { proposer: 'anthropic/claude-3-5-sonnet', critic: 'google/gemini-1.5-pro', validator: 'google/gemini-1.5-flash' },
+            GAME_BUILD: { proposer: 'anthropic/claude-3-5-sonnet', critic: 'anthropic/claude-3-5-sonnet', validator: 'google/gemini-1.5-flash' },
+            FAST: { proposer: 'google/gemini-1.5-flash', critic: 'google/gemini-1.5-flash', validator: 'google/gemini-1.5-flash' },
             HEAVY: { proposer: 'anthropic/claude-3-5-opus', critic: 'anthropic/claude-3-5-opus', validator: 'anthropic/claude-3-5-sonnet' }
         };
         const selected = specs[profile] || specs.DEFAULT;

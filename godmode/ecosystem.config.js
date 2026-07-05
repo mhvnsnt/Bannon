@@ -1,7 +1,7 @@
 module.exports = {
   apps: [{
     name: "PrimeNode_Autonomous_OS",
-    script: "./dist/server.js",
+    script: "./dist/server.cjs",
     instances: "max",
     exec_mode: "cluster",
     watch: false,
