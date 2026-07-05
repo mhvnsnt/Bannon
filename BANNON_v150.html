@@ -9522,7 +9522,9 @@ function applyDamage(opp, dmg, attacker, move, forceDown){
 
   // combo
   comboCount++;
-  if (attacker) attacker.momentum = clamp((attacker.momentum||0) + 5, 0, 100);
+  // v154: the SIGNATURE half of the spirit meter fills 50% faster (owner spec) — gains below the
+  // 50-point signature threshold are boosted; the climb from 50->100 (finisher) stays standard.
+  if (attacker){ const _mg=((attacker.momentum||0)<50)?7.5:5; attacker.momentum = clamp((attacker.momentum||0) + _mg, 0, 100); }
   if (comboTimeout) clearTimeout(comboTimeout);
   comboTimeout = setTimeout(()=>{ comboCount=0; updateCombo(); }, 1400);
   updateCombo();
@@ -11682,9 +11684,25 @@ function playerAttack(kind){
   const m = Object.assign({}, mv);   // the directional strike keeps its own height (low/mid/high)
   if (powerMod){ m._loaded=true; if (m.power>66) m.follow = 'KNOCKDOWN'; }
   if (p.running){ m._loaded=true; }   // running strike hits harder & lunges
+  // v154 SIGNATURE -> FINISHER BANK (owner spec): MOD + jab at 50+ momentum = the character's
+  // SIGNATURE (named from CHAR_FINISHERS.sig where authored) — it spends 50 momentum, hits hard,
+  // and BANKS a stored finisher (max 3). The banked finisher can be spent any time with MOD+special
+  // even below full momentum. Signature meter effectively fills 50% faster (gain boost below 50).
+  if (kind==='jab' && powerMod && (p.momentum||0)>=50 && !p.grappling){
+    p.momentum-=50; p._finBank=Math.min(3,(p._finBank||0)+1);
+    const _sk=((p.specName||(p.opts&&p.opts.name)||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
+    const _sig=(window.CHAR_FINISHERS&&window.CHAR_FINISHERS[_sk]&&window.CHAR_FINISHERS[_sk].sig)
+      ? (window.CHAR_FINISHERS[_sk].sig+'').split('—')[0].trim() : 'SIGNATURE';
+    const sm=Object.assign({}, m, { name:_sig, power:85, follow:'KNOCKDOWN', _loaded:true, _signature:true });
+    flashScreen(0.4); camShake=Math.max(camShake,0.35);
+    announce(_sig+'  [FINISHER BANKED]', fname(p));
+    p.startAttack(sm); return;
+  }
   // FINISHER: full momentum + power-mod special = the character's NAMED finisher.
   // v153: named finishers resolve through the real systems — grapple finishers auto-run the actual
   // grab -> named-position lift -> delivery physics; strike finishers are named max-power shots.
+  // v154: a BANKED finisher (from a signature) fires the same path below full momentum.
+  if (kind==='special' && powerMod && (p._finBank||0)>0 && p.momentum<100){ p._finBank--; p.momentum=100; }
   if (kind==='special' && powerMod && p.momentum>=100){
     p.momentum = 0; flashScreen(0.7); chromAb=0.7; camShake=Math.max(camShake,0.5);
     const _fk=((p.specName||(p.opts&&p.opts.name)||'BANNON')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
@@ -13607,7 +13625,8 @@ function setupInput(){
   document.querySelectorAll('.act-btn').forEach(btn=>{
     const kind = btn.dataset.btn;
     const press = (e)=>{ e.preventDefault(); markTouch();
-      if (kind==='block'){ heldBtns['block']=true; }
+      if (window.__stunMash && fighters && fighters[0] && fighters[0].isDown()){ window.__stunMash(fighters[0]); return; }  // v154: mash any action to fight the stun clock
+      if (kind==='block'){ heldBtns['block']=true; if(window.__tryReversal) window.__tryReversal(fighters&&fighters[0]); }
       else playerAttack(kind);
     };
     const release = (e)=>{ e.preventDefault(); if(kind==='block') heldBtns['block']=false; };
@@ -34609,6 +34628,106 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   try{ if(window.MANIFESTO&&window.MANIFESTO.register) window.MANIFESTO.register({ key:'combat.envContact', kind:'gameplay',
     summary:'ring posts are live impact surfaces: velocity-scaled post impacts (damage/stagger/knockdown via the same physics selling as strikes) — Urban Reign/Def Jam environmental energy, sim-resolved', call:'ENV CONTACT interval' }); }catch(_){}
   console.log('%c[v153 ENV CONTACT] ring posts are live impact surfaces', 'color:#00ff88;font-weight:bold');
+})();
+</script>
+
+<script>
+// =============================================================================
+// v154 — 2K-STYLE REVERSAL + STUN MASH-OUT (owner control spec: docs/controls_
+// and_mechanics_spec.md). ADDITIVE on the existing controls: the DODGE/REV
+// (block) button, TAPPED inside an incoming strike's windup window, reverses —
+// the attack is cut, the attacker stumbles off-balance, the defender banks
+// momentum. A "REVERSE!" prompt flashes over the defender's head during the
+// window (2K read). Mistimed taps lock the reversal out briefly (2K penalty).
+// AI defenders roll their own reversals from stamina. Knocked-down fighters get
+// the tap-out-of-stun circle: any action button tapped while down speeds the
+// get-up (yellow ring gauge over the head drains as you mash).
+// =============================================================================
+(function(){
+  if (window.__rev154 || typeof Fighter==='undefined') return; window.__rev154=true;
+
+  // ---- floating prompt + gauge (DOM, projected from head world pos) ----
+  const _pr=document.createElement('div');
+  _pr.style.cssText='position:fixed;z-index:9200;display:none;pointer-events:none;font:bold 15px ui-monospace,monospace;color:#ffd24a;text-shadow:0 0 8px #000,0 0 14px #ff7a1a;letter-spacing:1px;transform:translate(-50%,-100%);';
+  _pr.textContent='◇ REVERSE!';
+  document.body.appendChild(_pr);
+  const _gg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  _gg.setAttribute('width','46'); _gg.setAttribute('height','46');
+  _gg.style.cssText='position:fixed;z-index:9200;display:none;pointer-events:none;transform:translate(-50%,-120%);';
+  _gg.innerHTML='<circle cx="23" cy="23" r="18" fill="none" stroke="#3338" stroke-width="5"/><circle id="ggArc" cx="23" cy="23" r="18" fill="none" stroke="#ffd24a" stroke-width="5" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="0" transform="rotate(-90 23 23)"/>';
+  document.body.appendChild(_gg);
+  const _v3=new THREE.Vector3();
+  function _headScreen(f){ try{ const wp=f.worldJoint('head'); _v3.set(wp.x,wp.y+0.28,wp.z); _v3.project(camera);
+    if(_v3.z>1) return null; return { x:(_v3.x*0.5+0.5)*window.innerWidth, y:(-_v3.y*0.5+0.5)*window.innerHeight }; }catch(_){ return null; } }
+
+  // ---- the reversal itself ----
+  window.__tryReversal = function(def){
+    try{
+      if (!def || (def._revLock||0)>0 || (def._revCd||0)>0 || def.isDown() || def.state==='grabbed') return false;
+      const atk = def.opponent && def.opponent();
+      if (!atk || atk.state!=='attack' || !atk.attackData) return false;
+      const ph = atk.attackPhase||0;
+      const d = Math.hypot(atk.x-def.x, atk.z-def.z);
+      if (d>1.9) return false;
+      if (ph<0.06 || ph>0.42){ def._revLock=1.1; return false; }   // mistimed — brief lockout, like 2K
+      def._revCd=2.4;
+      atk.hitLanded=true;                                          // the strike never registers
+      try{ atk.endAttack(); }catch(_){}
+      try{ const f=atk.forward(); atk.enterStumble ? atk.enterStumble(-f.x, 34) : (atk.state='stumble', atk.stateTime=0); }catch(_){}
+      atk.poise=Math.max(0,(atk.poise||100)-28);
+      def.momentum=Math.min(100,(def.momentum||0)+16);
+      if (typeof camShake!=='undefined') camShake=Math.max(camShake,0.3);
+      if (typeof triggerHitStop==='function') triggerHitStop(0.07);
+      if (typeof announce==='function') announce('REVERSAL!', (typeof fname==='function'?fname(def):''));
+      return true;
+    }catch(_){ return false; }
+  };
+
+  // ---- stun mash-out: any action tap while down shaves the get-up clock ----
+  window.__stunMash = function(f){
+    try{ if (f && f.isDown() && f.downTimer!=null && f.downTimer>0){ f.downTimer=Math.max(0, f.downTimer-0.14); return true; } }catch(_){}
+    return false;
+  };
+
+  // ---- per-frame-ish tick: prompt visibility, AI reversal rolls, gauge, cooldowns ----
+  setInterval(()=>{ try{
+    if (typeof gameState==='undefined' || gameState!=='fight' || typeof fighters==='undefined' || !fighters){ _pr.style.display='none'; _gg.style.display='none'; return; }
+    const dt=0.09;
+    for (const f of fighters){ if(!f) continue; f._revLock=Math.max(0,(f._revLock||0)-dt); f._revCd=Math.max(0,(f._revCd||0)-dt); }
+    const p=fighters[0];
+    // prompt: show over the PLAYER when an incoming strike is in the reversal window
+    let show=false;
+    if (p && !p.isDown() && (p._revLock||0)<=0 && (p._revCd||0)<=0){
+      const atk=p.opponent&&p.opponent();
+      if (atk && atk.state==='attack' && atk.attackData){ const ph=atk.attackPhase||0;
+        if (ph>=0.06 && ph<=0.42 && Math.hypot(atk.x-p.x,atk.z-p.z)<=1.9) show=true; }
+    }
+    if (show){ const s=_headScreen(p); if (s){ _pr.style.left=s.x+'px'; _pr.style.top=s.y+'px'; _pr.style.display='block'; } }
+    else _pr.style.display='none';
+    // stun gauge over the downed PLAYER (yellow ring drains as downTimer runs)
+    if (p && p.isDown() && p.downTimer!=null && p.downTimer>0.05){
+      const s=_headScreen(p); if (s){ const frac=Math.min(1, p.downTimer/3.0);
+        _gg.style.left=s.x+'px'; _gg.style.top=s.y+'px'; _gg.style.display='block';
+        const arc=_gg.querySelector('#ggArc'); if (arc) arc.setAttribute('stroke-dashoffset', String(113*(1-frac))); }
+    } else _gg.style.display='none';
+    // AI reversal roll: defenders read the same window, chance scales with stamina
+    for (const f of fighters){ if (!f || f.isPlayer || f.isDown()) continue;
+      const atk=f.opponent&&f.opponent();
+      if (atk && atk.state==='attack' && atk.attackData){ const ph=atk.attackPhase||0;
+        if (ph>=0.10 && ph<=0.40 && Math.hypot(atk.x-f.x,atk.z-f.z)<=1.9 && (f._revCd||0)<=0){
+          const chance=0.05 + 0.06*Math.min(1,(f.stamina||0)/(f.maxStamina||100));
+          if (Math.random()<chance) window.__tryReversal(f);
+        } } }
+  }catch(_){} }, 90);
+
+  // keyboard: SHIFT-tap already blocks; the reversal fires from the same press via keydown
+  window.addEventListener('keydown', (e)=>{ try{
+    if ((e.key==='Shift'||e.key.toLowerCase()==='h') && !e.repeat && typeof fighters!=='undefined' && fighters) window.__tryReversal(fighters[0]);
+  }catch(_){} });
+
+  try{ if(window.MANIFESTO&&window.MANIFESTO.register) window.MANIFESTO.register({ key:'combat.reversal2k', kind:'gameplay',
+    summary:'2K-style reversal on the existing DODGE/REV button: tap in the incoming strike windup (prompt flashes over your head) to cut the attack and stumble the attacker; mistimed = lockout; AI rolls reversals from stamina; downed fighters mash any action button to shave the get-up clock (ring gauge)', call:'window.__tryReversal / __stunMash' }); }catch(_){}
+  console.log('%c[v154 REVERSAL] 2K reversal window + stun mash-out live on existing controls', 'color:#00ff88;font-weight:bold');
 })();
 </script>
 

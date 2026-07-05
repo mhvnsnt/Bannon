@@ -226,6 +226,21 @@ LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding
   Verified fin.js: FINXSSE GETBACKK announces -> FIREMANS_CARRY st2 -> auto-delivers to ragdoll.
   Sub-type finishers (Anaconda Vise etc) + dive finishers (frog splash) still route as
   spike/strike — proper sub/dive wiring queued.
+- v154 (owner control spec drop -> docs/controls_and_mechanics_spec.md, BINDING for control work.
+  RULE: build ON TOP of existing controls, never replace — e.g. reversal lives on the existing
+  DODGE/REV button, NOT a new Y button): 2K REVERSAL — tap DODGE/REV (or Shift/H) inside the
+  incoming strike's windup (phase 0.06-0.42, range<1.9): attack cut, attacker stumbles+poise−28,
+  defender +16 momentum, "◇ REVERSE!" prompt projected over the player's head during the window,
+  mistimed tap = 1.1s lockout, AI defenders roll reversals from stamina (5-11%). STUN MASH-OUT —
+  while down, any action button tap shaves downTimer 0.14 (yellow SVG ring gauge over head).
+  SIGNATURE->FINISHER BANK — MOD+jab at 50+ momentum = named signature (CHAR_FINISHERS.sig),
+  −50 momentum, banks a finisher (max 3); MOD+special spends a banked finisher below full meter;
+  momentum gains below 50 boosted ×1.5 (sig meter fills 50% faster). Verified rev2.js: REVERSAL!,
+  stumble, cooldown block, mash 2.5->1.66, SIGNATURE[BANKED] 60->10 mom bank 1, banked finisher
+  fires EXECUTIONER'S DROP at 10 momentum. Spec items still queued: taunt set (crowd/opponent/
+  wake-up ×4+MOD variants), daze meter (purple, longer than stun), 5-slot sig/fin move pickers,
+  contextual LB interact button, floating left joystick, surface-matrix extension (tables/barbed
+  wire/tacks/glass/trashcan), squash-vs-epic match pacing options.
 - MOCAP HARVEST FINDING: BANNON_AAA_v21_2K_mocap_2.html has the SAME MoveNet-Thunder webcam
   recorder v150 already has — its clips live in the OWNER'S browser localStorage (STORE_KEY), not
   the file. The real harvest = convert assets/mocap/mocap_data_partial.json (144-joint two-fighter
@@ -233,6 +248,27 @@ LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding
   docs/mocap_orientation_master_prompt.md first. QUEUED as its own focused brick.
 - Verified mm.js/lms.js/fb.js: 3-man spawns (BANNON/FINXSSE/RONIN), AI brawls, elimination
   continues match, last-standing ends it; REF COUNT announces; FIRST BLOOD ends w/ bleeder hp 0.
+
+## MODEL GAP ANALYSIS (owner demand 2026-07-05: "no bullshit, why are ours so far off 2K/UFC/FN")
+Honest technical audit of the procedural body vs WWE 2K26 / EA UFC / Fight Night models:
+1. **Mesh density/topology**: ours ≈3.6k verts of swept tubes; theirs 40-80k+ sculpted meshes with
+   edge loops following musculature. Tube cross-sections can't crease at elbows/knees, can't make a
+   scapula, pec-delt tie-in, or knuckles. Gaussian relief on a tube has a hard ceiling.
+2. **Face**: ours = primitive nose/mouth boxes + sphere eyes on a tube head + relief bumps; theirs =
+   scanned/sculpted heads, 50+ blendshapes, real eyeballs (cornea/iris shader), teeth, lashes.
+3. **Skin**: ours = 512px procedural mottle + Sobel normal; theirs = 4K scanned albedo/normal/spec,
+   pore-level detail normals, SSS, per-region wetness. (Our sweat roughness ramp is the right idea.)
+4. **Hair**: cap mesh + cylinder dreads vs alpha hair cards w/ anisotropic spec.
+5. **Attire**: vertex-paint regions vs real cloth meshes w/ wrinkle normals + logos.
+CONCLUSION (already the plan, now confirmed by audit): the procedural body CANNOT reach 2K by more
+gaussians — it is the fallback/CAW-preview body. The AAA path = REAL sculpted GLBs through the
+pipeline that already exists: (a) Blender-MCP + BlenderGoodies rig + Auto-Rig Pro → author base
+male/female sculpts, import via CHAR_MODEL (binding + morph->slider bridge already live);
+(b) forge_server image-to-3D from the owner's sketches per character. Near-term procedural wins
+(worth doing, won't close the gap): 1024px skin tex w/ pores+veins, real eyeball meshes w/ iris
+texture, hair-card texture for dreads, cloth wrinkle normal for attire regions, elbow/knee crease
+rings. NEXT SESSION with Blender-MCP connected: convert Action Adventure Pack X Bot -> GLB, retarget,
+import as the first real-mesh fighter to prove the full path, then sculpt passes.
 
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
