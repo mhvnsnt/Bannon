@@ -9468,6 +9468,11 @@ function registerHit(attacker, move){
   if (attacker.kickWobble) attacker.kickWobble(sreg, -af.x*0.5, 0.06, -af.z*0.5, clamp(effPower/90,0.2,1)*1.3); // recoil up the striking arm
   attacker.x = clamp(attacker.x + af.x*0.05, -ARENA_HALF, ARENA_HALF);   // drive a touch into the blow
   attacker.z = clamp(attacker.z + af.z*0.05, -ARENA_HALF_Z, ARENA_HALF_Z);
+  // v152 VISIBLE SEND-BACK (readability): the receiver GIVES GROUND with the shot, scaled by tier and
+  // the weight-class knockback ratio — exchanges read as advance/retreat instead of two merged bodies.
+  { const _sb2=(tier==='HEAVY'?0.16:tier==='MEDIUM'?0.09:0.04)*kbF;
+    opp.x = clamp(opp.x + af.x*_sb2, -ARENA_HALF, ARENA_HALF);
+    opp.z = clamp(opp.z + af.z*_sb2, -ARENA_HALF_Z, ARENA_HALF_Z); }
   const _ww = (move.traj==='HOOK'||move.traj==='OVERHAND'||move.traj==='SPINNING')?1.5 : (move.traj==='UPPERCUT')?1.35 : ((move.limb&&move.limb.includes('KICK'))?1.55 : (move.limb==='KNEE'||move.limb==='ELBOW')?1.3 : 1.0);   // WEAPON WEIGHT: a haymaker is not a jab
   triggerHitStop(0.03*_ww + cu*0.05*_ww);
   camShake = Math.max(camShake, (0.1 + cu*0.45)*_ww);
@@ -12539,7 +12544,30 @@ function loop(now){
 
   if (_fight){
     readPlayerInput(dt);   // v117: read input on the REAL frame clock so controls stop lagging behind the slowed combat sim (SIM_PACE 0.85). AI + physics stay weighty on sdt; player intent/locomotion read crisp. Revert to sdt if you want input slowed to match.
-    fighters[1].updateAI(sdt);
+    // v152: AI drives EVERY non-player fighter (was hardcoded fighters[1] — a CPU-controlled P1
+    // stood idle forever, and multi-man needs N-fighter AI). isPlayer is the single source of truth.
+    for (const f of fighters){ if (f && !f.isPlayer && f.updateAI){ try{ f.updateAI(sdt); }catch(e){ window.__logErr&&window.__logErr('updateAI', e); } } }
+    // v152 BODY SEPARATION (readability #1): strikes/reactions move x/z directly, so mid-combo the
+    // two bodies used to drive INTO each other and stay merged — you literally could not see who was
+    // doing what. move2D's push only ran while walking. This resolver runs every frame for every
+    // standing pair: eases overlapped bodies apart to a visible-daylight gap (0.46 — tighter than the
+    // walk gap so pocket range/hooks still work), skipping any pair that is SUPPOSED to be in contact
+    // (grapples, held bodies, downed, airborne, dives/vaults).
+    for (let _i=0;_i<fighters.length;_i++) for (let _j=_i+1;_j<fighters.length;_j++){
+      const A=fighters[_i], B=fighters[_j];
+      if (!A||!B||A.zone!==B.zone) continue;
+      if (A.isDown()||B.isDown()||A.ragdoll||B.ragdoll) continue;
+      if ((A.airLift||0)>0.05||(B.airLift||0)>0.05) continue;
+      if (A.grappling||B.grappling||A.state==='grabbed'||B.state==='grabbed'||A.state==='deliver'||B.state==='deliver') continue;
+      if (A.state==='dive'||B.state==='dive'||A.state==='vault'||B.state==='vault') continue;
+      const _gap=0.46;
+      let _dx=A.x-B.x, _dz=A.z-B.z, _d=Math.hypot(_dx,_dz);
+      if (_d>=_gap) continue;
+      if (_d<1e-4){ _dx=1; _dz=0; _d=1e-4; }
+      const _ux=_dx/_d, _uz=_dz/_d, _push=(_gap-_d)*0.5*Math.min(1, sdt*11);   // ease apart, no snap
+      A.x=clamp(A.x+_ux*_push,-ARENA_HALF,ARENA_HALF); A.z=clamp(A.z+_uz*_push,-ARENA_HALF_Z,ARENA_HALF_Z);
+      B.x=clamp(B.x-_ux*_push,-ARENA_HALF,ARENA_HALF); B.z=clamp(B.z-_uz*_push,-ARENA_HALF_Z,ARENA_HALF_Z);
+    }
     for (const f of fighters){ try{ f.update(sdt); }catch(e){ window.__logErr&&window.__logErr('update:'+(f.isPlayer?'P1':'P2')+':'+f.state, e); } }
     updateFX(sdt);
     updateDamageNumbers(dt);
