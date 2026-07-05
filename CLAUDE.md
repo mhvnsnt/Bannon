@@ -112,9 +112,16 @@ Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (mas
   architecture (DaemonCore/CombatAI/MatchDirector TS mirrors — we already have better in-repo).
   Gold extracted (mocap json/extractor/rules doc above); rest is reference only.
 - `harness-main.zip` + `claude-plugins-official-main.zip` — Claude Code plugin tooling (reference
-  for making me more autonomous; marketplace format). `palmier-pro-main.zip` — Metal shader effects
-  (ChromaKey/Clarity/Glow) reference. `ai-website-cloner-template-master.zip` — agent skill template
-  reference. None need in-repo integration beyond this note.
+  for making me more autonomous; marketplace format). `ai-website-cloner-template-master.zip` —
+  agent skill template reference (used as the model for `.claude/skills/bannon-verify/SKILL.md`,
+  which now encodes the whole verification-harness recipe + gotchas — future sessions start hot).
+- `palmier-pro-main.zip` → GOLD EXTRACTED to `assets/reference/shaders/*.metal` (11 shaders:
+  GradeCurves/HueCurves/Levels/Wheels/HighlightsShadows/Grain/Vignette/Clarity/Glow/LUTTetra/
+  ChromaKey). The math ports 1:1 to GLSL — QUEUED BRICK: a broadcast color-grade post pass
+  (grade curves + highlights/shadows + grain + vignette) for the WWE/UFC broadcast look.
+- `tools/blender/` — BlenderGoodies convert.py + external_run.py + Instructions.txt (FBX→GLB +
+  Auto-Rig Pro retarget; teammate/Blender-MCP fuel). Action Adventure Pack = X Bot + idle/walk/run
+  FBX clips for the STUDIO locomotion set once Blender-MCP is connected.
 
 ## Combat roadmap (task #21, from BLUEPRINT.next)
 SHIPPED: springboard rope-plant VAULT in-between (state 'vault' -> dive from rope height); grounded
