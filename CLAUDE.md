@@ -217,6 +217,15 @@ LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding
 - v153 ARENA PERF: 96 rope segments -> ONE InstancedMesh (unit cylinder, verlet solver composes
   instance matrices at ch.segBase+i); 12 turnbuckle pads + 12 connector rings instanced (baked once).
   Visible meshes 240 -> 120. Rope sag/bow physics unchanged (BANNON_ROPES.update).
+- v153 FINISHERS WIRED: `window.FINISHER_MOVES` (by roster key) — full momentum + power-mod +
+  SPECIAL = the character's NAMED finisher. kind 'grapple' auto-runs grab -> named GRAPPLE_POSITIONS
+  lift -> timed grappleDeliver through the REAL physics (no canned path); kind 'strike' = named
+  100-power shot. Canon names from the OTTR cast table (GETBACKK, THE OPTIMIZATION DRIVE, THE
+  HOSTILE TAKEOVER, THE INDEFINITE SUSPENSION=gorilla press, THE CRUCIBLE, LION'S ROAR...).
+  **BANNON's "EXECUTIONER'S DROP" (CROSS_POWERBOMB) is a PLACEHOLDER — owner names it later.**
+  Verified fin.js: FINXSSE GETBACKK announces -> FIREMANS_CARRY st2 -> auto-delivers to ragdoll.
+  Sub-type finishers (Anaconda Vise etc) + dive finishers (frog splash) still route as
+  spike/strike — proper sub/dive wiring queued.
 - MOCAP HARVEST FINDING: BANNON_AAA_v21_2K_mocap_2.html has the SAME MoveNet-Thunder webcam
   recorder v150 already has — its clips live in the OWNER'S browser localStorage (STORE_KEY), not
   the file. The real harvest = convert assets/mocap/mocap_data_partial.json (144-joint two-fighter

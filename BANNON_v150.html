@@ -11682,11 +11682,31 @@ function playerAttack(kind){
   const m = Object.assign({}, mv);   // the directional strike keeps its own height (low/mid/high)
   if (powerMod){ m._loaded=true; if (m.power>66) m.follow = 'KNOCKDOWN'; }
   if (p.running){ m._loaded=true; }   // running strike hits harder & lunges
-  // FINISHER: full momentum + power-mod special = devastating, guaranteed knockdown
+  // FINISHER: full momentum + power-mod special = the character's NAMED finisher.
+  // v153: named finishers resolve through the real systems — grapple finishers auto-run the actual
+  // grab -> named-position lift -> delivery physics; strike finishers are named max-power shots.
   if (kind==='special' && powerMod && p.momentum>=100){
-    m.power = 100; m.follow='KNOCKDOWN'; m._loaded=true; m._finisher=true;
     p.momentum = 0; flashScreen(0.7); chromAb=0.7; camShake=Math.max(camShake,0.5);
-    announce('FINISHER','BANNON');
+    const _fk=((p.specName||(p.opts&&p.opts.name)||'BANNON')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
+    const FF=(window.FINISHER_MOVES||{})[_fk];
+    if (FF && FF.kind==='grapple' && opp && !opp.isDown()){
+      if (p.startGrab()){
+        announce(FF.name, fname(p));
+        p.grapplePos=FF.pos; p._aiGrapChosen=true;
+        p.craneLift=(GRAPPLE_POSITIONS[FF.pos]||{}).lift0||0; p.craneTwist=0;
+        p.grappleStage=2; p.stateTime=0;
+        const _ld=((GRAPPLE_POSITIONS[FF.pos]||{}).liftDur||0.7);
+        p._liftMinT=_ld;
+        setTimeout(()=>{ try{ if (p.grappling && p.grappleStage>=2 && p.grapplePos===FF.pos){
+          p.grappleStage=3; p.stateTime=0;
+          setTimeout(()=>{ try{ if (p.grappling && p.grappleStage===3) p.grappleDeliver(FF.deliver||'signature', 0); }catch(_){}}, 700);
+        } }catch(_){}}, _ld*1000+250);
+        return;
+      }
+    }
+    m.power = 100; m.follow='KNOCKDOWN'; m._loaded=true; m._finisher=true;
+    if (FF) m.name=FF.name;
+    announce(FF?FF.name:'FINISHER', fname(p));
   }
   p.startAttack(m);
 }
@@ -12841,6 +12861,30 @@ try{
   window.CHAR_FINISHERS = Object.assign(window.CHAR_FINISHERS||{}, {
     FINXSSE:  { style:'Lesnar/Guerrero hybrid — speed+power showman', sig:'CHAINSNATCHER — jumping double-knee backstabber', fin:'GETBACKK — fireman-carry tornado slam (F5-class violence)', props:['gold jeweled diamond cross (stolen from Chainlink)'] },
     STICK_UP: { fin:['LEAP OF FAITH — swanton bomb','SUPER LEAP OF FAITH — swanton 450 splash','FIRE THUNDER DRIVER','TWIST OF FATE — theatrical twisting cutter/stunner'] }
+  });
+  // v153 FINISHER WIRING — named finishers resolve through the REAL grapple physics (no cinematic
+  // canned path): kind 'grapple' auto-runs grab -> named position lift -> delivery; kind 'strike'
+  // is a named max-power shot. Canon names from the OTTR cast doc / dossiers; non-canon originals
+  // get proprietary names. BANNON's canon finisher awaits the owner's spec (placeholder flagged).
+  window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
+    BANNON:        { name:"EXECUTIONER'S DROP",        kind:'grapple', pos:'CROSS_POWERBOMB', deliver:'slam'  },   // placeholder until owner names it
+    FINXSSE:       { name:'GETBACKK',                  kind:'grapple', pos:'FIREMANS_CARRY',  deliver:'slam'  },   // canon: F5-class off the shoulders
+    STICK_UP:      { name:'THE OPTIMIZATION DRIVE',    kind:'grapple', pos:'BACK_SUPLEX',     deliver:'toss'  },   // canon: exploder suplex
+    STAN_COMBS:    { name:'THE HOSTILE TAKEOVER',      kind:'grapple', pos:'CHOKESLAM',       deliver:'choke' },
+    EDWIN_KENNEDY: { name:'THE INDEFINITE SUSPENSION', kind:'grapple', pos:'GORILLA_PRESS',   deliver:'slam'  },   // held suspended overhead — the name IS the move
+    YORKSHIRE_GRIT:{ name:'THE CRUCIBLE',              kind:'grapple', pos:'BRAINBUSTER',     deliver:'spike' },   // canon: unannounced piledriver-class
+    HEATH_BROKER:  { name:'THE GLOBAL RECESSION',      kind:'grapple', pos:'DDT',             deliver:'spike' },   // canon vise — grounded sub wiring later
+    AKON_WARRIOR:  { name:"THE LION'S ROAR",           kind:'strike' },                                            // canon: running discus clothesline
+    CAPTAIN_UNITY: { name:'THE MAPLE LEAF MISSILE',    kind:'strike' },                                            // canon frog splash — dive wiring later
+    TIGHTROPE:     { name:'NO-NET DIVE',               kind:'strike' },
+    TITAN:         { name:'TITANFALL',                 kind:'grapple', pos:'POWERBOMB',       deliver:'slam'  },
+    GOLEM:         { name:'CLAY AVALANCHE',            kind:'grapple', pos:'CHOKESLAM',       deliver:'choke' },
+    RONIN:         { name:"RONIN'S EDGE",              kind:'grapple', pos:'BRAINBUSTER',     deliver:'spike' },
+    BRUTUS:        { name:'COLOSSEUM BOMB',            kind:'grapple', pos:'POWERBOMB',       deliver:'slam'  },
+    MORTUS:        { name:'LAST RITES',                kind:'grapple', pos:'DDT',             deliver:'spike' },
+    VIPER:         { name:'VENOM STRIKE',              kind:'strike' },
+    KAGE:          { name:'SHADOW BLADE',              kind:'strike' },
+    ZEPHYR:        { name:'TEMPEST',                   kind:'strike' }
   });
   try{ if(window.MANIFESTO) window.MANIFESTO.register({key:'roster.dossiers',kind:'gameplay',summary:'canon/characters dossiers wired: bosses (Combs/Kennedy-AWE), free agents (Tightrope female flyer, Akon, Heath, Unity, Grit), CHAR_FINISHERS specs (Finxsse Chainsnatcher/Getbackk, Stick Up Leap of Faith...)',call:'window.CHAR_FINISHERS'}); }catch(e){}
 }catch(_){}
