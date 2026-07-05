@@ -107,9 +107,15 @@ per-zone grounded traj/power/name (OVERHAND·HEAD / STRAIGHT·LEGS / HOOKING·RI
 phase3b.js: stages hold 1→2→3 w/ loadErr+grip live, gripNearestVert 0.088 (<R dig-in), pelvisVar
 0.0097, RUNNING LARIAT@96, STOMP·LEGS. GOTCHA: v72 weight-class wrapper turns stage-1 grappleAdvance
 into instant `grappleDeliver('drop')` when !canLiftOpponent — heavy victims (GOLEM) skip lift/carry
-BY DESIGN; stub `canLiftOpponent` in tests. NEXT: UFC weight-strike tuning; vault variants from
-apron/mid/top; unique grounded ANIMATIONS per zone (beyond traj flavor); wire CHAR_FINISHERS into
-MOVESET_DB.
+BY DESIGN; stub `canLiftOpponent` in tests. GOTCHA 2: `this.J[j]` are Spring3 — write `.tgt.y`, NOT
+`.y` (a bare `.y +=` is a silent NaN no-op; the PD block shipped with that bug, fixed, pelvisVar
+0.0097→0.0326 once live). ALSO SHIPPED: GROUNDED ZONE DELIVERY in poseAttack (whole-body posture per
+zone: HEAD = mounted-hammer knee drop + torso pitch, FEET = upright forward hinge chop, SIDE = dip +
+lateral hinge rib drop; grounded aim clamps to mat 0.10 and targets the zone's verlet joint);
+groundZoneOf fallback threshold 0.35→0.18 (slumped bodies carry a real axis — the facing guess was
+misreading forward falls as FEET). Verified: all 3 zones classify + name + pose correctly (gzvis.js
+freecam shots). NEXT: UFC weight-strike tuning; vault variants from apron/mid/top; wire
+CHAR_FINISHERS into MOVESET_DB.
 
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,

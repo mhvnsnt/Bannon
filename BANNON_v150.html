@@ -4264,7 +4264,9 @@ Fighter.prototype.poseAttack = function(dt){
   } else {
     // hand strike — IK-reach toward the opponent's ACTUAL target zone (head/chest/pelvis)
     const ha = isLeft?'haL':'haR', el=isLeft?'elL':'elR', sh=isLeft?'shL':'shR';
-    const aimJoint = m.height==='HIGH'?'head' : m.height==='LOW'?'pelvis' : 'chest';
+    let aimJoint = m.height==='HIGH'?'head' : m.height==='LOW'?'pelvis' : 'chest';
+    // grounded strikes aim at the zone's actual body part on the downed opponent (verlet-true)
+    if (m.height==='GROUND') aimJoint = m._groundZone==='HEAD'?'head' : m._groundZone==='FEET'?'knR' : 'chest';
     // CHAMBER (guard position): hands at chin, elbows down — the START of every punch
     const gx=0.22, gy=1.50, gz=isLeft?0.14:-0.11;   // chin-level guard (not chest-level)
     let tx=ext, ty2=ty, tz=isLeft?0.10:-0.10;
@@ -4287,7 +4289,7 @@ Fighter.prototype.poseAttack = function(dt){
         tx = tx + (clamp(oppLocalX - 0.2, 0, maxReach) - tx) * trackStr;
       }
       tz  = clamp(lz, -0.55, 0.55) + vary.zspread + (isLeft?0.05:-0.05);
-      ty2 = clamp(wp.y + vary.yoff, 0.4, 1.85);
+      ty2 = clamp(wp.y + vary.yoff, m.height==='GROUND'?0.10:0.4, 1.85);   // grounded shots reach the mat
     }
     const rr = clamp(reach,0,1);
     let hx = lerp(gx, tx, rr), hy = lerp(gy, ty2, rr), hz = lerp(gz, tz, rr);
@@ -4382,6 +4384,34 @@ Fighter.prototype.poseAttack = function(dt){
     if (_whiffPow > 0.75 && this.crumple < 0.4){
       this.crumple = clamp(this.crumple + 0.18, 0, 0.6);
       if (this.enterStumble && Math.random() < 0.45) this.enterStumble(fw.x, m.power*0.25);
+    }
+  }
+  // ===== GROUNDED ZONE DELIVERY (2K26 ground game) — the whole BODY changes per zone, not just the
+  // arm arc. HEAD = mounted hammer: drop toward a knee over the head, torso pitches down, the shot
+  // bombs from above. FEET = leg attack: upright with a forward hinge, chopping down onto the legs.
+  // SIDE = rib drop: deep dip + lateral hinge so the shot swings down across the ribs.
+  if (m.height==='GROUND' && m._groundZone){
+    const _gz = m._groundZone, _dip = Math.sin(Math.min(1,p)*Math.PI);   // deepest at mid-strike
+    if (_gz==='HEAD'){
+      const _drop = (isKick?0.14:0.34)*_dip;
+      this.J.pelvis.tgt.y -= _drop; this.J.spineLow.tgt.y -= _drop*0.92; this.J.spineMid.tgt.y -= _drop*0.84;
+      this.J.chest.tgt.y  -= _drop*0.78; this.J.chest.tgt.x += 0.15*_dip;
+      this.J.head.tgt.y   -= _drop*0.72; this.J.head.tgt.x  += 0.18*_dip;
+      if (!isKick){   // rear leg kneels beside the head, lead foot stays planted wide
+        const _rk=isLeft?'knR':'knL', _rf=isLeft?'ftR':'ftL', _rz=isLeft?-0.15:0.15;
+        this.J[_rk].set(-0.05, lerp(0.42, 0.16, _dip), _rz);
+        this.J[_rf].set(-0.30, 0.05, _rz*1.15);
+      }
+    } else if (_gz==='FEET'){
+      const _hinge = 0.15*_dip;   // upright leg attack — hinge over the legs, slight sit into the chop
+      this.J.chest.tgt.x += _hinge; this.J.head.tgt.x += _hinge*1.25;
+      this.J.pelvis.tgt.y -= 0.08*_dip; this.J.spineMid.tgt.x += _hinge*0.55;
+    } else {          // SIDE — rib drop: dip + lateral hinge across the downed torso
+      const _side = isLeft?1:-1;
+      this.J.pelvis.tgt.y -= 0.16*_dip; this.J.spineLow.tgt.y -= 0.14*_dip;
+      this.J.chest.tgt.y  -= 0.12*_dip; this.J.chest.tgt.x += 0.11*_dip; this.J.chest.tgt.z += _side*0.09*_dip;
+      this.J.spineMid.tgt.z += _side*0.055*_dip;
+      this.J.head.tgt.y   -= 0.10*_dip; this.J.head.tgt.z += _side*0.11*_dip;
     }
   }
   this.solveArmIK();
@@ -7762,7 +7792,7 @@ function groundZoneOf(att, opp){
     const fr = useV ? opp.V.ftR.pos    : opp.worldJoint('ftR');
     const mfx=(fl.x+fr.x)*0.5, mfz=(fl.z+fr.z)*0.5;
     let ax=hd.x-mfx, az=hd.z-mfz; const L=Math.hypot(ax,az);
-    if (L<0.35){ ax=-Math.cos(opp.facing||0); az=Math.sin(opp.facing||0); }  // not laid out yet: backward-fall default (head lands OPPOSITE facing)
+    if (L<0.18){ ax=-Math.cos(opp.facing||0); az=Math.sin(opp.facing||0); }  // truly curled/upright: backward-fall default (head lands OPPOSITE facing). 0.18 not 0.35 — slumped/half-curled bodies still carry a real axis (a forward fall reads 0.25-0.30 and the facing guess points the WRONG way)
     else { ax/=L; az/=L; }
     const dx=att.x-ph.x, dz=att.z-ph.z, d=Math.hypot(dx,dz)||1;
     const dot=(dx*ax+dz*az)/d;
@@ -8539,9 +8569,9 @@ Fighter.prototype.poseGrab = function(dt){
       const Kp=0.55, Kd=0.07;
       let tau = Kp*_v._loadErr - Kd*(_v._loadVel||0);
       tau = clamp(tau, -0.085, 0.085);
-      this.J.pelvis.y += tau*0.55; this.J.chest.y += tau*0.40; this.J.head.y += tau*0.30;
-      this.J.chest.x  += Math.abs(tau)*0.35;                    // tip INTO the load (never away)
-      this.J.knL.y += tau*0.30; this.J.knR.y += tau*0.30;       // knees give under the sag
+      this.J.pelvis.tgt.y += tau*0.55; this.J.chest.tgt.y += tau*0.40; this.J.head.tgt.y += tau*0.30;
+      this.J.chest.tgt.x  += Math.abs(tau)*0.35;                // tip INTO the load (never away)
+      this.J.knL.tgt.y += tau*0.30; this.J.knR.tgt.y += tau*0.30; // knees give under the sag
     } }
   this.solveArmIK();
 };
