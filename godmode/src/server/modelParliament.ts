@@ -38,8 +38,8 @@ export class ModelParliament {
     private marginOptimizer: MarginOptimizer;
     private activeSeats: ParliamentProfile = {
         proposer: 'anthropic/claude-3-5-sonnet',
-        critic: 'google/gemini-2.5-pro',
-        validator: 'google/gemini-3.5-flash'
+        critic: 'google/gemini-1.5-pro',
+        validator: 'google/gemini-1.5-flash'
     };
     private useMock = false;
 
@@ -457,7 +457,7 @@ CONFIDENCE_REASON: [2 sentences max]`;
                 const { GoogleGenAI } = await import('@google/genai');
                 const ai = new GoogleGenAI({ apiKey: geminiKey });
                 const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-pro',
+                    model: 'gemini-1.5-pro',
                     contents: promptText,
                     config: { systemInstruction: systemText }
                 });
@@ -479,7 +479,7 @@ CONFIDENCE_REASON: [2 sentences max]`;
                 const { GoogleGenAI } = await import('@google/genai');
                 const ai = new GoogleGenAI({ apiKey: geminiFreeKey });
                 const response = await ai.models.generateContent({
-                    model: 'gemini-3.5-flash',
+                    model: 'gemini-1.5-flash',
                     contents: promptText,
                     config: { systemInstruction: systemText }
                 });
@@ -572,7 +572,7 @@ Output ONLY a JSON structured CritiqueReport:
                 const { GoogleGenAI } = await import('@google/genai');
                 const ai = new GoogleGenAI({ apiKey: geminiKey });
                 const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-pro',
+                    model: 'gemini-1.5-pro',
                     contents: promptContent,
                     config: { systemInstruction }
                 });
@@ -588,7 +588,7 @@ Output ONLY a JSON structured CritiqueReport:
                 const { GoogleGenAI } = await import('@google/genai');
                 const ai = new GoogleGenAI({ apiKey: geminiFreeKey });
                 const response = await ai.models.generateContent({
-                    model: 'gemini-3.5-flash',
+                    model: 'gemini-1.5-flash',
                     contents: promptContent,
                     config: { systemInstruction }
                 });
@@ -670,7 +670,7 @@ Output ONLY a JSON ValidationReport:
                 const { GoogleGenAI } = await import('@google/genai');
                 const ai = new GoogleGenAI({ apiKey: geminiKey });
                 const response = await ai.models.generateContent({
-                    model: 'gemini-3.5-flash',
+                    model: 'gemini-1.5-flash',
                     contents: promptContent,
                     config: { systemInstruction }
                 });
@@ -686,7 +686,7 @@ Output ONLY a JSON ValidationReport:
                 const { GoogleGenAI } = await import('@google/genai');
                 const ai = new GoogleGenAI({ apiKey: geminiFreeKey });
                 const response = await ai.models.generateContent({
-                    model: 'gemini-3.5-flash',
+                    model: 'gemini-1.5-flash',
                     contents: promptContent,
                     config: { systemInstruction }
                 });

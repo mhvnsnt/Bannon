@@ -97,7 +97,7 @@ export async function runScrapeAndEmbedMatrix() {
         console.log("Upserting record:", Object.keys(record), "Values type:", typeof record.values, "Values array:", Array.isArray(record.values), "length:", record.values.length);
         
         try {
-           await index.upsert({ records: [record] });
+           await index.upsert([record]);
         } catch(e) {
            console.log("Error directly inside upsert", e);
            throw e;

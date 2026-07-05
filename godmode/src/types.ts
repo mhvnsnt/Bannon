@@ -22,6 +22,7 @@ export interface ChatMessage {
   intent?: string;
   toolCalls?: ToolCall[];
   attachedFiles?: AttachedFile[];
+  mediaUrls?: string[];
 }
 
 export interface ModelProvider {
@@ -41,6 +42,9 @@ export interface FieldLog {
   outcome: string;
   negentropyDelta: number;
   note?: string;
+  notes?: string;
+  vector?: string;
+  initialStrategy?: string;
   timestamp?: any;
 }
 
@@ -66,8 +70,10 @@ export interface ToolCall {
 
 export interface AttachedFile {
   name: string;
-  content: string;
+  content?: string;
   type: string;
+  base64?: string;
+  size?: number;
 }
 
 export interface ChatSession {

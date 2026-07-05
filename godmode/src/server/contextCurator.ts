@@ -249,4 +249,6 @@ export class ContextCurator {
 }
 
 // Spark up
-ContextCurator.init();
+if (process.env.ENABLE_BACKGROUND_DAEMONS === 'true') {
+  ContextCurator.init();
+}

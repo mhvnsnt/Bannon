@@ -5,14 +5,24 @@ import { Activity, TrendingUp, Users, Cpu, Thermometer, Battery, Terminal, Orbit
 import { motion } from 'framer-motion';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../lib/firebase';
+import io from 'socket.io-client';
 
 import D3FlowVisualizer from './D3FlowVisualizer';
+
+const socket = io("");
+
+interface DashboardTrajectoryData {
+  time: string;
+  negentropy: number;
+  wealth: number;
+  entanglement: number;
+}
 
 export default function Dashboard() {
   const [user] = useAuthState(auth);
   const isPrimeNode = user?.email === 'MarquisWhitacre@gmail.com';
 
-  const [data, setData] = useState<TrajectoryData[]>([]);
+  const [data, setData] = useState<DashboardTrajectoryData[]>([]);
   const [shadowTasks, setShadowTasks] = useState<any[]>([]);
   const [lowPowerMode, setLowPowerMode] = useState(false);
   const [hardwareStats, setHardwareStats] = useState({ temp: 42, cpu: 15, mem: 45 });
@@ -39,37 +49,40 @@ export default function Dashboard() {
       { metric: 'Mars', value: 65, fullMark: 100 },
     ]);
 
-    // Polling simulated hardware stats for the visualizer
-    const intv = setInterval(() => {
+    // Handle real hardware telemetry via socket.io
+    const handleHardwareUpdate = (data: any) => {
         const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
         
-        setCognitiveData(curr => {
-            const last = curr.length > 0 ? curr[curr.length - 1] : { load: 40, throughput: 300 };
-            const newData = [...curr, { 
-                time, 
-                load: Math.max(10, Math.min(100, last.load + (Math.random() * 20 - 10))),
-                throughput: Math.max(50, Math.min(1000, last.throughput + (Math.random() * 150 - 75)))
-            }];
-            if (newData.length > 20) newData.shift();
-            return newData;
-        });
-
         setHardwareStats(prev => {
-            const temp = prev.temp + (Math.random() * 2 - 1);
-            const cpu = lowPowerMode ? prev.cpu * 0.9 : Math.min(100, Math.max(5, prev.cpu + (Math.random() * 15 - 5)));
-            const mem = Math.min(100, Math.max(10, prev.mem + (Math.random() * 5 - 2)));
-            
+            const cpu = data.gpu_util || data.cpu_util || 0; // Using gpu_util as the proxy for compute load
+            const mem = data.vram_used || 0;
+            const temp = 40 + (cpu * 0.2) + (Math.random() * 2); // Approximation if no true temp available
+
             setHardwareHistory(curr => {
                 const newData = [...curr, { time, cpu, mem, temp }];
-                if (newData.length > 20) newData.shift(); // Keep last 20 frames
+                if (newData.length > 20) newData.shift();
                 return newData;
             });
             
             return { temp, cpu, mem };
         });
-    }, 1500);
+        
+        setCognitiveData(curr => {
+            const newData = [...curr, { 
+                time, 
+                load: Math.min(100, data.gpu_util * 1.5),
+                throughput: Math.min(1000, data.vram_used * 2)
+            }];
+            if (newData.length > 20) newData.shift();
+            return newData;
+        });
+    };
+    
+    socket.on('hardware-telemetry', handleHardwareUpdate);
 
-    return () => clearInterval(intv);
+    return () => {
+      socket.off('hardware-telemetry', handleHardwareUpdate);
+    };
   }, [lowPowerMode]);
 
   const latest = data[data.length - 1] || { negentropy: 0, wealth: 0, entanglement: 0 };

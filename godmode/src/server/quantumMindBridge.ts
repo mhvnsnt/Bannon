@@ -133,5 +133,7 @@ export class QuantumMindBridge {
   }
 }
 
-QuantumMindBridge.init();
+if (process.env.ENABLE_BACKGROUND_DAEMONS === 'true') {
+  QuantumMindBridge.init();
+}
 

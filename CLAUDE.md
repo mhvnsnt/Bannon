@@ -94,6 +94,28 @@ Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (mas
 - `rig_tools_3.67.12.zip` — Auto-Rig Pro (Blender addon; teammate installs in Blender).
 - `uploads_files_147201_Steel_Steps.zip` — ringside steel steps (3MF -> convert to GLB prop).
 
+## Integrated drops (2026-07-05 pass — zips opened, gold extracted into the repo)
+- **`docs/mocap_orientation_master_prompt.md` — BINDING owner rules for ALL move/mocap/pose work.**
+  Orientation before magnitude: verify body up-vector, facing vs opponent, attacker side, and joint
+  bend direction via full-FK world transforms BEFORE trusting any rotation number. Documented failure
+  modes: frog splash built like a dropkick, swanton/moonsault mirrored, suplex families wrongly
+  merged. READ IT before authoring/judging any move.
+- `assets/mocap/mocap_data_partial.json` — first extracted two-fighter clip (AlternatingForearms,
+  144 joints, 97 frames, phases + joint_curves + hip_height_curve). `tools/extract_anim.py` = the
+  extractor. Feed into STUDIO clips / grapple mocap slots (poseGrabbed LIFT/CARRY hooks exist).
+- `godmode/` REFRESHED from `God-Mode-OS-D3MN-V2-main (4).zip` (newest; (3) older, superseded).
+  New: `BANNON_AAA_v21_2K_mocap_2.html` (owner's 2K-mocap game snapshot, 41 STUDIO.clips refs —
+  HARVEST TARGET for v150 clip import), `BANNON_SWARM_BUILDER_v50_1.html`, `orchestrator-core.ts`,
+  new daemon components (AP2SpendControls/ActuatorControlPanel/DynamicToolForge/…), scripts for
+  cloudflare-tunnel + termux daemon. Kept our extra `app/`, `vault/`, `check_db.cjs`.
+- `spatial-command-architecture-(sca) (7).zip` — owner's AI-Studio (Gemini) scaffold of the same
+  architecture (DaemonCore/CombatAI/MatchDirector TS mirrors — we already have better in-repo).
+  Gold extracted (mocap json/extractor/rules doc above); rest is reference only.
+- `harness-main.zip` + `claude-plugins-official-main.zip` — Claude Code plugin tooling (reference
+  for making me more autonomous; marketplace format). `palmier-pro-main.zip` — Metal shader effects
+  (ChromaKey/Clarity/Glow) reference. `ai-website-cloner-template-master.zip` — agent skill template
+  reference. None need in-repo integration beyond this note.
+
 ## Combat roadmap (task #21, from BLUEPRINT.next)
 SHIPPED: springboard rope-plant VAULT in-between (state 'vault' -> dive from rope height); grounded
 HEAD/FEET/SIDE zoning (groundZoneOf: verlet head-vs-midfeet axis, backward-fall facing fallback)
@@ -107,9 +129,51 @@ per-zone grounded traj/power/name (OVERHAND·HEAD / STRAIGHT·LEGS / HOOKING·RI
 phase3b.js: stages hold 1→2→3 w/ loadErr+grip live, gripNearestVert 0.088 (<R dig-in), pelvisVar
 0.0097, RUNNING LARIAT@96, STOMP·LEGS. GOTCHA: v72 weight-class wrapper turns stage-1 grappleAdvance
 into instant `grappleDeliver('drop')` when !canLiftOpponent — heavy victims (GOLEM) skip lift/carry
-BY DESIGN; stub `canLiftOpponent` in tests. NEXT: UFC weight-strike tuning; vault variants from
-apron/mid/top; unique grounded ANIMATIONS per zone (beyond traj flavor); wire CHAR_FINISHERS into
-MOVESET_DB.
+BY DESIGN; stub `canLiftOpponent` in tests. GOTCHA 2: `this.J[j]` are Spring3 — write `.tgt.y`, NOT
+`.y` (a bare `.y +=` is a silent NaN no-op; the PD block shipped with that bug, fixed, pelvisVar
+0.0097→0.0326 once live). ALSO SHIPPED: GROUNDED ZONE DELIVERY in poseAttack (whole-body posture per
+zone: HEAD = mounted-hammer knee drop + torso pitch, FEET = upright forward hinge chop, SIDE = dip +
+lateral hinge rib drop; grounded aim clamps to mat 0.10 and targets the zone's verlet joint);
+groundZoneOf fallback threshold 0.35→0.18 (slumped bodies carry a real axis — the facing guess was
+misreading forward falls as FEET). Verified: all 3 zones classify + name + pose correctly (gzvis.js
+freecam shots). ALSO SHIPPED: UFC WEIGHT-STRIKE TUNING — `Fighter.strikeMass()` (height×_specBuild,
+same proxy as canLiftOpponent); registerHit power ×massF=clamp(1+0.22·(mA−1),0.78,1.20), knockback
+(visceralImpact) ×kbF=clamp((mA/mD)^0.6,0.70,1.45); poseAttack swing speed ×clamp(1−0.12·(m−1),
+0.85,1.08). Verified wtune.js: TIGHTROPE(0.90)→GOLEM(1.79) massF 0.978/kbF 0.70; reverse 1.175/1.45.
+TASK #21 COMPLETE. REGRESSION HUNT (owner report 2026-07-05, all fixed+verified):
+(1) LAG/"struggle-to-lift broken"/"forklift arc broken" = ONE root cause: crowd was 227 groups of
+1-5 unique meshes/materials (~380 draw calls) -> frame collapse -> dt pegged at 0.05 cap -> every
+spring (GLOCK carry, crane) ran ~0.3x speed, lifts never reached climax. Crane input, spring target
+(0.696@cl0), attacker bend all measured CORRECT — it was frame budget. Crowd now 5 InstancedMeshes
+w/ instanceColor + direct matrix-array Y bob. Diagnosis pattern: wrap poseGrabbed count + __lastDt.
+(2) "very bad slave posing in phases/sub-phases" = v93 RECEIVER CARRY POSE wrapper OVERWROTE the
+authored per-move slave/liftPoses with one generic fetal-curl pose for every move at st 2-3. Now
+defers to authored poses (only faint additive flail) and full-poses only positions with no slave.
+Verified: CHOKESLAM (new GOOSENECK->HOIST->DANGLE liftPoses) vs FIREMANS_CARRY (new DUCK-UNDER->
+ROLL-ON->DRAPED) produce distinct correct trajectories; powerbomb/suplex/DDT/German un-stomped.
+(3) "missing hands/fingers" = arm tube tapered to a nub + fingers hidden by smooth-body pass. Arm
+now ends in flat palm+knuckle plate (wrist/hand/knuckle rings widened+flattened); finger+thumb
+chains keepVisible over it (28/28 verified; GLB imports still hide all procedural).
+SHIPPED (2K26 positions pass): `groundFacingOf(opp)` — face-UP/DOWN via verlet chest normal
+(spine × shoulder-axis cross, ny sign); grounded matrix now zone×facing = 6 attacks (HEAD/BACK OF
+HEAD ×1.25 / LEGS/HAMSTRINGS / RIBS/KIDNEYS ×1.12); CORNER strike family (opp._inCorner + <1.35:
+KNIFE-EDGE CHOP·CORNER / SHOULDER THRUST·CORNER / MUDHOLE STOMP·CORNER, ×1.10 trapped bonus);
+APRON combat family (zone mismatch over the ropes: OVER-THE-ROPE FOREARM / HOTSHOT SNAP / APRON
+KNEE). MORPH DEPTH: body axes neckW/neckD/lats(V-taper, in _glute NOT _relief — size morphs must
+not be definition-gated)/bicepW/forearmW/calfW/handS/footS (ringGirth); face PLACEMENT axes
+faceEyeSpread/faceEyeH/faceMouthH/faceEarH (position-only in applyMesh — NEVER re-scale face segs
+there, applyFighterSpec owns feature scaling: faceEars/faceEye/faceMouthW/faceLips). All in CAW.
+GOTCHA: geometry probes need enterCreatePreview(0) — idle body motion (~0.19 max vert drift)
+swamps morph deltas; probe the 45° cones for lats (pure-side verts don't move by design).
+ALSO SHIPPED: VAULT VARIANTS — `_vaultPending.from` ('ring'/'apron'/'mid' by zone + airLift>0.45);
+apron = SLINGSHOT entry (T 0.36, knees TUCK over the rope, body travels 2.6·kick into the ring,
+zone flips to RING, launch 0.85, announced "SLINGSHOT <move>"); mid = quick pop (T 0.22, launch
+0.75, "SPRINGBOARD <move>"); ring = classic (0.95). Verified vault2.js: 0.95/0.85+0.26 travel/0.75
++ correct announces. NEXT: corner BACK moves (opp facing buckles: back elbows/tree-of-woe from
+behind); pins gated on face-UP;
+arena group still has ~142 meshes (next perf brick); wire CHAR_FINISHERS into MOVESET_DB; harvest
+STUDIO clips from godmode/BANNON_AAA_v21_2K_mocap_2.html + feed assets/mocap clip into poseGrabbed
+LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding).
 
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,

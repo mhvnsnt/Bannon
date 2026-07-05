@@ -40,11 +40,11 @@ export async function auditMarketAsymmetry(platformAData: any, platformBData: an
 
       // 1. Instantly log the vector snapshot to Pinecone long-term memory
       try {
-        await index.upsert({ records: [{
+        await index.upsert([{
           id: `arb_${eventA.id}_${Date.now()}`,
           values: new Array(768).fill(0.1),
           metadata: { event: eventA.title, cost: spreadCost, margin: profitMargin }
-        }] });
+        }]);
       } catch(e) {
           console.error("Failed to upsert to pinecone", e);
       }

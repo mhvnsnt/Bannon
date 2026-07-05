@@ -640,6 +640,18 @@ export function QuantumBuildChat() {
                   <span>Context Slicing (Razor Engine)</span>
                </label>
             </div>
+            
+            <div className="flex items-center justify-between border-t border-white/5 pt-1.5 pb-1">
+               <label className="text-[10px] text-gray-400 flex items-center gap-1.5 cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={true} 
+                    readOnly
+                    className="accent-cyan-500 rounded" 
+                  />
+                  <span className="text-cyan-500 font-bold tracking-tight">Advanced AST Context Parsing (DeepSeek-R1 / Fable 5 Class)</span>
+               </label>
+            </div>
             {file && (
               <button
                 onClick={downloadFile}

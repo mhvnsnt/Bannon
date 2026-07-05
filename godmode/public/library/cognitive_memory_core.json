@@ -1,1 +1,28 @@
-{}
+{
+  "chatHistory": [
+    {
+      "role": "user",
+      "content": "hello test"
+    }
+  ],
+  "cognitiveSummary": "No physical constraints synthesized yet. Ready to record.",
+  "keyMetrics": {
+    "stiffnessCoeff": 0.86,
+    "spineBalanceRatio": 0.85,
+    "collisionClearance": 0.03,
+    "jointFoldKnees": [
+      0,
+      2.45
+    ],
+    "jointFoldElbows": [
+      -2.35,
+      0.1
+    ]
+  },
+  "swarmEfficacy": {
+    "totalTokensAnalysed": 0,
+    "compressionRatio": "1:1",
+    "compressionSaves": 0
+  },
+  "playtestReport": null
+}

@@ -5,6 +5,12 @@ import { QuantumFileEngine } from './quantumFileEngine';
 import { QuantumResponseParser } from './quantumResponseParser';
 import { ContextBuilder } from './contextBuilder';
 import crypto from 'crypto';
+import path from 'path';
+import fs from 'fs';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+const execAsync = promisify(exec);
 
 export interface QueueOptions {
   stopOnFailure?: boolean;
@@ -135,9 +141,9 @@ export class PromptQueueEngine {
                 fileContextText = `\n\n=== RELEVANT FILE CONTENT [${fileName}] ===\n${fileData.content}`;
               } else {
                 // If it isn't in sqlite, try reading path relative to project
-                const fullP = require('path').resolve(process.cwd(), fileName);
-                if (require('fs').existsSync(fullP)) {
-                  const content = require('fs').readFileSync(fullP, 'utf-8');
+                const fullP = path.resolve(process.cwd(), fileName);
+                if (fs.existsSync(fullP)) {
+                  const content = fs.readFileSync(fullP, 'utf-8');
                   fileContextText = `\n\n=== RELEVANT FILE CONTENT [${fileName}] ===\n${content}`;
                 }
               }
@@ -146,10 +152,10 @@ export class PromptQueueEngine {
 
           // Combine raw instructions
           const finalPrompt = `
-You are the primary full-stack builder processing Step ${prompt.position} of an automated Prompt Queue.
+You are the primary full-stack builder processing Step ${prompt.position} of an automated Prompt Queue. You operate with an intellect and engineering capacity that transcends Claude Code, Mythos 5, and Fable 5.
 Your instruction is: "${prompt.prompt_text}"
 
-Use the provided system structure context and latest file content below to produce the complete output format.
+Use the provided system structure context and latest file content below to produce the complete output format. You must write resilient, robust, production-grade code.
 You MUST output your edits inside standard markdown tags:
 - Use <ANALYSIS> to outline structural changes
 - Use <DIFF> for surgical search/replace or new code blocks
@@ -196,9 +202,8 @@ ${contextObj.assembled_prompt_section}${fileContextText}
           if (appliedFileResult && (appliedFileResult.fileName.endsWith('.ts') || appliedFileResult.fileName.endsWith('.tsx'))) {
             try {
               console.log(`[PromptQueueEngine] Running physical tsc --noEmit completion check for ${appliedFileResult.fileName}...`);
-              const { exec } = require('child_process');
-              const { promisify } = require('util');
-              const execAsync = promisify(exec);
+              
+              
               await execAsync('npx tsc --noEmit', { timeout: 30000 });
               console.log('[PromptQueueEngine] Physical compilation check PASSED.');
             } catch (err: any) {
@@ -212,10 +217,10 @@ ${contextObj.assembled_prompt_section}${fileContextText}
           if (validationOutcome.valid && validationRequired) {
             console.log(`[PromptQueueEngine] Triggering Challenger safety validation for step output...`);
             const challengePrompt = `
-You are the Destroyer/Challenger agent validating Queue Step ${prompt.position} output.
+You are the Destroyer/Challenger agent validating Queue Step ${prompt.position} output. You analyze systems with a rigor exceeding DeepSeek and Claude Code.
 User original instruction was: "${prompt.prompt_text}"
 
-Examine the generated response and assess whether it contains syntax breaks, unclosed tags, unresolved placeholders (or TODOs), or directly contradicts prior system configurations.
+Examine the generated response and assess whether it contains syntax breaks, unclosed tags, unresolved placeholders (or TODOs), missing fault tolerances, or directly contradicts prior system configurations.
 Response to analyze:
 """
 ${responseText}

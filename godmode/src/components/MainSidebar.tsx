@@ -1,5 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PANELS } from '../App';
+import { auth, signInUser, signOutUser } from '../lib/firebase';
+import type { User } from 'firebase/auth';
+import ActuatorControlPanel from './ActuatorControlPanel';
+import NotificationPanel from './NotificationPanel';
+import AP2SpendControls from './AP2SpendControls';
+import MatrixEnginePanel from './MatrixEnginePanel';
 
 interface MainSidebarProps {
   isOpen: boolean;
@@ -11,6 +17,20 @@ interface MainSidebarProps {
 export default function MainSidebar({ isOpen, setOpen, activePanel, setActivePanel }: MainSidebarProps) {
   // Search query filter tracking state for the drawer view
   const [searchQuery, setSearchQuery] = useState('');
+  const [user, setUser] = useState<User | null>(null);
+  const [activeTab, setActiveTab] = useState<'panels' | 'system'>('panels');
+
+  useEffect(() => {
+    if (!auth || typeof auth.onAuthStateChanged !== 'function') return;
+    const unsubscribe = auth.onAuthStateChanged((u: User | null) => {
+      setUser(u);
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   // Verbatim panel dictionary from images 1000142786_2.png to 1000142792_2.png
   const taxonomyGroups = [
@@ -74,14 +94,15 @@ export default function MainSidebar({ isOpen, setOpen, activePanel, setActivePan
         { id: 'system_health', label: 'System Health Moni...', icon: '📈', color: 'text-slate-400' },
         { id: 'void_monitor', label: 'Void Monitor', icon: '📈', color: 'text-slate-400' },
         { id: 'world_model', label: 'World Model', icon: '🌐', color: 'text-slate-400' },
-        { id: 'main_sidebar_ui', label: 'Main Sidebar UI', icon: '🖧', color: 'text-slate-400' }
+        { id: 'main_sidebar_ui', label: 'Main Sidebar UI', icon: '🖧', color: 'text-slate-400' },
+        { id: 'autonomous_workflows', label: 'Autonomous Workflows', icon: '⚡', color: 'text-amber-400' }
       ]
     }
   ];
 
   // Map legacy PANELS back to missing array slots dynamically without changing the reference
   const existingIds = new Set(taxonomyGroups[0].items.map(item => item.id));
-  const missingLegacyPanels = PANELS.filter(p => !existingIds.has(p.id)).map(p => ({
+  const missingLegacyPanels = (PANELS || []).filter(p => !existingIds.has(p.id)).map(p => ({
      id: p.id,
      label: p.label,
      icon: '✦',
@@ -106,29 +127,55 @@ export default function MainSidebar({ isOpen, setOpen, activePanel, setActivePan
         <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-white md:hidden text-sm">✕</button>
       </div>
 
+      {/* High-Tech Tab Switcher (Image 1000142786_2.png theme) */}
+      <div className="px-4 py-2.5 border-b border-gray-900 flex-shrink-0 flex space-x-1.5 bg-black/50">
+        <button
+          onClick={() => setActiveTab('panels')}
+          className={`flex-1 py-1.5 text-center text-[10px] font-Rajdhani font-bold rounded-lg transition-all tracking-wider ${activeTab === 'panels' ? 'bg-pink-500/10 border border-pink-500/30 text-pink-400 font-extrabold' : 'bg-transparent border border-transparent text-gray-500 hover:text-gray-300'}`}
+        >
+          PANELS ({taxonomyGroups[0].items.length + (missingLegacyPanels || []).length})
+        </button>
+        <button
+          onClick={() => setActiveTab('system')}
+          className={`flex-1 py-1.5 text-center text-[10px] font-Rajdhani font-bold rounded-lg transition-all tracking-wider ${activeTab === 'system' ? 'bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 font-extrabold' : 'bg-transparent border border-transparent text-gray-500 hover:text-gray-300'}`}
+        >
+          SYSTEM CORE
+        </button>
+      </div>
+
       {/* Interactive Panels Navigation Loop */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4 scrolling-touch">
-        {taxonomyGroups.map((group, gIdx) => (
-          <div key={gIdx} className="space-y-1">
-            <div className="text-[10px] text-gray-600 font-Rajdhani font-bold px-3 py-1 tracking-wider uppercase">
-              {group.group}
+      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4 scrolling-touch custom-scrollbar">
+        {activeTab === 'panels' ? (
+          taxonomyGroups.map((group, gIdx) => (
+            <div key={gIdx} className="space-y-1">
+              <div className="text-[10px] text-gray-600 font-Rajdhani font-bold px-3 py-1 tracking-wider uppercase">
+                {group.group}
+              </div>
+              {group.items.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => { setActivePanel(item.id); setOpen(false); }}
+                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs text-left transition-all duration-150 ${activePanel === item.id ? 'bg-zinc-900/60 border border-pink-500/30 text-white font-semibold' : 'text-gray-400 hover:bg-zinc-900/30'}`}
+                >
+                  <div className="flex items-center space-x-3 truncate">
+                    <span className={`${item.color} font-mono font-bold text-sm w-5 text-center flex-shrink-0`}>
+                      {item.icon}
+                    </span>
+                    <span className="font-Rajdhani font-medium tracking-wide truncate">{item.label}</span>
+                  </div>
+                </button>
+              ))}
             </div>
-            {group.items.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => { setActivePanel(item.id); setOpen(false); }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs text-left transition-all duration-150 ${activePanel === item.id ? 'bg-zinc-900/60 border border-pink-500/30 text-white' : 'text-gray-400 hover:bg-zinc-900/30'}`}
-              >
-                <div className="flex items-center space-x-3 truncate">
-                  <span className={`${item.color} font-mono font-bold text-sm w-5 text-center flex-shrink-0`}>
-                    {item.icon}
-                  </span>
-                  <span className="font-Rajdhani font-medium tracking-wide truncate">{item.label}</span>
-                </div>
-              </button>
-            ))}
+          ))
+        ) : (
+          /* Unified Control & Metric Modules */
+          <div className="space-y-4 pt-1 animate-fade-in">
+            <NotificationPanel />
+            <AP2SpendControls />
+            <ActuatorControlPanel />
+            <MatrixEnginePanel />
           </div>
-        ))}
+        )}
       </div>
 
       {/* Base Security Vault and Identity Grid (Image 1000142789_2.png) */}
@@ -143,22 +190,43 @@ export default function MainSidebar({ isOpen, setOpen, activePanel, setActivePan
 
         <div className="flex items-center justify-between p-2 rounded-xl bg-zinc-950/80 border border-gray-900">
           <div className="flex items-center space-x-3 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-purple-900/40 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold font-mono text-xs flex-shrink-0">
-              M
-            </div>
+            {user ? (
+              user.photoURL ? (
+                <img src={user.photoURL} alt="Profile" className="w-8 h-8 rounded-full border border-purple-500/30 flex-shrink-0 object-cover" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-purple-900/40 border border-purple-500/30 flex items-center justify-center text-purple-300 font-bold font-mono text-xs flex-shrink-0">
+                  {user.displayName ? user.displayName[0].toUpperCase() : user.email ? user.email[0].toUpperCase() : 'U'}
+                </div>
+              )
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gray-900/40 border border-gray-700/50 flex items-center justify-center text-gray-500 font-bold font-mono text-xs flex-shrink-0">
+                ?
+              </div>
+            )}
+            
             <div className="min-w-0">
               <div className="text-xs font-Rajdhani font-bold text-gray-200 truncate flex items-center space-x-1.5">
-                <span>Marquis Whitacre</span>
-                <span className="text-[9px] font-medium text-gray-500 bg-zinc-900 px-1 py-0.5 rounded border border-gray-800">Offline</span>
+                <span>{user ? (user.displayName || 'Unknown User') : 'Guest Mode'}</span>
+                <span className={`text-[9px] font-medium px-1 py-0.5 rounded border ${user ? 'text-emerald-500 bg-emerald-950/30 border-emerald-900/50' : 'text-gray-500 bg-zinc-900 border-gray-800'}`}>
+                  {user ? 'Online' : 'Offline'}
+                </span>
               </div>
-              <div className="text-[10px] font-mono text-gray-500 truncate">MarquisWhitacre@gmail.com</div>
+              <div className="text-[10px] font-mono text-gray-500 truncate">
+                {user ? user.email : 'Not Authenticated'}
+              </div>
             </div>
           </div>
         </div>
 
-        <button className="w-full text-center py-2 text-[10px] font-mono text-gray-600 hover:text-gray-400 border border-dashed border-gray-900 rounded-lg transition-colors">
-          📋 Disconnect Session...
-        </button>
+        {user ? (
+          <button onClick={signOutUser} className="w-full text-center py-2 text-[10px] font-mono text-gray-600 hover:text-red-400 hover:border-red-900 border border-dashed border-gray-900 rounded-lg transition-colors">
+            📋 Disconnect Session...
+          </button>
+        ) : (
+          <button onClick={signInUser} className="w-full text-center py-2 text-[10px] font-mono text-emerald-600 hover:text-emerald-400 hover:border-emerald-900 border border-dashed border-emerald-900/50 rounded-lg transition-colors">
+            🔑 Connect Google Identity...
+          </button>
+        )}
       </div>
     </div>
   );

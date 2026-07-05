@@ -1,22 +1,12 @@
 import fs from 'fs';
 import { proxyRotator } from './proxyRotator';
 import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
+const require = createRequire(typeof __filename !== 'undefined' ? __filename : import.meta.url);
 
 // Dynamic import via require to prevent build environment crashes
 // User must run: npm install puppeteer-extra puppeteer-extra-plugin-stealth puppeteer
-let puppeteer: any;
-let StealthPlugin: any;
-
-try {
-    puppeteer = require('puppeteer-extra');
-    StealthPlugin = require('puppeteer-extra-plugin-stealth');
-    if (puppeteer && StealthPlugin) {
-        puppeteer.use(StealthPlugin());
-    }
-} catch (e) {
-    console.warn("[STEALTH BROWSER WARNING] Puppeteer dependencies missing. Running in simulated fallback mode.");
-}
+let puppeteer: any = null;
+let StealthPlugin: any = null;
 
 /**
  * Fingerprint Randomization Utility
@@ -43,8 +33,18 @@ function getRandomDeviceFingerprint() {
  */
 export async function spawnStealthWorker(targetUrl: string): Promise<string> {
     if (!puppeteer) {
-        console.warn("[ACTUATION]: Puppeteer not installed. Simulating successful stealth payload extraction for target:", targetUrl);
-        return `[SIMULATED STEALTH EXTRACT] Data from ${targetUrl}`;
+        try {
+            const _puppeteer = await import('puppeteer-extra');
+            puppeteer = _puppeteer.default || _puppeteer;
+            const _StealthPlugin = await import('puppeteer-extra-plugin-stealth');
+            StealthPlugin = _StealthPlugin.default || _StealthPlugin;
+            if (puppeteer && StealthPlugin) {
+                puppeteer.use(StealthPlugin());
+            }
+        } catch (e) {
+            console.warn("[ACTUATION]: Puppeteer not installed. Simulating successful stealth payload extraction for target:", targetUrl);
+            return `[SIMULATED STEALTH EXTRACT] Data from ${targetUrl}`;
+        }
     }
 
     // 1. Get Fresh Proxy from Rotator

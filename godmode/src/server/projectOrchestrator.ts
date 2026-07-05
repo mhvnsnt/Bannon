@@ -160,4 +160,6 @@ export class ProjectOrchestrator {
 }
 
 // Self-booting initial database config
-ProjectOrchestrator.init();
+if (process.env.ENABLE_BACKGROUND_DAEMONS === 'true') {
+  ProjectOrchestrator.init();
+}

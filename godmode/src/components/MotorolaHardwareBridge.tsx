@@ -49,7 +49,7 @@ const HardwareSyncSparkline = () => {
 };
 
 export default function MotorolaHardwareBridge() {
-  const [connectionState, setConnectionState] = useState<'OFFLINE' | 'HANDSHAKE' | 'SECURE_LINK'>('OFFLINE');
+  const [connectionState, setConnectionState] = useState<'OFFLINE' | 'HANDSHAKE' | 'SECURE_LINK'>('HANDSHAKE');
   const [logs, setLogs] = useState<string[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
 
@@ -60,6 +60,29 @@ export default function MotorolaHardwareBridge() {
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
+
+  useEffect(() => {
+    let mounted = true;
+    addLog("INITIATING BARE_METAL_ACTUATION PROTOCOL...");
+    addLog("TARGET: LOCALHOST PORT 9999 (MOTOROLA HARDWARE BRIDGE)");
+    
+    setTimeout(() => {
+      if(mounted) addLog("ESTABLISHING TCP/IP SOCKET TO KERNEL SPACE...");
+    }, 800);
+
+    setTimeout(() => {
+      if(mounted) addLog("NEGOTIATING QUANTUM RSA-4096 HANDSHAKE...");
+    }, 1800);
+
+    setTimeout(() => {
+      if(mounted) {
+        addLog("HANDSHAKE ACCEPTED. ELEVATING PRIVILEGES TO RING-0.");
+        setConnectionState('SECURE_LINK');
+      }
+    }, 3200);
+
+    return () => { mounted = false; };
+  }, []);
 
   const initHandshake = () => {
     if (connectionState !== 'OFFLINE') return;

@@ -387,4 +387,6 @@ export class PatternRecognizer {
 }
 
 // Spark up capabilities
-PatternRecognizer.init();
+if (process.env.ENABLE_BACKGROUND_DAEMONS === 'true') {
+  PatternRecognizer.init();
+}

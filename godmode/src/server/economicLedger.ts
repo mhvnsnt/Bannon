@@ -16,10 +16,7 @@ export interface EconomicTransaction {
 // Pricing constants in USD per 1,000,000 tokens
 export const MODEL_PRICING: Record<string, { input: number; output: number }> = {
     'gemini-1.5-flash': { input: 0.075, output: 0.30 },
-    'gemini-2.5-flash': { input: 0.075, output: 0.30 },
-    'gemini-3.5-flash': { input: 0.075, output: 0.30 },
     'gemini-1.5-pro': { input: 1.25, output: 5.00 },
-    'gemini-2.5-pro': { input: 1.25, output: 5.00 },
     'claude-3-5-sonnet': { input: 3.00, output: 15.00 },
     'claude-3.5-sonnet': { input: 3.00, output: 15.00 },
     'groq-llama-3-8b': { input: 0.05, output: 0.08 },
@@ -116,7 +113,7 @@ export class EconomicLedger {
                 }
 
                 // Add model costs for builds
-                const models = ['gemini-3.5-flash', 'claude-3.5-sonnet', 'openai-gpt-4o'];
+                const models = ['gemini-1.5-flash', 'claude-3.5-sonnet', 'openai-gpt-4o'];
                 for (let j = 0; j < buildCount * 2; j++) {
                     const model = models[Math.floor(Math.random() * models.length)];
                     const pricing = MODEL_PRICING[model] || { input: 1.0, output: 5.0 };

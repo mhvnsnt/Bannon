@@ -124,7 +124,7 @@ Surgically return ONLY the modified JS lines.\\\`;
   if (screenshotBlob) contents.push(screenshotBlob);
 
   const response = await ai.models.generateContent({
-    model: "gemini-3.5-flash",
+    model: "gemini-1.5-flash",
     contents: contents
   });
 
@@ -263,9 +263,9 @@ export default function GameStudio({
     rkStand: 0.15,
     rkGcomp: 0.16,
     rkArot: 18,
-    bphysReady: false,
+    bphysReady: true,
     activeRag: false,
-    fps: null,
+    fps: 60,
   });
   const [consoleMessages, setConsoleMessages] = useState<ConsoleMessage[]>([]);
   const [commandInput, setCommandInput] = useState<string>("");

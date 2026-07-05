@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Globe, Shield, Trash2, Plus, RefreshCw, Layers, CheckCircle2, Sliders, Search, AlertTriangle, BookOpen, Clock, Activity, Zap
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export interface WorldStateEntry {
   id: string;

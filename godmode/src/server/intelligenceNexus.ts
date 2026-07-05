@@ -22,7 +22,10 @@ const strategicQueries = [
   'quantum physics probability algorithms',
   'persuasion heuristics marketing advertising',
   'predictive analytics market crashes',
-  'neuroplasticity habit formation'
+  'neuroplasticity habit formation',
+  'advanced autonomous swarm architectures',
+  'LLM multi-agent self correction framework',
+  'reinforcement learning from verifiable execution'
 ];
 
 export async function harvestAcademicAsymmetry() {
@@ -47,15 +50,15 @@ export async function harvestAcademicAsymmetry() {
           Analyze this academic abstract: "${title} - ${abstract}"
           
           Translate this scientific data into a raw, practical tactical advantage. 
-          How does this specific mechanism of human psychology, neurochemistry, economics, physics, or choice architecture allow someone to understand human behavior and reality better? 
-          Provide 2 concrete, actionable ways to apply this knowledge mathematically or psychologically in real-world social dynamics, negotiations, marketing, sports betting, or personal influence. Keep it clinical, direct, and focused on power and leverage. Start the response with exactly this format:
+          How does this specific mechanism of human psychology, neurochemistry, economics, physics, AI architecture, or choice architecture allow someone to understand human behavior and reality better? 
+          Provide 2 concrete, actionable ways to apply this knowledge mathematically, psychologically, or structurally in real-world systems, AI architectures, negotiations, marketing, sports betting, or personal influence. Keep it clinical, direct, and focused on power and leverage. Start the response with exactly this format:
           **LEVERAGE UNLOCKED**: [1 sentence summary of the power gained]
           
           Then list the tactics.
         `;
 
         const tacticalResponse = await ai.models.generateContent({
-          model: 'gemini-3.5-flash',
+          model: 'gemini-2.5-pro',
           contents: extractionPrompt
         });
 
@@ -84,11 +87,11 @@ export async function harvestAcademicAsymmetry() {
           const vectorValues = Array.from(vectorResponse.embeddings?.[0]?.values || (vectorResponse as any).embedding?.values || (vectorResponse as any)?.values || []).slice(0, 768) as number[];
           
           if (vectorValues.length > 0) {
-              await index.upsert({ records: [{
+              await index.upsert([{
                  id: `intel_${Date.now()}_${Math.floor(Math.random()*1000)}`,
                  values: vectorValues,
                  metadata: { topic: query, source: 'arXiv', abstract: abstract.slice(0, 1000), insight: tacticalInsight.slice(0, 1000) }
-              }] });
+              }]);
           }
         }
 
@@ -138,7 +141,7 @@ export async function harvestSingleQuery(query: string) {
       `;
 
       const tacticalResponse = await ai.models.generateContent({
-        model: 'gemini-3.5-flash',
+        model: 'gemini-1.5-flash',
         contents: extractionPrompt
       });
 

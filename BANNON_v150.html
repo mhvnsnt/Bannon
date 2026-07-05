@@ -4115,7 +4115,9 @@ Fighter.prototype.poseAttack = function(dt){
   const stamF = 0.35 + 0.65*Math.min(1.0,(this.atkStamina!=null?this.atkStamina:this.stamina)/(this.maxStamina||100)); // v101
   const vary = this.atkVary || {spd:1,windup:1,zspread:0,yoff:0,recover:1,lead:0.25};
   const profileSpd = this.speedMultiplier || 1.0;
-  const spd = (0.5 + m.speed/100 * 1.6) * stamF * (m._loaded?0.78:1) * vary.spd * cwf('speed') * STRIKE.speed * profileSpd;
+  // UFC weight tuning: mass slows the swing (normalized at 1.0 so mid-card is untouched)
+  const massSpd = clamp(1 - 0.12*((this.strikeMass ? this.strikeMass() : 1) - 1), 0.85, 1.08);
+  const spd = (0.5 + m.speed/100 * 1.6) * stamF * (m._loaded?0.78:1) * vary.spd * cwf('speed') * STRIKE.speed * profileSpd * massSpd;
   // recovery is allowed to be a touch faster/slower per throw
   const _adr = (window.ADRENALINE===false)?1:(1 + (this.adrenaline||0)/100*0.22);
   const _crash = (this._adrCrash>0)?0.72:1;
@@ -4264,7 +4266,9 @@ Fighter.prototype.poseAttack = function(dt){
   } else {
     // hand strike — IK-reach toward the opponent's ACTUAL target zone (head/chest/pelvis)
     const ha = isLeft?'haL':'haR', el=isLeft?'elL':'elR', sh=isLeft?'shL':'shR';
-    const aimJoint = m.height==='HIGH'?'head' : m.height==='LOW'?'pelvis' : 'chest';
+    let aimJoint = m.height==='HIGH'?'head' : m.height==='LOW'?'pelvis' : 'chest';
+    // grounded strikes aim at the zone's actual body part on the downed opponent (verlet-true)
+    if (m.height==='GROUND') aimJoint = m._groundZone==='HEAD'?'head' : m._groundZone==='FEET'?'knR' : 'chest';
     // CHAMBER (guard position): hands at chin, elbows down — the START of every punch
     const gx=0.22, gy=1.50, gz=isLeft?0.14:-0.11;   // chin-level guard (not chest-level)
     let tx=ext, ty2=ty, tz=isLeft?0.10:-0.10;
@@ -4287,7 +4291,7 @@ Fighter.prototype.poseAttack = function(dt){
         tx = tx + (clamp(oppLocalX - 0.2, 0, maxReach) - tx) * trackStr;
       }
       tz  = clamp(lz, -0.55, 0.55) + vary.zspread + (isLeft?0.05:-0.05);
-      ty2 = clamp(wp.y + vary.yoff, 0.4, 1.85);
+      ty2 = clamp(wp.y + vary.yoff, m.height==='GROUND'?0.10:0.4, 1.85);   // grounded shots reach the mat
     }
     const rr = clamp(reach,0,1);
     let hx = lerp(gx, tx, rr), hy = lerp(gy, ty2, rr), hz = lerp(gz, tz, rr);
@@ -4382,6 +4386,34 @@ Fighter.prototype.poseAttack = function(dt){
     if (_whiffPow > 0.75 && this.crumple < 0.4){
       this.crumple = clamp(this.crumple + 0.18, 0, 0.6);
       if (this.enterStumble && Math.random() < 0.45) this.enterStumble(fw.x, m.power*0.25);
+    }
+  }
+  // ===== GROUNDED ZONE DELIVERY (2K26 ground game) — the whole BODY changes per zone, not just the
+  // arm arc. HEAD = mounted hammer: drop toward a knee over the head, torso pitches down, the shot
+  // bombs from above. FEET = leg attack: upright with a forward hinge, chopping down onto the legs.
+  // SIDE = rib drop: deep dip + lateral hinge so the shot swings down across the ribs.
+  if (m.height==='GROUND' && m._groundZone){
+    const _gz = m._groundZone, _dip = Math.sin(Math.min(1,p)*Math.PI);   // deepest at mid-strike
+    if (_gz==='HEAD'){
+      const _drop = (isKick?0.14:0.34)*_dip;
+      this.J.pelvis.tgt.y -= _drop; this.J.spineLow.tgt.y -= _drop*0.92; this.J.spineMid.tgt.y -= _drop*0.84;
+      this.J.chest.tgt.y  -= _drop*0.78; this.J.chest.tgt.x += 0.15*_dip;
+      this.J.head.tgt.y   -= _drop*0.72; this.J.head.tgt.x  += 0.18*_dip;
+      if (!isKick){   // rear leg kneels beside the head, lead foot stays planted wide
+        const _rk=isLeft?'knR':'knL', _rf=isLeft?'ftR':'ftL', _rz=isLeft?-0.15:0.15;
+        this.J[_rk].set(-0.05, lerp(0.42, 0.16, _dip), _rz);
+        this.J[_rf].set(-0.30, 0.05, _rz*1.15);
+      }
+    } else if (_gz==='FEET'){
+      const _hinge = 0.15*_dip;   // upright leg attack — hinge over the legs, slight sit into the chop
+      this.J.chest.tgt.x += _hinge; this.J.head.tgt.x += _hinge*1.25;
+      this.J.pelvis.tgt.y -= 0.08*_dip; this.J.spineMid.tgt.x += _hinge*0.55;
+    } else {          // SIDE — rib drop: dip + lateral hinge across the downed torso
+      const _side = isLeft?1:-1;
+      this.J.pelvis.tgt.y -= 0.16*_dip; this.J.spineLow.tgt.y -= 0.14*_dip;
+      this.J.chest.tgt.y  -= 0.12*_dip; this.J.chest.tgt.x += 0.11*_dip; this.J.chest.tgt.z += _side*0.09*_dip;
+      this.J.spineMid.tgt.z += _side*0.055*_dip;
+      this.J.head.tgt.y   -= 0.10*_dip; this.J.head.tgt.z += _side*0.11*_dip;
     }
   }
   this.solveArmIK();
@@ -5101,8 +5133,11 @@ window.BBODY = (function(){
     // ringGirth ti===2): jaw width/length and skull width/length are now honest sliders.
     { cap:true, capStart:true, rings:[ [['chest','neck',0.42],0.170,0.140], [['chest','neck',0.62],0.110,0.098], ['neck',0.080,0.076], [['neck','head',0.45],0.084,0.082], [['neck','head',0.78],0.096,0.108], ['head',0.106,0.124], [['neck','head',1.32],0.080,0.092] ] },
     // ARMS: broad deltoid cap -> THICK biceps -> elbow -> forearm -> wrist -> hand (more mass + taper)
-    { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
-    { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
+    // hand: past the wrist the tube FLATTENS and WIDENS into a real palm + knuckle plate (wide
+    // side-to-side, thin front-back) instead of tapering into a ball nub — the articulated finger
+    // chains (seg.fingersL/R, keepVisible) grow out of the knuckle ring.
+    { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054,0.046], ['haL',0.062,0.044], [['elL','haL',1.25],0.056,0.032] ] },
+    { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054,0.046], ['haR',0.062,0.044], [['elR','haR',1.25],0.056,0.032] ] },
     // LEGS: thick quad -> knee -> calf taper -> ankle -> foot
     // foot: after the ankle the tube turns FORWARD (local +x) into an instep + toe, flattened wide/low,
     // so it reads as a foot/boot instead of a ball stub. fy lowers it to the mat, fz widens the sole.
@@ -5267,22 +5302,22 @@ window.BBODY = (function(){
     if(ti===1){ const h=_part(f,'hips',1.0,true); return {s:h*_mul(f,'hipW'), d:h*_mul(f,'hipD')}; }  // pelvis -> HIPS (own axis)
     if(ti===2){ const r=i/Math.max(1,M-1);                         // neck tube: 0=trap yoke .. 1=crown
       const FM=(k)=>{ const sh=f.shape||{}; return sh[k]!=null?+sh[k]:1; };
-      if(r<0.55){ const n=_part(f,'neck',1.0,false); return {s:n,d:n}; }               // traps/neck
+      if(r<0.55){ const n=_part(f,'neck',1.0,false); return {s:n*_mul(f,'neckW'), d:n*_mul(f,'neckD')}; }  // traps/neck: own W/D axes (bull neck vs pencil neck)
       const hd=_part(f,'head',0.70,false);
       if(r<0.75) return {s:hd*FM('faceJawW'), d:hd*FM('faceJawL')};                     // jaw/lower face
       return {s:hd*FM('faceSkullW'), d:hd*FM('faceSkullL')};                            // cranium/crown
     }
     if(ti===3||ti===4){ const r=i/Math.max(1,M-1);              // arm: delt -> bicep -> forearm -> hand, each its own slider
       let v; if(r<=0.18) v=_part(f,'shoulders',1.20,true);
-      else if(r<=0.50) v=_part(f,'arms',1.05,true);
-      else if(r<=0.80) v=_part(f,'forearms',1.0,true);
-      else v=_part(f,'hands',0.82,false);
+      else if(r<=0.50) v=_part(f,'arms',1.05,true)*_mul(f,'bicepW');
+      else if(r<=0.80) v=_part(f,'forearms',1.0,true)*_mul(f,'forearmW');
+      else v=_part(f,'hands',0.82,false)*_mul(f,'handS');
       return {s:v,d:v}; }
     if(ti===5||ti===6){ const r=i/Math.max(1,M-1);              // leg: thigh -> knee blend -> calf -> foot
       if(r<=0.30){ const b=_part(f,'thighs',1.06,true); return {s:b*_mul(f,'thighW'), d:b}; }   // thigh keeps its own W axis
       let v; if(r<=0.45) v=(_part(f,'thighs',1.06,true)+_part(f,'calves',1.0,true))*0.5;         // knee = smooth thigh/calf blend
-      else if(r<=0.68) v=_part(f,'calves',1.0,true);
-      else v=_part(f,'feet',1.0,false);
+      else if(r<=0.68){ const c=_part(f,'calves',1.0,true); return {s:c*_mul(f,'calfW'), d:c}; } // calf gets its own W axis (diamond calves)
+      else v=_part(f,'feet',1.0,false)*_mul(f,'footS');
       return {s:v,d:v}; }
     return {s:1,d:1};
   }
@@ -5294,6 +5329,10 @@ window.BBODY = (function(){
     const fem=_bodyComp(f).fem;
     if(ti===1){ const round=back*back; return (0.030*g + 0.030*(g-1) + fem*0.035*g) * round; }   // seat on the pelvic basin
     if((ti===5||ti===6) && i<=1){ return (0.018*(g-1) + fem*0.018*g) * back; }                    // upper-ham fullness
+    // LATS / V-TAPER (ti 0 upper torso): back-side wings that fade toward the waist. Lives here (not
+    // _relief) because it's a SIZE morph — it must not be gated by muscle definition like the cuts are.
+    if(ti===0){ const hi=i/Math.max(1,M-1); if(hi>0.45){ const side=Math.abs(Math.sin(a));
+      return side*back*2.0*0.055*(hi-0.45)/0.55*(_mul(f,'lats')-1); } }
     return 0;
   }
   // BODY COMPOSITION — three independent axes so the roster spans real 2026 body
@@ -5440,7 +5479,7 @@ window.BBODY = (function(){
     if(m.userData && m.userData.keepVisible){ m.visible=true; continue; }   // explicit keep (e.g. Maime's painted face shell)
     // finger/thumb chains live in (possibly nested) arrays — plain `m.visible=` skipped them, so the
     // crude little cylinders stayed visible over the smooth hand and read as a grid blob. Recurse.
-    if(Array.isArray(m)){ const walk=(x)=>{ if(Array.isArray(x)) x.forEach(walk); else if(x&&x.visible!==undefined) x.visible=!hide; }; walk(m); continue; }
+    if(Array.isArray(m)){ const walk=(x)=>{ if(Array.isArray(x)) x.forEach(walk); else if(x&&x.visible!==undefined) x.visible=(x.userData&&x.userData.keepVisible)?true:!hide; }; walk(m); continue; }
     if(m.visible!==undefined) m.visible=!hide; } }
   // Hide EVERYTHING procedural (continuous body + every seg incl face + finger arrays). Used when a
   // GLB model replaces this fighter — otherwise the procedural body renders INSIDE the imported model
@@ -5819,7 +5858,8 @@ window.cycleRosterP2 = function(){
   const BODY=[['shoulders','SHOULDERS'],['traps','TRAPS / YOKE'],['chest','CHEST'],['bust','BUST'],['arms','UPPER ARMS'],['forearms','FOREARMS'],['hands','HANDS'],['waist','WAIST / GUT'],['hips','HIPS'],['glutes','GLUTES / SEAT'],['thighs','THIGHS'],['calves','CALVES'],['feet','FEET'],['head','HEAD']];
   // per-axis WIDTH vs DEPTH knobs (default 1 = neutral) — wide-but-flat shoulders,
   // wide hips, tiny-deep waist, etc. The "disproportionate body" controls.
-  const AXES=[['shoulderW','SHOULDER WIDTH'],['chestW','CHEST WIDTH'],['chestD','CHEST DEPTH'],['waistW','WAIST WIDTH'],['waistD','WAIST DEPTH'],['hipW','HIP WIDTH'],['hipD','HIP DEPTH'],['thighW','THIGH WIDTH']];
+  const AXES=[['shoulderW','SHOULDER WIDTH'],['chestW','CHEST WIDTH'],['chestD','CHEST DEPTH'],['waistW','WAIST WIDTH'],['waistD','WAIST DEPTH'],['hipW','HIP WIDTH'],['hipD','HIP DEPTH'],['thighW','THIGH WIDTH'],
+    ['neckW','NECK WIDTH'],['neckD','NECK DEPTH'],['lats','LATS / V-TAPER'],['bicepW','BICEP PEAK'],['forearmW','FOREARM GIRTH'],['calfW','CALF WIDTH'],['handS','HAND SIZE'],['footS','FOOT SIZE']];
   const COLZ=[['skin','SKIN'],['hair','HAIR'],['trunk','TRUNKS'],['accent','GLOVES/ACCENT'],['band','WAISTBAND'],['boot','BOOTS'],['eye','EYE GLOW']];
   const STYLES=['allrounder','powerhouse','striker','grappler','technical','capoeira','brawler','luchador'];
   // STYLES above are cosmetic archetype LABELS shown on the button — they are not
@@ -5909,7 +5949,11 @@ window.cycleRosterP2 = function(){
     slider('faceNoseL','NOSE LENGTH',0.7,1.6,true,true);
     slider('faceEars','EAR SIZE',0.6,1.6,true,true);
     slider('faceEye','EYE SIZE',0.6,1.7,true,true);
+    slider('faceEyeSpread','EYE SPREAD',0.7,1.5,true,true);    // inter-ocular distance (placement)
+    slider('faceEyeH','EYE HEIGHT',0.5,1.8,true,true);         // eyes ride higher/lower on the face
     slider('faceMouthW','MOUTH WIDTH',0.6,1.6,true,true);
+    slider('faceMouthH','MOUTH HEIGHT',0.5,1.8,true,true);     // mouth slides nose-ward/chin-ward
+    slider('faceEarH','EAR HEIGHT',0.4,1.9,true,true);
     slider('faceLips','LIP FULLNESS',0.7,1.8,true,true);
     H('SKIN / HAIR / ATTIRE','#c084fc');
     COLZ.forEach(c=> colorRow(c[0],c[1]));
@@ -6207,13 +6251,18 @@ Fighter.prototype.applyMesh = function(){
   put(s.band, p, 0, 0.06, 0); s.band.scale.set(pelW*0.98, 0.05, 0.212*(1+fem*0.16)*0.98);  // waistband snapped to the crest, hugging the basin top
 
   // HEAD / FACE (local +x = forward) — offsets scale with head size so features stay attached when head is morphed
+  // v152 FACE PLACEMENT morphs (position-only — applyMesh must NEVER re-scale face segs, the sculpt
+  // scaling lives in applyFighterSpec): faceEyeSpread = inter-ocular distance, faceEyeH = eye height,
+  // faceMouthH = mouth height, faceEarH = ear height — the "feature placement" 2K axes on top of the
+  // feature-size sliders (faceEars/faceEye/faceMouthW/faceLips) and the skull-geometry sculpt.
+  const _fx=(k)=>{ const sh=this.shape||{}; return sh[k]!=null?+sh[k]:1; };
   put(s.head, h);
   put(s.jaw,  h,  0.045*_hs, -0.10*_hs, 0);
   put(s.brow, h,  0.075*_hs,  0.05*_hs, 0);
   put(s.nose, h,  0.150*_hs, -0.02*_hs, 0);
-  put(s.earL, h, -0.02*_hs,   0.0,  0.135*_hs); put(s.earR, h, -0.02*_hs, 0.0, -0.135*_hs);
-  put(s.mouth,h,  0.150*_hs, -0.050*_hs, 0);                                                          // mouth on the lower FACE, not down on the chin/neck
-  put(s.eyeL, h,  0.140*_hs,  0.020*_hs,  0.062*_hs); put(s.eyeR, h, 0.140*_hs, 0.020*_hs, -0.062*_hs); // eyes mid-face, set a touch closer
+  put(s.earL, h, -0.02*_hs,   0.0 + 0.04*_hs*(_fx('faceEarH')-1),  0.135*_hs); put(s.earR, h, -0.02*_hs, 0.0 + 0.04*_hs*(_fx('faceEarH')-1), -0.135*_hs);
+  put(s.mouth,h,  0.150*_hs, -0.050*_hs*_fx('faceMouthH'), 0);                                        // mouth on the lower FACE; H slider slides it chin-ward/nose-ward
+  put(s.eyeL, h,  0.140*_hs,  0.020*_hs + 0.03*_hs*(_fx('faceEyeH')-1),  0.062*_hs*_fx('faceEyeSpread')); put(s.eyeR, h, 0.140*_hs, 0.020*_hs + 0.03*_hs*(_fx('faceEyeH')-1), -0.062*_hs*_fx('faceEyeSpread')); // eyes mid-face; spread = inter-ocular
   put(s.hair, h, -0.060*_hs,   0.120*_hs,  0);                                                         // hair RAISED into a cap on top/back so the forehead + face are clear (was a helmet to the brow)
   // FACE GEAR placement (canon sketch): metallic 3/4 mask hugs the face; jaw plate floats BELOW it
   // with a visible slot; dread strands hang from the back/side of the skull, leaving the face arc open.
@@ -6553,7 +6602,27 @@ const GRAPPLE_POSITIONS = {
       knL:[-0.30,0.56,0.14], knR:[-0.30,0.56,-0.14], ftL:[-0.52,0.22,0.15], ftR:[-0.52,0.22,-0.15] }) },
   // CHOKESLAM: opponent held AT arm's length — one arm fully extended to throat.
   // Real: Big Show/Kane — opponent is directly in front, close. off reduced from 0.42 to 0.20.
-  CHOKESLAM: { label:"CHOKESLAM",   off:0.20, oppYaw:Math.PI, delivery:'slam', basePow:112, lift0:0.0,
+  // v152: 3-phase setup (was a snap to the final dangle): GOOSENECK — the throat is clamped, victim
+  // upright, both hands prying at the choking wrist -> HOIST — driven upward, back arching, feet
+  // just clearing the mat, hands still fighting the wrist -> DANGLE (= original slave, unchanged).
+  CHOKESLAM: { label:"CHOKESLAM",   off:0.20, oppYaw:Math.PI, delivery:'slam', basePow:112, lift0:0.0, liftDur:0.80,
+    liftPoses: [
+      { t:0.00, pose: slavePose({ // GOOSENECK — clamped at the throat, upright, prying at the wrist
+          pelvis:[0.02,0.90,0], chest:[-0.02,1.20,0], head:[-0.06,1.50,0],
+          shL:[0,1.24,0.20], shR:[0,1.24,-0.20], elL:[0.12,1.16,0.22], elR:[0.12,1.16,-0.22],
+          haL:[0.20,1.38,0.10], haR:[0.20,1.38,-0.10], hipL:[0.02,0.88,0.13], hipR:[0.02,0.88,-0.13],
+          knL:[0.08,0.50,0.14], knR:[0.08,0.50,-0.14], ftL:[0.12,0.05,0.15], ftR:[0.12,0.05,-0.15] }) },
+      { t:0.55, pose: slavePose({ // HOIST — rising off the mat, back arching, toes leaving the canvas
+          pelvis:[0.02,1.02,0], chest:[-0.02,1.34,0], head:[-0.04,1.64,0],
+          shL:[0,1.38,0.20], shR:[0,1.38,-0.20], elL:[0.10,1.24,0.24], elR:[0.10,1.24,-0.24],
+          haL:[0.18,1.50,0.10], haR:[0.18,1.50,-0.10], hipL:[0.01,0.94,0.13], hipR:[0.01,0.94,-0.13],
+          knL:[0.06,0.56,0.14], knR:[0.08,0.60,-0.14], ftL:[0.08,0.24,0.15], ftR:[0.10,0.30,-0.15] }) },
+      { t:1.00, pose: slavePose({ // DANGLE — = original slave, feet kicking free under the extended arm
+          pelvis:[0,0.96,0], chest:[0,1.32,0], head:[0,1.64,0],
+          shL:[0,1.38,0.20], shR:[0,1.38,-0.20], elL:[0.04,1.10,0.24], elR:[0.04,1.10,-0.24],
+          haL:[0.08,0.86,0.22], haR:[0.08,0.86,-0.22], hipL:[0,0.88,0.13], hipR:[0,0.88,-0.13],
+          knL:[0.04,0.52,0.14], knR:[0.04,0.52,-0.14], ftL:[0.06,0.18,0.15], ftR:[0.06,0.18,-0.15] }) }
+    ],
     slave: slavePose({ pelvis:[0,0.96,0], chest:[0,1.32,0], head:[0,1.64,0],
       shL:[0,1.38,0.20], shR:[0,1.38,-0.20], elL:[0.04,1.10,0.24], elR:[0.04,1.10,-0.24],
       haL:[0.08,0.86,0.22], haR:[0.08,0.86,-0.22], hipL:[0,0.88,0.13], hipR:[0,0.88,-0.13],
@@ -6588,7 +6657,26 @@ const GRAPPLE_POSITIONS = {
 
   // ---- additional FRONT positions ----
   // FIREMAN'S CARRY: opponent draped across shoulders, off is lateral not forward
-  FIREMANS_CARRY: { label:"FIREMAN'S CARRY", off:0.06, oppYaw:Math.PI/2, delivery:'slam', basePow:100, lift0:0.0, land:'shoulder',
+  // v152: 3-phase setup (was a snap to the drape): DUCK-UNDER — attacker ducks, victim folded over
+  // the shoulder line, feet still down -> ROLL-ON — hauled up onto the shoulders, body tipping to
+  // the lateral drape, legs trailing -> DRAPED (= original slave across the shoulders, unchanged).
+  FIREMANS_CARRY: { label:"FIREMAN'S CARRY", off:0.06, oppYaw:Math.PI/2, delivery:'slam', basePow:100, lift0:0.0, land:'shoulder', liftDur:0.85,
+    liftPoses: [
+      { t:0.00, pose: slavePose({ // DUCK-UNDER — bent over the ducked attacker, arm hooked, feet planted
+          pelvis:[0.14,0.98,0], chest:[0.32,0.92,0.06], head:[0.48,0.84,0.10],
+          shL:[0.30,0.96,0.24], shR:[0.28,0.90,-0.16], elL:[0.42,0.80,0.26], elR:[0.38,0.76,-0.16],
+          haL:[0.52,0.66,0.24], haR:[0.46,0.62,-0.14], hipL:[0.12,0.96,0.13], hipR:[0.12,0.96,-0.13],
+          knL:[0.22,0.54,0.15], knR:[0.22,0.54,-0.14], ftL:[0.30,0.05,0.16], ftR:[0.30,0.05,-0.15] }) },
+      { t:0.50, pose: slavePose({ // ROLL-ON — hauled up, tipping into the lateral drape, legs trailing
+          pelvis:[0.02,1.16,0.02], chest:[0.18,1.20,0.02], head:[0.34,1.18,0.04],
+          shL:[0.16,1.24,0.20], shR:[0.16,1.16,-0.14], elL:[0.28,1.08,0.22], elR:[0.24,1.04,-0.12],
+          haL:[0.38,0.94,0.20], haR:[0.32,0.90,-0.10], hipL:[-0.14,1.12,0.10], hipR:[-0.14,1.10,-0.10],
+          knL:[-0.34,0.86,0.12], knR:[-0.34,0.84,-0.12], ftL:[-0.50,0.56,0.13], ftR:[-0.50,0.54,-0.13] }) },
+      { t:1.00, pose: slavePose({ // DRAPED — = original slave across the shoulders
+          pelvis:[0,1.28,0.0], chest:[0.28,1.30,0], head:[0.52,1.28,0],
+          hipL:[-0.28,1.28,0.10], hipR:[-0.28,1.28,-0.10], knL:[-0.52,1.28,0.12], knR:[-0.52,1.28,-0.12],
+          ftL:[-0.76,1.26,0.13], ftR:[-0.76,1.26,-0.13] }) }
+    ],
     slave: slavePose({ pelvis:[0,1.28,0.0], chest:[0.28,1.30,0], head:[0.52,1.28,0],
       hipL:[-0.28,1.28,0.10], hipR:[-0.28,1.28,-0.10], knL:[-0.52,1.28,0.12], knR:[-0.52,1.28,-0.12],
       ftL:[-0.76,1.26,0.13], ftR:[-0.76,1.26,-0.13] }) },
@@ -7738,9 +7826,9 @@ function pickGrapplePosition(mode, kind, dir5, powerMod){
 window.POSITION_TAXONOMY = {
   STAND_FRONT:   { families:['strike','front grapple: scoop/suplex/DDT/powerbomb/chokeslam families'], hook:'GRAPPLE_MATRIX.front + poseGrab', status:'live' },
   STAND_REAR:    { families:['rear grapple: German/back suplex, backbreaker, atomic drop, reverse DDT'], hook:'GRAPPLE_MATRIX.rear + go-behind', status:'live' },
-  GROUND_HEAD:   { families:['mounted strikes, head-side submissions, leg drops/elbows'],               hook:'groundAttack (head-side zoning)', status:'todo' },
-  GROUND_SIDE:   { families:['side submissions, pins, stomps'],                                          hook:'groundAttack (side zoning)',      status:'todo' },
-  GROUND_FEET:   { families:['leg-side submissions (locks), catapults, stomps'],                         hook:'groundAttack (leg-side zoning)',  status:'todo' },
+  GROUND_HEAD:   { families:['face-up: mounted strikes/head shots · face-down: back-of-head shots'],    hook:'groundZoneOf x groundFacingOf',   status:'live' },
+  GROUND_SIDE:   { families:['face-up: rib work, pins · face-down: kidney shots'],                       hook:'groundZoneOf x groundFacingOf',   status:'live' },
+  GROUND_FEET:   { families:['face-up: leg attacks · face-down: hamstring work'],                        hook:'groundZoneOf x groundFacingOf',   status:'live' },
   CORNER_FACING: { families:['corner strikes, splashes, tree-of-woe setups, top-rope seat'],             hook:'zone CORNER + climb',             status:'partial' },
   ROPE_REBOUND:  { families:['rebound strikes (lariat/dropkick), leapfrog/duck in-betweens'],            hook:'reboundT + runCharge',            status:'partial' },
   APRON:         { families:['apron strikes, slingshot entries, apron-to-floor dives'],                  hook:'zone APRON + ropeexit',           status:'partial' },
@@ -7749,6 +7837,22 @@ window.POSITION_TAXONOMY = {
   SPRINGBOARD:   { families:['springboard dives + in-between VAULT animation off the ropes'],           hook:'startDive(sb) — vault anim todo', status:'partial' },
   RUNNING:       { families:['running strikes/grapples (bulldog, spear, running knees)'],               hook:'running + momentum',              status:'live' }
 };
+// FACE-UP vs FACE-DOWN (2K26 grounded orientation): the downed body's chest normal = the cross
+// product of the spine axis (pelvis->head) and the shoulder axis (shL->shR), read from the verlet
+// points. Normal pointing up = supine (face-up: mounted punches, pins, gut stomps); pointing down =
+// prone (face-down: back-of-head shots, back stomps, kidney/hamstring work). Which family a grounded
+// strike belongs to depends on BOTH this and groundZoneOf — orientation before magnitude
+// (docs/mocap_orientation_master_prompt.md).
+function groundFacingOf(opp){
+  try{
+    const V=opp.V; if(!V||!V.pelvis||!V.head||!V.shL||!V.shR) return 'UP';
+    const px=V.head.pos.x-V.pelvis.pos.x, py=V.head.pos.y-V.pelvis.pos.y, pz=V.head.pos.z-V.pelvis.pos.z;
+    const sx=V.shR.pos.x-V.shL.pos.x,   sy=V.shR.pos.y-V.shL.pos.y,   sz=V.shR.pos.z-V.shL.pos.z;
+    const ny = pz*sx - px*sz;   // y of (spine x shoulderAxis) = the chest normal's vertical part
+    return ny>=0 ? 'UP' : 'DOWN';
+  }catch(e){ return 'UP'; }
+}
+window.groundFacingOf = groundFacingOf;
 // Which zone of a DOWNED body the attacker is standing at: their offset projected on the body's
 // pelvis->head axis. HEAD side / FEET side / SIDE drive the grounded move family + damage target.
 function groundZoneOf(att, opp){
@@ -7762,7 +7866,7 @@ function groundZoneOf(att, opp){
     const fr = useV ? opp.V.ftR.pos    : opp.worldJoint('ftR');
     const mfx=(fl.x+fr.x)*0.5, mfz=(fl.z+fr.z)*0.5;
     let ax=hd.x-mfx, az=hd.z-mfz; const L=Math.hypot(ax,az);
-    if (L<0.35){ ax=-Math.cos(opp.facing||0); az=Math.sin(opp.facing||0); }  // not laid out yet: backward-fall default (head lands OPPOSITE facing)
+    if (L<0.18){ ax=-Math.cos(opp.facing||0); az=Math.sin(opp.facing||0); }  // truly curled/upright: backward-fall default (head lands OPPOSITE facing). 0.18 not 0.35 — slumped/half-curled bodies still carry a real axis (a forward fall reads 0.25-0.30 and the facing guess points the WRONG way)
     else { ax/=L; az/=L; }
     const dx=att.x-ph.x, dz=att.z-ph.z, d=Math.hypot(dx,dz)||1;
     const dot=(dx*ax+dz*az)/d;
@@ -8539,9 +8643,9 @@ Fighter.prototype.poseGrab = function(dt){
       const Kp=0.55, Kd=0.07;
       let tau = Kp*_v._loadErr - Kd*(_v._loadVel||0);
       tau = clamp(tau, -0.085, 0.085);
-      this.J.pelvis.y += tau*0.55; this.J.chest.y += tau*0.40; this.J.head.y += tau*0.30;
-      this.J.chest.x  += Math.abs(tau)*0.35;                    // tip INTO the load (never away)
-      this.J.knL.y += tau*0.30; this.J.knR.y += tau*0.30;       // knees give under the sag
+      this.J.pelvis.tgt.y += tau*0.55; this.J.chest.tgt.y += tau*0.40; this.J.head.tgt.y += tau*0.30;
+      this.J.chest.tgt.x  += Math.abs(tau)*0.35;                // tip INTO the load (never away)
+      this.J.knL.tgt.y += tau*0.30; this.J.knR.tgt.y += tau*0.30; // knees give under the sag
     } }
   this.solveArmIK();
 };
@@ -9042,7 +9146,12 @@ Fighter.prototype.startDive = function(type, sb){
   // it plays the actual rope-plant first (hands/foot to the top rope, hips kicking over) and THEN
   // launches from rope height. The vault stores the dive and hands off to the normal path when done.
   if (sb && !this._vaultPending && !this.ragdoll){
-    this._vaultPending = { type: type };
+    // VAULT VARIANTS (2K26): where you springboard FROM changes the in-between and the launch —
+    //  ring  = the standard rope-plant vault (hands to the top rope, hips kick over, top-rope height)
+    //  apron = SLINGSHOT entry: plant on the top rope from OUTSIDE and sling the body over INTO the ring
+    //  mid   = quick second-rope pop: shorter plant, lower launch, faster into the dive
+    const _vfrom = (this.zone==='APRON') ? 'apron' : (((this.airLift||0)>0.45) ? 'mid' : 'ring');
+    this._vaultPending = { type: type, from: _vfrom };
     this.state='vault'; this.stateTime=0; this.spin=0; this.diveType=null;
     return;
   }
@@ -9053,7 +9162,9 @@ Fighter.prototype.startDive = function(type, sb){
   this.aerialFrom = { x:this.x, y:(this.airLift||(sb?0.2:1.85)), z:this.z };
   this.aerialTo = opp ? { x:clamp(opp.x,-ARENA_HALF,ARENA_HALF), z:clamp(opp.z,-ARENA_HALF_Z,ARENA_HALF_Z) } : { x:this.x + this.dir*2.5, z:this.z };
   this._diveArc = (d.arc + (sb?DIVE.spring:0)) * DIVE.arc;
-  announce(d.label, this.who());
+  const _vPre = this._sbFrom==='apron' ? 'SLINGSHOT ' : (this._sbFrom==='mid' ? 'SPRINGBOARD ' : '');
+  this._sbFrom = null;
+  announce(_vPre + d.label, this.who());
 };
 Fighter.prototype.exitAerial = function(){
   this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this._airPitch=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
@@ -9062,10 +9173,19 @@ Fighter.prototype.exitAerial = function(){
 // hips kick up and over, then the stored dive launches from rope height. One continuous motion
 // (smoothstep phases), not a keyframe snap; physics keeps stepping underneath.
 Fighter.prototype.poseVault = function(dt){
-  const T=0.30, t=Math.min(1, this.stateTime/T);
+  const _vp=this._vaultPending||{}, _from=_vp.from||'ring';
+  const T=(_from==='mid')?0.22:(_from==='apron')?0.36:0.30;   // mid = quick pop, apron = the bigger sling
+  const t=Math.min(1, this.stateTime/T);
   const s=t*t*(3-2*t);                                    // eased master phase
   const plant=Math.min(1, s/0.5), kick=Math.max(0,(s-0.45)/0.55);   // A: dip+plant  B: hips over
-  this.airLift = 0.15*plant + 0.75*kick;                  // body carries up onto the rope line
+  const _liftMax=(_from==='mid')?0.55:(_from==='apron')?0.70:0.75;
+  this.airLift = 0.15*plant + _liftMax*kick;              // body carries up onto the rope line
+  // APRON SLINGSHOT: the body TRAVELS over the top rope INTO the ring while the hips sling over
+  if (_from==='apron' && kick>0){
+    const _L=Math.hypot(this.x,this.z)||1;
+    this.x += (-this.x/_L)*dt*2.6*kick; this.z += (-this.z/_L)*dt*2.6*kick;
+    this.zone='RING'; this.zoneY=0;                       // committed over the ropes — zone follows the body
+  }
   this.root.position.set(this.x, RING.floorY + (this.zoneY||0) + this.airLift, this.z);
   this.root.rotation.set(0, this.facing, 0, 'YXZ');
   const J=this.J, dip=0.14*plant*(1-kick);
@@ -9075,14 +9195,21 @@ Fighter.prototype.poseVault = function(dt){
   // hands PLANT on the top rope line ahead (the visible contact of the vault)
   J.haL.set(0.42+0.10*plant, 1.06-0.04*plant, 0.20); J.haR.set(0.42+0.10*plant, 1.06-0.04*plant, -0.20);
   J.elL.set(0.30, 1.12, 0.22); J.elR.set(0.30, 1.12, -0.22);
-  // legs: load in the dip, then SWEEP up behind as the hips kick over the hands
-  J.hipL.set(-0.02-0.16*kick, 0.86+0.16*kick, 0.13); J.hipR.set(-0.02-0.16*kick, 0.86+0.16*kick, -0.13);
-  J.knL.set(0.10-0.34*kick, 0.48+0.44*kick, 0.15); J.knR.set(0.10-0.30*kick, 0.48+0.38*kick, -0.15);
-  J.ftL.set(0.16-0.52*kick, 0.06+0.72*kick, 0.16); J.ftR.set(0.16-0.46*kick, 0.06+0.62*kick, -0.16);
+  if (_from==='apron'){
+    // SLINGSHOT legs: knees TUCK high over the rope (clearing it from outside), not the behind-sweep
+    J.hipL.set(-0.04-0.10*kick, 0.86+0.20*kick, 0.13); J.hipR.set(-0.04-0.10*kick, 0.86+0.20*kick, -0.13);
+    J.knL.set(0.16+0.10*kick, 0.48+0.62*kick, 0.15); J.knR.set(0.16+0.14*kick, 0.48+0.56*kick, -0.15);
+    J.ftL.set(0.10+0.06*kick, 0.06+0.52*kick, 0.16); J.ftR.set(0.10+0.10*kick, 0.06+0.46*kick, -0.16);
+  } else {
+    // legs: load in the dip, then SWEEP up behind as the hips kick over the hands
+    J.hipL.set(-0.02-0.16*kick, 0.86+0.16*kick, 0.13); J.hipR.set(-0.02-0.16*kick, 0.86+0.16*kick, -0.13);
+    J.knL.set(0.10-0.34*kick, 0.48+0.44*kick, 0.15); J.knR.set(0.10-0.30*kick, 0.48+0.38*kick, -0.15);
+    J.ftL.set(0.16-0.52*kick, 0.06+0.72*kick, 0.16); J.ftR.set(0.16-0.46*kick, 0.06+0.62*kick, -0.16);
+  }
   if (this.stateTime>=T){
     const p=this._vaultPending; this._vaultPending=null;
-    this.airLift=0.95;                                     // launch height = off the top rope
-    if(p) this.startDive(p.type,false); else this.exitAerial();
+    this.airLift = (_from==='mid')?0.75:(_from==='apron')?0.85:0.95;   // launch height per rope tier
+    if(p){ this._sbFrom=p.from; this.startDive(p.type,false); } else this.exitAerial();
   }
 };
 Fighter.prototype.diveImpact = function(opp){ try{
@@ -9318,8 +9445,14 @@ function registerHit(attacker, move){
   const velF   = 0.74 + 0.34*(move.speed/100) + 0.14*reachUsed;   // tip velocity: faster strike + more travel = more snap
   const loadF  = (move._loaded || attacker.atkLoaded) ? 1.4 : 1.0;
   const wakeBonus = opp.isGettingUp() ? 1.4 : 1;
-  const effPower = clamp(move.power * rangeF * stamF * velF * loadF, 6, 135);
-  const em = Object.assign({}, move, { power: effPower }); // reactions key off effective power
+  // UFC WEIGHT-STRIKE TUNING: mass is in the punch. A heavyweight's shot carries more (power scales
+  // with the attacker's absolute mass), and how far the RECEIVER gets moved is the mass RATIO — a
+  // flyweight can sting a heavyweight for damage but barely rocks him; the reverse launches.
+  const _mA = attacker.strikeMass ? attacker.strikeMass() : 1, _mD = opp.strikeMass ? opp.strikeMass() : 1;
+  const massF = clamp(1 + 0.22*(_mA - 1), 0.78, 1.20);
+  const kbF   = clamp(Math.pow(_mA/Math.max(0.1,_mD), 0.6), 0.70, 1.45);
+  const effPower = clamp(move.power * rangeF * stamF * velF * loadF * massF, 6, 135);
+  const em = Object.assign({}, move, { power: effPower, _massF: massF, _kbF: kbF }); // reactions key off effective power
   // tier label feedback (Light / Medium / Heavy)
   const tier = effPower<35 ? 'LIGHT' : effPower<70 ? 'MEDIUM' : 'HEAVY';
   em._tier = tier;
@@ -9342,7 +9475,7 @@ function registerHit(attacker, move){
   if(window.PHYS_STRIKE && window.RK_BODY && window.BPHYS && window.BPHYS.visceralImpact){   // send the shot through their skeleton
     const vreg=(move.height==='HIGH')?'head':((move.height==='LOW'||move.height==='GROUND')?'low':'body');
     const _as=Math.min(1.0,((attacker.atkStamina!=null?attacker.atkStamina:attacker.stamina)||(attacker.maxStamina||100))/(attacker.maxStamina||100)); // v101
-    window.BPHYS.visceralImpact(opp, vreg, effPower, af.x, af.z, _as);
+    window.BPHYS.visceralImpact(opp, vreg, effPower*kbF, af.x, af.z, _as);   // knockback rides the mass ratio (UFC weight classes)
     // NEWTONIAN HAND RECOIL: the striking forearm bounces off the target (equal/opposite) and the blend shows it
     if(attacker._ar && attacker._ar.byName){
       const _hb=(move.limb && move.limb.includes('LEFT'))?'lArmL':'lArmR';
@@ -10721,59 +10854,41 @@ function buildArena(){
     const crowdPalette=[0x9a1a1a,0x1a3a8a,0x7a5a10,0x1a1a2a,0x5a1a5a,0x1a5a3a,0x6a3a10,0x2a2a6a,0xaa2222,0x224488,0x886600,0x228844];
     const skinTones=[0x2a1a10,0x3d2510,0x8b5e3c,0xc8956c,0xe8c49a,0x4a2010];
 
+    // v152 PERF: INSTANCED CROWD — the old crowd was 227 Groups of 1-5 unique Meshes with unique
+    // materials (~380 draw calls + ~380 material binds every frame), the single biggest render cost
+    // in the scene and the primary cause of the in-play lag (frame time starves dt, which slows every
+    // spring — lifts crawl, arcs never reach climax). Same look, now 5 InstancedMeshes = 5 draw calls.
+    // Per-fan color via instanceColor with the band brightness baked in (they were emissive-lit anyway).
+    const _cSpec=[]; const _cMembers=[];
     const buildCrowdBand=(count,zMin,zMax,xMin,xMax,sizeMin,sizeMax,brightness,addHead,doSigns)=>{
       for(let i=0;i<count;i++){
         const col=crowdPalette[Math.floor(Math.random()*crowdPalette.length)];
         const skinCol=skinTones[Math.floor(Math.random()*skinTones.length)];
         const sz=rand(sizeMin,sizeMax);
-        const g=new THREE.Group();
-
-        // body — jersey colour
-        const bodyMat=new THREE.MeshStandardMaterial({color:col,roughness:0.92,metalness:0,emissive:col,emissiveIntensity:brightness});
-        const body=new THREE.Mesh(new THREE.BoxGeometry(sz*0.58,sz*0.85,sz*0.38),bodyMat);
-        body.position.y=sz*0.42; g.add(body);
-
+        const px=rand(xMin,xMax), pz=rand(zMin,zMax);
+        const distFromRing=Math.abs(pz)-5;
+        const gy=-0.05+Math.max(0,distFromRing*0.06);
+        const ry=rand(-0.20,0.20), ca=Math.cos(ry), sa=Math.sin(ry);
+        const member={parts:[], sp:rand(0.8,2.8), ph:rand(0,Math.PI*2)};
+        // local offset -> band world (yaw about the fan's own origin)
+        const add=(kind, lx,ly,lz, sx,sy,sz2, rz, c, lum)=>{
+          _cSpec.push({kind, x:px+lx*ca+lz*sa, y:gy+ly, z:pz-lx*sa+lz*ca, sx,sy,sz:sz2, ry, rz:rz||0, col:c, lum, member});
+        };
+        const bodyLum=0.30+brightness*2.4, skinLum=0.26+brightness*1.6;
+        add('body', 0, sz*0.42, 0, sz*0.58, sz*0.85, sz*0.38, 0, col, bodyLum);
         if(addHead){
-          // head with skin tone
-          const headMat=new THREE.MeshStandardMaterial({color:skinCol,roughness:0.85,metalness:0,emissive:skinCol,emissiveIntensity:brightness*0.6});
-          const head=new THREE.Mesh(new THREE.SphereGeometry(sz*0.20,7,6),headMat);
-          head.position.y=sz*0.88+sz*0.20; g.add(head);
-
-          // raised arms (random ~25% of crowd — the energy read)
+          add('head', 0, sz*1.08, 0, sz*0.20, sz*0.20, sz*0.20, 0, skinCol, skinLum);
           if(Math.random()<0.25){
-            const armMat=new THREE.MeshStandardMaterial({color:skinCol,roughness:0.9,metalness:0});
-            const armL=new THREE.Mesh(new THREE.CylinderGeometry(sz*0.07,sz*0.07,sz*0.55,5),armMat);
-            const armR=armL.clone();
-            armL.position.set(-sz*0.38,sz*0.88+sz*0.35,0); armL.rotation.z=0.45;
-            armR.position.set( sz*0.38,sz*0.88+sz*0.35,0); armR.rotation.z=-0.45;
-            g.add(armL); g.add(armR);
+            add('arm', -sz*0.38, sz*1.23, 0, sz*0.07, sz*0.55, sz*0.07,  0.45, skinCol, skinLum);
+            add('arm',  sz*0.38, sz*1.23, 0, sz*0.07, sz*0.55, sz*0.07, -0.45, skinCol, skinLum);
           }
-
-          // phone light (small emissive white dot ~15% of crowd)
-          if(Math.random()<0.15){
-            const phoneMat=new THREE.MeshBasicMaterial({color:0xffffff});
-            const phone=new THREE.Mesh(new THREE.BoxGeometry(sz*0.12,sz*0.06,sz*0.02),phoneMat);
-            phone.position.set(rand(-sz*0.2,sz*0.2),sz*0.72,sz*0.22);
-            g.add(phone);
-          }
-
-          // signs (~8% of front rows)
+          if(Math.random()<0.15) add('phone', rand(-sz*0.2,sz*0.2), sz*0.72, sz*0.22, sz*0.12, sz*0.06, sz*0.02, 0, 0xffffff, 3.0);
           if(doSigns && Math.random()<0.08){
             const signCol=crowdPalette[Math.floor(Math.random()*crowdPalette.length)];
-            const signMat=new THREE.MeshStandardMaterial({color:signCol,emissive:signCol,emissiveIntensity:brightness*1.4});
-            const sign=new THREE.Mesh(new THREE.BoxGeometry(sz*0.9,sz*0.5,sz*0.04),signMat);
-            sign.position.set(0,sz*1.4,0);
-            g.add(sign);
+            add('sign', 0, sz*1.4, 0, sz*0.9, sz*0.5, sz*0.04, 0, signCol, 0.35+brightness*3.0);
           }
         }
-
-        const px=rand(xMin,xMax), pz=rand(zMin,zMax);
-        // y stagger: further back = higher (tiered seating)
-        const distFromRing=Math.abs(pz)-5;
-        g.position.set(px,-0.05+Math.max(0,distFromRing*0.06),pz);
-        g.rotation.y=rand(-0.20,0.20);
-        arenaGroup.add(g);
-        crowdMeshes.push({mesh:g, base:g.position.y, sp:rand(0.8,2.8), ph:rand(0,Math.PI*2), isGroup:true});
+        _cMembers.push(member);
       }
     };
 
@@ -10786,6 +10901,29 @@ function buildArena(){
     // end-side bands (facing camera, most visible)
     buildCrowdBand(32,-7, 6, -13,-7.5, 0.40,0.66, 0.12, true,  true);
     buildCrowdBand(32,-7, 6,   7.5,13, 0.40,0.66, 0.12, true,  true);
+
+    // bake the spec into one InstancedMesh per primitive kind
+    const _cGeo={ body:new THREE.BoxGeometry(1,1,1), head:new THREE.SphereGeometry(1,7,6),
+                  arm:new THREE.CylinderGeometry(1,1,1,5), phone:new THREE.BoxGeometry(1,1,1), sign:new THREE.BoxGeometry(1,1,1) };
+    const _byKind={};
+    for(const s of _cSpec){ (_byKind[s.kind]=_byKind[s.kind]||[]).push(s); }
+    const _M=new THREE.Matrix4(), _Q=new THREE.Quaternion(), _E=new THREE.Euler(), _S=new THREE.Vector3(), _P=new THREE.Vector3(), _C=new THREE.Color();
+    window.__crowdIMs=[];
+    for(const kind in _byKind){
+      const list=_byKind[kind];
+      const im=new THREE.InstancedMesh(_cGeo[kind], new THREE.MeshBasicMaterial({color:0xffffff}), list.length);
+      list.forEach((s,i)=>{
+        _E.set(0, s.ry, s.rz); _Q.setFromEuler(_E);
+        _P.set(s.x, s.y, s.z); _S.set(s.sx, s.sy, s.sz);
+        _M.compose(_P,_Q,_S); im.setMatrixAt(i,_M);
+        _C.set(s.col).multiplyScalar(s.lum); im.setColorAt(i,_C);
+        s.member.parts.push({im, i, baseY:s.y});
+      });
+      im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true;
+      im.frustumCulled=false;   // one bounding test would cull ALL fans at once — skip it
+      arenaGroup.add(im); window.__crowdIMs.push(im);
+    }
+    window.__crowdMembers=_cMembers;
   }
 
   // LIGHTS — WWE 2K / UFC broadcast grade:
@@ -10921,6 +11059,16 @@ function switchArena(key){
 function updateArenaAnim(t){
   for (const c of crowdMeshes){
     c.mesh.position.y = c.base + Math.sin(t*c.sp + c.ph)*0.08;
+  }
+  // v152 instanced-crowd bob: write translation-Y straight into each instance matrix
+  // (column-major element 13) — a few hundred float writes, no Matrix4 recompose.
+  const M=window.__crowdMembers;
+  if (M){
+    for (const m of M){
+      const dy=Math.sin(t*m.sp + m.ph)*0.08;
+      for (const p of m.parts) p.im.instanceMatrix.array[p.i*16+13]=p.baseY+dy;
+    }
+    for (const im of window.__crowdIMs) im.instanceMatrix.needsUpdate=true;
   }
 }
 
@@ -11419,14 +11567,60 @@ function playerAttack(kind){
     if (gm){
       const m = Object.assign({}, gm);
       const gz = (typeof groundZoneOf==='function') ? groundZoneOf(p, opp) : 'SIDE';
-      m._groundZone = gz;
+      const gf = (typeof groundFacingOf==='function') ? groundFacingOf(opp) : 'UP';
+      m._groundZone = gz; m._groundFacing = gf;
       m.height = 'GROUND';
-      // distinct arc per zone: HEAD = dropping overhand (elbow/axe read), FEET = straight low drive
-      // into the legs, SIDE = hooking swing across the ribs — three visibly different deliveries.
-      if (gz==='HEAD'){ m._aimHead=true;  m.power=Math.round((m.power||50)*1.15); m.traj='OVERHAND'; m.name=(gm.name||'GROUND')+' · HEAD'; }
-      else if (gz==='FEET'){ m._aimHead=false; m._aimLegs=true; m.power=Math.round((m.power||50)*0.95); m.traj='STRAIGHT'; m.name=(gm.name||'GROUND')+' · LEGS'; }
-      else { m._aimHead=(zone!=='LOW'); m.power=Math.round((m.power||50)*1.05); m.traj='HOOKING'; m.name=(gm.name||'GROUND')+' · RIBS'; }
+      // 2K26 GROUNDED MATRIX — zone x orientation = six distinct grounded attacks, not three:
+      // distinct arc per zone (HEAD = dropping overhand, FEET = straight low drive, SIDE = hooking
+      // swing) x what's actually exposed (face-UP: face/gut/ribs; face-DOWN: back of head/hamstrings/
+      // kidneys — prone targets are more defenseless, so back-of-head and kidney shots hit harder).
+      if (gz==='HEAD'){
+        m._aimHead=true; m.traj='OVERHAND';
+        if (gf==='UP'){ m.power=Math.round((m.power||50)*1.15); m.name=(gm.name||'GROUND')+' · HEAD'; }
+        else          { m.power=Math.round((m.power||50)*1.25); m.name=(gm.name||'GROUND')+' · BACK OF HEAD'; }
+      } else if (gz==='FEET'){
+        m._aimHead=false; m._aimLegs=true; m.traj='STRAIGHT';
+        if (gf==='UP'){ m.power=Math.round((m.power||50)*0.95); m.name=(gm.name||'GROUND')+' · LEGS'; }
+        else          { m.power=Math.round((m.power||50)*1.00); m.name=(gm.name||'GROUND')+' · HAMSTRINGS'; }
+      } else {
+        m._aimHead=(zone!=='LOW'); m.traj='HOOKING';
+        if (gf==='UP'){ m.power=Math.round((m.power||50)*1.05); m.name=(gm.name||'GROUND')+' · RIBS'; }
+        else          { m.power=Math.round((m.power||50)*1.12); m.name=(gm.name||'GROUND')+' · KIDNEYS'; }
+      }
       p.startAttack(m); return;
+    }
+  }
+
+  // CORNER STRIKE FAMILY (POSITION_TAXONOMY.CORNER_FACING): a trapped opponent in the buckles eats
+  // the corner arsenal — chops that echo, shoulder thrusts into the midsection, mudhole stomps.
+  // Cornered targets can't give ground, so corner strikes carry a trapped-target bonus.
+  if (opp && opp._inCorner && !opp.isDown() && (kind==='jab'||kind==='cross'||kind==='kick')){
+    const _cd = Math.hypot(opp.x-p.x, opp.z-p.z);
+    if (_cd < 1.35){
+      const CORNER_S={
+        jab:  { name:'KNIFE-EDGE CHOP · CORNER', cat:'STRIKE', limb:'LEFT JAB',   traj:'HOOK',     height:'HIGH', power:54, speed:88 },
+        cross:{ name:'SHOULDER THRUST · CORNER', cat:'STRIKE', limb:'RIGHT CROSS',traj:'STRAIGHT', height:'MID',  power:58, speed:78 },
+        kick: { name:'MUDHOLE STOMP · CORNER',   cat:'STRIKE', limb:'RIGHT KICK', traj:'STRAIGHT', height:'LOW',  power:52, speed:86 }
+      };
+      const cm=Object.assign({ style:p.style||'BRAWLER', follow:'CHAIN NEXT', _corner:true }, CORNER_S[kind]);
+      cm.power=Math.round(cm.power*1.10);   // nowhere to retreat
+      p.startAttack(cm); return;
+    }
+  }
+
+  // APRON COMBAT (POSITION_TAXONOMY.APRON): one fighter on the apron, one inside — the exchange
+  // happens OVER the ropes: over-the-rope forearms, the hotshot snap across the top rope, and the
+  // apron knee to the trapped head. Fires for either side of the rope.
+  if (opp && !opp.isDown() && ((p.zone==='APRON') !== (opp.zone==='APRON')) && (kind==='jab'||kind==='cross'||kind==='kick')){
+    const _ad = Math.hypot(opp.x-p.x, opp.z-p.z);
+    if (_ad < 1.4){
+      const APRON_S={
+        jab:  { name:'OVER-THE-ROPE FOREARM', cat:'STRIKE', limb:'LEFT JAB',    traj:'OVERHAND', height:'HIGH', power:50, speed:84 },
+        cross:{ name:'HOTSHOT SNAP',          cat:'STRIKE', limb:'RIGHT CROSS', traj:'HOOKING',  height:'HIGH', power:60, speed:76 },
+        kick: { name:'APRON KNEE',            cat:'STRIKE', limb:'KNEE',        traj:'STRAIGHT', height:'HIGH', power:56, speed:82 }
+      };
+      const am=Object.assign({ style:p.style||'BRAWLER', follow:'RESET STANCE', _apron:true }, APRON_S[kind]);
+      p.startAttack(am); return;
     }
   }
 
@@ -21848,6 +22042,12 @@ Fighter.prototype.canLiftOpponent = function(opponent) {
   return liftMod >= 0.75;
 };
 
+// UFC WEIGHT-STRIKE mass proxy — same height×build product the lift check uses,
+// shared by strike power/knockback/speed tuning so every weight rule reads one scale.
+Fighter.prototype.strikeMass = function(){
+  return (this.shape && this.shape.height ? +this.shape.height : 1.0) * (this._specBuild || 1.0);
+};
+
 // Tekken-style floating juggle — scale gravity down on airborne victim
 // giving a wider hit-registration window for aerial combos
 Fighter.prototype.enterJuggleFloat = function(duration) {
@@ -26340,6 +26540,12 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
       addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.012, 0.038, 6), fingerMaterial)),
       addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.008, 0.028, 6), fingerMaterial))
     ];
+    // v152: fingers/thumbs stay visible OVER the smooth body (setHidden honors keepVisible inside
+    // arrays) — the smooth arm now ends in a flat palm/knuckle plate and these chains complete the
+    // hand. hideAllProc (GLB replacement) still hides them unconditionally: imported models bring
+    // their own hands.
+    { const _keep=(x)=>{ if(Array.isArray(x)) x.forEach(_keep); else if(x&&x.userData) x.userData.keepVisible=true; };
+      _keep(this.seg.fingersL); _keep(this.seg.fingersR); _keep(this.seg.thumbLChain); _keep(this.seg.thumbRChain); }
 
     // 3. APPLIED PHYSICAL BONE SCALE ATLAS
     // Apply static anatomical morphing at build-time to establish distinct skeletal weight classes
@@ -32407,9 +32613,24 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     // ease in over first 0.4s of lift
     const ease = Math.min(1, (by.stateTime || 0) / 0.4);
 
-    // CARRIED BODY POSE — knees drawn up, arms bracing, head tucked
-    // This runs AFTER the base poseGrabbed so it overwrites the dangling defaults
+    // v152 FIX — this used to OVERWRITE the victim's whole body with one generic "knees curled,
+    // panic grab" pose for EVERY move at stages 2-3, running after the base poseGrabbed had already
+    // applied the authored per-move slave poses (powerbomb tuck->belly->shoulder, suplex inversion,
+    // chokeslam dangle, fireman's drape...). Net effect: every carry looked like the same fetal curl
+    // and no lift sub-phase could read ("very bad slave posing" bug). The base path ALWAYS supplies
+    // an authored slave pose (GRAPPLE_POSITIONS[..].slave / liftPoses, STANDARD fallback), so the
+    // absolute pose here only applies when a position genuinely has no authored shape; otherwise the
+    // authored pose owns the body and this layer adds only a faint additive struggle for life.
+    const _gpos = (typeof GRAPPLE_POSITIONS !== 'undefined' && GRAPPLE_POSITIONS[by.grapplePos]) || null;
+    if (_gpos && (_gpos.slave || _gpos.liftPoses)){
+      const flail = Math.sin((by.stateTime || 0) * 4.2) * 0.03 * ease;
+      if (this.J.haL && this.J.haL.tgt) this.J.haL.tgt.x += flail;
+      if (this.J.haR && this.J.haR.tgt) this.J.haR.tgt.x -= flail;
+      if (this.J.head && this.J.head.tgt) this.J.head.tgt.x -= 0.02 * ease;   // slight instinctive tuck
+      return;
+    }
 
+    // CARRIED BODY POSE (fallback only — position without an authored slave pose)
     // Legs curl up — knees toward chest (panic/helpless position)
     const kneeLift = ease * 0.38;
     this.J.hipL && this.J.hipL.set( 0.06, 0.72 + kneeLift, 0.14);

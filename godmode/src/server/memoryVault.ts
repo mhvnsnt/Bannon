@@ -1,11 +1,8 @@
-import { createRequire } from 'module';
-
-const require = createRequire(import.meta.url);
+import Database from 'better-sqlite3';
 
 let memoryVaultDb: any;
 
 try {
-  const Database = require('better-sqlite3');
   memoryVaultDb = new Database('memory_vault.db', { verbose: process.env.NODE_ENV !== 'production' ? console.log : undefined });
 } catch (e) {
   console.warn("[VAULT] better-sqlite3 not found. Falling back to in-memory dummy DB.");

@@ -1,0 +1,3 @@
+Error: Daemon unreachable: fetch failed. Ensure your local model is running and accessible.
+    at <anonymous> (/app/applet/server.ts:2257:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)

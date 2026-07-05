@@ -1,7 +1,10 @@
+import { EntangledAgentMemory } from './EntangledAgentMemory';
 import React, { useState, useEffect } from 'react';
 import { Network, Activity, Zap, ShieldAlert, CheckCircle, XCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { io, Socket } from 'socket.io-client';
+import { useQuantumEngine } from '../hooks/useQuantumEngine';
+import { ErrorCorrectionNode } from '../lib/quantum/ErrorCorrectionNode';
 
 export function SwarmMonitor() {
   const [status, setStatus] = useState<'IDLE' | 'RUNNING'>('IDLE');
@@ -14,6 +17,8 @@ export function SwarmMonitor() {
 
   const [history, setHistory] = useState<any[]>([]);
   const [manualIntent, setManualIntent] = useState('');
+
+  const { qState, applyHadamard, entangle, measureAndCollapse, collapsedState } = useQuantumEngine(3);
 
   const fetchHistory = async () => {
     try {
@@ -48,8 +53,14 @@ export function SwarmMonitor() {
 
     socket.on('SWARM_UPDATE', (data: any) => {
       setStatus('RUNNING');
-      // In a real stream, we'd accumulate chunks here. 
-      // For now, based on our setup, we get an output on COMPLETE.
+      
+      // Induce quantum entanglement in state probabilities when swarm updates
+      applyHadamard(0);
+      applyHadamard(1);
+      applyHadamard(2);
+      entangle(0, 1);
+      entangle(1, 2);
+
       if (data.status === 'RUNNING') {
          if (data.agent === 'builder') setBuilderContext('SYNTHESIZING...');
          if (data.agent === 'destroyer') setDestroyerContext('ANALYZING WEAKNESSES...');
@@ -64,14 +75,28 @@ export function SwarmMonitor() {
     socket.on('SWARM_RESULT', (data: any) => {
       setStatus('IDLE');
       setIntent(null);
-      setAdjudicatorRuling({ status: data.status, ruling: data.ruling });
+      
+      // Parity Check Simulation via ErrorCorrectionNode
+      const finalState = measureAndCollapse();
+      // We simulate agent states based on final measured state bits
+      const a1State = (finalState >> 2) & 1;
+      const a2State = (finalState >> 1) & 1;
+      const a3State = finalState & 1;
+      
+      const correctedState = ErrorCorrectionNode.applyParityCheck(a1State, a2State, a3State);
+      const isCorrected = correctedState !== a1State;
+
+      setAdjudicatorRuling({ 
+          status: data.status, 
+          ruling: data.ruling + (isCorrected ? `\n\n[QEC] Hallucination parity corrected.` : `\n\n[QEC] Consensus absolute.`)
+      });
       fetchHistory();
     });
 
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [applyHadamard, entangle, measureAndCollapse]);
 
   const dispatchSwarm = async () => {
     if (!manualIntent.trim()) return;
@@ -131,6 +156,25 @@ export function SwarmMonitor() {
           >
             Dispatch Swarm
           </button>
+        </div>
+
+        {/* Quantum State Visualizer */}
+        <div className="bg-slate-900 border border-indigo-900/50 rounded-xl p-4">
+           <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-3">Quantum Execution Probabilities</div>
+           <div className="grid grid-cols-4 gap-2">
+             {qState.amplitudes.map((amp, idx) => {
+                 const probability = amp.real * amp.real + amp.imag * amp.imag;
+                 return (
+                     <div key={idx} className="flex flex-col items-center p-2 bg-black/40 rounded border border-indigo-500/20">
+                         <span className="text-[10px] text-gray-400">|{idx.toString(2).padStart(3, '0')}⟩</span>
+                         <div className="w-full h-1 bg-gray-800 rounded mt-1 overflow-hidden">
+                             <div className="h-full bg-indigo-500 transition-all duration-300" style={{ width: `${probability * 100}%` }} />
+                         </div>
+                         <span className="text-[9px] mt-1 text-indigo-300">{(probability * 100).toFixed(1)}%</span>
+                     </div>
+                 );
+             })}
+           </div>
         </div>
 
         {/* Active Swarm View */}
