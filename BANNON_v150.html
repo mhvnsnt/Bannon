@@ -14579,6 +14579,62 @@ init();
       // Bloom: tighter threshold (only true emissives — ropes, eyes, impact flashes), higher strength for the rope LED pop
       const bloom=new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth*pxRatio, window.innerHeight*pxRatio), 1.35, 0.52, 0.72);
       composer.addPass(bloom);
+      // ---- v153 BROADCAST GRADE (ported from the palmier shader suite: HighlightsShadows +
+      // GradeCurves + Vignette + Grain collapsed into one cheap pass) — the WWE/UFC broadcast look:
+      // filmic tone curve, lifted shadows, gentle S-curve contrast, warmth, edge vignette, live film
+      // grain. Toggle window.BROADCAST_GRADE, tune window.GRADE.{sat,con,warm,vig,grain,shadow}.
+      window.BROADCAST_GRADE = (window.BROADCAST_GRADE!==undefined) ? window.BROADCAST_GRADE : true;
+      window.GRADE = window.GRADE || { sat:1.12, con:0.35, warm:0.035, vig:0.32, grain:0.028, shadow:0.045 };
+      const gradeShader = {
+        uniforms: { tDiffuse:{value:null}, uTime:{value:0}, uOn:{value:1},
+          uSat:{value:1.12}, uCon:{value:0.35}, uWarm:{value:0.035}, uVig:{value:0.32}, uGrain:{value:0.028}, uShadow:{value:0.045} },
+        vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+        fragmentShader: [
+          'uniform sampler2D tDiffuse; uniform float uTime,uOn,uSat,uCon,uWarm,uVig,uGrain,uShadow;',
+          'varying vec2 vUv;',
+          'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }',
+          'void main(){',
+          '  vec3 c = texture2D(tDiffuse, vUv).rgb;',
+          '  if(uOn<0.5){ gl_FragColor=vec4(c,1.0); return; }',
+          '  float l = dot(c, vec3(0.2126,0.7152,0.0722));',
+          '  c += uShadow*(1.0-smoothstep(0.0,0.5,l));',                              // shadow lift (HighlightsShadows)
+          '  c = (c*(2.51*c+vec3(0.03)))/(c*(2.43*c+vec3(0.59))+vec3(0.14));',        // filmic tone curve (highlight rolloff)
+          '  l = dot(c, vec3(0.2126,0.7152,0.0722));',
+          '  c = mix(vec3(l), c, uSat);',                                             // saturation (GradeCurves)
+          '  c = mix(c, c*c*(3.0-2.0*c), uCon);',                                     // S-curve contrast
+          '  c *= vec3(1.0+uWarm, 1.0, 1.0-uWarm);',                                  // warmth (color Wheels)
+          '  float d = length(vUv-0.5)*1.4142;',
+          '  c *= 1.0 - uVig*smoothstep(0.52, 1.05, d);',                             // vignette
+          '  c += (hash(vUv*vec2(1920.0,1080.0)+fract(uTime)*13.7)-0.5)*uGrain;',     // film grain (Grain)
+          '  gl_FragColor = vec4(clamp(c,0.0,1.0), 1.0);',
+          '}'].join('\n')
+      };
+      const gradePass = new THREE.ShaderPass(gradeShader);
+      composer.addPass(gradePass);
+      window.__gradePass = gradePass;
+      // ---- v153 QUALITY BAR / INSPIRATION STACK — the owner's canon, baked into the live soul ----
+      // Every system is judged against these references. Physics-based creative freedom is the core
+      // identity: degrees of freedom in combat, grappling, dives — never canned arcade animation.
+      window.QUALITY_BAR = {
+        combatPhysics : ['Steve Masson Neckbreaker: Visceral Pro Wrestling (active ragdoll, no two moves alike)',
+                         'Endorphin Pro Wrestling (procedural full-body reactions)',
+                         'EA UFC (weight transfer, strike drive, kinetic chain)'],
+        moveDepth     : ['WWE 2K26 (moveset library, POSITIONS/zoning, creation suite)',
+                         'Fire Pro Wrestling (per-move logic priority, deep edit/sim focus — NO timing-minigame grapples: lockups stay physics/stamina-resolved)',
+                         'King of Colosseum / Japanese wrestling-sim lineage (stiff strike exchange, selling logic)'],
+        sandboxBreadth: ['MDickie Wrestling Empire (breadth, chaos, roster sandbox)',
+                         'Casual Pro Wrestling (approachable physics wrestling)'],
+        brawlEnergy   : ['Urban Reign / Def Jam (environmental brawling, grab-anywhere freedom, multi-man chaos, momentum hype)'],
+        storyDepth    : ['Tekken 5-era (per-character story depth + juggle physics — the REAL Tekken lessons, not arcade hit bloom)'],
+        identity      : 'physics-based CREATIVE FREEDOM: degrees of freedom in physics combat/grappling/dives; additive-only; verify with the senses'
+      };
+      try{ if(window.MANIFESTO&&window.MANIFESTO.register) window.MANIFESTO.register({ key:'soul.qualityBar', kind:'canon',
+        summary:'the inspiration stack every system is judged against (Neckbreaker/Endorphin/UFC physics · 2K26/FirePro/KoC move depth · MDickie/CasualPW breadth · UrbanReign/DefJam brawl energy · Tekken5 story+juggles) — physics-based creative freedom is the identity',
+        call:'window.QUALITY_BAR' }); }catch(_){}
+      setInterval(()=>{ try{ const G=window.GRADE, u=gradePass.uniforms;
+        u.uOn.value = window.BROADCAST_GRADE?1:0; u.uTime.value=(performance.now()%100000)/1000;
+        u.uSat.value=G.sat; u.uCon.value=G.con; u.uWarm.value=G.warm; u.uVig.value=G.vig; u.uGrain.value=G.grain; u.uShadow.value=G.shadow;
+      }catch(_){} }, 100);
       if(THREE.GammaCorrectionShader){
         composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       }

@@ -10,6 +10,16 @@ North Star (additive-only, surgical, physics-first); `window.MANIFESTO` / `windo
   (moveset library depth, POSITIONS/zoning: front/back grapple, grounded head-side/leg-side, corner,
   apron, rope-rebound, springboard, middle/top rope, in-between animations — actual rope vaulting
   from different positions), *Casual Pro Wrestling*, MDickie *Wrestling Empire* (breadth/sandbox).
+- **Fire Pro Wrestling standouts** (owner add, 2026-07-05): per-move logic priority + deep
+  edit/simulation focus. **OWNER VETO: NO timing-minigame grapples/lockups** ("that will take away
+  realism and simulation from our physics based game") — the tie-up stays physics/stamina-resolved
+  (the existing `_tryEscape` stamina-vs-gripStrain roll is the correct model; never replace it with
+  a timing contest). **Japanese wrestling/boxing-sim lineage** (King of Colosseum et al): stiff
+  strike exchanges, selling logic. **Urban Reign / Def Jam**: environmental brawling, grab-anywhere
+  freedom, multi-man chaos, momentum/crowd hype. **Tekken 5** lessons = per-character STORY depth +
+  juggle physics — explicitly NOT arcade hit-bloom. All of this is baked in-game as
+  `window.QUALITY_BAR` (MANIFESTO key `soul.qualityBar`). The identity: physics-based CREATIVE
+  FREEDOM — degrees of freedom in combat/grappling/dives, never canned animation.
 - **Story/modes:** Tekken-depth story, WWE-2K-like Universe/Career loops with **proprietary names**
   (no trademarked gimmick names). "God Within" mode = Devil-Within-style, daemon as core feature,
   mixing GAME canon (10-heavens/Enoch physics layer, `Cosmology.ts`) with BOOK canon (`canon/*.md`).
@@ -115,10 +125,14 @@ Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (mas
   for making me more autonomous; marketplace format). `ai-website-cloner-template-master.zip` —
   agent skill template reference (used as the model for `.claude/skills/bannon-verify/SKILL.md`,
   which now encodes the whole verification-harness recipe + gotchas — future sessions start hot).
-- `palmier-pro-main.zip` → GOLD EXTRACTED to `assets/reference/shaders/*.metal` (11 shaders:
-  GradeCurves/HueCurves/Levels/Wheels/HighlightsShadows/Grain/Vignette/Clarity/Glow/LUTTetra/
-  ChromaKey). The math ports 1:1 to GLSL — QUEUED BRICK: a broadcast color-grade post pass
-  (grade curves + highlights/shadows + grain + vignette) for the WWE/UFC broadcast look.
+- `palmier-pro-main.zip` → GOLD EXTRACTED to `assets/reference/shaders/*.metal` (11 shaders).
+  SHIPPED (v153): BROADCAST GRADE post pass — a ShaderPass in the existing bloom composer
+  (after bloom, before gamma): shadow lift + filmic tone curve + saturation + S-curve contrast +
+  warmth + vignette + animated film grain, all ported from the palmier math. Toggle
+  `window.BROADCAST_GRADE`, live-tune `window.GRADE.{sat,con,warm,vig,grain,shadow}`. Verified
+  on/off screenshots in-harness (postprocessing example scripts now vendored in pwtest/vendor/three
+  + rebuild.js maps their CDN URLs). Remaining palmier gold for later: LUTTetra (arena mood LUTs),
+  HueCurves (per-arena palettes), Clarity (local contrast).
 - `tools/blender/` — BlenderGoodies convert.py + external_run.py + Instructions.txt (FBX→GLB +
   Auto-Rig Pro retarget; teammate/Blender-MCP fuel). Action Adventure Pack = X Bot + idle/walk/run
   FBX clips for the STUDIO locomotion set once Blender-MCP is connected.
