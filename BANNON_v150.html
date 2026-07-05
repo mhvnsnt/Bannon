@@ -10789,14 +10789,20 @@ function buildArena(){
     window.__ringRX = RX; window.__ringRZ = RZ;                 // rope boundary for the body<->rope coupler
     const RR = window.__ringRopes;
     const ROPE_N = 9;                                           // Verlet nodes per rope
+    // v153 PERF: all 96 rope segments live in ONE InstancedMesh (unit-height cylinder; the verlet
+    // solver writes position/orientation/length into the instance matrices each frame) — was 96
+    // individual meshes = 96 draw calls of the arena's ~142. Same visual, 1 draw call.
+    const _ropeIM = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.055,0.055,1,8), ropeMat, 12*(ROPE_N-1));
+    _ropeIM.castShadow = true; _ropeIM.frustumCulled = false;
+    ringProcGroup.add(_ropeIM); window.__ropeIM = _ropeIM; window.__ropeIMNext = 0;
     const _mkRopeChain = (run, ext, fixedA, fixedV, ry)=>{
       // run='x' (front/back, vary X, fixed Z=fixedV) or 'z' (sides, vary Z, fixed X=fixedV)
       const nodes=[]; for(let i=0;i<ROPE_N;i++){ const t=-ext + (2*ext)*i/(ROPE_N-1);
         const x = run==='x' ? t : fixedV, z = run==='x' ? fixedV : t;
         nodes.push({x, y:ry, z, ox:x, oy:ry, oz:z, pin:(i===0||i===ROPE_N-1), bx:x, by:ry, bz:z}); }   // bx/by/bz = rest position
-      const segs=[]; const segRest=(2*ext)/(ROPE_N-1);
-      for(let i=0;i<ROPE_N-1;i++){ const s=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,segRest,8),ropeMat); s.castShadow=true; ringProcGroup.add(s); segs.push(s); }
-      return {nodes, segs, segRest, run, ext, ry, fixedV};
+      const segRest=(2*ext)/(ROPE_N-1);
+      const segBase=window.__ropeIMNext; window.__ropeIMNext += (ROPE_N-1);
+      return {nodes, segBase, segCount:ROPE_N-1, segRest, run, ext, ry, fixedV};
     };
     for (let h=0;h<3;h++){
       const ropeY = 0.65 + h*0.46;   // slightly higher — bottom rope at 0.65m (more physical)
@@ -10818,27 +10824,36 @@ function buildArena(){
       });
     }
     // corner posts — tall, chrome, with base plate + cap ball
-    [[RX,RZ],[-RX,RZ],[RX,-RZ],[-RX,-RZ]].forEach(([px,pz])=>{
-      // post body — chrome steel tube
-      const post=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.090,2.20,14), postMat);
-      post.position.set(px,1.10,pz); post.castShadow=true; ringProcGroup.add(post);
-      // base plate — thick chrome disc
-      const base=new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.22,0.08,14), postMat);
-      base.position.set(px,-0.01,pz); ringProcGroup.add(base);
-      // cap ball — chrome sphere top
-      const cap=new THREE.Mesh(new THREE.SphereGeometry(0.10,12,10), postMat);
-      cap.position.set(px,2.21,pz); ringProcGroup.add(cap);
-      // three turnbuckle pads — fabric covered, hugging toward ring center
-      const ix = -Math.sign(px)*0.10, iz = -Math.sign(pz)*0.10;
-      for (let h=0;h<3;h++){
-        const pad=new THREE.Mesh(new THREE.BoxGeometry(0.30,0.36,0.30), padMat);
-        pad.position.set(px+ix, 0.65+h*0.46, pz+iz); pad.castShadow=true; ringProcGroup.add(pad);
-        // rope connector ring (small chrome ring where rope meets pad)
-        const ring=new THREE.Mesh(new THREE.TorusGeometry(0.04,0.015,8,12), postMat);
-        ring.position.set(px+ix*2.2, 0.65+h*0.46, pz+iz*2.2); ring.rotation.y=Math.atan2(iz,ix)+Math.PI/2;
-        ringProcGroup.add(ring);
-      }
-    });
+    // v153 PERF: the 12 turnbuckle pads + 12 connector rings are static — one InstancedMesh each
+    // (matrices baked once at build). Chrome posts/bases/caps stay individual (only 12 meshes).
+    const _padIM  = new THREE.InstancedMesh(new THREE.BoxGeometry(0.30,0.36,0.30), padMat, 12);
+    const _ringIM = new THREE.InstancedMesh(new THREE.TorusGeometry(0.04,0.015,8,12), postMat, 12);
+    _padIM.castShadow = true; _padIM.frustumCulled=false; _ringIM.frustumCulled=false;
+    ringProcGroup.add(_padIM); ringProcGroup.add(_ringIM);
+    { const _M=new THREE.Matrix4(), _Q=new THREE.Quaternion(), _E=new THREE.Euler(), _P=new THREE.Vector3(), _S=new THREE.Vector3(1,1,1);
+      let _pi=0;
+      [[RX,RZ],[-RX,RZ],[RX,-RZ],[-RX,-RZ]].forEach(([px,pz])=>{
+        // post body — chrome steel tube
+        const post=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.090,2.20,14), postMat);
+        post.position.set(px,1.10,pz); post.castShadow=true; ringProcGroup.add(post);
+        // base plate — thick chrome disc
+        const base=new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.22,0.08,14), postMat);
+        base.position.set(px,-0.01,pz); ringProcGroup.add(base);
+        // cap ball — chrome sphere top
+        const cap=new THREE.Mesh(new THREE.SphereGeometry(0.10,12,10), postMat);
+        cap.position.set(px,2.21,pz); ringProcGroup.add(cap);
+        // three turnbuckle pads + connector rings — instanced, hugging toward ring center
+        const ix = -Math.sign(px)*0.10, iz = -Math.sign(pz)*0.10;
+        for (let h=0;h<3;h++){
+          _E.set(0,0,0); _Q.setFromEuler(_E); _P.set(px+ix, 0.65+h*0.46, pz+iz);
+          _M.compose(_P,_Q,_S); _padIM.setMatrixAt(_pi,_M);
+          _E.set(0, Math.atan2(iz,ix)+Math.PI/2, 0); _Q.setFromEuler(_E); _P.set(px+ix*2.2, 0.65+h*0.46, pz+iz*2.2);
+          _M.compose(_P,_Q,_S); _ringIM.setMatrixAt(_pi,_M);
+          _pi++;
+        }
+      });
+      _padIM.instanceMatrix.needsUpdate=true; _ringIM.instanceMatrix.needsUpdate=true;
+    }
     // ring apron skirt around the mat
     const skirt=new THREE.Mesh(new THREE.BoxGeometry(RX*2+0.4,0.5,RZ*2+0.4),
       new THREE.MeshStandardMaterial({color:0x111114, emissive:accentCol, emissiveIntensity:0.08, roughness:0.85, metalness:0.1}));
@@ -21427,11 +21442,23 @@ window.BANNON_ROPES = {
           if(!a.pin){a.x+=ax;a.y+=ay;a.z+=az;} if(!b.pin){b.x-=ax;b.y-=ay;b.z-=az;} }
         const e0=nodes[0],e1=nodes[nodes.length-1]; e0.x=e0.bx;e0.y=e0.by;e0.z=e0.bz; e1.x=e1.bx;e1.y=e1.by;e1.z=e1.bz;
       }
-      if(this._up){ for(let i=0;i<ch.segs.length;i++){ const a=nodes[i],b=nodes[i+1],s=ch.segs[i]; if(!s) continue;
-        s.position.set((a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2);
-        const dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z,len=Math.hypot(dx,dy,dz)||1e-6; s.scale.y=len/ch.segRest;
-        s.quaternion.setFromUnitVectors(this._up,new THREE.Vector3(dx/len,dy/len,dz/len)); } }
+      // v153: segments live in the shared InstancedMesh (window.__ropeIM) — compose each segment's
+      // matrix (midpoint position, unit-Y->direction rotation, length as Y scale; geometry is a
+      // unit-height cylinder). Same math as the old per-mesh sync, 96 draw calls -> 1.
+      if(this._up && window.__ropeIM && ch.segBase!=null){
+        if(!this._m4){ this._m4=new THREE.Matrix4(); this._q=new THREE.Quaternion(); this._p=new THREE.Vector3(); this._s=new THREE.Vector3(); this._dir=new THREE.Vector3(); }
+        for(let i=0;i<ch.segCount;i++){ const a=nodes[i],b=nodes[i+1];
+          const dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z,len=Math.hypot(dx,dy,dz)||1e-6;
+          this._dir.set(dx/len,dy/len,dz/len);
+          this._q.setFromUnitVectors(this._up,this._dir);
+          this._p.set((a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2);
+          this._s.set(1,len,1);
+          this._m4.compose(this._p,this._q,this._s);
+          window.__ropeIM.setMatrixAt(ch.segBase+i, this._m4);
+        }
+      }
     }
+    if(window.__ropeIM) window.__ropeIM.instanceMatrix.needsUpdate=true;
   }
 };
 if(window.ROPE_PHYS===undefined) window.ROPE_PHYS=true;
@@ -34492,6 +34519,52 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   _wireFB();
 
   console.log('%c[v152 MATCH ENGINE] rules live: LMS ref-count · FIRST BLOOD · SUBMISSION tapout · IRON MAN timer · FALLS ANYWHERE/HARDCORE (pins were never zone-gated) · TRIPLE/FOUR-WAY/ROYALE multi-man with elimination', 'color:#00ff88;font-weight:bold');
+})();
+</script>
+
+<script>
+// =============================================================================
+// v153 ENVIRONMENTAL CONTACT (Urban Reign / Def Jam energy, sim-resolved):
+// the arena furniture is REAL. A body sent into a ring post at speed eats a
+// post impact — velocity-scaled damage, a hard stagger, camera hit, and the
+// announce. No scripted animation: the impact reads through the same wobble/
+// stumble physics as everything else. Cooldown-gated so a cornered fighter
+// isn't blender-ed. Steel steps join when the 3MF prop lands in-scene.
+// =============================================================================
+(function(){
+  if (window.__envContact153) return; window.__envContact153=true;
+  const POSTS=()=>{ const RX=(window.__ringRX||3.35), RZ=(window.__ringRZ||2.35);
+    return [[RX,RZ],[-RX,RZ],[RX,-RZ],[-RX,-RZ]]; };
+  setInterval(()=>{ try{
+    if (typeof gameState==='undefined' || gameState!=='fight' || typeof fighters==='undefined' || !fighters) return;
+    for (const f of fighters){
+      if (!f || f.isDown() || (f.airLift||0)>0.1 || f.state==='grabbed' || f.grappling) continue;
+      // sampled velocity (position delta over the 120ms tick — covers knockback/whip, not just running)
+      const vx=(f.x-(f.__epx!=null?f.__epx:f.x))/0.12, vz=(f.z-(f.__epz!=null?f.__epz:f.z))/0.12;
+      f.__epx=f.x; f.__epz=f.z;
+      const spd=Math.hypot(vx,vz);
+      f.__postCd=Math.max(0,(f.__postCd||0)-0.12);
+      if (spd<1.9 || f.__postCd>0) continue;
+      for (const [px,pz] of POSTS()){
+        const dx=px-f.x, dz=pz-f.z, d=Math.hypot(dx,dz);
+        if (d>0.62) continue;
+        const toward=(vx*dx+vz*dz)/(d*Math.max(0.1,spd));            // heading INTO the post?
+        if (toward<0.45) continue;
+        f.__postCd=1.6;
+        const sev=Math.min(1, spd/4.5);                              // velocity-scaled severity
+        try{ if (typeof applyDamage==='function') applyDamage(f, (30+90*sev)*(window.DMG_SCALE||1), f.opponent&&f.opponent(), {power:40+60*sev, height:'HIGH', traj:'STRAIGHT', limb:'POST', name:'RING POST'}, sev>0.7); }catch(_){}
+        try{ f.kickWobble && f.kickWobble('body', -dx/d, 0.10+0.15*sev, -dz/d, 1.6+1.4*sev); }catch(_){}
+        try{ if (sev>0.55 && f.triggerKnockdown) f.triggerKnockdown(-dx/d*0.6, 0.9+sev*0.6); else if (f.enterStumble) f.enterStumble(-dx/d, 30*sev); }catch(_){}
+        if (typeof camShake!=='undefined') camShake=Math.max(camShake, 0.35+0.45*sev);
+        if (typeof triggerHitStop==='function') triggerHitStop(0.05+0.07*sev);
+        if (typeof announce==='function') announce('INTO THE POST', (typeof fname==='function'?fname(f):'')+' EATS STEEL');
+        break;
+      }
+    }
+  }catch(_){} }, 120);
+  try{ if(window.MANIFESTO&&window.MANIFESTO.register) window.MANIFESTO.register({ key:'combat.envContact', kind:'gameplay',
+    summary:'ring posts are live impact surfaces: velocity-scaled post impacts (damage/stagger/knockdown via the same physics selling as strikes) — Urban Reign/Def Jam environmental energy, sim-resolved', call:'ENV CONTACT interval' }); }catch(_){}
+  console.log('%c[v153 ENV CONTACT] ring posts are live impact surfaces', 'color:#00ff88;font-weight:bold');
 })();
 </script>
 

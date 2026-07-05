@@ -211,6 +211,17 @@ LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding
   updated in the char-select block. Still 'soon': TAG, LADDER/TABLES/TLC/CAGE (need props), GAUNTLET.
 - GOTCHA: `let fighters` (line ~1646) — window.fighters is UNDEFINED; late script blocks must
   reference the bare lexical `fighters` (typeof-guarded), not window.fighters.
+- v153 ENV CONTACT: ring posts are live impact surfaces (120ms interval: sampled velocity > 1.9
+  toward a post within 0.62 -> velocity-scaled damage + wobble + stumble/knockdown + "INTO THE
+  POST"). Steel steps join when the 3MF prop converts. Verified: fling into corner = −56hp, ragdoll.
+- v153 ARENA PERF: 96 rope segments -> ONE InstancedMesh (unit cylinder, verlet solver composes
+  instance matrices at ch.segBase+i); 12 turnbuckle pads + 12 connector rings instanced (baked once).
+  Visible meshes 240 -> 120. Rope sag/bow physics unchanged (BANNON_ROPES.update).
+- MOCAP HARVEST FINDING: BANNON_AAA_v21_2K_mocap_2.html has the SAME MoveNet-Thunder webcam
+  recorder v150 already has — its clips live in the OWNER'S browser localStorage (STORE_KEY), not
+  the file. The real harvest = convert assets/mocap/mocap_data_partial.json (144-joint two-fighter
+  AlternatingForearms) into STUDIO.clips format — needs the 144->rig joint map, READ
+  docs/mocap_orientation_master_prompt.md first. QUEUED as its own focused brick.
 - Verified mm.js/lms.js/fb.js: 3-man spawns (BANNON/FINXSSE/RONIN), AI brawls, elimination
   continues match, last-standing ends it; REF COUNT announces; FIRST BLOOD ends w/ bleeder hp 0.
 
