@@ -4115,7 +4115,9 @@ Fighter.prototype.poseAttack = function(dt){
   const stamF = 0.35 + 0.65*Math.min(1.0,(this.atkStamina!=null?this.atkStamina:this.stamina)/(this.maxStamina||100)); // v101
   const vary = this.atkVary || {spd:1,windup:1,zspread:0,yoff:0,recover:1,lead:0.25};
   const profileSpd = this.speedMultiplier || 1.0;
-  const spd = (0.5 + m.speed/100 * 1.6) * stamF * (m._loaded?0.78:1) * vary.spd * cwf('speed') * STRIKE.speed * profileSpd;
+  // UFC weight tuning: mass slows the swing (normalized at 1.0 so mid-card is untouched)
+  const massSpd = clamp(1 - 0.12*((this.strikeMass ? this.strikeMass() : 1) - 1), 0.85, 1.08);
+  const spd = (0.5 + m.speed/100 * 1.6) * stamF * (m._loaded?0.78:1) * vary.spd * cwf('speed') * STRIKE.speed * profileSpd * massSpd;
   // recovery is allowed to be a touch faster/slower per throw
   const _adr = (window.ADRENALINE===false)?1:(1 + (this.adrenaline||0)/100*0.22);
   const _crash = (this._adrCrash>0)?0.72:1;
@@ -9348,8 +9350,14 @@ function registerHit(attacker, move){
   const velF   = 0.74 + 0.34*(move.speed/100) + 0.14*reachUsed;   // tip velocity: faster strike + more travel = more snap
   const loadF  = (move._loaded || attacker.atkLoaded) ? 1.4 : 1.0;
   const wakeBonus = opp.isGettingUp() ? 1.4 : 1;
-  const effPower = clamp(move.power * rangeF * stamF * velF * loadF, 6, 135);
-  const em = Object.assign({}, move, { power: effPower }); // reactions key off effective power
+  // UFC WEIGHT-STRIKE TUNING: mass is in the punch. A heavyweight's shot carries more (power scales
+  // with the attacker's absolute mass), and how far the RECEIVER gets moved is the mass RATIO — a
+  // flyweight can sting a heavyweight for damage but barely rocks him; the reverse launches.
+  const _mA = attacker.strikeMass ? attacker.strikeMass() : 1, _mD = opp.strikeMass ? opp.strikeMass() : 1;
+  const massF = clamp(1 + 0.22*(_mA - 1), 0.78, 1.20);
+  const kbF   = clamp(Math.pow(_mA/Math.max(0.1,_mD), 0.6), 0.70, 1.45);
+  const effPower = clamp(move.power * rangeF * stamF * velF * loadF * massF, 6, 135);
+  const em = Object.assign({}, move, { power: effPower, _massF: massF, _kbF: kbF }); // reactions key off effective power
   // tier label feedback (Light / Medium / Heavy)
   const tier = effPower<35 ? 'LIGHT' : effPower<70 ? 'MEDIUM' : 'HEAVY';
   em._tier = tier;
@@ -9372,7 +9380,7 @@ function registerHit(attacker, move){
   if(window.PHYS_STRIKE && window.RK_BODY && window.BPHYS && window.BPHYS.visceralImpact){   // send the shot through their skeleton
     const vreg=(move.height==='HIGH')?'head':((move.height==='LOW'||move.height==='GROUND')?'low':'body');
     const _as=Math.min(1.0,((attacker.atkStamina!=null?attacker.atkStamina:attacker.stamina)||(attacker.maxStamina||100))/(attacker.maxStamina||100)); // v101
-    window.BPHYS.visceralImpact(opp, vreg, effPower, af.x, af.z, _as);
+    window.BPHYS.visceralImpact(opp, vreg, effPower*kbF, af.x, af.z, _as);   // knockback rides the mass ratio (UFC weight classes)
     // NEWTONIAN HAND RECOIL: the striking forearm bounces off the target (equal/opposite) and the blend shows it
     if(attacker._ar && attacker._ar.byName){
       const _hb=(move.limb && move.limb.includes('LEFT'))?'lArmL':'lArmR';
@@ -21876,6 +21884,12 @@ Fighter.prototype.canLiftOpponent = function(opponent) {
   if (this.momentum >= 100 || this._strongTier >= 3) return true;
   // Standard threshold: attacker needs 75% of defender's mass
   return liftMod >= 0.75;
+};
+
+// UFC WEIGHT-STRIKE mass proxy — same height×build product the lift check uses,
+// shared by strike power/knockback/speed tuning so every weight rule reads one scale.
+Fighter.prototype.strikeMass = function(){
+  return (this.shape && this.shape.height ? +this.shape.height : 1.0) * (this._specBuild || 1.0);
 };
 
 // Tekken-style floating juggle — scale gravity down on airborne victim

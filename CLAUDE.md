@@ -136,8 +136,13 @@ zone: HEAD = mounted-hammer knee drop + torso pitch, FEET = upright forward hing
 lateral hinge rib drop; grounded aim clamps to mat 0.10 and targets the zone's verlet joint);
 groundZoneOf fallback threshold 0.35→0.18 (slumped bodies carry a real axis — the facing guess was
 misreading forward falls as FEET). Verified: all 3 zones classify + name + pose correctly (gzvis.js
-freecam shots). NEXT: UFC weight-strike tuning; vault variants from apron/mid/top; wire
-CHAR_FINISHERS into MOVESET_DB.
+freecam shots). ALSO SHIPPED: UFC WEIGHT-STRIKE TUNING — `Fighter.strikeMass()` (height×_specBuild,
+same proxy as canLiftOpponent); registerHit power ×massF=clamp(1+0.22·(mA−1),0.78,1.20), knockback
+(visceralImpact) ×kbF=clamp((mA/mD)^0.6,0.70,1.45); poseAttack swing speed ×clamp(1−0.12·(m−1),
+0.85,1.08). Verified wtune.js: TIGHTROPE(0.90)→GOLEM(1.79) massF 0.978/kbF 0.70; reverse 1.175/1.45.
+TASK #21 COMPLETE. NEXT: vault variants from apron/mid/top; wire CHAR_FINISHERS into MOVESET_DB;
+harvest STUDIO clips from godmode/BANNON_AAA_v21_2K_mocap_2.html + feed assets/mocap clip into the
+poseGrabbed LIFT/CARRY mocap slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding).
 
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
