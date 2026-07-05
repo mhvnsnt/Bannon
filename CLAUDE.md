@@ -10,6 +10,16 @@ North Star (additive-only, surgical, physics-first); `window.MANIFESTO` / `windo
   (moveset library depth, POSITIONS/zoning: front/back grapple, grounded head-side/leg-side, corner,
   apron, rope-rebound, springboard, middle/top rope, in-between animations — actual rope vaulting
   from different positions), *Casual Pro Wrestling*, MDickie *Wrestling Empire* (breadth/sandbox).
+- **Fire Pro Wrestling standouts** (owner add, 2026-07-05): per-move logic priority + deep
+  edit/simulation focus. **OWNER VETO: NO timing-minigame grapples/lockups** ("that will take away
+  realism and simulation from our physics based game") — the tie-up stays physics/stamina-resolved
+  (the existing `_tryEscape` stamina-vs-gripStrain roll is the correct model; never replace it with
+  a timing contest). **Japanese wrestling/boxing-sim lineage** (King of Colosseum et al): stiff
+  strike exchanges, selling logic. **Urban Reign / Def Jam**: environmental brawling, grab-anywhere
+  freedom, multi-man chaos, momentum/crowd hype. **Tekken 5** lessons = per-character STORY depth +
+  juggle physics — explicitly NOT arcade hit-bloom. All of this is baked in-game as
+  `window.QUALITY_BAR` (MANIFESTO key `soul.qualityBar`). The identity: physics-based CREATIVE
+  FREEDOM — degrees of freedom in combat/grappling/dives, never canned animation.
 - **Story/modes:** Tekken-depth story, WWE-2K-like Universe/Career loops with **proprietary names**
   (no trademarked gimmick names). "God Within" mode = Devil-Within-style, daemon as core feature,
   mixing GAME canon (10-heavens/Enoch physics layer, `Cosmology.ts`) with BOOK canon (`canon/*.md`).
@@ -112,9 +122,20 @@ Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (mas
   architecture (DaemonCore/CombatAI/MatchDirector TS mirrors — we already have better in-repo).
   Gold extracted (mocap json/extractor/rules doc above); rest is reference only.
 - `harness-main.zip` + `claude-plugins-official-main.zip` — Claude Code plugin tooling (reference
-  for making me more autonomous; marketplace format). `palmier-pro-main.zip` — Metal shader effects
-  (ChromaKey/Clarity/Glow) reference. `ai-website-cloner-template-master.zip` — agent skill template
-  reference. None need in-repo integration beyond this note.
+  for making me more autonomous; marketplace format). `ai-website-cloner-template-master.zip` —
+  agent skill template reference (used as the model for `.claude/skills/bannon-verify/SKILL.md`,
+  which now encodes the whole verification-harness recipe + gotchas — future sessions start hot).
+- `palmier-pro-main.zip` → GOLD EXTRACTED to `assets/reference/shaders/*.metal` (11 shaders).
+  SHIPPED (v153): BROADCAST GRADE post pass — a ShaderPass in the existing bloom composer
+  (after bloom, before gamma): shadow lift + filmic tone curve + saturation + S-curve contrast +
+  warmth + vignette + animated film grain, all ported from the palmier math. Toggle
+  `window.BROADCAST_GRADE`, live-tune `window.GRADE.{sat,con,warm,vig,grain,shadow}`. Verified
+  on/off screenshots in-harness (postprocessing example scripts now vendored in pwtest/vendor/three
+  + rebuild.js maps their CDN URLs). Remaining palmier gold for later: LUTTetra (arena mood LUTs),
+  HueCurves (per-arena palettes), Clarity (local contrast).
+- `tools/blender/` — BlenderGoodies convert.py + external_run.py + Instructions.txt (FBX→GLB +
+  Auto-Rig Pro retarget; teammate/Blender-MCP fuel). Action Adventure Pack = X Bot + idle/walk/run
+  FBX clips for the STUDIO locomotion set once Blender-MCP is connected.
 
 ## Combat roadmap (task #21, from BLUEPRINT.next)
 SHIPPED: springboard rope-plant VAULT in-between (state 'vault' -> dive from rope height); grounded
@@ -174,6 +195,35 @@ behind); pins gated on face-UP;
 arena group still has ~142 meshes (next perf brick); wire CHAR_FINISHERS into MOVESET_DB; harvest
 STUDIO clips from godmode/BANNON_AAA_v21_2K_mocap_2.html + feed assets/mocap clip into poseGrabbed
 LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding).
+
+## Match engine (v152 — the "coming soon" catalog went live)
+- Combat readability fixes: per-frame BODY SEPARATION for standing pairs (gap 0.46, skips
+  grapple/held/down/air pairs — merged-bodies was THE "can't tell what they're doing" cause);
+  receiver GIVE-GROUND per hit tier (0.04/0.09/0.16 ×kbF); AI now drives EVERY non-player fighter
+  (was hardcoded fighters[1] — CPU P1 stood idle; multi-man needs this).
+- v152 MATCH RULES + MULTI-MAN block (end of file): opponent() = nearest-living when >2 fighters;
+  TRIPLE/FOURWAY/ROYALE spawn extra AI entrants from BANNON_ROSTER (dressFighter+morphs applied,
+  mini HP bars top-center); declareWinner wrapper = elimination flow (KO'd are ELIMINATED, match
+  runs until one stands). LMS = ref 10-count over any downed fighter (hp<55%); FIRSTBLOOD wraps
+  __spawnBlood (nearest-fighter attribution, bleeder loses); SUBMISSION = sub-minigame success sets
+  hp 0 "TAP OUT" (edit at the sub-success branch); IRONMAN = 180s round in startRound; ANYWHERE/
+  HARDCORE = official (pins/subs were never zone-gated, no DQ system exists). MATCH_TYPES live flags
+  updated in the char-select block. Still 'soon': TAG, LADDER/TABLES/TLC/CAGE (need props), GAUNTLET.
+- GOTCHA: `let fighters` (line ~1646) — window.fighters is UNDEFINED; late script blocks must
+  reference the bare lexical `fighters` (typeof-guarded), not window.fighters.
+- v153 ENV CONTACT: ring posts are live impact surfaces (120ms interval: sampled velocity > 1.9
+  toward a post within 0.62 -> velocity-scaled damage + wobble + stumble/knockdown + "INTO THE
+  POST"). Steel steps join when the 3MF prop converts. Verified: fling into corner = −56hp, ragdoll.
+- v153 ARENA PERF: 96 rope segments -> ONE InstancedMesh (unit cylinder, verlet solver composes
+  instance matrices at ch.segBase+i); 12 turnbuckle pads + 12 connector rings instanced (baked once).
+  Visible meshes 240 -> 120. Rope sag/bow physics unchanged (BANNON_ROPES.update).
+- MOCAP HARVEST FINDING: BANNON_AAA_v21_2K_mocap_2.html has the SAME MoveNet-Thunder webcam
+  recorder v150 already has — its clips live in the OWNER'S browser localStorage (STORE_KEY), not
+  the file. The real harvest = convert assets/mocap/mocap_data_partial.json (144-joint two-fighter
+  AlternatingForearms) into STUDIO.clips format — needs the 144->rig joint map, READ
+  docs/mocap_orientation_master_prompt.md first. QUEUED as its own focused brick.
+- Verified mm.js/lms.js/fb.js: 3-man spawns (BANNON/FINXSSE/RONIN), AI brawls, elimination
+  continues match, last-standing ends it; REF COUNT announces; FIRST BLOOD ends w/ bleeder hp 0.
 
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,

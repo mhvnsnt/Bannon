@@ -9468,6 +9468,11 @@ function registerHit(attacker, move){
   if (attacker.kickWobble) attacker.kickWobble(sreg, -af.x*0.5, 0.06, -af.z*0.5, clamp(effPower/90,0.2,1)*1.3); // recoil up the striking arm
   attacker.x = clamp(attacker.x + af.x*0.05, -ARENA_HALF, ARENA_HALF);   // drive a touch into the blow
   attacker.z = clamp(attacker.z + af.z*0.05, -ARENA_HALF_Z, ARENA_HALF_Z);
+  // v152 VISIBLE SEND-BACK (readability): the receiver GIVES GROUND with the shot, scaled by tier and
+  // the weight-class knockback ratio — exchanges read as advance/retreat instead of two merged bodies.
+  { const _sb2=(tier==='HEAVY'?0.16:tier==='MEDIUM'?0.09:0.04)*kbF;
+    opp.x = clamp(opp.x + af.x*_sb2, -ARENA_HALF, ARENA_HALF);
+    opp.z = clamp(opp.z + af.z*_sb2, -ARENA_HALF_Z, ARENA_HALF_Z); }
   const _ww = (move.traj==='HOOK'||move.traj==='OVERHAND'||move.traj==='SPINNING')?1.5 : (move.traj==='UPPERCUT')?1.35 : ((move.limb&&move.limb.includes('KICK'))?1.55 : (move.limb==='KNEE'||move.limb==='ELBOW')?1.3 : 1.0);   // WEAPON WEIGHT: a haymaker is not a jab
   triggerHitStop(0.03*_ww + cu*0.05*_ww);
   camShake = Math.max(camShake, (0.1 + cu*0.45)*_ww);
@@ -10784,14 +10789,20 @@ function buildArena(){
     window.__ringRX = RX; window.__ringRZ = RZ;                 // rope boundary for the body<->rope coupler
     const RR = window.__ringRopes;
     const ROPE_N = 9;                                           // Verlet nodes per rope
+    // v153 PERF: all 96 rope segments live in ONE InstancedMesh (unit-height cylinder; the verlet
+    // solver writes position/orientation/length into the instance matrices each frame) — was 96
+    // individual meshes = 96 draw calls of the arena's ~142. Same visual, 1 draw call.
+    const _ropeIM = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.055,0.055,1,8), ropeMat, 12*(ROPE_N-1));
+    _ropeIM.castShadow = true; _ropeIM.frustumCulled = false;
+    ringProcGroup.add(_ropeIM); window.__ropeIM = _ropeIM; window.__ropeIMNext = 0;
     const _mkRopeChain = (run, ext, fixedA, fixedV, ry)=>{
       // run='x' (front/back, vary X, fixed Z=fixedV) or 'z' (sides, vary Z, fixed X=fixedV)
       const nodes=[]; for(let i=0;i<ROPE_N;i++){ const t=-ext + (2*ext)*i/(ROPE_N-1);
         const x = run==='x' ? t : fixedV, z = run==='x' ? fixedV : t;
         nodes.push({x, y:ry, z, ox:x, oy:ry, oz:z, pin:(i===0||i===ROPE_N-1), bx:x, by:ry, bz:z}); }   // bx/by/bz = rest position
-      const segs=[]; const segRest=(2*ext)/(ROPE_N-1);
-      for(let i=0;i<ROPE_N-1;i++){ const s=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.055,segRest,8),ropeMat); s.castShadow=true; ringProcGroup.add(s); segs.push(s); }
-      return {nodes, segs, segRest, run, ext, ry, fixedV};
+      const segRest=(2*ext)/(ROPE_N-1);
+      const segBase=window.__ropeIMNext; window.__ropeIMNext += (ROPE_N-1);
+      return {nodes, segBase, segCount:ROPE_N-1, segRest, run, ext, ry, fixedV};
     };
     for (let h=0;h<3;h++){
       const ropeY = 0.65 + h*0.46;   // slightly higher — bottom rope at 0.65m (more physical)
@@ -10813,27 +10824,36 @@ function buildArena(){
       });
     }
     // corner posts — tall, chrome, with base plate + cap ball
-    [[RX,RZ],[-RX,RZ],[RX,-RZ],[-RX,-RZ]].forEach(([px,pz])=>{
-      // post body — chrome steel tube
-      const post=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.090,2.20,14), postMat);
-      post.position.set(px,1.10,pz); post.castShadow=true; ringProcGroup.add(post);
-      // base plate — thick chrome disc
-      const base=new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.22,0.08,14), postMat);
-      base.position.set(px,-0.01,pz); ringProcGroup.add(base);
-      // cap ball — chrome sphere top
-      const cap=new THREE.Mesh(new THREE.SphereGeometry(0.10,12,10), postMat);
-      cap.position.set(px,2.21,pz); ringProcGroup.add(cap);
-      // three turnbuckle pads — fabric covered, hugging toward ring center
-      const ix = -Math.sign(px)*0.10, iz = -Math.sign(pz)*0.10;
-      for (let h=0;h<3;h++){
-        const pad=new THREE.Mesh(new THREE.BoxGeometry(0.30,0.36,0.30), padMat);
-        pad.position.set(px+ix, 0.65+h*0.46, pz+iz); pad.castShadow=true; ringProcGroup.add(pad);
-        // rope connector ring (small chrome ring where rope meets pad)
-        const ring=new THREE.Mesh(new THREE.TorusGeometry(0.04,0.015,8,12), postMat);
-        ring.position.set(px+ix*2.2, 0.65+h*0.46, pz+iz*2.2); ring.rotation.y=Math.atan2(iz,ix)+Math.PI/2;
-        ringProcGroup.add(ring);
-      }
-    });
+    // v153 PERF: the 12 turnbuckle pads + 12 connector rings are static — one InstancedMesh each
+    // (matrices baked once at build). Chrome posts/bases/caps stay individual (only 12 meshes).
+    const _padIM  = new THREE.InstancedMesh(new THREE.BoxGeometry(0.30,0.36,0.30), padMat, 12);
+    const _ringIM = new THREE.InstancedMesh(new THREE.TorusGeometry(0.04,0.015,8,12), postMat, 12);
+    _padIM.castShadow = true; _padIM.frustumCulled=false; _ringIM.frustumCulled=false;
+    ringProcGroup.add(_padIM); ringProcGroup.add(_ringIM);
+    { const _M=new THREE.Matrix4(), _Q=new THREE.Quaternion(), _E=new THREE.Euler(), _P=new THREE.Vector3(), _S=new THREE.Vector3(1,1,1);
+      let _pi=0;
+      [[RX,RZ],[-RX,RZ],[RX,-RZ],[-RX,-RZ]].forEach(([px,pz])=>{
+        // post body — chrome steel tube
+        const post=new THREE.Mesh(new THREE.CylinderGeometry(0.075,0.090,2.20,14), postMat);
+        post.position.set(px,1.10,pz); post.castShadow=true; ringProcGroup.add(post);
+        // base plate — thick chrome disc
+        const base=new THREE.Mesh(new THREE.CylinderGeometry(0.20,0.22,0.08,14), postMat);
+        base.position.set(px,-0.01,pz); ringProcGroup.add(base);
+        // cap ball — chrome sphere top
+        const cap=new THREE.Mesh(new THREE.SphereGeometry(0.10,12,10), postMat);
+        cap.position.set(px,2.21,pz); ringProcGroup.add(cap);
+        // three turnbuckle pads + connector rings — instanced, hugging toward ring center
+        const ix = -Math.sign(px)*0.10, iz = -Math.sign(pz)*0.10;
+        for (let h=0;h<3;h++){
+          _E.set(0,0,0); _Q.setFromEuler(_E); _P.set(px+ix, 0.65+h*0.46, pz+iz);
+          _M.compose(_P,_Q,_S); _padIM.setMatrixAt(_pi,_M);
+          _E.set(0, Math.atan2(iz,ix)+Math.PI/2, 0); _Q.setFromEuler(_E); _P.set(px+ix*2.2, 0.65+h*0.46, pz+iz*2.2);
+          _M.compose(_P,_Q,_S); _ringIM.setMatrixAt(_pi,_M);
+          _pi++;
+        }
+      });
+      _padIM.instanceMatrix.needsUpdate=true; _ringIM.instanceMatrix.needsUpdate=true;
+    }
     // ring apron skirt around the mat
     const skirt=new THREE.Mesh(new THREE.BoxGeometry(RX*2+0.4,0.5,RZ*2+0.4),
       new THREE.MeshStandardMaterial({color:0x111114, emissive:accentCol, emissiveIntensity:0.08, roughness:0.85, metalness:0.1}));
@@ -12539,7 +12559,30 @@ function loop(now){
 
   if (_fight){
     readPlayerInput(dt);   // v117: read input on the REAL frame clock so controls stop lagging behind the slowed combat sim (SIM_PACE 0.85). AI + physics stay weighty on sdt; player intent/locomotion read crisp. Revert to sdt if you want input slowed to match.
-    fighters[1].updateAI(sdt);
+    // v152: AI drives EVERY non-player fighter (was hardcoded fighters[1] — a CPU-controlled P1
+    // stood idle forever, and multi-man needs N-fighter AI). isPlayer is the single source of truth.
+    for (const f of fighters){ if (f && !f.isPlayer && f.updateAI){ try{ f.updateAI(sdt); }catch(e){ window.__logErr&&window.__logErr('updateAI', e); } } }
+    // v152 BODY SEPARATION (readability #1): strikes/reactions move x/z directly, so mid-combo the
+    // two bodies used to drive INTO each other and stay merged — you literally could not see who was
+    // doing what. move2D's push only ran while walking. This resolver runs every frame for every
+    // standing pair: eases overlapped bodies apart to a visible-daylight gap (0.46 — tighter than the
+    // walk gap so pocket range/hooks still work), skipping any pair that is SUPPOSED to be in contact
+    // (grapples, held bodies, downed, airborne, dives/vaults).
+    for (let _i=0;_i<fighters.length;_i++) for (let _j=_i+1;_j<fighters.length;_j++){
+      const A=fighters[_i], B=fighters[_j];
+      if (!A||!B||A.zone!==B.zone) continue;
+      if (A.isDown()||B.isDown()||A.ragdoll||B.ragdoll) continue;
+      if ((A.airLift||0)>0.05||(B.airLift||0)>0.05) continue;
+      if (A.grappling||B.grappling||A.state==='grabbed'||B.state==='grabbed'||A.state==='deliver'||B.state==='deliver') continue;
+      if (A.state==='dive'||B.state==='dive'||A.state==='vault'||B.state==='vault') continue;
+      const _gap=0.46;
+      let _dx=A.x-B.x, _dz=A.z-B.z, _d=Math.hypot(_dx,_dz);
+      if (_d>=_gap) continue;
+      if (_d<1e-4){ _dx=1; _dz=0; _d=1e-4; }
+      const _ux=_dx/_d, _uz=_dz/_d, _push=(_gap-_d)*0.5*Math.min(1, sdt*11);   // ease apart, no snap
+      A.x=clamp(A.x+_ux*_push,-ARENA_HALF,ARENA_HALF); A.z=clamp(A.z+_uz*_push,-ARENA_HALF_Z,ARENA_HALF_Z);
+      B.x=clamp(B.x-_ux*_push,-ARENA_HALF,ARENA_HALF); B.z=clamp(B.z-_uz*_push,-ARENA_HALF_Z,ARENA_HALF_Z);
+    }
     for (const f of fighters){ try{ f.update(sdt); }catch(e){ window.__logErr&&window.__logErr('update:'+(f.isPlayer?'P1':'P2')+':'+f.state, e); } }
     updateFX(sdt);
     updateDamageNumbers(dt);
@@ -12579,7 +12622,8 @@ function announce(text, sub){
   a.classList.remove('announce-show'); void a.offsetWidth; a.classList.add('announce-show');
 }
 function startRound(){
-  roundTimer = 99;
+  // v152 IRON MAN: a long timed round — most rounds banked when time expires wins (pips system).
+  roundTimer = (window.MATCH_SETUP && MATCH_SETUP.matchType==='IRONMAN') ? 180 : 99;
   document.getElementById('timer').textContent = roundTimer;
   updateRoundPips();
   if (roundTimerInterval) clearInterval(roundTimerInterval);
@@ -13825,7 +13869,11 @@ function setupInput(){
           if (victim.hp !== undefined) victim.hp = Math.max(0, victim.hp - 180);
           if (typeof announce === 'function') announce('1 … 2 … 3', attacker.opts&&attacker.opts.name||'BANNON');
         } else if (victim){
-          if (victim.hp !== undefined) victim.hp = Math.max(0, victim.hp - 120);
+          // v152 SUBMISSION MATCH: a landed submission IS the finish (tapout), not just damage
+          if (window.MATCH_SETUP && MATCH_SETUP.matchType==='SUBMISSION'){
+            if (victim.hp !== undefined) victim.hp = 0;
+            if (typeof announce === 'function') announce('TAP OUT', (attacker.opts&&attacker.opts.name)||'');
+          } else if (victim.hp !== undefined) victim.hp = Math.max(0, victim.hp - 120);
         }
       }
     }, 20);
@@ -14546,6 +14594,62 @@ init();
       // Bloom: tighter threshold (only true emissives — ropes, eyes, impact flashes), higher strength for the rope LED pop
       const bloom=new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth*pxRatio, window.innerHeight*pxRatio), 1.35, 0.52, 0.72);
       composer.addPass(bloom);
+      // ---- v153 BROADCAST GRADE (ported from the palmier shader suite: HighlightsShadows +
+      // GradeCurves + Vignette + Grain collapsed into one cheap pass) — the WWE/UFC broadcast look:
+      // filmic tone curve, lifted shadows, gentle S-curve contrast, warmth, edge vignette, live film
+      // grain. Toggle window.BROADCAST_GRADE, tune window.GRADE.{sat,con,warm,vig,grain,shadow}.
+      window.BROADCAST_GRADE = (window.BROADCAST_GRADE!==undefined) ? window.BROADCAST_GRADE : true;
+      window.GRADE = window.GRADE || { sat:1.12, con:0.35, warm:0.035, vig:0.32, grain:0.028, shadow:0.045 };
+      const gradeShader = {
+        uniforms: { tDiffuse:{value:null}, uTime:{value:0}, uOn:{value:1},
+          uSat:{value:1.12}, uCon:{value:0.35}, uWarm:{value:0.035}, uVig:{value:0.32}, uGrain:{value:0.028}, uShadow:{value:0.045} },
+        vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+        fragmentShader: [
+          'uniform sampler2D tDiffuse; uniform float uTime,uOn,uSat,uCon,uWarm,uVig,uGrain,uShadow;',
+          'varying vec2 vUv;',
+          'float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }',
+          'void main(){',
+          '  vec3 c = texture2D(tDiffuse, vUv).rgb;',
+          '  if(uOn<0.5){ gl_FragColor=vec4(c,1.0); return; }',
+          '  float l = dot(c, vec3(0.2126,0.7152,0.0722));',
+          '  c += uShadow*(1.0-smoothstep(0.0,0.5,l));',                              // shadow lift (HighlightsShadows)
+          '  c = (c*(2.51*c+vec3(0.03)))/(c*(2.43*c+vec3(0.59))+vec3(0.14));',        // filmic tone curve (highlight rolloff)
+          '  l = dot(c, vec3(0.2126,0.7152,0.0722));',
+          '  c = mix(vec3(l), c, uSat);',                                             // saturation (GradeCurves)
+          '  c = mix(c, c*c*(3.0-2.0*c), uCon);',                                     // S-curve contrast
+          '  c *= vec3(1.0+uWarm, 1.0, 1.0-uWarm);',                                  // warmth (color Wheels)
+          '  float d = length(vUv-0.5)*1.4142;',
+          '  c *= 1.0 - uVig*smoothstep(0.52, 1.05, d);',                             // vignette
+          '  c += (hash(vUv*vec2(1920.0,1080.0)+fract(uTime)*13.7)-0.5)*uGrain;',     // film grain (Grain)
+          '  gl_FragColor = vec4(clamp(c,0.0,1.0), 1.0);',
+          '}'].join('\n')
+      };
+      const gradePass = new THREE.ShaderPass(gradeShader);
+      composer.addPass(gradePass);
+      window.__gradePass = gradePass;
+      // ---- v153 QUALITY BAR / INSPIRATION STACK — the owner's canon, baked into the live soul ----
+      // Every system is judged against these references. Physics-based creative freedom is the core
+      // identity: degrees of freedom in combat, grappling, dives — never canned arcade animation.
+      window.QUALITY_BAR = {
+        combatPhysics : ['Steve Masson Neckbreaker: Visceral Pro Wrestling (active ragdoll, no two moves alike)',
+                         'Endorphin Pro Wrestling (procedural full-body reactions)',
+                         'EA UFC (weight transfer, strike drive, kinetic chain)'],
+        moveDepth     : ['WWE 2K26 (moveset library, POSITIONS/zoning, creation suite)',
+                         'Fire Pro Wrestling (per-move logic priority, deep edit/sim focus — NO timing-minigame grapples: lockups stay physics/stamina-resolved)',
+                         'King of Colosseum / Japanese wrestling-sim lineage (stiff strike exchange, selling logic)'],
+        sandboxBreadth: ['MDickie Wrestling Empire (breadth, chaos, roster sandbox)',
+                         'Casual Pro Wrestling (approachable physics wrestling)'],
+        brawlEnergy   : ['Urban Reign / Def Jam (environmental brawling, grab-anywhere freedom, multi-man chaos, momentum hype)'],
+        storyDepth    : ['Tekken 5-era (per-character story depth + juggle physics — the REAL Tekken lessons, not arcade hit bloom)'],
+        identity      : 'physics-based CREATIVE FREEDOM: degrees of freedom in physics combat/grappling/dives; additive-only; verify with the senses'
+      };
+      try{ if(window.MANIFESTO&&window.MANIFESTO.register) window.MANIFESTO.register({ key:'soul.qualityBar', kind:'canon',
+        summary:'the inspiration stack every system is judged against (Neckbreaker/Endorphin/UFC physics · 2K26/FirePro/KoC move depth · MDickie/CasualPW breadth · UrbanReign/DefJam brawl energy · Tekken5 story+juggles) — physics-based creative freedom is the identity',
+        call:'window.QUALITY_BAR' }); }catch(_){}
+      setInterval(()=>{ try{ const G=window.GRADE, u=gradePass.uniforms;
+        u.uOn.value = window.BROADCAST_GRADE?1:0; u.uTime.value=(performance.now()%100000)/1000;
+        u.uSat.value=G.sat; u.uCon.value=G.con; u.uWarm.value=G.warm; u.uVig.value=G.vig; u.uGrain.value=G.grain; u.uShadow.value=G.shadow;
+      }catch(_){} }, 100);
       if(THREE.GammaCorrectionShader){
         composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       }
@@ -21338,11 +21442,23 @@ window.BANNON_ROPES = {
           if(!a.pin){a.x+=ax;a.y+=ay;a.z+=az;} if(!b.pin){b.x-=ax;b.y-=ay;b.z-=az;} }
         const e0=nodes[0],e1=nodes[nodes.length-1]; e0.x=e0.bx;e0.y=e0.by;e0.z=e0.bz; e1.x=e1.bx;e1.y=e1.by;e1.z=e1.bz;
       }
-      if(this._up){ for(let i=0;i<ch.segs.length;i++){ const a=nodes[i],b=nodes[i+1],s=ch.segs[i]; if(!s) continue;
-        s.position.set((a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2);
-        const dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z,len=Math.hypot(dx,dy,dz)||1e-6; s.scale.y=len/ch.segRest;
-        s.quaternion.setFromUnitVectors(this._up,new THREE.Vector3(dx/len,dy/len,dz/len)); } }
+      // v153: segments live in the shared InstancedMesh (window.__ropeIM) — compose each segment's
+      // matrix (midpoint position, unit-Y->direction rotation, length as Y scale; geometry is a
+      // unit-height cylinder). Same math as the old per-mesh sync, 96 draw calls -> 1.
+      if(this._up && window.__ropeIM && ch.segBase!=null){
+        if(!this._m4){ this._m4=new THREE.Matrix4(); this._q=new THREE.Quaternion(); this._p=new THREE.Vector3(); this._s=new THREE.Vector3(); this._dir=new THREE.Vector3(); }
+        for(let i=0;i<ch.segCount;i++){ const a=nodes[i],b=nodes[i+1];
+          const dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z,len=Math.hypot(dx,dy,dz)||1e-6;
+          this._dir.set(dx/len,dy/len,dz/len);
+          this._q.setFromUnitVectors(this._up,this._dir);
+          this._p.set((a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2);
+          this._s.set(1,len,1);
+          this._m4.compose(this._p,this._q,this._s);
+          window.__ropeIM.setMatrixAt(ch.segBase+i, this._m4);
+        }
+      }
     }
+    if(window.__ropeIM) window.__ropeIM.instanceMatrix.needsUpdate=true;
   }
 };
 if(window.ROPE_PHYS===undefined) window.ROPE_PHYS=true;
@@ -34055,20 +34171,20 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   var MATCH_TYPES = [
     { id:'ONE_ON_ONE',   label:'ONE ON ONE',          live:true  },
     { id:'TAG',          label:'TAG TEAM',            live:false },
-    { id:'TRIPLE',       label:'TRIPLE THREAT',       live:false },
-    { id:'FOURWAY',      label:'FOUR-WAY',            live:false },
+    { id:'TRIPLE',       label:'TRIPLE THREAT',       live:true  },   // v152: multi-man engine (elimination rules)
+    { id:'FOURWAY',      label:'FOUR-WAY',            live:true  },   // v152
     { id:'LADDER',       label:'LADDER MATCH',        live:false },
     { id:'TABLES',       label:'TABLES MATCH',        live:false },
     { id:'TLC',          label:'TABLES LADDERS CHAIRS', live:false },
     { id:'CAGE',         label:'STEEL CAGE',          live:false },
-    { id:'LMS',          label:'LAST ONE STANDING',   live:false },
-    { id:'SUBMISSION',   label:'SUBMISSION',          live:false },
-    { id:'IRONMAN',      label:'IRON MAN (TIME)',     live:false },
-    { id:'ANYWHERE',     label:'FALLS COUNT ANYWHERE',live:false },
+    { id:'LMS',          label:'LAST ONE STANDING',   live:true  },   // v152: 10-count ref over any downed fighter
+    { id:'SUBMISSION',   label:'SUBMISSION',          live:true  },   // v152: landed submission = tapout finish
+    { id:'IRONMAN',      label:'IRON MAN (TIME)',     live:true  },   // v152: 180s round, most rounds banked wins
+    { id:'ANYWHERE',     label:'FALLS COUNT ANYWHERE',live:true  },   // v152: pins/subs were never zone-gated — official
     { id:'GAUNTLET',     label:'GAUNTLET',            live:false },
-    { id:'ROYALE',       label:'OPEN BATTLE ROYALE',  live:false },
-    { id:'HARDCORE',     label:'NO-RULES HARDCORE',   live:false },
-    { id:'FIRSTBLOOD',   label:'FIRST BLOOD',         live:false },
+    { id:'ROYALE',       label:'OPEN BATTLE ROYALE',  live:true  },   // v152: 6-man elimination
+    { id:'HARDCORE',     label:'NO-RULES HARDCORE',   live:true  },   // v152: no DQ/count-out exists — anything goes
+    { id:'FIRSTBLOOD',   label:'FIRST BLOOD',         live:true  },   // v152: first blood spatter ends it
     { id:'IQUIT',        label:'I QUIT',              live:false },
     { id:'CASKET',       label:'CASKET',              live:false },
     { id:'INFERNO',      label:'INFERNO',             live:false },
@@ -34277,6 +34393,178 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   }
   if (document.readyState!=='loading') wire(); else document.addEventListener('DOMContentLoaded', wire);
   console.log('%c[CHARACTER SELECT] armed — FIGHT opens the select screen; pick anybody for both sides','color:#ffb000');
+})();
+</script>
+
+<script>
+// =============================================================================
+// v152 MATCH RULES + MULTI-MAN ENGINE — the "coming soon" catalog goes live.
+// Rule variants ride the systems that already exist (pin/sub minigames, blood,
+// knockdown/getup, round pips); multi-man generalizes opponent() to nearest-
+// living and spawns extra AI fighters, with elimination flow + mini HP bars.
+// =============================================================================
+(function(){
+  if (window.__matchRules152 || typeof Fighter==='undefined') return;
+  window.__matchRules152 = true;
+  const MT = ()=> (window.MATCH_SETUP && window.MATCH_SETUP.matchType) || 'ONE_ON_ONE';
+  const MULTI = { TRIPLE:3, FOURWAY:4, ROYALE:6 };
+
+  // ---- opponent(): nearest living non-eliminated fighter (multi-man only; 1v1 path untouched) ----
+  const _origOpp = Fighter.prototype.opponent;
+  Fighter.prototype.opponent = function(){
+    if (typeof fighters==='undefined' || !fighters || fighters.length<=2) return _origOpp.call(this);
+    let best=null, bd=1e9;
+    for (const f of fighters){ if (!f||f===this||f._eliminated||f.hp<=0) continue;
+      const d=(f.x-this.x)*(f.x-this.x)+(f.z-this.z)*(f.z-this.z); if (d<bd){ bd=d; best=f; } }
+    return best || _origOpp.call(this);
+  };
+
+  // ---- multi-man spawn: extra AI entrants after the base two are built ----
+  const _origStart = window.startFight;
+  window.startFight = function(){
+    const r = _origStart.apply(this, arguments);
+    try{
+      window.__fbDone=false;
+      for (const f of ((typeof fighters!=='undefined'&&fighters)||[])){ f._eliminated=false; f._lmsT=0; f._lmsAnn=0; }
+      const want = MULTI[MT()]||0;
+      if (want>2 && typeof fighters!=='undefined' && fighters && fighters.length===2){
+        const taken={}; taken[fighters[0].specName||fighters[0].opts&&fighters[0].opts.name]=1; taken[fighters[1].specName||fighters[1].opts&&fighters[1].opts.name]=1;
+        const pool=(window.BANNON_ROSTER||[]).map(t=>t.name).filter(n=>!taken[n]);
+        const spots=[[0,-1.4],[1.3,1.1],[-1.3,1.1],[0,1.5]];
+        for (let i=fighters.length; i<want && pool.length; i++){
+          const name=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+          const o=(typeof fighterOptsFor==='function')?fighterOptsFor(name):{};
+          const f=new Fighter(false, { col:o.col, accent:o.accent, skin:o.skin, name:name, style:o.style });
+          f._lookKey=name; f.isPlayer=false;
+          const s=spots[(i-2)%spots.length]; f.x=s[0]; f.z=s[1];
+          fighters.push(f);
+          try{ if(typeof dressFighter==='function') dressFighter(f); }catch(_){}
+          try{ if(typeof applyForgeMorphs==='function') applyForgeMorphs(f); }catch(_){}
+        }
+        announce && announce(MT()==='ROYALE'?'BATTLE ROYALE':(want===3?'TRIPLE THREAT':'FOUR-WAY'), fighters.length+' COMPETITORS');
+      }
+      _mkMiniBars();
+    }catch(e){ window.__logErr&&window.__logErr('multiSpawn', e); }
+    return r;
+  };
+
+  // ---- elimination flow: a KO in multi-man eliminates, only the last one standing wins ----
+  const _origDW = window.declareWinner;
+  window.declareWinner = function(w){
+    try{
+      if (typeof fighters!=='undefined' && fighters && fighters.length>2){
+        for (const f of fighters){ if (f.hp<=0 && !f._eliminated){ f._eliminated=true;
+          announce && announce((typeof fname==='function'?fname(f):'FIGHTER')+' ELIMINATED',''); } }
+        const alive=fighters.filter(f=>!f._eliminated && f.hp>0);
+        if (alive.length>1){ for (const f of fighters) f._koTriggered=false; return; }   // fight on
+        if (alive.length===1) return _origDW(alive[0]);
+      }
+    }catch(_){}
+    return _origDW(w);
+  };
+
+  // ---- mini HP bars for entrants 3+ (the main HUD covers the first two) ----
+  let _mini=null;
+  function _mkMiniBars(){
+    if (_mini){ _mini.remove(); _mini=null; }
+    if (typeof fighters==='undefined' || !fighters || fighters.length<=2) return;
+    _mini=document.createElement('div');
+    _mini.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:9000;display:flex;gap:14px;font:10px ui-monospace,monospace;color:#ffd9a8;pointer-events:none;';
+    for (let i=2;i<fighters.length;i++){
+      const d=document.createElement('div'); d.style.cssText='text-align:center;';
+      d.innerHTML='<div>'+((fighters[i].specName||fighters[i].opts&&fighters[i].opts.name)||('P'+(i+1)))+'</div><div style="width:90px;height:5px;background:#3338;border:1px solid #ff7a1a55;"><i style="display:block;height:100%;background:#ffb000;width:100%"></i></div>';
+      _mini.appendChild(d);
+    }
+    document.body.appendChild(_mini);
+  }
+  setInterval(()=>{ try{
+    if (!_mini || typeof fighters==='undefined' || !fighters) return;
+    const bars=_mini.querySelectorAll('i');
+    for (let i=2;i<fighters.length && i-2<bars.length;i++){
+      bars[i-2].style.width=Math.max(0,Math.min(100,(fighters[i].hp/(fighters[i].maxHp||300))*100))+'%';
+      bars[i-2].style.background=fighters[i]._eliminated?'#555':'#ffb000';
+    }
+  }catch(_){} }, 250);
+
+  // ---- per-frame rule tick: LAST ONE STANDING ref count + FIRST BLOOD ----
+  setInterval(()=>{ try{
+    if (typeof gameState==='undefined' || gameState!=='fight' || typeof fighters==='undefined' || !fighters) return;
+    const mt=MT();
+    if (mt==='LMS'){
+      for (const f of fighters){
+        if (f.isDown() && f.hp<(f.maxHp||300)*0.55){
+          f._lmsT=(f._lmsT||0)+0.25;
+          const c=Math.floor(f._lmsT);
+          if (c>(f._lmsAnn||0) && c<=10){ f._lmsAnn=c; announce('REF COUNT  '+c, (typeof fname==='function'?fname(f):'')+' IS DOWN'); }
+          if (f._lmsT>=10 && !f._koTriggered){ f._koTriggered=true; const w=f.opponent(); f.hp=0; setTimeout(()=>declareWinner(w),900); }
+        } else { f._lmsT=0; f._lmsAnn=0; }
+      }
+    }
+  }catch(_){} }, 250);
+
+  // ---- FIRST BLOOD: attribute the first blood spatter to the nearest fighter; their opponent wins ----
+  const _wireFB=()=>{ const _sb=window.__spawnBlood;
+    if (typeof _sb!=='function'){ setTimeout(_wireFB,1000); return; }
+    window.__spawnBlood=function(x,y,z,c,inten){
+      try{
+        if (MT()==='FIRSTBLOOD' && typeof gameState!=='undefined' && gameState==='fight' && !window.__fbDone && typeof fighters!=='undefined' && fighters){
+          let bf=null,bd=1e9; for (const f of fighters){ const d=(f.x-x)*(f.x-x)+(f.z-z)*(f.z-z); if (d<bd){ bd=d; bf=f; } }
+          if (bf){ window.__fbDone=true; const w=bf.opponent(); bf.hp=Math.min(bf.hp, 1);
+            announce('FIRST BLOOD', (typeof fname==='function'?fname(w):'')+' WINS');
+            setTimeout(()=>{ bf.hp=0; declareWinner(w); }, 1200); }
+        }
+      }catch(_){}
+      return _sb.apply(this, arguments);
+    }; };
+  _wireFB();
+
+  console.log('%c[v152 MATCH ENGINE] rules live: LMS ref-count · FIRST BLOOD · SUBMISSION tapout · IRON MAN timer · FALLS ANYWHERE/HARDCORE (pins were never zone-gated) · TRIPLE/FOUR-WAY/ROYALE multi-man with elimination', 'color:#00ff88;font-weight:bold');
+})();
+</script>
+
+<script>
+// =============================================================================
+// v153 ENVIRONMENTAL CONTACT (Urban Reign / Def Jam energy, sim-resolved):
+// the arena furniture is REAL. A body sent into a ring post at speed eats a
+// post impact — velocity-scaled damage, a hard stagger, camera hit, and the
+// announce. No scripted animation: the impact reads through the same wobble/
+// stumble physics as everything else. Cooldown-gated so a cornered fighter
+// isn't blender-ed. Steel steps join when the 3MF prop lands in-scene.
+// =============================================================================
+(function(){
+  if (window.__envContact153) return; window.__envContact153=true;
+  const POSTS=()=>{ const RX=(window.__ringRX||3.35), RZ=(window.__ringRZ||2.35);
+    return [[RX,RZ],[-RX,RZ],[RX,-RZ],[-RX,-RZ]]; };
+  setInterval(()=>{ try{
+    if (typeof gameState==='undefined' || gameState!=='fight' || typeof fighters==='undefined' || !fighters) return;
+    for (const f of fighters){
+      if (!f || f.isDown() || (f.airLift||0)>0.1 || f.state==='grabbed' || f.grappling) continue;
+      // sampled velocity (position delta over the 120ms tick — covers knockback/whip, not just running)
+      const vx=(f.x-(f.__epx!=null?f.__epx:f.x))/0.12, vz=(f.z-(f.__epz!=null?f.__epz:f.z))/0.12;
+      f.__epx=f.x; f.__epz=f.z;
+      const spd=Math.hypot(vx,vz);
+      f.__postCd=Math.max(0,(f.__postCd||0)-0.12);
+      if (spd<1.9 || f.__postCd>0) continue;
+      for (const [px,pz] of POSTS()){
+        const dx=px-f.x, dz=pz-f.z, d=Math.hypot(dx,dz);
+        if (d>0.62) continue;
+        const toward=(vx*dx+vz*dz)/(d*Math.max(0.1,spd));            // heading INTO the post?
+        if (toward<0.45) continue;
+        f.__postCd=1.6;
+        const sev=Math.min(1, spd/4.5);                              // velocity-scaled severity
+        try{ if (typeof applyDamage==='function') applyDamage(f, (30+90*sev)*(window.DMG_SCALE||1), f.opponent&&f.opponent(), {power:40+60*sev, height:'HIGH', traj:'STRAIGHT', limb:'POST', name:'RING POST'}, sev>0.7); }catch(_){}
+        try{ f.kickWobble && f.kickWobble('body', -dx/d, 0.10+0.15*sev, -dz/d, 1.6+1.4*sev); }catch(_){}
+        try{ if (sev>0.55 && f.triggerKnockdown) f.triggerKnockdown(-dx/d*0.6, 0.9+sev*0.6); else if (f.enterStumble) f.enterStumble(-dx/d, 30*sev); }catch(_){}
+        if (typeof camShake!=='undefined') camShake=Math.max(camShake, 0.35+0.45*sev);
+        if (typeof triggerHitStop==='function') triggerHitStop(0.05+0.07*sev);
+        if (typeof announce==='function') announce('INTO THE POST', (typeof fname==='function'?fname(f):'')+' EATS STEEL');
+        break;
+      }
+    }
+  }catch(_){} }, 120);
+  try{ if(window.MANIFESTO&&window.MANIFESTO.register) window.MANIFESTO.register({ key:'combat.envContact', kind:'gameplay',
+    summary:'ring posts are live impact surfaces: velocity-scaled post impacts (damage/stagger/knockdown via the same physics selling as strikes) — Urban Reign/Def Jam environmental energy, sim-resolved', call:'ENV CONTACT interval' }); }catch(_){}
+  console.log('%c[v153 ENV CONTACT] ring posts are live impact surfaces', 'color:#00ff88;font-weight:bold');
 })();
 </script>
 
