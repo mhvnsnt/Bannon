@@ -12948,6 +12948,16 @@ try{
   _addChar('GREAT_WHITE_NORTH',{ label:'Cold Mercenary',       col:0xdce8f0, accent:0x1a3a5a, skin:0xeed9c0, faction:'Free Agent', canon:true, bio:'Highest bidder wins — the Frostbite Driver settles the invoice.', archetype:'powerhouse' }, 'SINGLET', 'BEARD', {musc:0.78,fat:0.4});
   _addChar('SOMBRA_NEGRA',   { label:'The Silver Trap',        col:0x14141c, accent:0xc0c0cc, skin:0xb07840, faction:'Free Agent', canon:true, bio:'Calculated mercenary — steals opponents’ finishers (mechanic to build).', archetype:'technician' }, 'TIGHTS', 'SHORT', {musc:0.6,fat:0.16});
   _addChar('RAJA_ASCENDANT', { label:'The Ascendant',          col:0xd45a10, accent:0x2ac4c4, skin:0x9a6238, faction:'Free Agent', canon:true, bio:'Flamboyant artistry — could yet align with freedom.', archetype:'striker' }, 'TIGHTS', 'FADE', {musc:0.62,fat:0.16});
+  // v154 remaining AWE assets (completes the canon 41 from the cast doc):
+  _addChar('COLD_FROST',     { label:'The Objective Technician',col:0xc4dae8, accent:0x2a5a7a, skin:0xe6d0b8, faction:'Corporate Structure', canon:true, bio:'LP7 — emotionless technical threat, no wasted motion, no mercy.', archetype:'technician' }, 'LONG_TIGHTS', 'BUZZ', {musc:0.6,fat:0.16});
+  _addChar('GRIXF',          { label:'The Manic Fanatic',       col:0x4a1030, accent:0x88ee22, skin:0xcaa070, faction:'Corporate Structure', canon:true, bio:'LP9 — a zealot for the system, all teeth and fervor.', archetype:'brawler' }, 'CARGO_PANTS', 'MOHAWK', {musc:0.64,fat:0.24});
+  _addChar('MACHINE_TIGER',  { label:'Counter-Architect',       col:0xe08010, accent:0x111111, skin:0xb07840, faction:'Corporate Structure', canon:true, bio:'LP4 — methodical, structured, engineered to counter Bannon.', archetype:'technician' }, 'SINGLET_2TONE', 'SHORT', {musc:0.68,fat:0.14});
+  _addChar('CHAINMAIL',      { label:'The Scarred Vengeance',   col:0x3a3a44, accent:0x8a1a1a, skin:0xc09068, faction:'Corporate Structure', canon:true, bio:'LP8 — armored rage, every scar a debt to collect.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.86,fat:0.3});
+  // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
+  // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
+  window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
+    CODY_CALLAHAN: { name:'Cody "Corduroy Kid" Callahan', role:'Toxic Pawn / Distraction', faction:'Corporate Structure', canon:true, effect:{momentumTrickle:0.4, interfere:true} }
+  });
   // canon finishers for the new cast (through the real grapple physics; subs route as spikes until the sub-hold finisher path lands):
   window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
     ATLAS_VANCE:     { name:'THE ANCHOR COUNTER',        kind:'strike' },

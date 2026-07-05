@@ -234,7 +234,19 @@ LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding
   Canuck/Celtic Fury/Rey Fuego/El Toro de Oro; Corporate: Cain Elias/Astrid/Shaolin Shadow/Finn Mac/
   Ghost of Lahore/Masato Iida/Hikaru Arashi/Kenji Saito/Kiko Tanaka/Ryuji Tatsu/Finance Demon/Zenith;
   Agents/Indies: Cassian Thorne/Mr Zero Point/Great White North/Sombra Negra/Raja) + their canon
-  FINISHER_MOVES. Verified: ROSTER_ALL 19->47 (39 canon), all new cast selectable, 35 finishers.
+  FINISHER_MOVES. Read the full cast doc ("Off The Top Rope cast and characters .txt", 41-char
+  master roster) — added the last 4 AWE assets (Cold Frost/Grixf/Machine Tiger/Chainmail) so the
+  in-game canon matches the books. `window.CHAR_MANAGERS` registry seeded (Cody "Corduroy Kid"
+  Callahan — canon manager, momentumTrickle+interfere; slot-menu manager pick + interference wiring
+  queued). Verified: ROSTER_ALL 51 (43 canon), all new cast selectable. THE CANON 41 (books) =
+  Kennedy/Combs (owners), Marquis=BANNON (protagonist), Atlas Vance, Cassian Thorne, Cain Elias,
+  Cody Callahan (manager), Zenith, Cold Frost, Grixf, Machine Tiger, Chainmail, Tightrope, Finxsse,
+  Stick-Up, Mr Zero Point, Masato Iida, Hikaru Arashi, Kenji Saito, Kiko Tanaka, Ryuji Tatsu,
+  Finance Demon, Shaolin Shadow, Finn Mac, Ghost of Lahore, Astrid, Heath (London Broker),
+  Captain Unity, Great White North, Chief Red Cloud, Lion of Punjab, Lady Rhiannon, Agent Canuck,
+  Celtic Fury, Rey Fuego, El Toro de Oro, Akon, Yorkshire Grit, Raja, Sombra Negra. Factions:
+  Alliance / Corporate Structure (AWE+JPCW) / Agents of Chaos&Temptation / Independent Variables.
+  Companies: AWE (Kennedy) + JPCW (Combs's global network).
 - v154 FLAIL FIX ("feet and limbs fly around crazy when hit" — owner's constraint-solver diagnosis
   was correct): (a) visceralImpact (Rapier path) VMAX 6.5->4.5 + per-hit damping spike (lin 0.5/ang
   0.7 for 0.5s) + head/struck-node vertical share cut (whip BACK not UP); (b) POST-CONSTRAINT VELOCITY
