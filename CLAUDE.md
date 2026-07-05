@@ -165,8 +165,12 @@ faceEyeSpread/faceEyeH/faceMouthH/faceEarH (position-only in applyMesh — NEVER
 there, applyFighterSpec owns feature scaling: faceEars/faceEye/faceMouthW/faceLips). All in CAW.
 GOTCHA: geometry probes need enterCreatePreview(0) — idle body motion (~0.19 max vert drift)
 swamps morph deltas; probe the 45° cones for lats (pure-side verts don't move by design).
-NEXT: vault variants from apron/mid/top; apron springboards in/out (slingshot entries); corner
-BACK moves (opp facing buckles: back elbows/tree-of-woe from behind); pins gated on face-UP;
+ALSO SHIPPED: VAULT VARIANTS — `_vaultPending.from` ('ring'/'apron'/'mid' by zone + airLift>0.45);
+apron = SLINGSHOT entry (T 0.36, knees TUCK over the rope, body travels 2.6·kick into the ring,
+zone flips to RING, launch 0.85, announced "SLINGSHOT <move>"); mid = quick pop (T 0.22, launch
+0.75, "SPRINGBOARD <move>"); ring = classic (0.95). Verified vault2.js: 0.95/0.85+0.26 travel/0.75
++ correct announces. NEXT: corner BACK moves (opp facing buckles: back elbows/tree-of-woe from
+behind); pins gated on face-UP;
 arena group still has ~142 meshes (next perf brick); wire CHAR_FINISHERS into MOVESET_DB; harvest
 STUDIO clips from godmode/BANNON_AAA_v21_2K_mocap_2.html + feed assets/mocap clip into poseGrabbed
 LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding).

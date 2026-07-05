@@ -9146,7 +9146,12 @@ Fighter.prototype.startDive = function(type, sb){
   // it plays the actual rope-plant first (hands/foot to the top rope, hips kicking over) and THEN
   // launches from rope height. The vault stores the dive and hands off to the normal path when done.
   if (sb && !this._vaultPending && !this.ragdoll){
-    this._vaultPending = { type: type };
+    // VAULT VARIANTS (2K26): where you springboard FROM changes the in-between and the launch —
+    //  ring  = the standard rope-plant vault (hands to the top rope, hips kick over, top-rope height)
+    //  apron = SLINGSHOT entry: plant on the top rope from OUTSIDE and sling the body over INTO the ring
+    //  mid   = quick second-rope pop: shorter plant, lower launch, faster into the dive
+    const _vfrom = (this.zone==='APRON') ? 'apron' : (((this.airLift||0)>0.45) ? 'mid' : 'ring');
+    this._vaultPending = { type: type, from: _vfrom };
     this.state='vault'; this.stateTime=0; this.spin=0; this.diveType=null;
     return;
   }
@@ -9157,7 +9162,9 @@ Fighter.prototype.startDive = function(type, sb){
   this.aerialFrom = { x:this.x, y:(this.airLift||(sb?0.2:1.85)), z:this.z };
   this.aerialTo = opp ? { x:clamp(opp.x,-ARENA_HALF,ARENA_HALF), z:clamp(opp.z,-ARENA_HALF_Z,ARENA_HALF_Z) } : { x:this.x + this.dir*2.5, z:this.z };
   this._diveArc = (d.arc + (sb?DIVE.spring:0)) * DIVE.arc;
-  announce(d.label, this.who());
+  const _vPre = this._sbFrom==='apron' ? 'SLINGSHOT ' : (this._sbFrom==='mid' ? 'SPRINGBOARD ' : '');
+  this._sbFrom = null;
+  announce(_vPre + d.label, this.who());
 };
 Fighter.prototype.exitAerial = function(){
   this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this._airPitch=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
@@ -9166,10 +9173,19 @@ Fighter.prototype.exitAerial = function(){
 // hips kick up and over, then the stored dive launches from rope height. One continuous motion
 // (smoothstep phases), not a keyframe snap; physics keeps stepping underneath.
 Fighter.prototype.poseVault = function(dt){
-  const T=0.30, t=Math.min(1, this.stateTime/T);
+  const _vp=this._vaultPending||{}, _from=_vp.from||'ring';
+  const T=(_from==='mid')?0.22:(_from==='apron')?0.36:0.30;   // mid = quick pop, apron = the bigger sling
+  const t=Math.min(1, this.stateTime/T);
   const s=t*t*(3-2*t);                                    // eased master phase
   const plant=Math.min(1, s/0.5), kick=Math.max(0,(s-0.45)/0.55);   // A: dip+plant  B: hips over
-  this.airLift = 0.15*plant + 0.75*kick;                  // body carries up onto the rope line
+  const _liftMax=(_from==='mid')?0.55:(_from==='apron')?0.70:0.75;
+  this.airLift = 0.15*plant + _liftMax*kick;              // body carries up onto the rope line
+  // APRON SLINGSHOT: the body TRAVELS over the top rope INTO the ring while the hips sling over
+  if (_from==='apron' && kick>0){
+    const _L=Math.hypot(this.x,this.z)||1;
+    this.x += (-this.x/_L)*dt*2.6*kick; this.z += (-this.z/_L)*dt*2.6*kick;
+    this.zone='RING'; this.zoneY=0;                       // committed over the ropes — zone follows the body
+  }
   this.root.position.set(this.x, RING.floorY + (this.zoneY||0) + this.airLift, this.z);
   this.root.rotation.set(0, this.facing, 0, 'YXZ');
   const J=this.J, dip=0.14*plant*(1-kick);
@@ -9179,14 +9195,21 @@ Fighter.prototype.poseVault = function(dt){
   // hands PLANT on the top rope line ahead (the visible contact of the vault)
   J.haL.set(0.42+0.10*plant, 1.06-0.04*plant, 0.20); J.haR.set(0.42+0.10*plant, 1.06-0.04*plant, -0.20);
   J.elL.set(0.30, 1.12, 0.22); J.elR.set(0.30, 1.12, -0.22);
-  // legs: load in the dip, then SWEEP up behind as the hips kick over the hands
-  J.hipL.set(-0.02-0.16*kick, 0.86+0.16*kick, 0.13); J.hipR.set(-0.02-0.16*kick, 0.86+0.16*kick, -0.13);
-  J.knL.set(0.10-0.34*kick, 0.48+0.44*kick, 0.15); J.knR.set(0.10-0.30*kick, 0.48+0.38*kick, -0.15);
-  J.ftL.set(0.16-0.52*kick, 0.06+0.72*kick, 0.16); J.ftR.set(0.16-0.46*kick, 0.06+0.62*kick, -0.16);
+  if (_from==='apron'){
+    // SLINGSHOT legs: knees TUCK high over the rope (clearing it from outside), not the behind-sweep
+    J.hipL.set(-0.04-0.10*kick, 0.86+0.20*kick, 0.13); J.hipR.set(-0.04-0.10*kick, 0.86+0.20*kick, -0.13);
+    J.knL.set(0.16+0.10*kick, 0.48+0.62*kick, 0.15); J.knR.set(0.16+0.14*kick, 0.48+0.56*kick, -0.15);
+    J.ftL.set(0.10+0.06*kick, 0.06+0.52*kick, 0.16); J.ftR.set(0.10+0.10*kick, 0.06+0.46*kick, -0.16);
+  } else {
+    // legs: load in the dip, then SWEEP up behind as the hips kick over the hands
+    J.hipL.set(-0.02-0.16*kick, 0.86+0.16*kick, 0.13); J.hipR.set(-0.02-0.16*kick, 0.86+0.16*kick, -0.13);
+    J.knL.set(0.10-0.34*kick, 0.48+0.44*kick, 0.15); J.knR.set(0.10-0.30*kick, 0.48+0.38*kick, -0.15);
+    J.ftL.set(0.16-0.52*kick, 0.06+0.72*kick, 0.16); J.ftR.set(0.16-0.46*kick, 0.06+0.62*kick, -0.16);
+  }
   if (this.stateTime>=T){
     const p=this._vaultPending; this._vaultPending=null;
-    this.airLift=0.95;                                     // launch height = off the top rope
-    if(p) this.startDive(p.type,false); else this.exitAerial();
+    this.airLift = (_from==='mid')?0.75:(_from==='apron')?0.85:0.95;   // launch height per rope tier
+    if(p){ this._sbFrom=p.from; this.startDive(p.type,false); } else this.exitAerial();
   }
 };
 Fighter.prototype.diveImpact = function(opp){ try{
