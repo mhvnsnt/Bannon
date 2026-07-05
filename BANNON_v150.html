@@ -5133,8 +5133,11 @@ window.BBODY = (function(){
     // ringGirth ti===2): jaw width/length and skull width/length are now honest sliders.
     { cap:true, capStart:true, rings:[ [['chest','neck',0.42],0.170,0.140], [['chest','neck',0.62],0.110,0.098], ['neck',0.080,0.076], [['neck','head',0.45],0.084,0.082], [['neck','head',0.78],0.096,0.108], ['head',0.106,0.124], [['neck','head',1.32],0.080,0.092] ] },
     // ARMS: broad deltoid cap -> THICK biceps -> elbow -> forearm -> wrist -> hand (more mass + taper)
-    { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054], ['haL',0.058], [['elL','haL',1.18],0.040] ] },
-    { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054], ['haR',0.058], [['elR','haR',1.18],0.040] ] },
+    // hand: past the wrist the tube FLATTENS and WIDENS into a real palm + knuckle plate (wide
+    // side-to-side, thin front-back) instead of tapering into a ball nub — the articulated finger
+    // chains (seg.fingersL/R, keepVisible) grow out of the knuckle ring.
+    { cap:true, capStart:true, rings:[ [['shL','chest',0.32],0.122], ['shL',0.108], [['shL','elL',0.18],0.110], [['shL','elL',0.58],0.086], ['elL',0.074], ['faTwL',0.070], ['wrL',0.054,0.046], ['haL',0.062,0.044], [['elL','haL',1.25],0.056,0.032] ] },
+    { cap:true, capStart:true, rings:[ [['shR','chest',0.32],0.122], ['shR',0.108], [['shR','elR',0.18],0.110], [['shR','elR',0.58],0.086], ['elR',0.074], ['faTwR',0.070], ['wrR',0.054,0.046], ['haR',0.062,0.044], [['elR','haR',1.25],0.056,0.032] ] },
     // LEGS: thick quad -> knee -> calf taper -> ankle -> foot
     // foot: after the ankle the tube turns FORWARD (local +x) into an instep + toe, flattened wide/low,
     // so it reads as a foot/boot instead of a ball stub. fy lowers it to the mat, fz widens the sole.
@@ -5472,7 +5475,7 @@ window.BBODY = (function(){
     if(m.userData && m.userData.keepVisible){ m.visible=true; continue; }   // explicit keep (e.g. Maime's painted face shell)
     // finger/thumb chains live in (possibly nested) arrays — plain `m.visible=` skipped them, so the
     // crude little cylinders stayed visible over the smooth hand and read as a grid blob. Recurse.
-    if(Array.isArray(m)){ const walk=(x)=>{ if(Array.isArray(x)) x.forEach(walk); else if(x&&x.visible!==undefined) x.visible=!hide; }; walk(m); continue; }
+    if(Array.isArray(m)){ const walk=(x)=>{ if(Array.isArray(x)) x.forEach(walk); else if(x&&x.visible!==undefined) x.visible=(x.userData&&x.userData.keepVisible)?true:!hide; }; walk(m); continue; }
     if(m.visible!==undefined) m.visible=!hide; } }
   // Hide EVERYTHING procedural (continuous body + every seg incl face + finger arrays). Used when a
   // GLB model replaces this fighter — otherwise the procedural body renders INSIDE the imported model
@@ -10759,59 +10762,41 @@ function buildArena(){
     const crowdPalette=[0x9a1a1a,0x1a3a8a,0x7a5a10,0x1a1a2a,0x5a1a5a,0x1a5a3a,0x6a3a10,0x2a2a6a,0xaa2222,0x224488,0x886600,0x228844];
     const skinTones=[0x2a1a10,0x3d2510,0x8b5e3c,0xc8956c,0xe8c49a,0x4a2010];
 
+    // v152 PERF: INSTANCED CROWD — the old crowd was 227 Groups of 1-5 unique Meshes with unique
+    // materials (~380 draw calls + ~380 material binds every frame), the single biggest render cost
+    // in the scene and the primary cause of the in-play lag (frame time starves dt, which slows every
+    // spring — lifts crawl, arcs never reach climax). Same look, now 5 InstancedMeshes = 5 draw calls.
+    // Per-fan color via instanceColor with the band brightness baked in (they were emissive-lit anyway).
+    const _cSpec=[]; const _cMembers=[];
     const buildCrowdBand=(count,zMin,zMax,xMin,xMax,sizeMin,sizeMax,brightness,addHead,doSigns)=>{
       for(let i=0;i<count;i++){
         const col=crowdPalette[Math.floor(Math.random()*crowdPalette.length)];
         const skinCol=skinTones[Math.floor(Math.random()*skinTones.length)];
         const sz=rand(sizeMin,sizeMax);
-        const g=new THREE.Group();
-
-        // body — jersey colour
-        const bodyMat=new THREE.MeshStandardMaterial({color:col,roughness:0.92,metalness:0,emissive:col,emissiveIntensity:brightness});
-        const body=new THREE.Mesh(new THREE.BoxGeometry(sz*0.58,sz*0.85,sz*0.38),bodyMat);
-        body.position.y=sz*0.42; g.add(body);
-
+        const px=rand(xMin,xMax), pz=rand(zMin,zMax);
+        const distFromRing=Math.abs(pz)-5;
+        const gy=-0.05+Math.max(0,distFromRing*0.06);
+        const ry=rand(-0.20,0.20), ca=Math.cos(ry), sa=Math.sin(ry);
+        const member={parts:[], sp:rand(0.8,2.8), ph:rand(0,Math.PI*2)};
+        // local offset -> band world (yaw about the fan's own origin)
+        const add=(kind, lx,ly,lz, sx,sy,sz2, rz, c, lum)=>{
+          _cSpec.push({kind, x:px+lx*ca+lz*sa, y:gy+ly, z:pz-lx*sa+lz*ca, sx,sy,sz:sz2, ry, rz:rz||0, col:c, lum, member});
+        };
+        const bodyLum=0.30+brightness*2.4, skinLum=0.26+brightness*1.6;
+        add('body', 0, sz*0.42, 0, sz*0.58, sz*0.85, sz*0.38, 0, col, bodyLum);
         if(addHead){
-          // head with skin tone
-          const headMat=new THREE.MeshStandardMaterial({color:skinCol,roughness:0.85,metalness:0,emissive:skinCol,emissiveIntensity:brightness*0.6});
-          const head=new THREE.Mesh(new THREE.SphereGeometry(sz*0.20,7,6),headMat);
-          head.position.y=sz*0.88+sz*0.20; g.add(head);
-
-          // raised arms (random ~25% of crowd — the energy read)
+          add('head', 0, sz*1.08, 0, sz*0.20, sz*0.20, sz*0.20, 0, skinCol, skinLum);
           if(Math.random()<0.25){
-            const armMat=new THREE.MeshStandardMaterial({color:skinCol,roughness:0.9,metalness:0});
-            const armL=new THREE.Mesh(new THREE.CylinderGeometry(sz*0.07,sz*0.07,sz*0.55,5),armMat);
-            const armR=armL.clone();
-            armL.position.set(-sz*0.38,sz*0.88+sz*0.35,0); armL.rotation.z=0.45;
-            armR.position.set( sz*0.38,sz*0.88+sz*0.35,0); armR.rotation.z=-0.45;
-            g.add(armL); g.add(armR);
+            add('arm', -sz*0.38, sz*1.23, 0, sz*0.07, sz*0.55, sz*0.07,  0.45, skinCol, skinLum);
+            add('arm',  sz*0.38, sz*1.23, 0, sz*0.07, sz*0.55, sz*0.07, -0.45, skinCol, skinLum);
           }
-
-          // phone light (small emissive white dot ~15% of crowd)
-          if(Math.random()<0.15){
-            const phoneMat=new THREE.MeshBasicMaterial({color:0xffffff});
-            const phone=new THREE.Mesh(new THREE.BoxGeometry(sz*0.12,sz*0.06,sz*0.02),phoneMat);
-            phone.position.set(rand(-sz*0.2,sz*0.2),sz*0.72,sz*0.22);
-            g.add(phone);
-          }
-
-          // signs (~8% of front rows)
+          if(Math.random()<0.15) add('phone', rand(-sz*0.2,sz*0.2), sz*0.72, sz*0.22, sz*0.12, sz*0.06, sz*0.02, 0, 0xffffff, 3.0);
           if(doSigns && Math.random()<0.08){
             const signCol=crowdPalette[Math.floor(Math.random()*crowdPalette.length)];
-            const signMat=new THREE.MeshStandardMaterial({color:signCol,emissive:signCol,emissiveIntensity:brightness*1.4});
-            const sign=new THREE.Mesh(new THREE.BoxGeometry(sz*0.9,sz*0.5,sz*0.04),signMat);
-            sign.position.set(0,sz*1.4,0);
-            g.add(sign);
+            add('sign', 0, sz*1.4, 0, sz*0.9, sz*0.5, sz*0.04, 0, signCol, 0.35+brightness*3.0);
           }
         }
-
-        const px=rand(xMin,xMax), pz=rand(zMin,zMax);
-        // y stagger: further back = higher (tiered seating)
-        const distFromRing=Math.abs(pz)-5;
-        g.position.set(px,-0.05+Math.max(0,distFromRing*0.06),pz);
-        g.rotation.y=rand(-0.20,0.20);
-        arenaGroup.add(g);
-        crowdMeshes.push({mesh:g, base:g.position.y, sp:rand(0.8,2.8), ph:rand(0,Math.PI*2), isGroup:true});
+        _cMembers.push(member);
       }
     };
 
@@ -10824,6 +10809,29 @@ function buildArena(){
     // end-side bands (facing camera, most visible)
     buildCrowdBand(32,-7, 6, -13,-7.5, 0.40,0.66, 0.12, true,  true);
     buildCrowdBand(32,-7, 6,   7.5,13, 0.40,0.66, 0.12, true,  true);
+
+    // bake the spec into one InstancedMesh per primitive kind
+    const _cGeo={ body:new THREE.BoxGeometry(1,1,1), head:new THREE.SphereGeometry(1,7,6),
+                  arm:new THREE.CylinderGeometry(1,1,1,5), phone:new THREE.BoxGeometry(1,1,1), sign:new THREE.BoxGeometry(1,1,1) };
+    const _byKind={};
+    for(const s of _cSpec){ (_byKind[s.kind]=_byKind[s.kind]||[]).push(s); }
+    const _M=new THREE.Matrix4(), _Q=new THREE.Quaternion(), _E=new THREE.Euler(), _S=new THREE.Vector3(), _P=new THREE.Vector3(), _C=new THREE.Color();
+    window.__crowdIMs=[];
+    for(const kind in _byKind){
+      const list=_byKind[kind];
+      const im=new THREE.InstancedMesh(_cGeo[kind], new THREE.MeshBasicMaterial({color:0xffffff}), list.length);
+      list.forEach((s,i)=>{
+        _E.set(0, s.ry, s.rz); _Q.setFromEuler(_E);
+        _P.set(s.x, s.y, s.z); _S.set(s.sx, s.sy, s.sz);
+        _M.compose(_P,_Q,_S); im.setMatrixAt(i,_M);
+        _C.set(s.col).multiplyScalar(s.lum); im.setColorAt(i,_C);
+        s.member.parts.push({im, i, baseY:s.y});
+      });
+      im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true;
+      im.frustumCulled=false;   // one bounding test would cull ALL fans at once — skip it
+      arenaGroup.add(im); window.__crowdIMs.push(im);
+    }
+    window.__crowdMembers=_cMembers;
   }
 
   // LIGHTS — WWE 2K / UFC broadcast grade:
@@ -10959,6 +10967,16 @@ function switchArena(key){
 function updateArenaAnim(t){
   for (const c of crowdMeshes){
     c.mesh.position.y = c.base + Math.sin(t*c.sp + c.ph)*0.08;
+  }
+  // v152 instanced-crowd bob: write translation-Y straight into each instance matrix
+  // (column-major element 13) — a few hundred float writes, no Matrix4 recompose.
+  const M=window.__crowdMembers;
+  if (M){
+    for (const m of M){
+      const dy=Math.sin(t*m.sp + m.ph)*0.08;
+      for (const p of m.parts) p.im.instanceMatrix.array[p.i*16+13]=p.baseY+dy;
+    }
+    for (const im of window.__crowdIMs) im.instanceMatrix.needsUpdate=true;
   }
 }
 
@@ -26384,6 +26402,12 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
       addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.012, 0.038, 6), fingerMaterial)),
       addMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.008, 0.028, 6), fingerMaterial))
     ];
+    // v152: fingers/thumbs stay visible OVER the smooth body (setHidden honors keepVisible inside
+    // arrays) — the smooth arm now ends in a flat palm/knuckle plate and these chains complete the
+    // hand. hideAllProc (GLB replacement) still hides them unconditionally: imported models bring
+    // their own hands.
+    { const _keep=(x)=>{ if(Array.isArray(x)) x.forEach(_keep); else if(x&&x.userData) x.userData.keepVisible=true; };
+      _keep(this.seg.fingersL); _keep(this.seg.fingersR); _keep(this.seg.thumbLChain); _keep(this.seg.thumbRChain); }
 
     // 3. APPLIED PHYSICAL BONE SCALE ATLAS
     // Apply static anatomical morphing at build-time to establish distinct skeletal weight classes
