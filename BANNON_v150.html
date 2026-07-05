@@ -5302,22 +5302,22 @@ window.BBODY = (function(){
     if(ti===1){ const h=_part(f,'hips',1.0,true); return {s:h*_mul(f,'hipW'), d:h*_mul(f,'hipD')}; }  // pelvis -> HIPS (own axis)
     if(ti===2){ const r=i/Math.max(1,M-1);                         // neck tube: 0=trap yoke .. 1=crown
       const FM=(k)=>{ const sh=f.shape||{}; return sh[k]!=null?+sh[k]:1; };
-      if(r<0.55){ const n=_part(f,'neck',1.0,false); return {s:n,d:n}; }               // traps/neck
+      if(r<0.55){ const n=_part(f,'neck',1.0,false); return {s:n*_mul(f,'neckW'), d:n*_mul(f,'neckD')}; }  // traps/neck: own W/D axes (bull neck vs pencil neck)
       const hd=_part(f,'head',0.70,false);
       if(r<0.75) return {s:hd*FM('faceJawW'), d:hd*FM('faceJawL')};                     // jaw/lower face
       return {s:hd*FM('faceSkullW'), d:hd*FM('faceSkullL')};                            // cranium/crown
     }
     if(ti===3||ti===4){ const r=i/Math.max(1,M-1);              // arm: delt -> bicep -> forearm -> hand, each its own slider
       let v; if(r<=0.18) v=_part(f,'shoulders',1.20,true);
-      else if(r<=0.50) v=_part(f,'arms',1.05,true);
-      else if(r<=0.80) v=_part(f,'forearms',1.0,true);
-      else v=_part(f,'hands',0.82,false);
+      else if(r<=0.50) v=_part(f,'arms',1.05,true)*_mul(f,'bicepW');
+      else if(r<=0.80) v=_part(f,'forearms',1.0,true)*_mul(f,'forearmW');
+      else v=_part(f,'hands',0.82,false)*_mul(f,'handS');
       return {s:v,d:v}; }
     if(ti===5||ti===6){ const r=i/Math.max(1,M-1);              // leg: thigh -> knee blend -> calf -> foot
       if(r<=0.30){ const b=_part(f,'thighs',1.06,true); return {s:b*_mul(f,'thighW'), d:b}; }   // thigh keeps its own W axis
       let v; if(r<=0.45) v=(_part(f,'thighs',1.06,true)+_part(f,'calves',1.0,true))*0.5;         // knee = smooth thigh/calf blend
-      else if(r<=0.68) v=_part(f,'calves',1.0,true);
-      else v=_part(f,'feet',1.0,false);
+      else if(r<=0.68){ const c=_part(f,'calves',1.0,true); return {s:c*_mul(f,'calfW'), d:c}; } // calf gets its own W axis (diamond calves)
+      else v=_part(f,'feet',1.0,false)*_mul(f,'footS');
       return {s:v,d:v}; }
     return {s:1,d:1};
   }
@@ -5329,6 +5329,10 @@ window.BBODY = (function(){
     const fem=_bodyComp(f).fem;
     if(ti===1){ const round=back*back; return (0.030*g + 0.030*(g-1) + fem*0.035*g) * round; }   // seat on the pelvic basin
     if((ti===5||ti===6) && i<=1){ return (0.018*(g-1) + fem*0.018*g) * back; }                    // upper-ham fullness
+    // LATS / V-TAPER (ti 0 upper torso): back-side wings that fade toward the waist. Lives here (not
+    // _relief) because it's a SIZE morph — it must not be gated by muscle definition like the cuts are.
+    if(ti===0){ const hi=i/Math.max(1,M-1); if(hi>0.45){ const side=Math.abs(Math.sin(a));
+      return side*back*2.0*0.055*(hi-0.45)/0.55*(_mul(f,'lats')-1); } }
     return 0;
   }
   // BODY COMPOSITION — three independent axes so the roster spans real 2026 body
@@ -5854,7 +5858,8 @@ window.cycleRosterP2 = function(){
   const BODY=[['shoulders','SHOULDERS'],['traps','TRAPS / YOKE'],['chest','CHEST'],['bust','BUST'],['arms','UPPER ARMS'],['forearms','FOREARMS'],['hands','HANDS'],['waist','WAIST / GUT'],['hips','HIPS'],['glutes','GLUTES / SEAT'],['thighs','THIGHS'],['calves','CALVES'],['feet','FEET'],['head','HEAD']];
   // per-axis WIDTH vs DEPTH knobs (default 1 = neutral) — wide-but-flat shoulders,
   // wide hips, tiny-deep waist, etc. The "disproportionate body" controls.
-  const AXES=[['shoulderW','SHOULDER WIDTH'],['chestW','CHEST WIDTH'],['chestD','CHEST DEPTH'],['waistW','WAIST WIDTH'],['waistD','WAIST DEPTH'],['hipW','HIP WIDTH'],['hipD','HIP DEPTH'],['thighW','THIGH WIDTH']];
+  const AXES=[['shoulderW','SHOULDER WIDTH'],['chestW','CHEST WIDTH'],['chestD','CHEST DEPTH'],['waistW','WAIST WIDTH'],['waistD','WAIST DEPTH'],['hipW','HIP WIDTH'],['hipD','HIP DEPTH'],['thighW','THIGH WIDTH'],
+    ['neckW','NECK WIDTH'],['neckD','NECK DEPTH'],['lats','LATS / V-TAPER'],['bicepW','BICEP PEAK'],['forearmW','FOREARM GIRTH'],['calfW','CALF WIDTH'],['handS','HAND SIZE'],['footS','FOOT SIZE']];
   const COLZ=[['skin','SKIN'],['hair','HAIR'],['trunk','TRUNKS'],['accent','GLOVES/ACCENT'],['band','WAISTBAND'],['boot','BOOTS'],['eye','EYE GLOW']];
   const STYLES=['allrounder','powerhouse','striker','grappler','technical','capoeira','brawler','luchador'];
   // STYLES above are cosmetic archetype LABELS shown on the button — they are not
@@ -5944,7 +5949,11 @@ window.cycleRosterP2 = function(){
     slider('faceNoseL','NOSE LENGTH',0.7,1.6,true,true);
     slider('faceEars','EAR SIZE',0.6,1.6,true,true);
     slider('faceEye','EYE SIZE',0.6,1.7,true,true);
+    slider('faceEyeSpread','EYE SPREAD',0.7,1.5,true,true);    // inter-ocular distance (placement)
+    slider('faceEyeH','EYE HEIGHT',0.5,1.8,true,true);         // eyes ride higher/lower on the face
     slider('faceMouthW','MOUTH WIDTH',0.6,1.6,true,true);
+    slider('faceMouthH','MOUTH HEIGHT',0.5,1.8,true,true);     // mouth slides nose-ward/chin-ward
+    slider('faceEarH','EAR HEIGHT',0.4,1.9,true,true);
     slider('faceLips','LIP FULLNESS',0.7,1.8,true,true);
     H('SKIN / HAIR / ATTIRE','#c084fc');
     COLZ.forEach(c=> colorRow(c[0],c[1]));
@@ -6242,13 +6251,18 @@ Fighter.prototype.applyMesh = function(){
   put(s.band, p, 0, 0.06, 0); s.band.scale.set(pelW*0.98, 0.05, 0.212*(1+fem*0.16)*0.98);  // waistband snapped to the crest, hugging the basin top
 
   // HEAD / FACE (local +x = forward) — offsets scale with head size so features stay attached when head is morphed
+  // v152 FACE PLACEMENT morphs (position-only — applyMesh must NEVER re-scale face segs, the sculpt
+  // scaling lives in applyFighterSpec): faceEyeSpread = inter-ocular distance, faceEyeH = eye height,
+  // faceMouthH = mouth height, faceEarH = ear height — the "feature placement" 2K axes on top of the
+  // feature-size sliders (faceEars/faceEye/faceMouthW/faceLips) and the skull-geometry sculpt.
+  const _fx=(k)=>{ const sh=this.shape||{}; return sh[k]!=null?+sh[k]:1; };
   put(s.head, h);
   put(s.jaw,  h,  0.045*_hs, -0.10*_hs, 0);
   put(s.brow, h,  0.075*_hs,  0.05*_hs, 0);
   put(s.nose, h,  0.150*_hs, -0.02*_hs, 0);
-  put(s.earL, h, -0.02*_hs,   0.0,  0.135*_hs); put(s.earR, h, -0.02*_hs, 0.0, -0.135*_hs);
-  put(s.mouth,h,  0.150*_hs, -0.050*_hs, 0);                                                          // mouth on the lower FACE, not down on the chin/neck
-  put(s.eyeL, h,  0.140*_hs,  0.020*_hs,  0.062*_hs); put(s.eyeR, h, 0.140*_hs, 0.020*_hs, -0.062*_hs); // eyes mid-face, set a touch closer
+  put(s.earL, h, -0.02*_hs,   0.0 + 0.04*_hs*(_fx('faceEarH')-1),  0.135*_hs); put(s.earR, h, -0.02*_hs, 0.0 + 0.04*_hs*(_fx('faceEarH')-1), -0.135*_hs);
+  put(s.mouth,h,  0.150*_hs, -0.050*_hs*_fx('faceMouthH'), 0);                                        // mouth on the lower FACE; H slider slides it chin-ward/nose-ward
+  put(s.eyeL, h,  0.140*_hs,  0.020*_hs + 0.03*_hs*(_fx('faceEyeH')-1),  0.062*_hs*_fx('faceEyeSpread')); put(s.eyeR, h, 0.140*_hs, 0.020*_hs + 0.03*_hs*(_fx('faceEyeH')-1), -0.062*_hs*_fx('faceEyeSpread')); // eyes mid-face; spread = inter-ocular
   put(s.hair, h, -0.060*_hs,   0.120*_hs,  0);                                                         // hair RAISED into a cap on top/back so the forehead + face are clear (was a helmet to the brow)
   // FACE GEAR placement (canon sketch): metallic 3/4 mask hugs the face; jaw plate floats BELOW it
   // with a visible slot; dread strands hang from the back/side of the skull, leaving the face arc open.
@@ -7812,9 +7826,9 @@ function pickGrapplePosition(mode, kind, dir5, powerMod){
 window.POSITION_TAXONOMY = {
   STAND_FRONT:   { families:['strike','front grapple: scoop/suplex/DDT/powerbomb/chokeslam families'], hook:'GRAPPLE_MATRIX.front + poseGrab', status:'live' },
   STAND_REAR:    { families:['rear grapple: German/back suplex, backbreaker, atomic drop, reverse DDT'], hook:'GRAPPLE_MATRIX.rear + go-behind', status:'live' },
-  GROUND_HEAD:   { families:['mounted strikes, head-side submissions, leg drops/elbows'],               hook:'groundAttack (head-side zoning)', status:'todo' },
-  GROUND_SIDE:   { families:['side submissions, pins, stomps'],                                          hook:'groundAttack (side zoning)',      status:'todo' },
-  GROUND_FEET:   { families:['leg-side submissions (locks), catapults, stomps'],                         hook:'groundAttack (leg-side zoning)',  status:'todo' },
+  GROUND_HEAD:   { families:['face-up: mounted strikes/head shots · face-down: back-of-head shots'],    hook:'groundZoneOf x groundFacingOf',   status:'live' },
+  GROUND_SIDE:   { families:['face-up: rib work, pins · face-down: kidney shots'],                       hook:'groundZoneOf x groundFacingOf',   status:'live' },
+  GROUND_FEET:   { families:['face-up: leg attacks · face-down: hamstring work'],                        hook:'groundZoneOf x groundFacingOf',   status:'live' },
   CORNER_FACING: { families:['corner strikes, splashes, tree-of-woe setups, top-rope seat'],             hook:'zone CORNER + climb',             status:'partial' },
   ROPE_REBOUND:  { families:['rebound strikes (lariat/dropkick), leapfrog/duck in-betweens'],            hook:'reboundT + runCharge',            status:'partial' },
   APRON:         { families:['apron strikes, slingshot entries, apron-to-floor dives'],                  hook:'zone APRON + ropeexit',           status:'partial' },
@@ -7823,6 +7837,22 @@ window.POSITION_TAXONOMY = {
   SPRINGBOARD:   { families:['springboard dives + in-between VAULT animation off the ropes'],           hook:'startDive(sb) — vault anim todo', status:'partial' },
   RUNNING:       { families:['running strikes/grapples (bulldog, spear, running knees)'],               hook:'running + momentum',              status:'live' }
 };
+// FACE-UP vs FACE-DOWN (2K26 grounded orientation): the downed body's chest normal = the cross
+// product of the spine axis (pelvis->head) and the shoulder axis (shL->shR), read from the verlet
+// points. Normal pointing up = supine (face-up: mounted punches, pins, gut stomps); pointing down =
+// prone (face-down: back-of-head shots, back stomps, kidney/hamstring work). Which family a grounded
+// strike belongs to depends on BOTH this and groundZoneOf — orientation before magnitude
+// (docs/mocap_orientation_master_prompt.md).
+function groundFacingOf(opp){
+  try{
+    const V=opp.V; if(!V||!V.pelvis||!V.head||!V.shL||!V.shR) return 'UP';
+    const px=V.head.pos.x-V.pelvis.pos.x, py=V.head.pos.y-V.pelvis.pos.y, pz=V.head.pos.z-V.pelvis.pos.z;
+    const sx=V.shR.pos.x-V.shL.pos.x,   sy=V.shR.pos.y-V.shL.pos.y,   sz=V.shR.pos.z-V.shL.pos.z;
+    const ny = pz*sx - px*sz;   // y of (spine x shoulderAxis) = the chest normal's vertical part
+    return ny>=0 ? 'UP' : 'DOWN';
+  }catch(e){ return 'UP'; }
+}
+window.groundFacingOf = groundFacingOf;
 // Which zone of a DOWNED body the attacker is standing at: their offset projected on the body's
 // pelvis->head axis. HEAD side / FEET side / SIDE drive the grounded move family + damage target.
 function groundZoneOf(att, opp){
@@ -11514,14 +11544,60 @@ function playerAttack(kind){
     if (gm){
       const m = Object.assign({}, gm);
       const gz = (typeof groundZoneOf==='function') ? groundZoneOf(p, opp) : 'SIDE';
-      m._groundZone = gz;
+      const gf = (typeof groundFacingOf==='function') ? groundFacingOf(opp) : 'UP';
+      m._groundZone = gz; m._groundFacing = gf;
       m.height = 'GROUND';
-      // distinct arc per zone: HEAD = dropping overhand (elbow/axe read), FEET = straight low drive
-      // into the legs, SIDE = hooking swing across the ribs — three visibly different deliveries.
-      if (gz==='HEAD'){ m._aimHead=true;  m.power=Math.round((m.power||50)*1.15); m.traj='OVERHAND'; m.name=(gm.name||'GROUND')+' · HEAD'; }
-      else if (gz==='FEET'){ m._aimHead=false; m._aimLegs=true; m.power=Math.round((m.power||50)*0.95); m.traj='STRAIGHT'; m.name=(gm.name||'GROUND')+' · LEGS'; }
-      else { m._aimHead=(zone!=='LOW'); m.power=Math.round((m.power||50)*1.05); m.traj='HOOKING'; m.name=(gm.name||'GROUND')+' · RIBS'; }
+      // 2K26 GROUNDED MATRIX — zone x orientation = six distinct grounded attacks, not three:
+      // distinct arc per zone (HEAD = dropping overhand, FEET = straight low drive, SIDE = hooking
+      // swing) x what's actually exposed (face-UP: face/gut/ribs; face-DOWN: back of head/hamstrings/
+      // kidneys — prone targets are more defenseless, so back-of-head and kidney shots hit harder).
+      if (gz==='HEAD'){
+        m._aimHead=true; m.traj='OVERHAND';
+        if (gf==='UP'){ m.power=Math.round((m.power||50)*1.15); m.name=(gm.name||'GROUND')+' · HEAD'; }
+        else          { m.power=Math.round((m.power||50)*1.25); m.name=(gm.name||'GROUND')+' · BACK OF HEAD'; }
+      } else if (gz==='FEET'){
+        m._aimHead=false; m._aimLegs=true; m.traj='STRAIGHT';
+        if (gf==='UP'){ m.power=Math.round((m.power||50)*0.95); m.name=(gm.name||'GROUND')+' · LEGS'; }
+        else          { m.power=Math.round((m.power||50)*1.00); m.name=(gm.name||'GROUND')+' · HAMSTRINGS'; }
+      } else {
+        m._aimHead=(zone!=='LOW'); m.traj='HOOKING';
+        if (gf==='UP'){ m.power=Math.round((m.power||50)*1.05); m.name=(gm.name||'GROUND')+' · RIBS'; }
+        else          { m.power=Math.round((m.power||50)*1.12); m.name=(gm.name||'GROUND')+' · KIDNEYS'; }
+      }
       p.startAttack(m); return;
+    }
+  }
+
+  // CORNER STRIKE FAMILY (POSITION_TAXONOMY.CORNER_FACING): a trapped opponent in the buckles eats
+  // the corner arsenal — chops that echo, shoulder thrusts into the midsection, mudhole stomps.
+  // Cornered targets can't give ground, so corner strikes carry a trapped-target bonus.
+  if (opp && opp._inCorner && !opp.isDown() && (kind==='jab'||kind==='cross'||kind==='kick')){
+    const _cd = Math.hypot(opp.x-p.x, opp.z-p.z);
+    if (_cd < 1.35){
+      const CORNER_S={
+        jab:  { name:'KNIFE-EDGE CHOP · CORNER', cat:'STRIKE', limb:'LEFT JAB',   traj:'HOOK',     height:'HIGH', power:54, speed:88 },
+        cross:{ name:'SHOULDER THRUST · CORNER', cat:'STRIKE', limb:'RIGHT CROSS',traj:'STRAIGHT', height:'MID',  power:58, speed:78 },
+        kick: { name:'MUDHOLE STOMP · CORNER',   cat:'STRIKE', limb:'RIGHT KICK', traj:'STRAIGHT', height:'LOW',  power:52, speed:86 }
+      };
+      const cm=Object.assign({ style:p.style||'BRAWLER', follow:'CHAIN NEXT', _corner:true }, CORNER_S[kind]);
+      cm.power=Math.round(cm.power*1.10);   // nowhere to retreat
+      p.startAttack(cm); return;
+    }
+  }
+
+  // APRON COMBAT (POSITION_TAXONOMY.APRON): one fighter on the apron, one inside — the exchange
+  // happens OVER the ropes: over-the-rope forearms, the hotshot snap across the top rope, and the
+  // apron knee to the trapped head. Fires for either side of the rope.
+  if (opp && !opp.isDown() && ((p.zone==='APRON') !== (opp.zone==='APRON')) && (kind==='jab'||kind==='cross'||kind==='kick')){
+    const _ad = Math.hypot(opp.x-p.x, opp.z-p.z);
+    if (_ad < 1.4){
+      const APRON_S={
+        jab:  { name:'OVER-THE-ROPE FOREARM', cat:'STRIKE', limb:'LEFT JAB',    traj:'OVERHAND', height:'HIGH', power:50, speed:84 },
+        cross:{ name:'HOTSHOT SNAP',          cat:'STRIKE', limb:'RIGHT CROSS', traj:'HOOKING',  height:'HIGH', power:60, speed:76 },
+        kick: { name:'APRON KNEE',            cat:'STRIKE', limb:'KNEE',        traj:'STRAIGHT', height:'HIGH', power:56, speed:82 }
+      };
+      const am=Object.assign({ style:p.style||'BRAWLER', follow:'RESET STANCE', _apron:true }, APRON_S[kind]);
+      p.startAttack(am); return;
     }
   }
 

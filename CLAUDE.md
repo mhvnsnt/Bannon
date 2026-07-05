@@ -154,11 +154,22 @@ ROLL-ON->DRAPED) produce distinct correct trajectories; powerbomb/suplex/DDT/Ger
 (3) "missing hands/fingers" = arm tube tapered to a nub + fingers hidden by smooth-body pass. Arm
 now ends in flat palm+knuckle plate (wrist/hand/knuckle rings widened+flattened); finger+thumb
 chains keepVisible over it (28/28 verified; GLB imports still hide all procedural).
-NEXT: vault variants from apron/mid/top; corner front/back + apron combat + apron springboards
-in/out + face-up/face-down grounded moves; arena group still has ~142 meshes (next perf brick);
-wire CHAR_FINISHERS into MOVESET_DB; harvest STUDIO clips from godmode/BANNON_AAA_v21_2K_mocap_2.html
-+ feed assets/mocap clip into poseGrabbed LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md
-FIRST — binding).
+SHIPPED (2K26 positions pass): `groundFacingOf(opp)` — face-UP/DOWN via verlet chest normal
+(spine × shoulder-axis cross, ny sign); grounded matrix now zone×facing = 6 attacks (HEAD/BACK OF
+HEAD ×1.25 / LEGS/HAMSTRINGS / RIBS/KIDNEYS ×1.12); CORNER strike family (opp._inCorner + <1.35:
+KNIFE-EDGE CHOP·CORNER / SHOULDER THRUST·CORNER / MUDHOLE STOMP·CORNER, ×1.10 trapped bonus);
+APRON combat family (zone mismatch over the ropes: OVER-THE-ROPE FOREARM / HOTSHOT SNAP / APRON
+KNEE). MORPH DEPTH: body axes neckW/neckD/lats(V-taper, in _glute NOT _relief — size morphs must
+not be definition-gated)/bicepW/forearmW/calfW/handS/footS (ringGirth); face PLACEMENT axes
+faceEyeSpread/faceEyeH/faceMouthH/faceEarH (position-only in applyMesh — NEVER re-scale face segs
+there, applyFighterSpec owns feature scaling: faceEars/faceEye/faceMouthW/faceLips). All in CAW.
+GOTCHA: geometry probes need enterCreatePreview(0) — idle body motion (~0.19 max vert drift)
+swamps morph deltas; probe the 45° cones for lats (pure-side verts don't move by design).
+NEXT: vault variants from apron/mid/top; apron springboards in/out (slingshot entries); corner
+BACK moves (opp facing buckles: back elbows/tree-of-woe from behind); pins gated on face-UP;
+arena group still has ~142 meshes (next perf brick); wire CHAR_FINISHERS into MOVESET_DB; harvest
+STUDIO clips from godmode/BANNON_AAA_v21_2K_mocap_2.html + feed assets/mocap clip into poseGrabbed
+LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding).
 
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
