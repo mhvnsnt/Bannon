@@ -175,6 +175,24 @@ arena group still has ~142 meshes (next perf brick); wire CHAR_FINISHERS into MO
 STUDIO clips from godmode/BANNON_AAA_v21_2K_mocap_2.html + feed assets/mocap clip into poseGrabbed
 LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding).
 
+## Match engine (v152 — the "coming soon" catalog went live)
+- Combat readability fixes: per-frame BODY SEPARATION for standing pairs (gap 0.46, skips
+  grapple/held/down/air pairs — merged-bodies was THE "can't tell what they're doing" cause);
+  receiver GIVE-GROUND per hit tier (0.04/0.09/0.16 ×kbF); AI now drives EVERY non-player fighter
+  (was hardcoded fighters[1] — CPU P1 stood idle; multi-man needs this).
+- v152 MATCH RULES + MULTI-MAN block (end of file): opponent() = nearest-living when >2 fighters;
+  TRIPLE/FOURWAY/ROYALE spawn extra AI entrants from BANNON_ROSTER (dressFighter+morphs applied,
+  mini HP bars top-center); declareWinner wrapper = elimination flow (KO'd are ELIMINATED, match
+  runs until one stands). LMS = ref 10-count over any downed fighter (hp<55%); FIRSTBLOOD wraps
+  __spawnBlood (nearest-fighter attribution, bleeder loses); SUBMISSION = sub-minigame success sets
+  hp 0 "TAP OUT" (edit at the sub-success branch); IRONMAN = 180s round in startRound; ANYWHERE/
+  HARDCORE = official (pins/subs were never zone-gated, no DQ system exists). MATCH_TYPES live flags
+  updated in the char-select block. Still 'soon': TAG, LADDER/TABLES/TLC/CAGE (need props), GAUNTLET.
+- GOTCHA: `let fighters` (line ~1646) — window.fighters is UNDEFINED; late script blocks must
+  reference the bare lexical `fighters` (typeof-guarded), not window.fighters.
+- Verified mm.js/lms.js/fb.js: 3-man spawns (BANNON/FINXSSE/RONIN), AI brawls, elimination
+  continues match, last-standing ends it; REF COUNT announces; FIRST BLOOD ends w/ bleeder hp 0.
+
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
 faceSkullW/L (ringGirth ti===2). NEW `_face` relief (gaussians on the head tube r∈[0.55,1]):

@@ -12607,7 +12607,8 @@ function announce(text, sub){
   a.classList.remove('announce-show'); void a.offsetWidth; a.classList.add('announce-show');
 }
 function startRound(){
-  roundTimer = 99;
+  // v152 IRON MAN: a long timed round — most rounds banked when time expires wins (pips system).
+  roundTimer = (window.MATCH_SETUP && MATCH_SETUP.matchType==='IRONMAN') ? 180 : 99;
   document.getElementById('timer').textContent = roundTimer;
   updateRoundPips();
   if (roundTimerInterval) clearInterval(roundTimerInterval);
@@ -13853,7 +13854,11 @@ function setupInput(){
           if (victim.hp !== undefined) victim.hp = Math.max(0, victim.hp - 180);
           if (typeof announce === 'function') announce('1 … 2 … 3', attacker.opts&&attacker.opts.name||'BANNON');
         } else if (victim){
-          if (victim.hp !== undefined) victim.hp = Math.max(0, victim.hp - 120);
+          // v152 SUBMISSION MATCH: a landed submission IS the finish (tapout), not just damage
+          if (window.MATCH_SETUP && MATCH_SETUP.matchType==='SUBMISSION'){
+            if (victim.hp !== undefined) victim.hp = 0;
+            if (typeof announce === 'function') announce('TAP OUT', (attacker.opts&&attacker.opts.name)||'');
+          } else if (victim.hp !== undefined) victim.hp = Math.max(0, victim.hp - 120);
         }
       }
     }, 20);
@@ -34083,20 +34088,20 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   var MATCH_TYPES = [
     { id:'ONE_ON_ONE',   label:'ONE ON ONE',          live:true  },
     { id:'TAG',          label:'TAG TEAM',            live:false },
-    { id:'TRIPLE',       label:'TRIPLE THREAT',       live:false },
-    { id:'FOURWAY',      label:'FOUR-WAY',            live:false },
+    { id:'TRIPLE',       label:'TRIPLE THREAT',       live:true  },   // v152: multi-man engine (elimination rules)
+    { id:'FOURWAY',      label:'FOUR-WAY',            live:true  },   // v152
     { id:'LADDER',       label:'LADDER MATCH',        live:false },
     { id:'TABLES',       label:'TABLES MATCH',        live:false },
     { id:'TLC',          label:'TABLES LADDERS CHAIRS', live:false },
     { id:'CAGE',         label:'STEEL CAGE',          live:false },
-    { id:'LMS',          label:'LAST ONE STANDING',   live:false },
-    { id:'SUBMISSION',   label:'SUBMISSION',          live:false },
-    { id:'IRONMAN',      label:'IRON MAN (TIME)',     live:false },
-    { id:'ANYWHERE',     label:'FALLS COUNT ANYWHERE',live:false },
+    { id:'LMS',          label:'LAST ONE STANDING',   live:true  },   // v152: 10-count ref over any downed fighter
+    { id:'SUBMISSION',   label:'SUBMISSION',          live:true  },   // v152: landed submission = tapout finish
+    { id:'IRONMAN',      label:'IRON MAN (TIME)',     live:true  },   // v152: 180s round, most rounds banked wins
+    { id:'ANYWHERE',     label:'FALLS COUNT ANYWHERE',live:true  },   // v152: pins/subs were never zone-gated — official
     { id:'GAUNTLET',     label:'GAUNTLET',            live:false },
-    { id:'ROYALE',       label:'OPEN BATTLE ROYALE',  live:false },
-    { id:'HARDCORE',     label:'NO-RULES HARDCORE',   live:false },
-    { id:'FIRSTBLOOD',   label:'FIRST BLOOD',         live:false },
+    { id:'ROYALE',       label:'OPEN BATTLE ROYALE',  live:true  },   // v152: 6-man elimination
+    { id:'HARDCORE',     label:'NO-RULES HARDCORE',   live:true  },   // v152: no DQ/count-out exists — anything goes
+    { id:'FIRSTBLOOD',   label:'FIRST BLOOD',         live:true  },   // v152: first blood spatter ends it
     { id:'IQUIT',        label:'I QUIT',              live:false },
     { id:'CASKET',       label:'CASKET',              live:false },
     { id:'INFERNO',      label:'INFERNO',             live:false },
@@ -34305,6 +34310,132 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   }
   if (document.readyState!=='loading') wire(); else document.addEventListener('DOMContentLoaded', wire);
   console.log('%c[CHARACTER SELECT] armed — FIGHT opens the select screen; pick anybody for both sides','color:#ffb000');
+})();
+</script>
+
+<script>
+// =============================================================================
+// v152 MATCH RULES + MULTI-MAN ENGINE — the "coming soon" catalog goes live.
+// Rule variants ride the systems that already exist (pin/sub minigames, blood,
+// knockdown/getup, round pips); multi-man generalizes opponent() to nearest-
+// living and spawns extra AI fighters, with elimination flow + mini HP bars.
+// =============================================================================
+(function(){
+  if (window.__matchRules152 || typeof Fighter==='undefined') return;
+  window.__matchRules152 = true;
+  const MT = ()=> (window.MATCH_SETUP && window.MATCH_SETUP.matchType) || 'ONE_ON_ONE';
+  const MULTI = { TRIPLE:3, FOURWAY:4, ROYALE:6 };
+
+  // ---- opponent(): nearest living non-eliminated fighter (multi-man only; 1v1 path untouched) ----
+  const _origOpp = Fighter.prototype.opponent;
+  Fighter.prototype.opponent = function(){
+    if (typeof fighters==='undefined' || !fighters || fighters.length<=2) return _origOpp.call(this);
+    let best=null, bd=1e9;
+    for (const f of fighters){ if (!f||f===this||f._eliminated||f.hp<=0) continue;
+      const d=(f.x-this.x)*(f.x-this.x)+(f.z-this.z)*(f.z-this.z); if (d<bd){ bd=d; best=f; } }
+    return best || _origOpp.call(this);
+  };
+
+  // ---- multi-man spawn: extra AI entrants after the base two are built ----
+  const _origStart = window.startFight;
+  window.startFight = function(){
+    const r = _origStart.apply(this, arguments);
+    try{
+      window.__fbDone=false;
+      for (const f of ((typeof fighters!=='undefined'&&fighters)||[])){ f._eliminated=false; f._lmsT=0; f._lmsAnn=0; }
+      const want = MULTI[MT()]||0;
+      if (want>2 && typeof fighters!=='undefined' && fighters && fighters.length===2){
+        const taken={}; taken[fighters[0].specName||fighters[0].opts&&fighters[0].opts.name]=1; taken[fighters[1].specName||fighters[1].opts&&fighters[1].opts.name]=1;
+        const pool=(window.BANNON_ROSTER||[]).map(t=>t.name).filter(n=>!taken[n]);
+        const spots=[[0,-1.4],[1.3,1.1],[-1.3,1.1],[0,1.5]];
+        for (let i=fighters.length; i<want && pool.length; i++){
+          const name=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+          const o=(typeof fighterOptsFor==='function')?fighterOptsFor(name):{};
+          const f=new Fighter(false, { col:o.col, accent:o.accent, skin:o.skin, name:name, style:o.style });
+          f._lookKey=name; f.isPlayer=false;
+          const s=spots[(i-2)%spots.length]; f.x=s[0]; f.z=s[1];
+          fighters.push(f);
+          try{ if(typeof dressFighter==='function') dressFighter(f); }catch(_){}
+          try{ if(typeof applyForgeMorphs==='function') applyForgeMorphs(f); }catch(_){}
+        }
+        announce && announce(MT()==='ROYALE'?'BATTLE ROYALE':(want===3?'TRIPLE THREAT':'FOUR-WAY'), fighters.length+' COMPETITORS');
+      }
+      _mkMiniBars();
+    }catch(e){ window.__logErr&&window.__logErr('multiSpawn', e); }
+    return r;
+  };
+
+  // ---- elimination flow: a KO in multi-man eliminates, only the last one standing wins ----
+  const _origDW = window.declareWinner;
+  window.declareWinner = function(w){
+    try{
+      if (typeof fighters!=='undefined' && fighters && fighters.length>2){
+        for (const f of fighters){ if (f.hp<=0 && !f._eliminated){ f._eliminated=true;
+          announce && announce((typeof fname==='function'?fname(f):'FIGHTER')+' ELIMINATED',''); } }
+        const alive=fighters.filter(f=>!f._eliminated && f.hp>0);
+        if (alive.length>1){ for (const f of fighters) f._koTriggered=false; return; }   // fight on
+        if (alive.length===1) return _origDW(alive[0]);
+      }
+    }catch(_){}
+    return _origDW(w);
+  };
+
+  // ---- mini HP bars for entrants 3+ (the main HUD covers the first two) ----
+  let _mini=null;
+  function _mkMiniBars(){
+    if (_mini){ _mini.remove(); _mini=null; }
+    if (typeof fighters==='undefined' || !fighters || fighters.length<=2) return;
+    _mini=document.createElement('div');
+    _mini.style.cssText='position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:9000;display:flex;gap:14px;font:10px ui-monospace,monospace;color:#ffd9a8;pointer-events:none;';
+    for (let i=2;i<fighters.length;i++){
+      const d=document.createElement('div'); d.style.cssText='text-align:center;';
+      d.innerHTML='<div>'+((fighters[i].specName||fighters[i].opts&&fighters[i].opts.name)||('P'+(i+1)))+'</div><div style="width:90px;height:5px;background:#3338;border:1px solid #ff7a1a55;"><i style="display:block;height:100%;background:#ffb000;width:100%"></i></div>';
+      _mini.appendChild(d);
+    }
+    document.body.appendChild(_mini);
+  }
+  setInterval(()=>{ try{
+    if (!_mini || typeof fighters==='undefined' || !fighters) return;
+    const bars=_mini.querySelectorAll('i');
+    for (let i=2;i<fighters.length && i-2<bars.length;i++){
+      bars[i-2].style.width=Math.max(0,Math.min(100,(fighters[i].hp/(fighters[i].maxHp||300))*100))+'%';
+      bars[i-2].style.background=fighters[i]._eliminated?'#555':'#ffb000';
+    }
+  }catch(_){} }, 250);
+
+  // ---- per-frame rule tick: LAST ONE STANDING ref count + FIRST BLOOD ----
+  setInterval(()=>{ try{
+    if (typeof gameState==='undefined' || gameState!=='fight' || typeof fighters==='undefined' || !fighters) return;
+    const mt=MT();
+    if (mt==='LMS'){
+      for (const f of fighters){
+        if (f.isDown() && f.hp<(f.maxHp||300)*0.55){
+          f._lmsT=(f._lmsT||0)+0.25;
+          const c=Math.floor(f._lmsT);
+          if (c>(f._lmsAnn||0) && c<=10){ f._lmsAnn=c; announce('REF COUNT  '+c, (typeof fname==='function'?fname(f):'')+' IS DOWN'); }
+          if (f._lmsT>=10 && !f._koTriggered){ f._koTriggered=true; const w=f.opponent(); f.hp=0; setTimeout(()=>declareWinner(w),900); }
+        } else { f._lmsT=0; f._lmsAnn=0; }
+      }
+    }
+  }catch(_){} }, 250);
+
+  // ---- FIRST BLOOD: attribute the first blood spatter to the nearest fighter; their opponent wins ----
+  const _wireFB=()=>{ const _sb=window.__spawnBlood;
+    if (typeof _sb!=='function'){ setTimeout(_wireFB,1000); return; }
+    window.__spawnBlood=function(x,y,z,c,inten){
+      try{
+        if (MT()==='FIRSTBLOOD' && typeof gameState!=='undefined' && gameState==='fight' && !window.__fbDone && typeof fighters!=='undefined' && fighters){
+          let bf=null,bd=1e9; for (const f of fighters){ const d=(f.x-x)*(f.x-x)+(f.z-z)*(f.z-z); if (d<bd){ bd=d; bf=f; } }
+          if (bf){ window.__fbDone=true; const w=bf.opponent(); bf.hp=Math.min(bf.hp, 1);
+            announce('FIRST BLOOD', (typeof fname==='function'?fname(w):'')+' WINS');
+            setTimeout(()=>{ bf.hp=0; declareWinner(w); }, 1200); }
+        }
+      }catch(_){}
+      return _sb.apply(this, arguments);
+    }; };
+  _wireFB();
+
+  console.log('%c[v152 MATCH ENGINE] rules live: LMS ref-count · FIRST BLOOD · SUBMISSION tapout · IRON MAN timer · FALLS ANYWHERE/HARDCORE (pins were never zone-gated) · TRIPLE/FOUR-WAY/ROYALE multi-man with elimination', 'color:#00ff88;font-weight:bold');
 })();
 </script>
 
