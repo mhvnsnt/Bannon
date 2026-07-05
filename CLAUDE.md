@@ -226,6 +226,29 @@ LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding
   Verified fin.js: FINXSSE GETBACKK announces -> FIREMANS_CARRY st2 -> auto-delivers to ragdoll.
   Sub-type finishers (Anaconda Vise etc) + dive finishers (frog splash) still route as
   spike/strike — proper sub/dive wiring queued.
+- v154 FULL CANON CAST: `_addChar` now AUTO-SEEDS a MOVESET_DB stat block + ROSTER_SPEC style from
+  the meta.archetype (`_ARCH_STATS` map: powerhouse/brawler/striker/technician/highFlyer/freeAgent)
+  — previously _addChar only wrote CHAR_META/attire/body so canon chars WITHOUT a hand-written
+  MOVESET_DB entry were INVISIBLE in ROSTER_ALL (which iterates MOVESET_DB). Added ~24 canon fighters
+  from the OTTR cast table (Alliance: Atlas Vance/Chief Red Cloud/Lion of Punjab/Lady Rhiannon/Agent
+  Canuck/Celtic Fury/Rey Fuego/El Toro de Oro; Corporate: Cain Elias/Astrid/Shaolin Shadow/Finn Mac/
+  Ghost of Lahore/Masato Iida/Hikaru Arashi/Kenji Saito/Kiko Tanaka/Ryuji Tatsu/Finance Demon/Zenith;
+  Agents/Indies: Cassian Thorne/Mr Zero Point/Great White North/Sombra Negra/Raja) + their canon
+  FINISHER_MOVES. Verified: ROSTER_ALL 19->47 (39 canon), all new cast selectable, 35 finishers.
+- v154 FLAIL FIX ("feet and limbs fly around crazy when hit" — owner's constraint-solver diagnosis
+  was correct): (a) visceralImpact (Rapier path) VMAX 6.5->4.5 + per-hit damping spike (lin 0.5/ang
+  0.7 for 0.5s) + head/struck-node vertical share cut (whip BACK not UP); (b) POST-CONSTRAINT VELOCITY
+  CLAMP in the verlet updateRagdoll — integrate()'s cap runs BEFORE the 15-iter bone solver, so
+  constraint corrections re-inflated implied velocity (pos-old) uncapped = the flail; now clamped to
+  MAX_BODY_VEL*h AFTER the solve by pushing `old` toward `pos`; (c) POISE-DRIVEN MOTORS: currentRagMotor
+  now ×(0.55+0.45·poise) — stiff upright at high poise, limp drop when poise breaks (heavy terminal
+  reactions, not spring-back jiggle).
+- v154 MENU SLOT FLOW (owner: "tap ur slot then choose, don't force selecting both"): assign() NO
+  LONGER auto-flips sides — you tap the slot (P1/P2/P3/P4) then pick characters freely. TRIPLE/FOURWAY/
+  ROYALE reveal P3/P4 mini-slots under the plates (MULTI_TYPES map), feed MATCH_SETUP.p3Name/p4Name,
+  and the multi-man spawner uses those picks first (randoms fill the rest). Verified: tap P1 -> pick ->
+  P1=BRUTUS stays on P1; TRIPLE shows P3:RONIN slot. Spec items still queued: per-slot attire/payback/
+  manager context, taunts (crowd/opp/wakeup), daze meter, LB interact button.
 - v154 (owner control spec drop -> docs/controls_and_mechanics_spec.md, BINDING for control work.
   RULE: build ON TOP of existing controls, never replace — e.g. reversal lives on the existing
   DODGE/REV button, NOT a new Y button): 2K REVERSAL — tap DODGE/REV (or Shift/H) inside the
@@ -260,15 +283,32 @@ Honest technical audit of the procedural body vs WWE 2K26 / EA UFC / Fight Night
    pore-level detail normals, SSS, per-region wetness. (Our sweat roughness ramp is the right idea.)
 4. **Hair**: cap mesh + cylinder dreads vs alpha hair cards w/ anisotropic spec.
 5. **Attire**: vertex-paint regions vs real cloth meshes w/ wrinkle normals + logos.
-CONCLUSION (already the plan, now confirmed by audit): the procedural body CANNOT reach 2K by more
-gaussians — it is the fallback/CAW-preview body. The AAA path = REAL sculpted GLBs through the
-pipeline that already exists: (a) Blender-MCP + BlenderGoodies rig + Auto-Rig Pro → author base
-male/female sculpts, import via CHAR_MODEL (binding + morph->slider bridge already live);
-(b) forge_server image-to-3D from the owner's sketches per character. Near-term procedural wins
-(worth doing, won't close the gap): 1024px skin tex w/ pores+veins, real eyeball meshes w/ iris
-texture, hair-card texture for dreads, cloth wrinkle normal for attire regions, elbow/knee crease
-rings. NEXT SESSION with Blender-MCP connected: convert Action Adventure Pack X Bot -> GLB, retarget,
-import as the first real-mesh fighter to prove the full path, then sculpt passes.
+CONCLUSION (confirmed by audit): the procedural body CANNOT reach 2K by more gaussians — topology
+deficit is mathematical (morph targets are linear vertex translations; if the vertex isn't there,
+the math does nothing; a 12-vert joint ring collapses like a straw when bent). It is the
+fallback/CAW-preview/low-poly-"retro-attire" tier. **AAA PATH PROVEN THIS SESSION** (v154): the
+Action Adventure Pack X Bot FBX -> GLB (fbx2gltf, binary) -> `assignCharModel('BANNON', url)` loaded
+end-to-end through the EXISTING import path: 65 bones bound, 2 SkinnedMeshes, **28,374 verts** (8x
+the procedural body), procedural mesh auto-hidden, model follows the fight rig. Banked to
+`assets/models/xbot.glb` (+ idle/walk/run clips in assets/models/anims/). fbx2gltf binary lives at
+scratchpad `node_modules/fbx2gltf/bin/Linux/FBX2glTF` — headless conversion works in-sandbox, no
+Blender needed for the convert step.
+THE RUNTIME-CAW WORKAROUND (owner's architecture, the way to get 2K-level authoring WITHOUT saving a
+GLB per character): author ONE 40-80k male + one female BASE mesh in Blender with anatomical edge
+loops (deltoid/pec/knee/elbow loops that slide+compress on bend) + universal UV + 50-60 FACS/body
+shape keys, export ONE base GLB (Draco + KTX2). Then in-engine: (1) UI sliders -> `mesh.
+morphTargetInfluences[i]` (GPU morph targets, ~zero CPU, stack 60+); (2) height/proportion ->
+`skeleton.bones[i].scale` with a collider-recalc callback; (3) skin/tattoo/scar -> OffscreenCanvas
+composite into ONE CanvasTexture; (4) SAVE = a lightweight JSON "DNA payload" (slider vals + bone
+scales + tex IDs), NOT a 3D file — the engine spawns the base GLB and injects the DNA at match start.
+The morph->slider bridge + CHAR_MODEL binding are already live; what's missing is the authored base
+mesh (Blender-MCP task) and the DNA-payload save/load schema. Near-term procedural wins (won't close
+the gap, still worth it): 1024px skin tex w/ pores+veins, real eyeball meshes, hair-card dreads,
+cloth wrinkle normals, elbow/knee crease rings.
+ENGINE PIVOT (owner floated UE5/Unity): logic (MAX_HP 10000, DMG_SCALE, MAX_BODY_VEL 3.8, poise-
+driven crumple) translates 1:1 (cannon/verlet->PhysX/Chaos, JS->C#/C++). Keep the Three.js procedural
+models as low-poly retro/"training dummy" unlock attires. Decision deferred — prove the GLB pipeline
+fully in Three.js first (DONE for import; DNA-CAW schema next).
 
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
