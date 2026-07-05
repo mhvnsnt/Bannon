@@ -140,9 +140,25 @@ freecam shots). ALSO SHIPPED: UFC WEIGHT-STRIKE TUNING — `Fighter.strikeMass()
 same proxy as canLiftOpponent); registerHit power ×massF=clamp(1+0.22·(mA−1),0.78,1.20), knockback
 (visceralImpact) ×kbF=clamp((mA/mD)^0.6,0.70,1.45); poseAttack swing speed ×clamp(1−0.12·(m−1),
 0.85,1.08). Verified wtune.js: TIGHTROPE(0.90)→GOLEM(1.79) massF 0.978/kbF 0.70; reverse 1.175/1.45.
-TASK #21 COMPLETE. NEXT: vault variants from apron/mid/top; wire CHAR_FINISHERS into MOVESET_DB;
-harvest STUDIO clips from godmode/BANNON_AAA_v21_2K_mocap_2.html + feed assets/mocap clip into the
-poseGrabbed LIFT/CARRY mocap slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding).
+TASK #21 COMPLETE. REGRESSION HUNT (owner report 2026-07-05, all fixed+verified):
+(1) LAG/"struggle-to-lift broken"/"forklift arc broken" = ONE root cause: crowd was 227 groups of
+1-5 unique meshes/materials (~380 draw calls) -> frame collapse -> dt pegged at 0.05 cap -> every
+spring (GLOCK carry, crane) ran ~0.3x speed, lifts never reached climax. Crane input, spring target
+(0.696@cl0), attacker bend all measured CORRECT — it was frame budget. Crowd now 5 InstancedMeshes
+w/ instanceColor + direct matrix-array Y bob. Diagnosis pattern: wrap poseGrabbed count + __lastDt.
+(2) "very bad slave posing in phases/sub-phases" = v93 RECEIVER CARRY POSE wrapper OVERWROTE the
+authored per-move slave/liftPoses with one generic fetal-curl pose for every move at st 2-3. Now
+defers to authored poses (only faint additive flail) and full-poses only positions with no slave.
+Verified: CHOKESLAM (new GOOSENECK->HOIST->DANGLE liftPoses) vs FIREMANS_CARRY (new DUCK-UNDER->
+ROLL-ON->DRAPED) produce distinct correct trajectories; powerbomb/suplex/DDT/German un-stomped.
+(3) "missing hands/fingers" = arm tube tapered to a nub + fingers hidden by smooth-body pass. Arm
+now ends in flat palm+knuckle plate (wrist/hand/knuckle rings widened+flattened); finger+thumb
+chains keepVisible over it (28/28 verified; GLB imports still hide all procedural).
+NEXT: vault variants from apron/mid/top; corner front/back + apron combat + apron springboards
+in/out + face-up/face-down grounded moves; arena group still has ~142 meshes (next perf brick);
+wire CHAR_FINISHERS into MOVESET_DB; harvest STUDIO clips from godmode/BANNON_AAA_v21_2K_mocap_2.html
++ feed assets/mocap clip into poseGrabbed LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md
+FIRST — binding).
 
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,

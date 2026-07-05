@@ -6588,7 +6588,27 @@ const GRAPPLE_POSITIONS = {
       knL:[-0.30,0.56,0.14], knR:[-0.30,0.56,-0.14], ftL:[-0.52,0.22,0.15], ftR:[-0.52,0.22,-0.15] }) },
   // CHOKESLAM: opponent held AT arm's length — one arm fully extended to throat.
   // Real: Big Show/Kane — opponent is directly in front, close. off reduced from 0.42 to 0.20.
-  CHOKESLAM: { label:"CHOKESLAM",   off:0.20, oppYaw:Math.PI, delivery:'slam', basePow:112, lift0:0.0,
+  // v152: 3-phase setup (was a snap to the final dangle): GOOSENECK — the throat is clamped, victim
+  // upright, both hands prying at the choking wrist -> HOIST — driven upward, back arching, feet
+  // just clearing the mat, hands still fighting the wrist -> DANGLE (= original slave, unchanged).
+  CHOKESLAM: { label:"CHOKESLAM",   off:0.20, oppYaw:Math.PI, delivery:'slam', basePow:112, lift0:0.0, liftDur:0.80,
+    liftPoses: [
+      { t:0.00, pose: slavePose({ // GOOSENECK — clamped at the throat, upright, prying at the wrist
+          pelvis:[0.02,0.90,0], chest:[-0.02,1.20,0], head:[-0.06,1.50,0],
+          shL:[0,1.24,0.20], shR:[0,1.24,-0.20], elL:[0.12,1.16,0.22], elR:[0.12,1.16,-0.22],
+          haL:[0.20,1.38,0.10], haR:[0.20,1.38,-0.10], hipL:[0.02,0.88,0.13], hipR:[0.02,0.88,-0.13],
+          knL:[0.08,0.50,0.14], knR:[0.08,0.50,-0.14], ftL:[0.12,0.05,0.15], ftR:[0.12,0.05,-0.15] }) },
+      { t:0.55, pose: slavePose({ // HOIST — rising off the mat, back arching, toes leaving the canvas
+          pelvis:[0.02,1.02,0], chest:[-0.02,1.34,0], head:[-0.04,1.64,0],
+          shL:[0,1.38,0.20], shR:[0,1.38,-0.20], elL:[0.10,1.24,0.24], elR:[0.10,1.24,-0.24],
+          haL:[0.18,1.50,0.10], haR:[0.18,1.50,-0.10], hipL:[0.01,0.94,0.13], hipR:[0.01,0.94,-0.13],
+          knL:[0.06,0.56,0.14], knR:[0.08,0.60,-0.14], ftL:[0.08,0.24,0.15], ftR:[0.10,0.30,-0.15] }) },
+      { t:1.00, pose: slavePose({ // DANGLE — = original slave, feet kicking free under the extended arm
+          pelvis:[0,0.96,0], chest:[0,1.32,0], head:[0,1.64,0],
+          shL:[0,1.38,0.20], shR:[0,1.38,-0.20], elL:[0.04,1.10,0.24], elR:[0.04,1.10,-0.24],
+          haL:[0.08,0.86,0.22], haR:[0.08,0.86,-0.22], hipL:[0,0.88,0.13], hipR:[0,0.88,-0.13],
+          knL:[0.04,0.52,0.14], knR:[0.04,0.52,-0.14], ftL:[0.06,0.18,0.15], ftR:[0.06,0.18,-0.15] }) }
+    ],
     slave: slavePose({ pelvis:[0,0.96,0], chest:[0,1.32,0], head:[0,1.64,0],
       shL:[0,1.38,0.20], shR:[0,1.38,-0.20], elL:[0.04,1.10,0.24], elR:[0.04,1.10,-0.24],
       haL:[0.08,0.86,0.22], haR:[0.08,0.86,-0.22], hipL:[0,0.88,0.13], hipR:[0,0.88,-0.13],
@@ -6623,7 +6643,26 @@ const GRAPPLE_POSITIONS = {
 
   // ---- additional FRONT positions ----
   // FIREMAN'S CARRY: opponent draped across shoulders, off is lateral not forward
-  FIREMANS_CARRY: { label:"FIREMAN'S CARRY", off:0.06, oppYaw:Math.PI/2, delivery:'slam', basePow:100, lift0:0.0, land:'shoulder',
+  // v152: 3-phase setup (was a snap to the drape): DUCK-UNDER — attacker ducks, victim folded over
+  // the shoulder line, feet still down -> ROLL-ON — hauled up onto the shoulders, body tipping to
+  // the lateral drape, legs trailing -> DRAPED (= original slave across the shoulders, unchanged).
+  FIREMANS_CARRY: { label:"FIREMAN'S CARRY", off:0.06, oppYaw:Math.PI/2, delivery:'slam', basePow:100, lift0:0.0, land:'shoulder', liftDur:0.85,
+    liftPoses: [
+      { t:0.00, pose: slavePose({ // DUCK-UNDER — bent over the ducked attacker, arm hooked, feet planted
+          pelvis:[0.14,0.98,0], chest:[0.32,0.92,0.06], head:[0.48,0.84,0.10],
+          shL:[0.30,0.96,0.24], shR:[0.28,0.90,-0.16], elL:[0.42,0.80,0.26], elR:[0.38,0.76,-0.16],
+          haL:[0.52,0.66,0.24], haR:[0.46,0.62,-0.14], hipL:[0.12,0.96,0.13], hipR:[0.12,0.96,-0.13],
+          knL:[0.22,0.54,0.15], knR:[0.22,0.54,-0.14], ftL:[0.30,0.05,0.16], ftR:[0.30,0.05,-0.15] }) },
+      { t:0.50, pose: slavePose({ // ROLL-ON — hauled up, tipping into the lateral drape, legs trailing
+          pelvis:[0.02,1.16,0.02], chest:[0.18,1.20,0.02], head:[0.34,1.18,0.04],
+          shL:[0.16,1.24,0.20], shR:[0.16,1.16,-0.14], elL:[0.28,1.08,0.22], elR:[0.24,1.04,-0.12],
+          haL:[0.38,0.94,0.20], haR:[0.32,0.90,-0.10], hipL:[-0.14,1.12,0.10], hipR:[-0.14,1.10,-0.10],
+          knL:[-0.34,0.86,0.12], knR:[-0.34,0.84,-0.12], ftL:[-0.50,0.56,0.13], ftR:[-0.50,0.54,-0.13] }) },
+      { t:1.00, pose: slavePose({ // DRAPED — = original slave across the shoulders
+          pelvis:[0,1.28,0.0], chest:[0.28,1.30,0], head:[0.52,1.28,0],
+          hipL:[-0.28,1.28,0.10], hipR:[-0.28,1.28,-0.10], knL:[-0.52,1.28,0.12], knR:[-0.52,1.28,-0.12],
+          ftL:[-0.76,1.26,0.13], ftR:[-0.76,1.26,-0.13] }) }
+    ],
     slave: slavePose({ pelvis:[0,1.28,0.0], chest:[0.28,1.30,0], head:[0.52,1.28,0],
       hipL:[-0.28,1.28,0.10], hipR:[-0.28,1.28,-0.10], knL:[-0.52,1.28,0.12], knR:[-0.52,1.28,-0.12],
       ftL:[-0.76,1.26,0.13], ftR:[-0.76,1.26,-0.13] }) },
@@ -32475,9 +32514,24 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     // ease in over first 0.4s of lift
     const ease = Math.min(1, (by.stateTime || 0) / 0.4);
 
-    // CARRIED BODY POSE — knees drawn up, arms bracing, head tucked
-    // This runs AFTER the base poseGrabbed so it overwrites the dangling defaults
+    // v152 FIX — this used to OVERWRITE the victim's whole body with one generic "knees curled,
+    // panic grab" pose for EVERY move at stages 2-3, running after the base poseGrabbed had already
+    // applied the authored per-move slave poses (powerbomb tuck->belly->shoulder, suplex inversion,
+    // chokeslam dangle, fireman's drape...). Net effect: every carry looked like the same fetal curl
+    // and no lift sub-phase could read ("very bad slave posing" bug). The base path ALWAYS supplies
+    // an authored slave pose (GRAPPLE_POSITIONS[..].slave / liftPoses, STANDARD fallback), so the
+    // absolute pose here only applies when a position genuinely has no authored shape; otherwise the
+    // authored pose owns the body and this layer adds only a faint additive struggle for life.
+    const _gpos = (typeof GRAPPLE_POSITIONS !== 'undefined' && GRAPPLE_POSITIONS[by.grapplePos]) || null;
+    if (_gpos && (_gpos.slave || _gpos.liftPoses)){
+      const flail = Math.sin((by.stateTime || 0) * 4.2) * 0.03 * ease;
+      if (this.J.haL && this.J.haL.tgt) this.J.haL.tgt.x += flail;
+      if (this.J.haR && this.J.haR.tgt) this.J.haR.tgt.x -= flail;
+      if (this.J.head && this.J.head.tgt) this.J.head.tgt.x -= 0.02 * ease;   // slight instinctive tuck
+      return;
+    }
 
+    // CARRIED BODY POSE (fallback only — position without an authored slave pose)
     // Legs curl up — knees toward chest (panic/helpless position)
     const kneeLift = ease * 0.38;
     this.J.hipL && this.J.hipL.set( 0.06, 0.72 + kneeLift, 0.14);
