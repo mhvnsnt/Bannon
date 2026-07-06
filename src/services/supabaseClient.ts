@@ -1,18 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
 
-// These would normally come from environment variables.
-// As part of the MVP setup for Orion Enterprises LLC, these are placeholders
-// that will be replaced with real Supabase project URL and anon key once provisioned.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder-project.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'public-anon-key';
+// Retrieve from environment variables or local storage set via IntegrationsModal
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || localStorage.getItem('supabase_url') || 'https://placeholder-project.supabase.co';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || localStorage.getItem('supabase_key') || 'public-anon-key';
 
 export const isSupabaseConfigured = !!(
-  import.meta.env.VITE_SUPABASE_URL &&
-  import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder-project.supabase.co' &&
-  import.meta.env.VITE_SUPABASE_URL.trim() !== '' &&
-  import.meta.env.VITE_SUPABASE_ANON_KEY &&
-  import.meta.env.VITE_SUPABASE_ANON_KEY !== 'public-anon-key' &&
-  import.meta.env.VITE_SUPABASE_ANON_KEY.trim() !== ''
+  (import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'https://placeholder-project.supabase.co' && import.meta.env.VITE_SUPABASE_URL.trim() !== '') ||
+  (localStorage.getItem('supabase_url') && localStorage.getItem('supabase_url') !== 'https://placeholder-project.supabase.co' && localStorage.getItem('supabase_url')?.trim() !== '')
 );
 
 export const supabase = createClient(supabaseUrl, supabaseKey);

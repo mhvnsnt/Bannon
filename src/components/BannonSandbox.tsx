@@ -223,7 +223,24 @@ export const BannonSandbox: React.FC = () => {
       const MAX_ANGULAR_VEL = 4.5; // Rotational cap to suppress hyper-speed limb rotations
       let currentMax = 0;
 
+      // Determine if any part is impacting the ground (top of floor mat is at Y = 0)
+      let groundImpactActive = false;
+      ragdollParts.current.forEach(({ body }) => {
+        if (body.position.y <= 0.25) {
+          groundImpactActive = true;
+        }
+      });
+
       ragdollParts.current.forEach(({ body, mesh, name }) => {
+        // Dynamic impact damping trigger (0.7 angular / 0.5 linear on impact or strike spike)
+        if (groundImpactActive || dampingActive) {
+          body.angularDamping = 0.7;
+          body.linearDamping = 0.5;
+        } else {
+          body.angularDamping = 0.1;
+          body.linearDamping = 0.1;
+        }
+
         // Fetch current velocity vector
         const vel = body.velocity;
         const speed = vel.length();
@@ -502,11 +519,18 @@ export const BannonSandbox: React.FC = () => {
     }
 
     // B. APPLY AGGRESSIVE DAMPING (Damping spike state)
-    // "Aggressive Damping": Dynamically spike angularDamping to 0.7 and linearDamping to 0.5 on impacted limbs for half a second.
+    // "Aggressive Damping": Triggered on all strike impacts to resolve anti-gravity flailing
     setDampingActive(true);
     ragdollParts.current.forEach(({ body }) => {
       body.angularDamping = 0.7;
       body.linearDamping = 0.5;
+      
+      // Immediate 3.8 m/s velocity clamp to suppress hyper-speed impact impulse flailing
+      const speed = body.velocity.length();
+      if (speed > 3.8) {
+        body.velocity.normalize();
+        body.velocity.scale(3.8, body.velocity);
+      }
     });
 
     // Reset damping back to baseline (0.1) after exactly 500ms (0.5s)
@@ -848,6 +872,11 @@ export const BannonSandbox: React.FC = () => {
                             <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: attire?.color || '#ccc' }} />
                             {attire?.name || 'Default'}
                           </span>
+                          {slot.managerId && (
+                            <span className="text-[8px] font-bold text-cyan-400 mt-0.5 uppercase flex items-center gap-0.5">
+                              👔 {rosterData.find(r => r.id === slot.managerId)?.name || 'Manager'}
+                            </span>
+                          )}
                           {slot.payback && slot.payback !== 'None' && (
                             <span className="text-[8px] font-bold text-amber-500 mt-1 uppercase">⚡ {slot.payback}</span>
                           )}
@@ -989,6 +1018,32 @@ export const BannonSandbox: React.FC = () => {
                               );
                             })}
                           </div>
+                        </div>
+                      </div>
+
+                      {/* Ringside Manager selection */}
+                      <div className="flex flex-col gap-1.5 border-t border-slate-850 pt-2.5">
+                        <label className="text-[8px] font-mono text-slate-500 uppercase font-black">4. Ringside Manager</label>
+                        <div className="flex flex-wrap gap-1.5">
+                          <button
+                            onClick={() => selectSlotManager(activeSlotConfig.id, null)}
+                            className={`px-2 py-1 text-[9px] font-bold rounded-lg border cursor-pointer transition-all ${!activeSlotConfig.managerId ? 'bg-slate-850 border-cyan-500 text-white ring-2 ring-cyan-500/10' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}
+                          >
+                            None
+                          </button>
+                          {rosterData.filter(r => r.id !== activeSlotConfig.characterId).map(m => {
+                            const isSelectedManager = activeSlotConfig.managerId === m.id;
+                            return (
+                              <button
+                                key={m.id}
+                                onClick={() => selectSlotManager(activeSlotConfig.id, m.id)}
+                                className={`px-2 py-1 text-[9px] font-bold rounded-lg border cursor-pointer transition-all flex items-center gap-1 ${isSelectedManager ? 'bg-slate-850 border-cyan-500 text-white ring-2 ring-cyan-500/10' : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'}`}
+                              >
+                                <span className="text-[9px] opacity-60">👔</span>
+                                {m.name}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     </div>

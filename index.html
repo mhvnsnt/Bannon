@@ -28254,14 +28254,14 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       _origUpdateRagdoll.call(this, dt);
 
       if (this.ragdoll && this.V && typeof RING !== 'undefined') {
-        const MAX_BONE_VEL = 0.35; // Maximum biological travel distance per frame (~21 m/s)
+        const MAX_BONE_VEL = 3.8 * dt; // Hard 3.8 m/s velocity cap per body part
         const floorHeight = (this.zone === 'FLOOR') ? RING.floorY - 0.85 : RING.floorY;
 
         for (const j in this.V) {
           const v = this.V[j];
           if (v && v.pos && v.old && !v.pinned) {
             
-            // 1. Kinetic Energy Limit (Velocity Clamp)
+            // 1. Kinetic Energy Limit (Velocity Clamp of exactly 3.8 m/s)
             // Kills the infinite phantom momentum loops that cause jitter / seizing
             const dx = v.pos.x - v.old.x;
             const dy = v.pos.y - v.old.y;
@@ -28273,6 +28273,25 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
               v.old.x = v.pos.x - (dx * scale);
               v.old.y = v.pos.y - (dy * scale);
               v.old.z = v.pos.z - (dz * scale);
+            }
+
+            // 1b. Trigger 0.7 angular / 0.5 linear damping on impact to remove antigravity flailing
+            const isCollidingFloor = v.pos.y < floorHeight + 0.22;
+            if (isCollidingFloor) {
+              const currentDx = v.pos.x - v.old.x;
+              const currentDy = v.pos.y - v.old.y;
+              const currentDz = v.pos.z - v.old.z;
+              
+              // Apply 0.5 linear damping (keeps only 50% momentum)
+              v.old.x = v.pos.x - (currentDx * 0.5);
+              v.old.y = v.pos.y - (currentDy * 0.5);
+              v.old.z = v.pos.z - (currentDz * 0.5);
+              
+              // Apply 0.7 angular damping (restricts horizontal/rotational swing drift by 70%)
+              const postDampDx = v.pos.x - v.old.x;
+              const postDampDz = v.pos.z - v.old.z;
+              v.old.x = v.pos.x - (postDampDx * 0.3);
+              v.old.z = v.pos.z - (postDampDz * 0.3);
             }
 
             // 2. Anatomical Self-Collision (Chest vs Wrists/Elbows)
