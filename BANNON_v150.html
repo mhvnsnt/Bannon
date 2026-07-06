@@ -11529,7 +11529,10 @@ function playerAttack(kind){
     return;
   }
 
-  const set = getMoves('BANNON');
+  // v154 FIX: read the PLAYER's actual character moveset, not a hardcoded 'BANNON' — every character
+  // was fighting with Bannon's moves regardless of who you picked.
+  const _pKey=((p.specName||(p.opts&&p.opts.name)||'BANNON')+'').toUpperCase();
+  const set = getMoves(_pKey) || getMoves('BANNON');
   const opp = p.opponent();
   const zone = targetZone();
   const powerMod = keys['shift'] || heldBtns['block'] || heldBtns['mod']; // shift/guard/MOD-btn = loaded power shot / repositioning
@@ -11681,7 +11684,18 @@ function playerAttack(kind){
   else if (kind==='uppercut') mapKind='cross';
   let mv;
   if (kind==='special'){
-    mv = set.reduce((b,m)=> ((m.cat!=='THROW'&&m.cat!=='GROUND'&&m.power>(b?b.power:0))?m:b), null);
+    // v154 FIX: SPECIAL is now DIRECTIONAL too (was always the single highest-power move — that's why
+    // it "only ever did flying knee"). The stick picks the flavor of big move: up = biggest HIGH
+    // strike, down = biggest LOW, fwd = a flying/jumping/lunging move, back = a spinning move,
+    // neutral = the biggest strike overall. Each falls back to overall-biggest if none match.
+    const _elig=(m)=> m && m.cat!=='THROW' && m.cat!=='GROUND';
+    const _biggestOf=(pred)=> set.reduce((b,m)=> ((_elig(m)&&pred(m)&&m.power>(b?b.power:0))?m:b), null);
+    const _overall=_biggestOf(()=>true);
+    if      (sdir==='up')   mv=_biggestOf(m=>m.height==='HIGH');
+    else if (sdir==='down') mv=_biggestOf(m=>m.height==='LOW');
+    else if (sdir==='fwd')  mv=_biggestOf(m=>m.traj==='FLYING'||m.traj==='JUMPING'||m.traj==='DIVING'||m.traj==='SUPERMAN');
+    else if (sdir==='back') mv=_biggestOf(m=>m.traj==='SPINNING'||(m.name&&m.name.indexOf('SPIN')>=0));
+    mv = mv || _overall;
   } else if (STRIKE_MAP[mapKind]){
     const want = STRIKE_MAP[mapKind][sdir] || STRIKE_MAP[mapKind].neutral;
     mv = set.find(m=>m.name===want);
