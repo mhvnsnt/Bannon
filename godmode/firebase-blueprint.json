@@ -1,0 +1,72 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile and privileges",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "VaultEntry": {
+      "title": "Vault Entry",
+      "description": "Encrypted or sensitive data for the Security Vault",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "label": { "type": "string" },
+        "text": { "type": "string" },
+        "tags": { "type": "array" },
+        "encryptedData": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["ownerId", "label", "timestamp"]
+    },
+    "AppLog": {
+      "title": "App Log",
+      "description": "User interaction logs/telemetry",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string" },
+        "action": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["ownerId", "action", "timestamp"]
+    },
+    "WorkspaceState": {
+      "title": "Workspace State",
+      "description": "User's active workspace configuration (panels, views, sidebar, etc.)",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "mainView": { "type": "string" },
+        "splitViewRight": { "type": "string" },
+        "rightPanel": { "type": "string" },
+        "isSplitWorkspace": { "type": "boolean" },
+        "leftSidebarOpen": { "type": "boolean" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "mainView", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile data"
+    },
+    "/vault/{entryId}": {
+      "schema": { "$ref": "#/entities/VaultEntry" },
+      "description": "Security vault entries"
+    },
+    "/logs/{logId}": {
+      "schema": { "$ref": "#/entities/AppLog" },
+      "description": "Telemetry logs"
+    },
+    "/workspace/{userId}": {
+      "schema": { "$ref": "#/entities/WorkspaceState" },
+      "description": "Dynamic workspace session blueprints"
+    }
+  }
+}

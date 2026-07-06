@@ -1,0 +1,16 @@
+# Always needed (the API + stub backend run with just these — no GPU):
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2
+
+# --- GPU backends (install the set for your FORGE_BACKEND) ---
+# Hunyuan3D-2 (FORGE_BACKEND=hunyuan): native text->3D + texture
+#   pip install torch trimesh
+#   pip install git+https://github.com/Tencent/Hunyuan3D-2.git   # provides hy3dgen
+#
+# TRELLIS (FORGE_BACKEND=trellis): image->3D, needs a text->image step (sdxl-turbo)
+#   pip install torch diffusers trimesh
+#   pip install git+https://github.com/microsoft/TRELLIS.git
+#
+# Auto-rig (FORGE_RIG=1): UniRig (VAST-AI/UniRig) — skeleton + skin weights
+#   see https://github.com/VAST-AI-Research/UniRig  (wrap its inference as unirig.rig_glb)

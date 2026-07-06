@@ -1,0 +1,426 @@
+3:║                  BANNON ENGINE — AI ORIENTATION BLOCK v116                 ║
+17:File: BANNON_v116_FIXED__6_.html
+160:║           BANNON ENGINE — AI ORIENTATION BLOCK v116             ║
+245:<title>BANNON — FIGHTER v116</title>
+269:    console.log('[BANNON] real physics ready', (R.version&&R.version&&R.version&&typeof R.version==='function'?R.version():''));
+270:  }catch(e){ window.RAPIER_READY = false; console.warn('[BANNON] Rapier off (run from a local server to enable real physics):', (e&&e.message)||e); }
+718:/* ===== BANNON STUDIO ===== */
+733:/* ===== BANNON DIRECTOR ===== */
+756:    <div class="fighter-tag"><span class="fighter-name">BANNON</span><span class="fighter-style">FIRE · SCORPIO</span></div>
+768:  <div id="announcer" class="announce-show"><div class="announce-text" id="announce-text">FROG SPLASH</div><div class="announce-sub" id="announce-sub">BANNON</div></div>
+819:    <div class="menu-logo">BANNON</div>
+852:    <div class="menu-logo" id="winnerName" style="font-size:clamp(38px, 8vw, 64px);">BANNON</div>
+964:        <button class="opt-chip" style="background:#0f172a; padding:16px; margin:8px 0 0 0; border:2px dashed #3b82f6; color:#bfdbfe; font-family:'Bebas Neue'; font-size:20px; letter-spacing:2px; width:100%; border-radius:6px; cursor:pointer;" id="btnLoadFbxLib" onclick="this.textContent='LOADING OVER 80 AAA ANIMATIONS...'; if(window.BANNON_LOAD_FBX_LIBRARY){ window.BANNON_LOAD_FBX_LIBRARY().then(()=>{ window.renderClipChips&&window.renderClipChips(); this.style.display='none'; }) } else { this.textContent='MODULE NOT FOUND'; }">INITIALIZE WWE 2K MOCAP LIBRARY CORE</button>
+1050:        <div style="color:#ffb066;font-size:13px;letter-spacing:1.5px;">BANNON POSITION X — <span id="tune_p1x_v" style="color:#fff;">--</span></div>
+1148:          <button class="opt-chip selected" data-tg="p1">BANNON</button>
+1230:          THROW tab — BANNON or VIPER). The built-in procedural body is posed by the rig instead.
+1337:    <div class="creator-header"><div class="creator-title">BANNON STUDIO</div><button class="close-x" id="studioClose">×</button></div>
+1460:        <button class="opt-chip selected" data-v="p1" style="border-color:#ff6a3d;color:#ff6a3d;">BANNON (P1)</button>
+1463:      <div id="modelActiveLine" style="font-size:12px;opacity:0.9;margin:6px 2px 4px;">Editing <b id="modelEditName">BANNON</b> — currently: <b id="modelEditCur">Built-in body</b></div>
+1502:// BANNON FIGHTER v2.0 — PROCEDURAL FIGHT ENGINE
+1607:const BANNON_TOGGLE_KEY = 'bannonPhysToggles';
+1608:function loadPhysToggles(){ try{ return JSON.parse(localStorage.getItem(BANNON_TOGGLE_KEY)||'{}'); }catch(e){ return {}; } }
+1609:function savePhysToggle(key, val){ try{ const t=loadPhysToggles(); t[key]=val; localStorage.setItem(BANNON_TOGGLE_KEY, JSON.stringify(t)); }catch(e){} }
+1647:  try{ console.warn('[BANNON]', s); }catch(__){}
+1724:  BANNON: customMoves,
+1776:let creatorTarget = 'BANNON';
+2011:  BANNON: { maxHp:100, stamina:200, chin:100, speedMultiplier:1.05, powerMultiplier:1.10, moves:['FIRE JAB','LEO CROSS','SCORPIO HOOK','RAT SWEEP','SUPLEX'] },
+2030:  BANNON:  { style:'ORTHODOX',   heightScale:1.00, reachScale:1.00 },
+2053:    const nameKey = (opts && opts.name) ? opts.name.toUpperCase() : 'BANNON';
+2054:    const profile = MOVESET_DB[nameKey] || MOVESET_DB['BANNON'];
+2074:    // Resolution order: (1) an explicit opts.style (e.g. BANNON_ROSTER templates
+2301:    const nameKey = (this.opts && this.opts.name) ? this.opts.name.toUpperCase() : 'BANNON';
+2572:  console.log('%c[v99] GLB Arena Trimesh Parser ONLINE — BANNON physics will respect the 3D environmental structure (AAA Endorphin / Neckbreaker standard).', 'color:#00ffcc;font-weight:bold;background:#000a14;padding:3px 8px');
+2585:  window.BANNON_CLOTH = {
+2689:  window.BANNON_OCTREE = {
+2713:      if (!window.BANNON_OCTREE.checkCollision(attacker, opp)) return;
+3922:  // BANNON STUDIO: custom clip drives the body while hit/damage above stays as-is
+4778:// BANNON's body is already a ~50-part anatomical figure. Rather than swap the whole rig across stacks (which would shatter the
+4813:  }catch(e){ console.warn('[BANNON] applyFighterSpec failed', e); }
+4817:window.BANNON_ROSTER = [
+4818:  { name:'BANNON', style:'allrounder', build:1.00, shape:{} },                                                                          // default base
+4835:    window._rosterIdx=(window._rosterIdx+1)%window.BANNON_ROSTER.length;
+4836:    const t=window.BANNON_ROSTER[window._rosterIdx];
+4911:    (window.BANNON_ROSTER||[]).forEach(tpl=>{ const b=document.createElement('button'); b.textContent=tpl.name; b.style.cssText='background:#1a0e08;color:#ffd9a8;border:1px solid #ff7a1a;border-radius:5px;padding:6px 4px;cursor:pointer;font-size:11px;'; b.onclick=()=>{ const f=F(); if(f&&window.applyTemplate){ window.applyTemplate(f,tpl); syncAll(); } }; tg.appendChild(b); });
+6536:// BANNON v75 — GRAPPLE DEPTH & VISCERAL PHYSICS PASS
+6579:  if ((this.isPlayer || this.opts) && !_eliteCovered) announce(variant.label + (isBridge?' — BRIDGE':''), this.isPlayer?'BANNON':this.opts.name);
+7568:  announce(d.label, this.isPlayer?'BANNON':this.opts.name);
+8450:    if (this.isPlayer || this.opts) announce(fromZone==='APRON' ? 'OFF THE APRON!' : 'OVER THE TOP ROPE!', this.isPlayer?'BANNON':this.opts.name);
+8461:    if (this.isPlayer) announce('OUT TO THE APRON', this.opts?this.opts.name:'BANNON');
+8473:    if (this.isPlayer) announce('TO THE FLOOR', this.opts?this.opts.name:'BANNON');
+8480:    if (this.isPlayer) announce('BACK ON THE APRON', this.opts?this.opts.name:'BANNON');
+8524:      const D = (window.BANNON_AI_DNA && window.BANNON_AI_DNA.forFighter(f)) || null;
+8629:        const D = (window.BANNON_AI_DNA && window.BANNON_AI_DNA.forFighter(f)) || null;
+8656:        const D = (window.BANNON_AI_DNA && window.BANNON_AI_DNA.forFighter(f)) || null;
+8689:      const D = (window.BANNON_AI_DNA && window.BANNON_AI_DNA.forFighter(f)) || null;
+8752:      const D = (window.BANNON_AI_DNA && window.BANNON_AI_DNA.forFighter(f)) || null;
+8774:      const D = (window.BANNON_AI_DNA && window.BANNON_AI_DNA.forFighter(f)) || null;
+9064:    // large BANNON wordmark
+9068:    g.fillText('BANNON', 0, -10);
+9768:  const set = getMoves('BANNON');
+9783:        announce(p.grappleMode==='rear' ? 'REAR WAISTLOCK' : 'FRONT LOCKUP', 'BANNON');
+9797:        announce(GRAPPLE_POSITIONS[posName].label, 'BANNON');
+9865:    announce('FINISHER','BANNON');
+10265:    }catch(e){ console.warn('[BANNON] linkGrab failed', e); return false; }
+10315:    }catch(e){ console.warn('[BANNON] launchSlam failed', e); return false; }
+10373:    }catch(e){ console.warn('[BANNON] physStrike failed', e); return false; }
+10392:    }catch(e){ console.warn('[BANNON] visceralImpact failed', e); return false; }
+10438:    try{ const _gl=JSON.parse(localStorage.getItem('BANNON_GRAPPLES')||'null'); if(_gl) for(const k in _gl){ if(GRAPPLE_POSITIONS[k]) Object.assign(GRAPPLE_POSITIONS[k], _gl[k]); } }catch(e){}
+10439:    const _gsave=()=>{ try{ const o={}; for(const k in GRAPPLE_POSITIONS){ const g=GRAPPLE_POSITIONS[k]; o[k]={basePow:g.basePow, lift0:g.lift0, delivery:g.delivery, mocap:g.mocap||null}; } localStorage.setItem('BANNON_GRAPPLES', JSON.stringify(o)); }catch(e){} };
+10451:    _gm.onclick=()=>{ try{ const gs=JSON.parse(localStorage.getItem('BANNON_MOCAP_GRAPPLES')||'[]');
+10458:    try{ const _sl=JSON.parse(localStorage.getItem('BANNON_STRIKES')||'null'); if(_sl){ const st=getMoves('BANNON'); for(const m of st){ if(_sl[m.name]) Object.assign(m,_sl[m.name]); } } }catch(e){}
+10459:    const _ssave=()=>{ try{ const o={}; for(const m of getMoves('BANNON')) o[m.name]={power:m.power, speed:m.speed}; localStorage.setItem('BANNON_STRIKES', JSON.stringify(o)); }catch(e){} };
+10463:    const _skm=()=>{ const st=getMoves('BANNON'); return st[_ski%st.length]; };
+10465:    _skb.onclick=()=>{ _ski=(_ski+1)%getMoves('BANNON').length; _skb.textContent='MOVE: '+_skm().name; };
+10472:    const _ap=(idx,s)=>{ try{ if(typeof fighters!=='undefined'&&fighters[idx]) fighters[idx].style=s; localStorage.setItem('BANNON_STYLE_P'+(idx+1),s); }catch(e){} };
+10475:    try{ const a=localStorage.getItem('BANNON_STYLE_P1'); if(a&&_SK.includes(a)){ _s1i=_SK.indexOf(a); _sb1.textContent='P1 STYLE: '+a; _ap(0,a); }
+10476:         const b2=localStorage.getItem('BANNON_STYLE_P2'); if(b2&&_SK.includes(b2)){ _s2i=_SK.indexOf(b2); _sb2.textContent='P2 STYLE: '+b2; _ap(1,b2); } }catch(e){}
+10478:    try{ const _dl=JSON.parse(localStorage.getItem('BANNON_DIVES')||'null');
+10481:    const _dsave=()=>{ try{ localStorage.setItem('BANNON_DIVES', JSON.stringify({types:DIVE_TYPES, slots:window.DIVE_SLOTS||null})); }catch(e){} };
+10608:  if(_live){ try{ window.BANNON_ROPES && window.BANNON_ROPES.update(sdt); window.BANNON_CLOTH && window.BANNON_CLOTH.update(sdt); }catch(e){} }      // Verlet ropes: sag, bow where leaned, spring back
+10689:  const nm = winner.isPlayer?'BANNON':winner.opts.name;
+10719:  const nm = winner.isPlayer?'BANNON':winner.opts.name;
+10738:  const p1 = new Fighter(true, { col:0xcc3311, accent:0xffaa00, skin:0xd9a066, name:'BANNON' });
+10805:  const names = ['BANNON', ...OPPONENTS.map(o=>o.name)];
+10831:       if(window.BANNON_LOAD_FBX_LIBRARY) {
+10832:          window.BANNON_LOAD_FBX_LIBRARY().then(()=>{
+11206:  if(en) en.textContent = modelSel==='p1'?'BANNON':'VIPER';
+11696:          if (typeof announce === 'function') announce('1 … 2 … 3', attacker.opts&&attacker.opts.name||'BANNON');
+11794:          if (typeof announce === 'function') announce('referee: ONE!', attacker.opts && attacker.opts.name || 'BANNON');
+11796:          if (typeof announce === 'function') announce('referee: TWO!!', attacker.opts && attacker.opts.name || 'BANNON');
+11804:          if (typeof announce === 'function') announce('referee: THREE!!! PINNED!', attacker.opts && attacker.opts.name || 'BANNON');
+11899:  const MATCH_KEY = 'BANNON_matchState_v73';
+11900:  const MATCH_ACTIVE_KEY = 'BANNON_matchActive_v1';
+11965:        const p1 = new Fighter(true, { col:0xcc3311, accent:0xffaa00, skin:0xd9a066, name:'BANNON' });
+12117:    new Fighter(true, { col:0xcc3311, accent:0xffaa00, skin:0xd9a066, name:'BANNON' }),
+12337:  }catch(e){ console.warn('[BANNON] color pipeline partial', e); }
+12383:    }catch(e){ console.warn('[BANNON] IBL env skipped', e); }
+12396:      console.warn('[BANNON] post-processing scripts not present — bloom off, direct render');
+12413:    }catch(e){ console.warn('[BANNON] bloom setup failed — direct render', e); window.__composer=null; return false; }
+12454:  console.log('%c🎬 BANNON CINEMATIC v5 2K — sRGB+ACES·2K·IBL·'+(bloomOK?'BLOOM on':'bloom off')+' · PBR · impact punch',
+12594:  console.log('%c⚡ BANNON 2K PBR + UFC Sweat Active', 'color:#00aaff;font-weight:bold;background:#000a14;padding:3px 8px');
+12597:   BANNON STUDIO  —  per-joint pose / keyframe animation editor + tuning presets
+13149:   BANNON DIRECTOR — in-canvas creative control
+13497:/* BANNON LIBRARY — persistent device-imported models via IndexedDB.
+13530:  const MK='BANNON_MOCAP_MOVES';
+13655:      try{const gk='BANNON_MOCAP_GRAPPLES',gs=JSON.parse(localStorage.getItem(gk)||'[]');
+13666:     BANNON · BODY-ARCHITECTURE PASS · BRICK 1 — SMOOTH CAPSULE LIMBS
+13738:     BANNON · BODY-ARCHITECTURE PASS · BRICK 2 — BODY CHECK (read-only)
+13810:     BANNON · BODY-ARCH PASS · BRICK 3 — FORGE: BODY + MOTION
+13826:  const LS='BANNON_BODY';
+13936:     BANNON · BRICK 4 — STRIKE WEIGHT + MOTION CHECK (live in-game EYES)
+13956:  try{ const v=parseFloat(localStorage.getItem('BANNON_STRIKEW')); if(!isNaN(v)) window.STRIKE_WEIGHT=v; }catch(e){}
+14033:    sl.oninput=()=>{ window.STRIKE_WEIGHT=+sl.value; upd(); try{ localStorage.setItem('BANNON_STRIKEW', String(+sl.value)); }catch(e){} };
+14048:     BANNON · BRICK 5 — AI SENSES CONSOLE (unified perception + black box)
+14077:    L.push('===== BANNON FULL REPORT ('+VERSION+') =====');
+14230:        <strong style="color:#fff;font-size:12px;">BANNON North Star Targets</strong>
+14252:     BANNON · BRICK 6 — BOOT SELF-TEST (the sense that catches "silent pucks")
+14295:     BANNON · BRICK 7 — NEXUS VALIDATOR (ported from God Mode OS) + GOD WITHIN daemon scaffold
+14341:    const CEIL=50;                         // wob-velocity destabilization ceiling (BANNON units)
+14406:     BANNON · BRICK 8 — NEXUS MIND (more God Mode OS senses) + STRONGER escalation
+14453:  try{ const v=parseFloat(localStorage.getItem('BANNON_STRONGER')); if(!isNaN(v)) window.STRONGER=v; }catch(e){}
+14514:    sl.oninput=()=>{ window.STRONGER=+sl.value; upd(); try{localStorage.setItem('BANNON_STRONGER',String(+sl.value));}catch(e){} };
+14524:     BANNON · BRICK 9 — THE BLUEPRINT (baked-in, self-describing, self-auditing)
+14526:     opening BANNON reads this first: the vision, every system, every sense/tool,
+14602:    const L=['===== BANNON BLUEPRINT '+VERSION+' ====='];
+14637:     BANNON · BRICK 10 — THE MANIFESTO (the soul · system instructions)
+14643:     SOUL: BANNON is a compact single-file procedural fighting universe.
+14667:  const SOUL='BANNON — compact single-file procedural fighting universe. North star: Neckbreaker (Masson) blended with WWE2K/Tekken/UFC/Endorphin/GangBeasts/RDR2-euphoria. MDickie ethos. Fighting style IS psychology.';
+14708:    const L=['================ BANNON MANIFESTO (soul) ================'];
+14742:     BANNON · BRICK 11 — CONTEXT CURATOR (ported from God Mode OS ContextCurator)
+14768:    L.push('=== BANNON CURATED ('+(window.BLUEPRINT&&window.BLUEPRINT.version||'?')+') systems '+present+' ===');
+14803:     BANNON · BRICK 12 — MOCAP: VIDEO -> STUDIO CLIP
+14806:     the browser) -> world landmarks -> mapped to BANNON's 11 IK joints (rig solves
+14818:  // map one frame of landmarks -> BANNON local pose {joint:[x,y,z]} for the 11 IK joints
+14822:    // world axes: BANNON local forward=+x = -lm.z ; up=+y = -lm.y ; lateral=+z = lm.x*S
+14903:     BANNON · BRICK 13 — VISUAL FINGERPRINT (the render-correctness sense)
+14975:     BANNON · BRICK 14 — SELF-HEAL (ported from God Mode OS healingEngine/errorInterceptor)
+15035:     BANNON · BRICK 15 — RING ANNOUNCER (ported from God Mode OS ProceduralVoice)
+15341:    const fA = fighters[0].opts.name || 'BANNON';
+15373:    const wName = winnerObj.isPlayer ? 'BANNON' : (winnerObj.opts && winnerObj.opts.name) || 'BANNON';
+15376:      : (fighters[0].opts.name || 'BANNON');
+15682:     BANNON · BRICK 16 — THE ATLAS (window.ATLAS)
+15685:     deep-dive. Every mechanic carries a BANNON status (have/partial/todo) so the
+15697:    meta:{ title:'BANNON ATLAS', purpose:'excruciating game-dev study -> live build backlog', sourced:['user OmniGameDevAtlas (God Mode OS)','fighting/wrestling canon','Neckbreaker store data (Steam/TapTap 2024-25)'] },
+15716:        I('ECS / data-oriented','AoS->SoA for cache coherency (DOTS / MassEntity)',T,'BANNON is single-file JS; principle only'),
+15724:        I('vertical slice','15-min polished proof it is fun',P,'BANNON is a perpetual vertical slice'),
+15725:        I('asset pipeline','sculpt->retopo->UV->bake->texture->PBR',T,'BANNON is procedural; no DCC pipeline'),
+15730:        I('frame data math','60fps; startup/active/recovery/stun; frame advantage = stun-(active+recovery)',T,'BANNON uses time-based phases, not frames; formalize for fairness'),
+15738:        I('MDickie ethos','one dev, physics-driven, systemic over scripted (Wrestling Empire/Revolution, Hard Time)',H,'BANNONs foundational ethos'),
+15778:      var L=['===== BANNON ATLAS ===== have:'+have+'  partial:'+part+'  todo:'+td, 'north star: '+this.northStar.title+' ('+this.northStar.dev+')','top backlog (partial first):'];
+15783:  try{ if(window.MANIFESTO){ window.MANIFESTO.register({key:'codex.atlas',kind:'codex',summary:'game-dev study + Neckbreaker north star, mechanics tagged with BANNON status (build backlog)',call:'ATLAS.report() / ATLAS.backlog()'}); } }catch(e){}
+15790:     BANNON · BRICK 17 — THE MOVEDEX (window.MOVEDEX)
+15917:     BANNON · BRICK 18 — VISCERAL COMBAT (from the AI/follow-through + selling specs)
+15991:     BANNON · BRICK 19 — ENDORPHIN / ADRENALINE + DAMAGE TELLS
+16058:     BANNON · BRICK 20 — GROUND & ENVIRONMENT PAIN REACTIONS (Endorphin floor feel)
+16121:     BANNON · BRICK 21 — CORNER SYSTEM + ROPE vs CORNER PHYSICS (WWE-2K-style)
+16202:     BANNON · BRICK 22 — OVERLAY JOINT-STORE FIX (make standing reactions visible)
+16268:     BANNON · BRICK 23 — ARENA SURFACE-DAMAGE SYSTEM (the environment layer)
+16327:     BANNON · BRICK 24 — LIMB INTEGRITY (render): kills the stretched-stick knockdown
+16365:     BANNON · BRICK 25 — OTTR CANON CODEX + PROJECT LOG (findable in-game record)
+16433:    godWithin:{ canon:'parallel, LESS-canon RPG side-mode', premise:'Solaris Justice dies -> BANNON born, "The Broken Architect" / the bare-metal architect behind the metal mask', play:'distinct RPG playstyle, branching side story; folds God Mode OS tools + mlab audio later' },
+16442:    project:'BANNON — single-file Three.js wrestling game by Marq (M. Heaven$ent)',
+16445:    shipped:['continuous BBODY skin (V-taper ribcage, thicker arms)','knockdown head-attach + ALL-limb integrity (no stretched sticks)','BUG1 reset-crash fix','recovery-lock follow-through','locational selling','adrenaline/endorphin cascade + ADRN HUD','damage tells','whiff penalty','ground reactions (leg scissor + clutch)','corner hard-stop vs rope bounce + seatedTop/seatedBottom/treeOfWoe','15-surface damage matrix','OTTR canon codex (this)','PHYSICS BODY FIX: forearm inversion solved (pre-orient + spherical elbows + singularity-safe drive, verified in headless Rapier)','Gemini 2.5 Pro/Flash swarm nodes + diff-only surgery (1M ctx, no chunking)','LIVE SELF-AUDIT baked in (BANNON_AUDIT eyes)','OTTR STORY GRAPH (6-book chapter→beat→match) + 41-char fighting DNA','AI builder GROUNDED in OTTR canon','FORGE SELF-BUILD LOOP (perceive→propose→apply→VERIFY-in-live-iframe)','LIVE INSPECTOR (BANNON_INSPECT)','God Within mode + Ouroboros/MLab honest hooks','AUTOPILOT: always-on background self-improvement (observe→diagnose→verify→stage, prompt-free diagnosis)','KEYLESS LOCAL SWARM FIRST: dynamic Ollama bind to installed models + LM Studio, AUTO prefers local (no API key, no token cap)','EXPERT SKILLS KB injected into every swarm prompt (verified physics recipe + architecture + audit math + craft)','LOCO: separated world-locked foot planting + tunable step oscillator + contralateral arm wash + live ⚙ sliders','FORGE verify hardened: multi-sample (worst-of-3) so a metastable init audit cannot fool a patch decision','OTTR_DNA -> per-fighter AI: each character fights their philosophy (aggression/defense/range/grapple/risk scale updateAI)','FORGE scripted-bout verify: patches judged under real walk+strike action, not just a rest pose','AUTOPILOT now pursues the ATLAS roadmap (your declared backlog), not only bug fixes','STRETCH/NOODLE FIX: knockdown/impact/grapple/dive limbs no longer stretch to the invisible standing rig','VERSION LABEL FIX: title + on-screen badge reflect the real version (was stuck at v44)','GOD MODE OS: keyless swarm now prefers your custom local "bannon" Ollama model first (your specialized expert brain)','Builder expert KB now carries your MOVE OBJECT SCHEMA + the biomech sim spec (autonomic/grab-bulge/breath-audio)','PER-JOINT LIMITS: uniform [-2.6,0.15] split into tunable anatomical profiles (JOINT_LIMITS), knees keep verified values','TELEMETRY HOOK: BANNON_TELEMETRY_LOG/_NDJSON — the JSON a Puppeteer/Playwright autonomy loop scrapes (external nervous system)','AUTONOMY BRIDGE doc: AI-Studio blindness blueprint mapped to what BANNON already does internally','STORY PROGRESSION: canon 6-book unlock path + non-canon God Within branch over OTTR_STORY','SPRINGBOARD REST-LINE (v69): rope displacement capped (tunable window.ROPE_MAX_DISP, was 0.55 now 0.34) + the contacted edge eased back to rest at launch so the launch point no longer slides out from under you','SELF-BUILDER RE-ARM (v69): EXECUTE SWARM wrapped in try/finally so a thrown swarm/chunk call re-arms the button instead of leaving the in-game builder locked (the "works only once" blocker)','SPRINGBOARD FREEZE FIX (v70): running into the ropes no longer gets hijacked into a static lean — a RUN now falls through to the rope rebound (run -> bounce off -> springboard) instead of freezing. Root cause: running keeps state==="walk" (running is a flag), so the rope-lean interception fired at the rope edge and skipped the locomotion/rebound code. Plus anti-freeze nets: ropelean auto-springs back, a fully-coiled ropegrab auto-launches — neither rope state can dead-end. Verified by headless transition trace.','GRAPPLE DEEPENING brick 1 (v70): LOCKUP STRUGGLE — stage-1 tie-up now jockeys (collar-and-elbow push-pull, gripping hands stay locked) and eases out as the position resolves into the lift, instead of a dead static load. Exposes this._gripStrain for the upcoming stall/struggle phases.','GRAPPLE DEEPENING brick 2 (v71): FOLLOW-THROUGH HOLD — delivery plays over actDur(0.66s) then HOLDS a 0.42s settle/breath beat on the finish before idle (arc settles to a 30% residual, eases out) so the deliverer poses on the move instead of snapping upright. Verified: continuous arc, slam-release still mid-action.','GRAPPLE DEEPENING brick 3 (v71): RECEIVER RESISTANCE — the held fighter braces and counter-jockeys opposite the attacker (reads by._gripStrain + clock) so the lockup is contested by both bodies, not one limp one.','GRAPPLE DEEPENING brick 4 (v71): APEX STALL — holding the carry builds attacker strain over hold time (tremble + sag + stamina bleed, ramps after 0.6s, maxes ~1.8s) — the delayed-suplex/stalling-powerbomb strength-vs-overexertion beat.'],
+16448:    log:function(){ console.log('%cBANNON CODEX '+this.version+'\n','color:#ffb000;font-weight:bold','SHIPPED:\n - '+this.shipped.join('\n - ')+'\n\nNEXT:\n - '+this.nextUp.join('\n - ')); return this.version; }
+16457:     BANNON SELF-BUILDER — SURGEON PANEL
+16771:<button id="surgeon-toggle" title="Open BANNON Self-Builder">⚕</button>
+16776:    <div id="surgeon-title">BANNON // SELF-BUILDER</div>
+16914:        <button class="s-btn" style="background:#1a1400;color:#ffd36a;border:1px solid #ffd36a" onclick="BANNON_FORGE_LOOP({maxCycles:3})">♻ FORGE LOOP (build + self-verify)</button>
+16927:        <div class="s-log-line sys">[BANNON SWARM BUILDER] ONLINE</div>
+16943:      <div style="font-size:9px;color:#555;letter-spacing:1px">AI reads the live BANNON code. Ask anything. Get patches back with Apply button.</div>
+16944:      <div id="surgeon-chat-msgs"><div style="color:#555;font-size:10px;text-align:center;padding:20px">Ask anything about BANNON. The AI has the live game code.</div></div>
+16946:        <textarea class="s-textarea" id="s-chat-input" rows="2" placeholder="Ask the AI about BANNON physics, joints, combat..." style="min-height:50px"></textarea>
+16953:      <button class="s-btn s-btn-outline" onclick="runScan()" id="s-scan-btn">▸ SCAN BANNON CODE</button>
+16978:    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:#ff4500;letter-spacing:2px">BANNON PREVIEW</div>
+17542:    slog(`[SWARM] Engaging on live BANNON code`, 'ok');
+17550:    const systemPrompt = `You are a surgical code editor for the BANNON wrestling game — a Three.js HTML fighting game.
+17652:  window.BANNON_AUDIT = function(opts){
+17699:    if (arms.length) d += 'For inverted/off-pose forearms in BPHYS.buildAR/stepAR: (1) build each limb rigid body PRE-ORIENTED so its local +Y matches the animated bone direction (quaternion from (0,1,0) to animJoint(j0)-animJoint(j1)); (2) rotate each joint anchor a1/a2 into the body\'s rotated local frame (qConj * anchor); (3) make the ELBOW joints SPHERICAL (not revolute) so no hinge-axis sign mismatch can lodge the forearm sideways; (4) in the orientation drive, only apply the perpendicular fallback kick when current+Y is ANTI-parallel to target (dot<0), never when already aligned. Verify with BANNON_AUDIT(): want every forearm align > 0.6.\n';
+17706:    const r = window.BANNON_AUDIT();
+17734:    const sys = (window.BANNON_EXPERT_PROMPT?window.BANNON_EXPERT_PROMPT():'') + 'You are a precise patch generator for the BANNON wrestling game (a single-file Three.js HTML game). '
+17783:    a.download = `BANNON_v_NEXT_${ts}.html`;
+17906:    btn.textContent = '▸ SCAN BANNON CODE';
+17929:    const systemPrompt = `${(window.BANNON_EXPERT_PROMPT?window.BANNON_EXPERT_PROMPT():'')}You are an expert game developer AI embedded inside the BANNON wrestling game.
+17995:      container.innerHTML = '<div style="color:#555;font-size:10px;text-align:center;padding:20px">Ask anything about BANNON. The AI has the live game code.</div>';
+18067:     BANNON · BRICK 46 — OTTR STORY GRAPH + FIGHTING-STYLE DNA + STORY MODE
+18137:      arc:'Origin & collapse. Solaris Justice dies; BANNON is born as The Broken Architect — a defense mechanism, not an ambition. Maime, the inner antagonist voice, is born in a jail cell. Personal trauma rendered as mythology.',
+18181:      arc:'The story becomes a video game inside itself. Reality renders as a game world — glitches, team-select, physics patches (a meta nod to BANNON itself), debuffed zones, and a jailbreak from the simulation\u2019s lower levels.',
+18220:      'BANNON CANON (Off The Top Rope — 6-book wrestling mythology by Marq / M. Heaven$ent):',
+18221:      'Protagonist Marquis Whitacre "The Free Agent"; alter-ego BANNON "The Broken Architect" (Solaris Justice dies, Bannon is born as a defense mechanism). Inner antagonist voice: Maime.',
+18236:        premise:'Play as BANNON (or any roster/custom fighter) through a branching side-story behind the metal mask — the bare-metal architect. Distinct RPG playstyle; parallel to but less canon than the 6-book main story.',
+18237:        playable:['BANNON','any OTTR_DNA roster character','create-a-fighter'],
+18266:     BANNON · BRICK 47 — FORGE SELF-BUILD LOOP + LIVE INSPECTOR
+18268:       window.BANNON_INSPECT()  = Unity-style live inspector — reads the running
+18270:       window.BANNON_FORGE_LOOP() = closed perceive -> propose -> apply -> VERIFY
+18272:                                  iframe, lets physics settle, re-runs BANNON_AUDIT
+18281:  window.BANNON_INSPECT = function(){
+18321:  window.inspect = function(){ const r=window.BANNON_INSPECT(); try{ console.log('%c[INSPECT]','color:#37c0ff;font-weight:bold'); (r.fighters||[]).forEach(f=>{ console.log('%c  '+f.name+'  '+f.state+'  hp '+f.hp+'/'+f.maxHp+'  stam '+f.stamina+'  poise '+f.poise+(f.ragdoll?'  [RAGDOLL]':''), 'color:#9fd'); if(f.limbs) console.log('     limbs(align):', f.limbs); }); if(r.note) console.log('  '+r.note); }catch(e){} try{ if(typeof slog==='function'){ slog('──── INSPECT ────','sys'); (r.fighters||[]).forEach(f=>slog('['+f.name+'] '+f.state+' hp'+f.hp+' stam'+f.stamina+(f.limbs?(' limbs '+JSON.stringify(f.limbs)):''),'info')); if(r.note) slog(r.note,'warn'); } }catch(e){} return r; };
+18341:            if (w && typeof w.BANNON_AUDIT === 'function'){
+18344:              const grab=()=>{ try{ samples.push(w.BANNON_AUDIT()); }catch(e){} if(++k<3){ setTimeout(grab,260); } else {
+18350:            else finish({ ok:false, reason:'no BANNON_AUDIT in patched build (did the patch break a script?)' });
+18366:  window.BANNON_FORGE_LOOP = async function(opts){
+18374:    let baseline=null; try{ if(typeof window.BANNON_AUDIT==='function') baseline=window.BANNON_AUDIT(); }catch(e){}
+18387:      const sys = (window.BANNON_EXPERT_PROMPT?window.BANNON_EXPERT_PROMPT():'') + 'You get the ENTIRE single-file HTML game + its LIVE physics audit + canon. '
+18425:  try{ if (window.MANIFESTO) window.MANIFESTO.register({key:'forge.self_build_loop',kind:'tool',summary:'closed perceive→propose→apply→verify loop (verifies each AI patch in a live iframe via BANNON_AUDIT before keeping) + live Unity-style inspector',call:'BANNON_FORGE_LOOP / BANNON_INSPECT'}); }catch(e){}
+18426:  console.log('%c[FORGE] self-build loop + live inspector ready. Try inspect() during a match, or BANNON_FORGE_LOOP({directive:"…",maxCycles:3}) with a Gemini key set.','color:#ffd36a');
+18432:     BANNON · BRICK 48 — AUTOPILOT (always-on background self-improvement)
+18434:       OBSERVE  : samples the live instruments we built — BANNON_AUDIT (physics),
+18435:                  BANNON_INSPECT (fighters), __ERRLOG (crashes), NEXUS telemetry, fps.
+18457:  function liveAudit(){ return safe(()=> (typeof window.BANNON_AUDIT==='function') ? window.BANNON_AUDIT() : null, null); }
+18458:  function liveInspect(){ return safe(()=> (typeof window.BANNON_INSPECT==='function') ? window.BANNON_INSPECT() : null, null); }
+18492:        pushItem(id, 2, 'ROADMAP ('+x.sec+' / '+x.bannon+'): "'+x.k+'"'+(x.note?(' — '+x.note):'')+'. Advance it toward done with the SMALLEST additive system that fits BANNON; ship an in-game authoring control for it; no physics regression.'); }); }
+18505:    if(typeof window.BANNON_FORGE_LOOP!=='function') return;
+18513:    let res=null; try{ res = await window.BANNON_FORGE_LOOP({ directive:item.dir, maxCycles:2 }); }catch(e){ item.status='error'; jlog('FORGE error on '+item.id+': '+e.message); return; }
+18536:    c.title='BANNON Autopilot — click for journal';
+18542:  window.BANNON_AUTOPILOT = AP;
+18571:  try{ if (window.MANIFESTO) window.MANIFESTO.register({key:'forge.autopilot',kind:'tool',summary:'always-on background self-improvement: observes live instruments, auto-builds an improvement queue with no prompts, runs the verify-loop to stage DLC-style patches while you play',call:'BANNON_AUTOPILOT'}); }catch(e){}
+18578:     BANNON · BRICK 49 — EXPERT SKILLS / KNOWLEDGE BASE
+18581:     window.BANNON_EXPERT_PROMPT() so even small keyless local models inherit
+18583:     window.BANNON_SKILLS = the full reference;  console: BANNON_SKILLS.show()
+18587:  window.BANNON_SKILLS = {
+18597:      + 'Verify via BANNON_AUDIT: align ~1 correct, <0 inverted; maxStretchOnHit should stay ~1.0.',
+18608:      'EYES: BANNON_AUDIT() = live per-limb align + kneeForward + maxStretchOnHit (same math as the headless auditor). '
+18609:      + 'BANNON_INSPECT() = live fighter state. The FORGE LOOP verifies any patch by running it in a hidden iframe and '
+18640:    show:function(){ const k=Object.keys(this).filter(x=>typeof this[x]==='string'); console.log('%cBANNON SKILLS','color:#ffb000;font-weight:bold'); k.forEach(x=>console.log('%c['+x+']','color:#9fd',this[x])); return k.length+' skills'; }
+18644:  window.BANNON_EXPERT_PROMPT = function(){
+18645:    const S = window.BANNON_SKILLS;
+18646:    return 'You are the BANNON build engine — an EXPERT on this exact single-file Three.js + Rapier wrestling game. '
+18653:  try{ if (window.MANIFESTO) window.MANIFESTO.register({key:'forge.expert_skills',kind:'knowledge',summary:'verified physics recipe + architecture map + audit math + coding rules + wrestling craft, injected into every swarm prompt so even keyless local models build like a BANNON expert',call:'BANNON_SKILLS / BANNON_EXPERT_PROMPT'}); }catch(e){}
+18654:  console.log('%c[SKILLS] expert knowledge base loaded — every swarm prompt is now BANNON-expert. BANNON_SKILLS.show()','color:#ffb000');
+18660:     BANNON · BRICK 50 — LOCO: separated locomotion channels + live dials
+18726:     BANNON · BRICK 51 — OTTR_DNA -> PER-FIGHTER AI (fight your philosophy)
+18736:     console: BANNON_AI_DNA.profile('cain')  BANNON_AI_DNA.table()
+18768:  window.BANNON_AI_DNA = {
+18786:  try{ if(window.MANIFESTO) window.MANIFESTO.register({key:'ai.fighter_dna',kind:'gameplay',summary:'per-fighter AI behavior derived from OTTR_DNA philosophy (aggression/defense/range/grapple/risk/patience) scaling the real updateAI decision params',call:'BANNON_AI_DNA.profile() / .table()'}); }catch(e){}
+18787:  console.log('%c[AI DNA] per-fighter behavior from philosophy ready. BANNON_AI_DNA.table()','color:#e8c');
+18796:    try{ document.title='BANNON — FIGHTER '+ver(); }catch(e){}
+18801:    b.textContent='BANNON '+ver();
+18809:     BANNON · BRICK 52 — PER-JOINT LIMITS + TELEMETRY HOOK + STORY PROGRESSION
+18813:       window.BANNON_TELEMETRY_LOG / _NDJSON : the JSON telemetry hook the autonomy
+18816:       window.BANNON_AUTONOMY_BRIDGE : the headless/telemetry/API/regression blueprint,
+18817:                              mapped to what BANNON ALREADY does internally.
+18834:  window.BANNON_TELEMETRY_LOG = function(){
+18836:    try{ t.audit     = window.BANNON_AUDIT   ? window.BANNON_AUDIT()            : null; }catch(e){ t.audit=null; }
+18837:    try{ t.fighters  = window.BANNON_INSPECT ? window.BANNON_INSPECT().fighters : null; }catch(e){ t.fighters=null; }
+18844:  window.BANNON_TELEMETRY_NDJSON = function(){ try{ return JSON.stringify(window.BANNON_TELEMETRY_LOG()); }catch(e){ return '{}'; } };
+18846:  // ---- the autonomy blueprint, mapped to what BANNON already implements internally ----
+18847:  window.BANNON_AUTONOMY_BRIDGE = {
+18857:      telemetry_hooks:   'BANNON_AUDIT (live per-limb align) + BANNON_INSPECT + __ERRLOG + BANNON_TELEMETRY_LOG() JSON.',
+18861:    note: 'To run the EXTERNAL loop on your machine: a Playwright script loads the file, polls window.BANNON_TELEMETRY_NDJSON() each second, and POSTs spikes to your Gemini/Ollama endpoint. The in-game AUTOPILOT already does the internal equivalent.'
+18869:    godwithin: { node:0, char:'BANNON' },
+18885:    branchToGodWithin(character){ this.mode='godwithin'; this.godwithin.char=character||'BANNON'; this.godwithin.node=0;
+18895:    window.MANIFESTO.register({key:'forge.telemetry_hook',kind:'tool',summary:'BANNON_TELEMETRY_LOG/_NDJSON — JSON telemetry a Puppeteer/Playwright loop scrapes (external nervous system data half)',call:'BANNON_TELEMETRY_LOG'});
+18903:<!-- ===== BANNON · GRAPPLE HEFT & STRUGGLE (additive, guarded, grapple-state only — cannot touch init) ===== -->
+18953:<!-- BANNON · VERLET RING ROPES (sag + bow + spring-back) -->
+18955:window.BANNON_ROPES = {
+18993:<!-- ===== BANNON · ROPE INTERACTION SUITE (additive, guarded — back-lean, grab-lean, springboard, opponent-on-ropes, apron transitions) ===== -->
+19272:     BANNON · v65 — FOUR-SYSTEM PASS (each block independently toggleable + manifesto-registered)
+19280:<!-- ===== BANNON · v65 BLOCK 1 — LIMB-SPECIFIC HURT REACTIONS (HURT_LIMB) ===== -->
+19348:<!-- ===== BANNON · v65 BLOCK 2 — DEDICATED RUN BUTTON (RUN_BTN) ===== -->
+19407:<!-- ===== BANNON · v65 BLOCK 3 — MIDDLE/TOP ROPE ZONES (ROPE_CLIMB) =====
+19522:<!-- ===== BANNON · v65 BLOCK 4 — CORNER SETUP MOVES (CORNER_SETUP) =====
+19593:// BANNON v72 — BIOMECHANICAL CORE UPGRADE
+20010:        if (typeof announce === 'function') announce(em.label, this.isPlayer ? 'BANNON' : (this.opts && this.opts.name));
+20062:    '║  BANNON v78 — ZONE FIX · ANATOMY VALIDATOR · STATE  ║\n' +
+20145:// BANNON v73 — VISUAL POLISH + FIGHTER ARCHETYPE UPGRADE
+20159:  BANNON:'MIDDLEWEIGHT', TITAN:'HEAVYWEIGHT', GOLEM:'HEAVYWEIGHT',
+20232:console.log('[BANNON v73] IK arm fix, archetype bodies, skin warmth, ring mat darkened.');
+20237:// BANNON v77 — STABILITY + BUTTON FIX + ZONE + SHADOW + EUPHORIA REACTIONS
+20278:  const vb=document.getElementById('ver-badge'); if(vb) vb.textContent='BANNON v77';
+20568:console.log('[BANNON v77] Buttons fixed · Shadow floor-tracked · Zone responsive · Stability ↑ · Euphoria stumble · Stretch guard');
+20574:// BANNON v78 — MODEL POLISH · ANIMATION DEPTH · EUPHORIA PHYSICS
+21128:const vb = document.getElementById('ver-badge'); if(vb) vb.textContent = 'BANNON v78';
+21130:console.log('[BANNON v78] Model polish · Knee pads · Deep idle · Contact pause · Euphoria ripple · Inertial spine · Hurt snap · Whiff commitment');
+21136:// BANNON v79 — PANEL TOUCH FIX · PHYSICS DEFAULTS · AUTO-ENABLE SYSTEMS
+21273:  // BANNON_AUTOPILOT (self-builder daemon)
+21275:    if (window.BANNON_AUTOPILOT && typeof window.BANNON_AUTOPILOT.on === 'function' &&
+21276:        !window.BANNON_AUTOPILOT.running){
+21277:      window.BANNON_AUTOPILOT.on();
+21336:if (vb2) vb2.textContent = 'BANNON v79';
+21338:console.log('[BANNON v79] Panel touch fixed (pan-y/pan-x) · PHYS_GRAPPLE/STRIKE ON · Continuous skin · Autopilot auto-start');
+21344:// BANNON v116 — COMPLETE TOUCH FIX · EUPHORIA PHYSICS · ANIMATION POLISH
+21777:    if (vb) vb.textContent = 'BANNON v116';
+21780:    if (t && /BANNON/.test(t.textContent)) t.textContent = t.textContent.replace(/v\d+/, 'v116');
+21783:      if (/^v7[5-9]/.test((el.textContent||'').trim()) || /BANNON v7[5-9]/.test(el.textContent||''))
+21794:  '%c⚡ BANNON v116 — Universal touch · Euphoria (head snap · neck whip · leg buckle · dead-weight · floor resonance) · Wobble v2 (4-step + jitter kill) · poseAttack shoulder-roll · directional flinch · breath S-curve',
+21801:<!-- ===== BANNON v81 · DUPLICATE-ID DOOR ALARM ===== -->
+21837:// BANNON v88 — AAA ANIMATION BLENDING + EUPHORIA COMBAT DEPTH
+22268:  const CA={ BANNON:'MIDDLEWEIGHT',TITAN:'HEAVYWEIGHT',GOLEM:'HEAVYWEIGHT',VIPER:'LIGHTWEIGHT',ZEPHYR:'LIGHTWEIGHT',RONIN:'MIDDLEWEIGHT',BRUTUS:'CRUISERWEIGHT',MORTUS:'CRUISERWEIGHT',KAGE:'MIDDLEWEIGHT' };
+22353:console.log('[BANNON v89] Dive-damage fix, persistent continuous skin, universal freeze/T-pose watchdog, pose blending, secondary motion, guard fatigue, Euphoria balance, world-space grapple, varied KDs, skin stretch, stamina-hit scale, micro-variation — all live.');
+22708:     BANNON v91 — EUPHORIA/RDR2/ENDORPHIN PHYSICS LAYER
+22726:        console.warn('[BANNON v91] GLOCK drift detected — restoring k:28 c:8. Set window._GLOCKUserOverride=true to change intentionally.');
+22951:  console.log('%c[BANNON v93] Euphoria layer ONLINE — secondary limb motion · whiff carry · dead weight KO · carry commitment · impact slide · delivery variance · lift struggle · GLOCK k:28 c:8 guarded', 'color:#ffb000;font-weight:bold');
+23149:console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guard — no arcade sparks on flesh','color:#FFD700;font-weight:bold;background:#000;padding:2px 6px');
+23312:  console.log('%c[BANNON v93] Running move dispatch live — clothesline · big boot · flying forearm · dropkick · spear · running DDT · running hurricanrana','color:#FFD700;font-weight:bold;background:#000;padding:2px 6px');
+23318:// BANNON · BRICK 54 — HEAVY ATTACK FIX + UFC FULL-BODY HAYMAKER PHYSICS
+23584:  console.log('%c[BANNON · BRICK 54] HEAVY PUNCH FIX — running intercept gated · UFC haymaker physics live','color:#ff7a1a;font-weight:bold;background:#000;padding:3px 8px');
+23863:  console.log('%c[BANNON v93] Visceral Zone Transitions (RING <=> APRON <=> FLOOR)','color:#FFD700;font-weight:bold;background:#000;padding:2px 6px');
+23866:// BANNON — v102 CLINICAL SYSTEM UPGRADE
+23871:  if (window.__BANNON_CLINICAL_ACTIVE__) return;
+23872:  window.__BANNON_CLINICAL_ACTIVE__ = true;
+23878:    BANNON:  { neck: 1.0,  chest: 1.05, limbs: 1.00, head: 1.00, hip: 1.00, hairStyle: 'SPIKY',   wearTrunks: 'Red' },
+23968:      const nameKey = (parentFighter.opts && parentFighter.opts.name) ? parentFighter.opts.name.toUpperCase() : 'BANNON';
+23969:      const bScale = BONE_SCALES[nameKey] || BONE_SCALES['BANNON'];
+24110:    const nameKey = (this.opts && this.opts.name) ? this.opts.name.toUpperCase() : 'BANNON';
+24111:    const bScale = BONE_SCALES[nameKey] || BONE_SCALES['BANNON'];
+24786:// BANNON v98 — FLOOR PHYSICS · BLOOD ZONES · ROPE CONTACT · APRON COMBAT
+25049:        this.isPlayer ? 'BANNON' : (this.opts && this.opts.name)); }catch(e){}
+25111:  if (vb) vb.textContent = 'BANNON v103';
+25113:  if (ttl) ttl.textContent = 'BANNON — FIGHTER v103';
+25116:console.log('[BANNON v98] Floor physics zone-aware · Blood/stain decal Y fixed · Rope contact 0.42→0.10 · Apron combat · Throw-over extended · Tangle · Shadow zone-tracked');
+25117:console.log('%c[BANNON v103] AI behavior tree: Self-Preservation isPlayer-guarded + cooldown (no more permanent retreat-lock) · grapple chance opened to all styles · NEW Aerial Opportunity node (corner climb + springboard/dive) · Spatial Footwork isPlayer-guarded. Player input/attack/combo code untouched.', 'color:#7CFC00;font-weight:bold;background:#0a1a0a;padding:3px 8px');
+25123:// BANNON v106 — GRAPPLE ESCAPE FLAIL + ZONE SMOOTH + STRIKE VARIATIONS
+25560:console.log('[BANNON v106] Grapple escape 12-anim, zone smooth, hit stepback, strike variation, stumble movement — live.');
+25566:// BANNON · BRICK 53 — FBX ANIMATION IMPORT + SMART CATEGORIZATION SYSTEM
+26148:console.log('%c[BANNON v114 · BRICK 53] FBX ANIM IMPORT + WWE 2K26 TAXONOMY — ONLINE','color:#ff7a1a;font-weight:bold;background:#000;padding:3px 8px');
+26153:console.log('%c[BANNON v114] PER-JOINT SPRING HALFLIFE · SPINAL TORSION WAVE · CLAVICLE PROTRACTION · FOOT ROLL · ARM PENDULUM · CATCH-STEP · TARGET TRACKING — biological suspension system','color:#FFD700;font-weight:bold;background:#000;padding:3px 8px');
+26163:// BANNON · BRICK 55 — HEAVY ATTACK FIX + FALL-BRACING + ARM CONFLICT RESOLUTION
+26321:  console.log('%c[BANNON · BRICK 55] HEAVY FIX — threshold 0.72+runHeld · Fall brace reflex · Arm conflict resolution','color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+26327:// BANNON · BRICK 56 — VISCERAL IMPACT DEEPENING
+26673:  console.log('%c[BANNON · BRICK 56] VISCERAL IMPACT — whiff over-reach · wound clutch · hit-step · arm flail · ground writhe · stagger seed','color:#ff7a1a;font-weight:bold;background:#000;padding:3px 8px');
+26768:        const n1 = this.opts && this.opts.name ? this.opts.name.toUpperCase() : 'BANNON';
+26769:        const n2 = opp.opts && opp.opts.name ? opp.opts.name.toUpperCase() : 'BANNON';
+26887:  console.log('%c[BANNON v117] JOINT LOCKS · DEEP COMBAT RECOIL · ROSTER ARCHETYPES · CAPOEIRA GINGA · HOIST MASS DELTA — injected', 'color:#00ffff;font-weight:bold');
+26890:/* BANNON SYSTEM BRICK — PER-FRAME BONE LENGTH ENFORCEMENT */
+26955:  console.log('%c[BANNON] PER-FRAME BONE LENGTH ENFORCEMENT — injected', 'color:#ff00ff;font-weight:bold');
+26958:/* BANNON SYSTEM BRICK — BULK FBX ASSET LOADER & MOVEDEX REGISTRAR (WWE 2K26 STRUCTURE) */
+26960:    window.BANNON_LOAD_FBX_LIBRARY = async function() {
+26962:            console.error('[BANNON FBX BATCH] FBXLoader must be loaded to batch-import assets.');
+27043:            call: 'window.BANNON_LOAD_FBX_LIBRARY()'
+27048:/* BANNON SYSTEM BRICK — VRM ANATOMICAL POLE VECTOR PROJECTION */
+27115:  console.log('%c[BANNON] VRM ANATOMICAL POLE VECTORS — injected', 'color:#ff00ff;font-weight:bold');
+27211:  console.log('%c[BANNON · BRICK 57] MAT CLIPPING & AUTO-ZONE FIX ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+27213:/* BANNON SYSTEM BRICK — RAGDOLL ANGULAR MOMENTUM TRANSFER */
+27274:  console.log('%c[BANNON] RAGDOLL ANGULAR MOMENTUM TRANSFER — injected', 'color:#ff00ff;font-weight:bold');
+27277:/* BANNON SYSTEM BRICK — RAYCAST-DRIVEN FOOT IK */
+27338:  console.log('%c[BANNON] RAYCAST-DRIVEN FOOT IK — injected', 'color:#ff00ff;font-weight:bold');
+27341:/* BANNON SYSTEM BRICK — NARROWPHASE MULTI-BODY COLLISION */
+27401:  console.log('%c[BANNON] NARROWPHASE MULTI-BODY COLLISION — injected', 'color:#ff00ff;font-weight:bold');
+27404:/* BANNON SYSTEM BRICK 58 — OVERGROWTH VERLET VELOCITY CLAMP & SELF-COLLISION */
+27473:  console.log('%c[BANNON · BRICK 58] OVERGROWTH KINETIC CAP & SELF-COLLISION ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+27476:/* BANNON SYSTEM BRICK 59 — EUPHORIA SELF-PRESERVATION (ACTIVE FALL BRACING) */
+27557:  console.log('%c[BANNON · BRICK 59] EUPHORIA FALL BRACING ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+27560:/* BANNON SYSTEM BRICK 60 — KINEMATIC STRIKE RETARGETING & GOAL-ORIENTED STANCES */
+27653:  console.log('%c[BANNON · BRICK 60] KINEMATIC STRIKE RETARGETING & GOAL-ORIENTED STANCES ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+27656:/* BANNON SYSTEM BRICK 61 — EXANIMA CENTER OF MASS WEAPONIZATION */
+27701:  console.log('%c[BANNON · BRICK 61] EXANIMA CENTER OF MASS WEAPONIZATION ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+27704:/* BANNON SYSTEM BRICK 62 — EUPHORIA INVERTED PENDULUM BALANCING */
+27752:  console.log('%c[BANNON · BRICK 62] EUPHORIA INVERTED PENDULUM BALANCE ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+27755:/* BANNON SYSTEM BRICK 63 — BULLET PHYSICS CONE-TWIST JOINT LOCKS */
+27822:  console.log('%c[BANNON · BRICK 63] BULLET CONE-TWIST JOINT LOCKS ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+27825:/* BANNON SYSTEM BRICK 64 — JOLT PHYSICS MATERIAL SLIPPAGE (SWEAT) */
+27869:  console.log('%c[BANNON · BRICK 64] JOLT PHYSICS GRAPPLE FRICTION (SWEAT) ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+27872:/* BANNON SYSTEM BRICK 65 — GISH VOLUME PRESERVATION (SQUASH & STRETCH) */
+27931:  console.log('%c[BANNON · BRICK 65] GISH VOLUME PRESERVATION ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+27934:/* BANNON SYSTEM BRICK 66 — RIGS OF RODS SOFT BODY CANVAS DEFORMATION */
+27996:  console.log('%c[BANNON · BRICK 66] RIGS OF RODS SOFT BODY CANVAS ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+27999:/* BANNON SYSTEM BRICK 67 — XASH3D SPATIAL PREDICTION (FOOT PLANTING) */
+28044:  console.log('%c[BANNON · BRICK 67] XASH3D SPATIAL MOVEMENT PREDICTION ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28047:/* BANNON SYSTEM BRICK 68 — PROJECT CHRONO BIOMECHANICAL FATIGUE */
+28092:  console.log('%c[BANNON · BRICK 68] PROJECT CHRONO BIOMECHANICAL FATIGUE ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28094:/* BANNON SYSTEM BRICK 69 — OPEN DYNAMICS ENGINE (ODE) ABSOLUTE STABILITY DAEMON */
+28145:  console.log('%c[BANNON · BRICK 69] OPEN DYNAMICS ENGINE: NaN / INFINITY FIREWALL ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28148:/* BANNON SYSTEM BRICK 70 — OVERGROWTH JOINT STRESS DEFORMATION */
+28181:  console.log('%c[BANNON · BRICK 70] OVERGROWTH: JOINT STRESS DEFORMATION ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28184:/* BANNON SYSTEM BRICK 71 — TORIBASH KINETIC ENERGY SLAM INJECTION */
+28215:  console.log('%c[BANNON · BRICK 71] TORIBASH: KINETIC ENERGY SLAM INJECTION ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28218:/* BANNON SYSTEM BRICK 72 — BARE METTLE CENTER OF MASS WEAPONIZATION V2 */
+28245:  console.log('%c[BANNON · BRICK 72] BARE METTLE (EXANIMA): CORE MOTOR SHUTDOWN ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28248:/* BANNON SYSTEM BRICK 73 — UNITY CONFIGURABLE JOINTS (ROTATION CLAMP) */
+28280:  console.log('%c[BANNON · BRICK 73] UNITY CONFIGURABLE JOINTS: ANGULAR CLAMP ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28283:/* BANNON SYSTEM BRICK 74 — ACTIVE RAGDOLL ABSOLUTE FIREWALL */
+28329:  console.log('%c[BANNON · BRICK 74] ACTIVE RAGDOLL FIREWALL ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28331:/* BANNON SYSTEM BRICK 75 — WOBBLE NAN FILTER */
+28357:  console.log('%c[BANNON · BRICK 75] WOBBLE NAN FILTER ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28359:/* BANNON SYSTEM BRICK 76 — BARYCENTRIC ROOT SMOOTHING */
+28404:  console.log('%c[BANNON · BRICK 76] BARYCENTRIC ROOT SMOOTHING ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28407:/* BANNON SYSTEM BRICK 77 — SUMOTORI DREAMS CENTER-OF-MASS BALANCE */
+28445:  console.log('%c[BANNON · BRICK 77] SUMOTORI DREAMS BALANCE ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28448:/* BANNON SYSTEM BRICK 78 — GANG BEASTS ACTIVE GRIP TENSION */
+28502:  console.log('%c[BANNON · BRICK 78] GANG BEASTS ACTIVE GRIP ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28505:/* BANNON SYSTEM BRICK 79 — EUPHORIA PREDICTIVE STAGGER CATCH */
+28557:  console.log('%c[BANNON · BRICK 79] EUPHORIA PREDICTIVE STAGGER CATCH ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28560:/* BANNON SYSTEM BRICK 80 — DEAD OR ALIVE 6 IMPACT RIPPLE DAEMON */
+28605:  console.log('%c[BANNON · BRICK 80] DOA IMPACT RIPPLE DAEMON ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28608:/* BANNON SYSTEM BRICK 81 — EXANIMA KINEMATIC TRIP DAEMON (LEG SWEEPS) */
+28647:  console.log('%c[BANNON · BRICK 81] EXANIMA KINEMATIC TRIP DAEMON ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28650:/* BANNON SYSTEM BRICK 82 — OVERGROWTH TUMBLE PRESERVATION */
+28693:  console.log('%c[BANNON · BRICK 82] OVERGROWTH TUMBLE PRESERVATION ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28696:/* BANNON SYSTEM BRICK 83 — TORIBASH JOINT HARDENING (PRE-IMPACT TENSION) */
+28741:  console.log('%c[BANNON · BRICK 83] TORIBASH JOINT HARDENING ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28744:/* BANNON SYSTEM BRICK 84 — OPEN DYNAMICS ASYMMETRIC FRICTION ANCHORS */
+28784:  console.log('%c[BANNON · BRICK 84] ODE ASYMMETRIC GROUND FRICTION ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28787:/* BANNON SYSTEM BRICK 85 — PROJECT CHRONO MUSCULAR FATIGUE DECAY */
+28831:  console.log('%c[BANNON · BRICK 85] PROJECT CHRONO MUSCULAR FATIGUE ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28834:/* BANNON SYSTEM BRICK 86 — CYCLIC COORDINATE DESCENT (CCD) BONE CLAMP */
+28875:  console.log('%c[BANNON · BRICK 86] CCD BONE LENGTH CLAMPS ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28878:/* BANNON SYSTEM BRICK 87 — RIGS OF RODS VOLUME PRESERVATION (SLAM SQUASH) */
+28932:  console.log('%c[BANNON · BRICK 87] RIGS OF RODS VOLUME PRESERVATION ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28935:/* BANNON SYSTEM BRICK 88 — SYNTHETIC ENDORPHIN NERVOUS SYSTEM REBOOT */
+28982:  console.log('%c[BANNON · BRICK 88] ENDORPHIN NERVOUS SYSTEM REBOOT ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+28985:/* BANNON SYSTEM BRICK 89 — FIGHT NIGHT ROUND 4 GLANCING BLOWS */
+29025:  console.log('%c[BANNON · BRICK 89] FIGHT NIGHT ROUND 4 GLANCING BLOWS ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+29028:/* BANNON SYSTEM BRICK 90 — EUPHORIA 2.0 (RDR 2) FATIGUE LOCOMOTION SWAY */
+29060:  console.log('%c[BANNON · BRICK 90] EUPHORIA 2.0 FATIGUE LOCOMOTION SWAY ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+29063:/* BANNON SYSTEM BRICK 91 — SKATE 3 HALL OF MEAT BRACING (FALL PROTECTION) */
+29102:  console.log('%c[BANNON · BRICK 91] SKATE 3 HALL OF MEAT BRACING ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+29105:/* BANNON SYSTEM BRICK 92 — HUMAN FALL FLAT ASYMPTOTIC GRIP DECAY */
+29153:  console.log('%c[BANNON · BRICK 92] HUMAN FALL FLAT ASYMPTOTIC GRIP DECAY ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+29156:/* BANNON SYSTEM BRICK 93 — BEAMNG.DRIVE / WRECKFEST LOCALIZED SWELLING */
+29204:  console.log('%c[BANNON · BRICK 93] BEAMNG.DRIVE VOLUMETRIC SWELLING ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+29207:/* BANNON SYSTEM BRICK 94 — LOCALIZED IMPACT RECOIL (MESH SEGMENT REACTION) */
+29289:  console.log('%c[BANNON · BRICK 94] LOCALIZED IMPACT REACTION SYSTEM ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+29292:/* BANNON SYSTEM BRICK 95 — SURFACE-DAMAGE PHYSICS RESOLVER INTEGRATION */
+29336:  console.log('%c[BANNON · BRICK 95] MATERIAL-BASED PHYSICS RESOLVER ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
+29339:/* BANNON SYSTEM BRICK 118 — BIOLOGICAL DEGRADATION & ANATOMICAL POLE MATRICES */
+29430:  const vb=document.getElementById('ver-badge'); if(vb) vb.textContent='BANNON v118';
+29439:  console.log('%c[BANNON v118] AAA MOTOR MATH · BIOLOGY RENDER PASS · POLE VECTORS LATCHED', 'color:#00ffff;font-weight:bold;background:#000;padding:2px 6px');
+29442:/* BANNON SYSTEM BRICK 119 - SEAMLESS AAA BACKGROUND FBX MOCAP INJECTION */
+29444:    console.log("%c[BANNON v119] AUTO-MOCAP BOOTSTRAP INITIALIZED", "color:#00ffcc;font-weight:bold");
+29449:        if (typeof window.__FBX_READY !== 'undefined' && window.__FBX_READY && typeof window.BANNON_LOAD_FBX_LIBRARY === 'function') {
+29451:            console.log("%c[BANNON v119] FBXLOADER DETECTED. AUTO-FETCHING 80+ MOCAP FILES IN THE BACKGROUND.", "color:#00ffcc;font-weight:bold");
+29453:            // Override the BANNON_LOAD_FBX_LIBRARY to propagate to all fighter movesets!
+29454:            const _oldLoader = window.BANNON_LOAD_FBX_LIBRARY;
+29455:            window.BANNON_LOAD_FBX_LIBRARY = async function() {
+29494:            window.BANNON_LOAD_FBX_LIBRARY();
+29506:    if (vb) vb.textContent = 'BANNON v119';

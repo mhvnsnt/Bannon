@@ -1,0 +1,93 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email == 'MarquisWhitacre@gmail.com' || request.auth.token.admin == true);
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // User validation
+    function isValidUser(data) {
+      return data.keys().hasAll(['email', 'createdAt']) &&
+             data.email is string;
+    }
+
+    match /simulation_states/{userId} {
+      allow read, write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      
+      match /chat_sessions/{sessionId} {
+        allow read, write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      }
+
+      match /nodes/{nodeId} {
+        allow read, write: if isSignedIn() && (request.auth.uid == userId || isAdmin());
+      }
+    }
+
+    // Vault Entry validation
+    function isValidVaultEntryCreate(data) {
+      return data.keys().hasAll(['ownerId', 'label', 'timestamp']) &&
+             data.keys().size() >= 3 && data.keys().size() <= 7 &&
+             data.ownerId is string && data.ownerId == request.auth.uid &&
+             data.label is string && data.label.size() <= 200 &&
+             data.timestamp is string &&
+             (!('text' in data.keys()) || (data.text is string && data.text.size() <= 10000)) &&
+             (!('tags' in data.keys()) || (data.tags is list && data.tags.size() <= 50)) &&
+             (!('encryptedData' in data.keys()) || (data.encryptedData is string && data.encryptedData.size() <= 20000));
+    }
+
+    function isValidVaultEntryUpdate(data) {
+      return data.ownerId is string && data.ownerId == existing().ownerId &&
+             data.label is string && data.label.size() <= 200 &&
+             (!('text' in data.keys()) || (data.text is string && data.text.size() <= 10000)) &&
+             (!('tags' in data.keys()) || (data.tags is list && data.tags.size() <= 50)) &&
+             (!('encryptedData' in data.keys()) || (data.encryptedData is string && data.encryptedData.size() <= 20000));
+    }
+
+    match /vault/{entryId} {
+      // Intentionally omitting Admin 'allow list' blanket read, to enforce index creation/queries correctly
+      // but actually, Prime Node needs to see everyone's data. So we allow list if isAdmin().
+      allow get: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && isValidId(entryId) && isValidVaultEntryCreate(incoming());
+      allow update: if isSignedIn() && isValidId(entryId) && (existing().ownerId == request.auth.uid || isAdmin()) && isValidVaultEntryUpdate(incoming()) && 
+                    (isAdmin() || incoming().diff(existing()).affectedKeys().hasOnly(['label', 'text', 'tags', 'encryptedData']));
+      allow delete: if isSignedIn() && isValidId(entryId) && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    // Logs validation
+    function isValidAppLogCreate(data) {
+      return data.keys().hasAll(['ownerId', 'action', 'timestamp']) &&
+             data.keys().size() == 3 &&
+             data.ownerId is string && data.ownerId == request.auth.uid &&
+             data.action is string && data.action.size() <= 500 &&
+             data.timestamp is string;
+    }
+
+    match /logs/{logId} {
+      allow create: if isSignedIn() && isValidId(logId) && isValidAppLogCreate(incoming());
+      allow get, list: if isAdmin();
+    }
+
+    match /workspace/{userId} {
+      allow read, write: if isSignedIn() && (request.auth.uid == userId || isAdmin() || userId == "offline-architect" || userId == "offline-identity-key");
+    }
+  }
+}

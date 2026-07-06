@@ -1,8 +1,10 @@
 node_modules/
-build/
 dist/
-coverage/
-.DS_Store
+fight_history.json
+move_fitness.json
+move_fitness.json.transitions
+learned_content.json
+fighter_profiles.json
+forged_characters.json
+mocap_metadata.json
 *.log
-.env*
-!.env.example

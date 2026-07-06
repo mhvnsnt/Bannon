@@ -1,0 +1,3 @@
+root   ::= "{\n  \"jsonrpc\": \"2.0\",\n  \"method\": \"ast/mutate\",\n  \"params\": {\n    \"target_file\": \"" string "\",\n    \"mutation_type\": \"" muttype "\",\n    \"field_name\": \"" string "\",\n    \"new_value\": \"" string "\"\n  }\n}"
+string ::= "\"" [^"\\]* "\""
+muttype ::= "REPLACE_FIELD" | "ADD_FUNCTION" | "UPDATE_STRUCT" | "INJECT_DEPENDENCY"

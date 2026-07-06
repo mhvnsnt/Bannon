@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PRIME ARCHITECT SPACE SHOOTER</title>
+<style>
+  body { margin:0; background:#050510; display:flex; justify-content:center; align-items:center; height:100vh; overflow: hidden; font-family: monospace; }
+  canvas { border: 2px solid #00ffcc; box-shadow: 0 0 40px #00ffcc44; }
+  .hud { position:absolute; top:20px; color:#00ffcc; text-align:center; width:100%; pointer-events:none; }
+</style>
+</head>
+<body>
+<div class="hud">
+  <h1>GOD MODE SPACE SHOOTER</h1>
+  <p>WASD to Move | SPACE to Fire</p>
+</div>
+<canvas id="game" width="800" height="600"></canvas>
+
+<script>
+// Space Shooter - Prime Architect Edition
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+
+let score = 0;
+let gameOver = false;
+
+// Player Ship
+const player = { x: 400, y: 500, width: 30, height: 30, speed: 6, cooldown: 0 };
+const keys = {};
+
+document.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+document.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+// Arrays for entities
+const bullets = [];
+const enemies = [];
+const particles = [];
+
+function spawnEnemy() {
+  if (Math.random() < 0.03) {
+    enemies.push({
+      x: Math.random() * (canvas.width - 30),
+      y: -30,
+      width: 30,
+      height: 30,
+      speed: 1.5 + Math.random() * 2
+    });
+  }
+}
+
+function update() {
+  if (gameOver) return;
+
+  // Player movement
+  if ((keys['a'] || keys['arrowleft']) && player.x > 0) player.x -= player.speed;
+  if ((keys['d'] || keys['arrowright']) && player.x < canvas.width - player.width) player.x += player.speed;
+  if ((keys['w'] || keys['arrowup']) && player.y > 0) player.y -= player.speed;
+  if ((keys['s'] || keys['arrowdown']) && player.y < canvas.height - player.height) player.y += player.speed;
+
+  // Firing
+  if (player.cooldown > 0) player.cooldown--;
+  if (keys[' '] && player.cooldown === 0) {
+    bullets.push({ x: player.x + player.width/2 - 2, y: player.y, width: 4, height: 15, speed: -10 });
+    player.cooldown = 15;
+  }
+
+  // Bullets
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    bullets[i].y += bullets[i].speed;
+    if (bullets[i].y < 0) bullets.splice(i, 1);
+  }
+
+  // Enemies
+  spawnEnemy();
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    let e = enemies[i];
+    e.y += e.speed;
+    
+    // Collision with player
+    if (e.x < player.x + player.width && e.x + e.width > player.x &&
+        e.y < player.y + player.height && e.y + e.height > player.y) {
+      gameOver = true;
+    }
+
+    if (e.y > canvas.height) {
+      enemies.splice(i, 1);
+      continue;
+    }
+
+    // Collision with bullets
+    for (let j = bullets.length - 1; j >= 0; j--) {
+      let b = bullets[j];
+      if (b.x < e.x + e.width && b.x + b.width > e.x &&
+          b.y < e.y + e.height && b.y + b.height > e.y) {
+        
+        // Spawn explosion particles
+        for(let p=0; p<15; p++) {
+          particles.push({x: e.x+e.width/2, y: e.y+e.height/2, vx: (Math.random()-0.5)*5, vy: (Math.random()-0.5)*5, life: 30});
+        }
+        
+        enemies.splice(i, 1);
+        bullets.splice(j, 1);
+        score += 10;
+        break;
+      }
+    }
+  }
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    let p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Player
+  ctx.fillStyle = '#00ffcc';
+  ctx.beginPath();
+  ctx.moveTo(player.x + player.width/2, player.y);
+  ctx.lineTo(player.x, player.y + player.height);
+  ctx.lineTo(player.x + player.width, player.y + player.height);
+  ctx.fill();
+
+  // Bullets
+  ctx.fillStyle = '#ff0055';
+  bullets.forEach(b => ctx.fillRect(b.x, b.y, b.width, b.height));
+
+  // Enemies
+  ctx.fillStyle = '#ff3300';
+  enemies.forEach(e => ctx.fillRect(e.x, e.y, e.width, e.height));
+
+  // Particles
+  ctx.fillStyle = '#ffaa00';
+  particles.forEach(p => {
+    ctx.globalAlpha = p.life / 30;
+    ctx.fillRect(p.x, p.y, 4, 4);
+    ctx.globalAlpha = 1;
+  });
+
+  // Score
+  ctx.fillStyle = '#00ffcc';
+  ctx.font = '24px monospace';
+  ctx.fillText('SCORE: ' + score, 20, 40);
+
+  if (gameOver) {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#ff0055';
+    ctx.font = 'bold 48px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('SYSTEM COMPROMISED', canvas.width/2, canvas.height/2);
+    ctx.font = '24px monospace';
+    ctx.fillText('REFRESH TO REBOOT', canvas.width/2, canvas.height/2 + 50);
+  }
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>
