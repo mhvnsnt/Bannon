@@ -2080,6 +2080,11 @@ Object.assign(MOVESET_DB, {
   CASSIAN_THORNE:{ maxHp:104, stamina:210, chin:100, speedMultiplier:1.12, powerMultiplier:1.06, moves:['QUESTION MARK KICK','SPINNING HEEL KICK','CHECK HOOK','LEAD UPPERCUT'] }, // flawless solitary perfection (the lure)
   SOMBRA_NEGRA: { maxHp:92,  stamina:230, chin:88,  speedMultiplier:1.22, powerMultiplier:0.92, moves:['MEIA LUA','TORNADO KICK','SPIN HOOK KICK','FLYING KNEE'] }, // steals finishers
   MAIME:        { maxHp:120, stamina:200, chin:112, speedMultiplier:1.10, powerMultiplier:1.20, moves:['SPINNING ELBOW','OVERHAND BOMB','NECKBREAKER','AXE KICK'] },  // inner antagonist made flesh (boss)
+  // SOLARIS JUSTICE — Marquis's ORIGINAL idealistic FACE persona (Book 1 backstory), the golden
+  // "truth and justice" hero he was before the betrayal made Bannon. SAME PERSON as Bannon/Maime,
+  // DIFFERENT character + moveset (WWE-2K "persona" model): high-flying, heroic, agile/high-risk
+  // (his Exp5 freedom moves, un-suppressed). Detailed look awaits owner art — palette is gold/solar.
+  SOLARIS_JUSTICE:{ maxHp:100, stamina:230, chin:96, speedMultiplier:1.20, powerMultiplier:1.02, moves:['RAT SWEEP','SUPERMAN PUNCH','FLYING KNEE','HEAD KICK'] },
   // --- canon women (so the roster's female body types aren't a single mould) ---
   QUEEN_TYNESHIA:{ maxHp:112, stamina:205, chin:104, speedMultiplier:1.05, powerMultiplier:1.14, moves:['NECKBREAKER','SUPLEX','SPINNING ELBOW','AXE KICK'] }, // regal powerhouse queen
   KARMA:        { maxHp:96,  stamina:230, chin:92,  speedMultiplier:1.2,  powerMultiplier:0.95, moves:['QUESTION MARK KICK','SPINNING HEEL KICK','CHECK HOOK','FLYING KNEE'] } // fast striker
@@ -2118,6 +2123,7 @@ const CHAR_META = {
   CASSIAN_THORNE:{ label:'Flawless · The Lure',   col:0xb0b0c0, accent:0xfff0c0, skin:0xe0c0a0, faction:'Corporate Structure',  canon:true,  bio:'Solitary perfection weaponized — every immaculate strike is bait toward the abyss.', archetype:'technician' },
   SOMBRA_NEGRA:  { label:'The Finisher Thief',    col:0x101018, accent:0xff2a6a, skin:0x9a6a4a, faction:'Agents of Temptation', canon:true,  bio:'Steals your finisher mid-match and beats you with it — your best self, turned.', archetype:'highFlyer' },
   MAIME:         { label:'The Voice Made Flesh',  col:0x500a0a, accent:0xff0040, skin:0xd0a090, faction:'Agents of Temptation', canon:true,  bio:'Bannon’s inner antagonist given a body — the boss at the bottom of every spiral.', archetype:'enigma' },
+  SOLARIS_JUSTICE:{ label:'Truth & Justice',      col:0xffb020, accent:0xfff0a0, skin:0x8a5a34, faction:'Alliance',            canon:true,  bio:'Marquis before the mask — the golden face who fought for truth and justice, until the business broke him into Bannon.', archetype:'highFlyer' },
   QUEEN_TYNESHIA:{ label:'The Queen',             col:0x5a1a6a, accent:0xffd24a, skin:0x7a5236, faction:'Alliance',            canon:true,  bio:'Queen Tyneshia — regal, dominant, and the heart of the Alliance; she rules the ring she stands in.', archetype:'powerhouse' },
   KARMA:         { label:'What Comes Around',      col:0x1a6a5a, accent:0xff7acc, skin:0x6a4830, faction:'Independent Variable', canon:true,  bio:'Karma — a lightning-fast striker who collects every debt the ring owes, with interest.', archetype:'highFlyer' }
 };
@@ -13001,8 +13007,22 @@ try{
   // canned path): kind 'grapple' auto-runs grab -> named position lift -> delivery; kind 'strike'
   // is a named max-power shot. Canon names from the OTTR cast doc / dossiers; non-canon originals
   // get proprietary names. BANNON's canon finisher awaits the owner's spec (placeholder flagged).
+  // v154 MARQUIS PERSONA STACK (canon: ONE man, THREE characters — WWE-2K "personas", each its own
+  // moveset/finisher/look, NOT just attires): Marquis Deshaun Whitacre -> SOLARIS JUSTICE (original
+  // golden face) -> BANNON (masked steel heel) -> MAIME (raw alter-ego beneath). MAIME can ALSO be
+  // worn as a Bannon ATTIRE (Bannon's moves, Maime's paint) — persona vs attire, both supported.
+  window.MARQUIS_PERSONAS = {
+    realName:'Marquis Deshaun Whitacre',
+    personas:[
+      { key:'SOLARIS_JUSTICE', label:'Solaris Justice', role:'original idealistic FACE (pre-betrayal)', voice:'open/heroic' },
+      { key:'BANNON',          label:'Bannon',          role:'masked steel heel — The Broken Architect / The Executioner', voice:'processed/cold', mantra:'Vulnerability is a choice. I choose steel.' },
+      { key:'MAIME',           label:'Maime',           role:'raw psychotic alter-ego beneath Bannon (Verbal Leakage)', voice:'raw/high-pitched/manic' }
+    ]
+  };
   window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
-    BANNON:        { name:"EXECUTIONER'S DROP",        kind:'grapple', pos:'CROSS_POWERBOMB', deliver:'slam'  },   // placeholder until owner names it
+    BANNON:        { name:'THE STRUCTURAL COLLAPSE',   kind:'grapple', pos:'BACK_SUPLEX',     deliver:'toss', sub:'THE RING OF SATURN' },   // CANON (Book 1): deadlift German suplex -> Ring of Saturn submission, held until the opponent is visibly broken
+    MAIME:         { name:'VERBAL LEAKAGE',            kind:'grapple', pos:'DDT',             deliver:'spike' },   // the alter-ego's raw spike — unfiltered violence
+    SOLARIS_JUSTICE:{ name:'THE SOLAR FLARE',          kind:'strike' },                                          // high-flying justice finish (placeholder name; owner art pending)
     FINXSSE:       { name:'GETBACKK',                  kind:'grapple', pos:'FIREMANS_CARRY',  deliver:'slam'  },   // canon: F5-class off the shoulders
     STICK_UP:      { name:'THE OPTIMIZATION DRIVE',    kind:'grapple', pos:'BACK_SUPLEX',     deliver:'toss'  },   // canon: exploder suplex
     STAN_COMBS:    { name:'THE HOSTILE TAKEOVER',      kind:'grapple', pos:'CHOKESLAM',       deliver:'choke' },

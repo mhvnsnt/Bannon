@@ -36,7 +36,22 @@ North Star (additive-only, surgical, physics-first); `window.MANIFESTO` / `windo
 
 ## Character visual canon (books + owner sketches — the identity stack)
 Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (masked heel) → **Maime**
-(alter-ego beneath). Same man, three looks, three movesets/voices:
+(alter-ego beneath). Same man, three looks, three movesets/voices. WIRED as `window.MARQUIS_PERSONAS`
+(persona = own moveset/finisher/look; MAIME ALSO works as a Bannon ATTIRE via CHAR_ALTS — persona vs
+attire both supported, WWE-2K model). **BANNON's CANON finisher (Book 1, was a placeholder): THE
+STRUCTURAL COLLAPSE = deadlift German suplex → THE RING OF SATURN submission, held until the opponent
+is visibly broken** (FINISHER_MOVES.BANNON pos BACK_SUPLEX + sub tag). MAIME fin = VERBAL LEAKAGE
+(DDT spike). SOLARIS_JUSTICE now a selectable persona (gold/solar palette, high-flying justice
+moveset, THE SOLAR FLARE — placeholder name, owner art pending; books define the concept: the
+idealistic "truth and justice" face Marquis was before the betrayal made Bannon). Bannon's OTHER
+canon moves (Book 1): Deadlift German Suplexes, Running Powerslam (onto thumbtacks), Boston Crab,
+Deadlift Spinebuster, self-destructive Flying Headbutt; carries a coiled steel cable as a symbolic
+weapon. Mask = symbolic armor (Sun in Scorpio) w/ a functional jaw for promos; visual = Mankind/Kane
++ MF DOOM. Every canon char has an "OTR" (Outside The Ring) civilian persona classed Aligned/
+Contrasting/Blurred — see canon/00_cast_and_world.md (READ IT — deep per-character detail, signatures,
+finishers, OTR personas, numerology/astrology "character engine"). Books: canon/01..06_*.md are the
+per-book summaries; raw texts are the "Off The Top Rope Book N" .txt files at repo root (DO NOT
+commit those — commercial manuscripts; the canon/*.md distillations are the committed knowledge).
 - **BANNON** — "The Broken Architect / The Executioner." Metallic steel-blue **3/4 UPPER mask**
   (brow→below nose) with tribal/mechanical panel detail, **free-floating jaw/chin plate** with a
   "U" engraving, dark eye sockets; blond-brown **dreadlocks**; brown skin, muscular. Canon sketches:
