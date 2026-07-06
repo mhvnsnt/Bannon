@@ -1,0 +1,14 @@
+[providers]
+node = "20"
+
+[phases.setup]
+nixPkgs = ["nodejs_20", "npm"]
+
+[phases.install]
+cmds = ["npm install", "npm install -g pm2 tsx typescript"]
+
+[phases.build]
+cmds = ["npm run build"]
+
+[start]
+cmd = "pm2-runtime start dist/server.cjs --name 'codedummy-daemon'"
