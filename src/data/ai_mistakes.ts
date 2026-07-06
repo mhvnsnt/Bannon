@@ -1,0 +1,22 @@
+export const AI_BUILDER_MISTAKES = [
+  "1. Not locking down or securing API keys on client-side bundles.",
+  "2. Making non-draggable overlay panels that cover vital UI elements.",
+  "3. Ignoring mobile viewport scaling and responsive breakpoints.",
+  "4. Allowing infinite context loops and runaway API spending.",
+  "5. Not providing user cancellation hooks for long-running AI tasks.",
+  "6. Hardcoding AI personalities without giving users override controls.",
+  "7. Assuming LLM outputs are always valid JSON; failing to parse robustly.",
+  "8. Omitting loading states or latency transparency for users.",
+  "9. Building complex features without local testing fallbacks.",
+  "10. Failing to modularize the codebase, causing token limit truncation during AI edits.",
+  "11. Storing sensitive data in unencrypted local storage.",
+  "12. Polling APIs too aggressively instead of using WebSockets or SSE.",
+  "13. Neglecting accessibility (a11y) and keyboard navigation.",
+  "14. Not setting strict timeouts on external API calls.",
+  "15. Trusting AI-generated code without sandboxing or linting.",
+  "16. Ignoring memory leaks in React useEffect dependencies.",
+  "17. Unbounded array growth in state (e.g. storing massive chat histories in RAM).",
+  "18. Using absolute positioning without resize observers.",
+  "19. Coupling the UI too tightly to a specific AI provider's SDK.",
+  "20. Failing to sanitize user input before passing it to LLM prompts."
+];

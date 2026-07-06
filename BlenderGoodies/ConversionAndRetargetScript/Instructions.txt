@@ -1,0 +1,33 @@
+If this script ever actually gets used, I'll automate/improve a lot of this. It's a rough solution right now. Once setup though it works really well. Notes are important to read! I'll try to include an example setup on the next release.
+
+
+# Notes:
+
+!!! -BLENDER WILL APPEAR FROZEN WHEN USING THIS SCRIPT! You can check that it's running by looking for the output files. I'm sure there are better ways to approach this, but when a python script is run in Blender it locks Blender unless you take a couple of extra steps. I'm pretty sure this state prevents it from freeing up resources, making the processing of animations slightly slower with each one. Instead of letting the process take breaks/threading, I took what I thought was a slightly easier/lazier approach, but might have been more work in the end. An external script just opens Blender, runs several conversions, and then closes and re-opens Blender to free up the resources. It's several times faster since I implemented this. Do not try to use the instance of Blender this opens, it'll just give you warnings it's not responding. Those can be ignored unless you can see no files are being output or just want/need to close blender. I should probably just set it up to have no display(it's literally just an extra command line parameter), but that might make it harder for less tech savy people to force close.
+
+-The re-targeting part of this script requires Auto-Rig Pro! The conversion script has instructions if you just want to convert the animations without re-targeting.
+
+-if use_spot is set to True(Default), a file named "spot" will be generated in the folder this is run from. This will save which animation you're on when converting. If the process gets interupted, or you need to close blender for any reason, it'll pick right back up where you left off. It's also used for my cheap trick to speed up the conversions. DELETE OR CHANGE THE PATH OF THIS FILE TO REDO ANIMATIONS! Conversion will start one .bvh file after the one saved in spot.
+
+- Files output next to the original .bvh file.
+
+
+
+# Use:
+
+Setup:
+
+*You can skip these next steps if you just want to convert without remapping:
+- Make a Blender File with the armature/rig you want to convert.
+- Open the Auto-Rig Pro Remap Panel and set that rig to the target Armature.
+- Import one of the .bvh files and set it as the source armature.
+- Configure your remap settings(Match the bone names of the .bvh files to your rig's).
+- Remove/delete the .bvh data/file from the scene. (set script convert->rig_target_source_path to this .blend's file path_
+- Duplicate the .blend file
+- In your new file, delete the model and armature. (set script external_run->blend_with_map_removed_rig to this .blend's file path)
+
+*Stop skipping here.
+- Both of the included scripts need to be opened and have their variables set. It's pretty much just paths to things. More details in those files("external_run" and "convert").
+
+
+

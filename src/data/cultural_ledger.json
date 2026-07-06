@@ -1,0 +1,104 @@
+{
+  "entries": [
+    {
+      "id": "ledger-1783301362561-939",
+      "term": "rizz loop",
+      "target_primitive": "infinite_loop",
+      "drift_score": 0.88,
+      "status": "COMMITTED",
+      "context_scraped": "My background cron is caught in a rizz loop, spinning forever in an infinite doomscroll!",
+      "timestamp": "2026-07-06T01:29:22.561Z",
+      "simulation_pass": true
+    },
+    {
+      "id": "ledger-1783301362560-201",
+      "term": "code L-take",
+      "target_primitive": "syntax_error",
+      "drift_score": 0.82,
+      "status": "COMMITTED",
+      "context_scraped": "Yo, this package threw a complete code L-take error. Had to delete node_modules to fix my skill issue.",
+      "timestamp": "2026-07-06T01:29:22.560Z",
+      "simulation_pass": true
+    },
+    {
+      "id": "ledger-1783297642444-5",
+      "term": "NPC Gatekept",
+      "target_primitive": "unauthorized",
+      "drift_score": 0.94,
+      "status": "COMMITTED",
+      "context_scraped": "Tried to deploy but got NPC gatekept by the Cloud Run gateway permissions, totally unauthorized.",
+      "timestamp": "2026-07-06T00:27:22.444Z",
+      "simulation_pass": true
+    },
+    {
+      "id": "ledger-1783297642443-76",
+      "term": "Brainrot Overflow",
+      "target_primitive": "out_of_memory",
+      "drift_score": 0.99,
+      "status": "COMMITTED",
+      "context_scraped": "Deno sandbox just threw a brainrot overflow when running my scripts, completely out of heap memory.",
+      "timestamp": "2026-07-06T00:27:22.443Z",
+      "simulation_pass": true
+    },
+    {
+      "id": "ledger-1783297642443-907",
+      "term": "Code L-Take",
+      "target_primitive": "syntax_error",
+      "drift_score": 0.92,
+      "status": "COMMITTED",
+      "context_scraped": "Yo, this package threw a complete code L-take error. Had to delete node_modules to fix my skill issue.",
+      "timestamp": "2026-07-06T00:27:22.443Z",
+      "simulation_pass": true
+    },
+    {
+      "id": "ledger-1783297642442-19",
+      "term": "Rizz Loop",
+      "target_primitive": "infinite_loop",
+      "drift_score": 0.96,
+      "status": "COMMITTED",
+      "context_scraped": "My background cron is caught in a rizz loop, spinning forever in an infinite doomscroll!",
+      "timestamp": "2026-07-06T00:27:22.442Z",
+      "simulation_pass": true
+    },
+    {
+      "id": "ledger-1",
+      "term": "L-Ratio Crash",
+      "target_primitive": "system_crash",
+      "drift_score": 0.94,
+      "status": "COMMITTED",
+      "context_scraped": "Bro, my entire microVM just took a massive L-ratio crash. Terminated instantly.",
+      "timestamp": "2026-07-04T12:04:12.000Z",
+      "simulation_pass": true
+    },
+    {
+      "id": "ledger-2",
+      "term": "Glaze Loop",
+      "target_primitive": "infinite_loop",
+      "drift_score": 0.88,
+      "status": "COMMITTED",
+      "context_scraped": "The script is stuck in a heavy glaze loop, calling the same node over and over without stop.",
+      "timestamp": "2026-07-05T01:15:30.000Z",
+      "simulation_pass": true
+    },
+    {
+      "id": "ledger-3",
+      "term": "Rizz Lock",
+      "target_primitive": "unauthorized",
+      "drift_score": 0.45,
+      "status": "FLAGGED_AMBIGUOUS",
+      "context_scraped": "I got rizz lock on the auth server. It rejected my token.",
+      "timestamp": "2026-07-05T08:30:22.000Z",
+      "simulation_pass": false
+    },
+    {
+      "id": "ledger-4",
+      "term": "Cook Fail",
+      "target_primitive": "syntax_error",
+      "drift_score": 0.91,
+      "status": "COMMITTED",
+      "context_scraped": "Let him cook but he let the compiler burn. Cook fail on line 42.",
+      "timestamp": "2026-07-05T10:12:15.000Z",
+      "simulation_pass": true
+    }
+  ]
+}
