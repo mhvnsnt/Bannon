@@ -2080,6 +2080,11 @@ Object.assign(MOVESET_DB, {
   CASSIAN_THORNE:{ maxHp:104, stamina:210, chin:100, speedMultiplier:1.12, powerMultiplier:1.06, moves:['QUESTION MARK KICK','SPINNING HEEL KICK','CHECK HOOK','LEAD UPPERCUT'] }, // flawless solitary perfection (the lure)
   SOMBRA_NEGRA: { maxHp:92,  stamina:230, chin:88,  speedMultiplier:1.22, powerMultiplier:0.92, moves:['MEIA LUA','TORNADO KICK','SPIN HOOK KICK','FLYING KNEE'] }, // steals finishers
   MAIME:        { maxHp:120, stamina:200, chin:112, speedMultiplier:1.10, powerMultiplier:1.20, moves:['SPINNING ELBOW','OVERHAND BOMB','NECKBREAKER','AXE KICK'] },  // inner antagonist made flesh (boss)
+  // SOLARIS JUSTICE — Marquis's ORIGINAL idealistic FACE persona (Book 1 backstory), the golden
+  // "truth and justice" hero he was before the betrayal made Bannon. SAME PERSON as Bannon/Maime,
+  // DIFFERENT character + moveset (WWE-2K "persona" model): high-flying, heroic, agile/high-risk
+  // (his Exp5 freedom moves, un-suppressed). Detailed look awaits owner art — palette is gold/solar.
+  SOLARIS_JUSTICE:{ maxHp:100, stamina:230, chin:96, speedMultiplier:1.20, powerMultiplier:1.02, moves:['RAT SWEEP','SUPERMAN PUNCH','FLYING KNEE','HEAD KICK'] },
   // --- canon women (so the roster's female body types aren't a single mould) ---
   QUEEN_TYNESHIA:{ maxHp:112, stamina:205, chin:104, speedMultiplier:1.05, powerMultiplier:1.14, moves:['NECKBREAKER','SUPLEX','SPINNING ELBOW','AXE KICK'] }, // regal powerhouse queen
   KARMA:        { maxHp:96,  stamina:230, chin:92,  speedMultiplier:1.2,  powerMultiplier:0.95, moves:['QUESTION MARK KICK','SPINNING HEEL KICK','CHECK HOOK','FLYING KNEE'] } // fast striker
@@ -2118,6 +2123,7 @@ const CHAR_META = {
   CASSIAN_THORNE:{ label:'Flawless · The Lure',   col:0xb0b0c0, accent:0xfff0c0, skin:0xe0c0a0, faction:'Corporate Structure',  canon:true,  bio:'Solitary perfection weaponized — every immaculate strike is bait toward the abyss.', archetype:'technician' },
   SOMBRA_NEGRA:  { label:'The Finisher Thief',    col:0x101018, accent:0xff2a6a, skin:0x9a6a4a, faction:'Agents of Temptation', canon:true,  bio:'Steals your finisher mid-match and beats you with it — your best self, turned.', archetype:'highFlyer' },
   MAIME:         { label:'The Voice Made Flesh',  col:0x500a0a, accent:0xff0040, skin:0xd0a090, faction:'Agents of Temptation', canon:true,  bio:'Bannon’s inner antagonist given a body — the boss at the bottom of every spiral.', archetype:'enigma' },
+  SOLARIS_JUSTICE:{ label:'Truth & Justice',      col:0xffb020, accent:0xfff0a0, skin:0x8a5a34, faction:'Alliance',            canon:true,  bio:'Marquis before the mask — the golden face who fought for truth and justice, until the business broke him into Bannon.', archetype:'highFlyer' },
   QUEEN_TYNESHIA:{ label:'The Queen',             col:0x5a1a6a, accent:0xffd24a, skin:0x7a5236, faction:'Alliance',            canon:true,  bio:'Queen Tyneshia — regal, dominant, and the heart of the Alliance; she rules the ring she stands in.', archetype:'powerhouse' },
   KARMA:         { label:'What Comes Around',      col:0x1a6a5a, accent:0xff7acc, skin:0x6a4830, faction:'Independent Variable', canon:true,  bio:'Karma — a lightning-fast striker who collects every debt the ring owes, with interest.', archetype:'highFlyer' }
 };
@@ -7369,6 +7375,15 @@ Fighter.prototype.updateRagdoll = function(dt){
         }
       }
     }
+    // v154 POST-CONSTRAINT VELOCITY CLAMP (owner diagnosis: "the constraint solver injects massive
+    // corrective velocity -> joints over-travel -> the body jiggles"). integrate()'s cap runs BEFORE
+    // the 15-iter bone solver above, so constraint corrections re-inflate implied velocity (pos-old)
+    // uncapped — the antigravity flail. Clamp every joint's implied velocity to MAX_BODY_VEL AFTER
+    // the solve by pushing `old` toward `pos`, so the next frame integrates a sane, bounded step.
+    { const _cap=MAX_BODY_VEL*h;
+      for (const j of JOINTS){ const v=this.V[j]; if(!v||v.pinned) continue;
+        let dx=v.pos.x-v.old.x, dy=v.pos.y-v.old.y, dz=v.pos.z-v.old.z; const sp=Math.hypot(dx,dy,dz);
+        if(sp>_cap){ const s=_cap/sp; v.old.x=v.pos.x-dx*s; v.old.y=v.pos.y-dy*s; v.old.z=v.pos.z-dz*s; } } }
     // POWERED RAGDOLL: pull each joint toward relaxed hanging shape (rotated by spine).
     // Move pos AND old together => position correction with NO velocity change => no fling.
     const pv = this.V.pelvis.pos;
@@ -9522,7 +9537,9 @@ function applyDamage(opp, dmg, attacker, move, forceDown){
 
   // combo
   comboCount++;
-  if (attacker) attacker.momentum = clamp((attacker.momentum||0) + 5, 0, 100);
+  // v154: the SIGNATURE half of the spirit meter fills 50% faster (owner spec) — gains below the
+  // 50-point signature threshold are boosted; the climb from 50->100 (finisher) stays standard.
+  if (attacker){ const _mg=((attacker.momentum||0)<50)?7.5:5; attacker.momentum = clamp((attacker.momentum||0) + _mg, 0, 100); }
   if (comboTimeout) clearTimeout(comboTimeout);
   comboTimeout = setTimeout(()=>{ comboCount=0; updateCombo(); }, 1400);
   updateCombo();
@@ -11518,7 +11535,10 @@ function playerAttack(kind){
     return;
   }
 
-  const set = getMoves('BANNON');
+  // v154 FIX: read the PLAYER's actual character moveset, not a hardcoded 'BANNON' — every character
+  // was fighting with Bannon's moves regardless of who you picked.
+  const _pKey=((p.specName||(p.opts&&p.opts.name)||'BANNON')+'').toUpperCase();
+  const set = getMoves(_pKey) || getMoves('BANNON');
   const opp = p.opponent();
   const zone = targetZone();
   const powerMod = keys['shift'] || heldBtns['block'] || heldBtns['mod']; // shift/guard/MOD-btn = loaded power shot / repositioning
@@ -11670,7 +11690,18 @@ function playerAttack(kind){
   else if (kind==='uppercut') mapKind='cross';
   let mv;
   if (kind==='special'){
-    mv = set.reduce((b,m)=> ((m.cat!=='THROW'&&m.cat!=='GROUND'&&m.power>(b?b.power:0))?m:b), null);
+    // v154 FIX: SPECIAL is now DIRECTIONAL too (was always the single highest-power move — that's why
+    // it "only ever did flying knee"). The stick picks the flavor of big move: up = biggest HIGH
+    // strike, down = biggest LOW, fwd = a flying/jumping/lunging move, back = a spinning move,
+    // neutral = the biggest strike overall. Each falls back to overall-biggest if none match.
+    const _elig=(m)=> m && m.cat!=='THROW' && m.cat!=='GROUND';
+    const _biggestOf=(pred)=> set.reduce((b,m)=> ((_elig(m)&&pred(m)&&m.power>(b?b.power:0))?m:b), null);
+    const _overall=_biggestOf(()=>true);
+    if      (sdir==='up')   mv=_biggestOf(m=>m.height==='HIGH');
+    else if (sdir==='down') mv=_biggestOf(m=>m.height==='LOW');
+    else if (sdir==='fwd')  mv=_biggestOf(m=>m.traj==='FLYING'||m.traj==='JUMPING'||m.traj==='DIVING'||m.traj==='SUPERMAN');
+    else if (sdir==='back') mv=_biggestOf(m=>m.traj==='SPINNING'||(m.name&&m.name.indexOf('SPIN')>=0));
+    mv = mv || _overall;
   } else if (STRIKE_MAP[mapKind]){
     const want = STRIKE_MAP[mapKind][sdir] || STRIKE_MAP[mapKind].neutral;
     mv = set.find(m=>m.name===want);
@@ -11682,11 +11713,47 @@ function playerAttack(kind){
   const m = Object.assign({}, mv);   // the directional strike keeps its own height (low/mid/high)
   if (powerMod){ m._loaded=true; if (m.power>66) m.follow = 'KNOCKDOWN'; }
   if (p.running){ m._loaded=true; }   // running strike hits harder & lunges
-  // FINISHER: full momentum + power-mod special = devastating, guaranteed knockdown
+  // v154 SIGNATURE -> FINISHER BANK (owner spec): MOD + jab at 50+ momentum = the character's
+  // SIGNATURE (named from CHAR_FINISHERS.sig where authored) — it spends 50 momentum, hits hard,
+  // and BANKS a stored finisher (max 3). The banked finisher can be spent any time with MOD+special
+  // even below full momentum. Signature meter effectively fills 50% faster (gain boost below 50).
+  if (kind==='jab' && powerMod && (p.momentum||0)>=50 && !p.grappling){
+    p.momentum-=50; p._finBank=Math.min(3,(p._finBank||0)+1);
+    const _sk=((p.specName||(p.opts&&p.opts.name)||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
+    const _sig=(window.CHAR_FINISHERS&&window.CHAR_FINISHERS[_sk]&&window.CHAR_FINISHERS[_sk].sig)
+      ? (window.CHAR_FINISHERS[_sk].sig+'').split('—')[0].trim() : 'SIGNATURE';
+    const sm=Object.assign({}, m, { name:_sig, power:85, follow:'KNOCKDOWN', _loaded:true, _signature:true });
+    flashScreen(0.4); camShake=Math.max(camShake,0.35);
+    announce(_sig+'  [FINISHER BANKED]', fname(p));
+    p.startAttack(sm); return;
+  }
+  // FINISHER: full momentum + power-mod special = the character's NAMED finisher.
+  // v153: named finishers resolve through the real systems — grapple finishers auto-run the actual
+  // grab -> named-position lift -> delivery physics; strike finishers are named max-power shots.
+  // v154: a BANKED finisher (from a signature) fires the same path below full momentum.
+  if (kind==='special' && powerMod && (p._finBank||0)>0 && p.momentum<100){ p._finBank--; p.momentum=100; }
   if (kind==='special' && powerMod && p.momentum>=100){
-    m.power = 100; m.follow='KNOCKDOWN'; m._loaded=true; m._finisher=true;
     p.momentum = 0; flashScreen(0.7); chromAb=0.7; camShake=Math.max(camShake,0.5);
-    announce('FINISHER','BANNON');
+    const _fk=((p.specName||(p.opts&&p.opts.name)||'BANNON')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
+    const FF=(window.FINISHER_MOVES||{})[_fk];
+    if (FF && FF.kind==='grapple' && opp && !opp.isDown()){
+      if (p.startGrab()){
+        announce(FF.name, fname(p));
+        p.grapplePos=FF.pos; p._aiGrapChosen=true;
+        p.craneLift=(GRAPPLE_POSITIONS[FF.pos]||{}).lift0||0; p.craneTwist=0;
+        p.grappleStage=2; p.stateTime=0;
+        const _ld=((GRAPPLE_POSITIONS[FF.pos]||{}).liftDur||0.7);
+        p._liftMinT=_ld;
+        setTimeout(()=>{ try{ if (p.grappling && p.grappleStage>=2 && p.grapplePos===FF.pos){
+          p.grappleStage=3; p.stateTime=0;
+          setTimeout(()=>{ try{ if (p.grappling && p.grappleStage===3) p.grappleDeliver(FF.deliver||'signature', 0); }catch(_){}}, 700);
+        } }catch(_){}}, _ld*1000+250);
+        return;
+      }
+    }
+    m.power = 100; m.follow='KNOCKDOWN'; m._loaded=true; m._finisher=true;
+    if (FF) m.name=FF.name;
+    announce(FF?FF.name:'FINISHER', fname(p));
   }
   p.startAttack(m);
 }
@@ -12298,10 +12365,26 @@ window.BPHYS = (function(){
       let as=(aStam!=null?aStam:1); as=Math.max(0,Math.min(1,as));
       const I=(window.HIT_IMPULSE!=null?window.HIT_IMPULSE:4.0)*(0.5+(power||70)/110)*(0.6+0.4*as)/mass;
       const v0=(window.GRAB_VAR!=null?window.GRAB_VAR:0.04), jz=(Math.random()*2-1)*0.9*(1+v0*10), jy=(Math.random()*0.5)*(1+v0*6);
-      const add=(nm,sx,sy,sz)=>{ const b=by[nm]; if(!b) return; try{ const v=b.linvel(); b.setLinvel({x:v.x+sx, y:v.y+sy, z:v.z+sz}, true); }catch(e){} };
-      add(nodeNm, dirx*I + (Math.random()*2-1)*jz*0.2, (nodeNm==='head'?I*0.5:I*0.25)+jy, dirz*I + jz*0.2);   // primary kinetic ripple at the struck node
-      add('head',  dirx*I*0.8, I*0.45+jy, dirz*I*0.8 + jz);                                                   // visceral lean: spine/head whip back
-      add('torso', dirx*I*0.6, I*0.10,    dirz*I*0.6 + jz*0.6);
+      // v154 FLAIL FIX ("jiggly antigravity body flailing"): add() used to STACK velocity onto
+      // whatever the body already carried, uncapped — a fast combo compounded each hit's ~4-7 m/s
+      // until limbs flew, while the joint motors fought back at full gain (the oscillating flail).
+      // The RESULTING speed is now hard-capped per body (window.RK_VMAX, default 6.5 m/s — above a
+      // real knockback, below orbit). Vertical shares also grounded: a punch whips the head BACK,
+      // it does not launch it upward (head 0.45->0.26, struck node 0.25->0.15 of I).
+      const VMAX=(window.RK_VMAX!=null?window.RK_VMAX:4.5);
+      const add=(nm,sx,sy,sz)=>{ const b=by[nm]; if(!b) return; try{ const v=b.linvel();
+        let nx=v.x+sx, ny=v.y+sy, nz=v.z+sz; const sp=Math.hypot(nx,ny,nz);
+        if(sp>VMAX){ const s=VMAX/sp; nx*=s; ny*=s; nz*=s; }
+        b.setLinvel({x:nx, y:ny, z:nz}, true);
+        // v154 IMPACT DAMPING SPIKE: bleed the kinetic energy fast for ~0.5s after the hit so the
+        // reaction reads heavy and TERMINATES, instead of ringing through the joint motors (the
+        // jiggle). Damping restored automatically.
+        if(!b.__dampT){ b.__dampT=1; try{ b.setLinearDamping(0.5); b.setAngularDamping(0.7); }catch(_){}
+          setTimeout(()=>{ try{ b.setLinearDamping(0.05); b.setAngularDamping(0.08); }catch(_){} b.__dampT=0; }, 500); }
+      }catch(e){} };
+      add(nodeNm, dirx*I + (Math.random()*2-1)*jz*0.2, (nodeNm==='head'?I*0.30:I*0.15)+jy*0.6, dirz*I + jz*0.2);   // primary kinetic ripple at the struck node
+      add('head',  dirx*I*0.8, I*0.26+jy*0.6, dirz*I*0.8 + jz);                                                    // visceral lean: spine/head whip BACK (not up)
+      add('torso', dirx*I*0.6, I*0.08,        dirz*I*0.6 + jz*0.6);
 
       // v123 DEEPEN RECEIVER CHAIN: the impulse must reach the WHOLE structure, not just the
       // upper body — a real hit disrupts the center of mass relative to the base of support.
@@ -12823,10 +12906,28 @@ try{
       if(!window.CHAR_ALTS.MAIME.some(x=>x.id===a.id)) window.CHAR_ALTS.MAIME.push(a); } }
 
   // ── canon/characters dossier integration: bosses + free agents + finisher specs ──
+  // v154: archetype -> default stat block + guard style, so every _addChar character actually
+  // appears in ROSTER_ALL (which iterates MOVESET_DB) with sensible, gimmick-matched numbers.
+  // Previously _addChar only wrote meta/attire/body, so canon chars without a hand-written
+  // MOVESET_DB entry were invisible on the select screen.
+  const _ARCH_STATS={
+    powerhouse:{maxHp:120,stamina:170,chin:112,speedMultiplier:0.86,powerMultiplier:1.26,style:'BRAWLER',moves:['SCORPIO HOOK','RIGHT RIP','BODY KNEE','SUPLEX']},
+    brawler:   {maxHp:110,stamina:190,chin:104,speedMultiplier:0.94,powerMultiplier:1.14,style:'BRAWLER',moves:['FIRE JAB','SCORPIO HOOK','BODY HOOK','STOMP']},
+    striker:   {maxHp:96, stamina:210,chin:94, speedMultiplier:1.14,powerMultiplier:1.0, style:'MUAY_THAI',moves:['HEAD KICK','SPINNING ELBOW','LOW KICK','BODY KICK']},
+    technician:{maxHp:104,stamina:200,chin:100,speedMultiplier:1.02,powerMultiplier:1.02,style:'TECHNICIAN',moves:['NECKBREAKER','SUPLEX','FIRE JAB','BODY KNEE']},
+    highFlyer: {maxHp:86, stamina:236,chin:86, speedMultiplier:1.24,powerMultiplier:0.86,style:'LUCHA',moves:['RAT SWEEP','SUPERMAN PUNCH','FLYING KNEE','HEAD KICK']},
+    freeAgent: {maxHp:100,stamina:200,chin:100,speedMultiplier:1.0, powerMultiplier:1.05,style:'ORTHODOX',moves:['FIRE JAB','LEO CROSS','SCORPIO HOOK','SUPLEX']}
+  };
   const _addChar=(k,meta,attire,hair,body)=>{ if(!window.CHAR_META[k]){ window.CHAR_META[k]=meta; }
     if(attire) window.CHAR_ATTIRE[k]=window.CHAR_ATTIRE[k]||attire;
     if(hair) window.CHAR_HAIR[k]=window.CHAR_HAIR[k]||hair;
-    if(body&&window.CHAR_BODY) window.CHAR_BODY[k]=window.CHAR_BODY[k]||body; };
+    if(body&&window.CHAR_BODY) window.CHAR_BODY[k]=window.CHAR_BODY[k]||body;
+    if(typeof MOVESET_DB!=='undefined' && !MOVESET_DB[k]){
+      const a=_ARCH_STATS[(meta&&meta.archetype)||'freeAgent']||_ARCH_STATS.freeAgent;
+      MOVESET_DB[k]={ maxHp:a.maxHp, stamina:a.stamina, chin:a.chin, speedMultiplier:a.speedMultiplier, powerMultiplier:a.powerMultiplier, moves:a.moves.slice() };
+      if(typeof ROSTER_SPEC!=='undefined' && !ROSTER_SPEC[k]) ROSTER_SPEC[k]={ style:a.style, heightScale:1.0, reachScale:1.0 };
+    }
+  };
   _addChar('STAN_COMBS',   { label:'Honey · The Overlord',      col:0x23232b, accent:0xd4af37, skin:0xe8c9a8, faction:'Corporate Structure', canon:true, bio:'LP8 executive deviance — the shadow overlord who buys loyalty and builds weapons out of chaos.', archetype:'powerhouse' }, 'JACKET', 'BUZZ', {musc:0.5,fat:0.42});
   _addChar('EDWIN_KENNEDY',{ label:'The Chairman of AWE',       col:0x1c1c24, accent:0x8899aa, skin:0xe2b892, faction:'Corporate Structure', canon:true, bio:'LP33/6 imperious promoter — Apex Wrestling Entertainment is his family, his possession, his religion.', archetype:'powerhouse' }, 'JACKET', 'CAESAR', {musc:0.55,fat:0.3});
   _addChar('TIGHTROPE',    { label:'Reckless Freedom Seeker',   col:0xcc2255, accent:0x22ccee, skin:0xd9a066, faction:'Agents of Chaos', canon:true, bio:'A wire-walker with no net and no plan — chaos as an art form.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.55,fat:0.12,fem:1,hips:1.02,glutes:1.08,waist:0.86,bust:0.72});
@@ -12837,10 +12938,108 @@ try{
   _addChar('HEATH_BROKER', { label:'The London Broker',         col:0x24262e, accent:0x9fb4cc, skin:0xe6c8a8, faction:'Corporate Structure', canon:true, bio:'Corporate technician — every hold is a contract clause.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.5,fat:0.22});
   _addChar('CAPTAIN_UNITY',{ label:'Corporate Propaganda',      col:0x1a3a8a, accent:0xd42a2a, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'A manufactured hero — unity as a slogan, not a promise.', archetype:'brawler' }, 'SINGLET', 'BUZZ', {musc:0.72,fat:0.18});
   _addChar('YORKSHIRE_GRIT',{ label:'Hardcore Independent',     col:0x3a2e24, accent:0xc8b090, skin:0xe0b890, faction:'Free Agent', canon:true, bio:'The wildcard — pints, bricks and a chin made of quarry stone.', archetype:'brawler' }, 'CARGO_PANTS', 'BALD', {musc:0.6,fat:0.4});
+  // v154 FULL CANON CAST (owner: "add ALL canon characters") — every named fighter from the OTTR
+  // cast table (faction/angle/style sourced from the books' cast doc; palettes/builds authored to
+  // read each gimmick at a glance). Alliance:
+  _addChar('ATLAS_VANCE',    { label:'The Anchor',            col:0x24303c, accent:0x88a8c8, skin:0xd9a066, faction:'Alliance', canon:true, bio:'Moral structure — integrity that withstands structural attack. Counter-wrestling, submissions.', archetype:'technician' }, 'SINGLET', 'BUZZ', {musc:0.72,fat:0.26});
+  _addChar('CHIEF_RED_CLOUD',{ label:'The Ancestor’s Voice', col:0x5a2416, accent:0xd8b048, skin:0xa5683c, faction:'Alliance', canon:true, bio:'Wisdom and ethical guidance — contains, does not destroy.', archetype:'technician' }, 'LONG_TIGHTS', 'LONG', {musc:0.62,fat:0.3});
+  _addChar('LION_OF_PUNJAB', { label:'Trusted Loyalist',       col:0xd97a1a, accent:0x2a6a3a, skin:0x9a6238, faction:'Alliance', canon:true, bio:'Loyalty counters the lure — power brawling, traditional impact.', archetype:'powerhouse' }, 'TRUNKS', 'LONG', {musc:0.85,fat:0.3});
+  _addChar('LADY_RHIANNON',  { label:'The Global Diplomat',    col:0x3a1a4a, accent:0xd4af37, skin:0xe8c49a, faction:'Alliance', canon:true, bio:'Regal showwoman — charisma as a challenge to toxic structure.', archetype:'technician' }, 'SINGLET_2TONE', 'LONG', {musc:0.5,fat:0.16,fem:1,hips:1.05,glutes:1.06,waist:0.85,bust:1.1});
+  _addChar('AGENT_CANUCK',   { label:'Communicative Rebel',    col:0xb02020, accent:0xffffff, skin:0xe8c9a8, faction:'Alliance', canon:true, bio:'Exposes corporate hypocrisy — agile, witty, submission-sharp.', archetype:'highFlyer' }, 'TIGHTS', 'SHORT', {musc:0.58,fat:0.18});
+  _addChar('CELTIC_FURY',    { label:'Pure Freedom',           col:0x1a5a2a, accent:0xe8e0d0, skin:0xe6c8a8, faction:'Alliance', canon:true, bio:'Chaotic brawler — the wildness Marquis is reclaiming.', archetype:'brawler' }, 'CARGO_PANTS', 'MOHAWK', {musc:0.7,fat:0.32});
+  _addChar('REY_FUEGO',      { label:'El Beso del Sol',        col:0xd42a2a, accent:0xffd700, skin:0xc08a54, faction:'Alliance', canon:true, bio:'Joyful performance — aéreo, high-flying showmanship.', archetype:'highFlyer' }, 'TIGHTS', 'SHORT', {musc:0.55,fat:0.12});
+  _addChar('EL_TORO_DE_ORO', { label:'Honorable Partner',      col:0xb8860b, accent:0x111111, skin:0xa5683c, faction:'Alliance', canon:true, bio:'Power lucha — authentic loyalty in gold.', archetype:'powerhouse' }, 'TRUNKS', 'SHORT', {musc:0.8,fat:0.34});
+  // Corporate Structure:
+  _addChar('CAIN_ELIAS',     { label:'The Executioner',        col:0x14141a, accent:0x8a0f0f, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'The ultimate enforcer — past trauma made physical, the test of resolve.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.88,fat:0.24});
+  _addChar('ASTRID',         { label:'The Ice Maiden',         col:0xd8e4ee, accent:0x4a7a9a, skin:0xeed9c0, faction:'Corporate Structure', canon:true, bio:'Cold structuralist — efficiency as ideology.', archetype:'technician' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.6,fat:0.12,fem:1,hips:0.98,waist:0.84,bust:0.9});
+  _addChar('SHAOLIN_SHADOW', { label:'Technical Assassin',     col:0x1a1a1a, accent:0xcc8800, skin:0xd8b088, faction:'Corporate Structure', canon:true, bio:'Limb-targeting striker — counters versatility with precision.', archetype:'striker' }, 'TIGHTS', 'BALD', {musc:0.62,fat:0.1});
+  _addChar('FINN_MAC',       { label:'The Priest',             col:0x22262a, accent:0xd0c8b8, skin:0xe6c8a8, faction:'Corporate Structure', canon:true, bio:'Psychological manipulator — spiritual rhetoric for the system.', archetype:'striker' }, 'LONG_TIGHTS', 'SHORT', {musc:0.58,fat:0.24});
+  _addChar('GHOST_OF_LAHORE',{ label:'Shadow Assassin',        col:0x2a2a34, accent:0x5a6a7a, skin:0x9a6238, faction:'Corporate Structure', canon:true, bio:'Silent backstage sabotage — the sleeper you never see coming.', archetype:'striker' }, 'TIGHTS', 'SHORT', {musc:0.56,fat:0.14});
+  _addChar('MASATO_IIDA',    { label:'Silent Samurai',         col:0x2a1a10, accent:0xc0c0c8, skin:0xd8b088, faction:'Corporate Structure', canon:true, bio:'Honorable enforcer — JPCW strong-style, honor code intact.', archetype:'striker' }, 'TRUNKS', 'SHORT', {musc:0.72,fat:0.2});
+  _addChar('HIKARU_ARASHI',  { label:'The Storm',              col:0x2a4a8a, accent:0xe8e8f0, skin:0xd8b088, faction:'Corporate Structure', canon:true, bio:'Agile disruptor — JPCW storm offense.', archetype:'highFlyer' }, 'TIGHTS', 'SPIKY', {musc:0.6,fat:0.12});
+  _addChar('KENJI_SAITO',    { label:'The Masterpiece',        col:0x4a1a2a, accent:0xd4af37, skin:0xd8b088, faction:'Corporate Structure', canon:true, bio:'Technical mat virtuoso — every exchange a critique.', archetype:'technician' }, 'TRUNKS', 'SHORT', {musc:0.64,fat:0.16});
+  _addChar('KIKO_TANAKA',    { label:'The Ghost',              col:0xe8e8ee, accent:0x1a1a1a, skin:0xe0c0a0, faction:'Corporate Structure', canon:true, bio:'Psychological pressure — unsettling, unreadable.', archetype:'striker' }, 'LONG_TIGHTS', 'LONG', {musc:0.52,fat:0.14});
+  _addChar('RYUJI_TATSU',    { label:'The Dragon',             col:0x0f3a2a, accent:0xd42a2a, skin:0xd8b088, faction:'Corporate Structure', canon:true, bio:'The physical wall — endurance made flesh.', archetype:'powerhouse' }, 'SINGLET', 'SHORT', {musc:0.8,fat:0.42});
+  _addChar('FINANCE_DEMON',  { label:'The Liquidator',         col:0x101418, accent:0x22cc66, skin:0xe6c8a8, faction:'Corporate Structure', canon:true, bio:'Mercenary executive — power sold to the highest bidder.', archetype:'powerhouse' }, 'JACKET', 'BUZZ', {musc:0.66,fat:0.36});
+  _addChar('ZENITH',         { label:'The Spotlight Seeker',   col:0xe8d020, accent:0xd42a8a, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'Showboat flash — an AWE asset chasing the brightest light.', archetype:'highFlyer' }, 'TIGHTS', 'FADE', {musc:0.6,fat:0.14});
+  // Agents & Independents:
+  _addChar('CASSIAN_THORNE', { label:'The Ultimate Lure',      col:0xf0ead8, accent:0xd4af37, skin:0xe8c9a8, faction:'Agents of Temptation', canon:true, bio:'Flawless solitary perfection — the temptation of never needing anyone.', archetype:'technician' }, 'TRUNKS', 'CAESAR', {musc:0.7,fat:0.12});
+  _addChar('MR_ZERO_POINT',  { label:'The Nihilist',           col:0x3a3a42, accent:0x8a8a96, skin:0xd9a066, faction:'Agents of Chaos', canon:true, bio:'Pure chaos — the unplanned DDT from nowhere.', archetype:'brawler' }, 'CARGO_PANTS', 'MESSY', {musc:0.55,fat:0.3});
+  _addChar('GREAT_WHITE_NORTH',{ label:'Cold Mercenary',       col:0xdce8f0, accent:0x1a3a5a, skin:0xeed9c0, faction:'Free Agent', canon:true, bio:'Highest bidder wins — the Frostbite Driver settles the invoice.', archetype:'powerhouse' }, 'SINGLET', 'BEARD', {musc:0.78,fat:0.4});
+  _addChar('SOMBRA_NEGRA',   { label:'The Silver Trap',        col:0x14141c, accent:0xc0c0cc, skin:0xb07840, faction:'Free Agent', canon:true, bio:'Calculated mercenary — steals opponents’ finishers (mechanic to build).', archetype:'technician' }, 'TIGHTS', 'SHORT', {musc:0.6,fat:0.16});
+  _addChar('RAJA_ASCENDANT', { label:'The Ascendant',          col:0xd45a10, accent:0x2ac4c4, skin:0x9a6238, faction:'Free Agent', canon:true, bio:'Flamboyant artistry — could yet align with freedom.', archetype:'striker' }, 'TIGHTS', 'FADE', {musc:0.62,fat:0.16});
+  // v154 remaining AWE assets (completes the canon 41 from the cast doc):
+  _addChar('COLD_FROST',     { label:'The Objective Technician',col:0xc4dae8, accent:0x2a5a7a, skin:0xe6d0b8, faction:'Corporate Structure', canon:true, bio:'LP7 — emotionless technical threat, no wasted motion, no mercy.', archetype:'technician' }, 'LONG_TIGHTS', 'BUZZ', {musc:0.6,fat:0.16});
+  _addChar('GRIXF',          { label:'The Manic Fanatic',       col:0x4a1030, accent:0x88ee22, skin:0xcaa070, faction:'Corporate Structure', canon:true, bio:'LP9 — a zealot for the system, all teeth and fervor.', archetype:'brawler' }, 'CARGO_PANTS', 'MOHAWK', {musc:0.64,fat:0.24});
+  _addChar('MACHINE_TIGER',  { label:'Counter-Architect',       col:0xe08010, accent:0x111111, skin:0xb07840, faction:'Corporate Structure', canon:true, bio:'LP4 — methodical, structured, engineered to counter Bannon.', archetype:'technician' }, 'SINGLET_2TONE', 'SHORT', {musc:0.68,fat:0.14});
+  _addChar('CHAINMAIL',      { label:'The Scarred Vengeance',   col:0x3a3a44, accent:0x8a1a1a, skin:0xc09068, faction:'Corporate Structure', canon:true, bio:'LP8 — armored rage, every scar a debt to collect.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.86,fat:0.3});
+  // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
+  // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
+  window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
+    CODY_CALLAHAN: { name:'Cody "Corduroy Kid" Callahan', role:'Toxic Pawn / Distraction', faction:'Corporate Structure', canon:true, effect:{momentumTrickle:0.4, interfere:true} }
+  });
+  // canon finishers for the new cast (through the real grapple physics; subs route as spikes until the sub-hold finisher path lands):
+  window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
+    ATLAS_VANCE:     { name:'THE ANCHOR COUNTER',        kind:'strike' },
+    CHIEF_RED_CLOUD: { name:"THE ANCESTOR'S LOCK",       kind:'grapple', pos:'DDT',         deliver:'spike' },
+    LION_OF_PUNJAB:  { name:'THE UNITY BOMB',            kind:'grapple', pos:'POWERBOMB',   deliver:'slam'  },
+    LADY_RHIANNON:   { name:'THE PEACE ACCORD',          kind:'strike' },
+    AGENT_CANUCK:    { name:'THE NORTH STAR LOCK',       kind:'strike' },
+    CELTIC_FURY:     { name:'THE BRAVEHEART BOMB',       kind:'grapple', pos:'BRAINBUSTER', deliver:'spike' },
+    REY_FUEGO:       { name:'EL BESO DEL SOL',           kind:'strike' },
+    EL_TORO_DE_ORO:  { name:'EL GRITO DE LA BESTIA',     kind:'grapple', pos:'POWERBOMB',   deliver:'slam'  },
+    CAIN_ELIAS:      { name:'THE FINAL VERDICT',         kind:'grapple', pos:'BRAINBUSTER', deliver:'spike' },
+    ASTRID:          { name:'THE SCANDINAVIAN LOCK',     kind:'strike' },
+    SHAOLIN_SHADOW:  { name:'THE IRON PALM',             kind:'strike' },
+    FINN_MAC:        { name:'THE CONFESSION',            kind:'grapple', pos:'BRAINBUSTER', deliver:'spike' },
+    GHOST_OF_LAHORE: { name:'THE SILENT SUBMISSION',     kind:'grapple', pos:'CHOKESLAM',   deliver:'choke' },
+    MR_ZERO_POINT:   { name:'THE ZERO POINT DROP',       kind:'grapple', pos:'DDT',         deliver:'spike' },
+    GREAT_WHITE_NORTH:{ name:'THE FROSTBITE DRIVER',     kind:'grapple', pos:'BRAINBUSTER', deliver:'spike' },
+    SOMBRA_NEGRA:    { name:'LA TRAMPA DE PLATA',        kind:'strike' },
+    RAJA_ASCENDANT:  { name:'THE DHARMA DRIVER',         kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  }
+  });
   // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
   window.CHAR_FINISHERS = Object.assign(window.CHAR_FINISHERS||{}, {
     FINXSSE:  { style:'Lesnar/Guerrero hybrid — speed+power showman', sig:'CHAINSNATCHER — jumping double-knee backstabber', fin:'GETBACKK — fireman-carry tornado slam (F5-class violence)', props:['gold jeweled diamond cross (stolen from Chainlink)'] },
     STICK_UP: { fin:['LEAP OF FAITH — swanton bomb','SUPER LEAP OF FAITH — swanton 450 splash','FIRE THUNDER DRIVER','TWIST OF FATE — theatrical twisting cutter/stunner'] }
+  });
+  // v153 FINISHER WIRING — named finishers resolve through the REAL grapple physics (no cinematic
+  // canned path): kind 'grapple' auto-runs grab -> named position lift -> delivery; kind 'strike'
+  // is a named max-power shot. Canon names from the OTTR cast doc / dossiers; non-canon originals
+  // get proprietary names. BANNON's canon finisher awaits the owner's spec (placeholder flagged).
+  // v154 MARQUIS PERSONA STACK (canon: ONE man, THREE characters — WWE-2K "personas", each its own
+  // moveset/finisher/look, NOT just attires): Marquis Deshaun Whitacre -> SOLARIS JUSTICE (original
+  // golden face) -> BANNON (masked steel heel) -> MAIME (raw alter-ego beneath). MAIME can ALSO be
+  // worn as a Bannon ATTIRE (Bannon's moves, Maime's paint) — persona vs attire, both supported.
+  window.MARQUIS_PERSONAS = {
+    realName:'Marquis Deshaun Whitacre',
+    personas:[
+      { key:'SOLARIS_JUSTICE', label:'Solaris Justice', role:'original idealistic FACE (pre-betrayal)', voice:'open/heroic' },
+      { key:'BANNON',          label:'Bannon',          role:'masked steel heel — The Broken Architect / The Executioner', voice:'processed/cold', mantra:'Vulnerability is a choice. I choose steel.' },
+      { key:'MAIME',           label:'Maime',           role:'raw psychotic alter-ego beneath Bannon (Verbal Leakage)', voice:'raw/high-pitched/manic' }
+    ]
+  };
+  window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
+    BANNON:        { name:'THE STRUCTURAL COLLAPSE',   kind:'grapple', pos:'BACK_SUPLEX',     deliver:'toss', sub:'THE RING OF SATURN' },   // CANON (Book 1): deadlift German suplex -> Ring of Saturn submission, held until the opponent is visibly broken
+    MAIME:         { name:'VERBAL LEAKAGE',            kind:'grapple', pos:'DDT',             deliver:'spike' },   // the alter-ego's raw spike — unfiltered violence
+    SOLARIS_JUSTICE:{ name:'THE SOLAR FLARE',          kind:'strike' },                                          // high-flying justice finish (placeholder name; owner art pending)
+    FINXSSE:       { name:'GETBACKK',                  kind:'grapple', pos:'FIREMANS_CARRY',  deliver:'slam'  },   // canon: F5-class off the shoulders
+    STICK_UP:      { name:'THE OPTIMIZATION DRIVE',    kind:'grapple', pos:'BACK_SUPLEX',     deliver:'toss'  },   // canon: exploder suplex
+    STAN_COMBS:    { name:'THE HOSTILE TAKEOVER',      kind:'grapple', pos:'CHOKESLAM',       deliver:'choke' },
+    EDWIN_KENNEDY: { name:'THE INDEFINITE SUSPENSION', kind:'grapple', pos:'GORILLA_PRESS',   deliver:'slam'  },   // held suspended overhead — the name IS the move
+    YORKSHIRE_GRIT:{ name:'THE CRUCIBLE',              kind:'grapple', pos:'BRAINBUSTER',     deliver:'spike' },   // canon: unannounced piledriver-class
+    HEATH_BROKER:  { name:'THE GLOBAL RECESSION',      kind:'grapple', pos:'DDT',             deliver:'spike' },   // canon vise — grounded sub wiring later
+    AKON_WARRIOR:  { name:"THE LION'S ROAR",           kind:'strike' },                                            // canon: running discus clothesline
+    CAPTAIN_UNITY: { name:'THE MAPLE LEAF MISSILE',    kind:'strike' },                                            // canon frog splash — dive wiring later
+    TIGHTROPE:     { name:'NO-NET DIVE',               kind:'strike' },
+    TITAN:         { name:'TITANFALL',                 kind:'grapple', pos:'POWERBOMB',       deliver:'slam'  },
+    GOLEM:         { name:'CLAY AVALANCHE',            kind:'grapple', pos:'CHOKESLAM',       deliver:'choke' },
+    RONIN:         { name:"RONIN'S EDGE",              kind:'grapple', pos:'BRAINBUSTER',     deliver:'spike' },
+    BRUTUS:        { name:'COLOSSEUM BOMB',            kind:'grapple', pos:'POWERBOMB',       deliver:'slam'  },
+    MORTUS:        { name:'LAST RITES',                kind:'grapple', pos:'DDT',             deliver:'spike' },
+    VIPER:         { name:'VENOM STRIKE',              kind:'strike' },
+    KAGE:          { name:'SHADOW BLADE',              kind:'strike' },
+    ZEPHYR:        { name:'TEMPEST',                   kind:'strike' }
   });
   try{ if(window.MANIFESTO) window.MANIFESTO.register({key:'roster.dossiers',kind:'gameplay',summary:'canon/characters dossiers wired: bosses (Combs/Kennedy-AWE), free agents (Tightrope female flyer, Akon, Heath, Unity, Grit), CHAR_FINISHERS specs (Finxsse Chainsnatcher/Getbackk, Stick Up Leap of Faith...)',call:'window.CHAR_FINISHERS'}); }catch(e){}
 }catch(_){}
@@ -13563,7 +13762,8 @@ function setupInput(){
   document.querySelectorAll('.act-btn').forEach(btn=>{
     const kind = btn.dataset.btn;
     const press = (e)=>{ e.preventDefault(); markTouch();
-      if (kind==='block'){ heldBtns['block']=true; }
+      if (window.__stunMash && fighters && fighters[0] && fighters[0].isDown()){ window.__stunMash(fighters[0]); return; }  // v154: mash any action to fight the stun clock
+      if (kind==='block'){ heldBtns['block']=true; if(window.__tryReversal) window.__tryReversal(fighters&&fighters[0]); }
       else playerAttack(kind);
     };
     const release = (e)=>{ e.preventDefault(); if(kind==='block') heldBtns['block']=false; };
@@ -22133,9 +22333,14 @@ Fighter.prototype.calculateDynamicPhysicsState = function() {
   const hpRatio     = clamp(this.hp / (this.maxHp || MAX_HP), 0, 1);
   const staminaRatio= clamp((this.stamina || 0) / 100, 0, 1);
   const exhaustion  = hpRatio * staminaRatio;        // 1.0 = fresh, 0.0 = destroyed
-  // Muscle stiffness: battered fighters go loose and rubbery
+  // Muscle stiffness: battered fighters go loose and rubbery.
+  // v154 POISE-DRIVEN MOTORS: joint motor stiffness also rides current POISE — high poise = stiff
+  // upright joints that eat a shot; broken poise = motors go limp and the hit drops them like a
+  // rock (heavy, terminal reactions instead of spring-back jiggle).
+  const poiseRatio  = clamp((this.poise!=null?this.poise:100)/100, 0, 1);
   this.currentRagMotor = (typeof RAG_MOTOR !== 'undefined' ? RAG_MOTOR : 0.86)
-                         * (0.40 + 0.60 * exhaustion);
+                         * (0.40 + 0.60 * exhaustion)
+                         * (0.55 + 0.45 * poiseRatio);
   // Gravity feedforward: heavy, exhausted fighters pull down harder
   this.currentGravityFactor = 1.0 + (1.0 - staminaRatio) * 0.15;
   // Stamina sag multiplier (feeds into active ragdoll kbase)
@@ -34198,7 +34403,8 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   ];
 
   // ---- state ----
-  var sel = { p1:'BANNON', p2:'VIPER', p1Alt:null, p2Alt:null, side:'p2', modeIdx:0, typeIdx:0, stageIdx:0, preview:'BANNON' };
+  var sel = { p1:'BANNON', p2:'VIPER', p3:'RONIN', p4:'TITAN', p1Alt:null, p2Alt:null, side:'p2', modeIdx:0, typeIdx:0, stageIdx:0, preview:'BANNON' };
+  var MULTI_TYPES = { TRIPLE:1, FOURWAY:2, ROYALE:2 };   // how many extra slots the type shows
   try { var savedStage = (typeof arenaIdx!=='undefined') ? arenaIdx : 0; sel.stageIdx = savedStage; } catch(_){ }
 
   // ---- CSS — WWE-2K/Tekken VS-SCREEN: live 3D fighters in the scene behind,
@@ -34311,6 +34517,16 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     document.getElementById('csMode').textContent = MODES[sel.modeIdx].label;
     var mt = MATCH_TYPES[sel.typeIdx];
     var tEl = document.getElementById('csType'); tEl.textContent = mt.label + (mt.live?'':' (soon)'); tEl.classList.toggle('dim', !mt.live);
+    // multi-man entrant slots: show for TRIPLE/FOURWAY/ROYALE, highlight the active one
+    try{
+      var extra=MULTI_TYPES[mt.id]||0, bar=document.getElementById('csMulti');
+      if (bar){ bar.style.display = extra? 'flex':'none';
+        ['p3','p4'].forEach(function(sd,i){ var d=document.getElementById('csPlate_'+sd); if(!d) return;
+          d.style.display = (i<extra)? 'block':'none';
+          d.textContent = sd.toUpperCase()+': '+(sel[sd]||'?').replace(/_/g,' ');
+          d.style.borderColor = (sel.side===sd)?'#ffd24a':'#ff7a1a66';
+          d.style.color = (sel.side===sd)?'#ffd24a':'#ffd9a8'; }); }
+    }catch(_){}
     try { document.getElementById('csStage').textContent = (typeof ARENAS!=='undefined'?ARENAS[sel.stageIdx%ARENAS.length]:'FIRE PIT'); } catch(_){}
     try { var aSide=sel.side, aChar=sel[aSide], aCur=sel[aSide+'Alt']||null, aList=(window.altsFor?window.altsFor(aChar):[{id:null,label:'Default'}]); var aMatch=aList.find(function(a){return a.id===aCur;}); var aEl=document.getElementById('csAttire'); aEl.textContent=(aMatch?aMatch.label:'Default'); aEl.classList.toggle('dim', aList.length<=1); } catch(_){}
   }
@@ -34329,10 +34545,26 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     }catch(_){}
   }
 
-  function assign(name){ sel[sel.side]=name; sel[sel.side+'Alt']=null; sel.side=(sel.side==='p1')?'p2':'p1'; spawnPreview(); refresh(); }
+  // v154 (owner spec — 2K/MDickie slot flow): picking a character NO LONGER auto-flips to the other
+  // side. You tap the SLOT you want to set (P1/P2/P3/P4), then tap characters until happy. P3/P4
+  // mini-slots appear for multi-man match types and feed MATCH_SETUP.p3Name/p4Name.
+  function assign(name){ sel[sel.side]=name; sel[sel.side+'Alt']=null; if(sel.side==='p1'||sel.side==='p2') spawnPreview(); refresh(); }
 
   document.getElementById('csPlateP1').addEventListener('click', function(){ sel.side='p1'; refresh(); });
   document.getElementById('csPlateP2').addEventListener('click', function(){ sel.side='p2'; refresh(); });
+  // multi-man entrant slots (created lazily, sit under the two main plates)
+  (function(){
+    var top=document.getElementById('csTop'); if(!top) return;
+    var bar=document.createElement('div'); bar.id='csMulti';
+    bar.style.cssText='position:absolute;left:50%;transform:translateX(-50%);bottom:-34px;display:none;gap:8px;z-index:5;';
+    ['p3','p4'].forEach(function(sd){
+      var d=document.createElement('div'); d.id='csPlate_'+sd;
+      d.style.cssText='background:#140b07dd;border:1px solid #ff7a1a66;border-radius:6px;padding:4px 10px;font:bold 11px ui-monospace,monospace;color:#ffd9a8;cursor:pointer;letter-spacing:1px;';
+      d.addEventListener('click', function(){ sel.side=sd; refresh(); });
+      bar.appendChild(d);
+    });
+    top.appendChild(bar);
+  })();
   document.getElementById('csMode').addEventListener('click', function(){ sel.modeIdx=(sel.modeIdx+1)%MODES.length; refresh(); });
   document.getElementById('csType').addEventListener('click', function(){ sel.typeIdx=(sel.typeIdx+1)%MATCH_TYPES.length; refresh(); });
   document.getElementById('csStage').addEventListener('click', function(){ try{ sel.stageIdx=(sel.stageIdx+1)%ARENAS.length; if(typeof arenaIdx!=='undefined'){ arenaIdx=sel.stageIdx; var an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; if(typeof buildArena==='function') buildArena(); } }catch(_){} refresh(); });
@@ -34357,6 +34589,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     var mode = MODES[sel.modeIdx].id;
     window.MATCH_SETUP = {
       p1Name: sel.p1, p2Name: sel.p2, p1Alt: sel.p1Alt, p2Alt: sel.p2Alt,
+      p3Name: sel.p3, p4Name: sel.p4,
       p1Control: mode==='P1' ? 'YOU' : (mode==='P2' ? 'CPU' : 'AI'),
       p2Control: mode==='P2' ? 'YOU' : (mode==='P1' ? 'CPU' : 'AI'),
       matchType: MATCH_TYPES[sel.typeIdx].id, stage: sel.stageIdx
@@ -34430,9 +34663,11 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       if (want>2 && typeof fighters!=='undefined' && fighters && fighters.length===2){
         const taken={}; taken[fighters[0].specName||fighters[0].opts&&fighters[0].opts.name]=1; taken[fighters[1].specName||fighters[1].opts&&fighters[1].opts.name]=1;
         const pool=(window.BANNON_ROSTER||[]).map(t=>t.name).filter(n=>!taken[n]);
+        // v154: the select screen's P3/P4 slot picks come first; randoms only fill what's left
+        const picked=[window.MATCH_SETUP&&MATCH_SETUP.p3Name, window.MATCH_SETUP&&MATCH_SETUP.p4Name].filter(n=>n&&!taken[n]);
         const spots=[[0,-1.4],[1.3,1.1],[-1.3,1.1],[0,1.5]];
-        for (let i=fighters.length; i<want && pool.length; i++){
-          const name=pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+        for (let i=fighters.length; i<want && (picked.length||pool.length); i++){
+          const name=picked.length? picked.shift() : pool.splice(Math.floor(Math.random()*pool.length),1)[0];
           const o=(typeof fighterOptsFor==='function')?fighterOptsFor(name):{};
           const f=new Fighter(false, { col:o.col, accent:o.accent, skin:o.skin, name:name, style:o.style });
           f._lookKey=name; f.isPlayer=false;
@@ -34565,6 +34800,106 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   try{ if(window.MANIFESTO&&window.MANIFESTO.register) window.MANIFESTO.register({ key:'combat.envContact', kind:'gameplay',
     summary:'ring posts are live impact surfaces: velocity-scaled post impacts (damage/stagger/knockdown via the same physics selling as strikes) — Urban Reign/Def Jam environmental energy, sim-resolved', call:'ENV CONTACT interval' }); }catch(_){}
   console.log('%c[v153 ENV CONTACT] ring posts are live impact surfaces', 'color:#00ff88;font-weight:bold');
+})();
+</script>
+
+<script>
+// =============================================================================
+// v154 — 2K-STYLE REVERSAL + STUN MASH-OUT (owner control spec: docs/controls_
+// and_mechanics_spec.md). ADDITIVE on the existing controls: the DODGE/REV
+// (block) button, TAPPED inside an incoming strike's windup window, reverses —
+// the attack is cut, the attacker stumbles off-balance, the defender banks
+// momentum. A "REVERSE!" prompt flashes over the defender's head during the
+// window (2K read). Mistimed taps lock the reversal out briefly (2K penalty).
+// AI defenders roll their own reversals from stamina. Knocked-down fighters get
+// the tap-out-of-stun circle: any action button tapped while down speeds the
+// get-up (yellow ring gauge over the head drains as you mash).
+// =============================================================================
+(function(){
+  if (window.__rev154 || typeof Fighter==='undefined') return; window.__rev154=true;
+
+  // ---- floating prompt + gauge (DOM, projected from head world pos) ----
+  const _pr=document.createElement('div');
+  _pr.style.cssText='position:fixed;z-index:9200;display:none;pointer-events:none;font:bold 15px ui-monospace,monospace;color:#ffd24a;text-shadow:0 0 8px #000,0 0 14px #ff7a1a;letter-spacing:1px;transform:translate(-50%,-100%);';
+  _pr.textContent='◇ REVERSE!';
+  document.body.appendChild(_pr);
+  const _gg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  _gg.setAttribute('width','46'); _gg.setAttribute('height','46');
+  _gg.style.cssText='position:fixed;z-index:9200;display:none;pointer-events:none;transform:translate(-50%,-120%);';
+  _gg.innerHTML='<circle cx="23" cy="23" r="18" fill="none" stroke="#3338" stroke-width="5"/><circle id="ggArc" cx="23" cy="23" r="18" fill="none" stroke="#ffd24a" stroke-width="5" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="0" transform="rotate(-90 23 23)"/>';
+  document.body.appendChild(_gg);
+  const _v3=new THREE.Vector3();
+  function _headScreen(f){ try{ const wp=f.worldJoint('head'); _v3.set(wp.x,wp.y+0.28,wp.z); _v3.project(camera);
+    if(_v3.z>1) return null; return { x:(_v3.x*0.5+0.5)*window.innerWidth, y:(-_v3.y*0.5+0.5)*window.innerHeight }; }catch(_){ return null; } }
+
+  // ---- the reversal itself ----
+  window.__tryReversal = function(def){
+    try{
+      if (!def || (def._revLock||0)>0 || (def._revCd||0)>0 || def.isDown() || def.state==='grabbed') return false;
+      const atk = def.opponent && def.opponent();
+      if (!atk || atk.state!=='attack' || !atk.attackData) return false;
+      const ph = atk.attackPhase||0;
+      const d = Math.hypot(atk.x-def.x, atk.z-def.z);
+      if (d>1.9) return false;
+      if (ph<0.06 || ph>0.42){ def._revLock=1.1; return false; }   // mistimed — brief lockout, like 2K
+      def._revCd=2.4;
+      atk.hitLanded=true;                                          // the strike never registers
+      try{ atk.endAttack(); }catch(_){}
+      try{ const f=atk.forward(); atk.enterStumble ? atk.enterStumble(-f.x, 34) : (atk.state='stumble', atk.stateTime=0); }catch(_){}
+      atk.poise=Math.max(0,(atk.poise||100)-28);
+      def.momentum=Math.min(100,(def.momentum||0)+16);
+      if (typeof camShake!=='undefined') camShake=Math.max(camShake,0.3);
+      if (typeof triggerHitStop==='function') triggerHitStop(0.07);
+      if (typeof announce==='function') announce('REVERSAL!', (typeof fname==='function'?fname(def):''));
+      return true;
+    }catch(_){ return false; }
+  };
+
+  // ---- stun mash-out: any action tap while down shaves the get-up clock ----
+  window.__stunMash = function(f){
+    try{ if (f && f.isDown() && f.downTimer!=null && f.downTimer>0){ f.downTimer=Math.max(0, f.downTimer-0.14); return true; } }catch(_){}
+    return false;
+  };
+
+  // ---- per-frame-ish tick: prompt visibility, AI reversal rolls, gauge, cooldowns ----
+  setInterval(()=>{ try{
+    if (typeof gameState==='undefined' || gameState!=='fight' || typeof fighters==='undefined' || !fighters){ _pr.style.display='none'; _gg.style.display='none'; return; }
+    const dt=0.09;
+    for (const f of fighters){ if(!f) continue; f._revLock=Math.max(0,(f._revLock||0)-dt); f._revCd=Math.max(0,(f._revCd||0)-dt); }
+    const p=fighters[0];
+    // prompt: show over the PLAYER when an incoming strike is in the reversal window
+    let show=false;
+    if (p && !p.isDown() && (p._revLock||0)<=0 && (p._revCd||0)<=0){
+      const atk=p.opponent&&p.opponent();
+      if (atk && atk.state==='attack' && atk.attackData){ const ph=atk.attackPhase||0;
+        if (ph>=0.06 && ph<=0.42 && Math.hypot(atk.x-p.x,atk.z-p.z)<=1.9) show=true; }
+    }
+    if (show){ const s=_headScreen(p); if (s){ _pr.style.left=s.x+'px'; _pr.style.top=s.y+'px'; _pr.style.display='block'; } }
+    else _pr.style.display='none';
+    // stun gauge over the downed PLAYER (yellow ring drains as downTimer runs)
+    if (p && p.isDown() && p.downTimer!=null && p.downTimer>0.05){
+      const s=_headScreen(p); if (s){ const frac=Math.min(1, p.downTimer/3.0);
+        _gg.style.left=s.x+'px'; _gg.style.top=s.y+'px'; _gg.style.display='block';
+        const arc=_gg.querySelector('#ggArc'); if (arc) arc.setAttribute('stroke-dashoffset', String(113*(1-frac))); }
+    } else _gg.style.display='none';
+    // AI reversal roll: defenders read the same window, chance scales with stamina
+    for (const f of fighters){ if (!f || f.isPlayer || f.isDown()) continue;
+      const atk=f.opponent&&f.opponent();
+      if (atk && atk.state==='attack' && atk.attackData){ const ph=atk.attackPhase||0;
+        if (ph>=0.10 && ph<=0.40 && Math.hypot(atk.x-f.x,atk.z-f.z)<=1.9 && (f._revCd||0)<=0){
+          const chance=0.05 + 0.06*Math.min(1,(f.stamina||0)/(f.maxStamina||100));
+          if (Math.random()<chance) window.__tryReversal(f);
+        } } }
+  }catch(_){} }, 90);
+
+  // keyboard: SHIFT-tap already blocks; the reversal fires from the same press via keydown
+  window.addEventListener('keydown', (e)=>{ try{
+    if ((e.key==='Shift'||e.key.toLowerCase()==='h') && !e.repeat && typeof fighters!=='undefined' && fighters) window.__tryReversal(fighters[0]);
+  }catch(_){} });
+
+  try{ if(window.MANIFESTO&&window.MANIFESTO.register) window.MANIFESTO.register({ key:'combat.reversal2k', kind:'gameplay',
+    summary:'2K-style reversal on the existing DODGE/REV button: tap in the incoming strike windup (prompt flashes over your head) to cut the attack and stumble the attacker; mistimed = lockout; AI rolls reversals from stamina; downed fighters mash any action button to shave the get-up clock (ring gauge)', call:'window.__tryReversal / __stunMash' }); }catch(_){}
+  console.log('%c[v154 REVERSAL] 2K reversal window + stun mash-out live on existing controls', 'color:#00ff88;font-weight:bold');
 })();
 </script>
 

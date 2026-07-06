@@ -36,7 +36,22 @@ North Star (additive-only, surgical, physics-first); `window.MANIFESTO` / `windo
 
 ## Character visual canon (books + owner sketches — the identity stack)
 Marquis Deshaun Whitacre → **Solaris Justice** (past face) → **Bannon** (masked heel) → **Maime**
-(alter-ego beneath). Same man, three looks, three movesets/voices:
+(alter-ego beneath). Same man, three looks, three movesets/voices. WIRED as `window.MARQUIS_PERSONAS`
+(persona = own moveset/finisher/look; MAIME ALSO works as a Bannon ATTIRE via CHAR_ALTS — persona vs
+attire both supported, WWE-2K model). **BANNON's CANON finisher (Book 1, was a placeholder): THE
+STRUCTURAL COLLAPSE = deadlift German suplex → THE RING OF SATURN submission, held until the opponent
+is visibly broken** (FINISHER_MOVES.BANNON pos BACK_SUPLEX + sub tag). MAIME fin = VERBAL LEAKAGE
+(DDT spike). SOLARIS_JUSTICE now a selectable persona (gold/solar palette, high-flying justice
+moveset, THE SOLAR FLARE — placeholder name, owner art pending; books define the concept: the
+idealistic "truth and justice" face Marquis was before the betrayal made Bannon). Bannon's OTHER
+canon moves (Book 1): Deadlift German Suplexes, Running Powerslam (onto thumbtacks), Boston Crab,
+Deadlift Spinebuster, self-destructive Flying Headbutt; carries a coiled steel cable as a symbolic
+weapon. Mask = symbolic armor (Sun in Scorpio) w/ a functional jaw for promos; visual = Mankind/Kane
++ MF DOOM. Every canon char has an "OTR" (Outside The Ring) civilian persona classed Aligned/
+Contrasting/Blurred — see canon/00_cast_and_world.md (READ IT — deep per-character detail, signatures,
+finishers, OTR personas, numerology/astrology "character engine"). Books: canon/01..06_*.md are the
+per-book summaries; raw texts are the "Off The Top Rope Book N" .txt files at repo root (DO NOT
+commit those — commercial manuscripts; the canon/*.md distillations are the committed knowledge).
 - **BANNON** — "The Broken Architect / The Executioner." Metallic steel-blue **3/4 UPPER mask**
   (brow→below nose) with tribal/mechanical panel detail, **free-floating jaw/chin plate** with a
   "U" engraving, dark eye sockets; blond-brown **dreadlocks**; brown skin, muscular. Canon sketches:
@@ -217,6 +232,65 @@ LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding
 - v153 ARENA PERF: 96 rope segments -> ONE InstancedMesh (unit cylinder, verlet solver composes
   instance matrices at ch.segBase+i); 12 turnbuckle pads + 12 connector rings instanced (baked once).
   Visible meshes 240 -> 120. Rope sag/bow physics unchanged (BANNON_ROPES.update).
+- v153 FINISHERS WIRED: `window.FINISHER_MOVES` (by roster key) — full momentum + power-mod +
+  SPECIAL = the character's NAMED finisher. kind 'grapple' auto-runs grab -> named GRAPPLE_POSITIONS
+  lift -> timed grappleDeliver through the REAL physics (no canned path); kind 'strike' = named
+  100-power shot. Canon names from the OTTR cast table (GETBACKK, THE OPTIMIZATION DRIVE, THE
+  HOSTILE TAKEOVER, THE INDEFINITE SUSPENSION=gorilla press, THE CRUCIBLE, LION'S ROAR...).
+  **BANNON's "EXECUTIONER'S DROP" (CROSS_POWERBOMB) is a PLACEHOLDER — owner names it later.**
+  Verified fin.js: FINXSSE GETBACKK announces -> FIREMANS_CARRY st2 -> auto-delivers to ragdoll.
+  Sub-type finishers (Anaconda Vise etc) + dive finishers (frog splash) still route as
+  spike/strike — proper sub/dive wiring queued.
+- v154 FULL CANON CAST: `_addChar` now AUTO-SEEDS a MOVESET_DB stat block + ROSTER_SPEC style from
+  the meta.archetype (`_ARCH_STATS` map: powerhouse/brawler/striker/technician/highFlyer/freeAgent)
+  — previously _addChar only wrote CHAR_META/attire/body so canon chars WITHOUT a hand-written
+  MOVESET_DB entry were INVISIBLE in ROSTER_ALL (which iterates MOVESET_DB). Added ~24 canon fighters
+  from the OTTR cast table (Alliance: Atlas Vance/Chief Red Cloud/Lion of Punjab/Lady Rhiannon/Agent
+  Canuck/Celtic Fury/Rey Fuego/El Toro de Oro; Corporate: Cain Elias/Astrid/Shaolin Shadow/Finn Mac/
+  Ghost of Lahore/Masato Iida/Hikaru Arashi/Kenji Saito/Kiko Tanaka/Ryuji Tatsu/Finance Demon/Zenith;
+  Agents/Indies: Cassian Thorne/Mr Zero Point/Great White North/Sombra Negra/Raja) + their canon
+  FINISHER_MOVES. Read the full cast doc ("Off The Top Rope cast and characters .txt", 41-char
+  master roster) — added the last 4 AWE assets (Cold Frost/Grixf/Machine Tiger/Chainmail) so the
+  in-game canon matches the books. `window.CHAR_MANAGERS` registry seeded (Cody "Corduroy Kid"
+  Callahan — canon manager, momentumTrickle+interfere; slot-menu manager pick + interference wiring
+  queued). Verified: ROSTER_ALL 51 (43 canon), all new cast selectable. THE CANON 41 (books) =
+  Kennedy/Combs (owners), Marquis=BANNON (protagonist), Atlas Vance, Cassian Thorne, Cain Elias,
+  Cody Callahan (manager), Zenith, Cold Frost, Grixf, Machine Tiger, Chainmail, Tightrope, Finxsse,
+  Stick-Up, Mr Zero Point, Masato Iida, Hikaru Arashi, Kenji Saito, Kiko Tanaka, Ryuji Tatsu,
+  Finance Demon, Shaolin Shadow, Finn Mac, Ghost of Lahore, Astrid, Heath (London Broker),
+  Captain Unity, Great White North, Chief Red Cloud, Lion of Punjab, Lady Rhiannon, Agent Canuck,
+  Celtic Fury, Rey Fuego, El Toro de Oro, Akon, Yorkshire Grit, Raja, Sombra Negra. Factions:
+  Alliance / Corporate Structure (AWE+JPCW) / Agents of Chaos&Temptation / Independent Variables.
+  Companies: AWE (Kennedy) + JPCW (Combs's global network).
+- v154 FLAIL FIX ("feet and limbs fly around crazy when hit" — owner's constraint-solver diagnosis
+  was correct): (a) visceralImpact (Rapier path) VMAX 6.5->4.5 + per-hit damping spike (lin 0.5/ang
+  0.7 for 0.5s) + head/struck-node vertical share cut (whip BACK not UP); (b) POST-CONSTRAINT VELOCITY
+  CLAMP in the verlet updateRagdoll — integrate()'s cap runs BEFORE the 15-iter bone solver, so
+  constraint corrections re-inflated implied velocity (pos-old) uncapped = the flail; now clamped to
+  MAX_BODY_VEL*h AFTER the solve by pushing `old` toward `pos`; (c) POISE-DRIVEN MOTORS: currentRagMotor
+  now ×(0.55+0.45·poise) — stiff upright at high poise, limp drop when poise breaks (heavy terminal
+  reactions, not spring-back jiggle).
+- v154 MENU SLOT FLOW (owner: "tap ur slot then choose, don't force selecting both"): assign() NO
+  LONGER auto-flips sides — you tap the slot (P1/P2/P3/P4) then pick characters freely. TRIPLE/FOURWAY/
+  ROYALE reveal P3/P4 mini-slots under the plates (MULTI_TYPES map), feed MATCH_SETUP.p3Name/p4Name,
+  and the multi-man spawner uses those picks first (randoms fill the rest). Verified: tap P1 -> pick ->
+  P1=BRUTUS stays on P1; TRIPLE shows P3:RONIN slot. Spec items still queued: per-slot attire/payback/
+  manager context, taunts (crowd/opp/wakeup), daze meter, LB interact button.
+- v154 (owner control spec drop -> docs/controls_and_mechanics_spec.md, BINDING for control work.
+  RULE: build ON TOP of existing controls, never replace — e.g. reversal lives on the existing
+  DODGE/REV button, NOT a new Y button): 2K REVERSAL — tap DODGE/REV (or Shift/H) inside the
+  incoming strike's windup (phase 0.06-0.42, range<1.9): attack cut, attacker stumbles+poise−28,
+  defender +16 momentum, "◇ REVERSE!" prompt projected over the player's head during the window,
+  mistimed tap = 1.1s lockout, AI defenders roll reversals from stamina (5-11%). STUN MASH-OUT —
+  while down, any action button tap shaves downTimer 0.14 (yellow SVG ring gauge over head).
+  SIGNATURE->FINISHER BANK — MOD+jab at 50+ momentum = named signature (CHAR_FINISHERS.sig),
+  −50 momentum, banks a finisher (max 3); MOD+special spends a banked finisher below full meter;
+  momentum gains below 50 boosted ×1.5 (sig meter fills 50% faster). Verified rev2.js: REVERSAL!,
+  stumble, cooldown block, mash 2.5->1.66, SIGNATURE[BANKED] 60->10 mom bank 1, banked finisher
+  fires EXECUTIONER'S DROP at 10 momentum. Spec items still queued: taunt set (crowd/opponent/
+  wake-up ×4+MOD variants), daze meter (purple, longer than stun), 5-slot sig/fin move pickers,
+  contextual LB interact button, floating left joystick, surface-matrix extension (tables/barbed
+  wire/tacks/glass/trashcan), squash-vs-epic match pacing options.
 - MOCAP HARVEST FINDING: BANNON_AAA_v21_2K_mocap_2.html has the SAME MoveNet-Thunder webcam
   recorder v150 already has — its clips live in the OWNER'S browser localStorage (STORE_KEY), not
   the file. The real harvest = convert assets/mocap/mocap_data_partial.json (144-joint two-fighter
@@ -224,6 +298,44 @@ LIFT/CARRY slots (READ docs/mocap_orientation_master_prompt.md FIRST — binding
   docs/mocap_orientation_master_prompt.md first. QUEUED as its own focused brick.
 - Verified mm.js/lms.js/fb.js: 3-man spawns (BANNON/FINXSSE/RONIN), AI brawls, elimination
   continues match, last-standing ends it; REF COUNT announces; FIRST BLOOD ends w/ bleeder hp 0.
+
+## MODEL GAP ANALYSIS (owner demand 2026-07-05: "no bullshit, why are ours so far off 2K/UFC/FN")
+Honest technical audit of the procedural body vs WWE 2K26 / EA UFC / Fight Night models:
+1. **Mesh density/topology**: ours ≈3.6k verts of swept tubes; theirs 40-80k+ sculpted meshes with
+   edge loops following musculature. Tube cross-sections can't crease at elbows/knees, can't make a
+   scapula, pec-delt tie-in, or knuckles. Gaussian relief on a tube has a hard ceiling.
+2. **Face**: ours = primitive nose/mouth boxes + sphere eyes on a tube head + relief bumps; theirs =
+   scanned/sculpted heads, 50+ blendshapes, real eyeballs (cornea/iris shader), teeth, lashes.
+3. **Skin**: ours = 512px procedural mottle + Sobel normal; theirs = 4K scanned albedo/normal/spec,
+   pore-level detail normals, SSS, per-region wetness. (Our sweat roughness ramp is the right idea.)
+4. **Hair**: cap mesh + cylinder dreads vs alpha hair cards w/ anisotropic spec.
+5. **Attire**: vertex-paint regions vs real cloth meshes w/ wrinkle normals + logos.
+CONCLUSION (confirmed by audit): the procedural body CANNOT reach 2K by more gaussians — topology
+deficit is mathematical (morph targets are linear vertex translations; if the vertex isn't there,
+the math does nothing; a 12-vert joint ring collapses like a straw when bent). It is the
+fallback/CAW-preview/low-poly-"retro-attire" tier. **AAA PATH PROVEN THIS SESSION** (v154): the
+Action Adventure Pack X Bot FBX -> GLB (fbx2gltf, binary) -> `assignCharModel('BANNON', url)` loaded
+end-to-end through the EXISTING import path: 65 bones bound, 2 SkinnedMeshes, **28,374 verts** (8x
+the procedural body), procedural mesh auto-hidden, model follows the fight rig. Banked to
+`assets/models/xbot.glb` (+ idle/walk/run clips in assets/models/anims/). fbx2gltf binary lives at
+scratchpad `node_modules/fbx2gltf/bin/Linux/FBX2glTF` — headless conversion works in-sandbox, no
+Blender needed for the convert step.
+THE RUNTIME-CAW WORKAROUND (owner's architecture, the way to get 2K-level authoring WITHOUT saving a
+GLB per character): author ONE 40-80k male + one female BASE mesh in Blender with anatomical edge
+loops (deltoid/pec/knee/elbow loops that slide+compress on bend) + universal UV + 50-60 FACS/body
+shape keys, export ONE base GLB (Draco + KTX2). Then in-engine: (1) UI sliders -> `mesh.
+morphTargetInfluences[i]` (GPU morph targets, ~zero CPU, stack 60+); (2) height/proportion ->
+`skeleton.bones[i].scale` with a collider-recalc callback; (3) skin/tattoo/scar -> OffscreenCanvas
+composite into ONE CanvasTexture; (4) SAVE = a lightweight JSON "DNA payload" (slider vals + bone
+scales + tex IDs), NOT a 3D file — the engine spawns the base GLB and injects the DNA at match start.
+The morph->slider bridge + CHAR_MODEL binding are already live; what's missing is the authored base
+mesh (Blender-MCP task) and the DNA-payload save/load schema. Near-term procedural wins (won't close
+the gap, still worth it): 1024px skin tex w/ pores+veins, real eyeball meshes, hair-card dreads,
+cloth wrinkle normals, elbow/knee crease rings.
+ENGINE PIVOT (owner floated UE5/Unity): logic (MAX_HP 10000, DMG_SCALE, MAX_BODY_VEL 3.8, poise-
+driven crumple) translates 1:1 (cannon/verlet->PhysX/Chaos, JS->C#/C++). Keep the Three.js procedural
+models as low-poly retro/"training dummy" unlock attires. Decision deferred — prove the GLB pipeline
+fully in Three.js first (DONE for import; DNA-CAW schema next).
 
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
