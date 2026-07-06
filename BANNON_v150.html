@@ -5604,6 +5604,68 @@ window.BANNON_ROSTER = [
 ];
 window.applyTemplate = function(f, t){ if(!f||!t) return; f.shape = Object.assign({}, t.shape||{}); window.applyFighterSpec(f, t); };
 
+// ============================================================================
+// BANNON DNA — the CAW "DNA payload" schema + save/load (owner's runtime-CAW
+// architecture). A character is NOT saved as a 3D file — it is a lightweight JSON
+// RECIPE that reshapes a base mesh at spawn: morph slider values + proportion
+// (bone-scale) values + palette/attire/identity. This is ENGINE-AGNOSTIC — the same
+// schema that drives the procedural body today maps 1:1 onto a base GLB tomorrow
+// (shape morph keys -> mesh.morphTargetInfluences, proportion keys ->
+// skeleton.bones[i].scale, colours -> the OffscreenCanvas texture composite). It is
+// the exact contract the UE5/Unity port consumes. See docs/DNA_SCHEMA.md.
+window.BANNON_DNA = (function(){
+  const V = 1;
+  // Which f.shape keys are PROPORTION/bone-length (map to bone.scale in a rigged
+  // mesh) vs everything else = MASS/FACE morphs (map to morphTargetInfluences).
+  const BONE_KEYS = ['height','armLen','legLen','torsoLen'];
+  const _clone = (o)=>{ const r={}; if(o) for(const k in o){ const v=o[k]; if(typeof v==='number'||typeof v==='string'||typeof v==='boolean') r[k]=v; } return r; };
+
+  // capture(f) -> the DNA recipe (deep, value-only clone; no live refs/3D data)
+  function capture(f){
+    if(!f) return null;
+    const sp=_clone(f.spec);
+    const shape=_clone(f.shape);
+    const boneScale={}, morphs={};
+    for(const k in shape){ if(BONE_KEYS.indexOf(k)>=0) boneScale[k]=shape[k]; else morphs[k]=shape[k]; }
+    return {
+      v:V,
+      name:(f.specName||sp.name||(f.opts&&f.opts.name)||'FIGHTER'),
+      base:(shape.fem!=null && +shape.fem>0.5)?'female':'male',   // which base mesh the recipe reshapes
+      shape:shape,              // full morph state (procedural body reads this directly)
+      morphs:morphs,            // GLB path: -> mesh.morphTargetInfluences (mass + face)
+      boneScale:boneScale,      // GLB path: -> skeleton.bones[i].scale (length/proportion)
+      spec:sp                   // palette + attireStyle + hairStyle + ink + style + name
+    };
+  }
+  // apply(f, dna) -> reshape a live fighter from a recipe (procedural body today)
+  function apply(f, dna){
+    if(!f||!dna) return false;
+    try{
+      f.shape = Object.assign({}, dna.shape || Object.assign({}, dna.boneScale, dna.morphs));
+      const sp = Object.assign({}, dna.spec||{}); if(dna.name && sp.name==null) sp.name=dna.name;
+      if(window.applyFighterSpec) window.applyFighterSpec(f, sp); else f.spec=sp;
+      if(dna.name){ f.specName=dna.name; }
+      return true;
+    }catch(e){ console.warn('[BANNON_DNA] apply failed', e); return false; }
+  }
+  function exportJSON(f){ try{ return JSON.stringify(capture(f)); }catch(e){ return null; } }
+  function importJSON(f, json){ try{ return apply(f, (typeof json==='string')?JSON.parse(json):json); }catch(e){ console.warn('[BANNON_DNA] import parse failed', e); return false; } }
+
+  // localStorage persistence — a named DNA library, tiny (recipes, not meshes)
+  const STORE='bannonDNA';
+  function _db(){ try{ return JSON.parse(localStorage.getItem(STORE)||'{}')||{}; }catch(e){ return {}; } }
+  function _write(db){ try{ localStorage.setItem(STORE, JSON.stringify(db)); }catch(e){} }
+  function save(name, f){ if(!name||!f) return false; const db=_db(); db[name.toUpperCase()]=capture(f); _write(db); return true; }
+  function load(name, f){ const db=_db(); const dna=db[(name||'').toUpperCase()]; if(!dna) return false; return f?apply(f,dna):dna; }
+  function list(){ return Object.keys(_db()); }
+  function remove(name){ const db=_db(); delete db[(name||'').toUpperCase()]; _write(db); }
+
+  try{ if(window.MANIFESTO&&window.MANIFESTO.register) window.MANIFESTO.register({ key:'caw.dna', kind:'creation',
+    summary:'DNA-payload CAW: a character saves as a lightweight JSON recipe (morph sliders + bone-scale + palette/attire), engine-agnostic — reshapes the procedural body today and maps 1:1 onto a base GLB (morphTargetInfluences + bone.scale + texture composite) for the AAA/native-engine path',
+    call:'window.BANNON_DNA.capture/apply/save/load/export/import' }); }catch(_){}
+  return { V, BONE_KEYS, capture, apply, export:exportJSON, import:importJSON, save, load, list, remove };
+})();
+
 // Archetype physique presets (same shape-space as BANNON_ROSTER) so every
 // character — including the new canon cast that has no hand-authored template —
 // gets a distinct silhouette instead of the one default body in different colours.
@@ -6004,6 +6066,16 @@ window.cycleRosterP2 = function(){
     hb.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=window.HAIR_LIST||['SHORT']; let i=list.indexOf(f.spec.hairStyle||'SHORT'); i=(i+1)%list.length; f.spec.hairStyle=list[i]; hb.textContent=list[i]; if(window.applyHair) window.applyHair(f, list[i], (f.spec.hair!=null?f.spec.hair:undefined)); };
     syncers.push(()=>{ const f=F(); hb.textContent=(f&&f.spec&&f.spec.hairStyle)||'SHORT'; });
     hrow.appendChild(hlab); hrow.appendChild(hb); wrap.appendChild(hrow);
+    // DNA — save/load the character as a lightweight JSON recipe (the runtime-CAW payload)
+    H('DNA  (save / load recipe)','#7CFC00');
+    const dnaRow=document.createElement('div'); dnaRow.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;';
+    const dnaBtn=(txt,cb)=>{ const b=document.createElement('button'); b.textContent=txt; b.style.cssText='flex:1;min-width:78px;background:#0e1a08;color:#bfffa8;border:1px solid #7CFC00;border-radius:5px;padding:7px 6px;cursor:pointer;font:bold 10px ui-monospace,monospace;'; b.onclick=cb; return b; };
+    dnaRow.appendChild(dnaBtn('★ SAVE DNA',()=>{ const f=F(); if(!f)return; const nm=(f.specName||(f.spec&&f.spec.name)||'FIGHTER'); window.BANNON_DNA.save(nm,f); (window.toast?window.toast('DNA saved: '+nm):console.log('[DNA] saved',nm)); }));
+    dnaRow.appendChild(dnaBtn('⭳ LOAD DNA',()=>{ const f=F(); if(!f)return; const names=window.BANNON_DNA.list(); if(!names.length){ console.log('[DNA] no saved DNA'); return; } const nm=prompt('Load DNA:\n'+names.join(', '), names[0]); if(nm&&window.BANNON_DNA.load(nm,f)){ syncAll(); console.log('[DNA] loaded',nm); } }));
+    dnaRow.appendChild(dnaBtn('⧉ EXPORT',()=>{ const f=F(); if(!f)return; const j=window.BANNON_DNA.export(f); if(j){ try{ navigator.clipboard&&navigator.clipboard.writeText(j); }catch(_){} prompt('DNA JSON (copied — paste to share):', j); } }));
+    dnaRow.appendChild(dnaBtn('⧉ IMPORT',()=>{ const f=F(); if(!f)return; const j=prompt('Paste DNA JSON:'); if(j&&window.BANNON_DNA.import(f,j)){ syncAll(); console.log('[DNA] imported'); } }));
+    wrap.appendChild(dnaRow);
+
     // TATTOOS / SCARS — vertex-painted ink + scar marks on bare skin
     H('TATTOOS / SCARS','#c084fc');
     const mkCycle=(label,specKey,listGetter,dflt)=>{

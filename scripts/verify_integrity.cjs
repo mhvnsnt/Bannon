@@ -35,6 +35,7 @@ const SENTINELS = [
   ['grounded facing zones',       'groundFacingOf'],
   ['vault variants',              '_vaultPending'],
   ['GLB import binding',          '_bindFighterGltf'],
+  ['DNA-CAW save/load',           'BANNON_DNA'],
 ];
 
 let bad = [];

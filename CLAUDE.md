@@ -337,6 +337,20 @@ driven crumple) translates 1:1 (cannon/verlet->PhysX/Chaos, JS->C#/C++). Keep th
 models as low-poly retro/"training dummy" unlock attires. Decision deferred — prove the GLB pipeline
 fully in Three.js first (DONE for import; DNA-CAW schema next).
 
+## DNA-CAW schema (v155 — the runtime-CAW payload, the last piece before a native port)
+- `window.BANNON_DNA` (capture/apply/export/import/save/load/list/remove): a character saves as a
+  ~0.5KB JSON RECIPE (morph sliders + bone-scale + palette/attire/identity), NOT a 3D file. Engine-
+  agnostic: `shape` drives the procedural body now; pre-split `morphs`/`boneScale` map 1:1 onto a base
+  GLB (`morphTargetInfluences` + `skeleton.bones[i].scale` + OffscreenCanvas texture) and onto UE5/
+  Unity. `BONE_KEYS=[height,armLen,legLen,torsoLen]`→bone.scale, everything else→morph targets. SAVE
+  DNA / LOAD DNA / EXPORT / IMPORT buttons in the CAW panel. Verified dna.js: capture splits 7 morphs
+  + 2 bone keys, 499-byte export round-trips onto a DIFFERENT fighter exactly, localStorage save/load
+  works. Schema contract = `docs/DNA_SCHEMA.md`. Native port map = `docs/PORT_MAP_native.md`.
+  CODEDUMMY capability/anti-amateur-mistake spec = `docs/CODEDUMMY_capability_spec.md`.
+- ENGINE PIVOT PLAN: finish/validate DNA-CAW in three.js (DONE) → author base male/female GLBs w/
+  FACS BlendShapes (Blender-MCP) → port to UE5/Unity via PORT_MAP (logic is 1:1, physics laws carry
+  verbatim). Three.js procedural models become low-poly retro/training-dummy unlock attires.
+
 ## Model fidelity pass (v155 — deepen the procedural body, don't just defer to GLB)
 - MESH DENSITY: N (radial) 20->28, SUB (longitudinal) 4->7 — body verts 3594 -> 8638 (2.4x),
   rounder cross-sections + finer taper + more morph-target resolution for joint bends. Live knobs
