@@ -11686,14 +11686,19 @@ function playerAttack(kind){
   // running knee / rebound big boot), with power scaled by live momentum and a rebound bonus.
   if ((p.running || (p.reboundT||0)>0) && (kind==='jab'||kind==='cross'||kind==='kick')){
     const _reb=(p.reboundT||0)>0;
+    // v155 RUNNING DIRECTION VARIANTS (owner: "running moves new to people forward+forward and up"):
+    // holding TOWARD the opponent while running = a committed charge (spear/shoulder tackle/knee
+    // strike); holding UP = a LEAPING running move (flying forearm / lariat off the feet / flying
+    // knee). Neutral running keeps the base family. `aim>0` = pushing forward toward the foe.
+    const _fwd = (aim>0), _up = (zone==='HIGH' && aim===0);
     const RUN={
-      jab:  { name:_reb?'REBOUND SHOULDER BLOCK':'RUNNING SHOULDER BLOCK', cat:'STRIKE', limb:'RIGHT CROSS', traj:'STRAIGHT', height:'MID',  power:58, speed:88 },
-      cross:{ name:_reb?'REBOUND LARIAT':'RUNNING LARIAT',                 cat:'STRIKE', limb:'RIGHT CROSS', traj:'HOOKING',  height:'HIGH', power:66, speed:82 },
-      kick: { name:_reb?'REBOUND BIG BOOT':'RUNNING KNEE',                 cat:'STRIKE', limb:_reb?'RIGHT KICK':'KNEE', traj:'STRAIGHT', height:'HIGH', power:64, speed:85 }
+      jab:  { name:_reb?'REBOUND SHOULDER BLOCK':(_fwd?'RUNNING SPEAR':(_up?'FLYING FOREARM':'RUNNING SHOULDER BLOCK')), cat:'STRIKE', limb:'RIGHT CROSS', traj:_fwd?'FLYING':(_up?'JUMPING':'STRAIGHT'), height:_up?'HIGH':'MID',  power:_fwd?74:(_up?64:58), speed:_fwd?80:88 },
+      cross:{ name:_reb?'REBOUND LARIAT':(_fwd?'RUNNING SHOULDER TACKLE':(_up?'LEAPING LARIAT':'RUNNING LARIAT')),        cat:'STRIKE', limb:'RIGHT CROSS', traj:_up?'JUMPING':'HOOKING',  height:'HIGH', power:_fwd?72:(_up?70:66), speed:82 },
+      kick: { name:_reb?'REBOUND BIG BOOT':(_fwd?'RUNNING KNEE STRIKE':(_up?'FLYING KNEE':'RUNNING KNEE')),               cat:'STRIKE', limb:_reb?'RIGHT KICK':'KNEE', traj:_up?'FLYING':'STRAIGHT', height:'HIGH', power:_fwd?70:(_up?76:64), speed:85 }
     };
-    const rm=Object.assign({ style:p.style||'BRAWLER', follow:'RESET STANCE' }, RUN[kind]);
+    const rm=Object.assign({ style:p.style||'BRAWLER', follow:_fwd?'KNOCKDOWN':'RESET STANCE' }, RUN[kind]);
     rm.power=Math.round(rm.power*(1 + 0.45*Math.min(1,(p.momentum||0)/3) + (_reb?0.30:0)));
-    rm._running=true;
+    rm._running=true; if(_fwd||_up) rm._loaded=true;
     p.startAttack(rm); return;
   }
 
@@ -11712,12 +11717,17 @@ function playerAttack(kind){
     // strike, down = biggest LOW, fwd = a flying/jumping/lunging move, back = a spinning move,
     // neutral = the biggest strike overall. Each falls back to overall-biggest if none match.
     const _elig=(m)=> m && m.cat!=='THROW' && m.cat!=='GROUND';
+    const _fly=(m)=> m.traj==='FLYING'||m.traj==='JUMPING'||m.traj==='DIVING'||m.traj==='SUPERMAN';
     const _biggestOf=(pred)=> set.reduce((b,m)=> ((_elig(m)&&pred(m)&&m.power>(b?b.power:0))?m:b), null);
     const _overall=_biggestOf(()=>true);
-    if      (sdir==='up')   mv=_biggestOf(m=>m.height==='HIGH');
+    // v155: up = biggest GROUNDED high strike (exclude flying so up differs from fwd's leaping move —
+    // the owner: "special should do different moves than the flying one too"). fwd = the flying/
+    // lunging bomb, back = spinning, down = the biggest low.
+    if      (sdir==='up')   mv=_biggestOf(m=>m.height==='HIGH' && !_fly(m)) || _biggestOf(m=>m.height==='HIGH');
     else if (sdir==='down') mv=_biggestOf(m=>m.height==='LOW');
-    else if (sdir==='fwd')  mv=_biggestOf(m=>m.traj==='FLYING'||m.traj==='JUMPING'||m.traj==='DIVING'||m.traj==='SUPERMAN');
+    else if (sdir==='fwd')  mv=_biggestOf(_fly);
     else if (sdir==='back') mv=_biggestOf(m=>m.traj==='SPINNING'||(m.name&&m.name.indexOf('SPIN')>=0));
+    else                    mv=_biggestOf(m=>!_fly(m)) || _overall;   // neutral = biggest GROUNDED (flying is the fwd flavor)
     mv = mv || _overall;
   } else if (STRIKE_MAP[mapKind]){
     const want = STRIKE_MAP[mapKind][sdir] || STRIKE_MAP[mapKind].neutral;
