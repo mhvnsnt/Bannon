@@ -82,7 +82,7 @@ async function runLoop() {
     console.log("[Autonomous Daemon] Starting iteration...");
     try {
         const responseStream = await ai.models.generateContentStream({
-            model: "gemini-3.5-flash",
+            model: "gemini-2.5-flash",
             contents: history as any,
             config: {
                 systemInstruction,
@@ -187,4 +187,19 @@ async function runLoop() {
 // Run the loop every 30 seconds
 console.log("[Autonomous Daemon] Initialized.");
 runLoop();
-setInterval(runLoop, 30000);
+
+let errorCount = 0;
+async function loopWithBackoff() {
+    try {
+        await runLoop();
+        errorCount = 0; // reset on success
+        setTimeout(loopWithBackoff, 60000); // 1 minute between loops
+    } catch (e) {
+        errorCount++;
+        const backoff = Math.min(60000 * Math.pow(2, errorCount), 3600000); // Exponential backoff up to 1 hour
+        console.log(`[Autonomous Daemon] Loop failed. Retrying in ${backoff / 1000}s...`);
+        setTimeout(loopWithBackoff, backoff);
+    }
+}
+setTimeout(loopWithBackoff, 60000);
+
