@@ -30,6 +30,8 @@ from pydantic import BaseModel
 
 BACKEND = os.environ.get("FORGE_BACKEND", "stub").lower()
 DO_RIG = os.environ.get("FORGE_RIG", "1") == "1"
+DO_DECIMATE = os.environ.get("FORGE_DECIMATE", "1") == "1"   # topology guard (see post_process)
+TARGET_TRIS = int(os.environ.get("FORGE_TARGET_TRIS", "15000"))  # game-ready budget; keeps physics fast
 OUT_DIR = os.environ.get("FORGE_OUT", "/tmp/bannon_forge")
 PUBLIC_BASE = os.environ.get("FORGE_PUBLIC_BASE", "")  # e.g. https://your-gpu-host  (for absolute glbUrl)
 AUTH = os.environ.get("OWN_GEN_KEY", "")               # optional shared secret (Bearer)
@@ -48,6 +50,9 @@ class GenReq(BaseModel):
     rig: bool = True
     kind: str = "character"        # "character" | "attire"
     characterId: Optional[str] = None
+    image: Optional[str] = None    # OPTIONAL image seed: http(s) URL or data: URI (base64). When
+                                   # given, image->3D is used so a SKETCH or a book-derived concept
+                                   # sheet drives the mesh (CLAUDE.md task #20). Text still refines it.
 
 
 def _job(jid: str, **patch):
@@ -66,6 +71,59 @@ def _glb_url(name: str) -> str:
 # BACKENDS — each returns the path to a written .glb. Heavy imports are inside the
 # functions so the server starts without the weights and `stub` always works.
 # ─────────────────────────────────────────────────────────────────────────────
+def _load_image(spec: str):
+    """Resolve an image seed (data: URI or http(s) URL) to a PIL.Image. Lazy imports so the server
+    boots without Pillow when no image path is used."""
+    from PIL import Image
+    import io, base64, urllib.request
+    if spec.startswith("data:"):
+        b64 = spec.split(",", 1)[1]
+        return Image.open(io.BytesIO(base64.b64decode(b64))).convert("RGB")
+    with urllib.request.urlopen(spec, timeout=30) as r:
+        return Image.open(io.BytesIO(r.read())).convert("RGB")
+
+
+def post_process(in_glb: str, out_glb: str, on_progress) -> str:
+    """TOPOLOGY GUARD — the step that makes us better than Tripo/Convert3D for a PHYSICS game.
+    AI meshes ship chaotic (500k+ tris, non-manifold shards, unwelded seams) — that drags the solver
+    and can shatter the MAX_BODY_VEL collision constraints. We weld, drop degenerate/duplicate faces,
+    fix winding, and quadric-decimate to a game-ready budget (FORGE_TARGET_TRIS) BEFORE rigging so the
+    result deforms cleanly on the fight skeleton. Degrades gracefully: if the decimator isn't
+    installed, we still weld/clean and pass the mesh through rather than fail the job."""
+    try:
+        import trimesh, numpy as np  # noqa: F401
+    except Exception:
+        return in_glb  # no mesh tooling — leave the raw mesh for the game's in-browser handling
+    try:
+        loaded = trimesh.load(in_glb, force="scene")
+        mesh = loaded.to_geometry() if hasattr(loaded, "to_geometry") else loaded
+        if not hasattr(mesh, "faces") or len(mesh.faces) == 0:
+            return in_glb
+        # 1) CLEAN — weld coincident verts, drop degenerate + duplicate faces, fix normals/winding
+        mesh.merge_vertices()
+        mesh.update_faces(mesh.nondegenerate_faces())
+        mesh.update_faces(mesh.unique_faces())
+        mesh.remove_unreferenced_vertices()
+        try: mesh.fix_normals()
+        except Exception: pass
+        on_progress(84)
+        # 2) DECIMATE — quadric edge-collapse to the triangle budget (meshoptimizer-class). trimesh
+        #    routes to fast-simplification when available; skip if already under budget.
+        n = len(mesh.faces)
+        if DO_DECIMATE and n > TARGET_TRIS:
+            try:
+                mesh = mesh.simplify_quadric_decimation(face_count=TARGET_TRIS)
+            except TypeError:
+                # older trimesh signature takes a ratio, not a face_count
+                mesh = mesh.simplify_quadric_decimation(TARGET_TRIS / float(n))
+        on_progress(87)
+        mesh.export(out_glb)
+        return out_glb
+    except Exception:
+        traceback.print_exc()
+        return in_glb
+
+
 def _shape_prompt(prompt: str, kind: str) -> str:
     if kind == "attire":
         return (f"full-body fighting attire / costume: {prompt}. "
@@ -74,7 +132,7 @@ def _shape_prompt(prompt: str, kind: str) -> str:
             "Single connected humanoid mesh, T-pose, clean topology, PBR textured, game-ready.")
 
 
-def gen_hunyuan(prompt: str, kind: str, out_glb: str, on_progress):
+def gen_hunyuan(prompt: str, kind: str, out_glb: str, on_progress, image=None):
     # pip install: hy3dgen (Hunyuan3D-2), trimesh, torch
     from hy3dgen.shapegen import Hunyuan3DDiTFlowMatchingPipeline
     from hy3dgen.texgen import Hunyuan3DPaintPipeline
@@ -83,28 +141,38 @@ def gen_hunyuan(prompt: str, kind: str, out_glb: str, on_progress):
         _MODELS["hy_shape"] = Hunyuan3DDiTFlowMatchingPipeline.from_pretrained("tencent/Hunyuan3D-2")
         _MODELS["hy_paint"] = Hunyuan3DPaintPipeline.from_pretrained("tencent/Hunyuan3D-2")
     on_progress(15)
-    mesh = _MODELS["hy_shape"](prompt=_shape_prompt(prompt, kind))[0]
+    sp = _shape_prompt(prompt, kind)
+    if image:  # SKETCH / concept-sheet seed -> image->3D (shape follows the drawing; text still guides paint)
+        mesh = _MODELS["hy_shape"](image=_load_image(image))[0]
+    else:
+        mesh = _MODELS["hy_shape"](prompt=sp)[0]
     on_progress(60)
-    mesh = _MODELS["hy_paint"](mesh, prompt=_shape_prompt(prompt, kind))
+    mesh = _MODELS["hy_paint"](mesh, prompt=sp)
     on_progress(80)
     mesh.export(out_glb)
     return out_glb
 
 
-def gen_trellis(prompt: str, kind: str, out_glb: str, on_progress):
-    # TRELLIS is image->3D; make a concept image first (any SD text->image), then reconstruct.
+def gen_trellis(prompt: str, kind: str, out_glb: str, on_progress, image=None):
+    # TRELLIS is image->3D. Use the SUPPLIED image (sketch/concept sheet) when given; otherwise make a
+    # concept image from text first (any SD text->image), then reconstruct.
     import torch, trimesh  # noqa
-    from diffusers import AutoPipelineForText2Image
     from trellis.pipelines import TrellisImageTo3DPipeline
     from trellis.utils import postprocessing_utils
-    if "t2i" not in _MODELS:
+    if "trellis" not in _MODELS:
         on_progress(4)
-        _MODELS["t2i"] = AutoPipelineForText2Image.from_pretrained(
-            "stabilityai/sdxl-turbo", torch_dtype=torch.float16).to("cuda")
         _MODELS["trellis"] = TrellisImageTo3DPipeline.from_pretrained("microsoft/TRELLIS-image-large")
         _MODELS["trellis"].cuda()
-    on_progress(12)
-    img = _MODELS["t2i"](prompt=_shape_prompt(prompt, kind), num_inference_steps=4, guidance_scale=0.0).images[0]
+    if image:
+        on_progress(20)
+        img = _load_image(image)
+    else:
+        from diffusers import AutoPipelineForText2Image
+        if "t2i" not in _MODELS:
+            _MODELS["t2i"] = AutoPipelineForText2Image.from_pretrained(
+                "stabilityai/sdxl-turbo", torch_dtype=torch.float16).to("cuda")
+        on_progress(12)
+        img = _MODELS["t2i"](prompt=_shape_prompt(prompt, kind), num_inference_steps=4, guidance_scale=0.0).images[0]
     on_progress(30)
     out = _MODELS["trellis"].run(img)
     on_progress(70)
@@ -113,7 +181,7 @@ def gen_trellis(prompt: str, kind: str, out_glb: str, on_progress):
     return out_glb
 
 
-def gen_stub(prompt: str, kind: str, out_glb: str, on_progress):
+def gen_stub(prompt: str, kind: str, out_glb: str, on_progress, image=None):
     # No weights: write a minimal valid GLB (a box) so the full pipeline + game import is testable.
     import struct, json as _json
     on_progress(40)
@@ -171,15 +239,19 @@ def run_job(jid: str, req: GenReq):
         _job(jid, status="running", progress=2)
         gen = GEN.get(BACKEND, gen_stub)
         raw = os.path.join(OUT_DIR, f"{jid}_raw.glb")
-        gen(req.prompt, req.kind, raw, prog)
-        final = raw
+        gen(req.prompt, req.kind, raw, prog, req.image)
+        # TOPOLOGY GUARD: clean + decimate to a game-ready, physics-safe budget (skip the tiny stub).
+        clean = raw
+        if BACKEND != "stub":
+            clean = post_process(raw, os.path.join(OUT_DIR, f"{jid}_clean.glb"), prog)
+        final = clean
         if req.rig and DO_RIG and BACKEND != "stub":
             rigged = os.path.join(OUT_DIR, f"{jid}.glb")
-            final = auto_rig(raw, rigged, prog)
+            final = auto_rig(clean, rigged, prog)
         else:
             final = os.path.join(OUT_DIR, f"{jid}.glb")
-            if raw != final:
-                os.replace(raw, final)
+            if clean != final:
+                os.replace(clean, final)
         name = os.path.basename(final)
         _job(jid, status="succeeded", progress=100, glbUrl=_glb_url(name))
     except Exception as e:
