@@ -1,0 +1,10 @@
+{
+  "name": "CODEDUMMY",
+  "description": "Learn to code and have An autonomous AI agent with web scraping and simulated headless browser capabilities.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

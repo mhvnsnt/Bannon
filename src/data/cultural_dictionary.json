@@ -1,0 +1,14 @@
+{
+  "mappings": {
+    "system_crash": "Total Vibe Collapse",
+    "out_of_memory": "Brainrot Overflow",
+    "syntax_error": "Code L-Take",
+    "network_timeout": "Ghosted Connection",
+    "infinite_loop": "Rizz Loop",
+    "unauthorized": "NPC Gatekept",
+    "network_delay": "Vibe Check Speed",
+    "success": "W Cook"
+  },
+  "last_updated": "2026-07-06T05:06:53.039Z",
+  "version": "2.4.50"
+}

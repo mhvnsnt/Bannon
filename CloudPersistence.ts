@@ -18,7 +18,7 @@ async function getFirestore(): Promise<any | null> {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
   if (!projectId || !clientEmail || !privateKey) return null;
   try {
-    const admin = await import('firebase-admin');
+    const admin: any = await import('firebase-admin' as any);
     const app = admin.initializeApp({
       credential: admin.credential.cert({
         projectId,
