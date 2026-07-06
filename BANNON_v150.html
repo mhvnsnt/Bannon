@@ -12398,7 +12398,7 @@ window.BPHYS = (function(){
       // The RESULTING speed is now hard-capped per body (window.RK_VMAX, default 6.5 m/s — above a
       // real knockback, below orbit). Vertical shares also grounded: a punch whips the head BACK,
       // it does not launch it upward (head 0.45->0.26, struck node 0.25->0.15 of I).
-      const VMAX=(window.RK_VMAX!=null?window.RK_VMAX:4.5);
+      const VMAX=(window.RK_VMAX!=null?window.RK_VMAX:MAX_BODY_VEL);   // v155: honor the owner's spec — the Rapier impact cap = the engine's MAX_BODY_VEL (3.8 m/s) hard cap, same law as the verlet post-constraint clamp. No body ever exceeds it on a hit.
       const add=(nm,sx,sy,sz)=>{ const b=by[nm]; if(!b) return; try{ const v=b.linvel();
         let nx=v.x+sx, ny=v.y+sy, nz=v.z+sz; const sp=Math.hypot(nx,ny,nz);
         if(sp>VMAX){ const s=VMAX/sp; nx*=s; ny*=s; nz*=s; }
