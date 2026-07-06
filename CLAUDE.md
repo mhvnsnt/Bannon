@@ -111,6 +111,18 @@ commit those — commercial manuscripts; the canon/*.md distillations are the co
   Railway hosts the daemon (CPU); the model runs on a GPU host (HF Space/Modal/RunPod).
 - NEXT (task #20): feed the sketch images as image-to-3D seeds; per-character curated prompts;
   in-game GENERATE + attire-per-prompt + full EDIT panel.
+- FORGE BLUEPRINT (v155, `docs/FORGE_blueprint.md`) — the full "our own Tripo3D/Convert3D, free, no
+  credit limits, in-game" map. Verdict: the 3-machine loop (game→daemon `self`→`forge_server` GPU)
+  was already ~80% built; this pass CLOSED two real gaps in `forge_server/app.py`:
+  (1) **TOPOLOGY GUARD** `post_process` — weld + degenerate/dup-face cull + winding fix + quadric
+  decimate to `FORGE_TARGET_TRIS` (15k) BEFORE rigging. This is the differentiator over commercial
+  meshes for a PHYSICS game: 300–500k-tri AI output drags the solver + shatters MAX_BODY_VEL; verified
+  327k→15000 tris watertight valid GLB. Degrades gracefully (no decimator ⇒ weld+passthrough, never
+  fails a job). Env `FORGE_DECIMATE`/`FORGE_TARGET_TRIS`. (2) **IMAGE→3D SEED** — `image` field on
+  GenReq (data: URI or URL) + `_load_image`; a SKETCH (assets/reference/*) or concept sheet drives
+  shape (image→3D) instead of text-only. Verified: stub loop intact, decimation + data-URI loader.
+  REMAINING (last 20%, in the doc): lore→prompt endpoint, in-game image-seed UI, storage+roster
+  injection (Supabase/CloudPersistence), curated canon prompts, auto BANNON_DNA.capture on generate.
 
 ## Raw asset drops (repo root zips, from the owner — Blender-side pipeline fuel)
 - `Action Adventure Pack.zip` — Mixamo X Bot + animation FBXs (idle/walk/run/cover): convert to GLB
