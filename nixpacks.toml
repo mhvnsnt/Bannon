@@ -5,7 +5,7 @@ node = "20"
 nixPkgs = ["nodejs_20", "npm"]
 
 [phases.install]
-cmds = ["npm install", "npm install -g pm2 tsx typescript"]
+cmds = ["npm install", "npm install -g pm2 tsx typescript @railway/cli supabase"]
 
 [phases.build]
 cmds = ["npm run build"]

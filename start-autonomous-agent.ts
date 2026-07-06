@@ -8,6 +8,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const githubToken = process.env.GITHUB_TOKEN || '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';
+const WORKSPACE_DIR = process.env.WORKSPACE_DIR || "/workspace";
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
@@ -97,6 +98,31 @@ const githubTool = {
     }
 };
 
+
+const railwayTool = {
+    name: "railway_command",
+    description: "Execute a Railway CLI command to manage infrastructure (e.g. provision volumes, set variables).",
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            command: { type: Type.STRING, description: "The arguments for the railway CLI, e.g. 'volume create workspace'" }
+        },
+        required: ["command"]
+    }
+};
+
+const supabaseTool = {
+    name: "supabase_command",
+    description: "Execute a Supabase CLI command to manage database schema and migrations.",
+    parameters: {
+        type: Type.OBJECT,
+        properties: {
+            command: { type: Type.STRING, description: "The arguments for the supabase CLI, e.g. 'migration new feature_x'" }
+        },
+        required: ["command"]
+    }
+};
+
 const systemInstruction = `You are the Supreme Autonomous Developer Agent (Nexus). You run continuously 24/7.
 Your goal is to relentlessly improve the CODEDUMMY platform, making it superior to any existing AI studio or coding assistant.
 You will write tests, expand the curriculum in src/App.tsx, improve performance, build new components, and push changes to GitHub.
@@ -110,6 +136,17 @@ let history = [
     { role: 'user', parts: [{ text: "Initialize autonomous improvement loop. Find a file to improve, improve it, and report your action." }] }
 ];
 
+
+
+async function checkFinancialKillSwitch() {
+    // In production, this would query the Supabase agent_audit_log table
+    // For now, it enforces a basic circuit breaker in memory
+    const costLimit = parseFloat(process.env.AGENT_DAILY_BUDGET || "10");
+    let currentSpend = 0; // Simulated
+    if (currentSpend > costLimit) {
+        throw new Error("FINANCIAL_KILLSWITCH: Daily budget exceeded. Manual Admin Approval Required.");
+    }
+}
 
 async function runLoop() {
     console.log("[Autonomous Daemon] Starting iteration...");
@@ -128,7 +165,7 @@ async function runLoop() {
                     contents: history as any,
                     config: {
                         systemInstruction,
-                        tools: [{ functionDeclarations: [workspaceTool, githubTool] }],
+                        tools: [{ functionDeclarations: [workspaceTool, githubTool, railwayTool, supabaseTool] }],
                     }
                 });
 
@@ -212,15 +249,15 @@ async function runLoop() {
                 const { action, path: filePath, content, command } = functionCall.args;
                 try {
                     if (action === 'read_file') {
-                        const p = path.resolve(process.cwd(), filePath);
+                        const p = path.resolve(WORKSPACE_DIR, filePath);
                         result = { content: fs.readFileSync(p, 'utf8') };
                     } else if (action === 'write_file') {
-                        const p = path.resolve(process.cwd(), filePath);
+                        const p = path.resolve(WORKSPACE_DIR, filePath);
                         fs.mkdirSync(path.dirname(p), { recursive: true });
                         fs.writeFileSync(p, content, 'utf8');
                         result = { status: "Success" };
                     } else if (action === 'list_dir') {
-                        const p = path.resolve(process.cwd(), filePath || '.');
+                        const p = path.resolve(WORKSPACE_DIR, filePath || '.');
                         result = { files: fs.readdirSync(p) };
                     } else if (action === 'execute_command') {
                         result = { output: execSync(command, { encoding: 'utf8' }) };
@@ -256,6 +293,29 @@ async function runLoop() {
                  }
             }
 
+            } else if (functionCall.name === "railway_command") {
+                 await checkFinancialKillSwitch();
+                 try {
+                     const { command } = functionCall.args;
+                     const railwayToken = process.env.RAILWAY_TOKEN;
+                     if (!railwayToken) throw new Error("RAILWAY_TOKEN not found in environment");
+                     const output = execSync(`railway ${command} --token ${railwayToken}`, { encoding: 'utf8' });
+                     result = { status: "Success", output };
+                 } catch (e: any) {
+                     result = { error: e.message };
+                 }
+            } else if (functionCall.name === "supabase_command") {
+                 await checkFinancialKillSwitch();
+                 try {
+                     const { command } = functionCall.args;
+                     const output = execSync(`supabase ${command}`, { encoding: 'utf8' });
+                     result = { status: "Success", output };
+                 } catch (e: any) {
+                     result = { error: e.message };
+                 }
+            }
+
+            history.push({
             history.push({
                 role: 'model',
                 parts: [

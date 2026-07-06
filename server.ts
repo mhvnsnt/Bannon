@@ -56,7 +56,9 @@ function getGeminiClient(): GoogleGenAI {
 }
 
 startImmortalHeartbeat();
+import { imagePipelineRouter } from "./src/services/imagePipeline.js";
 const app = express();
+app.use(imagePipelineRouter);
 
 
 // Stripe Webhook needs raw body parsing
