@@ -1,7 +1,9 @@
 {
   "name": "react-example",
   "private": true,
-  "engines": { "node": ">=20.0.0" },
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -54,7 +56,8 @@
     "vite": "^6.2.3",
     "ws": "^8.21.0",
     "y-websocket": "^3.0.0",
-    "yjs": "^13.6.31"
+    "yjs": "^13.6.31",
+    "tsx": "^4.23.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
@@ -71,7 +74,6 @@
     "esbuild": "^0.25.0",
     "lucide-react": "^1.23.0",
     "tailwindcss": "^4.1.14",
-    "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.3"
   }
