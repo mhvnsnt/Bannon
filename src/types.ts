@@ -95,5 +95,12 @@ export const CAPSTONE_PROJECTS: ProjectDef[] = [
     description: 'A micro-clicker game with a live crypto ticker background, playing hertz frequencies on clicks.',
     requires: ['fetch_api', 'audio_api', 'timing_events', 'dom_manipulation'],
     isHybrid: true
+  },
+  {
+    id: 'bannon_engine',
+    name: 'Bannon Engine Sandbox',
+    description: 'Active 3D wrestling physics, 2K slot controllers, and immutable velocity cap simulation.',
+    requires: ['math_physics', 'dom_manipulation'],
+    isHybrid: true
   }
 ];

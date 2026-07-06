@@ -1,6 +1,8 @@
 import axios from 'axios';
 import fs from 'fs';
 import path from 'path';
+import { repoSyncService } from './repoSyncService';
+import { execSync } from 'child_process';
 
 /**
  * TelegramBotService Client/Server Bridge
@@ -185,6 +187,51 @@ export class TelegramBotService {
                 return;
             }
 
+            if (incomingText.includes('help') || incomingText === '/start') {
+                const helpMenu = `🛠 *BANNON AI Game Dev Agent Control Panel*\n\n` +
+                    `You can control the autonomous game dev loop and sync your Bannon repositories using these commands:\n\n` +
+                    `🔄 *Repository Sync Commands:*\n` +
+                    `• \`/pull\` or \`pull\`: Force bidirectional fetch, pull remote commits from BANNON and merge into local workspace.\n` +
+                    `• \`/push\` or \`push\`: Add, commit, and push any local code improvements/refactors back to \`mhvnsnt/BANNON\`.\n\n` +
+                    `📊 *Diagnostics & Utilities:*\n` +
+                    `• \`/status\` or \`status\`: Show active engine status, git staging files, last actions, and telemetry.\n` +
+                    `• \`/scrape\` or \`scrape\`: Trigger the Obscura internet slang scraper stack to ingest fresh cultural references.\n\n` +
+                    `💬 *Talk & Direct Dev Commands:*\n` +
+                    `• Simply *send any text message* to give a direct programming instruction, request a feature, or report a bug. The Bannon Dev Agent will ingest the instruction, consult the books/canon reference files, refactor the code, compile and verify, and report back!`;
+                await this.bot.sendMessage(senderChatId, helpMenu, { parse_mode: 'Markdown' });
+                return;
+            }
+
+            if (incomingText === 'pull' || incomingText === '/pull') {
+                await this.bot.sendMessage(senderChatId, "🔄 *Initiating bidirectional sync pull...* Connecting to GitHub, pulling remote commits, and merging...", { parse_mode: 'Markdown' });
+                try {
+                    await repoSyncService.syncAll();
+                    const gitLog = execSync('git log -n 3 --oneline', { encoding: 'utf8' });
+                    await this.bot.sendMessage(senderChatId, `✅ *Sync Pull Complete!* Local workspace is fully reconciled with remotes.\n\n*Recent Commits:*\n\`\`\`\n${gitLog}\n\`\`\``, { parse_mode: 'Markdown' });
+                } catch (err: any) {
+                    await this.bot.sendMessage(senderChatId, `❌ *Pull Sync Failed:* ${err.message}`, { parse_mode: 'Markdown' });
+                }
+                return;
+            }
+
+            if (incomingText === 'push' || incomingText === '/push') {
+                await this.bot.sendMessage(senderChatId, "📤 *Staging and pushing local changes to remote repositories...*", { parse_mode: 'Markdown' });
+                try {
+                    // Check if there are changes
+                    const diff = execSync('git status --porcelain', { encoding: 'utf8' });
+                    if (!diff.trim()) {
+                        await this.bot.sendMessage(senderChatId, "ℹ *No changes detected.* Workspace is clean and fully in sync with remotes.", { parse_mode: 'Markdown' });
+                        return;
+                    }
+
+                    await repoSyncService.syncAll();
+                    await this.bot.sendMessage(senderChatId, `✅ *Changes successfully committed and pushed!* Check your GitHub repo at \`mhvnsnt/BANNON\`.`, { parse_mode: 'Markdown' });
+                } catch (err: any) {
+                    await this.bot.sendMessage(senderChatId, `❌ *Push Sync Failed:* ${err.message}`, { parse_mode: 'Markdown' });
+                }
+                return;
+            }
+
             if (incomingText.includes('status')) {
                 // Increment active jobs for metric visualization stress tracking
                 if (process.env.ACTIVE_JOBS) {
@@ -194,13 +241,21 @@ export class TelegramBotService {
                 }
                 
                 try {
-                    const telemetry = `📊 *CODEDUMMY Autonomous Telemetry:* \n\n` +
-                        `🟢 *System Engine:* \`ONLINE (Autonomous Linux Container)\`\n` +
-                        `⚡ *Vibe Check Speed:* \`12ms (Superconductive)\`\n` +
-                        `📦 *WASM MicroVM Memory:* \`Isolated Deno memory heap\`\n` +
-                        `🎭 *Crawler Engine:* \`Obscura-Stealth v1.4.26\`\n` +
-                        `📱 *Authorized Client:* \`@${senderUsername} (${senderChatId})\``;
+                    const gitStatus = execSync('git status --short', { encoding: 'utf8' }) || '(None - Clean)';
+                    const recentLogs = fs.existsSync('logs/autonomous_agent.log') ? 
+                        execSync('tail -n 10 logs/autonomous_agent.log', { encoding: 'utf8' }) : 
+                        '(No logs found)';
+                    
+                    const telemetry = `📊 *BANNON Game Dev Agent Telemetry:* \n\n` +
+                        `🟢 *System Engine:* \`ONLINE (Autonomous Bannon Dev Loop)\`\n` +
+                        `⚡ *Heartbeat:* \`LIVE\`\n` +
+                        `🎭 *Knowledge Base:* \`12 Bannon Book Files & Core Engine Code\`\n` +
+                        `📱 *Authorized Controller:* \`@${senderUsername} (${senderChatId})\`\n\n` +
+                        `📝 *Staged/Unstaged Files:*\n\`\`\`\n${gitStatus}\n\`\`\`\n\n` +
+                        `🤖 *Recent Agent Daemon Logs:*\n\`\`\`\n${recentLogs.slice(-400)}\n\`\`\``;
                     await this.bot.sendMessage(senderChatId, telemetry, { parse_mode: 'Markdown' });
+                } catch (e: any) {
+                    await this.bot.sendMessage(senderChatId, `❌ *Telemetry collection failed:* ${e.message}`, { parse_mode: 'Markdown' });
                 } finally {
                     process.env.ACTIVE_JOBS = String(Math.max(0, Number(process.env.ACTIVE_JOBS || 1) - 1));
                 }
@@ -228,7 +283,25 @@ export class TelegramBotService {
                     process.env.ACTIVE_JOBS = String(Math.max(0, Number(process.env.ACTIVE_JOBS || 1) - 1));
                 }
             } else {
-                await this.bot.sendMessage(senderChatId, `❓ *Unknown command: "${msg.text}"*\n\nTry sending \`status\` or \`run scrape\`.`, { parse_mode: 'Markdown' });
+                // Not a predefined bot command, so it's a direct command/message for the Autonomous Agent
+                try {
+                    const queuePath = path.join(process.cwd(), 'command_queue.json');
+                    let queue = [];
+                    if (fs.existsSync(queuePath)) {
+                        try {
+                            queue = JSON.parse(queuePath);
+                        } catch (e) {
+                            try {
+                                queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
+                            } catch (e) { queue = []; }
+                        }
+                    }
+                    queue.push({ role: 'user', text: msg.text, timestamp: new Date().toISOString() });
+                    fs.writeFileSync(queuePath, JSON.stringify(queue, null, 2), 'utf8');
+                    await this.bot.sendMessage(senderChatId, `⏳ *Instruction received.* Passed to the Bannon Dev Agent.\n\n_Refactoring files and matching against Bannon books can take some time. Standby for updates..._`, { parse_mode: 'Markdown' });
+                } catch (err: any) {
+                    await this.bot.sendMessage(senderChatId, `❌ *Failed to queue command:* ${err.message}`, { parse_mode: 'Markdown' });
+                }
             }
         });
     }

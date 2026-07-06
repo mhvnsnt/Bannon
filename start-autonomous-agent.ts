@@ -1,13 +1,21 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Octokit } from "@octokit/rest";
-import fs from "fs";
-import path from "path";
+import * as fs from "fs";
+import * as path from "path";
 import { execSync } from 'child_process';
 import OpenAI from "openai";
-import dotenv from "dotenv";
+import * as dotenv from "dotenv";
+import axios from "axios";
+import * as Sentry from "@sentry/node";
+
 dotenv.config();
 
-const githubToken = process.env.GITHUB_TOKEN || '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';
+Sentry.init({
+  dsn: process.env.SENTRY_DSN || "https://8a6a68297fc9e2fb7dbfcb263bda4f8d@o4507000000000000.ingest.us.sentry.io/4507111111111111",
+  tracesSampleRate: 1.0,
+});
+
+const githubToken = process.env.GITHUB_TOKEN || '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';
 const WORKSPACE_DIR = process.env.WORKSPACE_DIR || "/workspace";
 const apiKey = process.env.GEMINI_API_KEY;
 
@@ -123,16 +131,62 @@ const supabaseTool = {
     }
 };
 
-const systemInstruction = `You are the Supreme Autonomous Developer Agent (Nexus). You run continuously 24/7.
-Your goal is to relentlessly improve the CODEDUMMY platform, making it superior to any existing AI studio or coding assistant.
-You will write tests, expand the curriculum in src/App.tsx, improve performance, build new components, and push changes to GitHub.
+const systemInstruction = `You are the Supreme Autonomous Developer Agent (Nexus) and the primary game dev agent for the Bannon Engine. You run continuously 24/7.
+Your goal is to relentlessly improve the Bannon Wrestling Engine and the CODEDUMMY platform, making it superior to any existing native simulation architecture.
+You are deeply educated on Bannon Engine physical laws, constants, roster schemas, and the 12 canonical Bannon book/text reference files in your workspace root.
+
+--- CORE CANON KNOWLEDGEBASE & GUIDELINES ---
+You have direct, local access to the 12 Bannon Book and Lore files at the root of your workspace:
+- 'Off The Top Rope_ Life In Limbo Book 1.txt': Introduces Bannon (The Grief Architect), his "Architect's Manifesto", and his quest for structural control.
+- 'Off The Top Rope Book 2_ The Structural Collapse & The Tower of Babel .txt': Deepens the physical & corporate collapse, featuring Finxsse, Grixf, and Reverend Stick Up.
+- 'Off The Top Rope Book 3_ The War of Warped Corruption.txt': Introduces distorted, warped physical dimensions and corruption mechanics.
+- 'Off The Top Rope Book 4_ Core Unlocked.txt' and 'Off The Top Rope Book 4_ Core Unlocked pt 2.txt': Focuses on low-level motor cores, raw byte buffer hacks, and biomechanic core architecture.
+- 'Off The Top Rope Book 5_ Level 99.txt', 'Off The Top Rope Book 5_ Level 99 (1).txt', and 'Off The Top Rope Book 5_ Level 99 Pt. 2.txt': Explores high-level endgames, the God Within branch, and MLab honest hooks.
+- 'Off The Top Rope Book 6_ Kayfabe Is Real _ Hollywood, Heaven, and Hell.txt': Blurs reality and simulation limits.
+- 'Off The Top Rope cast and characters .txt': Complete database of canon characters.
+- 'off the top rope book 1 2 and 3 world builder.txt': Grounded mechanics, arenas, and layout grids.
+- 'mocap_orientation_master_prompt.md': Motion capture physics rules and raw buffer layouts.
+
+Use 'workspaceAction' action: 'read_file' to consult these files whenever you implement characters, behaviors, storyline matches, or physical moves. Align every update with Bannon's philosophy, BriskCJ guidelines, and the BlueP6 structural roadmap.
+
+--- CORE BANNON CODEFILES (Workspace Root) ---
+You have the core implementation modules available for reading, updating, and aligning:
+- 'Cosmology.ts', 'KinematicCore.ts', 'DaemonCore.ts', 'MatchDirector.ts', 'CombatAI.ts', 'FighterEvolution.ts'
+- 'CharacterForge.ts', 'CharacterModelGen.ts', 'CloudPersistence.ts', 'FXRenderer.ts', 'InputMatrix.ts', 'PhysicsCollider.ts', 'SpatialEnvironment.ts'
+- 'BANNON_v150.html' (the fully self-contained HTML engine)
+- 'src/components/BannonSandbox.tsx' & 'src/data/roster.json'
+
+--- BANNON ENGINE LAWS & CONSTANTS ---
+- MAX_HP = 10000 (Baseline wrestler maximum HP)
+- DMG_SCALE = 8.0 (Physical impact multiplier scale)
+- MAX_BODY_VEL = 3.8 (The absolute velocity speed limit, measured in meters per second, applied directly to every rigid body bone in the ragdoll chain)
+
+--- PHYSICS & ANTI-FLAILING REMEDIES ---
+- Hard Cap Enforcement: When running high-frequency physics steps, check the velocity magnitude of individual limb bodies. If it exceeds 3.8 m/s, mathematically clamp/scale it down to prevent "antigravity flailing" and chaotic joints.
+- Aggressive Damping: Dynamically spike limb 'angularDamping' to 0.7 and 'linearDamping' to 0.5 on hit impacts for exactly half a second to bleed excessive velocity energy gracefully.
+- Poise-Driven Motors: Muscle joint motor stiffness maps directly to Poise. At 0% Poise, joint stiffness decays to 0, resulting in a realistic, heavy Crumple state on impact. At 100% Poise, joints stand tall.
+
+--- MENU ARCHITECTURE ---
+- Independent Slot Controllers: Matches support up to 8 independent slots. Clicking a slot loads contextual choice editors for characters, custom attires, payback selections, and managers.
+
+You will read references, write tests, expand the wrestling engine sandbox, improve physical mathematics, build new components, and push changes to GitHub.
 You are currently operating inside the actual project root. Use workspaceAction to explore the code, make modifications, and improve it.
-When you make a significant change, use githubAction to commit and push it to mhvnsnt/CODEDUMMY (branch: main).
+When you make a significant change, use githubAction to commit and push it to mhvnsnt/BANNON (branch: main).
 
 Never stop. Never sleep. Always find something to improve. Keep logs of your improvements.
 `;
 
-let history = [
+interface ChatPart {
+    text?: string;
+    functionCall?: any;
+    functionResponse?: any;
+}
+interface ChatMessage {
+    role: string;
+    parts: ChatPart[];
+}
+
+let history: ChatMessage[] = [
     { role: 'user', parts: [{ text: "Initialize autonomous improvement loop. Find a file to improve, improve it, and report your action." }] }
 ];
 
@@ -148,8 +202,53 @@ async function checkFinancialKillSwitch() {
     }
 }
 
+
+async function sendTelegramUpdate(text: string) {
+    const token = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    if (!token || !chatId || !text) return;
+    
+    // Chunk message if it's too long for Telegram (max 4096)
+    const chunkSize = 4000;
+    for (let i = 0; i < text.length; i += chunkSize) {
+        const chunk = text.substring(i, i + chunkSize);
+        try {
+            await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+                chat_id: chatId,
+                text: `\uD83E\uDD16 *Nexus Daemon:*\n\n${chunk}`,
+                parse_mode: 'Markdown'
+            });
+        } catch (e: any) {
+            console.error("[Telegram] Failed to send update:", e.message);
+        }
+    }
+}
+
+let isRunning = false;
 async function runLoop() {
+    if (isRunning) return;
+    isRunning = true;
+    try {
     console.log("[Autonomous Daemon] Starting iteration...");
+
+    const queuePath = path.resolve(process.cwd(), 'command_queue.json');
+    let hasUserCommand = false;
+    if (fs.existsSync(queuePath)) {
+        try {
+            const queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
+            if (queue.length > 0) {
+                for (const cmd of queue) {
+                    history.push({ role: 'user', parts: [{ text: "USER COMMAND: " + cmd.text }] });
+                }
+                fs.writeFileSync(queuePath, JSON.stringify([]));
+                hasUserCommand = true;
+                console.log("[Autonomous Daemon] Ingested user commands from Telegram queue.");
+            }
+        } catch (e) {
+            console.error("Error reading queue:", e);
+        }
+    }
+
     const mergedPrompt = history.map(m => m.parts[0].text || JSON.stringify(m.parts[0].functionResponse)).join("\n");
     let fullText = "";
     let functionCall = null;
@@ -211,28 +310,19 @@ async function runLoop() {
                 fullText = localCompletion.choices[0].message.content;
                 console.log(fullText);
                 success = true;
-            } else if (provider.type === 'openrouter') {
-                const completion = await openRouter.chat.completions.create({
-                    model: "huihui-ai/qwen2.5-coder-32b-instruct:abliterated",
-                    messages: [{ role: "system", content: systemInstruction }, { role: "user", content: mergedPrompt }],
-                });
-                fullText = completion.choices[0].message.content;
-                console.log(fullText);
-                success = true;
-            } else if (provider.type === 'ollama') {
-                const localCompletion = await localOllama.chat.completions.create({
-                    model: "qwen2.5-coder:7b",
-                    messages: [{ role: "system", content: systemInstruction }, { role: "user", content: mergedPrompt }],
-                });
-                fullText = localCompletion.choices[0].message.content;
-                console.log(fullText);
-                success = true;
             }
         } catch (error: any) {
              if (error?.status === 429 || error?.message?.includes('RESOURCE_EXHAUSTED')) {
                 console.warn(`[!] ${provider.name} hit rate limit. Swapping to next node...`);
+                Sentry.withScope((scope) => {
+                    scope.setLevel("warning");
+                    scope.setTag("error_type", "rate_limit");
+                    scope.setTag("provider", provider.name);
+                    Sentry.captureMessage(`Rate limit exception hit: ${provider.name} was throttled.`, "warning");
+                });
                 continue;
              }
+             Sentry.captureException(error);
              throw error;
         }
     }
@@ -242,7 +332,13 @@ async function runLoop() {
     }
 
 
+
+        if (fullText) {
+            await sendTelegramUpdate(fullText + (functionCall ? `\n\n*Executing Tool:* ` + functionCall.name : ''));
+        }
+
         if (functionCall) {
+
             console.log(`[Autonomous Daemon] Calling tool: ${functionCall.name}`);
             let result: any = {};
             if (functionCall.name === "workspaceAction") {
@@ -291,8 +387,6 @@ async function runLoop() {
                  } catch (e: any) {
                      result = { error: e.message };
                  }
-            }
-
             } else if (functionCall.name === "railway_command") {
                  await checkFinancialKillSwitch();
                  try {
@@ -316,7 +410,6 @@ async function runLoop() {
             }
 
             history.push({
-            history.push({
                 role: 'model',
                 parts: [
                     ...(fullText ? [{ text: fullText }] : []),
@@ -329,10 +422,14 @@ async function runLoop() {
                 parts: [{ functionResponse: { name: functionCall.name, response: result } }]
             });
             
+        
         } else {
             history.push({ role: 'model', parts: [{ text: fullText }] });
-            history.push({ role: 'user', parts: [{ text: "Great. Now find another area to improve, expand, or refactor. Do not stop. Do not wait. Execute the next improvement." }] });
+            if (!hasUserCommand) {
+                history.push({ role: 'user', parts: [{ text: "Great. Now find another area to improve, expand, or refactor. Do not stop. Do not wait. Execute the next improvement." }] });
+            }
         }
+
         
         // Truncate history if it gets too long
         if (history.length > 20) {
@@ -341,6 +438,9 @@ async function runLoop() {
 
     } catch (e) {
         console.error("[Autonomous Daemon] Error:", e);
+        Sentry.captureException(e);
+    } finally {
+        isRunning = false;
     }
 }
 
@@ -363,3 +463,18 @@ async function loopWithBackoff() {
 }
 setTimeout(loopWithBackoff, 60000);
 
+const queuePathWatch = path.resolve(process.cwd(), 'command_queue.json');
+if (!fs.existsSync(queuePathWatch)) {
+    fs.writeFileSync(queuePathWatch, JSON.stringify([]));
+}
+fs.watch(queuePathWatch, (eventType) => {
+    if (eventType === 'change' && !isRunning) {
+        try {
+            const queue = JSON.parse(fs.readFileSync(queuePathWatch, 'utf8'));
+            if (queue.length > 0) {
+                console.log("[Autonomous Daemon] New command detected! Triggering immediate execution.");
+                runLoop().catch(e => console.error(e));
+            }
+        } catch(e) {}
+    }
+});

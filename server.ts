@@ -3,7 +3,7 @@ dotenv.config();
 
 import express from "express";
 import { GitHubService } from "./src/services/githubService";
-import { RepoSyncService } from "./src/services/repoSyncService";
+import { RepoSyncService, repoSyncService } from "./src/services/repoSyncService";
 import Stripe from "stripe";
 import path from "path";
 import { createServer as createViteServer } from "vite";
@@ -442,7 +442,7 @@ app.post("/api/nexus/update", async (req, res) => {
 app.post("/api/github/sync-workspace", async (req, res) => {
     try {
         const { owner, repo, branch, message } = req.body;
-        const githubToken = req.body.githubToken || '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';
+        const githubToken = req.body.githubToken || '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';
         
         const { Octokit } = require('@octokit/rest');
         const octokit = new Octokit({ auth: githubToken });
@@ -522,7 +522,7 @@ app.post("/api/github/save-token", async (req, res) => {
 app.post("/api/github/pull-workspace", async (req, res) => {
     try {
         const { owner, repo, branch } = req.body;
-        const githubToken = req.body.githubToken || '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';
+        const githubToken = req.body.githubToken || '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';
         
         const { Octokit } = require('@octokit/rest');
         const octokit = new Octokit({ auth: githubToken });
@@ -983,6 +983,14 @@ app.post("/api/chat", async (req, res) => {
 
 // --- Vite Middleware for Development ---
 async function startServer() {
+  // Start the Git repository automatic sync daemon
+  try {
+    repoSyncService.startDaemon(60000);
+    console.log("🔄 [RepoSyncService] Repo sync daemon started successfully.");
+  } catch (err: any) {
+    console.error("⚠️ [RepoSyncService] Failed to start sync daemon:", err.message);
+  }
+
   // Boot the Telegram remote control daemon asynchronously on start
   telegramBotService.initialize().catch(err => {
     console.error("⚠️ [TelegramBotService] Failed to bind polling listener daemon:", err.message);

@@ -6,7 +6,7 @@ import ProjectSelection from './components/ProjectSelection';
 import LegalModal from './components/LegalModal';
 import FeedbackForm from './components/FeedbackForm';
 import UserAnalytics from './components/UserAnalytics';
-import SignInModal from './components/SignInModal';
+import SignInModal from './components/SignIn/Modal';
 import CommandPalette from './components/CommandPalette';
 import { Bot, BookOpen, LayoutGrid, AlertTriangle, BarChart3, Users, RotateCcw, Check, LogIn, Shield, LogOut, Search, Zap, Mic, MicOff, HelpCircle, Sun, Moon, Menu, X } from 'lucide-react';
 import { SyncStatus } from './components/SyncStatus';
@@ -26,6 +26,8 @@ import { INITIAL_SKILL_TREE } from './types';
 import { HardwareDetector } from './utils/hardware';
 import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import { TutorialViewSkeleton, ProjectSelectionSkeleton, AgentViewSkeleton } from './components/Skeleton';
+import { useStreakTracker } from './hooks/useStreakTracker';
+import { useTheme } from './hooks/useTheme';
 
 export const LESSONS = [
   { id: 1, title: 'The Intro', subtitle: 'print("I\'m a dummy")' },
@@ -35,7 +37,9 @@ export const LESSONS = [
   { id: 5, title: 'Break the Code', subtitle: 'Bubble Text Customizer' },
   { id: 6, title: 'First Assignment', subtitle: 'The Objectives' },
   { id: 7, title: 'Fetching Data', subtitle: 'Live API Testing' },
-  { id: 8, title: 'The Code Runner', subtitle: 'Interactive JS Sandbox' }
+  { id: 8, title: 'The Code Runner', subtitle: 'Interactive JS Sandbox' },
+  { id: 9, title: 'Kinetic DOM', subtitle: 'Dynamic UI with KineticDOM' },
+  { id: 10, title: 'Dynamic Theming', subtitle: 'Light vs Dark Mode' }
 ];
 
 export function cn(...inputs: ClassValue[]) {
@@ -100,42 +104,6 @@ export const PROJECT_META: Record<string, { title: string; description: string; 
   }
 };
 
-
-function useStreakTracker() {
-  const [streak, setStreak] = useState(1);
-  useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
-    const lastLogin = localStorage.getItem('lastLoginDate');
-    const savedStreak = parseInt(localStorage.getItem('currentStreak') || '1', 10);
-    
-    if (lastLogin) {
-      if (lastLogin !== today) {
-        const last = new Date(lastLogin);
-        const now = new Date(today);
-        const diffTime = Math.abs(now.getTime() - last.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-        if (diffDays === 1) {
-          setStreak(savedStreak + 1);
-          localStorage.setItem('currentStreak', (savedStreak + 1).toString());
-        } else if (diffDays > 1) {
-          setStreak(1);
-          localStorage.setItem('currentStreak', '1');
-        } else {
-          setStreak(savedStreak);
-        }
-        localStorage.setItem('lastLoginDate', today);
-      } else {
-         setStreak(savedStreak);
-      }
-    } else {
-      localStorage.setItem('currentStreak', '1');
-      localStorage.setItem('lastLoginDate', today);
-    }
-  }, []);
-  
-  return streak;
-}
-
 export default function App() {
   const [currentView, setCurrentView] = useState<'tutorial' | 'projects' | 'agent' | 'analytics'>('tutorial');
   const streak = useStreakTracker();
@@ -143,9 +111,7 @@ export default function App() {
   const [isShortcutModalOpen, setIsShortcutModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAgentToolsOpen, setIsAgentToolsOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    return (localStorage.getItem('theme') as 'light' | 'dark') || 'light';
-  });
+  const [theme, setTheme] = useTheme();
 
   // Telegram remote control status and daemon verification
   const [telegramStatus, setTelegramStatus] = useState<{
@@ -207,15 +173,6 @@ export default function App() {
     const interval = setInterval(checkMetrics, 4000); // Poll metrics every 4s
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
-  }, [theme]);
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
@@ -288,7 +245,7 @@ export default function App() {
     const saved = localStorage.getItem('codedummy-progress');
     return saved ? parseInt(saved, 10) : 1;
   });
-  const totalScreens = 8;
+  const totalScreens = LESSONS.length;
 
   const [activeProjectId, setActiveProjectId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
@@ -576,7 +533,7 @@ export default function App() {
         localStorage.setItem('codedummy-user-email', email);
         
         // Auto unlock for admin
-        if (email.trim().toLowerCase() === 'marquiswhitacre@gmail.com') {
+        if (email.trim().toLowerCase() === 'marquiswhitacre@gmail.0com') {
           setIsBuyer(true);
           localStorage.setItem('codedummy-is-buyer', 'true');
         }
@@ -850,7 +807,7 @@ export default function App() {
                     ? "bg-red-500 animate-ping"
                     : systemMetrics.status === 'STRESSED'
                       ? "bg-amber-500 animate-pulse"
-                      : "bg-emerald-500"
+                    : "bg-emerald-500"
               )} />
               <span className="text-[9px]">
                 {!systemMetrics 
@@ -978,7 +935,7 @@ export default function App() {
             <SyncStatus 
               pendingCount={pendingSyncCount} 
               isConnected={isSupabaseConnected}
-              onFlush={() => showToast('Flushing sync queue...')} 
+              onFlush={() => showToast('Flushing sync queue...')}
               onViewLogs={() => setIsOfflineLogModalOpen(true)}
             />
           </div>
@@ -1063,7 +1020,7 @@ export default function App() {
               <div className="bg-slate-50 border border-black/5 p-3 rounded-xl">
                 <div className="flex justify-between items-center text-[10px] uppercase font-mono tracking-wider text-slate-500 mb-1.5 font-bold">
                   <span>Syllabus Progress</span>
-                  <span className="text-black">{Math.round((completedLessons.length / totalScreens) * 100)}% Done</span>
+                  <span className="text-black">{(Math.round((completedLessons.length / totalScreens) * 100))}% Done</span>
                 </div>
                 <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
                   <div 
@@ -1220,7 +1177,7 @@ export default function App() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       {userEmail.trim().toLowerCase() === 'marquiswhitacre@gmail.com' ? (
-                        <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-900 border-none px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase shadow animate-pulse">
+                        <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 via://yellow-400 to-amber-500 text-slate-900 border-none px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase shadow animate-pulse">
                           <Shield className="w-3 h-3 text-slate-900" />
                           GOD MODE
                         </div>

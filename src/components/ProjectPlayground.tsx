@@ -7,6 +7,7 @@ import {
   ChevronLeft, Code, Send
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
+import { BannonSandbox } from './BannonSandbox';
 
 interface ProjectPlaygroundProps {
   projectId: string | null;
@@ -34,6 +35,7 @@ export default function ProjectPlayground({ projectId, onBackToSelector }: Proje
     { id: 'css_3d_cube', name: 'The CSS 3D Cube', color: 'from-indigo-500 to-purple-500' },
     { id: 'password_cracker', name: 'The Password Cracker Simulator', color: 'from-slate-600 to-slate-800' },
     { id: 'god_build', name: 'The God Build (All-In-One Hybrid)', color: 'from-yellow-500 via-red-500 to-purple-600' },
+    { id: 'bannon_engine', name: 'Bannon Engine Rig Sandbox', color: 'from-cyan-400 via-blue-500 to-indigo-600' },
   ];
 
   if (!activeProjId) {
@@ -150,6 +152,8 @@ function SandboxRouter({ id }: { id: string }) {
       return <PasswordCrackerSandbox />;
     case 'god_build':
       return <GodBuildSandbox />;
+    case 'bannon_engine':
+      return <BannonSandbox />;
     default:
       return (
         <div className="text-center text-slate-500 text-sm">

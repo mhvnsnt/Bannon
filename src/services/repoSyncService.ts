@@ -209,3 +209,6 @@ export class RepoSyncService {
     this.syncAll().catch(console.error);
   }
 }
+
+const gitToken = process.env.GITHUB_TOKEN || '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';
+export const repoSyncService = new RepoSyncService(gitToken);

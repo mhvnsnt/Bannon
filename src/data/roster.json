@@ -1,0 +1,163 @@
+[
+  {
+    "id": "bannon",
+    "name": "Bannon",
+    "dna": "BANNON_V1_CORE",
+    "role": "Wrestler",
+    "poise": 95,
+    "hp": 10000,
+    "speed": 85,
+    "strength": 90,
+    "physicsScale": 1.1,
+    "payback": "Beast Mode",
+    "manager": "None",
+    "bio": "The physical nucleus and absolute force of the Bannon Engine. Driven by raw physics and unmatched grit.",
+    "attires": [
+      { "id": "classic", "name": "Classic Black & Gold", "color": "#000000", "accent": "#f59e0b" },
+      { "id": "street", "name": "Street Fight", "color": "#1e293b", "accent": "#ef4444" },
+      { "id": "apex", "name": "Apex Champion", "color": "#ffffff", "accent": "#ffd700" }
+    ]
+  },
+  {
+    "id": "cierra",
+    "name": "Cierra",
+    "dna": "CIERRA_FLY_99",
+    "role": "Wrestler",
+    "poise": 85,
+    "hp": 9000,
+    "speed": 98,
+    "strength": 75,
+    "physicsScale": 0.95,
+    "payback": "Teleport Strike",
+    "manager": "None",
+    "bio": "High-velocity high-flyer and official co-admin of CODEDUMMY bot remote systems. Blurs the line between physics and speed.",
+    "attires": [
+      { "id": "neon", "name": "Cyber Neon", "color": "#111827", "accent": "#ec4899" },
+      { "id": "glitch", "name": "Glitch Lacing", "color": "#06b6d4", "accent": "#f43f5e" }
+    ]
+  },
+  {
+    "id": "marquis",
+    "name": "Marquis",
+    "dna": "MARQUIS_BOSS_ALPHA",
+    "role": "Wrestler",
+    "poise": 100,
+    "hp": 12000,
+    "speed": 80,
+    "strength": 98,
+    "physicsScale": 1.2,
+    "payback": "Low Blow",
+    "manager": "Cierra",
+    "bio": "The Administrator. Exercises final authority with god-tier stats and absolute command of the developmental ring.",
+    "attires": [
+      { "id": "ceo", "name": "CEO Suit", "color": "#1e1b4b", "accent": "#ffd700" },
+      { "id": "armor", "name": "Dark Gold Plate", "color": "#0f172a", "accent": "#d97706" }
+    ]
+  },
+  {
+    "id": "nexus_prime",
+    "name": "Nexus Prime",
+    "dna": "NEXUS_AI_CORRUPT",
+    "role": "Wrestler",
+    "poise": 90,
+    "hp": 10500,
+    "speed": 92,
+    "strength": 88,
+    "physicsScale": 1.05,
+    "payback": "Code Crash",
+    "manager": "None",
+    "bio": "The 24/7 autonomous loop mascot. Holographic visual structures built on unpredictable, high-velocity math.",
+    "attires": [
+      { "id": "hologram", "name": "Holographic Blue", "color": "#1e1b4b", "accent": "#06b6d4" },
+      { "id": "slate", "name": "Slang Slate Text", "color": "#0f172a", "accent": "#10b981" }
+    ]
+  },
+  {
+    "id": "mdickie_legend",
+    "name": "MDickie Legend",
+    "dna": "MDICKIE_RETRO_MAX",
+    "role": "Wrestler",
+    "poise": 80,
+    "hp": 9500,
+    "speed": 75,
+    "strength": 82,
+    "physicsScale": 1.0,
+    "payback": "Instant Pin",
+    "manager": "None",
+    "bio": "Classic low-poly retro combatant paying ultimate homage to the MDickie selection flows and heavy hit reactions.",
+    "attires": [
+      { "id": "classic_shorts", "name": "Classic Shorts", "color": "#ef4444", "accent": "#ffffff" },
+      { "id": "referee", "name": "Ref Stripes", "color": "#000000", "accent": "#ffffff" }
+    ]
+  },
+  {
+    "id": "training_dummy",
+    "name": "Crash Dummy",
+    "dna": "TEST_DUMMY_V0",
+    "role": "Wrestler",
+    "poise": 50,
+    "hp": 8000,
+    "speed": 50,
+    "strength": 50,
+    "physicsScale": 1.0,
+    "payback": "None",
+    "manager": "None",
+    "bio": "The baseline target skin of the Bannon Engine. Ideal for testing deep hit-reaction damping curves and velocity hard-caps.",
+    "attires": [
+      { "id": "default", "name": "Safety Orange", "color": "#f97316", "accent": "#1f2937" }
+    ]
+  },
+  {
+    "id": "vince_m",
+    "name": "The Chairman",
+    "dna": "CHAIRMAN_BOSS_99",
+    "role": "Manager",
+    "poise": 70,
+    "hp": 6000,
+    "speed": 60,
+    "strength": 65,
+    "physicsScale": 1.05,
+    "payback": "Screwed Ref",
+    "manager": "None",
+    "bio": "A power manager with extreme authority modifiers. Commands attention from the ringside.",
+    "attires": [
+      { "id": "classic_suit", "name": "Striped Suit", "color": "#111827", "accent": "#94a3b8" }
+    ]
+  },
+  {
+    "id": "brisk_cj",
+    "name": "Brisk CJ",
+    "dna": "BRISK_CJ_AGENT_MAX",
+    "role": "Wrestler",
+    "poise": 92,
+    "hp": 9800,
+    "speed": 90,
+    "strength": 87,
+    "physicsScale": 1.0,
+    "payback": "Teleport Strike",
+    "manager": "None",
+    "bio": "An advanced operations specialist of the Bannon system. Moves with superconductive speed and razor-sharp precision.",
+    "attires": [
+      { "id": "cyber", "name": "Cyber Tech Suit", "color": "#0284c7", "accent": "#38bdf8" },
+      { "id": "stealth", "name": "Stealth Mode", "color": "#18181b", "accent": "#f43f5e" }
+    ]
+  },
+  {
+    "id": "blue_p6",
+    "name": "Blue P6",
+    "dna": "BLUE_P6_DAEMON_CORE",
+    "role": "Wrestler",
+    "poise": 88,
+    "hp": 9600,
+    "speed": 82,
+    "strength": 92,
+    "physicsScale": 1.05,
+    "payback": "Beast Mode",
+    "manager": "None",
+    "bio": "A heavy-duty architectural compiler entity. Holds stable physical structures under extreme stress limits.",
+    "attires": [
+      { "id": "sapphire", "name": "Deep Sapphire", "color": "#1e3a8a", "accent": "#60a5fa" },
+      { "id": "reactor", "name": "Active Reactor", "color": "#172554", "accent": "#fbbf24" }
+    ]
+  }
+]

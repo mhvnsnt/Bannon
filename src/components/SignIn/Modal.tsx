@@ -163,7 +163,7 @@ export default function SignInModal({ isOpen, onClose, onSuccess }: SignInModalP
                 type="button"
                 onClick={async () => {
                   try {
-                    const { supabase, isSupabaseConfigured } = await import('../services/supabaseClient');
+                    const { supabase, isSupabaseConfigured } = await import('../../services/supabaseClient');
                     if (!isSupabaseConfigured) {
                       setErrorMsg('OAuth login requires your custom Supabase Keys to be configured in settings.');
                       return;
