@@ -3,6 +3,7 @@ import { Octokit } from "@octokit/rest";
 import fs from "fs";
 import path from "path";
 import { execSync } from 'child_process';
+import OpenAI from "openai";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -13,6 +14,22 @@ if (!apiKey) {
     console.error("GEMINI_API_KEY is missing. Cannot start autonomous loop.");
     process.exit(1);
 }
+
+
+const openRouter = new OpenAI({
+    baseURL: "https://openrouter.ai/api/v1",
+    apiKey: process.env.OPENROUTER_API_KEY || "sk-or-placeholder",
+});
+const localOllama = new OpenAI({
+    baseURL: "http://localhost:11434/v1",
+    apiKey: "ollama",
+});
+
+const providers = [
+    { name: 'Gemini', type: 'gemini' },
+    { name: 'OpenRouter (Qwable)', type: 'openrouter' },
+    { name: 'Local Ollama (Abliterated)', type: 'ollama' }
+];
 
 const ai = new GoogleGenAI({
     apiKey,
@@ -78,32 +95,68 @@ let history = [
     { role: 'user', parts: [{ text: "Initialize autonomous improvement loop. Find a file to improve, improve it, and report your action." }] }
 ];
 
+
 async function runLoop() {
     console.log("[Autonomous Daemon] Starting iteration...");
-    try {
-        const responseStream = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash",
-            contents: history as any,
-            config: {
-                systemInstruction,
-                tools: [{ functionDeclarations: [workspaceTool, githubTool] }],
-            }
-        });
+    const mergedPrompt = history.map(m => m.parts[0].text || JSON.stringify(m.parts[0].functionResponse)).join("\n");
+    let fullText = "";
+    let functionCall = null;
+    let success = false;
 
-        let fullText = "";
-        let functionCall: any = null;
+    for (const provider of providers) {
+        if (success) break;
+        console.log(`[Autonomous Daemon] Attempting execution with ${provider.name}...`);
+        try {
+            if (provider.type === 'gemini') {
+                const responseStream = await ai.models.generateContentStream({
+                    model: "gemini-2.5-flash",
+                    contents: history as any,
+                    config: {
+                        systemInstruction,
+                        tools: [{ functionDeclarations: [workspaceTool, githubTool] }],
+                    }
+                });
 
-        for await (const chunk of responseStream) {
-            if (chunk.functionCalls && chunk.functionCalls.length > 0) {
-                functionCall = chunk.functionCalls[0];
+                for await (const chunk of responseStream) {
+                    if (chunk.functionCalls && chunk.functionCalls.length > 0) {
+                        functionCall = chunk.functionCalls[0];
+                    }
+                    if (chunk.text) {
+                        fullText += chunk.text;
+                        process.stdout.write(chunk.text);
+                    }
+                }
+                success = true;
+            } else if (provider.type === 'openrouter') {
+                const completion = await openRouter.chat.completions.create({
+                    model: "huihui-ai/qwen2.5-coder-32b-instruct:abliterated",
+                    messages: [{ role: "system", content: systemInstruction }, { role: "user", content: mergedPrompt }],
+                });
+                fullText = completion.choices[0].message.content;
+                console.log(fullText);
+                success = true;
+            } else if (provider.type === 'ollama') {
+                const localCompletion = await localOllama.chat.completions.create({
+                    model: "qwen2.5-coder:7b",
+                    messages: [{ role: "system", content: systemInstruction }, { role: "user", content: mergedPrompt }],
+                });
+                fullText = localCompletion.choices[0].message.content;
+                console.log(fullText);
+                success = true;
             }
-            if (chunk.text) {
-                fullText += chunk.text;
-                process.stdout.write(chunk.text);
-            }
+        } catch (error: any) {
+             if (error?.status === 429 || error?.message?.includes('RESOURCE_EXHAUSTED')) {
+                console.warn(`[!] ${provider.name} hit rate limit. Swapping to next node...`);
+                continue;
+             }
+             throw error;
         }
-        
-        console.log("");
+    }
+    
+    if (!success) {
+        throw new Error("All providers in the fallback matrix failed.");
+    }
+
 
         if (functionCall) {
             console.log(`[Autonomous Daemon] Calling tool: ${functionCall.name}`);

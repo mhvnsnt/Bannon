@@ -19,6 +19,7 @@ import { telegramBotService } from "./src/services/TelegramBotService";
 import { databaseService } from "./src/services/DatabaseService";
 import { WebSocketServer, WebSocket } from "ws";
 import http from "http";
+import { startImmortalHeartbeat } from "./src/services/agent-heartbeat.js";
 
 
 let stripeClient: Stripe | null = null;
@@ -54,6 +55,7 @@ function getGeminiClient(): GoogleGenAI {
   return ai;
 }
 
+startImmortalHeartbeat();
 const app = express();
 
 
