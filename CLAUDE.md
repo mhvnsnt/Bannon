@@ -337,6 +337,34 @@ driven crumple) translates 1:1 (cannon/verlet->PhysX/Chaos, JS->C#/C++). Keep th
 models as low-poly retro/"training dummy" unlock attires. Decision deferred — prove the GLB pipeline
 fully in Three.js first (DONE for import; DNA-CAW schema next).
 
+## DNA-CAW schema (v155 — the runtime-CAW payload, the last piece before a native port)
+- `window.BANNON_DNA` (capture/apply/export/import/save/load/list/remove): a character saves as a
+  ~0.5KB JSON RECIPE (morph sliders + bone-scale + palette/attire/identity), NOT a 3D file. Engine-
+  agnostic: `shape` drives the procedural body now; pre-split `morphs`/`boneScale` map 1:1 onto a base
+  GLB (`morphTargetInfluences` + `skeleton.bones[i].scale` + OffscreenCanvas texture) and onto UE5/
+  Unity. `BONE_KEYS=[height,armLen,legLen,torsoLen]`→bone.scale, everything else→morph targets. SAVE
+  DNA / LOAD DNA / EXPORT / IMPORT buttons in the CAW panel. Verified dna.js: capture splits 7 morphs
+  + 2 bone keys, 499-byte export round-trips onto a DIFFERENT fighter exactly, localStorage save/load
+  works. Schema contract = `docs/DNA_SCHEMA.md`. Native port map = `docs/PORT_MAP_native.md`.
+  CODEDUMMY capability/anti-amateur-mistake spec = `docs/CODEDUMMY_capability_spec.md`.
+- ENGINE PIVOT PLAN: finish/validate DNA-CAW in three.js (DONE) → author base male/female GLBs w/
+  FACS BlendShapes (Blender-MCP) → port to UE5/Unity via PORT_MAP (logic is 1:1, physics laws carry
+  verbatim). Three.js procedural models become low-poly retro/training-dummy unlock attires.
+
+## Model fidelity pass (v155 — deepen the procedural body, don't just defer to GLB)
+- MESH DENSITY: N (radial) 20->28, SUB (longitudinal) 4->7 — body verts 3594 -> 8638 (2.4x),
+  rounder cross-sections + finer taper + more morph-target resolution for joint bends. Live knobs
+  `window.BBODY_N` / `window.BBODY_SUB`. Crowd instancing (v152/153) freed the budget for this;
+  8638×2 fighters is trivial on a real GPU (harness swiftshader FPS is not a real perf signal).
+- ANATOMICAL MUSCLE RELIEF (leverages the new density, in `_relief`, gated by _def=muscularity·lean):
+  arms = deltoid cap (rr~0.10) + biceps belly (front rr~0.42) + triceps horseshoe (back rr~0.44,
+  ×cos(2a) twin-ridge) + forearm flexor (rr~0.72); legs = quad sweep (front rr~0.22) + hamstring
+  (back rr~0.20) + gastroc twin heads (back rr~0.66 ×cos(2a)) + tibialis ridge (front rr~0.66).
+  Verified: TITAN at musc 1.0/fat 0.12 shows visible pec/ab/limb muscle shapes (was a smooth tube).
+- HONEST CEILING still true (procedural tubes ≠ 40-80k sculpts) BUT the owner is right that the
+  procedural body was under-built — these are real visible wins within the tube system. The GLB/
+  DNA-CAW path (proven X Bot import + documented runtime-CAW architecture) remains the AAA endgame.
+
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
 faceSkullW/L (ringGirth ti===2). NEW `_face` relief (gaussians on the head tube r∈[0.55,1]):

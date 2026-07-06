@@ -1,0 +1,12 @@
+# Fails any push/PR that drops a shipped BANNON system (the CODEDUMMY-merge-clobber guard).
+name: BANNON Integrity
+on: [push, pull_request]
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Verify no shipped system was clobbered
+        run: node scripts/verify_integrity.cjs
