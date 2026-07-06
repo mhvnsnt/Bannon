@@ -16,6 +16,7 @@ const MIN_LINES = 33000;   // raise this as the file legitimately grows; never l
 const SENTINELS = [
   ['multi-man match engine',      'MATCH RULES + MULTI-MAN ENGINE'],
   ['menu multi-slots',            'MULTI_TYPES'],
+  ['per-slot payback/manager',    'PER-SLOT STATE'],
   ['ring-post env contact',       'ENV CONTACT'],
   ['2K reversal',                 '__tryReversal'],
   ['stun mash-out',               '__stunMash'],

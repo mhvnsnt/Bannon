@@ -34430,8 +34430,14 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   ];
 
   // ---- state ----
-  var sel = { p1:'BANNON', p2:'VIPER', p3:'RONIN', p4:'TITAN', p1Alt:null, p2Alt:null, side:'p2', modeIdx:0, typeIdx:0, stageIdx:0, preview:'BANNON' };
+  var sel = { p1:'BANNON', p2:'VIPER', p3:'RONIN', p4:'TITAN', p1Alt:null, p2Alt:null, side:'p2', modeIdx:0, typeIdx:0, stageIdx:0, preview:'BANNON',
+    // v155 PER-SLOT STATE (2K/MDickie independent slot controllers): each slot carries its own
+    // payback + manager, keyed by side, so setting P2's manager doesn't touch P1's.
+    payback:{p1:0,p2:0,p3:0,p4:0}, manager:{p1:0,p2:0,p3:0,p4:0} };
   var MULTI_TYPES = { TRIPLE:1, FOURWAY:2, ROYALE:2 };   // how many extra slots the type shows
+  // PAYBACKS (WWE-2K comeback/ability abilities, proprietary names) — the MOD+DODGE trigger later.
+  var PAYBACKS = ['Comeback','Second Wind (stamina surge)','Iron Will (damage armor)','Resolve (poise shield)','Adrenaline (speed burst)','Bad Intentions (power spike)'];
+  function managerList(){ var m=['None']; try{ Object.keys(window.CHAR_MANAGERS||{}).forEach(function(k){ m.push((window.CHAR_MANAGERS[k].name)||k); }); }catch(_){} return m; }
   try { var savedStage = (typeof arenaIdx!=='undefined') ? arenaIdx : 0; sel.stageIdx = savedStage; } catch(_){ }
 
   // ---- CSS — WWE-2K/Tekken VS-SCREEN: live 3D fighters in the scene behind,
@@ -34498,6 +34504,8 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         '<div class="csOpt"><div class="ol">MODE</div><div class="csCyc" id="csMode">PLAYER vs CPU</div></div>'+
         '<div class="csOpt"><div class="ol">MATCH TYPE</div><div class="csCyc" id="csType">ONE ON ONE</div></div>'+
         '<div class="csOpt"><div class="ol">ATTIRE</div><div class="csCyc" id="csAttire">Default</div></div>'+
+        '<div class="csOpt"><div class="ol">PAYBACK</div><div class="csCyc" id="csPayback">Comeback</div></div>'+
+        '<div class="csOpt"><div class="ol">MANAGER</div><div class="csCyc" id="csManager">None</div></div>'+
         '<div class="csOpt"><div class="ol">STAGE</div><div class="csCyc" id="csStage">FIRE PIT</div></div>'+
         '<button id="csStart">FIGHT ▶</button>'+
       '</div>'+
@@ -34556,6 +34564,9 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     }catch(_){}
     try { document.getElementById('csStage').textContent = (typeof ARENAS!=='undefined'?ARENAS[sel.stageIdx%ARENAS.length]:'FIRE PIT'); } catch(_){}
     try { var aSide=sel.side, aChar=sel[aSide], aCur=sel[aSide+'Alt']||null, aList=(window.altsFor?window.altsFor(aChar):[{id:null,label:'Default'}]); var aMatch=aList.find(function(a){return a.id===aCur;}); var aEl=document.getElementById('csAttire'); aEl.textContent=(aMatch?aMatch.label:'Default'); aEl.classList.toggle('dim', aList.length<=1); } catch(_){}
+    // v155 per-slot payback + manager for the ACTIVE slot
+    try { var ps=sel.side; document.getElementById('csPayback').textContent = PAYBACKS[(sel.payback[ps]||0)%PAYBACKS.length].split(' (')[0];
+      var ml=managerList(); document.getElementById('csManager').textContent = ml[(sel.manager[ps]||0)%ml.length].split(' (')[0].replace(/"/g,''); } catch(_){}
   }
 
   // Spawn / refresh the two live 3D fighters standing in the ring (vs-screen).
@@ -34595,6 +34606,9 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   document.getElementById('csMode').addEventListener('click', function(){ sel.modeIdx=(sel.modeIdx+1)%MODES.length; refresh(); });
   document.getElementById('csType').addEventListener('click', function(){ sel.typeIdx=(sel.typeIdx+1)%MATCH_TYPES.length; refresh(); });
   document.getElementById('csStage').addEventListener('click', function(){ try{ sel.stageIdx=(sel.stageIdx+1)%ARENAS.length; if(typeof arenaIdx!=='undefined'){ arenaIdx=sel.stageIdx; var an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; if(typeof buildArena==='function') buildArena(); } }catch(_){} refresh(); });
+  // v155 per-slot PAYBACK + MANAGER cyclers — advance only the ACTIVE slot's value
+  document.getElementById('csPayback').addEventListener('click', function(){ var ps=sel.side; sel.payback[ps]=((sel.payback[ps]||0)+1)%PAYBACKS.length; refresh(); });
+  document.getElementById('csManager').addEventListener('click', function(){ var ps=sel.side, ml=managerList(); sel.manager[ps]=((sel.manager[ps]||0)+1)%ml.length; refresh(); });
   // ATTIRE — cycle the active side's alt looks (e.g. Bannon -> Maime), keeping moves.
   document.getElementById('csAttire').addEventListener('click', function(){
     var side=sel.side, charName=sel[side];
@@ -34619,7 +34633,10 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       p3Name: sel.p3, p4Name: sel.p4,
       p1Control: mode==='P1' ? 'YOU' : (mode==='P2' ? 'CPU' : 'AI'),
       p2Control: mode==='P2' ? 'YOU' : (mode==='P1' ? 'CPU' : 'AI'),
-      matchType: MATCH_TYPES[sel.typeIdx].id, stage: sel.stageIdx
+      matchType: MATCH_TYPES[sel.typeIdx].id, stage: sel.stageIdx,
+      // v155 per-slot payback + manager carried into the match
+      p1Payback:PAYBACKS[sel.payback.p1%PAYBACKS.length], p2Payback:PAYBACKS[sel.payback.p2%PAYBACKS.length],
+      p1Manager:managerList()[sel.manager.p1%managerList().length], p2Manager:managerList()[sel.manager.p2%managerList().length]
     };
     root.classList.remove('show'); setHud('');
     if (typeof startFight==='function') startFight();
