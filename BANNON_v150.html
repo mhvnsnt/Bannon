@@ -5118,7 +5118,7 @@ if (window.SMOOTH_BODY===undefined) {
   window.SMOOTH_BODY = (_savedSkinPref===null) ? true : (_savedSkinPref==='1');   // continuous anatomical skin is the default (toggle with the SKIN button); remembers your choice after that
 }
 window.BBODY = (function(){
-  const N=20;   // ring resolution — 10 read as a faceted blob; 20 gives a smooth, rounded AAA silhouette (still trivial vert count)
+  const N=(window.BBODY_N!=null?window.BBODY_N:28);   // v155: 20->28 radial — rounder cross-sections (crowd is instanced now, budget freed). Live-tunable window.BBODY_N.
   // rings: [centerSpec, rSide] = circular, or [centerSpec, rSide, rDepth] = ELLIPTICAL (rSide = side-to-side girth, rDepth = front-to-back).
   // Athletic build from the walking-sim ratios: broad chest, flatter depth, narrow waist (real V-taper), arms with bicep/forearm mass.
   const TUBES=[
@@ -5172,7 +5172,7 @@ window.BBODY = (function(){
   // tubes into smooth anatomy. All the shaping functions (relief/fat/fem/ink/scar/region) are still
   // sampled in AUTHORED ring-space via a fractional index (d/SUB), so every CAW morph is unchanged,
   // just evaluated at finer resolution. Cheap: ~3k verts total across the whole body.
-  const SUB=4;
+  const SUB=(window.BBODY_SUB!=null?window.BBODY_SUB:7);   // v155: 4->7 longitudinal — finer taper + more morph-target resolution along limbs (elbow/knee bends read smoother). Live-tunable window.BBODY_SUB.
   let LAYOUT=null;
   function layout(){ if(LAYOUT) return LAYOUT; const tubes=[]; let off=0; const idx=[];
     for(let ti=0;ti<TUBES.length;ti++){ const T=TUBES[ti], M=T.rings.length, DM=(M-1)*SUB+1, start=off;
@@ -5372,8 +5372,27 @@ window.BBODY = (function(){
       return r;
     }
     if(ti===1) return -spine*0.010;
-    if(ti===3||ti===4) return front*0.016 + back*0.012;
-    if(ti===5||ti===6){ let r=front*0.016; if(i>=3) r += back*0.014; return r; }
+    // v155 ANATOMICAL ARM RELIEF (uses the new SUB=7 density): deltoid cap at the shoulder, biceps
+    // peak on the front of the upper arm, triceps horseshoe on the back, brachioradialis on the
+    // forearm. r=position along the limb (0=shoulder..1=hand), a=angle around (front=-cos).
+    if(ti===3||ti===4){ const rr=i/Math.max(1,M-1); let r=0;
+      const delt=Math.exp(-Math.pow(rr-0.10,2)/0.010);                 // rounded deltoid head near the shoulder
+      const bi  =Math.exp(-Math.pow(rr-0.42,2)/0.018)*front;           // biceps belly (front, mid-upper arm)
+      const tri =Math.exp(-Math.pow(rr-0.44,2)/0.022)*back;            // triceps (back, slightly lower)
+      const fore=Math.exp(-Math.pow(rr-0.72,2)/0.020)*(front*0.7+0.3); // forearm flexor mass
+      r += delt*0.022 + bi*0.026 + tri*0.020*(0.6+0.4*Math.cos(a*2)) + fore*0.014;
+      return r;
+    }
+    // v155 ANATOMICAL LEG RELIEF: quadriceps sweep (front upper thigh), hamstring (back upper),
+    // twin gastrocnemius heads on the calf (back lower), shin tibia ridge (front lower).
+    if(ti===5||ti===6){ const rr=i/Math.max(1,M-1); let r=0;
+      const quad=Math.exp(-Math.pow(rr-0.22,2)/0.020)*front;           // quad sweep, front of thigh
+      const ham =Math.exp(-Math.pow(rr-0.20,2)/0.024)*back;            // hamstring, back of thigh
+      const calf=Math.exp(-Math.pow(rr-0.66,2)/0.016)*back*(0.7+0.3*Math.cos(a*2)); // gastroc twin heads
+      const shin=Math.exp(-Math.pow(rr-0.66,2)/0.020)*front*0.5;       // tibialis ridge, front lower
+      r += quad*0.024 + ham*0.022 + calf*0.022 + shin*0.010;
+      return r;
+    }
     return 0;
   }
   // SOFT MASS — body fat rounds the silhouette: belly bulge (low-front torso, strongest

@@ -337,6 +337,20 @@ driven crumple) translates 1:1 (cannon/verlet->PhysX/Chaos, JS->C#/C++). Keep th
 models as low-poly retro/"training dummy" unlock attires. Decision deferred — prove the GLB pipeline
 fully in Three.js first (DONE for import; DNA-CAW schema next).
 
+## Model fidelity pass (v155 — deepen the procedural body, don't just defer to GLB)
+- MESH DENSITY: N (radial) 20->28, SUB (longitudinal) 4->7 — body verts 3594 -> 8638 (2.4x),
+  rounder cross-sections + finer taper + more morph-target resolution for joint bends. Live knobs
+  `window.BBODY_N` / `window.BBODY_SUB`. Crowd instancing (v152/153) freed the budget for this;
+  8638×2 fighters is trivial on a real GPU (harness swiftshader FPS is not a real perf signal).
+- ANATOMICAL MUSCLE RELIEF (leverages the new density, in `_relief`, gated by _def=muscularity·lean):
+  arms = deltoid cap (rr~0.10) + biceps belly (front rr~0.42) + triceps horseshoe (back rr~0.44,
+  ×cos(2a) twin-ridge) + forearm flexor (rr~0.72); legs = quad sweep (front rr~0.22) + hamstring
+  (back rr~0.20) + gastroc twin heads (back rr~0.66 ×cos(2a)) + tibialis ridge (front rr~0.66).
+  Verified: TITAN at musc 1.0/fat 0.12 shows visible pec/ab/limb muscle shapes (was a smooth tube).
+- HONEST CEILING still true (procedural tubes ≠ 40-80k sculpts) BUT the owner is right that the
+  procedural body was under-built — these are real visible wins within the tube system. The GLB/
+  DNA-CAW path (proven X Bot import + documented runtime-CAW architecture) remains the AAA endgame.
+
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
 faceSkullW/L (ringGirth ti===2). NEW `_face` relief (gaussians on the head tube r∈[0.55,1]):
