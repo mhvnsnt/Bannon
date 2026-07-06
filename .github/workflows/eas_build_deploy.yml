@@ -1,0 +1,48 @@
+name: EAS Mobile App Store Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy_eas:
+    name: Build & Submit to Apple TestFlight & Google Play Console
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install NPM Dependencies
+        run: npm ci
+
+      - name: 🚀 Setup Expo & EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 🔑 Configure Apple & Google Android Credentials
+        run: |
+          echo "Setting up app credentials..."
+          # Credentials are automatically loaded from expo/EAS secrets vault
+          # EXPO_TOKEN must be defined in your GitHub Repository Secrets
+
+      - name: 🍏 Build & Submit iOS App to TestFlight
+        run: |
+          eas build --platform ios --profile production --non-interactive --auto-submit
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: 🤖 Build & Submit Android App to Google Play
+        run: |
+          eas build --platform android --profile production --non-interactive --auto-submit
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
