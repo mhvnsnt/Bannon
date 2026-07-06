@@ -112,8 +112,9 @@ The architecture doesn't care which; that's the point.
 
 ## Remaining gaps (the last 20%, in priority order)
 
-- [ ] **Lore→prompt endpoint** — `POST /lore` on the forge (or a daemon route): book excerpt / research
-      text → structured character prompt via the daemon LLM. Closes "read Chapter 3, generate the villain."
+- [x] **Lore→prompt endpoint** — `POST /lore { text, name?, generate? }` on the forge: book excerpt /
+      research text → structured character prompt. Deterministic extractor (build/attire/colours/hair/
+      mask/height), routes through `OWN_LLM_URL` when set, `generate:true` chains to a job. Verified.
 - [ ] **In-game image seed UI** — pass `image` from the model panel (pick a sketch from
       `assets/reference/*` or upload) through `genStart` → daemon → forge. (Backend path is now ready.)
 - [ ] **Storage + roster injection** — on success, push the `.glb` to a bucket (`CloudPersistence.ts`
