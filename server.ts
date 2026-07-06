@@ -13,6 +13,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { Octokit } from "@octokit/rest";
 import fs from "fs";
+import { exec, spawn } from 'child_process';
 import { runCulturalNexusUpdate } from "./src/services/cultural-nexus-updater.js";
 import { telegramBotService } from "./src/services/TelegramBotService";
 import { databaseService } from "./src/services/DatabaseService";
