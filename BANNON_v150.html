@@ -5644,6 +5644,8 @@ window.BANNON_DNA = (function(){
       f.shape = Object.assign({}, dna.shape || Object.assign({}, dna.boneScale, dna.morphs));
       const sp = Object.assign({}, dna.spec||{}); if(dna.name && sp.name==null) sp.name=dna.name;
       if(window.applyFighterSpec) window.applyFighterSpec(f, sp); else f.spec=sp;
+      // repaint hairstyle + two-tone gradient (applyFighterSpec owns colours, not the hair mesh)
+      if(window.applyHair && (sp.hairStyle||sp.hair2!=null)) window.applyHair(f, sp.hairStyle||f._hairStyle||'SHORT', (sp.hair!=null?sp.hair:undefined));
       if(dna.name){ f.specName=dna.name; }
       return true;
     }catch(e){ console.warn('[BANNON_DNA] apply failed', e); return false; }
@@ -5815,10 +5817,39 @@ window.HAIR_LIST = Object.keys(window.HAIRSTYLES);
 window.applyHair = function(f, style, hairColor){
   if(!f || !f.seg || !f.seg.hair) return;
   const h = window.HAIRSTYLES[style] || window.HAIRSTYLES.SHORT;
-  f.seg.hair.visible = h.vis !== false;
-  f.seg.hair.scale.set(h.s[0]*0.95, h.s[1]*0.95, h.s[2]*0.95);   // ~skull-hugging base
-  if(hairColor!=null && f.seg.hair.material){ try{ f.seg.hair.material.color.setHex(hairColor); }catch(_){ } }
+  const hm = f.seg.hair;
+  hm.visible = h.vis !== false;
+  hm.scale.set(h.s[0]*0.95, h.s[1]*0.95, h.s[2]*0.95);   // ~skull-hugging base
+  if(hairColor!=null && hm.material){ try{ hm.material.color.setHex(hairColor); }catch(_){ } }
   f._hairStyle = style;
+  // TWO-TONE HAIR (WWE-2K26 parity): a second colour blended root->tip via vertex colours, with a
+  // blend POINT (0..1 along the hair height) and SHARPNESS. Reads f.spec so no caller needs updating;
+  // when spec.hair2 is unset the hair stays the single base colour (material.vertexColors off).
+  try{
+    const sp = f.spec||{};
+    const g = hm.geometry;
+    if(sp.hair2!=null && g && g.attributes && g.attributes.position && typeof THREE!=='undefined'){
+      const pos = g.attributes.position, n = pos.count;
+      if(!g.boundingBox) g.computeBoundingBox();
+      const minY = g.boundingBox.min.y, maxY = g.boundingBox.max.y, span = (maxY-minY)||1;
+      const cRoot = new THREE.Color(hairColor!=null?hairColor:0x222222);
+      const cTip  = new THREE.Color(sp.hair2);
+      const blend = (sp.hairBlend!=null?+sp.hairBlend:0.55);        // where roots give way to tips
+      const sharp = (sp.hairSharp!=null?+sp.hairSharp:0.25);        // transition width (small = sharp)
+      const cols = new Float32Array(n*3), tmp = new THREE.Color();
+      for(let i=0;i<n;i++){
+        const t=(pos.getY(i)-minY)/span;                           // 0 root .. 1 tip
+        const w=Math.max(0,Math.min(1,(t-(blend-sharp))/(2*sharp||0.001)));  // smooth ramp across the blend band
+        tmp.copy(cRoot).lerp(cTip, w*w*(3-2*w));                   // smoothstep
+        cols[i*3]=tmp.r; cols[i*3+1]=tmp.g; cols[i*3+2]=tmp.b;
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(cols,3));
+      if(hm.material){ hm.material.vertexColors=true; hm.material.needsUpdate=true; }
+    } else if(hm.material && hm.material.vertexColors){            // hair2 cleared -> back to single tone
+      hm.material.vertexColors=false; hm.material.needsUpdate=true;
+      if(g && g.attributes && g.attributes.color) g.deleteAttribute('color');
+    }
+  }catch(_){ }
 };
 // Per-character hairstyles so the roster reads distinctly; archetype fallback for the rest.
 window.CHAR_HAIR = {
@@ -6084,6 +6115,25 @@ window.cycleRosterP2 = function(){
     H('ATTIRE & HAIR','#c084fc');
     mkCycle('ATTIRE','attireStyle',()=>window.ATTIRE_LIST||['TRUNKS'],'TRUNKS',(f,v)=>{ if(window.applyAttire) window.applyAttire(f, v, (f.spec.trunk!=null?f.spec.trunk:0x202028), (f.spec.accent!=null?f.spec.accent:0xffb000)); });
     mkCycle('HAIRSTYLE','hairStyle',()=>window.HAIR_LIST||['SHORT'],'SHORT',(f,v)=>{ if(window.applyHair) window.applyHair(f, v, (f.spec.hair!=null?f.spec.hair:undefined)); });
+    // TWO-TONE HAIR (WWE-2K26 parity) — a second tip colour + blend point. Reapplies applyHair which
+    // reads f.spec.hair2/hairBlend/hairSharp and paints a root->tip vertex gradient.
+    (function(){
+      const reHair=(f)=>{ if(window.applyHair) window.applyHair(f, (f.spec&&f.spec.hairStyle)||f._hairStyle||'SHORT', (f.spec&&f.spec.hair!=null?f.spec.hair:undefined)); };
+      const t2=document.createElement('div'); t2.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
+      const t2l=document.createElement('span'); t2l.textContent='HAIR TIP (2-TONE)'; const t2c=document.createElement('input'); t2c.type='color'; t2c.style.cssText='width:46px;height:24px;border:1px solid #ff7a1a55;background:none;cursor:pointer;';
+      const off=document.createElement('button'); off.textContent='OFF'; off.title='clear two-tone'; off.style.cssText='margin-left:6px;background:#2a0e08;color:#ff9;border:1px solid #ff7a1a55;border-radius:4px;padding:2px 7px;cursor:pointer;font:10px ui-monospace,monospace;';
+      t2c.oninput=()=>{ const f=F(); if(f){ if(!f.spec)f.spec={}; f.spec.hair2=int(t2c.value); reHair(f); } };
+      off.onclick=()=>{ const f=F(); if(f&&f.spec){ delete f.spec.hair2; reHair(f); } };
+      syncers.push(()=>{ const f=F(); t2c.value=hex((f&&f.spec&&f.spec.hair2!=null)?f.spec.hair2:0x888888); });
+      const wrapc=document.createElement('span'); wrapc.style.cssText='display:flex;align-items:center;'; wrapc.appendChild(t2c); wrapc.appendChild(off);
+      t2.appendChild(t2l); t2.appendChild(wrapc); cur.appendChild(t2);
+      const bl=document.createElement('div'); bl.style.margin='7px 0';
+      const bll=document.createElement('div'); bll.style.marginBottom='2px'; const blv=document.createElement('b'); blv.style.color='#ff7a1a'; bll.textContent='HAIR BLEND POINT '; bll.appendChild(blv);
+      const bs=document.createElement('input'); bs.type='range'; bs.min=0.1; bs.max=0.9; bs.step=0.01; bs.style.cssText='width:100%;accent-color:#ff7a1a;';
+      bs.oninput=()=>{ const f=F(); if(f){ if(!f.spec)f.spec={}; f.spec.hairBlend=+bs.value; reHair(f); } blv.textContent=(+bs.value).toFixed(2); };
+      syncers.push(()=>{ const f=F(); const v=(f&&f.spec&&f.spec.hairBlend!=null)?f.spec.hairBlend:0.55; bs.value=v; blv.textContent=(+v).toFixed(2); });
+      bl.appendChild(bll); bl.appendChild(bs); cur.appendChild(bl);
+    })();
 
     // ---------- INFO tab (name + style) ----------
     cur=panels.INFO;
