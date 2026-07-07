@@ -377,6 +377,33 @@ fully in Three.js first (DONE for import; DNA-CAW schema next).
   procedural body was under-built — these are real visible wins within the tube system. The GLB/
   DNA-CAW path (proven X Bot import + documented runtime-CAW architecture) remains the AAA endgame.
 
+## v156 pass (models + combat + grapple, all harness-verified, sentinels added 22->28)
+- JOINT CREASE RELIEF (`_relief`, sentinel 'ELBOW CREASE'): elbow flexor groove + olecranon rise (arms
+  ti3/4, rr~0.50); knee popliteal groove + patella cap (legs ti5/6). Limbs FOLD at a hinge, not straw-
+  collapse. Def-gated => all procedural chars. Verified relief maxDelta 0.114.
+- AAA BASE BODIES IN LIBRARY (sentinel 'Wrestler Base (AAA)'): `assets/models/wrestler_base.glb` +
+  `xbot.glb` opt-in MODEL_LIBRARY entries, driven by CAW/DNA via applyShapeMorphs. NOT default (bases
+  untextured — texturing them is the next step to make one the default AAA body).
+- HIGH-END AERIAL CATALOG (DIVE_TYPES, sentinel 'HIGH-END AERIAL CATALOG'): +8 dives (Shooting Star/
+  Phoenix/450/Imploding 450/Spiral Tap/Tornillo/Diving Leg Drop/Double Stomp; 16 total). Auto-listed in
+  Dive Lab editor. spin snaps to clean rotations on landing, no over-rotation.
+- CORNER BACK ARSENAL (playerAttack corner branch, sentinel 'CORNER BACK vs FRONT'): opp facing INTO the
+  buckles (forward()·dirToAttacker<0) => BACK ELBOW / FOREARM·KIDNEYS / TREE-OF-WOE STOMP; front keeps
+  the chops. Routes through startAttack (no new pose authoring).
+- STRUGGLE-LIFT (poseGrab PD block, sentinel 'STRUGGLE-LIFT'): physics teeter — S=f(mass margin,stamina);
+  high S => forklift stack rocks fwd/back, sags toward dropping on the down-beats (compound sine: fast
+  tremor + slow near-drop swell) then surges back up, spine flexes under grind / extends at apex, knees
+  buckle when slipping. Strong/fresh => S~0 clean. NO minigame (veto respected). Verified: featherweight→
+  GOLEM gassed S 0.68→0.94, carry 10cm fwd/back rock + 10 dir-flips + 7.5cm vertical sag/surge.
+- ANY MOVE FROM ANY POSITION (sentinel 'resolveGrapPos'): `window.resolveGrapPos(move)` maps an equipped
+  moveset entry -> GRAPPLE_POSITIONS key (tag->key->label->fuzzy->STANDARD); wired into the signature +
+  finisher grapple paths (+rear/front mode + lift0 + liftDur). Equip 'German Suplex' as finisher => real
+  German (grapplePos=BACK_SUPLEX, mode=rear). MOVE LIBRARY editor already allows any move in any SIG/FIN
+  slot (5+5 caps) grouped by position — this closes the COMBAT side. Verified 8/8 mappings.
+- STILL QUEUED (owner's list): 1024px skin (pores+veins+region masks); texture the base GLB -> make it a
+  default AAA body; deepen grapple IK 'connect' further (grip contact welds); expand positions to Steve
+  Masson/2K depth; WWE-2K editor VISUAL layout polish (CAW + moveset UI). procedural body + GLB both live.
+
 ## Morph system state (refined this pass)
 Oval SKULL rings (width<depth) + jaw ring on the neck tube; face sliders live per-ring: faceJawW/L,
 faceSkullW/L (ringGirth ti===2). NEW `_face` relief (gaussians on the head tube r∈[0.55,1]):
