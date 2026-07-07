@@ -41,6 +41,7 @@ const SENTINELS = [
   ['high-end aerial catalog',     'HIGH-END AERIAL CATALOG'],
   ['corner back arsenal',         'CORNER BACK vs FRONT'],
   ['struggle-lift physics',       'STRUGGLE-LIFT'],
+  ['any-move-any-position',       'resolveGrapPos'],
 ];
 
 let bad = [];

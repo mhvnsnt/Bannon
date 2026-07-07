@@ -7418,6 +7418,20 @@ const GRAPPLE_POSITIONS = {
       knL:[-0.10,0.50,0.30], knR:[-0.10,0.50,-0.30], ftL:[-0.16,0.40,0.32], ftR:[-0.16,0.40,-0.32] }) },
 };
 const GRAPPLE_POS_NAMES = Object.keys(GRAPPLE_POSITIONS);
+// ANY MOVE FROM ANY POSITION (owner spec): map an equipped moveset entry to the GRAPPLE_POSITIONS key
+// it should run through, so tagging e.g. "GERMAN SUPLEX" as your FINISHER actually performs a German
+// (correct rear waistlock arch), not the generic default hoist. Resolution order: explicit grapplePos
+// tag -> exact key match -> label match -> fuzzy name/label containment -> STANDARD.
+window.resolveGrapPos = function(move){
+  if(!move) return 'STANDARD';
+  const nm=((move.grapplePos||move.name||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'');
+  if(!nm) return 'STANDARD';
+  if(GRAPPLE_POSITIONS[nm]) return nm;                                                   // exact key ("POWERBOMB","BACK_SUPLEX")
+  for(const k of GRAPPLE_POS_NAMES){ const lb=((GRAPPLE_POSITIONS[k].label||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,''); if(lb && lb===nm) return k; }  // label match ("GERMAN SUPLEX"->BACK_SUPLEX)
+  for(const k of GRAPPLE_POS_NAMES){ const lb=((GRAPPLE_POSITIONS[k].label||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_'); if(lb && (nm.indexOf(lb)>=0 || lb.indexOf(nm)>=0)) return k; }  // fuzzy containment
+  for(const k of GRAPPLE_POS_NAMES){ if(k!=='STANDARD' && (nm.indexOf(k)>=0 || k.indexOf(nm)>=0)) return k; }  // fuzzy key containment
+  return 'STANDARD';
+};
 
 // getup keyframe poses (LOCAL, forward = +x toward opponent)
 // AUTO-FILL the v7 27-joint skeleton from a legacy 15-joint pose.
@@ -12120,6 +12134,9 @@ function playerAttack(kind){
     const eqSig=pickEquipped(p,'SIGNATURE',(opp && !opp.isDown()));
     if (eqSig && (eqSig.cat==='GRAPPLE'||eqSig.cat==='THROW') && opp && !opp.isDown() && p.startGrab()){
       announce(eqSig.name+'  [FINISHER BANKED]', fname(p));
+      // ANY MOVE FROM ANY POSITION: run the equipped signature through ITS OWN grapple position.
+      const _sp=window.resolveGrapPos?window.resolveGrapPos(eqSig):null;
+      if(_sp){ p.grapplePos=_sp; p.grappleMode=(GRAPPLE_POSITIONS[_sp]&&GRAPPLE_POSITIONS[_sp].rear)?'rear':'front'; p.craneLift=(GRAPPLE_POSITIONS[_sp]||{}).lift0||0; p.craneTwist=0; p._aiGrapChosen=true; }
       p.grappleStage=2; p.stateTime=0; p._liftMinT=0.5;
       setTimeout(()=>{ try{ if(p.grappling&&p.grappleStage>=2){ p.grappleStage=3; p.stateTime=0;
         setTimeout(()=>{ try{ if(p.grappling&&p.grappleStage===3) p.grappleDeliver('signature',0); }catch(_){}}, 600); } }catch(_){}}, 650);
@@ -12148,9 +12165,12 @@ function playerAttack(kind){
     const useGrapple = (eqFin && (eqFin.cat==='GRAPPLE'||eqFin.cat==='THROW')) || (!eqFin && FF && FF.kind==='grapple');
     if (useGrapple && opp && !opp.isDown()){
       if (p.startGrab()){
-        const finName=eqFin?eqFin.name:FF.name; const posKey=(FF&&FF.pos)||null;
+        const finName=eqFin?eqFin.name:FF.name;
+        // ANY MOVE FROM ANY POSITION: an equipped grapple finisher runs through ITS OWN position
+        // (German->rear waistlock, Powerbomb->headscissors, etc.); default finisher keeps FF.pos.
+        const posKey=(eqFin&&window.resolveGrapPos)?window.resolveGrapPos(eqFin):((FF&&FF.pos)||null);
         announce(finName, fname(p));
-        if (posKey){ p.grapplePos=posKey; p.craneLift=(GRAPPLE_POSITIONS[posKey]||{}).lift0||0; p.craneTwist=0; }
+        if (posKey){ p.grapplePos=posKey; p.grappleMode=(GRAPPLE_POSITIONS[posKey]&&GRAPPLE_POSITIONS[posKey].rear)?'rear':'front'; p.craneLift=(GRAPPLE_POSITIONS[posKey]||{}).lift0||0; p.craneTwist=0; }
         p._aiGrapChosen=true; p.grappleStage=2; p.stateTime=0;
         const _ld=((GRAPPLE_POSITIONS[posKey]||{}).liftDur||0.7); p._liftMinT=_ld;
         setTimeout(()=>{ try{ if (p.grappling && p.grappleStage>=2){
