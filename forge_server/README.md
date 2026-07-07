@@ -8,8 +8,12 @@ The GPU service behind the in-game "generate a character / attire from a prompt"
 POST /            { prompt, rig, kind, characterId, image? }  -> { id }
 GET  /{id}                                                    -> { status, progress, glbUrl, error }
 GET  /files/{name}.glb                                        -> the GLB
+POST /lore        { text, name?, kind?, generate? }           -> { prompt, attributes, id? }
 GET  /health
 ```
+`/lore` turns a **book excerpt / research blob** into a structured character prompt ("read Chapter 3,
+generate the villain"). Deterministic keyword extraction by default (no GPU/LLM needed); routes through
+`OWN_LLM_URL` first when set. `generate:true` immediately kicks off a generation and returns its `id`.
 `kind` = `"character"` or `"attire"` (both prompt-driven; the game stores a character as a base look,
 an attire as an alt look).
 `image` (optional) = a `data:` URI or `http(s)` URL of a **sketch or book-derived concept sheet**.

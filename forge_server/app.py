@@ -71,6 +71,77 @@ def _glb_url(name: str) -> str:
 # BACKENDS — each returns the path to a written .glb. Heavy imports are inside the
 # functions so the server starts without the weights and `stub` always works.
 # ─────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# LORE -> PROMPT — "read Chapter 3, generate the villain". Turns a book excerpt / research blob into
+# a structured character description + a shaped generation prompt. Deterministic keyword extraction so
+# it runs with NO GPU/LLM (always testable); when OWN_LLM_URL is set it routes through that LLM first
+# and falls back to the heuristic on any failure. This closes the autonomous loop's first stage.
+# ─────────────────────────────────────────────────────────────────────────────
+_COLOR_WORDS = ["black","white","red","blue","green","gold","golden","silver","gunmetal","steel",
+                "crimson","purple","orange","yellow","brown","grey","gray","teal","bronze"]
+_BUILD_WORDS = {"muscular":"muscular","hulking":"hulking heavyweight","lean":"lean","wiry":"wiry",
+                "massive":"massive powerhouse","ripped":"ripped","stocky":"stocky","athletic":"athletic",
+                "towering":"towering","huge":"huge","giant":"giant","slender":"slender","heavyset":"heavyset"}
+_HAIR_WORDS = {"dreadlocks":"dreadlocks","dreads":"dreadlocks","bald":"bald","mohawk":"mohawk",
+               "afro":"afro","ponytail":"ponytail","braids":"braided hair","long hair":"long hair",
+               "buzzcut":"buzzcut","shaved":"shaved head"}
+
+
+def lore_to_prompt(text: str, name: str = "", kind: str = "character") -> dict:
+    """Extract physical attributes from lore text and compose a generation prompt."""
+    import re
+    llm_url = os.environ.get("OWN_LLM_URL", "")
+    if llm_url:
+        try:
+            import urllib.request, json as _json
+            body = _json.dumps({"prompt": (
+                "Extract a wrestler character's physical appearance from this text as a single vivid "
+                "image-generation prompt (build, attire, colours, hair, mask, height). Text:\n" + text[:4000])
+            }).encode()
+            req = urllib.request.Request(llm_url, data=body, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=45) as r:
+                out = _json.loads(r.read())
+            p = out.get("prompt") or out.get("text") or out.get("completion")
+            if p and p.strip():
+                return {"prompt": p.strip(), "attributes": {"source": "llm"}, "name": name}
+        except Exception:
+            pass  # fall through to the deterministic extractor
+    low = text.lower()
+    attrs = {}
+    # colours (dedup, keep order of first appearance)
+    cols = []
+    for c in _COLOR_WORDS:
+        if re.search(r"\b" + c + r"\b", low) and c not in cols:
+            cols.append("gold" if c == "golden" else ("gray" if c == "grey" else c))
+    if cols: attrs["colors"] = cols[:3]
+    # build
+    for w, phrase in _BUILD_WORDS.items():
+        if re.search(r"\b" + w + r"\b", low): attrs["build"] = phrase; break
+    # hair
+    for w, phrase in _HAIR_WORDS.items():
+        if w in low: attrs["hair"] = phrase; break
+    # mask / attire cues
+    if "mask" in low or "masked" in low: attrs["mask"] = True
+    attire_cues = [w for w in ["jacket","tights","trunks","singlet","cape","hood","armor","armour",
+                               "leather","tattered","suit","robe","gear"] if re.search(r"\b"+w+r"\b", low)]
+    if attire_cues: attrs["attire"] = attire_cues[:3]
+    # height / stature cue
+    m = re.search(r"(\d(?:'|\s?ft|\s?foot|\s?feet)[\s\d\"']*)", low)
+    if m: attrs["height"] = m.group(1).strip()
+    elif any(w in low for w in ["towering","giant","huge"]): attrs["height"] = "very tall"
+    # compose the prompt
+    parts = []
+    if name: parts.append(name)
+    if attrs.get("build"): parts.append(attrs["build"])
+    parts.append("professional wrestler")
+    if attrs.get("mask"): parts.append("wearing a mask")
+    if attrs.get("hair"): parts.append(attrs["hair"])
+    if attrs.get("attire"): parts.append(", ".join(attrs["attire"]) + " attire")
+    if attrs.get("colors"): parts.append(" and ".join(attrs["colors"]) + " colour scheme")
+    prompt = ", ".join(parts) + "."
+    return {"prompt": prompt, "attributes": attrs, "name": name}
+
+
 def _load_image(spec: str):
     """Resolve an image seed (data: URI or http(s) URL) to a PIL.Image. Lazy imports so the server
     boots without Pillow when no image path is used."""
@@ -259,9 +330,30 @@ def run_job(jid: str, req: GenReq):
         _job(jid, status="failed", error=str(e))
 
 
+class LoreReq(BaseModel):
+    text: str
+    name: str = ""
+    kind: str = "character"
+    generate: bool = False          # if true, immediately kick off a generation from the extracted prompt
+
+
 @app.get("/health")
 def health():
     return {"ok": True, "backend": BACKEND, "rig": DO_RIG, "ready": True}
+
+
+@app.post("/lore")
+def lore(req: LoreReq):
+    if not req.text.strip():
+        raise HTTPException(400, "text required")
+    res = lore_to_prompt(req.text, req.name, req.kind)
+    if req.generate:
+        jid = "j_" + uuid.uuid4().hex[:10]
+        greq = GenReq(prompt=res["prompt"], kind=req.kind)
+        _job(jid, status="queued", progress=0, kind=req.kind)
+        threading.Thread(target=run_job, args=(jid, greq), daemon=True).start()
+        res["id"] = jid
+    return res
 
 
 @app.post("/")
