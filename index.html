@@ -5589,6 +5589,25 @@ window.__paintEye = function(mesh, irisHex){
 // instead of a fixed mannequin. This name-matches our shape keys to whatever the GLB's morph targets
 // are called (chest->"Chest"/"pecs"/"chestSize"...), writing into userData.shapeMorphs which the
 // per-frame morph apply folds in. Bone-scale keys (height/limbs) scale the rig's spine/arm/leg bones.
+// CANONICAL DNA -> BLENDSHAPE NAMING CONTRACT. The authored base GLB (Blender/forge) MUST name its
+// shape keys exactly these strings; the bridge then does an exact, deterministic match (no guessing).
+// Full artist checklist: docs/GLB_shapekey_spec.md. Fuzzy synonyms below remain a fallback for
+// third-party meshes that don't follow the contract.
+window.DNA_TO_MORPH = {
+  // physique (0..1 sliders drive directly)
+  muscularity:'Body_Muscular', bodyFat:'Body_Gut', fem:'Body_Feminine',
+  // per-region size (slider 0.4..2.3, neutral 1 -> influence above 1)
+  chest:'Chest_Size', bust:'Bust_Size', arms:'Arms_Size', forearms:'Forearms_Size',
+  shoulders:'Shoulders_Size', traps:'Traps_Size', waist:'Waist_Size', hips:'Hips_Size',
+  glutes:'Glutes_Size', thighs:'Thighs_Size', calves:'Calves_Size', neck:'Neck_Size',
+  hands:'Hands_Size', feet:'Feet_Size', head:'Head_Size',
+  // face sculpt
+  faceJawW:'Jaw_Width', faceJawL:'Jaw_Length', faceSkullW:'Skull_Width', faceSkullL:'Skull_Length',
+  faceCheek:'Cheek_Size', faceChin:'Chin_Projection', faceBrow:'Brow_Ridge', faceBrowW:'Brow_Width',
+  faceNose:'Nose_Size', faceNoseL:'Nose_Length', faceEye:'Eye_Size', faceEyeSpread:'Eye_Spread',
+  faceEyeH:'Eye_Height', faceMouthW:'Mouth_Width', faceMouthH:'Mouth_Height', faceLips:'Lip_Fullness',
+  faceEars:'Ear_Size', faceEarH:'Ear_Height'
+};
 window.__SHAPE_MORPH_SYN = {
   muscularity:['muscul','muscle','buff','ripped','definition','abs','swole'],
   bodyFat:['fat','belly','weight','heavy','gut','soft','bulk'],
@@ -5610,13 +5629,17 @@ window.applyShapeMorphs = function(f){
     if(m.userData.morphMap){
       const norm=(s)=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
       const names=(m.userData.morphNames||[]).map(n=>({raw:n,n:norm(n)}));
+      const MAP=window.DNA_TO_MORPH||{};
       const out={};
-      for(const key in SYN){ let v=sh[key]; if(v==null) continue;
+      const keys=new Set(Object.keys(MAP).concat(Object.keys(SYN)));
+      for(const key of keys){ let v=sh[key]; if(v==null) continue;
         // 0..1 sliders (musc/fat/fem) drive directly; size sliders center at 1 -> influence above neutral
         const infl=(key==='muscularity'||key==='bodyFat'||key==='fem') ? Math.max(0,Math.min(1,+v)) : Math.max(0,Math.min(1,(+v)-1));
         if(infl<=0.001) continue;
-        const syns=SYN[key];
-        for(const nn of names){ if(syns.some(s=>nn.n.indexOf(s)>=0)) out[nn.raw]=Math.max(out[nn.raw]||0, infl); }
+        // EXACT canonical name first (the authored-GLB contract), fuzzy synonyms only as fallback
+        let matched=false;
+        if(MAP[key]){ const target=norm(MAP[key]); for(const nn of names){ if(nn.n===target){ out[nn.raw]=Math.max(out[nn.raw]||0, infl); matched=true; } } }
+        if(!matched && SYN[key]){ for(const nn of names){ if(SYN[key].some(s=>nn.n.indexOf(s)>=0)) out[nn.raw]=Math.max(out[nn.raw]||0, infl); } }
       }
       m.userData.shapeMorphs=out;   // per-frame morph apply folds this in
     }
