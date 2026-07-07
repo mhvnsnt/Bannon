@@ -5980,7 +5980,27 @@ window.cycleRosterP2 = function(){
     hx.onclick=closeDrawer;
     btn.onclick=()=>{ if(open){ closeDrawer(); } else { open=true; wrap.style.display='block'; wrap.scrollTop=0; syncAll(); if(typeof enterCreatePreview==='function') enterCreatePreview(targetIdx); } };
 
-    const H=(t,c)=>{ const d=document.createElement('div'); d.textContent=t; d.style.cssText='color:'+(c||'#ff7a1a')+';font-weight:bold;letter-spacing:1px;margin:14px 0 7px;border-bottom:1px solid '+(c||'#ff7a1a')+'44;padding-bottom:3px;'; wrap.appendChild(d); };
+    // ===== WWE-2K26-STYLE LAYOUT: sticky topbar (title + edit-target + category tabs) over ONE active
+    // panel at a time. Replaces the old single 90-slider scroll — same controls, organized + navigable. =====
+    const top=document.createElement('div'); top.style.cssText='position:sticky;top:0;background:#0d0907;z-index:5;';
+    top.appendChild(hdr);   // re-parent the header into the topbar
+    // EDIT TARGET — always visible; applies to whichever tab you're on
+    const trow=document.createElement('div'); trow.style.cssText='display:flex;gap:6px;margin:0 0 6px;';
+    const mkT=(i,txt)=>{ const b=document.createElement('button'); b.textContent=txt; b.style.cssText='flex:1;background:#1a0e08;color:#ffd9a8;border:1px solid #7CFC00;border-radius:5px;padding:6px;cursor:pointer;font:bold 11px ui-monospace,monospace;'; b.onclick=()=>{ targetIdx=i; for(const x of trow.children) x.style.background='#1a0e08'; b.style.background='#2a3a10'; syncAll(); if(open && typeof enterCreatePreview==='function') enterCreatePreview(i); }; return b; };
+    const t0=mkT(0,'PLAYER 1'), t1=mkT(1,'PLAYER 2'); t0.style.background='#2a3a10'; trow.appendChild(t0); trow.appendChild(t1); top.appendChild(trow);
+    // CATEGORY TABS
+    const tabBar=document.createElement('div'); tabBar.style.cssText='display:flex;gap:4px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:1px;border-bottom:1px solid #ff7a1a55;';
+    const bodyc=document.createElement('div'); bodyc.style.paddingTop='4px';
+    const panels={}, tabBtns={};
+    const TABS=[['BODY','#ff7a1a'],['FACE','#c084fc'],['LOOK','#c084fc'],['INK','#c084fc'],['INFO','#7CFC00'],['PRESET','#ff7a1a'],['SAVE','#7CFC00']];
+    let cur=null;
+    function showTab(id){ for(const k in panels) panels[k].style.display=(k===id?'block':'none'); for(const k in tabBtns){ const on=(k===id), c=tabBtns[k]._c; tabBtns[k].style.background=on?c+'2e':'#140b07'; tabBtns[k].style.color=on?'#fff':'#c98'; tabBtns[k].style.borderColor=on?c:'#ff7a1a33'; } wrap.scrollTop=0; }
+    TABS.forEach(([id,c])=>{ const b=document.createElement('button'); b._c=c; b.textContent=id; b.style.cssText='flex:none;background:#140b07;color:#c98;border:1px solid #ff7a1a33;border-radius:7px 7px 0 0;padding:8px 12px;cursor:pointer;font:bold 11px ui-monospace,monospace;letter-spacing:1px;'; b.onclick=()=>showTab(id); tabBtns[id]=b; tabBar.appendChild(b);
+      const p=document.createElement('div'); p.style.display='none'; panels[id]=p; bodyc.appendChild(p); });
+    top.appendChild(tabBar); wrap.appendChild(top); wrap.appendChild(bodyc);
+
+    // helpers now append into the ACTIVE tab panel (cur) instead of the flat scroll
+    const H=(t,c)=>{ const d=document.createElement('div'); d.textContent=t; d.style.cssText='color:'+(c||'#ff7a1a')+';font-weight:bold;letter-spacing:1px;margin:13px 0 6px;border-bottom:1px solid '+(c||'#ff7a1a')+'44;padding-bottom:3px;font-size:11px;'; (cur||wrap).appendChild(d); };
     const slider=(key,label,min,max,isShape,visual)=>{
       const d=document.createElement('div'); d.style.margin='7px 0';
       const l=document.createElement('div'); l.style.marginBottom='2px'; const val=document.createElement('b'); val.style.color='#ff7a1a'; l.textContent=label+' '; l.appendChild(val);
@@ -5988,61 +6008,85 @@ window.cycleRosterP2 = function(){
       const rd=()=>{ const f=F(); if(!f) return 1; if(isShape){ return (f.shape&&f.shape[key]!=null)?f.shape[key]:1; } return (f.spec&&f.spec.build!=null)?f.spec.build:1; };
       const upd=()=>{ s.value=rd(); val.textContent=(+s.value).toFixed(2); };
       s.oninput=()=>{ const f=F(); if(f){ if(isShape){ if(!f.shape)f.shape={}; f.shape[key]=+s.value; } else { if(!f.spec)f.spec={}; f.spec.build=+s.value; } if(visual||!isShape) window.restyleFighter(f); } val.textContent=(+s.value).toFixed(2); };
-      d.appendChild(l); d.appendChild(s); wrap.appendChild(d); syncers.push(upd);
+      d.appendChild(l); d.appendChild(s); (cur||wrap).appendChild(d); syncers.push(upd);
     };
     const colorRow=(key,label)=>{
       const d=document.createElement('div'); d.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
       const l=document.createElement('span'); l.textContent=label; const c=document.createElement('input'); c.type='color'; c.style.cssText='width:46px;height:24px;border:1px solid #ff7a1a55;background:none;cursor:pointer;';
       const upd=()=>{ const f=F(); if(f) c.value=hex(curCol(f,key)); };
       c.oninput=()=>{ const f=F(); if(f){ if(!f.spec)f.spec={}; f.spec[key]=int(c.value); window.restyleFighter(f); } };
-      d.appendChild(l); d.appendChild(c); wrap.appendChild(d); syncers.push(upd);
+      d.appendChild(l); d.appendChild(c); (cur||wrap).appendChild(d); syncers.push(upd);
     };
+    // cycle-button row (attire / hair / tattoo placement / scars) — retargets into cur
+    const mkCycle=(label,specKey,listGetter,dflt,apply)=>{
+      const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
+      const lb=document.createElement('span'); lb.textContent=label; const bt=document.createElement('button'); bt.style.cssText='background:#1a0e08;color:#ff7a1a;border:1px solid #ff7a1a55;border-radius:4px;padding:4px 8px;cursor:pointer;min-width:120px;';
+      bt.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=listGetter()||[dflt]; let i=list.indexOf(f.spec[specKey]||dflt); i=(i+1)%list.length; f.spec[specKey]=list[i]; bt.textContent=list[i].replace(/_/g,' '); if(apply) apply(f,list[i]); else if(window.restyleFighter) window.restyleFighter(f); };
+      syncers.push(()=>{ const f=F(); bt.textContent=((f&&f.spec&&f.spec[specKey])||dflt).replace(/_/g,' '); });
+      row.appendChild(lb); row.appendChild(bt); (cur||wrap).appendChild(row);
+    };
+    // key->label lookups so grouped body sliders reuse the exact labels + ranges of the flat list
+    const BL=Object.fromEntries(BODY), AL=Object.fromEntries(AXES);
+    const sB=(k)=> slider(k, BL[k]||k, 0.4, 2.3, true, true);   // per-part size
+    const sA=(k)=> slider(k, AL[k]||k, 0.55, 1.9, true, true);  // per-axis width/depth
 
-    // TARGET P1/P2
-    H('EDIT TARGET','#7CFC00');
-    const trow=document.createElement('div'); trow.style.cssText='display:flex;gap:6px;margin-bottom:4px;';
-    const mkT=(i,txt)=>{ const b=document.createElement('button'); b.textContent=txt; b.style.cssText='flex:1;background:#1a0e08;color:#ffd9a8;border:1px solid #7CFC00;border-radius:5px;padding:6px;cursor:pointer;'; b.onclick=()=>{ targetIdx=i; for(const x of trow.children) x.style.background='#1a0e08'; b.style.background='#2a3a10'; syncAll(); if(open && typeof enterCreatePreview==='function') enterCreatePreview(i); }; return b; };
-    const t0=mkT(0,'PLAYER 1'), t1=mkT(1,'PLAYER 2'); t0.style.background='#2a3a10'; trow.appendChild(t0); trow.appendChild(t1); wrap.appendChild(trow);
-
-    // TEMPLATES (40+ in 2K; our roster presets as bases) + Tekken-style cosmetic edit of those same roster fighters
-    H('TEMPLATES');
-    const tg=document.createElement('div'); tg.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:5px;';
-    (window.BANNON_ROSTER||[]).forEach(tpl=>{ const b=document.createElement('button'); b.textContent=tpl.name; b.style.cssText='background:#1a0e08;color:#ffd9a8;border:1px solid #ff7a1a;border-radius:5px;padding:6px 4px;cursor:pointer;font-size:11px;'; b.onclick=()=>{ const f=F(); if(f&&window.applyTemplate){ window.applyTemplate(f,tpl); syncAll(); } }; tg.appendChild(b); });
-    wrap.appendChild(tg);
-
+    // ---------- BODY tab (proportions + physique + per-region morph) ----------
+    cur=panels.BODY;
     H('PROPORTIONS');
     PROP.forEach(p=> slider(p[0],p[1],p[2],p[3],true,false));   // skeletal (per-frame applyShape)
-    H('BODY MORPH');
+    H('PHYSIQUE');
     slider('build','OVERALL BUILD',0.7,1.6,false,true);
-    BODY.forEach(p=> slider(p[0],p[1],0.4,2.3,true,true));      // per-part size — wide range for huge arms / disproportionate builds
-    AXES.forEach(p=> slider(p[0],p[1],0.55,1.9,true,true));     // per-axis width/depth (default 1)
+    H('TORSO');
+    ['shoulders','traps','chest','bust','waist'].forEach(sB);
+    ['shoulderW','chestW','chestD','waistW','waistD','neckW','neckD','lats'].forEach(sA);
+    H('ARMS');
+    ['arms','forearms','hands'].forEach(sB);
+    ['bicepW','forearmW','handS'].forEach(sA);
+    H('LEGS & HIPS');
+    ['hips','glutes','thighs','calves','feet'].forEach(sB);
+    ['hipW','hipD','thighW','calfW','footS'].forEach(sA);
+    H('DEFINITION');
     slider('neck','NECK',0.6,1.6,true,true);                    // neck thickness
     slider('muscularity','MUSCULARITY  (definition)',0,1,true,true);   // abs/pecs/cuts \u2014 only show when lean
     slider('bodyFat','BODY FAT  (soft mass)',0,1,true,true);            // belly/softness, hides the cut
     slider('fem','FRAME  MASC \u2194 FEM',0,1,true,true);        // 0 male wedge -> 1 female hourglass (ribcage/waist/pelvis/glute)
-    H('FACE SCULPT','#c084fc');
-    slider('head','HEAD SIZE',0.55,1.3,true,true);              // overall skull (reuses the head part-scale)
-    slider('faceSkullW','SKULL WIDTH',0.7,1.4,true,true);       // cranium side-to-side (real ring geometry)
-    slider('faceSkullL','SKULL LENGTH',0.7,1.4,true,true);      // cranium front-to-back
+    // ---------- FACE tab (skull + feature sculpt, grouped) ----------
+    cur=panels.FACE;
+    H('SKULL','#c084fc');
+    slider('head','HEAD SIZE',0.55,1.3,true,true);
+    slider('faceSkullW','SKULL WIDTH',0.7,1.4,true,true);
+    slider('faceSkullL','SKULL LENGTH',0.7,1.4,true,true);
+    H('JAW · CHEEKS · BROW','#c084fc');
     slider('faceJawW','JAW WIDTH',0.6,1.6,true,true);
     slider('faceJawL','JAW LENGTH',0.7,1.5,true,true);
-    slider('faceCheek','CHEEKBONES',0.6,1.7,true,true);         // zygomatic side bulge, sculpted into the skull surface
-    slider('faceChin','CHIN PROJECTION',0.6,1.7,true,true);     // chin point forward/receding
+    slider('faceCheek','CHEEKBONES',0.6,1.7,true,true);
+    slider('faceChin','CHIN PROJECTION',0.6,1.7,true,true);
     slider('faceBrow','BROW RIDGE',0.6,1.7,true,true);
     slider('faceBrowW','BROW WIDTH',0.7,1.4,true,true);
+    H('NOSE · EARS','#c084fc');
     slider('faceNose','NOSE SIZE',0.6,1.6,true,true);
     slider('faceNoseL','NOSE LENGTH',0.7,1.6,true,true);
     slider('faceEars','EAR SIZE',0.6,1.6,true,true);
-    slider('faceEye','EYE SIZE',0.6,1.7,true,true);
-    slider('faceEyeSpread','EYE SPREAD',0.7,1.5,true,true);    // inter-ocular distance (placement)
-    slider('faceEyeH','EYE HEIGHT',0.5,1.8,true,true);         // eyes ride higher/lower on the face
-    slider('faceMouthW','MOUTH WIDTH',0.6,1.6,true,true);
-    slider('faceMouthH','MOUTH HEIGHT',0.5,1.8,true,true);     // mouth slides nose-ward/chin-ward
     slider('faceEarH','EAR HEIGHT',0.4,1.9,true,true);
+    H('EYES','#c084fc');
+    slider('faceEye','EYE SIZE',0.6,1.7,true,true);
+    slider('faceEyeSpread','EYE SPREAD',0.7,1.5,true,true);
+    slider('faceEyeH','EYE HEIGHT',0.5,1.8,true,true);
+    H('MOUTH','#c084fc');
+    slider('faceMouthW','MOUTH WIDTH',0.6,1.6,true,true);
+    slider('faceMouthH','MOUTH HEIGHT',0.5,1.8,true,true);
     slider('faceLips','LIP FULLNESS',0.7,1.8,true,true);
-    H('SKIN / HAIR / ATTIRE','#c084fc');
-    COLZ.forEach(c=> colorRow(c[0],c[1]));
 
+    // ---------- LOOK tab (colours + attire + hair) ----------
+    cur=panels.LOOK;
+    H('COLOURS','#c084fc');
+    COLZ.forEach(c=> colorRow(c[0],c[1]));
+    H('ATTIRE & HAIR','#c084fc');
+    mkCycle('ATTIRE','attireStyle',()=>window.ATTIRE_LIST||['TRUNKS'],'TRUNKS',(f,v)=>{ if(window.applyAttire) window.applyAttire(f, v, (f.spec.trunk!=null?f.spec.trunk:0x202028), (f.spec.accent!=null?f.spec.accent:0xffb000)); });
+    mkCycle('HAIRSTYLE','hairStyle',()=>window.HAIR_LIST||['SHORT'],'SHORT',(f,v)=>{ if(window.applyHair) window.applyHair(f, v, (f.spec.hair!=null?f.spec.hair:undefined)); });
+
+    // ---------- INFO tab (name + style) ----------
+    cur=panels.INFO;
     H('IDENTITY','#7CFC00');
     const nrow=document.createElement('div'); nrow.style.cssText='display:flex;align-items:center;gap:6px;margin:6px 0;';
     const nlab=document.createElement('span'); nlab.textContent='NAME'; const nin=document.createElement('input'); nin.type='text'; nin.maxLength=16; nin.style.cssText='flex:1;background:#1a0e08;color:#ffd9a8;border:1px solid #ff7a1a55;border-radius:4px;padding:4px 6px;font:12px ui-monospace,monospace;';
@@ -6054,46 +6098,31 @@ window.cycleRosterP2 = function(){
     sb.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; let i=STYLES.indexOf(f.spec.style||'allrounder'); i=(i+1)%STYLES.length; const lbl=STYLES[i]; f.spec.style=lbl; f.style=STYLE_TO_GUARD[lbl]||'ORTHODOX'; sb.textContent=lbl; };
     syncers.push(()=>{ const f=F(); sb.textContent=(f&&f.spec&&f.spec.style)||'allrounder'; });
     srow.appendChild(slab); srow.appendChild(sb); wrap.appendChild(srow);
-    // ATTIRE — cycle the outfit (trunks / shorts / tights / singlet / sleeves / streetwear / bodysuit / masked)
-    const arow=document.createElement('div'); arow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
-    const alab=document.createElement('span'); alab.textContent='ATTIRE'; const ab=document.createElement('button'); ab.style.cssText='background:#1a0e08;color:#ff7a1a;border:1px solid #ff7a1a55;border-radius:4px;padding:4px 8px;cursor:pointer;min-width:110px;';
-    ab.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=window.ATTIRE_LIST||['TRUNKS']; let i=list.indexOf(f.spec.attireStyle||'TRUNKS'); i=(i+1)%list.length; f.spec.attireStyle=list[i]; ab.textContent=list[i].replace(/_/g,' '); if(window.applyAttire) window.applyAttire(f, list[i], (f.spec.trunk!=null?f.spec.trunk:0x202028), (f.spec.accent!=null?f.spec.accent:0xffb000)); };
-    syncers.push(()=>{ const f=F(); ab.textContent=((f&&f.spec&&f.spec.attireStyle)||'TRUNKS').replace(/_/g,' '); });
-    arow.appendChild(alab); arow.appendChild(ab); wrap.appendChild(arow);
-    // HAIRSTYLE — cycle bald / buzz / fade / afro / mohawk / long / dreads / etc.
-    const hrow=document.createElement('div'); hrow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
-    const hlab=document.createElement('span'); hlab.textContent='HAIRSTYLE'; const hb=document.createElement('button'); hb.style.cssText='background:#1a0e08;color:#ff7a1a;border:1px solid #ff7a1a55;border-radius:4px;padding:4px 8px;cursor:pointer;min-width:110px;';
-    hb.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=window.HAIR_LIST||['SHORT']; let i=list.indexOf(f.spec.hairStyle||'SHORT'); i=(i+1)%list.length; f.spec.hairStyle=list[i]; hb.textContent=list[i]; if(window.applyHair) window.applyHair(f, list[i], (f.spec.hair!=null?f.spec.hair:undefined)); };
-    syncers.push(()=>{ const f=F(); hb.textContent=(f&&f.spec&&f.spec.hairStyle)||'SHORT'; });
-    hrow.appendChild(hlab); hrow.appendChild(hb); wrap.appendChild(hrow);
-    // DNA — save/load the character as a lightweight JSON recipe (the runtime-CAW payload)
-    H('DNA  (save / load recipe)','#7CFC00');
+    // ---------- SAVE tab: DNA recipe + fighter slots ----------
+    cur=panels.SAVE;
+    H('DNA  (portable recipe)','#7CFC00');
     const dnaRow=document.createElement('div'); dnaRow.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin:6px 0;';
     const dnaBtn=(txt,cb)=>{ const b=document.createElement('button'); b.textContent=txt; b.style.cssText='flex:1;min-width:78px;background:#0e1a08;color:#bfffa8;border:1px solid #7CFC00;border-radius:5px;padding:7px 6px;cursor:pointer;font:bold 10px ui-monospace,monospace;'; b.onclick=cb; return b; };
     dnaRow.appendChild(dnaBtn('★ SAVE DNA',()=>{ const f=F(); if(!f)return; const nm=(f.specName||(f.spec&&f.spec.name)||'FIGHTER'); window.BANNON_DNA.save(nm,f); (window.toast?window.toast('DNA saved: '+nm):console.log('[DNA] saved',nm)); }));
     dnaRow.appendChild(dnaBtn('⭳ LOAD DNA',()=>{ const f=F(); if(!f)return; const names=window.BANNON_DNA.list(); if(!names.length){ console.log('[DNA] no saved DNA'); return; } const nm=prompt('Load DNA:\n'+names.join(', '), names[0]); if(nm&&window.BANNON_DNA.load(nm,f)){ syncAll(); console.log('[DNA] loaded',nm); } }));
     dnaRow.appendChild(dnaBtn('⧉ EXPORT',()=>{ const f=F(); if(!f)return; const j=window.BANNON_DNA.export(f); if(j){ try{ navigator.clipboard&&navigator.clipboard.writeText(j); }catch(_){} prompt('DNA JSON (copied — paste to share):', j); } }));
     dnaRow.appendChild(dnaBtn('⧉ IMPORT',()=>{ const f=F(); if(!f)return; const j=prompt('Paste DNA JSON:'); if(j&&window.BANNON_DNA.import(f,j)){ syncAll(); console.log('[DNA] imported'); } }));
-    wrap.appendChild(dnaRow);
+    cur.appendChild(dnaRow);
 
-    // TATTOOS / SCARS — vertex-painted ink + scar marks on bare skin
-    H('TATTOOS / SCARS','#c084fc');
-    const mkCycle=(label,specKey,listGetter,dflt)=>{
-      const row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
-      const lb=document.createElement('span'); lb.textContent=label; const bt=document.createElement('button'); bt.style.cssText='background:#1a0e08;color:#ff7a1a;border:1px solid #ff7a1a55;border-radius:4px;padding:4px 8px;cursor:pointer;min-width:120px;';
-      bt.onclick=()=>{ const f=F(); if(!f)return; if(!f.spec)f.spec={}; const list=listGetter()||[dflt]; let i=list.indexOf(f.spec[specKey]||dflt); i=(i+1)%list.length; f.spec[specKey]=list[i]; bt.textContent=list[i].replace(/_/g,' '); if(window.restyleFighter) window.restyleFighter(f); };
-      syncers.push(()=>{ const f=F(); bt.textContent=((f&&f.spec&&f.spec[specKey])||dflt).replace(/_/g,' '); });
-      row.appendChild(lb); row.appendChild(bt); wrap.appendChild(row);
-    };
-    mkCycle('TATTOO PLACEMENT','tattooStyle',()=>window.TATTOO_LIST,'NONE');
+    // ---------- INK tab (tattoos + scars) ----------
+    cur=panels.INK;
+    H('TATTOOS','#c084fc');
+    mkCycle('PLACEMENT','tattooStyle',()=>window.TATTOO_LIST,'NONE');
     const tcRow=document.createElement('div'); tcRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin:6px 0;';
     const tcLab=document.createElement('span'); tcLab.textContent='TATTOO COLOR'; const tc=document.createElement('input'); tc.type='color'; tc.style.cssText='width:46px;height:24px;border:1px solid #ff7a1a55;background:none;cursor:pointer;';
     tc.oninput=()=>{ const f=F(); if(f){ if(!f.spec)f.spec={}; f.spec.tattooColor=int(tc.value); if(window.restyleFighter) window.restyleFighter(f); } };
     syncers.push(()=>{ const f=F(); tc.value=hex((f&&f.spec&&f.spec.tattooColor!=null)?f.spec.tattooColor:0x141019); });
-    tcRow.appendChild(tcLab); tcRow.appendChild(tc); wrap.appendChild(tcRow);
+    tcRow.appendChild(tcLab); tcRow.appendChild(tc); cur.appendChild(tcRow);
+    H('SCARS','#c084fc');
     mkCycle('SCARS','scarStyle',()=>window.SCAR_LIST,'NONE');
 
-    // SAVE / LOAD (localStorage — persists across sessions)
+    // ---------- SAVE tab (fighter slots; DNA is above) ----------
+    cur=panels.SAVE;
     H('SAVE / LOAD');
     const sv=document.createElement('button'); sv.textContent='💾 SAVE FIGHTER'; sv.style.cssText='width:100%;background:#102a10;color:#7CFC00;border:1px solid #7CFC00;border-radius:5px;padding:7px;cursor:pointer;margin-bottom:6px;';
     const sel=document.createElement('select'); sel.style.cssText='width:100%;background:#1a0e08;color:#ffd9a8;border:1px solid #ff7a1a55;border-radius:4px;padding:5px;margin-bottom:5px;';
@@ -6121,9 +6150,10 @@ window.cycleRosterP2 = function(){
     ld.onclick=()=>{ const nm=sel.value; if(!nm) return; try{ const d=JSON.parse(localStorage.getItem('bannon_caw_'+nm)||'null'); const f=F(); if(d&&f){ f.shape=Object.assign({},d.shape||{}); window.applyFighterSpec(f, d.spec||{}); syncAll(); } }catch(e){} };
     del.onclick=()=>{ const nm=sel.value; if(!nm) return; try{ const l=listSaved().filter(x=>x!==nm); localStorage.setItem('bannon_caw_list',JSON.stringify(l)); localStorage.removeItem('bannon_caw_'+nm); refreshSaved(); }catch(e){} };
     lrow.appendChild(ld); lrow.appendChild(del);
-    wrap.appendChild(sv); wrap.appendChild(sel); wrap.appendChild(lrow);
+    cur.appendChild(sv); cur.appendChild(sel); cur.appendChild(lrow);
     refreshSaved();
 
+    showTab('BODY');   // 2K default: open on the Body tab
     document.body.appendChild(btn); document.body.appendChild(wrap);
     window.__cawSync=syncAll;
   }
