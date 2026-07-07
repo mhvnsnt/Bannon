@@ -36,6 +36,9 @@ const SENTINELS = [
   ['vault variants',              '_vaultPending'],
   ['GLB import binding',          '_bindFighterGltf'],
   ['DNA-CAW save/load',           'BANNON_DNA'],
+  ['joint crease relief',         'ELBOW CREASE'],
+  ['AAA base body library',       'Wrestler Base (AAA)'],
+  ['high-end aerial catalog',     'HIGH-END AERIAL CATALOG'],
 ];
 
 let bad = [];

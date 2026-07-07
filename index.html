@@ -5410,6 +5410,11 @@ window.BBODY = (function(){
       const tri =Math.exp(-Math.pow(rr-0.44,2)/0.022)*back;
       const fore=Math.exp(-Math.pow(rr-0.72,2)/0.020)*(front*0.7+0.3);
       r += delt*0.022 + bi*0.026 + tri*0.020*(0.6+0.4*Math.cos(a*2)) + fore*0.014;
+      // v156 ELBOW CREASE: a shallow flexor groove at the joint (rr~0.50, front/anterior) so the arm
+      // FOLDS at the elbow instead of bulging as one continuous tube (the "straw" collapse). The paired
+      // olecranon (elbow point) rise on the back keeps the joint reading as a real hinge, not a kink.
+      const elb=Math.exp(-Math.pow(rr-0.50,2)/0.0045);
+      r -= elb*front*0.015; r += elb*back*0.008;
       return r;
     }
     // v155 ANATOMICAL LEG RELIEF: quad sweep + hamstring + twin gastrocnemius calf heads + tibia ridge.
@@ -5419,6 +5424,10 @@ window.BBODY = (function(){
       const calf=Math.exp(-Math.pow(rr-0.66,2)/0.016)*back*(0.7+0.3*Math.cos(a*2));
       const shin=Math.exp(-Math.pow(rr-0.66,2)/0.020)*front*0.5;
       r += quad*0.024 + ham*0.022 + calf*0.022 + shin*0.010;
+      // v156 KNEE CREASE: popliteal groove at the BACK of the joint (rr~0.50) + patella (kneecap) rise
+      // on the FRONT, so the knee folds as a hinge with a real cap instead of a smooth straw.
+      const kn=Math.exp(-Math.pow(rr-0.50,2)/0.0045);
+      r -= kn*back*0.016; r += Math.exp(-Math.pow(rr-0.50,2)/0.006)*front*0.011;
       return r;
     }
     return 0;
@@ -9444,6 +9453,16 @@ const DIVE_TYPES = {
   SENTON:       { label:"SENTON BOMB",  dur:0.80, spin:7.0,  pow:106, arc:0.9 },
   DIVING_HEADBUTT: { label:"DIVING HEADBUTT", dur:0.76, spin:0, pow:114, arc:0.82, sell:1 },   // angelic flight, violent crash — attacker PAYS
   SWANTON:      { label:"SWANTON BOMB", dur:0.84, spin:8.4,  pow:108, arc:0.95 },              // Hardy-style fast front flip, lands back-first
+  // v156 HIGH-END AERIAL CATALOG (deepen dives — top-rope elite flips). spin sign = flip direction
+  // (+ front / − back), arc = launch height, sell:1 = attacker eats impact on the crash.
+  SHOOTING_STAR:{ label:"SHOOTING STAR PRESS", dur:0.90, spin:-9.2, pow:114, arc:1.02 },        // backflip off the top, lands chest-first (moonsault family, inverted)
+  PHOENIX:      { label:"PHOENIX SPLASH",      dur:0.92, spin:9.8,  pow:120, arc:1.05, sell:1 }, // 540 corkscrew — the highest-risk flying splash
+  CORKSCREW_450:{ label:"450 SPLASH",          dur:0.88, spin:11.0, pow:116, arc:1.0 },          // front 1.25 rotation splash
+  IMPLODING_450:{ label:"IMPLODING 450",       dur:0.90, spin:-11.0,pow:118, arc:1.0, sell:1 },  // faces the corner, backflips INTO the ring
+  SPIRAL_TAP:   { label:"SPIRAL TAP",          dur:0.94, spin:12.5, pow:118, arc:1.06 },         // corkscrew shooting-star hybrid
+  TORNILLO:     { label:"TORNILLO",            dur:0.86, spin:13.0, pow:110, arc:0.98 },          // horizontal corkscrew crossbody
+  DIVING_LEGDROP:{ label:"DIVING LEG DROP",    dur:0.70, spin:0,    pow:100, arc:0.7 },           // guillotine leg drop off the top
+  DOUBLE_STOMP: { label:"DIVING DOUBLE STOMP", dur:0.66, spin:0,    pow:104, arc:0.62 },          // both feet, curb-stomp from height
 };
 Fighter.prototype.nearestCorner = function(){
   let best=null, bd=1e9;
@@ -13617,6 +13636,11 @@ function openCreator(){ renderFighterPicker(); renderMoveList(); show('creator')
 // ============================================================================
 const MODEL_LIBRARY = [
   { name:'Built-in', url:null, builtin:true },
+  // AAA authored bases — rigged GLBs whose blendshapes/bone-scale are driven by each character's
+  // CAW/DNA via applyShapeMorphs (DNA_TO_MORPH contract). Opt-in per character/side; the procedural
+  // body stays the default so attire/hair/face identity isn't lost until these carry textures.
+  { name:'Wrestler Base (AAA)', url:'assets/models/wrestler_base.glb' },
+  { name:'X Bot (dense)', url:'assets/models/xbot.glb' },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },
