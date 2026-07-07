@@ -2404,9 +2404,26 @@ class Fighter {
     this.seg.earL = ell(0.042, skinMat); this.seg.earR = ell(0.042, skinMat);
     this.seg.mouth= mkBox(0.07,0.018,0.03, M(0x3a1512));
     this.seg.hair = add(new THREE.Mesh(new THREE.SphereGeometry(0.162,28,24), hairMat));
-    this.seg.eyeL = mkBox(0.045,0.03,0.02, M(0x0c0c0c, isP?0xff3300:0x00ddff, 100));
-    this.seg.eyeR = mkBox(0.045,0.03,0.02, M(0x0c0c0c, isP?0xff3300:0x00ddff, 100));
-    this.seg.eyeL.material.emissiveIntensity = 0.55; this.seg.eyeR.material.emissiveIntensity = 0.55; // a lit iris, not a blown-out white bloom dot
+    // REAL EYEBALL (was a flat box — the "weird square eyes"): a sphere with vertex-painted white
+    // sclera + coloured iris + dark pupil on the FRONT (+x) hemisphere. Single mesh so it keeps the
+    // existing per-frame positioning (matrixAutoUpdate=false), CAW scaling, and the emissive eye-glow
+    // (applyFighterSpec still sets material.emissive). Rounds the eye + reads as an iris, not a cube.
+    const mkEye = (irisHex)=>{
+      const g = new THREE.SphereGeometry(0.024, 18, 16);
+      const pos = g.attributes.position, n = pos.count, cols = new Float32Array(n*3);
+      const scl = new THREE.Color(0xf1efe8), iris = new THREE.Color(irisHex), pup = new THREE.Color(0x070707), t = new THREE.Vector3();
+      for(let i=0;i<n;i++){
+        t.set(pos.getX(i), pos.getY(i), pos.getZ(i)).normalize();
+        const d = t.x;                                   // +x = facing forward out of the socket
+        const c = d>0.94 ? pup : (d>0.70 ? iris : scl);  // pupil core / iris ring / sclera
+        cols[i*3]=c.r; cols[i*3+1]=c.g; cols[i*3+2]=c.b;
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(cols,3));
+      const mat = new THREE.MeshStandardMaterial({ color:0xffffff, vertexColors:true, roughness:0.16, metalness:0.0, emissive:irisHex, emissiveIntensity:0.30 });
+      return add(new THREE.Mesh(g, mat));
+    };
+    this.seg.eyeL = mkEye(isP?0xff3300:0x00ddff);
+    this.seg.eyeR = mkEye(isP?0xff3300:0x00ddff);
     this.seg.neck = mkCyl(0.085,0.10, skinMat);
     // ===== FACE GEAR (canon: assets/reference/bannon_sketches) — Bannon's METALLIC 3/4 UPPER MASK
     // with a FREE-FLOATING JAW/CHIN PLATE ("U" plate), plus hanging DREADLOCK strands. Built for every
