@@ -29,9 +29,11 @@ def reset_scene():
 
 def build_body():
     mball = bpy.data.metaballs.new("BodyMB"); mball.resolution = 0.035; mball.render_resolution = 0.03
+    mball.threshold = 0.6   # lower threshold => neighbouring fields fuse into ONE connected surface
     obj = bpy.data.objects.new("Wrestler_Base", mball); bpy.context.collection.objects.link(obj)
     def el(x,y,z, sx,sy,sz, stiff=2.0):
-        e = mball.elements.new(); e.type='ELLIPSOID'; e.co=(x,y,z); e.size_x=sx; e.size_y=sy; e.size_z=sz; e.radius=1.0; e.stiffness=stiff
+        # larger influence radius so adjacent elements overlap and MERGE (no floating blobs)
+        e = mball.elements.new(); e.type='ELLIPSOID'; e.co=(x,y,z); e.size_x=sx; e.size_y=sy; e.size_z=sz; e.radius=2.4; e.stiffness=stiff
     # standing, Z up, facing +Y (torso/limbs); mirrored L/R on X
     el(0,0,1.78, .13,.13,.15)                    # head
     el(0,0,1.60, .07,.07,.07)                    # neck
@@ -168,7 +170,19 @@ def main():
     bpy.ops.export_scene.gltf(filepath=OUT, export_format='GLB', export_yup=True,
         export_morph=True, export_skins=rigged, export_materials='EXPORT', use_selection=True)
     nverts = len(obj.data.vertices); nkeys = len(obj.data.shape_keys.key_blocks)-1 if obj.data.shape_keys else 0
-    print("SUCCESS: %s  verts=%d shapekeys=%d rigged=%s" % (OUT, nverts, nkeys, rigged))
+    # connectivity report: how many separate shells? 1 = a single connected body (good)
+    bm = bmesh.new(); bm.from_mesh(obj.data)
+    seen=set(); shells=0
+    for v in bm.verts:
+        if v.index in seen: continue
+        shells+=1; stack=[v]
+        while stack:
+            x=stack.pop()
+            if x.index in seen: continue
+            seen.add(x.index)
+            for e in x.link_edges: stack.append(e.other_vert(x))
+    bm.free()
+    print("SUCCESS: %s  verts=%d shapekeys=%d rigged=%s shells=%d" % (OUT, nverts, nkeys, rigged, shells))
 
 if __name__ == "__main__":
     main()
