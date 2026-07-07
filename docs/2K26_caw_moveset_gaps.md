@@ -38,8 +38,9 @@ per style (brawler/high-flyer/power).
 
 **Create-a-Moveset editor — ✅ SHIPPED (2K26 structure).** The v127 MOVE LIBRARY editor now organizes
 the fighter's moveset by POSITION (STANDING / GRAPPLE FRONT / GRAPPLE BACK / GROUND / CORNER / TOP
-ROPE / RUNNING — a header per position present) and enforces the 2K26 slot model: 2 SIGNATURE + 3
-FINISHER caps with a live "SIG x/2 · FIN x/3" counter (the slot-cycle button skips a full tier). Each
+ROPE / RUNNING — a header per position present) and enforces the 2K26 slot model: 5 SIGNATURE + 5
+FINISHER caps (any move — strike OR grapple, any position/type — can fill a slot) with a live
+"SIG x/5 · FIN x/5" counter (the slot-cycle button skips a full tier). Each
 move carries a `pos` tag (posOf() derives it; ⇅ retags). Verified in-harness: panel opens, position
 headers render, caps hold. NEXT: wire per-position selection into combat's move picker (FINISHER_MOVES
 is already position-keyed) + a moveset DNA payload for sharing.

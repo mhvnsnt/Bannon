@@ -33520,7 +33520,9 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   // the move's cat/height when unset; the editor lets you retag it. Combat's FINISHER_MOVES is already
   // position-keyed, so this tags the library the same way.
   const POSITIONS = ['STANDING','GRAPPLE FRONT','GRAPPLE BACK','GROUND','CORNER','TOP ROPE','RUNNING'];
-  const SIG_CAP = 2, FIN_CAP = 3;
+  // WWE-2K26: 5 signature + 5 finisher slots, and ANY move (strike OR grapple, any position/type) can
+  // fill a slot — the position grouping below is organization only, never a restriction on tagging.
+  const SIG_CAP = 5, FIN_CAP = 5;
   function posOf(m){
     if(m.pos) return m.pos;
     const c=(m.cat||'').toUpperCase(), h=(m.height||'').toUpperCase(), f=(m.follow||'').toUpperCase();
