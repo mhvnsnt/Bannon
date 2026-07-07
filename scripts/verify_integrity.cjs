@@ -39,6 +39,7 @@ const SENTINELS = [
   ['joint crease relief',         'ELBOW CREASE'],
   ['AAA base body library',       'Wrestler Base (AAA)'],
   ['high-end aerial catalog',     'HIGH-END AERIAL CATALOG'],
+  ['corner back arsenal',         'CORNER BACK vs FRONT'],
 ];
 
 let bad = [];

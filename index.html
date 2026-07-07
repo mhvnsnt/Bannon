@@ -11983,12 +11983,23 @@ function playerAttack(kind){
   if (opp && opp._inCorner && !opp.isDown() && (kind==='jab'||kind==='cross'||kind==='kick')){
     const _cd = Math.hypot(opp.x-p.x, opp.z-p.z);
     if (_cd < 1.35){
+      // CORNER BACK vs FRONT (2K26 positions): if the opponent has turned INTO the buckles (their
+      // forward vector points AWAY from the attacker), their back/kidneys/skull are exposed and the
+      // attacker swaps to the BACK arsenal — back elbows, forearms to the kidneys, tree-of-woe stomp.
+      const _of = opp.forward ? opp.forward() : { x:Math.cos(opp.facing||0), z:-Math.sin(opp.facing||0) };
+      const _backExposed = (_of.x*(p.x-opp.x) + _of.z*(p.z-opp.z)) < 0;
+      const CORNER_B={
+        jab:  { name:'BACK ELBOW · CORNER',      cat:'STRIKE', limb:'LEFT ELBOW', traj:'HOOK',     height:'HIGH', power:56, speed:86 },
+        cross:{ name:'FOREARM SMASH · KIDNEYS',  cat:'STRIKE', limb:'RIGHT CROSS',traj:'HOOKING',  height:'MID',  power:60, speed:76 },
+        kick: { name:'TREE-OF-WOE STOMP',        cat:'STRIKE', limb:'RIGHT KICK', traj:'STRAIGHT', height:'LOW',  power:58, speed:80, _tow:true }
+      };
       const CORNER_S={
         jab:  { name:'KNIFE-EDGE CHOP · CORNER', cat:'STRIKE', limb:'LEFT JAB',   traj:'HOOK',     height:'HIGH', power:54, speed:88 },
         cross:{ name:'SHOULDER THRUST · CORNER', cat:'STRIKE', limb:'RIGHT CROSS',traj:'STRAIGHT', height:'MID',  power:58, speed:78 },
         kick: { name:'MUDHOLE STOMP · CORNER',   cat:'STRIKE', limb:'RIGHT KICK', traj:'STRAIGHT', height:'LOW',  power:52, speed:86 }
       };
-      const cm=Object.assign({ style:p.style||'BRAWLER', follow:'CHAIN NEXT', _corner:true }, CORNER_S[kind]);
+      const _cs = _backExposed ? CORNER_B[kind] : CORNER_S[kind];
+      const cm=Object.assign({ style:p.style||'BRAWLER', follow:'CHAIN NEXT', _corner:true, _cornerBack:_backExposed }, _cs);
       cm.power=Math.round(cm.power*1.10);   // nowhere to retreat
       p.startAttack(cm); return;
     }
