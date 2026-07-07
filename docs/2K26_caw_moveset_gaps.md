@@ -36,16 +36,22 @@ per style (brawler/high-flyer/power).
 | CHAR_FINISHERS → MOVESET_DB | ❌ finishers defined but not all in the library UI | wire CHAR_FINISHERS/sig into MOVESET_DB so they're selectable |
 | Moveset import/share | ❌ | a moveset DNA payload (like character DNA) |
 
-**Next moveset brick:** a **Create-a-Moveset editor** — per-position slots (standing/grapple front/
-back/ground-head/ground-legs/corner/top-rope/running) each pick from MOVESET_DB filtered by position,
-+ 2 signature slots + 3 finisher slots (position-tagged). Persist to the character's DNA. This is the
-big "you missed the moveset library setup" item — it's the EDITOR, not the move data (we have moves).
+**Create-a-Moveset editor — ✅ SHIPPED (2K26 structure).** The v127 MOVE LIBRARY editor now organizes
+the fighter's moveset by POSITION (STANDING / GRAPPLE FRONT / GRAPPLE BACK / GROUND / CORNER / TOP
+ROPE / RUNNING — a header per position present) and enforces the 2K26 slot model: 5 SIGNATURE + 5
+FINISHER caps (any move — strike OR grapple, any position/type — can fill a slot) with a live
+"SIG x/5 · FIN x/5" counter (the slot-cycle button skips a full tier). Each
+move carries a `pos` tag (posOf() derives it; ⇅ retags). Verified in-harness: panel opens, position
+headers render, caps hold. NEXT: wire per-position selection into combat's move picker (FINISHER_MOVES
+is already position-keyed) + a moveset DNA payload for sharing.
 
 ## C. Model fidelity (make it read as a modern game — UFC / Visceral / 2K26)
 From the MODEL GAP ANALYSIS (CLAUDE.md): procedural tubes have a topology ceiling; the AAA path is the
 authored base GLB + DNA morphs (proven). Near-term procedural wins that most move the "modern" needle,
 in priority order:
-1. **Real eyeball meshes** (sphere + iris/cornea shader) — flat eyes are the #1 "not modern" tell.
+1. ~~**Real eyeball meshes**~~ ✅ SHIPPED — the flat box eyes are now vertex-painted spheres (white
+   sclera + coloured iris + dark pupil on the front hemisphere, subtle emissive glow retained). Next
+   polish: a cornea highlight + per-fighter iris colour driven by sp.eye (currently baked at build).
 2. **1024px skin** w/ pores + veins + per-region wetness (sweat ramp already exists).
 3. **Hair cards** (alpha-tex strips w/ anisotropic spec) instead of cap+cylinders; two-tone now feeds them.
 4. **Elbow/knee crease rings** so joints fold instead of collapsing like a straw.
