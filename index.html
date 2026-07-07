@@ -8970,7 +8970,35 @@ Fighter.prototype.poseGrab = function(dt){
       this.J.pelvis.tgt.y += tau*0.55; this.J.chest.tgt.y += tau*0.40; this.J.head.tgt.y += tau*0.30;
       this.J.chest.tgt.x  += Math.abs(tau)*0.35;                // tip INTO the load (never away)
       this.J.knL.tgt.y += tau*0.30; this.J.knR.tgt.y += tau*0.30; // knees give under the sag
-    } }
+    }
+    // ===== v156 STRUGGLE-LIFT (owner spec) — a REAL fight to hoist a heavy body, not a clean pose.
+    // Physics-driven, NOT a timing minigame (owner veto respected): struggle intensity S grows as the
+    // attacker's mass advantage over the victim shrinks and as stamina drains. High S =>
+    //   • the whole forklift stack TEETERS forward/back like it might tip over,
+    //   • it SAGS toward dropping on the down-beats ("finna fall back down") then SURGES back up
+    //     ("fighting back to lift") on the up-beats — a compound sine (fast tremor + slow near-drop swell),
+    //   • the SPINE flexes forward under the grind and EXTENDS/locks out at the apex (real spinal bend
+    //     through the up-and-down of the forklift), and the knees buckle when it's slipping.
+    // Strong/fresh fighters lift clean (S~0). Full effect on the hoist (st2), softened on the carry (st3).
+    if((st===2||st===3) && _v){
+      const mA=(this.strikeMass?this.strikeMass():1), mV=(_v.strikeMass?_v.strikeMass():1);
+      const margin=clamp(mA/Math.max(0.4,mV),0.5,1.8);
+      const stF=clamp((this.stamina!=null?this.stamina:100)/(this.maxStamina||100),0,1);
+      const S=clamp((1.18-margin)+(1-stF)*0.55, 0, 1) * (st===2?1:0.55);
+      this._liftStruggle=S;
+      if(S>0.02){
+        const tt=this.stateTime||0;
+        const wob=Math.sin(tt*4.6)*0.55 + Math.sin(tt*2.15+0.7)*0.45;   // fast tremor + slow near-drop swell
+        const down=Math.max(0,-wob), apex=Math.max(0,wob);
+        const vSag = -S*(0.05 + down*0.15) + S*apex*0.03;               // slip down on the down-beats, catch on the up
+        this.J.pelvis.tgt.y += vSag*0.9; this.J.chest.tgt.y += vSag; this.J.head.tgt.y += vSag*1.05;
+        this.J.knL.tgt.y += -S*down*0.085; this.J.knR.tgt.y += -S*down*0.085;   // knees buckle when it's slipping
+        const teeter=S*wob*0.085;                                       // fwd/back rock, head lags most
+        this.J.pelvis.tgt.x += teeter*0.5; this.J.chest.tgt.x += teeter*0.85; this.J.head.tgt.x += teeter*1.1;
+        const bend=S*(down*0.18 - apex*0.09);                           // spine flexes under grind, extends at lockout
+        this.J.chest.tgt.x += bend*0.7; this.J.head.tgt.x += bend*1.0;
+      }
+    } else { this._liftStruggle=0; } }
   this.solveArmIK();
 };
 

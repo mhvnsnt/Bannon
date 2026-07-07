@@ -40,6 +40,7 @@ const SENTINELS = [
   ['AAA base body library',       'Wrestler Base (AAA)'],
   ['high-end aerial catalog',     'HIGH-END AERIAL CATALOG'],
   ['corner back arsenal',         'CORNER BACK vs FRONT'],
+  ['struggle-lift physics',       'STRUGGLE-LIFT'],
 ];
 
 let bad = [];
