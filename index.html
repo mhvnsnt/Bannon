@@ -5582,6 +5582,55 @@ window.__paintEye = function(mesh, irisHex){
     if(mesh.material){ mesh.material.vertexColors=true; if(mesh.material.emissive) mesh.material.emissive.setHex(irisHex); mesh.material.needsUpdate=true; }
   }catch(e){}
 };
+// ===== CAW/DNA -> imported-GLB bridge (the AAA-model shaping path) =====
+// The creation suite + DNA store shape in f.shape. On the PROCEDURAL body those drive swept-tube
+// gaussians (topology-ceilinged). On an imported high-poly GLB they must drive the mesh's BLENDSHAPES
+// (morphTargetInfluences) + bone scale — that's how a 2K/UFC-grade mesh becomes CAW-customizable
+// instead of a fixed mannequin. This name-matches our shape keys to whatever the GLB's morph targets
+// are called (chest->"Chest"/"pecs"/"chestSize"...), writing into userData.shapeMorphs which the
+// per-frame morph apply folds in. Bone-scale keys (height/limbs) scale the rig's spine/arm/leg bones.
+window.__SHAPE_MORPH_SYN = {
+  muscularity:['muscul','muscle','buff','ripped','definition','abs','swole'],
+  bodyFat:['fat','belly','weight','heavy','gut','soft','bulk'],
+  fem:['fem','female','gender','feminine','curv'],
+  chest:['chest','pec'], bust:['bust','breast'],
+  arms:['bicep','upperarm','arms'], forearms:['forearm'],
+  shoulders:['shoulder','delt'], traps:['trap','yoke'],
+  waist:['waist','stomach'], hips:['hip'], glutes:['glute','butt','seat'],
+  thighs:['thigh','quad'], calves:['calf','calve'], neck:['neck'],
+  hands:['hand'], feet:['foot','feet'], head:['headsize','skullsize'],
+  faceJawW:['jaw'], faceSkullW:['skull','cranium'], faceCheek:['cheek','zygo'], faceChin:['chin'],
+  faceBrow:['brow'], faceNose:['nose'], faceEye:['eye'], faceMouthW:['mouth'], faceLips:['lip']
+};
+window.applyShapeMorphs = function(f){
+  try{
+    const m=f&&f.model; if(!m||!m.userData) return;
+    const sh=f.shape||{}, SYN=window.__SHAPE_MORPH_SYN;
+    // 1) BLENDSHAPES — name-match shape keys to the GLB's morph targets
+    if(m.userData.morphMap){
+      const norm=(s)=>String(s).toLowerCase().replace(/[^a-z0-9]/g,'');
+      const names=(m.userData.morphNames||[]).map(n=>({raw:n,n:norm(n)}));
+      const out={};
+      for(const key in SYN){ let v=sh[key]; if(v==null) continue;
+        // 0..1 sliders (musc/fat/fem) drive directly; size sliders center at 1 -> influence above neutral
+        const infl=(key==='muscularity'||key==='bodyFat'||key==='fem') ? Math.max(0,Math.min(1,+v)) : Math.max(0,Math.min(1,(+v)-1));
+        if(infl<=0.001) continue;
+        const syns=SYN[key];
+        for(const nn of names){ if(syns.some(s=>nn.n.indexOf(s)>=0)) out[nn.raw]=Math.max(out[nn.raw]||0, infl); }
+      }
+      m.userData.shapeMorphs=out;   // per-frame morph apply folds this in
+    }
+    // 2) BONE SCALE — height/limb proportion onto the rig (restQuat/restScale captured at bind)
+    const bones=m.userData.boneByName; if(bones){
+      const H=+sh.height||1, AL=+sh.armLen||1, LL=+sh.legLen||1, TL=+sh.torsoLen||1;
+      const setScale=(re,val)=>{ if(val===1) return; for(const bk in bones){ if(re.test(bk.toLowerCase())){ const b=bones[bk], rs=(b.userData&&b.userData.restScale)||{x:1,y:1,z:1}; b.scale.set(rs.x*val, rs.y*val, rs.z*val); } } };
+      if(H!==1) setScale(/spine|hips|pelvis|root/, H);          // overall stature via the core chain
+      if(AL!==1) setScale(/(upper ?arm|forearm|lowerarm|elbow)/, AL);
+      if(LL!==1) setScale(/(upleg|thigh|calf|shin|lowerleg|knee)/, LL);
+      if(TL!==1) setScale(/(spine|chest|torso)/, TL);
+    }
+  }catch(e){}
+};
 window.applyFighterSpec = function(f, spec){
   try{
     if(!f || !f.seg) return;
@@ -5628,6 +5677,9 @@ window.applyFighterSpec = function(f, spec){
     // continuous body colour now lives in vertex colours (skin + attire) — flag for repaint
     // instead of tinting the whole material (which would override the per-region attire).
     if(f._bmesh){ f._attireDirty=true; }
+    // AAA path: if this fighter is an imported high-poly GLB, drive its blendshapes + bone scale
+    // from the same shape state (so the creation suite / DNA sculpts the real mesh, not just the tube body).
+    if(f.model && window.applyShapeMorphs) window.applyShapeMorphs(f);
   }catch(e){ console.warn('[BANNON] applyFighterSpec failed', e); }
 };
 window.restyleFighter = function(f){ window.applyFighterSpec(f, {}); };   // re-apply current spec+shape (live slider hook)
@@ -13685,6 +13737,7 @@ function _bindFighterGltf(side, url, name, gltf){
       if(typeof DIRECTOR!=='undefined' && DIRECTOR.partStore && DIRECTOR.partStore[url]){ var _hid=DIRECTOR.partStore[url]; container.traverse(function(o){ if(o.isMesh && _hid[o.name]) o.visible=false; }); }
     }catch(e){}
     f.model=container; f.modelUrl=url; scene.add(container); setProcVisible(f,false);
+    try{ if(window.applyShapeMorphs) window.applyShapeMorphs(f); }catch(_){}   // sculpt the fresh mesh to the fighter's current CAW/DNA shape
     _rigSense(side, name, bones, mapped, container, s);
   }catch(e){ setModelStatus(side,'⚠ Bind error. Built-in body kept.'); removeFighterModel(side); }
 }
@@ -13825,8 +13878,8 @@ function updateFighterModel(f){
       _SE.set(_s.ox*_soft, 0, _s.oz*_soft); _s.b.quaternion.copy(_s.rq).multiply(_SQ.setFromEuler(_SE));
     }
   }
-  if(m.userData.morphMap){ try{ var _mmp=m.userData.morphMap, _mb=m.userData.morphStore||{}, _mc=m.userData.clipMorphs;
-    for(var _mn in _mmp){ var _mv=(_mb[_mn]||0)+((_mc&&_mc[_mn])||0); if(_mv<0)_mv=0; if(_mv>1)_mv=1; var _mar=_mmp[_mn]; for(var _mi=0;_mi<_mar.length;_mi++){ var _me=_mar[_mi]; if(_me.mesh.morphTargetInfluences) _me.mesh.morphTargetInfluences[_me.idx]=_mv; } }
+  if(m.userData.morphMap){ try{ var _mmp=m.userData.morphMap, _mb=m.userData.morphStore||{}, _mc=m.userData.clipMorphs, _msh=m.userData.shapeMorphs||{};
+    for(var _mn in _mmp){ var _mv=(_mb[_mn]||0)+((_mc&&_mc[_mn])||0)+(_msh[_mn]||0); if(_mv<0)_mv=0; if(_mv>1)_mv=1; var _mar=_mmp[_mn]; for(var _mi=0;_mi<_mar.length;_mi++){ var _me=_mar[_mi]; if(_me.mesh.morphTargetInfluences) _me.mesh.morphTargetInfluences[_me.idx]=_mv; } }
     m.userData.clipMorphs=null; }catch(e){} }
 }
 function curModelName(side){
