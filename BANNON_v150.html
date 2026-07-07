@@ -21014,16 +21014,19 @@ ${sessionMemory || 'First session.'}`;
 
   window.BANNON_DAEMON = D;
 
-  // ===== PROMPT -> UNIQUE CHARACTER: type a description, the daemon generates a one-of-one rigged
-  // GLB (Meshy/Tripo), then we import it (binds to the fight rig + morphs) and bind it to the
-  // character so it's THEIRS. side: 'p1'/'p2' to show it live; characterKey to persist per-character.
+  // ===== PROMPT (+ optional IMAGE SEED) -> UNIQUE CHARACTER: type a description and/or hand it a
+  // sketch/concept image, the daemon generates a one-of-one rigged GLB (our forge / Meshy / Tripo),
+  // then we import it (binds to the fight rig + morphs) and bind it to the character so it's THEIRS.
+  // opts.image = a data: URI or URL of a sketch (e.g. assets/reference/bannon_sketches/*) — when set,
+  // the forge runs IMAGE->3D so the shape follows the drawing (forge_server GenReq.image).
+  // side: 'p1'/'p2' to show it live; characterKey to persist per-character.
   window.generateCharacterModel = function(prompt, opts){
     opts = opts || {};
     var side = opts.side || (typeof modelSel!=='undefined' ? modelSel : 'p1');
     var status = function(t){ try{ if(typeof setModelStatus==='function') setModelStatus(side, t); }catch(_){} if(opts.onProgress) opts.onProgress(t); };
     if(!window.BANNON_DAEMON){ status('⚠ Daemon offline — connect it to generate.'); return Promise.resolve(null); }
-    status('⏳ Generating "'+prompt.slice(0,40)+'"…');
-    return D.genStart(prompt, { provider: opts.provider, characterId: opts.characterKey }).then(function(job){
+    status(opts.image ? ('⏳ Generating from sketch'+(prompt?' + "'+prompt.slice(0,28)+'"':'')+'…') : ('⏳ Generating "'+prompt.slice(0,40)+'"…'));
+    return D.genStart(prompt, { provider: opts.provider, characterId: opts.characterKey, image: opts.image }).then(function(job){
       if(!job || !job.id){ status('⚠ Generator not available (needs MESHY_API_KEY/TRIPO_API_KEY on the daemon).'); return null; }
       if(job.status==='failed'){ status('⚠ '+(job.error||'generation failed')); return null; }
       return new Promise(function(resolve){
