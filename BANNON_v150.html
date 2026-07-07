@@ -5557,6 +5557,19 @@ window.BBODY = (function(){
 // physics, per the merge notes), we make THAT body parametric: a spec drives build (muscle bulk) + full palette, applied LIVE with
 // no rebuild. applyMesh only positions the muscle masses, so a one-time scale on them persists. This is the literal backbone of the
 // roster (distinct clones with style-matched characteristics) and, later, the create-a-fighter / customize suite.
+// Repaint an eyeball's iris to any colour (CAW eye colour drives the actual iris, not just the glow).
+// Same sclera/iris/pupil/catchlight scheme as the constructor's mkEye, callable live from applyFighterSpec.
+window.__paintEye = function(mesh, irisHex){
+  try{ if(!mesh||!mesh.geometry||typeof THREE==='undefined') return; const g=mesh.geometry, pos=g.attributes.position; if(!pos) return;
+    const n=pos.count, cols=new Float32Array(n*3);
+    const scl=new THREE.Color(0xf1efe8), iris=new THREE.Color(irisHex), pup=new THREE.Color(0x070707), cat=new THREE.Color(0xf8f9ff), t=new THREE.Vector3();
+    for(let i=0;i<n;i++){ t.set(pos.getX(i),pos.getY(i),pos.getZ(i)).normalize(); const d=t.x;
+      let c = d>0.94?pup:(d>0.70?iris:scl); if(d>0.5&&t.y>0.52&&t.z>0.12) c=cat;
+      cols[i*3]=c.r; cols[i*3+1]=c.g; cols[i*3+2]=c.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(cols,3));
+    if(mesh.material){ mesh.material.vertexColors=true; if(mesh.material.emissive) mesh.material.emissive.setHex(irisHex); mesh.material.needsUpdate=true; }
+  }catch(e){}
+};
 window.applyFighterSpec = function(f, spec){
   try{
     if(!f || !f.seg) return;
@@ -5598,7 +5611,7 @@ window.applyFighterSpec = function(f, spec){
     const gloveC=(sp.glove!=null?sp.glove:sp.accent); if(gloveC!=null) setCol(S.gloveL, gloveC);
     if(sp.boot!=null) setCol(S.bootL, sp.boot);
     if(sp.hair!=null) setCol(S.hair, sp.hair);
-    if(sp.eye!=null && S.eyeL && S.eyeL.material){ try{ S.eyeL.material.emissive.setHex(sp.eye); }catch(e){} }
+    if(sp.eye!=null && S.eyeL){ try{ window.__paintEye(S.eyeL, sp.eye); if(S.eyeR) window.__paintEye(S.eyeR, sp.eye); }catch(e){} }
     f._specBuild=B; if(sp.name!=null) f.specName=sp.name;
     // continuous body colour now lives in vertex colours (skin + attire) — flag for repaint
     // instead of tinting the whole material (which would override the per-region attire).
