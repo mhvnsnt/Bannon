@@ -5034,6 +5034,18 @@ window.__bannonSkinTex = function(){
     }
     x.putImageData(id,0,0);
 
+    // 4b. SUB-DERMAL VEINS — faint bluish branching lines (forearms/temples/hands read vascular up
+    // close — a modern-skin tell UFC/2K lean on). Very low alpha so per-fighter skin colour dominates.
+    x.strokeStyle='rgba(96,112,140,0.05)'; x.lineWidth=1.1; x.lineCap='round';
+    for(let v=0; v<16; v++){
+      let vx=Math.random()*512, vy=Math.random()*512, ang=Math.random()*6.283;
+      x.beginPath(); x.moveTo(vx,vy);
+      const seg=4+((Math.random()*4)|0);
+      for(let s=0;s<seg;s++){ ang+=(Math.random()*2-1)*0.7; vx+=Math.cos(ang)*(8+Math.random()*16); vy+=Math.sin(ang)*(8+Math.random()*16); x.lineTo(vx,vy);
+        if(Math.random()<0.4){ x.stroke(); x.beginPath(); x.moveTo(vx,vy); } }   // occasional branch break
+      x.stroke();
+    }
+
     // 5. SWEAT LAYER — scattered specular blobs simulating perspiration on skin surface
     x.globalCompositeOperation='screen';
     for(let i=0;i<80;i++){
