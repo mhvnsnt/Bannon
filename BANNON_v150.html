@@ -11668,6 +11668,22 @@ const STRIKE_MAP = {
   knee:  { neutral:'SAG KNEE',  up:'HEAD KNEE',     down:'BODY KNEE',  fwd:'FLYING KNEE',    back:'SPINNING ELBOW'   },
   elbow: { neutral:'LEAD ELBOW',up:'UP ELBOW',      down:'DESCENDING ELBOW', fwd:'LEAD ELBOW', back:'SPINNING ELBOW' }
 };
+// EQUIPPED MOVESET BRIDGE — read the signature/finisher moves the player equipped in the MOVE LIBRARY
+// editor (getMoves tags m.slot === 'SIGNATURE'/'FINISHER'). This is what makes "equipping" actually
+// change what fires: the signature/finisher inputs pull from these slots (cycling through up to 5
+// each) instead of a single hardcoded move. wantGrapple biases toward grapple/throw picks.
+function equippedMoves(f, slot){
+  try{ const key=((f.specName||(f.opts&&f.opts.name)||'BANNON')+'').toUpperCase();
+    const set=(window.getMoves&&window.getMoves(key))||[]; return set.filter(m=>m&&m.slot===slot); }catch(e){ return []; }
+}
+function pickEquipped(f, slot, wantGrapple){
+  const eq=equippedMoves(f, slot); if(!eq.length) return null;
+  const grp=eq.filter(m=>m.cat==='GRAPPLE'||m.cat==='THROW'), str=eq.filter(m=>m.cat!=='GRAPPLE'&&m.cat!=='THROW');
+  const pool = wantGrapple ? (grp.length?grp:eq) : (str.length?str:eq);
+  f._eqIdx=f._eqIdx||{}; const i=(f._eqIdx[slot]||0); f._eqIdx[slot]=(i+1)%pool.length;   // cycle equipped slots
+  return pool[i%pool.length];
+}
+
 function playerAttack(kind){
   const p = fighters[0];
   if (!p || p.ragdoll || p.state==='down') return;
@@ -11916,10 +11932,21 @@ function playerAttack(kind){
   // even below full momentum. Signature meter effectively fills 50% faster (gain boost below 50).
   if (kind==='jab' && powerMod && (p.momentum||0)>=50 && !p.grappling){
     p.momentum-=50; p._finBank=Math.min(3,(p._finBank||0)+1);
+    // EQUIPPED SIGNATURE: fire the move the player tagged SIGNATURE in the editor (cycling the slots).
+    // A grapple-type signature runs the grab->signature path; a strike-type fires as a loaded named
+    // shot. Falls back to CHAR_FINISHERS.sig when nothing is equipped.
+    const eqSig=pickEquipped(p,'SIGNATURE',(opp && !opp.isDown()));
+    if (eqSig && (eqSig.cat==='GRAPPLE'||eqSig.cat==='THROW') && opp && !opp.isDown() && p.startGrab()){
+      announce(eqSig.name+'  [FINISHER BANKED]', fname(p));
+      p.grappleStage=2; p.stateTime=0; p._liftMinT=0.5;
+      setTimeout(()=>{ try{ if(p.grappling&&p.grappleStage>=2){ p.grappleStage=3; p.stateTime=0;
+        setTimeout(()=>{ try{ if(p.grappling&&p.grappleStage===3) p.grappleDeliver('signature',0); }catch(_){}}, 600); } }catch(_){}}, 650);
+      return;
+    }
     const _sk=((p.specName||(p.opts&&p.opts.name)||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
-    const _sig=(window.CHAR_FINISHERS&&window.CHAR_FINISHERS[_sk]&&window.CHAR_FINISHERS[_sk].sig)
-      ? (window.CHAR_FINISHERS[_sk].sig+'').split('—')[0].trim() : 'SIGNATURE';
-    const sm=Object.assign({}, m, { name:_sig, power:85, follow:'KNOCKDOWN', _loaded:true, _signature:true });
+    const _sig=eqSig ? eqSig.name : ((window.CHAR_FINISHERS&&window.CHAR_FINISHERS[_sk]&&window.CHAR_FINISHERS[_sk].sig)
+      ? (window.CHAR_FINISHERS[_sk].sig+'').split('—')[0].trim() : 'SIGNATURE');
+    const sm=Object.assign({}, (eqSig||m), { name:_sig, power:Math.max(85, eqSig?(eqSig.power||85):85), follow:'KNOCKDOWN', _loaded:true, _signature:true });
     flashScreen(0.4); camShake=Math.max(camShake,0.35);
     announce(_sig+'  [FINISHER BANKED]', fname(p));
     p.startAttack(sm); return;
@@ -11933,24 +11960,29 @@ function playerAttack(kind){
     p.momentum = 0; flashScreen(0.7); chromAb=0.7; camShake=Math.max(camShake,0.5);
     const _fk=((p.specName||(p.opts&&p.opts.name)||'BANNON')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
     const FF=(window.FINISHER_MOVES||{})[_fk];
-    if (FF && FF.kind==='grapple' && opp && !opp.isDown()){
+    // EQUIPPED FINISHER wins over the hardcoded default: a grapple/throw the player tagged FINISHER
+    // runs the grab->lift->deliver path; a strike-type fires as its own named 100-power shot.
+    const eqFin=pickEquipped(p,'FINISHER',(opp && !opp.isDown()));
+    const useGrapple = (eqFin && (eqFin.cat==='GRAPPLE'||eqFin.cat==='THROW')) || (!eqFin && FF && FF.kind==='grapple');
+    if (useGrapple && opp && !opp.isDown()){
       if (p.startGrab()){
-        announce(FF.name, fname(p));
-        p.grapplePos=FF.pos; p._aiGrapChosen=true;
-        p.craneLift=(GRAPPLE_POSITIONS[FF.pos]||{}).lift0||0; p.craneTwist=0;
-        p.grappleStage=2; p.stateTime=0;
-        const _ld=((GRAPPLE_POSITIONS[FF.pos]||{}).liftDur||0.7);
-        p._liftMinT=_ld;
-        setTimeout(()=>{ try{ if (p.grappling && p.grappleStage>=2 && p.grapplePos===FF.pos){
+        const finName=eqFin?eqFin.name:FF.name; const posKey=(FF&&FF.pos)||null;
+        announce(finName, fname(p));
+        if (posKey){ p.grapplePos=posKey; p.craneLift=(GRAPPLE_POSITIONS[posKey]||{}).lift0||0; p.craneTwist=0; }
+        p._aiGrapChosen=true; p.grappleStage=2; p.stateTime=0;
+        const _ld=((GRAPPLE_POSITIONS[posKey]||{}).liftDur||0.7); p._liftMinT=_ld;
+        setTimeout(()=>{ try{ if (p.grappling && p.grappleStage>=2){
           p.grappleStage=3; p.stateTime=0;
-          setTimeout(()=>{ try{ if (p.grappling && p.grappleStage===3) p.grappleDeliver(FF.deliver||'signature', 0); }catch(_){}}, 700);
+          setTimeout(()=>{ try{ if (p.grappling && p.grappleStage===3) p.grappleDeliver((FF&&FF.deliver)||'signature', 0); }catch(_){}}, 700);
         } }catch(_){}}, _ld*1000+250);
         return;
       }
     }
+    // strike finisher — take the equipped strike move's shape/name when present, else the default
+    if (eqFin && eqFin.cat!=='GRAPPLE' && eqFin.cat!=='THROW'){ Object.assign(m, { limb:eqFin.limb, traj:eqFin.traj, height:eqFin.height, cat:eqFin.cat }); }
     m.power = 100; m.follow='KNOCKDOWN'; m._loaded=true; m._finisher=true;
-    if (FF) m.name=FF.name;
-    announce(FF?FF.name:'FINISHER', fname(p));
+    m.name = eqFin ? eqFin.name : (FF ? FF.name : (m.name||'FINISHER'));
+    announce(m.name, fname(p));
   }
   p.startAttack(m);
 }
