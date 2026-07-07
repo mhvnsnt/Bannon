@@ -36,10 +36,13 @@ per style (brawler/high-flyer/power).
 | CHAR_FINISHERS → MOVESET_DB | ❌ finishers defined but not all in the library UI | wire CHAR_FINISHERS/sig into MOVESET_DB so they're selectable |
 | Moveset import/share | ❌ | a moveset DNA payload (like character DNA) |
 
-**Next moveset brick:** a **Create-a-Moveset editor** — per-position slots (standing/grapple front/
-back/ground-head/ground-legs/corner/top-rope/running) each pick from MOVESET_DB filtered by position,
-+ 2 signature slots + 3 finisher slots (position-tagged). Persist to the character's DNA. This is the
-big "you missed the moveset library setup" item — it's the EDITOR, not the move data (we have moves).
+**Create-a-Moveset editor — ✅ SHIPPED (2K26 structure).** The v127 MOVE LIBRARY editor now organizes
+the fighter's moveset by POSITION (STANDING / GRAPPLE FRONT / GRAPPLE BACK / GROUND / CORNER / TOP
+ROPE / RUNNING — a header per position present) and enforces the 2K26 slot model: 2 SIGNATURE + 3
+FINISHER caps with a live "SIG x/2 · FIN x/3" counter (the slot-cycle button skips a full tier). Each
+move carries a `pos` tag (posOf() derives it; ⇅ retags). Verified in-harness: panel opens, position
+headers render, caps hold. NEXT: wire per-position selection into combat's move picker (FINISHER_MOVES
+is already position-keyed) + a moveset DNA payload for sharing.
 
 ## C. Model fidelity (make it read as a modern game — UFC / Visceral / 2K26)
 From the MODEL GAP ANALYSIS (CLAUDE.md): procedural tubes have a topology ceiling; the AAA path is the

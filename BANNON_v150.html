@@ -2411,11 +2411,12 @@ class Fighter {
     const mkEye = (irisHex)=>{
       const g = new THREE.SphereGeometry(0.024, 18, 16);
       const pos = g.attributes.position, n = pos.count, cols = new Float32Array(n*3);
-      const scl = new THREE.Color(0xf1efe8), iris = new THREE.Color(irisHex), pup = new THREE.Color(0x070707), t = new THREE.Vector3();
+      const scl = new THREE.Color(0xf1efe8), iris = new THREE.Color(irisHex), pup = new THREE.Color(0x070707), cat = new THREE.Color(0xf8f9ff), t = new THREE.Vector3();
       for(let i=0;i<n;i++){
         t.set(pos.getX(i), pos.getY(i), pos.getZ(i)).normalize();
         const d = t.x;                                   // +x = facing forward out of the socket
-        const c = d>0.94 ? pup : (d>0.70 ? iris : scl);  // pupil core / iris ring / sclera
+        let c = d>0.94 ? pup : (d>0.70 ? iris : scl);    // pupil core / iris ring / sclera
+        if(d>0.5 && t.y>0.52 && t.z>0.12) c = cat;       // CORNEA CATCHLIGHT: wet highlight on the upper-front (reads alive)
         cols[i*3]=c.r; cols[i*3+1]=c.g; cols[i*3+2]=c.b;
       }
       g.setAttribute('color', new THREE.BufferAttribute(cols,3));
@@ -33514,6 +33515,23 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   if (window.__moveLibReady) return; window.__moveLibReady = true;
   const LS = 'bannonMovesets_v1';
   const CATS = ['STRIKE','KICK','GRAPPLE','THROW','GROUND','FBX'];
+  // WWE-2K26 STRUCTURE: moves belong to a POSITION, and Signatures/Finishers are capped slots
+  // (2K26 = 2 signature + 3 finisher, position-dependent). posOf() derives a sensible position from
+  // the move's cat/height when unset; the editor lets you retag it. Combat's FINISHER_MOVES is already
+  // position-keyed, so this tags the library the same way.
+  const POSITIONS = ['STANDING','GRAPPLE FRONT','GRAPPLE BACK','GROUND','CORNER','TOP ROPE','RUNNING'];
+  const SIG_CAP = 2, FIN_CAP = 3;
+  function posOf(m){
+    if(m.pos) return m.pos;
+    const c=(m.cat||'').toUpperCase(), h=(m.height||'').toUpperCase(), f=(m.follow||'').toUpperCase();
+    if(c==='THROW'||c==='GRAPPLE') return 'GRAPPLE FRONT';
+    if(c==='GROUND'||h==='GROUND') return 'GROUND';
+    if(f.indexOf('REBOUND')>=0||f.indexOf('RUN')>=0) return 'RUNNING';
+    if((m.name||'').toUpperCase().match(/CORNER|BUCKLE|TURNBUCKLE/)) return 'CORNER';
+    if((m.name||'').toUpperCase().match(/DIVING|TOP ROPE|SPLASH|MOONSAULT|SWANTON/)) return 'TOP ROPE';
+    return 'STANDING';
+  }
+  const slotCount = (live, slot)=> (live||[]).filter(m=>m.slot===slot).length;
   function fighters(){ try{ return Object.keys(window.movesets||{}); }catch(e){ return ['BANNON']; } }
   function mapFbxCat(k){ k=(k||'').toUpperCase();
     if(/KNEE|KICK/.test(k)) return 'KICK';
@@ -33560,17 +33578,30 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     const pbox=document.createElement('div'); pbox.style.cssText='max-height:300px;overflow:auto'; left.appendChild(pbox);
     pool.forEach(m=>{ pbox.appendChild(row(m, ()=>{ const live=window.getMoves(cur); if(live){ live.push(Object.assign({},m)); flash('+ '+m.name); render(); } })); });
     if(!pool.length){ const e=document.createElement('div'); e.style.cssText='color:#69788a;font:11px monospace;padding:6px'; e.textContent=(filter==='FBX'?'No FBX clips imported yet \u2014 use the ANIMS panel.':'(empty)'); pbox.appendChild(e); }
-    const rh=document.createElement('div'); rh.style.cssText='color:#9fb0c3;font:bold 11px monospace;letter-spacing:1px;margin-bottom:3px'; rh.textContent=cur+' \u2014 MOVESET'; right.appendChild(rh);
-    const mbox=document.createElement('div'); mbox.style.cssText='max-height:330px;overflow:auto'; right.appendChild(mbox);
     const live=window.getMoves(cur)||[];
-    live.forEach((m,i)=>{ const ctrl=document.createElement('div'); ctrl.style.cssText='display:flex;gap:4px;align-items:center';
-      const tags=['NORMAL','SIGNATURE','FINISHER']; const ti=tags.indexOf(m.slot||'NORMAL');
-      const slot=document.createElement('button'); slot.textContent=(m.slot||'NORMAL').slice(0,3); slot.title='slot';
-      slot.style.cssText='font:9px monospace;padding:2px 5px;border-radius:4px;cursor:pointer;border:1px solid #2a3340;background:'+(m.slot==='FINISHER'?'#ff3b3b':m.slot==='SIGNATURE'?'#f5b81f':'#0c0f14')+';color:'+(m.slot&&m.slot!=='NORMAL'?'#000':'#9fb0c3');
-      slot.onclick=(e)=>{ e.stopPropagation(); m.slot=tags[(ti+1)%3]; render(); };
-      const rm=document.createElement('button'); rm.textContent='\u00d7'; rm.style.cssText='font:12px monospace;padding:1px 7px;border-radius:4px;cursor:pointer;border:1px solid #5a1f1f;background:#1c1010;color:#ff6b6b';
-      rm.onclick=(e)=>{ e.stopPropagation(); live.splice(i,1); render(); }; ctrl.appendChild(slot); ctrl.appendChild(rm);
-      mbox.appendChild(row(m, null, ctrl)); });
+    const rh=document.createElement('div'); rh.style.cssText='color:#9fb0c3;font:bold 11px monospace;letter-spacing:1px;margin-bottom:3px';
+    rh.innerHTML=cur+' \u2014 MOVESET  <span style="color:#f5b81f">SIG '+slotCount(live,'SIGNATURE')+'/'+SIG_CAP+'</span> \u00b7 <span style="color:#ff3b3b">FIN '+slotCount(live,'FINISHER')+'/'+FIN_CAP+'</span>'; right.appendChild(rh);
+    const mbox=document.createElement('div'); mbox.style.cssText='max-height:330px;overflow:auto'; right.appendChild(mbox);
+    // group the moveset by POSITION (2K26-style), a header per position present
+    const byPos={}; live.forEach((m,i)=>{ const p=posOf(m); (byPos[p]=byPos[p]||[]).push([m,i]); });
+    POSITIONS.filter(p=>byPos[p]).forEach(p=>{
+      const ph2=document.createElement('div'); ph2.style.cssText='color:#69788a;font:bold 10px monospace;letter-spacing:1px;margin:6px 0 2px;border-bottom:1px solid #1b2230'; ph2.textContent=p; mbox.appendChild(ph2);
+      byPos[p].forEach(([m,i])=>{ const ctrl=document.createElement('div'); ctrl.style.cssText='display:flex;gap:4px;align-items:center';
+        const slot=document.createElement('button'); slot.textContent=(m.slot||'NORMAL').slice(0,3); slot.title='slot (cap: '+SIG_CAP+' SIG / '+FIN_CAP+' FIN)';
+        slot.style.cssText='font:9px monospace;padding:2px 5px;border-radius:4px;cursor:pointer;border:1px solid #2a3340;background:'+(m.slot==='FINISHER'?'#ff3b3b':m.slot==='SIGNATURE'?'#f5b81f':'#0c0f14')+';color:'+(m.slot&&m.slot!=='NORMAL'?'#000':'#9fb0c3');
+        slot.onclick=(e)=>{ e.stopPropagation(); const order=['NORMAL','SIGNATURE','FINISHER']; let ni=(order.indexOf(m.slot||'NORMAL')+1)%3, g=0;
+          while(g++<3){ const t=order[ni];
+            if(t==='SIGNATURE' && m.slot!=='SIGNATURE' && slotCount(live,'SIGNATURE')>=SIG_CAP){ ni=(ni+1)%3; continue; }
+            if(t==='FINISHER'  && m.slot!=='FINISHER'  && slotCount(live,'FINISHER') >=FIN_CAP){ ni=(ni+1)%3; continue; }
+            m.slot=t; break; }
+          render(); };
+        const pb=document.createElement('button'); pb.textContent='\u21c5'; pb.title='position';
+        pb.style.cssText='font:9px monospace;padding:2px 5px;border-radius:4px;cursor:pointer;border:1px solid #2a3340;background:#0c0f14;color:#9fb0c3';
+        pb.onclick=(e)=>{ e.stopPropagation(); const pi=POSITIONS.indexOf(p); m.pos=POSITIONS[(pi+1)%POSITIONS.length]; render(); };
+        const rm=document.createElement('button'); rm.textContent='\u00d7'; rm.style.cssText='font:12px monospace;padding:1px 7px;border-radius:4px;cursor:pointer;border:1px solid #5a1f1f;background:#1c1010;color:#ff6b6b';
+        rm.onclick=(e)=>{ e.stopPropagation(); live.splice(i,1); render(); };
+        ctrl.appendChild(pb); ctrl.appendChild(slot); ctrl.appendChild(rm); mbox.appendChild(row(m, null, ctrl)); });
+    });
     if(!live.length){ const e=document.createElement('div'); e.style.cssText='color:#69788a;font:11px monospace;padding:6px'; e.textContent='No moves \u2014 add from the pool.'; mbox.appendChild(e); }
   }
   function buildPanel(){ const p=document.createElement('div'); p.id='moveLibPanel';
