@@ -13699,6 +13699,16 @@ const MODEL_LIBRARY = [
   // body stays the default so attire/hair/face identity isn't lost until these carry textures.
   { name:'Wrestler Base (AAA)', url:'assets/models/wrestler_base.glb' },
   { name:'X Bot (dense)', url:'assets/models/xbot.glb' },
+  // CANON authored bodies (Tripo, texture-baked). Named-part GLBs (pelvis/chest/head/…) that the
+  // auto-rig binds to the fight skeleton — these are the correct AAA attires for the canon leads.
+  // Identity verified by baked texture: BANNON = steel mask + blond dreads + vale tudo trunks;
+  // MAIME = white skull facepaint + jeans/chains; MAIME (Tattered) = skull paint + tattered graphics.
+  { name:'BANNON (canon)', url:'assets/models/BANNON.glb', charKey:'BANNON' },
+  { name:'MAIME (canon)', url:'assets/models/MAIME.glb', charKey:'MAIME' },
+  { name:'MAIME · Tattered', url:'assets/models/MAIME_tattered.glb', charKey:'MAIME' },
+  // single-mesh Tripo previews — load but stay STATIC until a named-part (rigready) export exists.
+  { name:'BANNON · Muscular (static)', url:'assets/models/BANNON_muscular.glb', charKey:'BANNON', needsRig:true },
+  { name:'MAIME · Studded (static)', url:'assets/models/MAIME_studded.glb', charKey:'MAIME', needsRig:true },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },
@@ -13808,12 +13818,22 @@ function _bindFighterGltf(side, url, name, gltf){
     const sc=s*(MODEL_CFG.userScale||1);
     container.scale.setScalar(sc);
     container.userData.yBase = -container.userData.minY*sc;
-    // ===== RIGID AUTO-RIG for unrigged models (e.g. Goro: 0 bones, separate mesh chunks) =====
+    // ===== RIGID AUTO-RIG for unrigged models (Goro-style chunks AND Tripo named-part GLBs) =====
     // Build a humanoid skeleton at the rig's rest layout (scaled to this mesh), attach each chunk to
-    // its nearest bone, and register the segments so the EXISTING retarget drives it. Gated to models
-    // that ship NO skeleton, and fully guarded: any failure leaves the model exactly as-is.
+    // its bone, and register the segments so the EXISTING retarget drives it. Gated to models that
+    // ship NO skeleton, and fully guarded: any failure leaves the model exactly as-is.
+    //   • Tripo exports ship named mesh nodes (pelvis/chest/head/shL/…) but ZERO Bones, so the old
+    //     isBone-only bind dropped them in as a frozen "statue". We now detect those names and attach
+    //     each part to its LIKE-NAMED joint (accurate pivots), auto-firing — no GORO_RIG flag needed.
+    //   • Unnamed chunk meshes (true Goro case) still fall back to nearest-centroid; window.GORO_RIG
+    //     forces that centroid path even when no named parts are present.
     try{
-      if(Object.keys(bones).length===0 && (typeof window!=='undefined' && window.GORO_RIG===true)){
+      var _JKEYS={pelvis:1,chest:1,head:1,shL:1,shR:1,elL:1,elR:1,haL:1,haR:1,hipL:1,hipR:1,knL:1,knR:1,ftL:1,ftR:1};
+      var _partByName={}, _namedN=0;
+      if(Object.keys(bones).length===0){
+        obj.traverse(function(o){ if(o.isMesh && o.name){ var _n=o.name, _tail=_n.replace(/^.*[_.:]/,''); for(var _jk in _JKEYS){ if(_partByName[_jk]) continue; if(_n===_jk || _n.toLowerCase()===_jk.toLowerCase() || _tail===_jk || _tail.toLowerCase()===_jk.toLowerCase()){ _partByName[_jk]=o; _namedN++; break; } } } });
+      }
+      if(Object.keys(bones).length===0 && ((typeof window!=='undefined' && window.GORO_RIG===true) || _namedN>=6)){
         var _meshes0=[]; obj.traverse(function(o){ if(o.isMesh)_meshes0.push(o); });
         if(_meshes0.length){
           var _H=(isFinite(box.max.y-box.min.y)&&(box.max.y-box.min.y)>1e-4)?(box.max.y-box.min.y):1.6;
@@ -13826,8 +13846,13 @@ function _bindFighterGltf(side, url, name, gltf){
           [['pelvis','chest'],['chest','head'],['shL','elL'],['elL','haL'],['shR','elR'],['elR','haR'],['hipL','knL'],['knL','ftL'],['hipR','knR'],['knR','ftR']].forEach(function(seg){ if(_BN[seg[0]]) mapped.push({bone:_BN[seg[0]], fromJ:seg[0], toJ:seg[1]}); });
           container.updateMatrixWorld(true); obj.updateMatrixWorld(true);
           var _bw={}, _tv=new THREE.Vector3(); for(var _bj in _BN){ _BN[_bj].getWorldPosition(_tv); _bw[_bj]=_tv.clone(); }
-          _meshes0.forEach(function(mesh){ try{ if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox(); var _c=mesh.geometry.boundingBox.getCenter(new THREE.Vector3()); mesh.localToWorld(_c); var _best=null,_bd=Infinity; for(var _bj2 in _bw){ var _d=_c.distanceToSquared(_bw[_bj2]); if(_d<_bd){_bd=_d;_best=_BN[_bj2];} } if(_best)_best.attach(mesh); }catch(e){} });
-          container.userData.autoRig=true;
+          _meshes0.forEach(function(mesh){ try{
+            // NAME MATCH first (Tripo named parts -> correct joint), else nearest-centroid (Goro).
+            var _named=null; for(var _jk2 in _partByName){ if(_partByName[_jk2]===mesh){ _named=_BN[_jk2]; break; } }
+            if(_named){ _named.attach(mesh); return; }
+            if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox(); var _c=mesh.geometry.boundingBox.getCenter(new THREE.Vector3()); mesh.localToWorld(_c); var _best=null,_bd=Infinity; for(var _bj2 in _bw){ var _d=_c.distanceToSquared(_bw[_bj2]); if(_d<_bd){_bd=_d;_best=_BN[_bj2];} } if(_best)_best.attach(mesh);
+          }catch(e){} });
+          container.userData.autoRig=true; container.userData.namedRig=(_namedN>=6);
         }
       }
     }catch(e){}
