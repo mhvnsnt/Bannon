@@ -35749,4 +35749,103 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
 })();
 </script>
+
+<script>
+// PHASE 1.5 SINGLE ENTRY DOCK ROUTIN
+// Strippin legacy floatin buttons and forcin all panel state through BANNON_UI
+(function enforceSingleEntryDock() {
+    if (!window.BANNON_UI) return;
+
+    // 1. Map panel IDs to their actual setup/open functions
+    const dockMap = {
+        'creator':      () => { if (typeof show === 'function') show('creator'); },
+        'studio':       () => { if (typeof show === 'function') show('studio'); },
+        'modelLab':     () => { if (typeof show === 'function') show('modelLab'); },
+        'tuneLab':      () => { if (typeof show === 'function') show('tuneLab'); },
+        'director':     () => { if (typeof show === 'function') show('director'); },
+        'aiSenses':     () => { if (window.SENSES && window.SENSES.toggle) window.SENSES.toggle(); },
+        'aiRoadmap':    () => { if (window.BLUEPRINT && window.BLUEPRINT.toggle) window.BLUEPRINT.toggle(); }
+    };
+
+    // 2. Nuke the legacy floatin DOM entry points
+    const legacyTargets = [
+        'movesBtn', 'btnMainStudio', 'aiSensesTab', 'aiRoadmapTab', 
+        'btnPauseMoves', 'btnPauseModels', 'btnPauseTune', 'btnPauseStudio', 'btnPauseDir'
+    ];
+    
+    legacyTargets.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.display = 'none';
+            el.style.pointerEvents = 'none';
+        }
+    });
+
+    // 3. Override BANNON_UI.open to execute mapped setups and enforce isolation
+    window.BANNON_UI.open = function(panelId) {
+        // Nuke all other panels
+        this.panels.forEach(p => {
+            const el = document.getElementById(p);
+            if (el && p !== panelId) {
+                el.classList.add('hidden');
+                if (el.dispose) el.dispose();
+            }
+        });
+        
+        // Execute specific setup
+        if (dockMap[panelId]) {
+            dockMap[panelId]();
+        } else {
+            const target = document.getElementById(panelId);
+            if (target) target.classList.remove('hidden');
+        }
+        
+        this.state.activePanel = panelId;
+    };
+
+    console.log('[BANNON UI] Legacy floatin buttons stripped. Single entry dock enforced.');
+})();
+
+// PHASE 2 BROADCAST HUD CLEANUP
+// Enforcin AAA 2K26 visual clarity. Top anchored. Dev pollution hidden.
+(function injectBroadcastHUD() {
+    if (window.__bannonPhase2HUD) return;
+    window.__bannonPhase2HUD = true;
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+        /* Enforce ultra-clean top layout */
+        .health-wrap { top: calc(24px + var(--safe-top)) !important; }
+        .bar-frame { border: 2px solid rgba(15, 15, 20, 0.95) !important; border-radius: 3px; box-shadow: 0 6px 16px rgba(0,0,0,0.85) !important; }
+        .hp-fill, .stam-fill { border-radius: 1px; }
+        .fighter-name { font-size: clamp(18px, 3vw, 26px) !important; letter-spacing: 5px !important; text-shadow: 0 4px 8px rgba(0,0,0,0.95) !important; }
+        .fighter-style { font-size: 10px !important; opacity: 0.8; }
+        
+        #round-display { top: calc(20px + var(--safe-top)) !important; background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(10,10,15,0.65) 100%); padding: 6px 20px; border-radius: 4px; border: 1px solid rgba(255,215,0,0.15); box-shadow: 0 4px 12px rgba(0,0,0,0.7); }
+        
+        /* DEV MODE TOGGLE - Hide visual pollution by default */
+        body:not(.dev-mode) #kb-hints,
+        body:not(.dev-mode) .dmg-num,
+        body:not(.dev-mode) #aiVisionLabels,
+        body:not(.dev-mode) #freecamBtn,
+        body:not(.dev-mode) #freecamHint,
+        body:not(.dev-mode) #topRightBtns {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    // Dev Toggle Logic (Press '`' or '~' to toggle debug pollution)
+    window.addEventListener('keydown', (e) => {
+        if (e.key === '`' || e.key === '~') {
+            document.body.classList.toggle('dev-mode');
+            console.log('[BANNON UI] Broadcast HUD Dev Mode:', document.body.classList.contains('dev-mode') ? 'ON' : 'OFF');
+        }
+    });
+
+    console.log('[BANNON UI] Phase 2 Broadcast HUD locked. Clean top-anchors active. Press \` to toggle dev visuals.');
+})();
+</script>
 </body></html>
