@@ -76,3 +76,17 @@ print("\n// --- paste in the Bannon browser console to bind (default attire = ge
 for key, url in results.items():
     print(f"assignCharModel('{key}', '{url}', '{key} (gen)');")
 print("\n// 3js versions stay available as the alternate attire in the ATTIRE panel.")
+
+# %% [7] OPTIONAL — Real-ESRGAN x4 texture upscale (Tripo/Meshy cap output size; you don't have to)
+# !pip install -q realesrgan basicsr
+# from realesrgan import RealESRGANer
+# from basicsr.archs.rrdbnet_arch import RRDBNet
+# import numpy as np, PIL.Image as Image
+# _rr = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=4)
+# _up = RealESRGANer(scale=4, model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.1.0/RealESRGAN_x4plus.pth', model=_rr, half=True)
+# def upscale_atlas(png_path):
+#     img = np.array(Image.open(png_path).convert('RGB'))
+#     out, _ = _up.enhance(img, outscale=4)
+#     Image.fromarray(out).save(png_path)
+#     return png_path
+# # call upscale_atlas() on the baked texture PNG before the mesh re-exports in generate().
