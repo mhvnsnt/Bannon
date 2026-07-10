@@ -37,7 +37,9 @@ public:
                                           JPH::EMotionType::Dynamic, Layers::MOVING);
             bcs.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateInertia;
             bcs.mMassPropertiesOverride.mMass = (i == J_PELVIS || i == J_CHEST) ? 12.0f : 4.0f;
-            mBody[i] = bi.CreateAndAddBody(bcs, JPH::EActivation::Activate);
+            JPH::Body* b = bi.CreateBody(bcs);
+            bi.AddBody(b->GetID(), JPH::EActivation::Activate);
+            mBodyPtr[i] = b; mBody[i] = b->GetID();
         }
         // connect bones with point constraints along the hierarchy
         for (int i = 0; i < JOINT_COUNT; ++i) {
@@ -46,9 +48,7 @@ public:
             JPH::PointConstraintSettings s;
             Vec3 mid = (JOINT_REST[i] + JOINT_REST[par]) * 0.5f + origin;
             s.mPoint1 = s.mPoint2 = JPH::RVec3(mid.x, mid.y, mid.z);
-            JPH::Body* a = bi.GetBodyLockInterfaceNoLock ? nullptr : nullptr; // bodies fetched via TwoBodyConstraint below
-            (void)a;
-            mSys->AddConstraint(s.Create(*getBody(par), *getBody(i)));
+            mSys->AddConstraint(s.Create(*mBodyPtr[par], *mBodyPtr[i]));
         }
     }
 
@@ -82,9 +82,9 @@ public:
     WrestlerState state;
 
 private:
-    JPH::Body* getBody(int i);   // resolve BodyID -> Body* via lock interface (impl in bannon_jolt.cpp)
     JPH::PhysicsSystem* mSys = nullptr;
     JPH::BodyID mBody[JOINT_COUNT];
+    JPH::Body*  mBodyPtr[JOINT_COUNT] = {nullptr};
     Vec3  mTarget[JOINT_COUNT];
     float mBlend[JOINT_COUNT] = {1};
 };
