@@ -101,3 +101,13 @@ print("\n// 3js versions stay available as the alternate attire in the ATTIRE pa
 
 # %% [9] IMAGE->3D for wearables — clothing / masks / accessories / hair come from the SAME shape pipeline,
 # just pass an item image instead of a character prompt:  shape(image=item_png)  then the Blender pass.
+
+# %% [10] VIDEO GEN — titantrons / cutscenes (LTX-Video: fast, fits a T4; or Wan2.x for higher quality)
+# !pip install -q diffusers[torch] imageio-ffmpeg
+# from diffusers import LTXPipeline; import torch
+# vid = LTXPipeline.from_pretrained('Lightricks/LTX-Video', torch_dtype=torch.bfloat16).to('cuda')
+# def gen_video(prompt, seconds=5, w=768, h=512, fps=24):
+#     frames = vid(prompt=prompt, width=w, height=h, num_frames=seconds*fps).frames[0]
+#     # export mp4, upload to Supabase assets/video/, PATCH the gen_jobs row (kind='video') to succeeded
+#     return frames
+# # the daemon's /api/gen/video queues a 'video' job here; this cell drains + fills it (batch).
