@@ -35857,5 +35857,171 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 
     console.log('[BANNON UI] Phase 3.5 MDickie Tabular Roster ONLINE');
 })();
+// BRICK 61 PAUSE MENU AND MATCH FLOW ROUTIN
+// Wirin the WWE 2K pause screen and post match overlays into the autonomous UI controller
+(function initMatchFlowRoutin() {
+    if (!window.BANNON_UI || window.__bannonMatchFlow) return;
+    window.__bannonMatchFlow = true;
+
+    // Register pause and winner menus
+    if (!window.BANNON_UI.panels.includes('winnerMenu')) window.BANNON_UI.panels.push('winnerMenu');
+    
+    // Map the pause menu buttons to the dock router
+    const pMap = {
+        'btnResume': () => { window.BANNON_UI.closeAll(); if(typeof window.togglePause === 'function') window.togglePause(false); },
+        'btnRematch': () => { window.BANNON_UI.closeAll(); if(typeof window.resetMatch === 'function') window.resetMatch(); },
+        'btnPauseMoves': () => window.BANNON_UI.open('creator'),
+        'btnPauseModels': () => window.BANNON_UI.open('modelLab'),
+        'btnPauseTune': () => window.BANNON_UI.open('tuneLab'),
+        'btnPauseStudio': () => window.BANNON_UI.open('studio'),
+        'btnPauseDir': () => window.BANNON_UI.open('director'),
+        'btnToMain': () => { window.BANNON_UI.open('mainMenu'); if(typeof window.endMatch === 'function') window.endMatch(); }
+    };
+
+    for (const [id, fn] of Object.entries(pMap)) {
+        const el = document.getElementById(id);
+        if (el) {
+            el.onclick = null; // Strip legacy
+            el.addEventListener('click', (e) => { e.preventDefault(); fn(); });
+        }
+    }
+
+    // Top right pause button override
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) {
+        pauseBtn.onclick = null;
+        pauseBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.BANNON_UI.open('pauseMenu');
+            if(typeof window.togglePause === 'function') window.togglePause(true);
+        });
+    }
+
+    // Winner menu buttons
+    const btnRematch2 = document.getElementById('btnRematch2');
+    if (btnRematch2) {
+        btnRematch2.onclick = null;
+        btnRematch2.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.BANNON_UI.closeAll();
+            if(typeof window.resetMatch === 'function') window.resetMatch();
+        });
+    }
+
+    const btnMainFromWin = document.getElementById('btnMainFromWin');
+    if (btnMainFromWin) {
+        btnMainFromWin.onclick = null;
+        btnMainFromWin.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.BANNON_UI.open('mainMenu');
+            if(typeof window.endMatch === 'function') window.endMatch();
+        });
+    }
+
+    console.log('[BANNON UI] Phase 5 Pause and Match Flow Routin ONLINE');
+})();
+
+// BRICK 62 COMBAT STATE POLLER AND BROADCAST CLEAN ENFORCEMENT
+// Decoupled 300ms loop to autonomously hide the dock when the match goes live
+(function initCombatPoller() {
+    if (!window.BANNON_UI || window.__bannonCombatPoller) return;
+    window.__bannonCombatPoller = true;
+
+    // Dev override flag to keep panels open durin live combat testing
+    window.BANNON_UI.allowInFight = false;
+
+    setInterval(() => {
+        if (typeof window.gameState !== 'undefined' && window.gameState === 'fight') {
+            if (!window.BANNON_UI.allowInFight && window.BANNON_UI.state.activePanel !== null) {
+                // Force close everything if a match is live and override is off
+                // Exception for pause menu which is natively allowed mid match
+                if (window.BANNON_UI.state.activePanel !== 'pauseMenu') {
+                    window.BANNON_UI.closeAll();
+                    console.log('[BANNON UI] Live combat detected. Broadcast clean enforced.');
+                }
+            }
+        }
+    }, 300);
+
+    console.log('[BANNON UI] Phase 6 Combat State Poller ONLINE');
+})();
+
+// BRICK 63 BANNON STUDIO TAB DISCIPLINE
+// Decouplin clip management and bone authorin channels into strict tabs
+(function injectStudioTabs() {
+    const studioCard = document.querySelector('#studio .creator-card');
+    if (!studioCard || window.__bannonStudioTabs) return;
+    window.__bannonStudioTabs = true;
+
+    // 1. Construct the Studio Tab Navigation
+    const nav = document.createElement('div');
+    nav.className = 'bannon-tab-nav';
+    nav.id = 'studioTabGroup';
+    nav.innerHTML = `
+        <button class="bannon-tab-btn active" data-target="st-anim" onclick="window.BANNON_UI.switchTab('studioTabGroup', 'st-anim')">POSE & ANIMATE</button>
+        <button class="bannon-tab-btn" data-target="st-clips" onclick="window.BANNON_UI.switchTab('studioTabGroup', 'st-clips')">CLIPS</button>
+        <button class="bannon-tab-btn" data-target="st-presets" onclick="window.BANNON_UI.switchTab('studioTabGroup', 'st-presets')">PRESETS</button>
+    `;
+
+    // 2. Wrap existing hardcoded target blocks into active classes
+    const tabAnim = document.getElementById('st-anim');
+    const tabClips = document.getElementById('st-clips');
+    const tabPresets = document.getElementById('st-presets');
+
+    if (tabAnim) tabAnim.className = 'bannon-tab-content active';
+    if (tabClips) tabClips.className = 'bannon-tab-content';
+    if (tabPresets) tabPresets.className = 'bannon-tab-content';
+
+    // 3. Re-assemble Studio Card Order
+    // Strip the legacy text-tabs row if it exists
+    const legacyTabs = document.getElementById('studioTabs');
+    if (legacyTabs) legacyTabs.style.display = 'none';
+
+    studioCard.insertBefore(nav, studioCard.firstChild);
+
+    // 4. Force strict O(1) slider updates for FK bone authorin
+    // Prevents layout thrashin by writin text telemetry only on frame changes
+    const sliders = ['stX', 'stY', 'stZ', 'stBrx', 'stBry', 'stBrz', 'stBtx', 'stBty', 'stBtz', 'stBsc', 'stBsx', 'stBsy', 'stBsz'];
+    sliders.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => {
+                const valEl = document.getElementById(id + 'v') || document.getElementById(id + 'V');
+                if (valEl) valEl.textContent = parseFloat(el.value).toFixed(2);
+            });
+        }
+    });
+
+    console.log('%c[BANNON UI] Phase 7 Bannon Studio DOM Tab Isolation Complete.', 'color:#00ffcc;font-weight:bold;');
+})();
+
+// BRICK 64 FINAL PANEL DOCK MERGE & EVENT ISOLATION
+(function finalizePanelDockMerge() {
+    if (window.__bannonBrick64) return;
+    window.__bannonBrick64 = true;
+    if (typeof window.BANNON_UI === 'undefined' || !window.BANNON_UI) {
+        console.warn('[BANNON UI] BANNON_UI state controller missing for Brick 64.');
+        return;
+    }
+    // Bind modelLab and additional panels explicitly if not present
+    const extendedMap = {
+        'modelLab':  () => { if (typeof window.__forgeRender === 'function') window.__forgeRender(); },
+        'creator':   () => { if (typeof show === 'function') show('creator'); },
+        'studio':    () => { if (typeof show === 'function') show('studio'); },
+        'tuneLab':   () => { if (typeof show === 'function') show('tuneLab'); },
+        'director':  () => { if (typeof show === 'function') show('director'); }
+    };
+    // Wrap open method to ensure unmounting/hidden disposition
+    const _baseOpen = window.BANNON_UI.open;
+    window.BANNON_UI.open = function(panelId) {
+        _baseOpen.call(this, panelId);
+        if (extendedMap[panelId]) {
+            try { extendedMap[panelId](); } catch(e) {}
+        }
+        console.log('[BANNON UI] Brick 64 routed panel: ' + panelId);
+    };
+    console.log('%c[BANNON UI] Brick 64 Final Panel Dock Merge ONLINE', 'color:#00ffcc;font-weight:bold;');
+})();
+
 </script>
 </body></html>
