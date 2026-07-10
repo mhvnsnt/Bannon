@@ -242,7 +242,7 @@ NEVER rename existing functions or variables.
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#000000">
-<title>BANNON — FIGHTER v150 (legs step when moving in any state)</title>
+<title>BANNON v151 (combat-freeze fix: angle-wrap infinite loop)</title>
 
 <!-- THREE.js loaded SYNCHRONOUSLY before inline script: no race condition -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -3198,8 +3198,7 @@ Fighter.prototype.faceOpponent = function(dt){
   const want = Math.atan2(-dz, dx);
   this.dir = (dx >= 0) ? 1 : -1; // legacy left/right hint
   let d = want - this.facing;
-  while (d > Math.PI) d -= TAU;
-  while (d < -Math.PI) d += TAU;
+  d = isFinite(d) ? (d - TAU * Math.round(d / TAU)) : 0;   // v151: O(1) finite-safe wrap. The old `while(d>PI)d-=TAU; while(d<-PI)d+=TAU;` runs FOREVER if d ever becomes Infinity (a numeric blowup during heavy combat) -> frozen match. This can't loop.
   this.facing += d * Math.min(1, dt*9);
 };
 // world-space forward (toward opponent) from facing
@@ -11578,7 +11577,7 @@ function updateCamera(dt){
     // Lurching Action Camera (perpendicular circling)
     let perp = Math.atan2(b.z-a.z, b.x-a.x) + Math.PI/2;
     if (Math.sin(perp) < 0) perp += Math.PI;          // keep camera in front (+z)
-    let dA = perp - camAngle; while(dA>Math.PI)dA-=TAU; while(dA<-Math.PI)dA+=TAU;
+    let dA = perp - camAngle; dA = isFinite(dA) ? (dA - TAU * Math.round(dA / TAU)) : 0;   // v151: finite-safe wrap (was while-loops that hang on Infinity -> frozen match)
     camAngle += dA * Math.min(1, dt*2.0);
     ox = midX + Math.cos(camAngle)*dist;
     oz = midZ + Math.sin(camAngle)*dist;
