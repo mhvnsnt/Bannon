@@ -1,0 +1,103 @@
+<script>
+/* ============================================================================
+ * BANNON UI CONTROLLER — one active panel, broadcast-clean matches (additive)
+ * Fixes the overlapping/hidden-panel mess: every secondary/dev panel is registered
+ * here and driven through ONE dock. Opening one closes the rest (no stacking, no
+ * offscreen render loops). During a live match ALL of them are force-hidden so the
+ * fight stays broadcast-clean (WWE 2K style) — only the core HUD shows. Reads
+ * gameState by polling a snapshot; never touches the physics tick.
+ * ============================================================================ */
+(function () {
+  'use strict';
+  if (window.BANNON_UI) return;
+
+  // secondary/dev panels (NOT the core HUD or game-flow menus) + their open buttons if known
+  var PANELS = [
+    { id: 'moveLibPanel',  label: 'MOVES' },
+    { id: 'bphysPanel',    label: 'PHYSICS' },
+    { id: 'mcPanel',       label: 'CREATOR' },
+    { id: 'aiSensesPanel', label: 'SENSES' },
+    { id: 'surgeon-panel', label: 'SURGEON' },
+  ];
+  // module modals that manage themselves — the controller just makes sure they close on fight / on open-another
+  var MODALS = ['__forgeClose', '__attireClose'];
+
+  function el(id) { return document.getElementById(id); }
+  function hide(p) {
+    var e = el(p.id); if (!e) return;
+    e.style.display = 'none';
+    e.classList.remove('show', 'open', 'visible', 'active');
+  }
+  function show(p) {
+    var e = el(p.id); if (!e) return;
+    e.style.display = 'block';
+    e.classList.add('show', 'open', 'visible', 'active');
+  }
+  function closeModals() {
+    // close the Forge / Attire module modals cleanly (they own their own dispose)
+    try { var f = document.querySelector('[id^="fg"]'); } catch (e) {}
+    if (window.__forgeRender) { var m = document.querySelector('div'); } // no-op guard
+    var fx = document.getElementById('fgX'); if (fx && fx.offsetParent) fx.click();
+  }
+
+  var UI = {
+    current: null,
+    allowInFight: false,
+
+    closeAll: function () {
+      for (var i = 0; i < PANELS.length; i++) hide(PANELS[i]);
+      closeModals();
+      this.current = null;
+      this._paint();
+    },
+
+    open: function (id) {
+      this.closeAll();
+      var p = PANELS.filter(function (x) { return x.id === id; })[0];
+      if (p) { show(p); this.current = id; }
+      this._paint();
+    },
+
+    toggle: function (id) { this.current === id ? this.closeAll() : this.open(id); },
+
+    // called every ~300ms; broadcast-clean during a live match
+    _tick: function () {
+      var fighting = (window.gameState === 'fight');
+      if (fighting && !this.allowInFight && this.current) this.closeAll();
+      var dock = el('bannonDock');
+      if (dock) dock.style.opacity = (fighting && !this.allowInFight) ? '0.25' : '1';
+    },
+
+    _paint: function () {
+      for (var i = 0; i < PANELS.length; i++) {
+        var b = el('dockb_' + PANELS[i].id); if (!b) continue;
+        var on = this.current === PANELS[i].id;
+        b.style.background = on ? 'rgba(212,175,55,.2)' : '#161a22';
+        b.style.borderColor = on ? '#d4af37' : '#333';
+      }
+    },
+
+    _dock: function () {
+      if (el('bannonDock')) return;
+      var d = document.createElement('div'); d.id = 'bannonDock';
+      d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:6px;z-index:99990;display:flex;gap:4px;padding:5px 8px;border-radius:10px;background:rgba(10,12,18,.9);border:1px solid #2a3340;font:bold 10px monospace;transition:opacity .2s';
+      var self = this;
+      PANELS.forEach(function (p) {
+        var b = document.createElement('button'); b.id = 'dockb_' + p.id; b.textContent = p.label;
+        b.style.cssText = 'padding:6px 9px;border-radius:7px;border:1px solid #333;background:#161a22;color:#cdd6e0;cursor:pointer;font:bold 10px monospace';
+        b.onclick = function () { self.toggle(p.id); };
+        d.appendChild(b);
+      });
+      var x = document.createElement('button'); x.textContent = '✕'; x.title = 'close panels';
+      x.style.cssText = 'padding:6px 9px;border-radius:7px;border:1px solid #533;background:#1a1214;color:#e88;cursor:pointer;font:bold 10px monospace';
+      x.onclick = function () { self.closeAll(); };
+      d.appendChild(x);
+      document.body.appendChild(d);
+    }
+  };
+
+  window.BANNON_UI = UI;
+  function boot() { UI._dock(); UI.closeAll(); setInterval(function () { UI._tick(); }, 300); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
+})();
+</script>
