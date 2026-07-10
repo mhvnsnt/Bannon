@@ -29,3 +29,7 @@ if(BANNON_USE_JOLT)
     target_link_libraries(bannon_core Jolt)
     target_compile_definitions(bannon_core PUBLIC BANNON_USE_JOLT=1)
 endif()
+
+add_executable(test_combat tests/test_combat.cpp)
+target_link_libraries(test_combat bannon_core)
+add_test(NAME combat COMMAND test_combat)
