@@ -1,0 +1,64 @@
+<!doctype html><html><head><meta charset="utf8"><title>BANNON model preview</title>
+<style>html,body{margin:0;background:#1a2430;overflow:hidden}#c{display:block;margin:0 auto}</style></head>
+<body>
+<script src="vendor/three.min.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
+<script src="vendor/fflate.min.js"></script>
+<script src="vendor/NURBSUtils.js"></script>
+<script src="vendor/NURBSCurve.js"></script>
+<script src="vendor/FBXLoader.js"></script>
+<script src="autorig.js"></script>
+<script>
+window.RESULT = {};
+function qp(k){ return new URLSearchParams(location.search).get(k); }
+var W=800,H=800;
+var scene=new THREE.Scene(); scene.background=new THREE.Color(0x1a2430);
+var cam=new THREE.PerspectiveCamera(42,1,0.05,200);
+scene.add(new THREE.HemisphereLight(0xffffff,0x33404d,1.35));
+var key=new THREE.DirectionalLight(0xffffff,1.15); key.position.set(3,5,4); scene.add(key);
+var rim=new THREE.DirectionalLight(0x88aaff,0.5); rim.position.set(-4,3,-4); scene.add(rim);
+var renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(W,H); renderer.domElement.id='c'; document.body.appendChild(renderer.domElement);
+
+var rigged=null, fitR=2, fitC=new THREE.Vector3(0,0.9,0);
+function frame(){
+  if(!rigged){ renderer.render(scene,cam); requestAnimationFrame(frame); return; }
+  renderer.render(scene,cam); requestAnimationFrame(frame);
+}
+// place camera at azimuth(deg)/elev(deg) around the fitted model
+window.setView = function(az, el){
+  el=el||0; var a=az*Math.PI/180, e=el*Math.PI/180;
+  var d=fitR*2.15;
+  cam.position.set(fitC.x+d*Math.cos(e)*Math.sin(a), fitC.y+d*Math.sin(e), fitC.z+d*Math.cos(e)*Math.cos(a));
+  cam.lookAt(fitC); cam.updateProjectionMatrix(); renderer.render(scene,cam);
+};
+// apply a Z-bend pose to every mapped bone (to preview articulation), amt in radians
+window.setPose = function(amt){
+  if(!window._res) return;
+  window._res.mapped.forEach(function(mp){ mp.bone.quaternion.identity(); mp.bone.rotateZ(amt||0); });
+  window._res.root.updateMatrixWorld(true); renderer.render(scene,cam);
+};
+
+function onLoad(root){
+  try{
+    var res = AutoRig.rig(THREE, root, {});
+    window._res = res;
+    var pt = AutoRig.poseTest(THREE, res);
+    var box = new THREE.Box3().setFromObject(res.root);
+    var c=box.getCenter(new THREE.Vector3()), s=box.getSize(new THREE.Vector3());
+    fitC.copy(c); fitR=Math.max(s.x,s.y,s.z)*0.5||1;
+    scene.add(res.root);
+    rigged=res.root;
+    window.RESULT = Object.assign({done:true, pose:pt}, res.diag,
+      { size:{x:+s.x.toFixed(2),y:+s.y.toFixed(2),z:+s.z.toFixed(2)} });
+    window.setView(35,6);
+  }catch(e){ window.RESULT={done:true, err:String(e&&e.message||e)}; }
+}
+
+var url=qp('model'); var ext=(url||'').split('.').pop().toLowerCase();
+try{
+  if(ext==='fbx'){ new THREE.FBXLoader().load(url, function(o){ onLoad(o); }, undefined, function(e){ window.RESULT={done:true,loadErr:String(e&&e.message||e)}; }); }
+  else { new THREE.GLTFLoader().load(url, function(g){ onLoad(g.scene||g.scenes[0]); }, undefined, function(e){ window.RESULT={done:true,loadErr:String(e&&e.message||e)}; }); }
+}catch(e){ window.RESULT={done:true, loadErr:String(e&&e.message||e)}; }
+frame();
+</script></body></html>
