@@ -109,8 +109,55 @@ def main():
         if node in SEEDS:
             o.name = node
 
+    if '--skin' in sys.argv:
+        skin(xs, ys, zs, up)
+
     bpy.ops.export_scene.gltf(filepath=outp, export_format='GLB')
-    print("[rig] wrote", outp, "with 15 named nodes")
+    print("[rig] wrote", outp, "with 15 named nodes" + (" + skinned armature" if '--skin' in sys.argv else ""))
+
+
+def skin(xs, ys, zs, up):
+    """Rejoin the named parts, build a 15-bone armature at the seed points, bind with automatic weights."""
+    minx, maxx = min(xs), max(xs); miny, maxy = min(ys), max(ys); minz, maxz = min(zs), max(zs)
+    def world(s):  # normalised seed -> world coords (respecting which axis is up)
+        wx = minx + (s[0] + 0.5) * ((maxx-minx) or 1)
+        if up == 'z':
+            wz = minz + s[1] * ((maxz-minz) or 1); wy = miny + (s[2] + 0.5) * ((maxy-miny) or 1)
+        else:
+            wy = miny + s[1] * ((maxy-miny) or 1); wz = minz + (s[2] + 0.5) * ((maxz-minz) or 1)
+        return (wx, wy, wz)
+
+    parts = [o for o in bpy.data.objects if o.type == 'MESH' and o.name in SEEDS]
+    bpy.ops.object.select_all(action='DESELECT')
+    for o in parts: o.select_set(True)
+    if parts:
+        bpy.context.view_layer.objects.active = parts[0]
+        if len(parts) > 1: bpy.ops.object.join()
+    body = bpy.context.view_layer.objects.active
+
+    arm_data = bpy.data.armatures.new('BANNON_RIG'); arm = bpy.data.objects.new('BANNON_RIG', arm_data)
+    bpy.context.collection.objects.link(arm)
+    bpy.context.view_layer.objects.active = arm; bpy.ops.object.mode_set(mode='EDIT')
+    # parent chain so weights flow anatomically
+    chain = {'pelvis': None, 'chest': 'pelvis', 'head': 'chest',
+             'shL': 'chest', 'elL': 'shL', 'haL': 'elL', 'shR': 'chest', 'elR': 'shR', 'haR': 'elR',
+             'hipL': 'pelvis', 'knL': 'hipL', 'ftL': 'knL', 'hipR': 'pelvis', 'knR': 'hipR', 'ftR': 'knR'}
+    bones = {}
+    for k, s in SEEDS.items():
+        b = arm_data.edit_bones.new(k); b.head = world(s)
+        parent = chain[k]; b.tail = world(SEEDS[parent]) if parent else (b.head[0], b.head[1], b.head[2] + 0.05)
+        bones[k] = b
+    for k, parent in chain.items():
+        if parent: bones[k].parent = bones[parent]
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    # bind mesh to armature with automatic weights
+    bpy.ops.object.select_all(action='DESELECT')
+    body.select_set(True); arm.select_set(True); bpy.context.view_layer.objects.active = arm
+    try:
+        bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+    except Exception as e:
+        print('[rig] auto-weight fallback:', e); bpy.ops.object.parent_set(type='ARMATURE')
 
 if __name__ == "__main__":
     main()
