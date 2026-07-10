@@ -16,6 +16,10 @@ add_executable(test_core tests/test_core.cpp)
 target_link_libraries(test_core bannon_core)
 add_test(NAME core COMMAND test_core)
 
+add_executable(test_rig tests/test_rig.cpp)
+target_link_libraries(test_rig bannon_core)
+add_test(NAME rig COMMAND test_rig)
+
 # --- Jolt physics (real rigid-body / active-ragdoll solver) ---
 # Drop Jolt in third_party/JoltPhysics, then flip this ON:
 #   git submodule add https://github.com/jrouwe/JoltPhysics native/third_party/JoltPhysics
