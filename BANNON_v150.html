@@ -35848,4 +35848,371 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     console.log('[BANNON UI] Phase 2 Broadcast HUD locked. Clean top-anchors active. Press \` to toggle dev visuals.');
 })();
 </script>
+
+<script>
+// BRICK 56 UI STATE CONTROLLER AND BROADCAST HUD
+(function initUIStateController() {
+    if (window.BANNON_UI) return;
+
+    window.BANNON_UI = {
+        state: { activePanel: null },
+        panels: ['mainMenu', 'pauseMenu', 'creator', 'animBrowser', 'tuneLab', 'director', 'studio', 'modelLab'],
+        
+        closeAll: function() {
+            this.panels.forEach(p => {
+                const el = document.getElementById(p);
+                if (el) {
+                    el.classList.add('hidden');
+                    if (el.dispose) el.dispose();
+                }
+            });
+            this.state.activePanel = null;
+        }
+    };
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .health-wrap { top: calc(24px + var(--safe-top)) !important; }
+        .bar-frame { border: 2px solid rgba(15, 15, 20, 0.95) !important; border-radius: 3px; box-shadow: 0 6px 16px rgba(0,0,0,0.85) !important; }
+        .hp-fill, .stam-fill { border-radius: 1px; }
+        .fighter-name { font-size: clamp(18px, 3vw, 26px) !important; letter-spacing: 5px !important; text-shadow: 0 4px 8px rgba(0,0,0,0.95) !important; }
+        #round-display { top: calc(20px + var(--safe-top)) !important; background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, rgba(10,10,15,0.65) 100%); border-radius: 4px; border: 1px solid rgba(255,215,0,0.15); }
+        
+        body:not(.dev-mode) #kb-hints,
+        body:not(.dev-mode) .dmg-num,
+        body:not(.dev-mode) #aiVisionLabels,
+        body:not(.dev-mode) #freecamBtn,
+        body:not(.dev-mode) #freecamHint {
+            display: none !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    window.addEventListener('keydown', (e) => {
+        if (e.key === '`' || e.key === '~') {
+            document.body.classList.toggle('dev-mode');
+        }
+    });
+
+    const dockMap = {
+        'creator':      () => { if (typeof show === 'function') show('creator'); },
+        'studio':       () => { if (typeof show === 'function') show('studio'); },
+        'modelLab':     () => { if (typeof show === 'function') show('modelLab'); },
+        'tuneLab':      () => { if (typeof show === 'function') show('tuneLab'); },
+        'director':     () => { if (typeof show === 'function') show('director'); }
+    };
+
+    window.BANNON_UI.open = function(panelId) {
+        this.closeAll();
+        if (dockMap[panelId]) {
+            dockMap[panelId]();
+        } else {
+            const target = document.getElementById(panelId);
+            if (target) target.classList.remove('hidden');
+        }
+        this.state.activePanel = panelId;
+    };
+
+    const legacyTargets = ['movesBtn', 'btnMainStudio', 'btnPauseMoves', 'btnPauseModels', 'btnPauseTune', 'btnPauseStudio', 'btnPauseDir'];
+    legacyTargets.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.display = 'none';
+            el.style.pointerEvents = 'none';
+        }
+    });
+
+    console.log('%c[BANNON UI] Phase 1.5 and Phase 2 ONLINE', 'color:#00ffcc;font-weight:bold;');
+})();
+
+// BRICK 57 TABULAR DEPTH AND ZERO LAG TRANSITIONS
+(function injectTabularDepth() {
+    if (window.__bannonTabs) return;
+    window.__bannonTabs = true;
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .bannon-tab-nav { display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 2px solid var(--gold); padding-bottom: 4px; }
+        .bannon-tab-btn { flex: 1; padding: 10px; font-family: 'Bebas Neue'; font-size: 20px; background: rgba(0,0,0,0.8); color: #888; border: 1px solid #333; cursor: pointer; transition: 0.1s; }
+        .bannon-tab-btn.active { background: rgba(255,69,0,0.3); color: var(--gold); border-color: var(--fire); box-shadow: 0 0 12px rgba(255,69,0,0.5); }
+        .bannon-tab-content { display: none; }
+        .bannon-tab-content.active { display: block; }
+    `;
+    document.head.appendChild(style);
+
+    window.BANNON_UI.switchTab = function(tabGroupId, targetTabId) {
+        const group = document.getElementById(tabGroupId);
+        if (!group) return;
+        
+        const contents = group.querySelectorAll('.bannon-tab-content');
+        const btns = group.querySelectorAll('.bannon-tab-btn');
+        
+        contents.forEach(c => c.classList.remove('active'));
+        btns.forEach(b => b.classList.remove('active'));
+        
+        const targetContent = document.getElementById(targetTabId);
+        const targetBtn = document.querySelector(`[data-target="${targetTabId}"]`);
+        
+        if (targetContent) targetContent.classList.add('active');
+        if (targetBtn) targetBtn.classList.add('active');
+    };
+
+    window.BANNON_UI.preloadSelectScreens = function() {
+        this.screenCache = this.screenCache || {};
+        this.panels.forEach(p => {
+            const el = document.getElementById(p);
+            if (el) this.screenCache[p] = el.innerHTML;
+        });
+    };
+
+    window.BANNON_UI.preloadSelectScreens();
+    console.log('%c[BANNON UI] Phase 3 Tabular Depth and Phase 4 Tekken Transitions ONLINE', 'color:#00ffcc;font-weight:bold;');
+})();
+
+// BRICK 58 MOVE FORGE DOM RESTRUCTURE
+// Surgically extractin monolithic scroll elements into isolated tab containers
+(function injectCreatorTabs() {
+    const creatorCard = document.querySelector('#creator .creator-card');
+    if (!creatorCard || window.__bannonCreatorTabs) return;
+    window.__bannonCreatorTabs = true;
+
+    // 1. Construct the Tab Navigation
+    const nav = document.createElement('div');
+    nav.className = 'bannon-tab-nav';
+    nav.id = 'creatorTabGroup';
+    nav.innerHTML = `
+        <button class="bannon-tab-btn active" data-target="tab-core" onclick="window.BANNON_UI.switchTab('creatorTabGroup', 'tab-core')">IDENTITY</button>
+        <button class="bannon-tab-btn" data-target="tab-anim" onclick="window.BANNON_UI.switchTab('creatorTabGroup', 'tab-anim')">MOCAP</button>
+        <button class="bannon-tab-btn" data-target="tab-stats" onclick="window.BANNON_UI.switchTab('creatorTabGroup', 'tab-stats')">PHYSICS</button>
+    `;
+
+    // 2. Construct the Isolated Containers
+    const tabCore = document.createElement('div');
+    tabCore.className = 'bannon-tab-content active';
+    tabCore.id = 'tab-core';
+
+    const tabAnim = document.createElement('div');
+    tabAnim.className = 'bannon-tab-content';
+    tabAnim.id = 'tab-anim';
+
+    const tabStats = document.createElement('div');
+    tabStats.className = 'bannon-tab-content';
+    tabStats.id = 'tab-stats';
+
+    // 3. Execute DOM Extraction Array (Node mapin by sequence)
+    // We isolate nodes into arrays and append them to their respective tabs
+    const nodes = Array.from(creatorCard.children);
+    let currentTab = tabCore;
+
+    nodes.forEach(node => {
+        // Exclude the header and action buttons from tabs
+        if (node.classList.contains('action-row') || node.classList.contains('field-label') && node.innerText.includes('EDIT FIGHTER')) {
+            return; 
+        }
+
+        // Logic splitters based on UI section headers
+        if (node.innerText && node.innerText.includes('WWE 2K MOTION CAPTURE LIBRARY')) {
+            currentTab = tabAnim;
+        } else if (node.innerText && node.innerText.includes('POWER')) {
+            currentTab = tabStats;
+        }
+
+        currentTab.appendChild(node);
+    });
+
+    // 4. Re-assemble the Creator Card
+    creatorCard.insertBefore(nav, creatorCard.firstChild);
+    creatorCard.insertBefore(tabCore, nav.nextSibling);
+    creatorCard.insertBefore(tabAnim, tabCore.nextSibling);
+    creatorCard.insertBefore(tabStats, tabAnim.nextSibling);
+
+    // Keep Action Row at bottom
+    const actionRow = document.querySelector('#creator .action-row');
+    if (actionRow) creatorCard.appendChild(actionRow);
+
+    console.log('%c[BANNON UI] Phase 3.5 Tabular DOM Migration complete. Move Forge isolated.', 'color:#00ffcc;font-weight:bold;');
+})();
+
+// BRICK 59 TEKKEN SNAPPY ROSTER AND ARENA SELECT
+// Interceptin main menu cyclers to deploy zero-lag visual grid selects
+(function injectTekkenSelects() {
+    if (window.__bannonTekkenSelect) return;
+    window.__bannonTekkenSelect = true;
+
+    // 1. Construct the Unified Select Screen Container
+    const selectScreen = document.createElement('div');
+    selectScreen.id = 'fastSelectScreen';
+    selectScreen.className = 'menu-overlay hidden';
+    selectScreen.innerHTML = `
+        <div style="width:100%; max-width:800px;">
+            <div class="creator-header">
+                <div class="creator-title" id="selectTitle" style="color:var(--gold);">SELECT</div>
+                <button class="close-x" onclick="window.BANNON_UI.open('mainMenu')">×</button>
+            </div>
+            <div class="creator-card" id="selectGrid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:10px; max-height:65vh; overflow-y:auto;">
+            </div>
+        </div>
+    `;
+    document.body.appendChild(selectScreen);
+    
+    // Register with UI State Controller
+    if (window.BANNON_UI) {
+        window.BANNON_UI.panels.push('fastSelectScreen');
+        
+        // 2. Fast Mount Logic
+        window.BANNON_UI.mountSelect = function(title, items, callback, isRoster = false) {
+            document.getElementById('selectTitle').innerText = title;
+            const grid = document.getElementById('selectGrid');
+            grid.innerHTML = '';
+            
+            items.forEach(item => {
+                const btn = document.createElement('button');
+                btn.className = 'opt-chip';
+                btn.style.padding = '24px 10px';
+                btn.style.fontSize = '22px';
+                btn.style.display = 'flex';
+                btn.style.flexDirection = 'column';
+                btn.style.alignItems = 'center';
+                btn.style.justifyContent = 'center';
+                
+                const itemName = isRoster ? item.name : item;
+                btn.innerHTML = `<span>${itemName}</span>`;
+                
+                if (isRoster && item.style) {
+                    btn.innerHTML += `<span style="font-family:'Share Tech Mono'; font-size:10px; color:#888; margin-top:4px;">${item.style}</span>`;
+                }
+
+                btn.onclick = () => {
+                    callback(item);
+                    window.BANNON_UI.open('mainMenu');
+                };
+                grid.appendChild(btn);
+            });
+            
+            this.open('fastSelectScreen');
+        };
+    }
+
+    // 3. Override Main Menu Opponent Button
+    const btnOpp = document.getElementById('btnOpp');
+    if (btnOpp) {
+        // Strip existin inline onclicks if any
+        btnOpp.onclick = null; 
+        btnOpp.addEventListener('click', (e) => {
+            e.preventDefault();
+            const roster = typeof window.ROSTER_ALL === 'function' ? window.ROSTER_ALL() : (window.OPPONENTS || []);
+            window.BANNON_UI.mountSelect('SELECT OPPONENT', roster, (selected) => {
+                // Hook into existin engine state setters
+                if (typeof window.setOpponent === 'function') window.setOpponent(selected);
+                const oppNameSpan = document.getElementById('oppName');
+                if (oppNameSpan) oppNameSpan.innerText = selected.name || selected;
+            }, true);
+        });
+    }
+
+    // 4. Override Main Menu Arena Button
+    const btnArena = document.getElementById('btnArena');
+    if (btnArena) {
+        btnArena.onclick = null;
+        btnArena.addEventListener('click', (e) => {
+            e.preventDefault();
+            const arenas = window.ARENAS || ['FIRE PIT', 'ICE CAGE', 'VOID DOJO'];
+            window.BANNON_UI.mountSelect('SELECT ARENA', arenas, (selected) => {
+                if (typeof window.setArena === 'function') window.setArena(selected);
+                const arenaNameSpan = document.getElementById('arenaName');
+                if (arenaNameSpan) arenaNameSpan.innerText = selected;
+            }, false);
+        });
+    }
+
+    console.log('%c[BANNON UI] Phase 4 Tekken Snappy Select Menus ONLINE', 'color:#00ffcc;font-weight:bold;');
+})();
+
+// BRICK 60 MDICKIE TABULAR ROSTER AND WWE 2K SHOWCASE
+// Killin the arcade grid for deep simulation stat comparison
+(function injectMDickieRoster() {
+    if (window.__bannonMDickieRoster) return;
+    window.__bannonMDickieRoster = true;
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+        .mdickie-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-family: 'Share Tech Mono'; font-size: 12px; }
+        .mdickie-table th { background: rgba(255,215,0,0.15); color: var(--gold); padding: 8px; text-align: left; border-bottom: 2px solid var(--gold); font-family: 'Bebas Neue'; letter-spacing: 2px; font-size: 16px; }
+        .mdickie-table td { padding: 10px 8px; border-bottom: 1px solid rgba(255,255,255,0.1); color: #ccc; vertical-align: middle; }
+        .mdickie-table tr:hover td { background: rgba(255,69,0,0.15); color: #fff; cursor: pointer; }
+        .stat-bar-bg { width: 60px; height: 4px; background: #222; display: inline-block; vertical-align: middle; margin-left: 6px; }
+        .stat-bar-fg { height: 100%; background: var(--gold); }
+        .roster-name-cell { font-family: 'Bebas Neue'; font-size: 20px; color: var(--white); letter-spacing: 2px; }
+        .roster-style-tag { display: block; font-size: 9px; color: #888; }
+    `;
+    document.head.appendChild(style);
+
+    if (window.BANNON_UI) {
+        window.BANNON_UI.mountSelect = function(title, items, callback, isRoster = false) {
+            document.getElementById('selectTitle').innerText = title;
+            const grid = document.getElementById('selectGrid');
+            grid.innerHTML = '';
+            grid.style.display = 'block'; 
+            
+            if (!isRoster) {
+                // Keep Arenas as simple buttons
+                items.forEach(item => {
+                    const btn = document.createElement('button');
+                    btn.className = 'opt-chip';
+                    btn.style.width = '100%';
+                    btn.style.margin = '4px 0';
+                    btn.style.padding = '16px';
+                    btn.innerText = item;
+                    btn.onclick = () => { callback(item); window.BANNON_UI.open('mainMenu'); };
+                    grid.appendChild(btn);
+                });
+            } else {
+                // Build MDickie style tabular roster
+                const table = document.createElement('table');
+                table.className = 'mdickie-table';
+                
+                const thead = document.createElement('thead');
+                thead.innerHTML = `<tr><th>FIGHTER</th><th>HP</th><th>STAMINA</th><th>SPEED</th><th>POWER</th></tr>`;
+                table.appendChild(thead);
+                
+                const tbody = document.createElement('tbody');
+                items.forEach(f => {
+                    const tr = document.createElement('tr');
+                    
+                    const hpFill = Math.min(100, (f.stats.hp / 150) * 100);
+                    const stamFill = Math.min(100, (f.stats.stamina / 250) * 100);
+                    const spdFill = Math.min(100, (f.stats.speed / 130) * 100);
+                    const powFill = Math.min(100, (f.stats.power / 140) * 100);
+                    
+                    tr.innerHTML = `
+                        <td>
+                            <span class="roster-name-cell" style="color: #${(f.col || 0xffffff).toString(16)}">${f.label || f.name}</span>
+                            <span class="roster-style-tag">${f.style || 'UNKNOWN'}</span>
+                        </td>
+                        <td>${f.stats.hp} <div class="stat-bar-bg"><div class="stat-bar-fg" style="width:${hpFill}%; background:var(--blood)"></div></div></td>
+                        <td>${f.stats.stamina} <div class="stat-bar-bg"><div class="stat-bar-fg" style="width:${stamFill}%; background:#00ffaa"></div></div></td>
+                        <td>${f.stats.speed} <div class="stat-bar-bg"><div class="stat-bar-fg" style="width:${spdFill}%; background:var(--ice)"></div></div></td>
+                        <td>${f.stats.power} <div class="stat-bar-bg"><div class="stat-bar-fg" style="width:${powFill}%; background:var(--fire)"></div></div></td>
+                    `;
+                    
+                    tr.onclick = () => {
+                        callback(f);
+                        window.BANNON_UI.open('mainMenu');
+                    };
+                    tbody.appendChild(tr);
+                });
+                
+                table.appendChild(tbody);
+                grid.appendChild(table);
+            }
+            
+            this.open('fastSelectScreen');
+        };
+    }
+
+    console.log('[BANNON UI] Phase 3.5 MDickie Tabular Roster ONLINE');
+})();
+</script>
 </body></html>
