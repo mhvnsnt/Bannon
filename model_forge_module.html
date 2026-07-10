@@ -36,10 +36,13 @@
       cam.position.set(target.x + dist * Math.cos(pitch) * Math.sin(yaw), target.y + dist * Math.sin(pitch), target.z + dist * Math.cos(pitch) * Math.cos(yaw));
       cam.lookAt(target);
     }
-    var down = false, lx = 0, ly = 0;
-    canvas.onpointerdown = function (e) { down = true; lx = e.clientX; ly = e.clientY; };
-    window.addEventListener('pointerup', function () { down = false; });
-    window.addEventListener('pointermove', function (e) { if (!down) return; yaw -= (e.clientX - lx) * 0.01; pitch = Math.max(-1.2, Math.min(1.2, pitch + (e.clientY - ly) * 0.01)); lx = e.clientX; ly = e.clientY; });
+    var down = false, lx = 0, ly = 0, raf = 0, alive = true;
+    var onMove = function (e) { if (!down) return; yaw -= (e.clientX - lx) * 0.01; pitch = Math.max(-1.2, Math.min(1.2, pitch + (e.clientY - ly) * 0.01)); lx = e.clientX; ly = e.clientY; };
+    var onUp = function (e) { down = false; try { canvas.releasePointerCapture(e.pointerId); } catch (_) {} };
+    canvas.onpointerdown = function (e) { down = true; lx = e.clientX; ly = e.clientY; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} };
+    canvas.addEventListener('pointermove', onMove);
+    canvas.addEventListener('pointerup', onUp);
+    canvas.addEventListener('pointercancel', onUp);
     canvas.onwheel = function (e) { e.preventDefault(); dist = Math.max(0.5, Math.min(12, dist * (1 + Math.sign(e.deltaY) * 0.1))); };
     var cur = null;
     this.load = function (url) {
@@ -50,7 +53,15 @@
         target.copy(c); dist = Math.max(s.x, s.y, s.z) * 1.8 || 3;
       }, undefined, function (err) { console.warn('[forge] load failed', url, err); });
     };
-    (function anim() { requestAnimationFrame(anim); place(); rnd.render(scene, cam); })();
+    this.dispose = function () {
+      alive = false;
+      if (raf) cancelAnimationFrame(raf);
+      canvas.removeEventListener('pointermove', onMove);
+      canvas.removeEventListener('pointerup', onUp);
+      canvas.removeEventListener('pointercancel', onUp);
+      try { rnd.dispose(); } catch (e) {}
+    };
+    (function anim() { if (!alive) return; raf = requestAnimationFrame(anim); place(); rnd.render(scene, cam); })();
   }
 
   // ---------------- data ----------------
@@ -103,7 +114,7 @@
       '<canvas id="fgView" style="flex:1;width:100%;display:block;touch-action:none"></canvas>' +
       '<div id="fgAssign" style="padding:10px;border-top:1px solid #222"></div></div></div></div>';
 
-    modal.querySelector('#fgX').onclick = function () { modal.style.display = 'none'; };
+    modal.querySelector('#fgX').onclick = function () { if (viewer && viewer.dispose) viewer.dispose(); viewer = null; modal.style.display = 'none'; };
     ['LIBRARY', 'GENERATE', 'IMPORT'].forEach(function (t) {
       var b = document.createElement('button'); b.textContent = t;
       b.style.cssText = 'text-align:left;padding:9px;border-radius:7px;border:1px solid ' + (t === tab ? '#33d0ff' : '#333') + ';background:' + (t === tab ? 'rgba(51,208,255,.14)' : '#151a22') + ';color:#dce4f0;cursor:pointer;font:bold 11px monospace';
@@ -113,6 +124,7 @@
     msgEl = document.createElement('div'); msgEl.style.cssText = 'margin-top:auto;opacity:.7;font:10px monospace;min-height:14px'; modal.querySelector('#fgTabs').appendChild(msgEl);
 
     var canvas = modal.querySelector('#fgView');
+    if (viewer && viewer.dispose) { viewer.dispose(); viewer = null; }
     setTimeout(function () { try { if (THREEref) viewer = new Viewer(canvas); } catch (e) { canvas.replaceWith(Object.assign(document.createElement('div'), { textContent: 'viewer needs THREE', style: 'padding:20px;opacity:.6' })); } }, 30);
 
     var main = modal.querySelector('#fgMain');
