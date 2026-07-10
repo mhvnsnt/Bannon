@@ -90,3 +90,14 @@ print("\n// 3js versions stay available as the alternate attire in the ATTIRE pa
 #     Image.fromarray(out).save(png_path)
 #     return png_path
 # # call upscale_atlas() on the baked texture PNG before the mesh re-exports in generate().
+
+# %% [8] 2D ASSET GEN — FLUX.1-schnell (Apache-2.0) for textures / tattoos / face-paints / logos / banners / titantrons / arena
+# from diffusers import FluxPipeline; import torch
+# flux = FluxPipeline.from_pretrained('black-forest-labs/FLUX.1-schnell', torch_dtype=torch.bfloat16).to('cuda')
+# def gen_2d(prompt, w=1024, h=1024, steps=4):
+#     img = flux(prompt, width=w, height=h, num_inference_steps=steps, guidance_scale=0.0).images[0]
+#     return img   # PIL -> upload to Supabase assets/textures|logos|banners/...
+# # wire this behind the daemon's /api/gen/image route so the Forge 2D tab (IMAGE_GEN_URL) calls it.
+
+# %% [9] IMAGE->3D for wearables — clothing / masks / accessories / hair come from the SAME shape pipeline,
+# just pass an item image instead of a character prompt:  shape(image=item_png)  then the Blender pass.

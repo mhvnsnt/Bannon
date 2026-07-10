@@ -149,24 +149,72 @@
     });
   }
 
+  // asset categories: 3D go through image-to-3D / char gen; 2D go through the image (FLUX/SDXL) pipeline
+  var CATS_3D = { character: 'full-body fighter, T-pose', clothing: 'single garment / fight gear, isolated', mask: 'wrestling / luchador mask, isolated', accessory: 'accessory prop (belt, pads, chains), isolated', hair: 'hairstyle hairpiece, isolated' };
+  var CATS_2D = { texture: 'seamless PBR material / skin texture', tattoo: 'tattoo design, black or color, transparent background', 'face-paint': 'face paint design, symmetric, transparent background', logo: 'character / brand logo, vector-style, transparent background', banner: 'arena banner / poster graphic, wide', titantron: 'titantron entrance graphic, high energy, wide', arena: 'wrestling arena / apron / ramp graphic' };
+
+  function aiExpand(text, cb) {
+    var url = window.AI_ASSIST_URL || (SB_URL ? null : null);
+    // POST {prompt} to your daemon's LLM endpoint (Qwen abliterated via Ollama). Falls through if not set.
+    var ep = window.AI_ASSIST_URL || '/api/ai/expand';
+    fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: text }) })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { cb(j && (j.text || j.prompt) || null); })
+      .catch(function () { cb(null); });
+  }
+
   function renderGenerate(main) {
-    main.innerHTML = '<div style="opacity:.7;margin-bottom:8px">Text → model, through your daemon (self provider). Needs OWN_GEN_URL set + the Colab notebook running.</div>';
-    var ta = document.createElement('textarea'); ta.placeholder = 'e.g. a hulking masked luchador, muscular, red and gold gear, full body T-pose';
-    ta.style.cssText = 'width:100%;height:80px;box-sizing:border-box;padding:8px;background:#0b0e14;color:#cde;border:1px solid #444;border-radius:7px;font:12px monospace'; main.appendChild(ta);
-    var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-top:8px;align-items:center';
+    main.innerHTML = '<div style="opacity:.7;margin-bottom:8px">Generate from text and/or reference image(s). 3D categories → image-to-3D; 2D categories → image gen (FLUX/SDXL). Needs the daemon + notebook running.</div>';
+    // category
+    var catRow = document.createElement('div'); catRow.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center';
+    var cat = document.createElement('select'); cat.style.cssText = 'flex:1;padding:7px;background:#0b0e14;color:#cde;border:1px solid #444;border-radius:6px';
+    Object.keys(CATS_3D).forEach(function (k) { var o = document.createElement('option'); o.value = '3d:' + k; o.textContent = '3D · ' + k; cat.appendChild(o); });
+    Object.keys(CATS_2D).forEach(function (k) { var o = document.createElement('option'); o.value = '2d:' + k; o.textContent = '2D · ' + k; cat.appendChild(o); });
+    catRow.appendChild(cat); main.appendChild(catRow);
+
+    var ta = document.createElement('textarea'); ta.placeholder = 'describe it… e.g. a hulking masked luchador, red and gold gear';
+    ta.style.cssText = 'width:100%;height:70px;box-sizing:border-box;padding:8px;background:#0b0e14;color:#cde;border:1px solid #444;border-radius:7px;font:12px monospace'; main.appendChild(ta);
+
+    // reference images (single OR batch) for image-to-3D / img2img
+    var imgWrap = document.createElement('div'); imgWrap.style.cssText = 'margin-top:8px';
+    var imgLbl = document.createElement('div'); imgLbl.textContent = 'Reference image(s) — optional, single or batch:'; imgLbl.style.cssText = 'opacity:.7;margin-bottom:3px'; imgWrap.appendChild(imgLbl);
+    var imgInp = document.createElement('input'); imgInp.type = 'file'; imgInp.accept = 'image/*'; imgInp.multiple = true; imgInp.style.color = '#cde';
+    var refs = [];
+    imgInp.onchange = function (e) { refs = []; Array.from(e.target.files || []).forEach(function (f) { var rd = new FileReader(); rd.onload = function () { refs.push({ name: f.name, data: rd.result }); }; rd.readAsDataURL(f); }); msg((e.target.files || []).length + ' reference(s) loaded'); };
+    imgWrap.appendChild(imgInp); main.appendChild(imgWrap);
+
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-top:10px;align-items:center';
     var sel = document.createElement('select'); sel.style.cssText = 'flex:1;padding:7px;background:#0b0e14;color:#cde;border:1px solid #444;border-radius:6px';
     var none = document.createElement('option'); none.value = ''; none.textContent = 'bind to… (optional)'; sel.appendChild(none);
     chars().forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+    var ai = document.createElement('button'); ai.textContent = 'AI-ASSIST'; ai.title = 'expand the prompt with your abliterated LLM'; ai.style.cssText = 'padding:9px 12px;background:#241a33;color:#c79bff;border:1px solid #8a5cff;border-radius:7px;cursor:pointer;font:bold 11px monospace';
     var gen = document.createElement('button'); gen.textContent = 'GENERATE'; gen.style.cssText = 'padding:9px 16px;background:#0e2a33;color:#8fe6ff;border:1px solid #33d0ff;border-radius:7px;cursor:pointer;font:bold 12px monospace';
-    row.appendChild(sel); row.appendChild(gen); main.appendChild(row);
+    row.appendChild(sel); row.appendChild(ai); row.appendChild(gen); main.appendChild(row);
     var prog = document.createElement('div'); prog.style.cssText = 'margin-top:10px;opacity:.8;font:11px monospace'; main.appendChild(prog);
+
+    ai.onclick = function () { var t = ta.value.trim(); if (!t) return; prog.textContent = 'AI-assist expanding…'; aiExpand(t, function (out) { if (out) { ta.value = out; prog.textContent = 'prompt expanded ✓'; } else prog.textContent = 'AI-assist endpoint not reachable (set window.AI_ASSIST_URL to your Qwen daemon route)'; }); };
+
     gen.onclick = function () {
-      var p = ta.value.trim(); if (!p) return; prog.textContent = 'submitting…';
-      if (typeof window.generateCharacterModel !== 'function') { prog.textContent = 'generateCharacterModel not found in this build.'; return; }
-      try {
-        window.generateCharacterModel(p, { characterId: sel.value || undefined, onProgress: function (j) { prog.textContent = 'gen ' + (j.status || '') + ' ' + (j.progress || 0) + '%'; },
-          onDone: function (j) { var url = j.glbUrl || j.url; if (url) { LOCAL.unshift({ name: p.slice(0, 24) + ' (gen)', url: url, char: sel.value }); if (viewer) viewer.load(resolve(url)); prog.textContent = 'done ✓ added to library'; } else prog.textContent = 'finished, no url'; } });
-      } catch (e) { prog.textContent = 'error: ' + e.message; }
+      var p = ta.value.trim(); if (!p && !refs.length) return;
+      var mode = cat.value.split(':')[0], kind = cat.value.split(':')[1];
+      var suffix = (mode === '3d' ? CATS_3D[kind] : CATS_2D[kind]) || '';
+      var full = [p, suffix].filter(Boolean).join(', ');
+      prog.textContent = 'submitting ' + refs.length + ' ref(s)…';
+      if (mode === '3d') {
+        if (typeof window.generateCharacterModel !== 'function') { prog.textContent = 'generateCharacterModel not found.'; return; }
+        try {
+          window.generateCharacterModel(full, { characterId: sel.value || undefined, image: refs[0] && refs[0].data, images: refs.map(function (r) { return r.data; }), category: kind,
+            onProgress: function (j) { prog.textContent = 'gen ' + (j.status || '') + ' ' + (j.progress || 0) + '%'; },
+            onDone: function (j) { var url = j.glbUrl || j.url; if (url) { LOCAL.unshift({ name: (p || kind).slice(0, 24) + ' (' + kind + ')', url: url, char: sel.value }); if (viewer) viewer.load(resolve(url)); prog.textContent = 'done ✓ in library'; } else prog.textContent = 'finished, no url'; } });
+        } catch (e) { prog.textContent = 'error: ' + e.message; }
+      } else {
+        // 2D image gen -> daemon /api/gen/image (FLUX/SDXL). Result is an image URL added to the library preview.
+        var ep = window.IMAGE_GEN_URL || '/api/gen/image';
+        fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: full, category: kind, images: refs.map(function (r) { return r.data; }) }) })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) { if (j && (j.url || j.imageUrl)) { var u = j.url || j.imageUrl; LOCAL.unshift({ name: (p || kind).slice(0, 20) + ' (' + kind + ')', url: u, char: null, image2d: true }); prog.textContent = '2D asset ready ✓ (in library)'; } else prog.textContent = 'image endpoint not set — deploy the FLUX/SDXL route (IMAGE_GEN_URL)'; })
+          .catch(function () { prog.textContent = 'image endpoint not reachable (set window.IMAGE_GEN_URL)'; });
+      }
     };
   }
 
