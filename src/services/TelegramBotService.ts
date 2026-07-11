@@ -16,7 +16,7 @@ export class TelegramBotService {
     private chatId: string;
 
     constructor() {
-        this.token = process.env.TELEGRAM_BOT_TOKEN || '8770548771:AAGdEeseFlkyfEesXJ_h1DXQcAYVolwujik';
+        this.token = process.env.TELEGRAM_BOT_TOKEN || '8867602832:AAFv-BujSUiAGR-RjIJVr5snBtIT8u99aqk';
         this.chatId = process.env.TELEGRAM_CHAT_ID || '';
     }
 
