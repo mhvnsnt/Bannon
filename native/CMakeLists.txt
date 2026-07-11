@@ -39,3 +39,8 @@ add_test(NAME combat COMMAND test_combat)
 add_executable(test_solvers tests/test_solvers.cpp)
 target_link_libraries(test_solvers bannon_core)
 add_test(NAME solvers COMMAND test_solvers)
+
+# God Within — three-persona (Marquis/Bannon/Maime) physics-multiplier state machine
+add_executable(test_persona tests/test_persona.cpp)
+target_link_libraries(test_persona bannon_core)
+add_test(NAME persona COMMAND test_persona)
