@@ -1472,8 +1472,8 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
       <input type="text" class="move-name-input" id="modelUrlCustom" placeholder="https://models.readyplayer.me/XXXX.glb" spellcheck="false">
       <div class="option-row"><button class="opt-chip" id="modelLoadCustom">LOAD THIS URL</button></div>
 
-      <div class="field-label">OR IMPORT A .glb FROM YOUR DEVICE — saved to your library, persists across sessions</div>
-      <input type="file" id="modelFile" accept=".glb,.gltf" style="color:#ffd9a8;width:100%;margin-bottom:12px;font-size:13px;">
+      <div class="field-label">OR IMPORT A .glb / .gltf / .fbx FROM YOUR DEVICE — saved to your library, persists across sessions (.blend: export to .glb/.fbx first)</div>
+      <input type="file" id="modelFile" accept=".glb,.gltf,.fbx" style="color:#ffd9a8;width:100%;margin-bottom:12px;font-size:13px;">
       <div class="field-label">APPLY TO</div>
       <div class="option-row" id="opt-fileslot">
         <button class="opt-chip selected" data-slot="fighter">FIGHTER</button>
@@ -5760,7 +5760,10 @@ window.BANNON_DNA = (function(){
       shape:shape,              // full morph state (procedural body reads this directly)
       morphs:morphs,            // GLB path: -> mesh.morphTargetInfluences (mass + face)
       boneScale:boneScale,      // GLB path: -> skeleton.bones[i].scale (length/proportion)
-      spec:sp                   // palette + attireStyle + hairStyle + ink + style + name
+      spec:sp,                  // palette + attireStyle + hairStyle + ink + style + name
+      // v157 IMPORT->TEMPLATE: the bound model rides in the recipe (URL only, never mesh data).
+      // idb: URLs persist via the BLIB IndexedDB library on this device; assets/ + embedded: travel anywhere.
+      model:(f.modelUrl?{url:f.modelUrl}:undefined)
     };
   }
   // apply(f, dna) -> reshape a live fighter from a recipe (procedural body today)
@@ -5773,6 +5776,14 @@ window.BANNON_DNA = (function(){
       // repaint hairstyle + two-tone gradient (applyFighterSpec owns colours, not the hair mesh)
       if(window.applyHair && (sp.hairStyle||sp.hair2!=null)) window.applyHair(f, sp.hairStyle||f._hairStyle||'SHORT', (sp.hair!=null?sp.hair:undefined));
       if(dna.name){ f.specName=dna.name; }
+      // v157 IMPORT->TEMPLATE: recipes that carry a model REBIND it (auto-rig path handles the rest),
+      // so a saved import template restores as a complete character, not just sliders.
+      try{
+        if(dna.model && dna.model.url && f.modelUrl!==dna.model.url && typeof loadFighterModel==='function' && typeof fighters!=='undefined' && fighters){
+          var _sd=(fighters[0]===f)?'p1':(fighters[1]===f)?'p2':null;
+          if(_sd) loadFighterModel(_sd, dna.model.url, dna.name||'model');
+        }
+      }catch(_e){}
       return true;
     }catch(e){ console.warn('[BANNON_DNA] apply failed', e); return false; }
   }
@@ -5784,6 +5795,15 @@ window.BANNON_DNA = (function(){
   function _db(){ try{ return JSON.parse(localStorage.getItem(STORE)||'{}')||{}; }catch(e){ return {}; } }
   function _write(db){ try{ localStorage.setItem(STORE, JSON.stringify(db)); }catch(e){} }
   function save(name, f){ if(!name||!f) return false; const db=_db(); db[name.toUpperCase()]=capture(f); _write(db); return true; }
+  // v157 IMPORT->TEMPLATE: called by the device-import flow after a successful bind — every imported
+  // model instantly becomes a persistent, named CAW starter template (WWE-2K "create from a base").
+  window.__importAsTemplate = function(side, name){ try{
+    var f=(typeof fighterFor==='function')?fighterFor(side):null; if(!f||!name) return false;
+    var key=('IMPORT '+name).toUpperCase();
+    save(key, f);
+    if(window.toast) window.toast('★ Saved as CAW template: '+key); else console.log('[DNA] import template saved:',key);
+    return true;
+  }catch(e){ return false; } };
   function load(name, f){ const db=_db(); const dna=db[(name||'').toUpperCase()]; if(!dna) return false; return f?apply(f,dna):dna; }
   function list(){ return Object.keys(_db()); }
   function remove(name){ const db=_db(); delete db[(name||'').toUpperCase()]; _write(db); }
@@ -9825,8 +9845,13 @@ function registerHit(attacker, move){
   // flyweight can sting a heavyweight for damage but barely rocks him; the reverse launches.
   const _mA = attacker.strikeMass ? attacker.strikeMass() : 1, _mD = opp.strikeMass ? opp.strikeMass() : 1;
   const massF = clamp(1 + 0.22*(_mA - 1), 0.78, 1.20);
-  const kbF   = clamp(Math.pow(_mA/Math.max(0.1,_mD), 0.6), 0.70, 1.45);
-  const effPower = clamp(move.power * rangeF * stamF * velF * loadF * massF, 6, 135);
+  // GOD WITHIN persona layer: attacker's persona scales outgoing power (Maime 1.45 feral .. Marquis
+  // 0.85 technical); defender's staggerRes shrinks how far they get moved (Bannon 1.6 barely rocks).
+  // Non-persona characters are NEUTRAL 1.0 — this line is a no-op for the rest of the roster.
+  const _pmA = window.personaModsFor ? window.personaModsFor(attacker) : null;
+  const _pmD = window.personaModsFor ? window.personaModsFor(opp) : null;
+  const kbF   = clamp(Math.pow(_mA/Math.max(0.1,_mD), 0.6), 0.70, 1.45) / (_pmD ? _pmD.staggerRes : 1);
+  const effPower = clamp(move.power * rangeF * stamF * velF * loadF * massF * (_pmA ? _pmA.damageMult : 1), 6, 135);
   const em = Object.assign({}, move, { power: effPower, _massF: massF, _kbF: kbF }); // reactions key off effective power
   // tier label feedback (Light / Medium / Heavy)
   const tier = effPower<35 ? 'LIGHT' : effPower<70 ? 'MEDIUM' : 'HEAVY';
@@ -13403,6 +13428,12 @@ try{
   _addChar('GRIXF',          { label:'The Manic Fanatic',       col:0x4a1030, accent:0x88ee22, skin:0xcaa070, faction:'Corporate Structure', canon:true, bio:'LP9 — a zealot for the system, all teeth and fervor.', archetype:'brawler' }, 'CARGO_PANTS', 'MOHAWK', {musc:0.64,fat:0.24});
   _addChar('MACHINE_TIGER',  { label:'Counter-Architect',       col:0xe08010, accent:0x111111, skin:0xb07840, faction:'Corporate Structure', canon:true, bio:'LP4 — methodical, structured, engineered to counter Bannon.', archetype:'technician' }, 'SINGLET_2TONE', 'SHORT', {musc:0.68,fat:0.14});
   _addChar('CHAINMAIL',      { label:'The Scarred Vengeance',   col:0x3a3a44, accent:0x8a1a1a, skin:0xc09068, faction:'Corporate Structure', canon:true, bio:'LP8 — armored rage, every scar a debt to collect.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.86,fat:0.3});
+  // ONYX — new canon: darker-skinned woman, white chola/vamp facepaint, spiked corset/bodysuit heel.
+  // GLB attires (ONYX.glb chola/spiked, ONYX_corset.glb corset) bind via charKey; procedural body is the fallback.
+  _addChar('ONYX',           { label:'The Obsidian Hex',        col:0x101014, accent:0xe8e8ee, skin:0x7a4a2e, faction:'Agents of Chaos', canon:true, bio:'Darker than the space between stars — white paint, spiked leather, and a hex for every man who underestimated her.', archetype:'striker' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.5,fat:0.16,fem:1,hips:1.05,glutes:1.12,waist:0.82,bust:0.9});
+  // CODY CALLAHAN — canon manager, NOW ALSO FIGHTABLE ("Cannon Cody" fights in God Within Act 3.5).
+  // GLB attire CODY_gear.glb (heavyset hairy brawler, beard, blue-plaid trunks, yellow wristbands).
+  _addChar('CODY_CALLAHAN',  { label:'The Corduroy Kid',        col:0x27374a, accent:0xf2c230, skin:0xe7bd96, faction:'Corporate Structure', canon:true, bio:'Toxic manager, exposed nerve — no mask, no armor, pure loyalty and deterioration. When the bell rings anyway, he throws hands like a bar fight.', archetype:'brawler' }, 'TRUNKS', 'SHORT', {musc:0.5,fat:0.62});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13449,6 +13480,28 @@ try{
       { key:'MAIME',           label:'Maime',           role:'raw psychotic alter-ego beneath Bannon (Verbal Leakage)', voice:'raw/high-pitched/manic' }
     ]
   };
+  // ===== GOD WITHIN — 3-PERSONA PHYSICS STATE MACHINE (mirrors native/include/bannon_persona.h) =====
+  // One man, swapped physics multipliers — NOT three characters (Book 5: Maime is a distinct feral
+  // combat mode). damageMult = outgoing power; staggerRes = how hard THIS fighter is to rock (scales
+  // give-ground/knockback down); counterWindow = reversal timing window scale (Marquis reads best).
+  // Non-Marquis characters resolve to NEUTRAL (all 1.0) — zero behavior change for the rest of the roster.
+  window.PERSONA_MODS = {
+    MARQUIS:  { damageMult:0.85, staggerRes:0.80, counterWindow:1.35, label:'Marquis · Technician'  },
+    SOLARIS_JUSTICE: { damageMult:0.85, staggerRes:0.80, counterWindow:1.35, label:'Solaris · Face' },
+    BANNON:   { damageMult:1.20, staggerRes:1.60, counterWindow:0.75, label:'Bannon · Unstoppable'  },
+    MAIME:    { damageMult:1.45, staggerRes:1.05, counterWindow:0.70, label:'Maime · Feral'         },
+    NEUTRAL:  { damageMult:1.0,  staggerRes:1.0,  counterWindow:1.0,  label:'' }
+  };
+  window.personaFor = function(f){
+    if (!f) return 'NEUTRAL';
+    if (f._persona && window.PERSONA_MODS[f._persona]) return f._persona;   // runtime swap (setPersona)
+    var k = String(f.name||'').toUpperCase().replace(/[^A-Z_]/g,'_');
+    if (window.PERSONA_MODS[k]) return k;
+    return 'NEUTRAL';
+  };
+  window.personaModsFor = function(f){ return window.PERSONA_MODS[window.personaFor(f)] || window.PERSONA_MODS.NEUTRAL; };
+  // God Within / story-mode hook: swap the live persona mid-match (mask on/off, paint breaking through)
+  window.setPersona = function(f, key){ if(f && window.PERSONA_MODS[key]){ f._persona=key; if(typeof announce==='function' && window.PERSONA_MODS[key].label) try{ announce(window.PERSONA_MODS[key].label.toUpperCase(), ''); }catch(_){}} };
   window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
     BANNON:        { name:'THE STRUCTURAL COLLAPSE',   kind:'grapple', pos:'BACK_SUPLEX',     deliver:'toss', sub:'THE RING OF SATURN' },   // CANON (Book 1): deadlift German suplex -> Ring of Saturn submission, held until the opponent is visibly broken
     MAIME:         { name:'VERBAL LEAKAGE',            kind:'grapple', pos:'DDT',             deliver:'spike' },   // the alter-ego's raw spike — unfiltered violence
@@ -13706,9 +13759,12 @@ const MODEL_LIBRARY = [
   { name:'BANNON (canon)', url:'assets/models/BANNON.glb', charKey:'BANNON' },
   { name:'MAIME (canon)', url:'assets/models/MAIME.glb', charKey:'MAIME' },
   { name:'MAIME · Tattered', url:'assets/models/MAIME_tattered.glb', charKey:'MAIME' },
+  // ONYX (new canon character) — darker-skinned woman, white chola/vamp facepaint, spiked corset.
+  { name:'ONYX · Chola/Spiked', url:'assets/models/ONYX.glb', charKey:'ONYX', needsRig:true },
+  { name:'ONYX · Corset/Vamp', url:'assets/models/ONYX_corset.glb', charKey:'ONYX', needsRig:true },
+  { name:'CODY · Wrestling Gear', url:'assets/models/CODY_gear.glb', charKey:'CODY_CALLAHAN', needsRig:true },
   // single-mesh Tripo previews — load but stay STATIC until a named-part (rigready) export exists.
   { name:'BANNON · Muscular (static)', url:'assets/models/BANNON_muscular.glb', charKey:'BANNON', needsRig:true },
-  { name:'MAIME · Studded (static)', url:'assets/models/MAIME_studded.glb', charKey:'MAIME', needsRig:true },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },
@@ -13856,6 +13912,10 @@ function _bindFighterGltf(side, url, name, gltf){
         }
       }
     }catch(e){}
+    // ORIENTATION NORMALIZE: recenter the model's mass on X/Z so it sits on the pelvis point the engine
+    // places it at each frame. Off-center Tripo exports otherwise orbit their own centroid (the "facing
+    // wrong / drifting" look). Y is floored by yBase below; centered models shift ~0 (safe no-op).
+    try{ if(isFinite(box.min.x)&&isFinite(box.max.x)){ var _ncx=(box.min.x+box.max.x)/2, _ncz=(box.min.z+box.max.z)/2; if(Math.abs(_ncx)>0.02||Math.abs(_ncz)>0.02){ obj.position.x-=_ncx; obj.position.z-=_ncz; obj.updateMatrixWorld(true); } } }catch(e){}
     container.userData.mapped = mapped; container.userData.url=url;
     try{ mapped.forEach(function(mp){ var _cs=mp.bone.children, _ch=null; for(var _i=0;_i<_cs.length;_i++){ if(_cs[_i].isBone){_ch=_cs[_i];break;} } if(!_ch&&_cs.length)_ch=_cs[0]; if(_ch){ var _lf=_ch.position.clone(); if(_lf.lengthSq()>1e-9) mp.localFwd=_lf.normalize(); } mp.isLimb=(mp.toJ!=='chest'&&mp.toJ!=='head'); }); }catch(e){}
     try{ container.userData.boneByName=bones; container.userData.mappedSet=new Set(mapped.map(x=>x.bone));
@@ -14909,9 +14969,20 @@ function setupInput(){
   document.querySelectorAll('#opt-fileslot .opt-chip').forEach(chip=>chip.addEventListener('click',()=>{ document.querySelectorAll('#opt-fileslot .opt-chip').forEach(c=>c.classList.remove('selected')); chip.classList.add('selected'); _fileSlot=chip.dataset.slot; }));
   const _mf=document.getElementById('modelFile');
   if(_mf) _mf.addEventListener('change',(e)=>{ const file=e.target.files&&e.target.files[0]; if(!file) return; setModelStatus(modelSel,'Loading '+file.name+'...'); const rd=new FileReader();
-    rd.onload=()=>{ try{ const loader=new THREE.GLTFLoader(); loader.parse(rd.result,'',(gltf)=>{
+    var _isFbx=/\.fbx$/i.test(file.name);
+    rd.onload=()=>{ try{
+      if(_isFbx){
+        // FBX (Mixamo / Blender export): FBXLoader.parse returns a Group synchronously; wrap as {scene}
+        // so the shared bind path runs (real bones -> skinned path; else the named-part/chunk auto-rig).
+        if(typeof THREE==='undefined' || !THREE.FBXLoader){ setModelStatus(modelSel,'\u26a0 FBX loader still initializing (or blocked) \u2014 try again in a moment, or export .glb.'); return; }
+        var _fobj; try{ _fobj=new THREE.FBXLoader().parse(rd.result,''); }catch(err){ setModelStatus(modelSel,'Could not parse '+file.name+' ('+err.message+')'); return; }
+        var _nf=file.name.replace(/\.fbx$/i,'');
+        try{ _bindFighterGltf(modelSel,'idb:'+_nf, _nf, {scene:_fobj}); if(typeof BLIB!=='undefined'){ try{ BLIB.saveImported(_nf, rd.result.slice(0)); }catch(_e){} } if(window.__importAsTemplate)window.__importAsTemplate(modelSel,_nf); setModelStatus(modelSel,'Loaded '+file.name+' \u2014 use the size slider'); }catch(err){ setModelStatus(modelSel,'Bind failed: '+err.message); }
+        return;
+      }
+      const loader=new THREE.GLTFLoader(); loader.parse(rd.result,'',(gltf)=>{
         if(_fileSlot==='ring'){ try{ loadCustomRing(gltf); setModelStatus(modelSel,'Ring loaded: '+file.name); }catch(err){ setModelStatus(modelSel,'Ring load failed'); } }
-        else { try{ var _nm=file.name.replace(/\.(glb|gltf)$/i,''); _bindFighterGltf(modelSel,'idb:'+_nm, _nm, gltf); if(typeof BLIB!=='undefined'){ try{ BLIB.saveImported(_nm, rd.result.slice(0)); }catch(_e){} } setModelStatus(modelSel,'Loaded '+file.name+' \u2014 use the size slider'); }catch(err){ setModelStatus(modelSel,'Bind failed: '+err.message); } }
+        else { try{ var _nm=file.name.replace(/\.(glb|gltf)$/i,''); _bindFighterGltf(modelSel,'idb:'+_nm, _nm, gltf); if(typeof BLIB!=='undefined'){ try{ BLIB.saveImported(_nm, rd.result.slice(0)); }catch(_e){} } if(window.__importAsTemplate)window.__importAsTemplate(modelSel,_nm); setModelStatus(modelSel,'Loaded '+file.name+' \u2014 use the size slider'); }catch(err){ setModelStatus(modelSel,'Bind failed: '+err.message); } }
       },(err)=>setModelStatus(modelSel,'Could not parse '+file.name)); }catch(err){ setModelStatus(modelSel,'Load error'); } };
     rd.readAsArrayBuffer(file); });
   document.getElementById('btnToMain').addEventListener('click', ()=>{ gameState='menu'; if(roundTimerInterval)clearInterval(roundTimerInterval); if(typeof clearActiveFightState==='function') clearActiveFightState(); show('mainMenu'); });
@@ -35354,7 +35425,9 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       const ph = atk.attackPhase||0;
       const d = Math.hypot(atk.x-def.x, atk.z-def.z);
       if (d>1.9) return false;
-      if (ph<0.06 || ph>0.42){ def._revLock=1.1; return false; }   // mistimed — brief lockout, like 2K
+      // persona counterWindow: Marquis (1.35) gets a wider read window, Bannon/Maime tighter — NEUTRAL 1.0 unchanged
+      const _cw = window.personaModsFor ? window.personaModsFor(def).counterWindow : 1;
+      if (ph<0.06 || ph>0.06+0.36*_cw){ def._revLock=1.1; return false; }   // mistimed — brief lockout, like 2K
       def._revCd=2.4;
       atk.hitLanded=true;                                          // the strike never registers
       try{ atk.endAttack(); }catch(_){}

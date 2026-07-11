@@ -33,3 +33,14 @@ endif()
 add_executable(test_combat tests/test_combat.cpp)
 target_link_libraries(test_combat bannon_core)
 add_test(NAME combat COMMAND test_combat)
+
+# bricks 245-444 batch 1 (shockwave / torsion limiter / zone scaling / throw stability / tension
+# recovery / knee buckling / kickout) — header-only solvers, pure-function tests
+add_executable(test_solvers tests/test_solvers.cpp)
+target_link_libraries(test_solvers bannon_core)
+add_test(NAME solvers COMMAND test_solvers)
+
+# God Within — three-persona (Marquis/Bannon/Maime) physics-multiplier state machine
+add_executable(test_persona tests/test_persona.cpp)
+target_link_libraries(test_persona bannon_core)
+add_test(NAME persona COMMAND test_persona)
