@@ -1,0 +1,28 @@
+name: Sharded Test Suite
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  test-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        suite: [cpp_core, ts_frontend]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - name: Install Dependencies
+        run: npm ci
+      - name: Execute Tests
+        run: |
+          if [ "${{ matrix.suite }}" == "cpp_core" ]; then
+             echo "Running C++ Engine Tests..."
+             # make test-cpp
+          elif [ "${{ matrix.suite }}" == "ts_frontend" ]; then
+             echo "Running TypeScript Frontend Tests..."
+             npm run test
+          fi

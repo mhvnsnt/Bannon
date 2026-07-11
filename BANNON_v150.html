@@ -13406,6 +13406,9 @@ try{
   // ONYX — new canon: darker-skinned woman, white chola/vamp facepaint, spiked corset/bodysuit heel.
   // GLB attires (ONYX.glb chola/spiked, ONYX_corset.glb corset) bind via charKey; procedural body is the fallback.
   _addChar('ONYX',           { label:'The Obsidian Hex',        col:0x101014, accent:0xe8e8ee, skin:0x7a4a2e, faction:'Agents of Chaos', canon:true, bio:'Darker than the space between stars — white paint, spiked leather, and a hex for every man who underestimated her.', archetype:'striker' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.5,fat:0.16,fem:1,hips:1.05,glutes:1.12,waist:0.82,bust:0.9});
+  // CODY CALLAHAN — canon manager, NOW ALSO FIGHTABLE ("Cannon Cody" fights in God Within Act 3.5).
+  // GLB attire CODY_gear.glb (heavyset hairy brawler, beard, blue-plaid trunks, yellow wristbands).
+  _addChar('CODY_CALLAHAN',  { label:'The Corduroy Kid',        col:0x27374a, accent:0xf2c230, skin:0xe7bd96, faction:'Corporate Structure', canon:true, bio:'Toxic manager, exposed nerve — no mask, no armor, pure loyalty and deterioration. When the bell rings anyway, he throws hands like a bar fight.', archetype:'brawler' }, 'TRUNKS', 'SHORT', {musc:0.5,fat:0.62});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13712,6 +13715,7 @@ const MODEL_LIBRARY = [
   // ONYX (new canon character) — darker-skinned woman, white chola/vamp facepaint, spiked corset.
   { name:'ONYX · Chola/Spiked', url:'assets/models/ONYX.glb', charKey:'ONYX', needsRig:true },
   { name:'ONYX · Corset/Vamp', url:'assets/models/ONYX_corset.glb', charKey:'ONYX', needsRig:true },
+  { name:'CODY · Wrestling Gear', url:'assets/models/CODY_gear.glb', charKey:'CODY_CALLAHAN', needsRig:true },
   // single-mesh Tripo previews — load but stay STATIC until a named-part (rigready) export exists.
   { name:'BANNON · Muscular (static)', url:'assets/models/BANNON_muscular.glb', charKey:'BANNON', needsRig:true },
   { name:'King', url:'embedded:king' },
