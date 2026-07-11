@@ -42,7 +42,7 @@ window.setPose = function(amt){
     window._res.mapped.forEach(function(mp){ mp.bone.quaternion.identity(); var a=POSE[mp.bone.name]; if(a) mp.bone.rotateZ(a*A); });
   } else {
     // SKINNED path (our skin.cjs output / Mixamo): bend by bone name — smooth deformation, no seams
-    var SPOSE = { LeftForeArm:[-0.55,'x'], RightForeArm:[0.55,'x'], LeftArm:[-0.15,'x'], RightArm:[0.15,'x'], LeftLeg:[0.22,'z'], RightLeg:[0.22,'z'], Spine:[0.06,'z'] };
+    var SPOSE = { LeftForeArm:[-0.55,'x'], RightForeArm:[0.55,'x'], LeftArm:[-0.15,'x'], RightArm:[0.15,'x'], LeftLeg:[0.35,'x'], RightLeg:[0.35,'x'], Spine:[0.05,'x'] };
     window._res.root.traverse(function(o){ if(o.isBone && SPOSE[o.name]){ o.quaternion.identity(); var pr=SPOSE[o.name]; if(pr[1]==='x')o.rotateX(pr[0]*A); else o.rotateZ(pr[0]*A); } });
   }
   window._res.root.updateMatrixWorld(true); renderer.render(scene,cam);

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* BANNON skinned auto-rigger v3 — the REAL fix for "breaking apart".
+/* BANNON skinned auto-rigger v4 — GEODESIC (surface-aware) weights, Pinocchio/bone-heat lineage.
  * Instead of splitting into rigid chunks (visible seams at every bend), this outputs a proper
  * SKINNED GLB: the original mesh stays ONE continuous surface, a 16-bone Mixamo-named skeleton is
  * built inside it, and every vertex gets smooth blended weights (top-4 bones, inverse-distance^4 to
@@ -129,20 +129,91 @@ function main(){
   // world-space joint positions
   const JW={}; for(const j in joints) JW[j]=[DX(joints[j][0]), DY(joints[j][1]), DZ(joints[j][2])];
 
-  // ---- skin weights: top-K inverse-distance^POW to bone capsules ----
+  // ---- GEODESIC skin weights (v4) — influence travels along the SURFACE, never through the body
+  // interior, so the inner thigh can NEVER grab the other leg (the euclidean "twisted legs /
+  // ballooned thighs" bug). Method = the practical bone-heat recipe: weld verts by position (UV
+  // seams split Tripo meshes), build the surface graph, seed each bone where the mesh hugs its
+  // capsule, multi-source K-label Dijkstra for per-vertex geodesic bone distances, weights from
+  // those distances, then Laplacian smoothing for soft creases. Disconnected shells (hair cards
+  // etc.) fall back to euclidean capsule weights.
   const boneIdx={}; BONES.forEach((b,i)=>boneIdx[b[0]]=i);
   const segs=BONES.map(b=>{ const A=JW[b[1]], B=JW[b[2]];
-    // zero-length (Head) -> small vertical stub so it still attracts skull verts
     if(b[1]===b[2]) return [A[0],A[1],A[2], A[0],A[1]+hy*0.2,A[2]];
     return [A[0],A[1],A[2], B[0],B[1],B[2]]; });
-  const J0=new Uint8Array(nV*4), W0=new Float32Array(nV*4);
-  for(let v=0;v<nV;v++){
-    const px=pos[v*3],py=pos[v*3+1],pz=pos[v*3+2];
-    const ds=segs.map((s,i)=>({i, d:segDist(px,py,pz, s[0],s[1],s[2], s[3],s[4],s[5])}));
-    ds.sort((a,b)=>a.d-b.d);
-    let tot=0; const top=ds.slice(0,K).map(e=>{ const w=1/Math.pow(e.d+1e-4,POW); tot+=w; return {i:e.i,w}; });
-    for(let k=0;k<4;k++){ if(k<top.length){ J0[v*4+k]=top[k].i; W0[v*4+k]=top[k].w/tot; } }
+  const capDist=(v,i)=>{ const s=segs[i]; return segDist(pos[v*3],pos[v*3+1],pos[v*3+2], s[0],s[1],s[2], s[3],s[4],s[5]); };
+
+  // 1. weld by quantized position -> canonical vertex ids
+  const weld=new Int32Array(nV); { const seen=new Map();
+    for(let v=0;v<nV;v++){ const kx=Math.round(pos[v*3]*1e4),ky=Math.round(pos[v*3+1]*1e4),kz=Math.round(pos[v*3+2]*1e4);
+      const key=kx+':'+ky+':'+kz; const got=seen.get(key);
+      if(got===undefined){ seen.set(key,v); weld[v]=v; } else weld[v]=got; } }
+  // 2. adjacency over welded ids
+  const adj=new Map(); const link=(a,b)=>{ if(a===b)return; let l=adj.get(a); if(!l){l=[];adj.set(a,l);} if(l.indexOf(b)<0)l.push(b); };
+  for(let t=0;t<idx.length;t+=3){ const a=weld[idx[t]],b=weld[idx[t+1]],c=weld[idx[t+2]];
+    link(a,b);link(b,a);link(b,c);link(c,b);link(a,c);link(c,a); }
+  // 3. seeds: adaptive radius per bone until enough seeds
+  const SRC=new Map();   // welded vid -> [{bone,d0}]
+  BONES.forEach((b,i)=>{ let r=hy*0.03, seeds=[], tries=0;
+    while(seeds.length<30 && tries<6){ seeds=[];
+      for(const v of adj.keys()){ const d=capDist(v,i); if(d<r) seeds.push([v,d]); }
+      r*=1.7; tries++; }
+    for(const [v,d] of seeds){ let l=SRC.get(v); if(!l){l=[];SRC.set(v,l);} l.push({bone:i,d0:d}); }
+  });
+  // 4. K-label multi-source Dijkstra (binary heap on [dist, vid, bone])
+  const labels=new Map();   // vid -> Map(bone -> dist)
+  const heap=[]; const hpush=(d,v,b)=>{ heap.push([d,v,b]); let i=heap.length-1;
+    while(i>0){ const p=(i-1)>>1; if(heap[p][0]<=heap[i][0])break; [heap[p],heap[i]]=[heap[i],heap[p]]; i=p; } };
+  const hpop=()=>{ const top=heap[0], last=heap.pop(); if(heap.length){ heap[0]=last; let i=0;
+      for(;;){ const l=2*i+1,r=l+1; let m=i; if(l<heap.length&&heap[l][0]<heap[m][0])m=l; if(r<heap.length&&heap[r][0]<heap[m][0])m=r; if(m===i)break; [heap[m],heap[i]]=[heap[i],heap[m]]; i=m; } }
+    return top; };
+  for(const [v,list] of SRC){ for(const {bone,d0} of list) hpush(d0,v,bone); }
+  const KL=K;
+  while(heap.length){
+    const [d,v,b]=hpop();
+    let lm=labels.get(v); if(!lm){ lm=new Map(); labels.set(v,lm); }
+    const cur=lm.get(b);
+    if(cur!==undefined && cur<=d) continue;
+    if(cur===undefined && lm.size>=KL){ let worstB=null,worstD=-1; for(const [bb,dd] of lm){ if(dd>worstD){worstD=dd;worstB=bb;} }
+      if(d>=worstD) continue; lm.delete(worstB); }
+    lm.set(b,d);
+    const nbrs=adj.get(v); if(!nbrs) continue;
+    for(const n of nbrs){ const ex=pos[n*3]-pos[v*3],ey=pos[n*3+1]-pos[v*3+1],ez=pos[n*3+2]-pos[v*3+2];
+      hpush(d+Math.sqrt(ex*ex+ey*ey+ez*ez), n, b); }
   }
+  // 5. weights from geodesic distances (fallback: euclidean for unreached shells)
+  let wl=new Array(nV);   // per ORIGINAL vertex: [{bone,w}]
+  let fallbackN=0;
+  for(let v=0;v<nV;v++){
+    const lm=labels.get(weld[v]);
+    let entries;
+    if(lm && lm.size){ entries=[...lm.entries()].map(([b,d])=>({b, w:1/Math.pow(d+hy*0.01,2)})); }
+    else { fallbackN++;
+      const ds=segs.map((s,i)=>({b:i, d:capDist(v,i)})).sort((a,c)=>a.d-c.d).slice(0,KL);
+      entries=ds.map(e=>({b:e.b, w:1/Math.pow(e.d+hy*0.01,2)})); }
+    let tot=0; for(const e of entries) tot+=e.w; for(const e of entries) e.w/=tot;
+    wl[v]=entries;
+  }
+  console.log(`  geodesic labels: ${labels.size} welded verts, ${fallbackN} fallback (disconnected shells)`);
+  // 6. Laplacian smoothing over the surface graph (8 passes, welded space then re-fanned)
+  for(let pass=0;pass<8;pass++){
+    const nw=new Array(nV);
+    for(let v=0;v<nV;v++){
+      const wv=weld[v]; const nbrs=adj.get(wv);
+      if(!nbrs||!nbrs.length){ nw[v]=wl[v]; continue; }
+      const accum=new Map();
+      for(const e of wl[v]) accum.set(e.b,(accum.get(e.b)||0)+e.w*0.5);
+      const share=0.5/nbrs.length;
+      for(const n of nbrs){ for(const e of wl[n]) accum.set(e.b,(accum.get(e.b)||0)+e.w*share); }
+      const top=[...accum.entries()].sort((a,c)=>c[1]-a[1]).slice(0,KL);
+      let tot=0; for(const [,w] of top) tot+=w;
+      nw[v]=top.map(([b,w])=>({b, w:w/tot}));
+    }
+    wl=nw;
+  }
+  // 7. pack
+  const J0=new Uint8Array(nV*4), W0=new Float32Array(nV*4);
+  for(let v=0;v<nV;v++){ const es=wl[v];
+    for(let k=0;k<4;k++){ if(k<es.length){ J0[v*4+k]=es[k].b; W0[v*4+k]=es[k].w; } } }
 
   // ---- write skinned GLB ----
   const outViews=[],outAcc=[],bufParts=[]; let bufOff=0;
