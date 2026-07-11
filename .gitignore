@@ -8,3 +8,4 @@ fighter_profiles.json
 forged_characters.json
 mocap_metadata.json
 *.log
+.env

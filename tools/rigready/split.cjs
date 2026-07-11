@@ -29,6 +29,16 @@ for (const k in RAW) {
   TPL[k]={ mn:nmn, mx:nmx, vol:(nmx[0]-nmn[0])*(nmx[1]-nmn[1])*(nmx[2]-nmn[2]) };
 }
 const PARTS = Object.keys(TPL);
+// joint adjacency — boundary strips get DUPLICATED into both neighbours ("overlap flanges"), the same
+// trick segmented-rig figures use so elbows/knees/waist don't open visible gaps when the joint bends.
+const ADJ = {
+  pelvis:['chest','hipL','hipR'], chest:['pelvis','head','shL','shR'], head:['chest'],
+  shL:['chest','elL'], elL:['shL','haL'], haL:['elL'],
+  shR:['chest','elR'], elR:['shR','haR'], haR:['elR'],
+  hipL:['pelvis','knL'], knL:['hipL','ftL'], ftL:['knL'],
+  hipR:['pelvis','knR'], knR:['hipR','ftR'], ftR:['knR']
+};
+const OVERLAP = 0.055;   // normalized-space flange width copied across each boundary
 
 function readGlb(p){
   const b=fs.readFileSync(p); let off=12, json=null, bin=null;
@@ -47,14 +57,17 @@ function acc(json,bin,i){
 }
 
 function classify(cx,cy,cz){
-  let best=null, bestD=Infinity, bestVol=Infinity;
+  let best=null, bestD=Infinity, bestVol=Infinity; const dist={};
   for(const k of PARTS){
     const t=TPL[k];
     const dx=Math.max(t.mn[0]-cx,0,cx-t.mx[0]), dy=Math.max(t.mn[1]-cy,0,cy-t.mx[1]), dz=Math.max(t.mn[2]-cz,0,cz-t.mx[2]);
-    const d=dx*dx+dy*dy+dz*dz;
+    const d=dx*dx+dy*dy+dz*dz; dist[k]=d;
     if(d<bestD-1e-12 || (Math.abs(d-bestD)<1e-12 && t.vol<bestVol)){ bestD=d; best=k; bestVol=t.vol; }
   }
-  return best;
+  // flanges: copy the triangle into any ADJACENT part whose box is within OVERLAP of the centroid
+  const extra=[];
+  for(const nb of (ADJ[best]||[])){ if(dist[nb]!=null && Math.sqrt(dist[nb])<OVERLAP) extra.push(nb); }
+  return {best, extra};
 }
 
 function main(){
@@ -82,7 +95,9 @@ function main(){
     const cx=((pos[a]+pos[b]+pos[c])/3)/mxX;
     const cyv=(((pos[a+1]+pos[b+1]+pos[c+1])/3)-cy0)/mxY;
     const cz=((pos[a+2]+pos[b+2]+pos[c+2])/3)/mxZ;
-    buckets[classify(cx,cyv,cz)].push(t);
+    const cls=classify(cx,cyv,cz);
+    buckets[cls.best].push(t);
+    for(const nb of cls.extra) buckets[nb].push(t);
   }
 
   // rebuild per-part geometry (remap verts)

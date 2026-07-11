@@ -32,10 +32,13 @@ window.setView = function(az, el){
   cam.position.set(fitC.x+d*Math.cos(e)*Math.sin(a), fitC.y+d*Math.sin(e), fitC.z+d*Math.cos(e)*Math.cos(a));
   cam.lookAt(fitC); cam.updateProjectionMatrix(); renderer.render(scene,cam);
 };
-// apply a Z-bend pose to every mapped bone (to preview articulation), amt in radians
+// articulation preview: a NATURAL fighting-guard pose (elbows + knees bend, slight torso), not the
+// old bend-everything scatter — this is what joint articulation actually looks like in-engine.
 window.setPose = function(amt){
   if(!window._res) return;
-  window._res.mapped.forEach(function(mp){ mp.bone.quaternion.identity(); mp.bone.rotateZ(amt||0); });
+  var A = (amt==null?1:amt);
+  var POSE = { rig_shL:0.25, rig_shR:0.25, rig_elL:0.85, rig_elR:0.85, rig_knL:0.45, rig_knR:0.45, rig_chest:0.08, rig_hipL:-0.18, rig_hipR:-0.18 };
+  window._res.mapped.forEach(function(mp){ mp.bone.quaternion.identity(); var a=POSE[mp.bone.name]; if(a) mp.bone.rotateZ(a*A); });
   window._res.root.updateMatrixWorld(true); renderer.render(scene,cam);
 };
 
