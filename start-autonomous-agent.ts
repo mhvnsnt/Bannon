@@ -44,9 +44,9 @@ const localNode = new OpenAI({
 });
 
 const providers = [
+    { name: 'OpenRouter (Qwable Abliterated - Uncensored/No Limits)', type: 'openrouter', model: 'huihui-ai/qwable-abliterated-32b' },
     { name: 'Gemini (Unlimited Context Coder)', type: 'gemini', model: 'gemini-2.5-pro' },
     { name: 'Gemini (Primary Context Map)', type: 'gemini', model: 'gemini-2.5-flash' },
-    { name: 'OpenRouter (Qwable Abliterated)', type: 'openrouter', model: 'huihui-ai/qwable-abliterated-32b' },
     { name: 'DeepInfra (Qwopus Reasoning)', type: 'deepinfra', model: 'Qwen/QwQ-32B-Preview' },
     { name: 'Together AI (Qwen Coder)', type: 'togetherai', model: 'Qwen/Qwen2.5-Coder-32B-Instruct' },
     { name: 'SiliconFlow (Qwen)', type: 'openrouter', model: 'Qwen/Qwen2.5-Coder-32B-Instruct' }, // placeholder routing
