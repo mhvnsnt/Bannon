@@ -5,6 +5,7 @@
 #include "../engine/GematriaCalculator.h"
 #include "../engine/GimmickCompositor.h"
 #include "EvolutionMatrix.h"
+#include "JSpaceThoughtRealm.h"
 #include <memory>
 #include <string>
 
@@ -23,6 +24,7 @@ namespace BannonEngine {
         void bootOS();
         
         // Execute a complete match cycle evaluation (Learning, Memory, Chaos)
+        void injectConversationalThought(const std::string& prompt);
         void processMatchConclusion(const std::string& characterUuid, const std::string& characterName, bool isWinner, float matchIntensity, float karmicShift);
         
         // Fetch current active multipliers for the physics engine
@@ -31,6 +33,7 @@ namespace BannonEngine {
     private:
         std::unique_ptr<QuantumChaosEngine> quantumEngine;
         std::unique_ptr<EvolutionMatrix> evolutionMatrix;
+        std::unique_ptr<JSpaceThoughtRealm> jSpaceRealm;
         std::unique_ptr<GimmickCompositor> compositor;
         bool isOnline;
     };
