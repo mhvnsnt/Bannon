@@ -31,6 +31,7 @@ namespace BannonEngine {
         // Inject a new prompt or idea into J-Space for deep, isolated research
         void injectThought(const std::string& inputPrompt);
         // Loads a complex wrestling scenario into the predictive buffer\n        void bufferComplexScenario(const std::string& scenarioMap);
+        // Evaluates C++ engine code, kinematics math, and memory layouts silently in J-Space before writing\n        void evaluateCodeArchitecture(const std::string& codeContext);
 
         // Run the internal research loop (similar to Claude's internal scratchpad logic)
         void processInternalMonologue();
