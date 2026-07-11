@@ -126,3 +126,11 @@ The architecture doesn't care which; that's the point.
 
 The core is real and testable today. Bring up the GPU host with `FORGE_BACKEND=hunyuan`, and the
 in-game prompt flow is entirely on your own stack — no Tripo, no Meshy, no per-asset fee.
+
+## v157 addendum — creation-suite direction (owner spec)
+- Target: MDickie-breadth × WWE-2K-depth × Blender-level freedom, ALL in-game/mobile. Reference apps:
+  Nomad Sculpt-class mobile modelers (owner cites a Play-Store Blender alternative, name starts with
+  "I" — candidates: iyan 3D / Prisma3D-class; confirm exact app with owner). The runtime-CAW
+  (DNA payload + base-GLB morphs) is the architecture that delivers it without desktop Blender.
+- Rig/skin pipeline is now fully ours: tools/rigready/skin.cjs v4.1 (geodesic weights, auto
+  game-scale 1.85m bake) -> engine skinned path. UniRig on the GPU forge raises the ceiling later.

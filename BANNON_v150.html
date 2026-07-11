@@ -13970,7 +13970,17 @@ function loadFighterModel(side, url, name){
   }
   loader.load(url, (gltf)=>_bindFighterGltf(side,url,name,gltf),
     undefined,
-    (err)=>{ setModelStatus(side,'⚠ "'+(name||'model')+'" blocked by the sandbox — external downloads are not allowed here. Built-in body kept.'); removeFighterModel(side); });
+    (err)=>{
+      // CDN FALLBACK: a downloaded single-file HTML has no assets/ folder next to it — retry
+      // relative asset URLs against the repo CDN so canon models load anywhere with internet.
+      var _cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+      if(!/^(https?:|idb:|embedded:|blob:|data:)/.test(url) && !url.startsWith(_cdn)){
+        setModelStatus(side,'… local copy missing — streaming "'+(name||'model')+'" from the repo');
+        loader.load(_cdn+url, (gltf)=>_bindFighterGltf(side,url,name,gltf), undefined,
+          (e2)=>{ setModelStatus(side,'⚠ "'+(name||'model')+'" unavailable (no local file, CDN unreachable). Built-in body kept.'); removeFighterModel(side); });
+        return;
+      }
+      setModelStatus(side,'⚠ "'+(name||'model')+'" failed to load. Built-in body kept.'); removeFighterModel(side); });
 }
 const _mUp=new THREE.Vector3(0,1,0), _mDir=new THREE.Vector3(), _mQ=new THREE.Quaternion(), _mPQ=new THREE.Quaternion();
 const _invP=new THREE.Quaternion(), _dl=new THREE.Vector3(), _rfl=new THREE.Vector3(), _qd=new THREE.Quaternion(), _qw=new THREE.Quaternion(), _idQ=new THREE.Quaternion();

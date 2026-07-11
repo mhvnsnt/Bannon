@@ -95,10 +95,19 @@ function main(){
   // normalize space
   let mxX=0,mxZ=0,mnY=Infinity,mxY=-Infinity;
   for(let i=0;i<pos.length;i+=3){ mxX=Math.max(mxX,Math.abs(pos[i])); mnY=Math.min(mnY,pos[i+1]); mxY=Math.max(mxY,pos[i+1]); mxZ=Math.max(mxZ,Math.abs(pos[i+2])); }
-  const cy0=(mnY+mxY)/2, hy=(mxY-mnY)/2;
+  let cy0=(mnY+mxY)/2, hy=(mxY-mnY)/2;
   const NX=(x)=>x/mxX, NY=(y)=>(y-cy0)/hy, NZ=(z)=>z/mxZ;
   const DX=(nx)=>nx*mxX, DY=(ny)=>ny*hy+cy0, DZ=(nz)=>nz*mxZ;
   console.log(`in: ${nV} verts  half-extents x ${mxX.toFixed(2)} y ${hy.toFixed(2)} z ${mxZ.toFixed(2)}`);
+  // AUTO GAME-SCALE: Tripo ships ~1-unit bodies; bake to the standard 1.85m fight height so models
+  // drop into the engine at real scale with no manual resizing (per-character height/proportions
+  // still refine via CAW/DNA heightScale + bone scale). Override: --height=1.7
+  { const hArg=process.argv.find(a=>a.startsWith('--height=')); const target=hArg?parseFloat(hArg.split('=')[1]):1.85;
+    const cur=(mxY-mnY)||1; const k=target/cur;
+    if(Math.abs(k-1)>0.01){ for(let i=0;i<pos.length;i++) pos[i]*=k;
+      mxX*=k; mxZ*=k; mnY*=k; mxY*=k;
+      console.log(`  auto-scale: ${cur.toFixed(2)} -> ${target}m (×${k.toFixed(2)})`); } }
+  cy0=(mnY+mxY)/2; hy=(mxY-mnY)/2;
 
   // ---- AUTO-SENSE joints: centroid of verts in the band where the two parts meet ----
   const joints={};
@@ -186,7 +195,7 @@ function main(){
   for(let v=0;v<nV;v++){
     const lm=labels.get(weld[v]);
     let entries;
-    if(lm && lm.size){ entries=[...lm.entries()].map(([b,d])=>({b, w:1/Math.pow(d+hy*0.01,2)})); }
+    if(lm && lm.size){ entries=[...lm.entries()].map(([b,d])=>({b, w:1/Math.pow(d+hy*0.01,3)})); }
     else { fallbackN++;
       const ds=segs.map((s,i)=>({b:i, d:capDist(v,i)})).sort((a,c)=>a.d-c.d).slice(0,KL);
       entries=ds.map(e=>({b:e.b, w:1/Math.pow(e.d+hy*0.01,2)})); }
@@ -194,8 +203,9 @@ function main(){
     wl[v]=entries;
   }
   console.log(`  geodesic labels: ${labels.size} welded verts, ${fallbackN} fallback (disconnected shells)`);
-  // 6. Laplacian smoothing over the surface graph (8 passes, welded space then re-fanned)
-  for(let pass=0;pass<8;pass++){
+  // 6. Laplacian smoothing over the surface graph (3 passes — enough to soften joint creases;
+  // more passes over-blur and let influence creep far from joints = the "mushy hips" look)
+  for(let pass=0;pass<3;pass++){
     const nw=new Array(nV);
     for(let v=0;v<nV;v++){
       const wv=weld[v]; const nbrs=adj.get(wv);
@@ -210,7 +220,12 @@ function main(){
     }
     wl=nw;
   }
-  // 7. pack
+  // 7. prune weak influences (<0.06) + renormalize — inside a limb the dominant bone should own the
+  // vert almost fully; blends belong ONLY in the narrow joint bands (production-rigger behavior)
+  for(let v=0;v<nV;v++){ let es=wl[v].filter(e=>e.w>=0.06);
+    if(!es.length) es=[wl[v].reduce((a,c)=>c.w>a.w?c:a)];
+    let tot=0; for(const e of es) tot+=e.w; for(const e of es) e.w/=tot; wl[v]=es; }
+  // pack
   const J0=new Uint8Array(nV*4), W0=new Float32Array(nV*4);
   for(let v=0;v<nV;v++){ const es=wl[v];
     for(let k=0;k<4;k++){ if(k<es.length){ J0[v*4+k]=es[k].b; W0[v*4+k]=es[k].w; } } }
