@@ -5760,7 +5760,10 @@ window.BANNON_DNA = (function(){
       shape:shape,              // full morph state (procedural body reads this directly)
       morphs:morphs,            // GLB path: -> mesh.morphTargetInfluences (mass + face)
       boneScale:boneScale,      // GLB path: -> skeleton.bones[i].scale (length/proportion)
-      spec:sp                   // palette + attireStyle + hairStyle + ink + style + name
+      spec:sp,                  // palette + attireStyle + hairStyle + ink + style + name
+      // v157 IMPORT->TEMPLATE: the bound model rides in the recipe (URL only, never mesh data).
+      // idb: URLs persist via the BLIB IndexedDB library on this device; assets/ + embedded: travel anywhere.
+      model:(f.modelUrl?{url:f.modelUrl}:undefined)
     };
   }
   // apply(f, dna) -> reshape a live fighter from a recipe (procedural body today)
@@ -5773,6 +5776,14 @@ window.BANNON_DNA = (function(){
       // repaint hairstyle + two-tone gradient (applyFighterSpec owns colours, not the hair mesh)
       if(window.applyHair && (sp.hairStyle||sp.hair2!=null)) window.applyHair(f, sp.hairStyle||f._hairStyle||'SHORT', (sp.hair!=null?sp.hair:undefined));
       if(dna.name){ f.specName=dna.name; }
+      // v157 IMPORT->TEMPLATE: recipes that carry a model REBIND it (auto-rig path handles the rest),
+      // so a saved import template restores as a complete character, not just sliders.
+      try{
+        if(dna.model && dna.model.url && f.modelUrl!==dna.model.url && typeof loadFighterModel==='function' && typeof fighters!=='undefined' && fighters){
+          var _sd=(fighters[0]===f)?'p1':(fighters[1]===f)?'p2':null;
+          if(_sd) loadFighterModel(_sd, dna.model.url, dna.name||'model');
+        }
+      }catch(_e){}
       return true;
     }catch(e){ console.warn('[BANNON_DNA] apply failed', e); return false; }
   }
@@ -5784,6 +5795,15 @@ window.BANNON_DNA = (function(){
   function _db(){ try{ return JSON.parse(localStorage.getItem(STORE)||'{}')||{}; }catch(e){ return {}; } }
   function _write(db){ try{ localStorage.setItem(STORE, JSON.stringify(db)); }catch(e){} }
   function save(name, f){ if(!name||!f) return false; const db=_db(); db[name.toUpperCase()]=capture(f); _write(db); return true; }
+  // v157 IMPORT->TEMPLATE: called by the device-import flow after a successful bind — every imported
+  // model instantly becomes a persistent, named CAW starter template (WWE-2K "create from a base").
+  window.__importAsTemplate = function(side, name){ try{
+    var f=(typeof fighterFor==='function')?fighterFor(side):null; if(!f||!name) return false;
+    var key=('IMPORT '+name).toUpperCase();
+    save(key, f);
+    if(window.toast) window.toast('★ Saved as CAW template: '+key); else console.log('[DNA] import template saved:',key);
+    return true;
+  }catch(e){ return false; } };
   function load(name, f){ const db=_db(); const dna=db[(name||'').toUpperCase()]; if(!dna) return false; return f?apply(f,dna):dna; }
   function list(){ return Object.keys(_db()); }
   function remove(name){ const db=_db(); delete db[(name||'').toUpperCase()]; _write(db); }
@@ -14957,12 +14977,12 @@ function setupInput(){
         if(typeof THREE==='undefined' || !THREE.FBXLoader){ setModelStatus(modelSel,'\u26a0 FBX loader still initializing (or blocked) \u2014 try again in a moment, or export .glb.'); return; }
         var _fobj; try{ _fobj=new THREE.FBXLoader().parse(rd.result,''); }catch(err){ setModelStatus(modelSel,'Could not parse '+file.name+' ('+err.message+')'); return; }
         var _nf=file.name.replace(/\.fbx$/i,'');
-        try{ _bindFighterGltf(modelSel,'idb:'+_nf, _nf, {scene:_fobj}); if(typeof BLIB!=='undefined'){ try{ BLIB.saveImported(_nf, rd.result.slice(0)); }catch(_e){} } setModelStatus(modelSel,'Loaded '+file.name+' \u2014 use the size slider'); }catch(err){ setModelStatus(modelSel,'Bind failed: '+err.message); }
+        try{ _bindFighterGltf(modelSel,'idb:'+_nf, _nf, {scene:_fobj}); if(typeof BLIB!=='undefined'){ try{ BLIB.saveImported(_nf, rd.result.slice(0)); }catch(_e){} } if(window.__importAsTemplate)window.__importAsTemplate(modelSel,_nf); setModelStatus(modelSel,'Loaded '+file.name+' \u2014 use the size slider'); }catch(err){ setModelStatus(modelSel,'Bind failed: '+err.message); }
         return;
       }
       const loader=new THREE.GLTFLoader(); loader.parse(rd.result,'',(gltf)=>{
         if(_fileSlot==='ring'){ try{ loadCustomRing(gltf); setModelStatus(modelSel,'Ring loaded: '+file.name); }catch(err){ setModelStatus(modelSel,'Ring load failed'); } }
-        else { try{ var _nm=file.name.replace(/\.(glb|gltf)$/i,''); _bindFighterGltf(modelSel,'idb:'+_nm, _nm, gltf); if(typeof BLIB!=='undefined'){ try{ BLIB.saveImported(_nm, rd.result.slice(0)); }catch(_e){} } setModelStatus(modelSel,'Loaded '+file.name+' \u2014 use the size slider'); }catch(err){ setModelStatus(modelSel,'Bind failed: '+err.message); } }
+        else { try{ var _nm=file.name.replace(/\.(glb|gltf)$/i,''); _bindFighterGltf(modelSel,'idb:'+_nm, _nm, gltf); if(typeof BLIB!=='undefined'){ try{ BLIB.saveImported(_nm, rd.result.slice(0)); }catch(_e){} } if(window.__importAsTemplate)window.__importAsTemplate(modelSel,_nm); setModelStatus(modelSel,'Loaded '+file.name+' \u2014 use the size slider'); }catch(err){ setModelStatus(modelSel,'Bind failed: '+err.message); } }
       },(err)=>setModelStatus(modelSel,'Could not parse '+file.name)); }catch(err){ setModelStatus(modelSel,'Load error'); } };
     rd.readAsArrayBuffer(file); });
   document.getElementById('btnToMain').addEventListener('click', ()=>{ gameState='menu'; if(roundTimerInterval)clearInterval(roundTimerInterval); if(typeof clearActiveFightState==='function') clearActiveFightState(); show('mainMenu'); });
