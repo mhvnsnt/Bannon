@@ -44,14 +44,38 @@ namespace BannonEngine {
         ArchetypeBlend onyxBlend = {"Lethal Striker", "Sadistic Brawler", "Fearless High-Flyer", "Feral Agility", "Intimidation Aura"};
         assignArchetypes("Onyx", onyxBlend);
         
-        // DEEP LORE: Expanding Non-Canon faction characters
-        std::cout << "[NEXUS LORE] Zephyr Bio: The Ghost of the Grid. Faction history unknown, utilizes legacy Three.js framework history." << std::endl;
-        ArchetypeBlend zephyrBlend = {"Evasive Tactician", "Fearless High-Flyer", "Lethal Precision", "Underdog", ""};
+        // DEEP LORE: The 8 Non-Canon Characters (Humanized & Grounded)
+        std::cout << "[NEXUS LORE] Desmond Okafor (Viper): The waiting kid. Counter-striking as a survival habit. Wants his brother to book him." << std::endl;
+        ArchetypeBlend viperBlend = {"Evasive Tactician", "Lethal Precision", "Underdog", "", ""};
+        assignArchetypes("Viper", viperBlend);
+
+        std::cout << "[NEXUS LORE] Toma Ishikawa (Kage): Seattle dojo family. Explosive early, gasses late. Fighting to save the dojo." << std::endl;
+        ArchetypeBlend kageBlend = {"Dark Arts Striker", "Evasive Tactician", "Feral Agility", "", ""};
+        assignArchetypes("Kage", kageBlend);
+
+        std::cout << "[NEXUS LORE] Curtis Bowe (Brutus): Ex-bouncer. Absorbs damage to end it fast. Wants to be present for his daughter." << std::endl;
+        ArchetypeBlend brutusBlend = {"Absolute Mass", "Brawler", "Unstoppable Force", "", ""};
+        assignArchetypes("Brutus", brutusBlend);
+
+        std::cout << "[NEXUS LORE] Zephyr: No confirmed real name. Capoeira as cover for uncle's errands. Wants to outgrow the underworld." << std::endl;
+        ArchetypeBlend zephyrBlend = {"Fearless High-Flyer", "Evasive Tactician", "Feral Agility", "", ""};
         assignArchetypes("Zephyr", zephyrBlend);
 
-        std::cout << "[NEXUS LORE] Kage Bio: Shadow-walker from the forgotten Tokyo dome deviations." << std::endl;
-        ArchetypeBlend kageBlend = {"Dark Arts Striker", "Evasive Tactician", "Psychological Menace", "Feral Agility", ""};
-        assignArchetypes("Kage", kageBlend);
+        std::cout << "[NEXUS LORE] Adrian Vess (Mortus): Former mortuary assistant. Calm around grief. Wants funeral-director licensing money." << std::endl;
+        ArchetypeBlend mortusBlend = {"Psychological Menace", "Master Technician", "Absolute Mass", "", ""};
+        assignArchetypes("Mortus", mortusBlend);
+
+        std::cout << "[NEXUS LORE] Joseph Alaka (Titan): Samoan-American ex-shot-putter. Measures himself against former teammates." << std::endl;
+        ArchetypeBlend titanBlend = {"Explosive Powerhouse", "Powerhouse", "Absolute Mass", "", ""};
+        assignArchetypes("Titan", titanBlend);
+
+        std::cout << "[NEXUS LORE] Nikolai Petrenko (Golem): Undiagnosed learning disability. Secretly teaching himself to read. Unmoved and unmaking." << std::endl;
+        ArchetypeBlend golemBlend = {"Unstoppable Force", "Absolute Mass", "Powerhouse", "", ""};
+        assignArchetypes("Golem", golemBlend);
+
+        std::cout << "[NEXUS LORE] Kenji Kaneshiro (Ronin): Lost developmental deal, distrusts locker rooms. Wants to believe Atlas's offer is real." << std::endl;
+        ArchetypeBlend roninBlend = {"Master Technician", "Lethal Precision", "Underdog", "", ""};
+        assignArchetypes("Ronin", roninBlend);
         
         std::cout << "[NEXUS COMPOSITOR] Roster Profiles Mapped. Float logic bound to active execution states." << std::endl;
     }

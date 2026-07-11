@@ -95,3 +95,10 @@ This document tracks the cognitive expansion of the God Mode OS Daemon and its i
   - Action: Automated the hand-off from Tripo3D ingestion directly into the `GORO_RIG` attachment protocol, eliminating manual rigging steps.
   - Lore Expansion: Deepened context regarding Book 4 (The Dynasty, Ronye, Kray-Z) and Book 5 (Level 99 AR dystopia, Maime's independent combat mode). 
   - Faction Alignment: Mapped debut angles for non-canon operators VIPER, KAGE, BRUTUS, ZEPHYR, and MORTUS, bridging them into the NWC / Vandal philosophy and independent mercenary tiers.
+
+## Patch v1.1.5 - "The 8 Non-Canon Souls & God Within Architecture"
+- **Date:** 2026-07-10
+- **Updates:**
+  - Action: Stripped the gimmick-shell identities from the 8 non-canon characters and injected real, grounded, humanized profiles per the latest narrative collaboration. 
+  - Lore Expansion: Added Desmond Okafor (Viper), Toma Ishikawa (Kage), Curtis Bowe (Brutus), Zephyr, Adrian Vess (Mortus), Joseph Alaka (Titan), Nikolai Petrenko (Golem), and Kenji Kaneshiro (Ronin) into the engine's `GimmickCompositor` ledger with their specific 'wants' explicitly coded in.
+  - Lore Enforcement: Bypassed all concept-first names. Re-framed characters around human tragedy, survival mechanics, and ordinary stakes underneath the mystical framing.
