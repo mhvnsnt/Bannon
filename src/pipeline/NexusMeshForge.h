@@ -17,13 +17,29 @@ namespace BannonEngine {
         // Autonomously generates the high-poly mesh structure from baseline data
         void generateProceduralMesh(const std::string& characterId, bool isNonCanon);
 
-        // Advanced internal rigging loop replacing external tools (Tripo3D)
+        // Advanced internal rigging loop replacing external tools
         void autoRigAndBone(const std::string& characterId);
 
         // Skinning pass binding the generated bones to the mesh vertices
         void applyDynamicSkinning();
-        // Superior to Tripo3D v3: Neural conversion of raw vertex data into structured geometry\n        void executeNeuralPointcloudTranslation(const std::string& rawDataId);\n\n        // Superior to Tripo3D v3: Autonomous Sub-D Retopology for instant game-ready animation loops\n        void autoretopologizeSubD();
-        // Ingests legacy Three.js meshes and expands them to next-gen resolution\n        void ingestLegacyThreeJSMesh(const std::string& legacyMeshId);\n\n        // Synthesizes ingested meshes into hyper-detailed Tripo3D v3+ equivalents natively\n        void synthesizeNextGenModel(const std::string& profileId);
+
+        // Superior to Tripo3D v3: Neural conversion of raw vertex data into structured geometry
+        void executeNeuralPointcloudTranslation(const std::string& rawDataId);
+
+        // Superior to Tripo3D v3: Autonomous Sub-D Retopology for instant game-ready animation loops
+        void autoretopologizeSubD();
+
+        // Ingests legacy Three.js meshes and expands them to next-gen resolution
+        void ingestLegacyThreeJSMesh(const std::string& legacyMeshId);
+
+        // Synthesizes ingested meshes natively using Hunyuan3D-2mini / TRELLIS SLAT logic
+        void synthesizeNextGenModel(const std::string& profileId);
+
+        // Chunking the mesh into 10 anatomical pieces for GORO_RIG procedural skeleton attachment
+        void applyGoroRigging(const std::string& characterId);
+        
+        // Integrates with Mixamo FBX inputs for overlay clips (taunts, entrances)
+        void initializeMixamoOverlayBridge();
     };
 
 } // namespace BannonEngine

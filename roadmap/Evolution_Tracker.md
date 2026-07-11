@@ -80,3 +80,10 @@ This document tracks the cognitive expansion of the God Mode OS Daemon and its i
   - Ingested prompt: Expand non-canon profiles, upgrade Onyx's moveset/locomotion, and push the model creator pipeline past Tripo3D v3 limits using legacy Three.js meshes.
   - Action: Upgraded `NexusMeshForge` to natively ingest legacy Three.js meshes and synthesize them into next-gen, high-fidelity geometry.
   - Action: Expanded Onyx's execution matrix in the Compositor. Mapped her unique Lethal Striker/High-Flyer locomotion and stealth physics. Expanded faction-based deep lore for non-canon characters.
+
+## Patch v1.1.3 - "Archetype Math, Deep Lore, & NexusMeshForge v4"
+- **Date:** 2026-07-10
+- **Updates:**
+  - Action: Upgraded `CollisionReactionSolver` to accurately compute hit-reactions for 'Feral Menace' (volatile friction, low-profile evasions) and 'Supernatural Intimidation' (utterly rooted, kinetic absorption).
+  - Action: Deepened Onyx's non-canon origin profile in `GimmickCompositor`. Defined her 'Zero-Point' locomotion state and expanded her tactical moveset based on her chronological anomaly status.
+  - Action: Upgraded `NexusMeshForge` to v4 (Quick Items Priority). Integrated native support for Hunyuan3D-2mini DiT Flow-Matching and TRELLIS SLAT logic, bypassing Tripo3D limits. Added `applyGoroRigging` (native 15-bone chunking) and `initializeMixamoOverlayBridge` for FBX clip blending.
