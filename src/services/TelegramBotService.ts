@@ -347,6 +347,25 @@ export class TelegramBotService {
                 return;
             }
 
+            if (incomingText.startsWith('/agent ') || incomingText.startsWith('agent ')) {
+                const prompt = msg.text.replace(/^\/?agent\s+/i, '');
+                await this.bot.sendMessage(senderChatId, `🧠 *Injecting Prompt into Nexus Queue:*\n_"${prompt}"_`, { parse_mode: 'Markdown' });
+                
+                try {
+                    const queuePath = path.resolve(process.cwd(), 'command_queue.json');
+                    let queue = [];
+                    if (fs.existsSync(queuePath)) {
+                        try { queue = JSON.parse(fs.readFileSync(queuePath, 'utf8')); } catch(e) {}
+                    }
+                    queue.push({ role: 'user', text: prompt, timestamp: new Date().toISOString() });
+                    fs.writeFileSync(queuePath, JSON.stringify(queue, null, 2), 'utf8');
+                    await this.bot.sendMessage(senderChatId, `✅ *Prompt queued successfully.* The autonomous daemon will process it on the next cycle.`, { parse_mode: 'Markdown' });
+                } catch(e) {
+                    await this.bot.sendMessage(senderChatId, `❌ *Failed to queue prompt:* ${e.message}`, { parse_mode: 'Markdown' });
+                }
+                return;
+            }
+
             if (incomingText.includes('help') || incomingText === '/start') {
                 const helpMenu = `🛠 *BANNON AI Game Dev Agent Control Panel*\n\n` +
                     `You can control the autonomous game dev loop and sync your Bannon repositories using these commands:\n\n` +
@@ -355,7 +374,7 @@ export class TelegramBotService {
                     `• \`/push\` or \`push\`: Add, commit, and push any local code improvements/refactors back to \`mhvnsnt/BANNON\`.\n\n` +
                     `📊 *Diagnostics & Utilities:*\n` +
                     `• \`/status\` or \`status\`: Show active engine status, git staging files, last actions, and telemetry.\n` +
-                    `• \`/scrape\` or \`scrape\`: Trigger the Obscura internet slang scraper stack to ingest fresh cultural references.\n• \`/bash <command>\` or \`bash <command>\`: Execute raw root terminal commands directly on the Living Nexus server.\n\n` +
+                    `• \`/scrape\` or \`scrape\`: Trigger the Obscura internet slang scraper stack to ingest fresh cultural references.\n• \`/bash <command>\` or \`bash <command>\`: Execute raw root terminal commands directly on the Living Nexus server.\n• \`/agent <prompt>\` or \`agent <prompt>\`: Send natural language commands directly to the autonomous Qwable/Gemini agent to edit the codebase.\n\n` +
                     `💬 *Talk & Direct Dev Commands:*\n` +
                     `• Simply *send any text message* to give a direct programming instruction, request a feature, or report a bug. The Bannon Dev Agent will ingest the instruction, consult the books/canon reference files, refactor the code, compile and verify, and report back!`;
                 await this.bot.sendMessage(senderChatId, helpMenu, { parse_mode: 'Markdown' });
