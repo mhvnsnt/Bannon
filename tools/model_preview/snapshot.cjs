@@ -43,7 +43,7 @@ const srv = http.createServer((q, r) => {
     await page.screenshot({ path: path.join(outDir, `${label}_${name}.png`) });
   }
   // articulation preview (bones bent) — proves it's driven, not a statue
-  await page.evaluate(() => { window.setView(40, 6); window.setPose(0.5); });
+  await page.evaluate(() => { window.setView(40, 6); window.setPose(1); });
   await page.waitForTimeout(150);
   await page.screenshot({ path: path.join(outDir, `${label}_pose.png`) });
   await page.evaluate(() => window.setPose(0));

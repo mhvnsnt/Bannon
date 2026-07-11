@@ -13760,11 +13760,12 @@ const MODEL_LIBRARY = [
   { name:'MAIME (canon)', url:'assets/models/MAIME.glb', charKey:'MAIME' },
   { name:'MAIME · Tattered', url:'assets/models/MAIME_tattered.glb', charKey:'MAIME' },
   // ONYX (new canon character) — darker-skinned woman, white chola/vamp facepaint, spiked corset.
-  { name:'ONYX · Chola/Spiked', url:'assets/models/ONYX.glb', charKey:'ONYX', needsRig:true },
-  { name:'ONYX · Corset/Vamp', url:'assets/models/ONYX_corset.glb', charKey:'ONYX', needsRig:true },
-  { name:'CODY · Wrestling Gear', url:'assets/models/CODY_gear.glb', charKey:'CODY_CALLAHAN', needsRig:true },
-  // single-mesh Tripo previews — load but stay STATIC until a named-part (rigready) export exists.
-  { name:'BANNON · Muscular (static)', url:'assets/models/BANNON_muscular.glb', charKey:'BANNON', needsRig:true },
+  // *_skinned versions from OUR auto-rigger (tools/rigready/skin.cjs): ONE continuous mesh + 16-bone
+  // Mixamo-named skeleton + smooth blended weights — deforms like Mixamo output, seams impossible.
+  { name:'ONYX · Chola/Spiked', url:'assets/models/ONYX_skinned.glb', charKey:'ONYX' },
+  { name:'ONYX · Corset/Vamp', url:'assets/models/ONYX_corset_skinned.glb', charKey:'ONYX' },
+  { name:'BANNON · Muscular', url:'assets/models/BANNON_muscular_skinned.glb', charKey:'BANNON' },
+  { name:'CODY · Wrestling Gear', url:'assets/models/CODY_gear_skinned.glb', charKey:'CODY_CALLAHAN' },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },
@@ -13969,7 +13970,17 @@ function loadFighterModel(side, url, name){
   }
   loader.load(url, (gltf)=>_bindFighterGltf(side,url,name,gltf),
     undefined,
-    (err)=>{ setModelStatus(side,'⚠ "'+(name||'model')+'" blocked by the sandbox — external downloads are not allowed here. Built-in body kept.'); removeFighterModel(side); });
+    (err)=>{
+      // CDN FALLBACK: a downloaded single-file HTML has no assets/ folder next to it — retry
+      // relative asset URLs against the repo CDN so canon models load anywhere with internet.
+      var _cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+      if(!/^(https?:|idb:|embedded:|blob:|data:)/.test(url) && !url.startsWith(_cdn)){
+        setModelStatus(side,'… local copy missing — streaming "'+(name||'model')+'" from the repo');
+        loader.load(_cdn+url, (gltf)=>_bindFighterGltf(side,url,name,gltf), undefined,
+          (e2)=>{ setModelStatus(side,'⚠ "'+(name||'model')+'" unavailable (no local file, CDN unreachable). Built-in body kept.'); removeFighterModel(side); });
+        return;
+      }
+      setModelStatus(side,'⚠ "'+(name||'model')+'" failed to load. Built-in body kept.'); removeFighterModel(side); });
 }
 const _mUp=new THREE.Vector3(0,1,0), _mDir=new THREE.Vector3(), _mQ=new THREE.Quaternion(), _mPQ=new THREE.Quaternion();
 const _invP=new THREE.Quaternion(), _dl=new THREE.Vector3(), _rfl=new THREE.Vector3(), _qd=new THREE.Quaternion(), _qw=new THREE.Quaternion(), _idQ=new THREE.Quaternion();
@@ -30253,13 +30264,21 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         console.log(`[FBX BATCH] Starting bulk import of ${ASSETS.length} FBX files...`);
         const loader = new THREE.FBXLoader();
         let loadedCount = 0;
-        
+
         // Ensure MOVEDEX and STUDIO clips are instantiated
         if (typeof STUDIO === 'undefined') window.STUDIO = { clips: {} };
         STUDIO.clips = STUDIO.clips || {};
-        
+
         for (const file of ASSETS) {
             try {
+                // LAG FIX (the "can't even make them fight" freeze): this loop used to fetch + SYNC-parse
+                // ~78 FBX files back-to-back on the main thread, starting 1s after page load — right on
+                // top of char select / the opening bell. Now it (a) fully PAUSES while a fight is live,
+                // (b) yields a frame + breather between files so parses never stack into one long stall.
+                while ((function(){ try { return (typeof gameState !== 'undefined' ? gameState : window.gameState) === 'fight'; } catch(_) { return window.gameState === 'fight'; } })()) {
+                    await new Promise(r => setTimeout(r, 2000));
+                }
+                await new Promise(r => (window.requestAnimationFrame || setTimeout)(() => setTimeout(r, 120)));
                 const response = await fetch('/' + encodeURIComponent(file));
                 if (!response.ok) continue;
                 const buffer = await response.arrayBuffer();
@@ -32861,6 +32880,8 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     
     function attemptFBXLoad() {
         if (injected) return;
+        // LAG FIX: never kick the 80-file mocap harvest off while a match is live — wait for a menu lull.
+        if ((function(){ try { return (typeof gameState !== 'undefined' ? gameState : window.gameState) === 'fight'; } catch(_) { return window.gameState === 'fight'; } })()) { setTimeout(attemptFBXLoad, 3000); return; }
         if (typeof window.__FBX_READY !== 'undefined' && window.__FBX_READY && typeof window.BANNON_LOAD_FBX_LIBRARY === 'function') {
             injected = true;
             console.log("%c[BANNON v119] FBXLOADER DETECTED. AUTO-FETCHING 80+ MOCAP FILES IN THE BACKGROUND.", "color:#00ffcc;font-weight:bold");
@@ -32913,8 +32934,9 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         }
     }
     
-    // Start polling to execute once FBX Loader is instantiated
-    setTimeout(attemptFBXLoad, 1000);
+    // Start polling to execute once FBX Loader is instantiated.
+    // LAG FIX: was 1000ms — landed right on char select / the opening bell. Let the game settle first.
+    setTimeout(attemptFBXLoad, 12000);
     
     // Update version badge to 119
     const vb = document.getElementById('ver-badge');
@@ -35778,6 +35800,12 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     _v2: true, current: null,
     state: { activePanel: null },   // Gemini-brick compatible mirror of .current
     allowInFight: false,
+    // OWNER RULE (the whole point of the dock): the tool grid does NOT live on screen. It exists
+    // only when summoned from the PAUSE menu or the MAIN menu; dismissing it (or the bell ringing)
+    // unmounts it completely so gameplay/char-select never fight it for touches or layout.
+    summoned: false,
+    summon: function () { this.summoned = true; var d = el('bannonDock'); if (d) d.style.display = 'flex'; this._paint(); },
+    dismiss: function () { this.summoned = false; this.closeAll(); var d = el('bannonDock'); if (d) d.style.display = 'none'; },
 
     _sync: function () { this.state.activePanel = this.current; },
 
@@ -35814,10 +35842,14 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     },
 
     _tick: function () {
-      var fighting = (window.gameState === 'fight');
+      // gameState is a bare lexical, NOT window.gameState (see CLAUDE.md gotcha) — read it safely
+      var fighting = false; try { fighting = (typeof gameState !== 'undefined' ? gameState : window.gameState) === 'fight'; } catch (_) { fighting = (window.gameState === 'fight'); }
+      // the bell rings -> the dock and any open panel unmount entirely (was: dim to 0.28 and keep
+      // eating the touchscreen — the "menu stack sitting on my game" bug)
+      if (fighting && !this.allowInFight && this.summoned) { this.dismiss(); return; }
       if (fighting && !this.allowInFight && this.current) this.closeAll();
       this._hideStragglers();
-      var d = el('bannonDock'); if (d) d.style.opacity = (fighting && !this.allowInFight) ? '0.28' : '1';
+      var d = el('bannonDock'); if (d) d.style.display = this.summoned ? 'flex' : 'none';
     },
 
     _paint: function () {
@@ -35839,7 +35871,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     _dock: function () {
       if (el('bannonDock')) return;
       var d = document.createElement('div'); d.id = 'bannonDock';
-      d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:6px;z-index:99990;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;padding:5px 8px;border-radius:11px;background:rgba(10,12,18,.9);border:1px solid #2a3340;transition:opacity .2s;max-width:96vw';
+      d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:6px;z-index:99990;display:none;flex-wrap:wrap;justify-content:center;gap:4px;padding:5px 8px;border-radius:11px;background:rgba(10,12,18,.9);border:1px solid #2a3340;transition:opacity .2s;max-width:96vw';
       var self = this;
       ENTRIES.forEach(function (e, i) {
         var b = document.createElement('button'); b.id = 'dockb_' + i; b.textContent = e.label;
@@ -35849,14 +35881,31 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       });
       var x = document.createElement('button'); x.textContent = '\u2715';
       x.style.cssText = 'padding:6px 9px;border-radius:7px;border:1px solid #533;background:#1a1214;color:#e88;cursor:pointer;font:bold 10px monospace';
-      x.onclick = function () { self.closeAll(); };
+      x.onclick = function () { self.dismiss(); };
       d.appendChild(x);
       document.body.appendChild(d);
+    },
+
+    // DEV TOOLS entry points \u2014 the ONLY two places the dock can be summoned from (pause + main menu)
+    _summonButtons: function () {
+      var self = this;
+      function mk(id, host, css) {
+        if (el(id) || !host) return;
+        var b = document.createElement('button'); b.id = id; b.textContent = '\ud83d\udee0 DEV TOOLS';
+        b.style.cssText = css;
+        b.onclick = function () { self.summoned ? self.dismiss() : self.summon(); };
+        host.appendChild(b);
+      }
+      // pause menu: ride next to the existing pause buttons
+      var pb = el('btnPauseTune') || el('btnPauseModels') || el('btnPauseMoves');
+      if (pb && pb.parentNode) mk('btnPauseTools', pb.parentNode, (pb.getAttribute('style') || '') + ';display:' + (getComputedStyle(pb).display || 'block'));
+      // main menu: small corner button
+      mk('btnMenuTools', el('mainMenu'), 'position:absolute;left:10px;bottom:10px;z-index:50;padding:8px 12px;border-radius:8px;border:1px solid #2a3340;background:rgba(10,12,18,.85);color:#cdd6e0;font:bold 11px monospace;cursor:pointer');
     }
   };
 
   window.BANNON_UI = UI;
-  function boot() { UI._css(); UI._dock(); UI._hideStragglers(); UI.closeAll(); setInterval(function () { UI._tick(); }, 300); }
+  function boot() { UI._css(); UI._dock(); UI._summonButtons(); UI._hideStragglers(); UI.closeAll(); setInterval(function () { UI._tick(); UI._summonButtons(); }, 300); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 400);
 })();
 </script>
@@ -35894,6 +35943,105 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         console.log('[BANNON UI] Brick 138 routed panel: ' + panelId);
     };
     console.log('%c[BANNON UI] Brick 138 Final Panel Dock Merge ONLINE', 'color:#00ffcc;font-weight:bold;');
+})();
+</script>
+
+<script>
+/* ============================================================================
+ * GOD MODE OS — the in-game NEURALINK TERMINAL (God Within design canon).
+ * The pip-boy in Bannon's head: a diegetic AR console the owner talks to from
+ * INSIDE the game — it reads live match state, swaps personas, starts fights,
+ * runs live code on the engine, and queues dev ORDERS into the shared
+ * command_queue (server /api/orders) that the Telegram/Living-Nexus autonomous
+ * coders drain while the owner is away. Only Bannon/Marquis/Maime (and Onyx,
+ * Zero Point, and the God-Within variants of Shinobi/Stick-Up/Combs/Kennedy)
+ * know it runs — it renders nothing until summoned. Zero per-frame cost while
+ * closed (no DOM, no timers). Summon: backquote (`) key, window.GODOS.open(),
+ * or the GODOS button injected into the pause row.
+ * ============================================================================ */
+(function(){
+  'use strict';
+  if (window.GODOS) return;
+  var box=null, log=null, input=null, meter=null, timer=null;
+
+  function fighterByName(n){ try{ if(typeof fighters==='undefined'||!fighters) return null; n=String(n||'').toUpperCase(); return fighters.find(function(f){ return f && String(f.name||'').toUpperCase().indexOf(n)>=0; })||null; }catch(_){ return null; } }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+  function say(html, cls){ if(!log) return; var d=document.createElement('div'); d.style.cssText='margin:2px 0;white-space:pre-wrap;word-break:break-word;'+(cls==='you'?'color:#9fd;':'color:#7CFC00;'); d.innerHTML=(cls==='you'?'&gt; ':'◈ ')+html; log.appendChild(d); log.scrollTop=log.scrollHeight; while(log.children.length>140) log.removeChild(log.firstChild); }
+
+  var CMDS = {
+    help: function(){ say('COMMANDS:\n/status — match + daemon vitals\n/persona MARQUIS|BANNON|MAIME [p1|p2] — swap the live state\n/fight NAME1 NAME2 — start a match\n/order &lt;text&gt; — queue a dev order for the away-time coders (Telegram/Nexus drain it)\n/orders — show the local order queue\n/js &lt;code&gt; — run live code on the engine\n/skill — persona physics (the ontology branches)\n/daemon — ping the daemon\n/clear'); },
+    clear: function(){ if(log) log.innerHTML=''; },
+    status: function(){
+      var s='gameState: '+(typeof gameState!=='undefined'?gameState:window.gameState||'?');
+      try{ if(typeof fighters!=='undefined'&&fighters&&fighters.length){ fighters.forEach(function(f,i){ if(!f)return; s+='\nP'+(i+1)+' '+(f.name||'?')+'  hp '+Math.round(f.hp||0)+'/'+(f.maxHp||0)+'  stam '+Math.round(f.stamina||0)+'  poise '+Math.round(f.poise!=null?f.poise:100)+'  persona '+(window.personaFor?window.personaFor(f):'?'); }); } }catch(_){}
+      s+='\ndaemon: '+(window.BANNON_DAEMON&&window.BANNON_DAEMON.connected?'ONLINE':'offline');
+      say(s);
+    },
+    persona: function(a){
+      var key=String(a[0]||'').toUpperCase(), side=(a[1]||'p1').toLowerCase();
+      if(!window.PERSONA_MODS||!window.PERSONA_MODS[key]){ say('unknown persona. MARQUIS | BANNON | MAIME | SOLARIS_JUSTICE'); return; }
+      var f=null; try{ f=(typeof fighterFor==='function')?fighterFor(side):null; }catch(_){}
+      if(!f){ say('no fighter on '+side+' — start a match first'); return; }
+      window.setPersona(f,key); say(side+' → '+key+'  (dmg×'+window.PERSONA_MODS[key].damageMult+', staggerRes '+window.PERSONA_MODS[key].staggerRes+')');
+    },
+    skill: function(){ var s='ONTOLOGY BRANCHES (live physics):'; for(var k in (window.PERSONA_MODS||{})){ if(k==='NEUTRAL')continue; var m=window.PERSONA_MODS[k]; s+='\n'+k+': dmg×'+m.damageMult+'  staggerRes '+m.staggerRes+'  counter '+m.counterWindow; } s+='\nGeburah=MAIME · Chesed=MARQUIS · the mask=BANNON (canon/godwithin/ontology_skill_tree.md)'; say(s); },
+    fight: function(a){ try{ window.MATCH_SETUP={p1Name:String(a[0]||'BANNON').toUpperCase(), p2Name:String(a[1]||'FINXSSE').toUpperCase(), p1Control:'YOU', p2Control:'CPU'}; (window.startFight||startFight)(); say('bell. '+window.MATCH_SETUP.p1Name+' vs '+window.MATCH_SETUP.p2Name); }catch(e){ say('could not start: '+esc(e.message)); } },
+    daemon: function(){ if(!window.BANNON_DAEMON){ say('no daemon client'); return; } window.BANNON_DAEMON.ping().then(function(ok){ say('daemon '+(ok?'ONLINE '+(window.BANNON_DAEMON.base||'(same origin)'):'offline — orders will queue locally')); }); },
+    order: function(a, raw){
+      var text=raw.trim(); if(!text){ say('usage: /order fix the corner camera clipping'); return; }
+      var entry={ id:Date.now().toString(36), text:text, from:'godos', at:new Date().toISOString(), status:'queued' };
+      var sent=false;
+      if(window.BANNON_DAEMON){ window.BANNON_DAEMON._post('/api/orders',{text:text,from:'godos'}).then(function(r){ if(r&&r.ok){ sent=true; say('order queued on the daemon → the away-time coders will pick it up.'); } else { say('daemon unreachable — queued locally (syncs when it connects).'); } }); }
+      try{ var q=JSON.parse(localStorage.getItem('bannonGodosOrders')||'[]'); q.push(entry); localStorage.setItem('bannonGodosOrders',JSON.stringify(q)); }catch(_){}
+      if(!window.BANNON_DAEMON) say('queued locally.');
+    },
+    orders: function(){ try{ var q=JSON.parse(localStorage.getItem('bannonGodosOrders')||'[]'); say(q.length? q.map(function(o){ return '['+o.status+'] '+o.text; }).join('\n') : 'queue empty'); }catch(_){ say('queue empty'); } },
+    js: function(a, raw){ try{ var r=(0,eval)(raw); say(esc(typeof r==='undefined'?'✓':String(r)).slice(0,600)); }catch(e){ say('✗ '+esc(e.message)); } }
+  };
+
+  function exec(line){
+    line=String(line||'').trim(); if(!line) return;
+    say(esc(line),'you');
+    if(line[0]!=='/'){ CMDS.order([], line); return; }   // bare text = an order, like talking to it
+    var sp=line.indexOf(' '), cmd=(sp<0?line.slice(1):line.slice(1,sp)).toLowerCase(), rest=sp<0?'':line.slice(sp+1);
+    var fn=CMDS[cmd]; if(!fn){ say('unknown. /help'); return; }
+    fn(rest.split(/\s+/).filter(Boolean), rest);
+  }
+
+  function build(){
+    if(box) return;
+    box=document.createElement('div'); box.id='godosBox';
+    box.style.cssText='position:fixed;left:50%;top:8%;transform:translateX(-50%);width:min(680px,94vw);height:min(46vh,420px);z-index:99995;display:flex;flex-direction:column;background:rgba(2,10,4,.93);border:1px solid #1f7a2f;border-radius:10px;box-shadow:0 0 24px rgba(30,255,90,.18), inset 0 0 60px rgba(20,160,60,.08);font:12px/1.5 monospace;color:#7CFC00';
+    var head=document.createElement('div'); head.style.cssText='display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid #1f7a2f;color:#aef5b0;font-weight:bold;letter-spacing:2px';
+    head.innerHTML='◈ GOD MODE OS <span style="opacity:.55;font-weight:normal;letter-spacing:0">neuralink · only you can see this</span>';
+    meter=document.createElement('span'); meter.style.cssText='margin-left:auto;opacity:.8'; head.appendChild(meter);
+    var x=document.createElement('button'); x.textContent='✕'; x.style.cssText='margin-left:8px;background:none;border:1px solid #1f7a2f;border-radius:6px;color:#7CFC00;cursor:pointer;font:bold 11px monospace;padding:2px 7px'; x.onclick=close; head.appendChild(x);
+    log=document.createElement('div'); log.style.cssText='flex:1;overflow-y:auto;padding:8px 10px';
+    var row=document.createElement('div'); row.style.cssText='display:flex;border-top:1px solid #1f7a2f';
+    input=document.createElement('input'); input.placeholder='/help — or just type an order for the coders'; input.style.cssText='flex:1;background:none;border:none;outline:none;color:#baffc4;font:12px monospace;padding:9px 10px';
+    input.addEventListener('keydown',function(e){ if(e.key==='Enter'){ exec(input.value); input.value=''; } e.stopPropagation(); });
+    input.addEventListener('keyup',function(e){ e.stopPropagation(); });
+    row.appendChild(input);
+    box.appendChild(head); box.appendChild(log); box.appendChild(row);
+    document.body.appendChild(box);
+    say('GOD MODE OS online. The front office cannot see this channel. /help');
+  }
+  function refresh(){ if(!meter) return; var p='—'; try{ var f=(typeof fighters!=='undefined'&&fighters&&fighters[0])||null; if(f&&window.personaFor) p=window.personaFor(f); }catch(_){}
+    meter.textContent='PERSONA '+p+' · '+(window.BANNON_DAEMON&&window.BANNON_DAEMON.connected?'NEXUS ONLINE':'nexus offline'); }
+  function open(){ build(); box.style.display='flex'; refresh(); if(!timer) timer=setInterval(refresh,1200); try{ input.focus(); }catch(_){} }
+  function close(){ if(box) box.style.display='none'; if(timer){ clearInterval(timer); timer=null; } }
+  function toggle(){ (box && box.style.display!=='none') ? close() : open(); }
+
+  // summons: backquote key + a GODOS button in the pause row (no always-on UI — owner's rule)
+  document.addEventListener('keydown', function(e){ if(e.key==='`' && !e.ctrlKey && !e.metaKey){ var t=e.target; if(t && (t.tagName==='INPUT'||t.tagName==='TEXTAREA')) return; toggle(); } });
+  setInterval(function(){ try{
+    if(document.getElementById('btnPauseGodos')) return;
+    var pb=document.getElementById('btnPauseTune')||document.getElementById('btnPauseModels')||document.getElementById('btnPauseMoves');
+    if(pb&&pb.parentNode){ var b=document.createElement('button'); b.id='btnPauseGodos'; b.textContent='◈ GOD MODE OS'; b.setAttribute('style',pb.getAttribute('style')||''); b.onclick=toggle; pb.parentNode.appendChild(b); }
+  }catch(_){ } }, 1500);
+
+  window.GODOS={ open:open, close:close, toggle:toggle, exec:exec };
+  console.log('%c[GOD MODE OS] neuralink armed — ` to summon, /order routes to the away-time coders','color:#7CFC00');
 })();
 </script>
 </body>
