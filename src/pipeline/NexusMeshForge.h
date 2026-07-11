@@ -39,6 +39,13 @@ namespace BannonEngine {
         void applyGoroRigging(const std::string& characterId);
         // Automates conversion of Tripo3D meshes into rig-ready assets, script-based scaling to 1.88m, and GORO_RIG integration
         void automateTripo3DIngestionAndRigging(const std::string& meshId);
+
+        // RigReady Slots system for dynamically attaching distinct mesh pieces (Head, Torso, Arms, Legs, Attire)
+        void generateRigReadySlots(const std::string& characterId);
+        void attachMeshToRigReadySlot(const std::string& characterId, const std::string& slotName, const std::string& meshData);
+        // Upgraded Alt Pipeline - Semantic Auto-Splitter to split single-mesh Tripo3D exports into RigReady slots
+        void executeSemanticMeshAutoSplitter(const std::string& meshId);
+
         
         // Integrates with Mixamo FBX inputs for overlay clips (taunts, entrances)
         void initializeMixamoOverlayBridge();

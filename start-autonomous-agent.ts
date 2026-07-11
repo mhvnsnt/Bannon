@@ -44,6 +44,7 @@ const localNode = new OpenAI({
 });
 
 const providers = [
+    { name: 'Gemini (Unlimited Context Coder)', type: 'gemini', model: 'gemini-2.5-pro' },
     { name: 'Gemini (Primary Context Map)', type: 'gemini', model: 'gemini-2.5-flash' },
     { name: 'OpenRouter (Qwable Abliterated)', type: 'openrouter', model: 'huihui-ai/qwable-abliterated-32b' },
     { name: 'DeepInfra (Qwopus Reasoning)', type: 'deepinfra', model: 'Qwen/QwQ-32B-Preview' },

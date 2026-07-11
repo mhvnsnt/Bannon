@@ -1,3 +1,4 @@
+import { telegramBotService } from './src/services/TelegramBotService.js';
 import express from 'express';
 import path from 'path';
 import fs from 'fs';
@@ -359,6 +360,14 @@ async function startServer() {
   });
 
   const PORT = Number(process.env.PORT) || 3000;
+  
+// [LIVING NEXUS] Ignite Autonomous Telegram Polling
+telegramBotService.initialize().then((res) => {
+    console.log("[Telegram] Autonomous Proactive engine booted:", res);
+}).catch((err) => {
+    console.error("[Telegram] Daemon failed:", err);
+});
+
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`BANNON Monolithic Engine Booted on port ${PORT}`);
   });

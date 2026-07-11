@@ -71,7 +71,7 @@
       var fighting = (window.gameState === 'fight');
       if (fighting && !this.allowInFight && this.current) this.closeAll();
       this._hideStragglers();
-      var d = el('bannonDock'); if (d) d.style.opacity = (fighting && !this.allowInFight) ? '0.28' : '1';
+      var isMenu = (window.gameState === 'menu' || window.gameState === 'pause'); var d = el('bannonDock'); if (d) d.style.display = isMenu ? 'flex' : 'none';
     },
 
     _paint: function () {
