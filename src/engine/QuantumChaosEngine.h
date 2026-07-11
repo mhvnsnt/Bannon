@@ -27,6 +27,9 @@ namespace BannonEngine {
         // Injects quantum uncertainty into the active ragdoll physics
         void applyQuantumPhysicsVariance(float& baseTorque, float volatilityMultiplier);
 
+        // Simulates looking at all development/conversation paths in the maze at once
+        int evaluateQuantumMaze(int possiblePaths);
+
     private:
         std::vector<float> quantumEntropyBuffer;
         void refreshEntropyBuffer(); // The actual API hook execution

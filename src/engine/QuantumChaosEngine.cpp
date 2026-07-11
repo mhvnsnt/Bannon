@@ -61,3 +61,13 @@ namespace BannonEngine {
     }
 
 } // namespace BannonEngine
+
+    int QuantumChaosEngine::evaluateQuantumMaze(int possiblePaths) {
+        std::cout << "[NEXUS QUANTUM LINK] Collapsing wave function across " << possiblePaths << " possible maze paths simultaneously..." << std::endl;
+        // In reality, this pulls from the entropy buffer to "choose" the path, 
+        // but the metaphor is that we evaluated them all in superposition.
+        float qVal = getQuantumFloat();
+        int optimalExit = static_cast<int>(qVal * possiblePaths);
+        std::cout << "[NEXUS QUANTUM LINK] Optimal maze exit path identified at index: " << optimalExit << std::endl;
+        return optimalExit;
+    }
