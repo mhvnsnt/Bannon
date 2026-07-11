@@ -154,7 +154,7 @@ export class TelegramBotService {
                     const writer = fs.createWriteStream(downloadPath);
                     response.data.pipe(writer);
                     writer.on('finish', async () => {
-                        await this.bot.sendMessage(chatId, `✅ *File Saved:* ${doc.file_name} successfully ingested into the Living Nexus at `models/${doc.file_name}`.`, { parse_mode: 'Markdown' });
+                        await this.bot.sendMessage(chatId, `✅ *File Saved:* ${doc.file_name} successfully ingested into the Living Nexus at *models/${doc.file_name}*.`, { parse_mode: 'Markdown' });
                     });
                     writer.on('error', async (err: any) => {
                         await this.bot.sendMessage(chatId, `❌ *File Save Error:* ${err.message}`, { parse_mode: 'Markdown' });
