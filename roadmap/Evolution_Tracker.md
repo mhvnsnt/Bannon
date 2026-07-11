@@ -102,3 +102,13 @@ This document tracks the cognitive expansion of the God Mode OS Daemon and its i
   - Action: Stripped the gimmick-shell identities from the 8 non-canon characters and injected real, grounded, humanized profiles per the latest narrative collaboration. 
   - Lore Expansion: Added Desmond Okafor (Viper), Toma Ishikawa (Kage), Curtis Bowe (Brutus), Zephyr, Adrian Vess (Mortus), Joseph Alaka (Titan), Nikolai Petrenko (Golem), and Kenji Kaneshiro (Ronin) into the engine's `GimmickCompositor` ledger with their specific 'wants' explicitly coded in.
   - Lore Enforcement: Bypassed all concept-first names. Re-framed characters around human tragedy, survival mechanics, and ordinary stakes underneath the mystical framing.
+
+## Patch v1.1.6 - "God Within Physical Open-World Architecture"
+- **Date:** 2026-07-10
+- **Updates:**
+  - Action: Shifted `God Within` mode to a fully physical, 3D open-world brawler engine block (`GodWithinCampaign` & `GodWithinZoneTriggers`).
+  - Mechanics: Seamless transitions from over-the-shoulder atmospheric roaming (Devil Within style) into visceral sandbox grappling (MDickie / Steve Masson Neckbreaker style). Environmental interactions (concrete walls, car hoods) are live.
+  - Act 3 Triggers: Coded the `checkAct3Threshold` to unlock Maime-State gameplay once the Corruption meter crosses 75.0f.
+  - Rendering Hook: Linked Onyx's conditional rendering (`canRenderOnyx()`) specifically to the Maime-State boolean. She remains unrendered/invisible outside of this state.
+  - Cinematics: Coded dynamic, unplayable inter-cutscene transitions for "THE GOD WITHIN" title cards (glitches, typewriter fogs, ash dissolves, etc.).
+  - Act 1 Mapping: Physically mapped the 8 non-canon encounter triggers to their respective arena locations (Loading Dock for Ronin, Dumpster Corridor for Zephyr, Boiler Room for Golem, etc.).
