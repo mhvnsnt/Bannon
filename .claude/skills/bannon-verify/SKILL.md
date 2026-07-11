@@ -45,6 +45,10 @@ Chromium lives at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` (launch w
 - Grounded/zone tests: pin the victim (`downTimer=9; getUpT=0; state='down'` on an
   interval) or they get up mid-test.
 - After edits ALWAYS rebuild test.html before running — it is a stale copy otherwise.
+- STRIP the Google-fonts `@import url('https://fonts...')` in the rebuild: it HANGS in the sandbox,
+  the page `load` event never fires, and every load-gated script block (MARQUIS_PERSONAS,
+  __tryReversal, the whole controls layer) silently never runs — looks like "window.* all
+  undefined" with zero pageerror. Screenshot timeouts saying "waiting for fonts to load" = this.
 
 ## Commit discipline
 Verify → commit (with what was MEASURED in the message) → push each brick. Read

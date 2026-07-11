@@ -9825,8 +9825,13 @@ function registerHit(attacker, move){
   // flyweight can sting a heavyweight for damage but barely rocks him; the reverse launches.
   const _mA = attacker.strikeMass ? attacker.strikeMass() : 1, _mD = opp.strikeMass ? opp.strikeMass() : 1;
   const massF = clamp(1 + 0.22*(_mA - 1), 0.78, 1.20);
-  const kbF   = clamp(Math.pow(_mA/Math.max(0.1,_mD), 0.6), 0.70, 1.45);
-  const effPower = clamp(move.power * rangeF * stamF * velF * loadF * massF, 6, 135);
+  // GOD WITHIN persona layer: attacker's persona scales outgoing power (Maime 1.45 feral .. Marquis
+  // 0.85 technical); defender's staggerRes shrinks how far they get moved (Bannon 1.6 barely rocks).
+  // Non-persona characters are NEUTRAL 1.0 — this line is a no-op for the rest of the roster.
+  const _pmA = window.personaModsFor ? window.personaModsFor(attacker) : null;
+  const _pmD = window.personaModsFor ? window.personaModsFor(opp) : null;
+  const kbF   = clamp(Math.pow(_mA/Math.max(0.1,_mD), 0.6), 0.70, 1.45) / (_pmD ? _pmD.staggerRes : 1);
+  const effPower = clamp(move.power * rangeF * stamF * velF * loadF * massF * (_pmA ? _pmA.damageMult : 1), 6, 135);
   const em = Object.assign({}, move, { power: effPower, _massF: massF, _kbF: kbF }); // reactions key off effective power
   // tier label feedback (Light / Medium / Heavy)
   const tier = effPower<35 ? 'LIGHT' : effPower<70 ? 'MEDIUM' : 'HEAVY';
@@ -13455,6 +13460,28 @@ try{
       { key:'MAIME',           label:'Maime',           role:'raw psychotic alter-ego beneath Bannon (Verbal Leakage)', voice:'raw/high-pitched/manic' }
     ]
   };
+  // ===== GOD WITHIN — 3-PERSONA PHYSICS STATE MACHINE (mirrors native/include/bannon_persona.h) =====
+  // One man, swapped physics multipliers — NOT three characters (Book 5: Maime is a distinct feral
+  // combat mode). damageMult = outgoing power; staggerRes = how hard THIS fighter is to rock (scales
+  // give-ground/knockback down); counterWindow = reversal timing window scale (Marquis reads best).
+  // Non-Marquis characters resolve to NEUTRAL (all 1.0) — zero behavior change for the rest of the roster.
+  window.PERSONA_MODS = {
+    MARQUIS:  { damageMult:0.85, staggerRes:0.80, counterWindow:1.35, label:'Marquis · Technician'  },
+    SOLARIS_JUSTICE: { damageMult:0.85, staggerRes:0.80, counterWindow:1.35, label:'Solaris · Face' },
+    BANNON:   { damageMult:1.20, staggerRes:1.60, counterWindow:0.75, label:'Bannon · Unstoppable'  },
+    MAIME:    { damageMult:1.45, staggerRes:1.05, counterWindow:0.70, label:'Maime · Feral'         },
+    NEUTRAL:  { damageMult:1.0,  staggerRes:1.0,  counterWindow:1.0,  label:'' }
+  };
+  window.personaFor = function(f){
+    if (!f) return 'NEUTRAL';
+    if (f._persona && window.PERSONA_MODS[f._persona]) return f._persona;   // runtime swap (setPersona)
+    var k = String(f.name||'').toUpperCase().replace(/[^A-Z_]/g,'_');
+    if (window.PERSONA_MODS[k]) return k;
+    return 'NEUTRAL';
+  };
+  window.personaModsFor = function(f){ return window.PERSONA_MODS[window.personaFor(f)] || window.PERSONA_MODS.NEUTRAL; };
+  // God Within / story-mode hook: swap the live persona mid-match (mask on/off, paint breaking through)
+  window.setPersona = function(f, key){ if(f && window.PERSONA_MODS[key]){ f._persona=key; if(typeof announce==='function' && window.PERSONA_MODS[key].label) try{ announce(window.PERSONA_MODS[key].label.toUpperCase(), ''); }catch(_){}} };
   window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
     BANNON:        { name:'THE STRUCTURAL COLLAPSE',   kind:'grapple', pos:'BACK_SUPLEX',     deliver:'toss', sub:'THE RING OF SATURN' },   // CANON (Book 1): deadlift German suplex -> Ring of Saturn submission, held until the opponent is visibly broken
     MAIME:         { name:'VERBAL LEAKAGE',            kind:'grapple', pos:'DDT',             deliver:'spike' },   // the alter-ego's raw spike — unfiltered violence
@@ -35378,7 +35405,9 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       const ph = atk.attackPhase||0;
       const d = Math.hypot(atk.x-def.x, atk.z-def.z);
       if (d>1.9) return false;
-      if (ph<0.06 || ph>0.42){ def._revLock=1.1; return false; }   // mistimed — brief lockout, like 2K
+      // persona counterWindow: Marquis (1.35) gets a wider read window, Bannon/Maime tighter — NEUTRAL 1.0 unchanged
+      const _cw = window.personaModsFor ? window.personaModsFor(def).counterWindow : 1;
+      if (ph<0.06 || ph>0.06+0.36*_cw){ def._revLock=1.1; return false; }   // mistimed — brief lockout, like 2K
       def._revCd=2.4;
       atk.hitLanded=true;                                          // the strike never registers
       try{ atk.endAttack(); }catch(_){}
