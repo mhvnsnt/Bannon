@@ -229,7 +229,7 @@ export class TelegramBotService {
                     `Try texting me \`status\` or \`run scrape\` now to see telemetry and execute automation!`,
                     { parse_mode: 'Markdown' }
                 );
-                return;
+                // return removed so the first prompt is also processed
             } else if (senderChatId.toString() === cleanChatId) {
                 isAuthorized = true;
             } else if (senderUsername.toLowerCase() === 'cierrasquirts') {
@@ -411,7 +411,7 @@ export class TelegramBotService {
                 return;
             }
 
-            if (incomingText.includes('status')) {
+            if (incomingText === 'status' || incomingText === '/status') {
                 // Increment active jobs for metric visualization stress tracking
                 if (process.env.ACTIVE_JOBS) {
                     process.env.ACTIVE_JOBS = String(Number(process.env.ACTIVE_JOBS) + 1);
@@ -438,7 +438,7 @@ export class TelegramBotService {
                 } finally {
                     process.env.ACTIVE_JOBS = String(Math.max(0, Number(process.env.ACTIVE_JOBS || 1) - 1));
                 }
-            } else if (incomingText.includes('scrape')) {
+            } else if (incomingText === 'scrape' || incomingText === '/scrape') {
                 // Track active jobs
                 if (process.env.ACTIVE_JOBS) {
                     process.env.ACTIVE_JOBS = String(Number(process.env.ACTIVE_JOBS) + 1);
