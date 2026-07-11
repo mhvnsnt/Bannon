@@ -94,6 +94,29 @@ async function startServer() {
   // Always-on: keep self-improving on a cadence even with no traffic.
   daemon.startHeartbeat();
 
+  // GOD MODE OS ORDER QUEUE — the shared inbox for dev orders. Written by the in-game neuralink
+  // terminal (window.GODOS '/order …') and by the Telegram agents; drained by the autonomous
+  // coders (Living Nexus / codedummy daemon) working the repo while the owner is away.
+  // File-backed (command_queue.json — the codedummy convention) so it survives restarts.
+  const ORDERS_FILE = path.join(process.cwd(), 'command_queue.json');
+  const readOrders = (): any[] => { try { const j = JSON.parse(fs.readFileSync(ORDERS_FILE, 'utf-8')); return Array.isArray(j) ? j : (j.orders || []); } catch (e) { return []; } };
+  const writeOrders = (o: any[]) => { try { fs.writeFileSync(ORDERS_FILE, JSON.stringify(o, null, 1)); } catch (e) { /* read-only fs: queue lives in memory */ } };
+  app.get('/api/orders', (_req, res) => { res.json({ ok: true, orders: readOrders() }); });
+  app.post('/api/orders', (req, res) => {
+    const text = String((req.body && req.body.text) || '').slice(0, 4000);
+    if (!text) { res.status(400).json({ ok: false, error: 'text required' }); return; }
+    const orders = readOrders();
+    const order = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), text, from: String((req.body && req.body.from) || 'game'), at: new Date().toISOString(), status: 'queued' };
+    orders.push(order); writeOrders(orders);
+    res.json({ ok: true, order });
+  });
+  app.post('/api/orders/:id/done', (req, res) => {
+    const orders = readOrders();
+    const o = orders.find((x: any) => x.id === req.params.id);
+    if (o) { o.status = 'done'; o.doneAt = new Date().toISOString(); writeOrders(orders); }
+    res.json({ ok: !!o });
+  });
+
   // API: Get history data
   app.get('/api/commentary/history', (req, res) => {
     try {
