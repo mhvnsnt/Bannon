@@ -18,21 +18,27 @@ namespace BannonEngine {
 
     void GimmickCompositor::compilePhysicsMultipliers() {
         std::cout << "[NEXUS COMPOSITOR] Feeding 50-Block Array to J-Space for Float Calculation..." << std::endl;
-        // In reality, this hands off to JSpaceThoughtRealm to derive the math via Quantum Oracle
         std::cout << "[NEXUS COMPOSITOR] Archetype physics multipliers derived and attached to root skeleton." << std::endl;
     }
-
-} // namespace BannonEngine
 
     void GimmickCompositor::initializeRosterProfiles() {
         std::cout << "[NEXUS COMPOSITOR] Ingesting Canon and Non-Canon character profiles into the Evolution Matrix..." << std::endl;
         
-        ArchetypeBlend marquisBlend = {"Cunning Strategist", "Master Technician", "Psychological Menace", "Unstoppable Force", ""};
-        assignArchetypes("Marquis Bannon", marquisBlend);
+        // CORRECTION: Marquis Whitacre is the man. Bannon is the mask. Maime is the paint.
+        ArchetypeBlend whitacreBlend = {"Master Technician", "Cunning Strategist", "Underdog", "", ""};
+        assignArchetypes("Marquis Whitacre (The Man)", whitacreBlend);
+
+        ArchetypeBlend bannonBlend = {"Cunning Strategist", "Unstoppable Force", "Psychological Menace", "Powerhouse", ""};
+        assignArchetypes("Bannon (The Mask)", bannonBlend);
+
+        ArchetypeBlend maimeBlend = {"Unstable Chaos", "Feral Agility", "Sadistic Brawler", "Psychological Menace", ""};
+        assignArchetypes("Maime (The Paint)", maimeBlend);
         
         ArchetypeBlend johnFordBlend = {"Explosive Powerhouse", "Absolute Mass", "Brawler", "Unstoppable Force", ""};
         assignArchetypes("John Ford", johnFordBlend);
         
+        // CORRECTION: Onyx Profile - Background Canonically Unknown
+        std::cout << "[NEXUS LORE] Onyx Bio: Real Name [UNKNOWN], DOB [UNKNOWN], Birthplace [UNKNOWN]." << std::endl;
         ArchetypeBlend onyxBlend = {"Lethal Striker", "Sadistic Brawler", "Fearless High-Flyer", "Intimidation Aura", ""};
         assignArchetypes("Onyx", onyxBlend);
         
@@ -41,3 +47,5 @@ namespace BannonEngine {
         
         std::cout << "[NEXUS COMPOSITOR] Roster Profiles Mapped. Float logic bound to active execution states." << std::endl;
     }
+
+} // namespace BannonEngine

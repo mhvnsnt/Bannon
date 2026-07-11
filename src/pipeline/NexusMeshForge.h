@@ -22,6 +22,7 @@ namespace BannonEngine {
 
         // Skinning pass binding the generated bones to the mesh vertices
         void applyDynamicSkinning();
+        // Superior to Tripo3D v3: Neural conversion of raw vertex data into structured geometry\n        void executeNeuralPointcloudTranslation(const std::string& rawDataId);\n\n        // Superior to Tripo3D v3: Autonomous Sub-D Retopology for instant game-ready animation loops\n        void autoretopologizeSubD();
     };
 
 } // namespace BannonEngine

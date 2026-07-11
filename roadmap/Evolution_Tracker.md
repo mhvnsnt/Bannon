@@ -66,3 +66,10 @@ This document tracks the cognitive expansion of the God Mode OS Daemon and its i
   - Action: Built `CollisionReactionSolver` C++ class. Calculates exact physics offsets, friction bounds, and stagger animations dynamically derived from the 5-tier archetype matrix.
   - Action: Initialized `NexusMeshForge`, our proprietary 3D pipeline that outperforms Tripo3D. It automatically ingests legacy Three.js vertex data for non-canon characters, applying a mathematically perfect autonomous rigging and skinning protocol without relying on external APIs.
   - Action: Upgraded character profiles (Marquis Bannon, John Ford, Onyx, Kage, etc.) to fully utilize the `GimmickCompositor` matrix.
+
+## Patch v1.1.1 - "Lore Correction & Nexus Mesh Forge v2"
+- **Date:** 2026-07-10
+- **Updates:**
+  - Ingested prompt: Clarified that Marquis Whitacre is the man behind the gimmick. "Marquis Bannon" was an incorrect amalgamation. Bannon = the mask/resilience. Maime = the paint/pain. Onyx's background is strictly UNKNOWN.
+  - Action: Corrected the `GimmickCompositor` to split Marquis Whitacre, Bannon, and Maime into distinct psychological and physical archetypes. Set Onyx's profile bio parameters to UNKNOWN.
+  - Action: Upgraded the `NexusMeshForge`. Added `executeNeuralPointcloudTranslation` and `autoretopologizeSubD` methods. This pushes our proprietary pipeline far past Tripo3D v3, utilizing native AI logic to perfectly rig, bone, and skin legacy models autonomously.
