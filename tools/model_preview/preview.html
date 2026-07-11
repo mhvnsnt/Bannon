@@ -37,8 +37,14 @@ window.setView = function(az, el){
 window.setPose = function(amt){
   if(!window._res) return;
   var A = (amt==null?1:amt);
-  var POSE = { rig_shL:0.25, rig_shR:0.25, rig_elL:0.85, rig_elR:0.85, rig_knL:0.45, rig_knR:0.45, rig_chest:0.08, rig_hipL:-0.18, rig_hipR:-0.18 };
-  window._res.mapped.forEach(function(mp){ mp.bone.quaternion.identity(); var a=POSE[mp.bone.name]; if(a) mp.bone.rotateZ(a*A); });
+  if(window._res.mapped && window._res.mapped.length){
+    var POSE = { rig_shL:0.25, rig_shR:0.25, rig_elL:0.85, rig_elR:0.85, rig_knL:0.45, rig_knR:0.45, rig_chest:0.08, rig_hipL:-0.18, rig_hipR:-0.18 };
+    window._res.mapped.forEach(function(mp){ mp.bone.quaternion.identity(); var a=POSE[mp.bone.name]; if(a) mp.bone.rotateZ(a*A); });
+  } else {
+    // SKINNED path (our skin.cjs output / Mixamo): bend by bone name — smooth deformation, no seams
+    var SPOSE = { LeftForeArm:[-0.55,'x'], RightForeArm:[0.55,'x'], LeftArm:[-0.15,'x'], RightArm:[0.15,'x'], LeftLeg:[0.22,'z'], RightLeg:[0.22,'z'], Spine:[0.06,'z'] };
+    window._res.root.traverse(function(o){ if(o.isBone && SPOSE[o.name]){ o.quaternion.identity(); var pr=SPOSE[o.name]; if(pr[1]==='x')o.rotateX(pr[0]*A); else o.rotateZ(pr[0]*A); } });
+  }
   window._res.root.updateMatrixWorld(true); renderer.render(scene,cam);
 };
 

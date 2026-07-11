@@ -13760,11 +13760,12 @@ const MODEL_LIBRARY = [
   { name:'MAIME (canon)', url:'assets/models/MAIME.glb', charKey:'MAIME' },
   { name:'MAIME · Tattered', url:'assets/models/MAIME_tattered.glb', charKey:'MAIME' },
   // ONYX (new canon character) — darker-skinned woman, white chola/vamp facepaint, spiked corset.
-  // *_rigready versions produced by OUR splitter (tools/rigready/split.cjs) — fully articulated in-engine.
-  { name:'ONYX · Chola/Spiked', url:'assets/models/ONYX_rigready.glb', charKey:'ONYX' },
-  { name:'ONYX · Corset/Vamp', url:'assets/models/ONYX_corset_rigready.glb', charKey:'ONYX' },
-  { name:'BANNON · Muscular', url:'assets/models/BANNON_muscular_rigready.glb', charKey:'BANNON' },
-  { name:'CODY · Wrestling Gear', url:'assets/models/CODY_gear_rigready.glb', charKey:'CODY_CALLAHAN' },
+  // *_skinned versions from OUR auto-rigger (tools/rigready/skin.cjs): ONE continuous mesh + 16-bone
+  // Mixamo-named skeleton + smooth blended weights — deforms like Mixamo output, seams impossible.
+  { name:'ONYX · Chola/Spiked', url:'assets/models/ONYX_skinned.glb', charKey:'ONYX' },
+  { name:'ONYX · Corset/Vamp', url:'assets/models/ONYX_corset_skinned.glb', charKey:'ONYX' },
+  { name:'BANNON · Muscular', url:'assets/models/BANNON_muscular_skinned.glb', charKey:'BANNON' },
+  { name:'CODY · Wrestling Gear', url:'assets/models/CODY_gear_skinned.glb', charKey:'CODY_CALLAHAN' },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },

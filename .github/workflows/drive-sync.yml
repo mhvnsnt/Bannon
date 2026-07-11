@@ -19,14 +19,14 @@ jobs:
           node-version: 22
       - name: Pull new Drive files
         run: node tools/drive_sync/sync.mjs
-      - name: Auto-split any new single-mesh GLBs into rigready parts
+      - name: Auto-SKIN any new single-mesh GLBs (16-bone smooth-weight rig)
         run: |
           shopt -s nullglob
           for f in assets/models/incoming/*.glb; do
             base="$(basename "$f" .glb)"
-            out="assets/models/incoming/${base}_rigready.glb"
+            out="assets/models/incoming/${base}_skinned.glb"
             [ -f "$out" ] && continue
-            node tools/rigready/split.cjs "$f" "$out" || echo "split failed for $f (kept raw)"
+            node tools/rigready/skin.cjs "$f" "$out" || echo "skin failed for $f (kept raw)"
           done
       - name: Commit anything new
         run: |
