@@ -128,3 +128,11 @@ This document tracks the cognitive expansion of the God Mode OS Daemon and its i
   - Mechanics: Implemented full MDickie roaming autonomy in transition zones (Concrete Bowels, Loading Dock Tunnels, Equipment Lock-Up, Interview Set) where the player can choose to walk past or spontaneously attack non-hostile roster members (Heath Broker, Akon Warrior, Machine Tiger, Astrid). Actions permanently alter the environment and affect the Corruption meter.
   - Characters Remixed: Transitioned from surreal/magical hallucinations into grounded, psychological warfare. Added "shoot" style transformations: Rey Fuego (Grounded Shooter), Cassian Thorne (Corporate Guard), Kenji Kaneshiro (Paranoid Survivalist), and Nikolai Petrenko (Straitjacket Monster).
   - Story Progression: Configured the Executive Corridor fork where Onyx physically disrupts the world space, blowing out lights and destroying Stan Combs's office as an environmental storytelling element.
+
+## Patch v1.1.9 - "God Within: Investigation, Physics & Anchor of Reality"
+- **Date:** 2026-07-10
+- **Updates:**
+  - Systems: Introduced Context-Aware Sound (`triggerLocalizedAudio`), Rigid Body Physics hooks for environmental interaction, and Lore Investigation (`examineLoreNode`).
+  - Pathfinding: Built `routeToGorillaPosition()` which utilizes `spawnDynamicEncounter()` to generate random NPCs (including 'Cannon' Cody Callahan as a Cannonball Brawler) based on the current Corruption meter.
+  - Ruined Office: When Bannon steps into Combs' wrecked office, audio glitches trigger and scattered papers react dynamically to movement. Investigating the ledger reveals Onyx's script manipulation lore.
+  - Characters: 'Cannon' Cody Callahan configured for the Broadcast Booth siege. Queen Tyneshia formally registered in the engine as the "Anchor of Reality", actively breaking the Feral Menace domains and unlocking her as a playable character for Act 4 and New Game Plus.

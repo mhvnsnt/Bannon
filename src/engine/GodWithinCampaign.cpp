@@ -21,7 +21,6 @@ namespace BannonEngine {
     }
 
     void GodWithinCampaign::checkAct3Threshold() {
-        // Act 3 Corruption Threshold Trigger
         if (corruptionMeter >= 75.0f && !maimeStateUnlocked) {
             maimeStateUnlocked = true;
             std::cout << "[GOD WITHIN] CRITICAL: Corruption threshold crossed. Maime-State UNLOCKED." << std::endl;
@@ -30,7 +29,6 @@ namespace BannonEngine {
     }
 
     bool GodWithinCampaign::canRenderOnyx() {
-        // TECHNICAL HOOK: Onyx only renders if Maime state is active.
         if (maimeStateUnlocked) {
             std::cout << "[GOD WITHIN] RENDER HOOK: Onyx model visibility ENABLED. Loading unclocked anomaly mesh." << std::endl;
             return true;
@@ -73,7 +71,45 @@ namespace BannonEngine {
             case TransitionEffect::TYPEWRITER_FOG:
                 std::cout << "-> (Effect: Text types out with mechanical clacks, blurs into a white fog)" << std::endl;
                 break;
+            case TransitionEffect::NEON_SHATTER:
+                std::cout << "-> (Effect: Neon tubing flashes, buzzes loudly, violently shatters outward)" << std::endl;
+                break;
+            case TransitionEffect::BLOOD_RAIN_WASH:
+                std::cout << "-> (Effect: Blood on lens washed away by sudden heavy rain)" << std::endl;
+                break;
         }
+    }
+
+    void GodWithinCampaign::triggerLocalizedAudio(const std::string& ambientNoise, const std::string& glitchEffect) {
+        std::cout << "[AUDIO SYSTEM] Area Ambient: " << ambientNoise << std::endl;
+        std::cout << "[AUDIO SYSTEM] Spatial Glitch FX: " << glitchEffect << " triggered on proximity." << std::endl;
+    }
+
+    void GodWithinCampaign::enableRigidBodyPhysics(const std::string& objectType) {
+        std::cout << "[PHYSICS ENGINE] Rigid body dynamics activated for: " << objectType << std::endl;
+        std::cout << "-> Object now reacts dynamically to Bannon's collision hull (kick, shove, trample)." << std::endl;
+    }
+
+    void GodWithinCampaign::examineLoreNode(const std::string& documentName) {
+        std::cout << "[INVESTIGATION] Inspecting: " << documentName << std::endl;
+        std::cout << "-> LORE UNLOCKED: Onyx's ledger reveals script manipulation. 'They built the whole house on numbers.'" << std::endl;
+    }
+
+    void GodWithinCampaign::spawnDynamicEncounter(const std::string& location) {
+        std::cout << "[PATHFINDING] Recalculating route back to: " << location << std::endl;
+        float currentCorrupt = getCorruption();
+        if (currentCorrupt >= 60.0f) {
+            std::cout << "[DYNAMIC ENCOUNTER] High Corruption: Hostile 'Cannon' Cody Callahan (Cannonball Brawler) intercepts." << std::endl;
+        } else if (currentCorrupt >= 30.0f) {
+            std::cout << "[DYNAMIC ENCOUNTER] Med Corruption: Paranoid lower-card rookie attacks from shadows." << std::endl;
+        } else {
+            std::cout << "[DYNAMIC ENCOUNTER] Low Corruption: Neutral encounter. Maintenance crew flees the area." << std::endl;
+        }
+    }
+
+    void GodWithinCampaign::unlockTyneshiaPlayable() {
+        std::cout << "[SYSTEM] Queen Tyneshia unlocked as a fully playable POV character!" << std::endl;
+        std::cout << "[SYSTEM] Tyneshia acts as the Anchor of Reality, breaking Feral Menace domains. Available in Act 4 and NG+." << std::endl;
     }
 
 } // namespace BannonEngine

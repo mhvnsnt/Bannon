@@ -15,7 +15,7 @@ namespace BannonEngine {
         GodWithinZoneTriggers(GodWithinCampaign* campaignRef);
         ~GodWithinZoneTriggers();
 
-        // Act 1 Openers - Physically walking into zones
+        // Act 1 Openers
         void enterLoadingDock();
         void enterTrainersRoom();
         void enterLowerLevelGarage();
@@ -52,8 +52,11 @@ namespace BannonEngine {
         void enterStorageBay();
         void enterPropGraveyard();
         
-        // Executive Corridor
+        // Executive Corridor, Ruined Office, & Pathfinding
         void enterExecutiveCorridor();
+        void enterRuinedOffice();
+        void routeToGorillaPosition();
+        void enterBroadcastBooth();
 
     private:
         GodWithinCampaign* campaign;

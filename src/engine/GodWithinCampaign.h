@@ -15,7 +15,9 @@ namespace BannonEngine {
         WHITE_ASH_DISSOLVE,
         HORIZONTAL_SLICE,
         DIGITAL_STATIC_WAVE,
-        TYPEWRITER_FOG
+        TYPEWRITER_FOG,
+        NEON_SHATTER,
+        BLOOD_RAIN_WASH
     };
 
     class GodWithinCampaign {
@@ -43,6 +45,15 @@ namespace BannonEngine {
 
         // Inter-Cutscene Black Screen Transitions
         void triggerCinematicTransition(TransitionEffect effect);
+
+        // --- NEW SYSTEMS (Patch v1.1.9) ---
+        void triggerLocalizedAudio(const std::string& ambientNoise, const std::string& glitchEffect);
+        void enableRigidBodyPhysics(const std::string& objectType);
+        void examineLoreNode(const std::string& documentName);
+        void spawnDynamicEncounter(const std::string& location);
+        void unlockTyneshiaPlayable();
+        
+        float getCorruption() const { return corruptionMeter; }
 
     private:
         float corruptionMeter;

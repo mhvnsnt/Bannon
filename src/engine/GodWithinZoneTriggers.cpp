@@ -181,4 +181,25 @@ namespace BannonEngine {
         campaign->triggerCinematicTransition(TransitionEffect::WHITE_ASH_DISSOLVE);
     }
 
+    void GodWithinZoneTriggers::enterRuinedOffice() {
+        std::cout << "[ZONE TRIGGER] Entered: Ruined Executive Office (Stan Combs' Office)." << std::endl;
+        campaign->triggerLocalizedAudio("Shifting, heavy fan hums", "High-frequency audio tearing near the desk");
+        campaign->enableRigidBodyPhysics("Flipped Oak Desk & Scattered Corporate Papers");
+        
+        std::cout << "[PLAYER ACTION] Bannon physically wades through the scattered papers." << std::endl;
+        campaign->examineLoreNode("Stan Combs' Booking Ledger");
+    }
+
+    void GodWithinZoneTriggers::routeToGorillaPosition() {
+        std::cout << "[ZONE TRIGGER] Pathfinding logic updated. Routing back to Gorilla Position." << std::endl;
+        campaign->spawnDynamicEncounter("Gorilla Position Tunnels");
+    }
+
+    void GodWithinZoneTriggers::enterBroadcastBooth() {
+        std::cout << "[ZONE TRIGGER] Entered: Broadcast Booth. Shattered glass, severed cables." << std::endl;
+        std::cout << "[ENCOUNTER] 'Cannon' Cody Callahan (Canon) defending the terminal." << std::endl;
+        std::cout << "[ENCOUNTER] Queen Tyneshia (Anchor of Reality) arrives." << std::endl;
+        campaign->unlockTyneshiaPlayable();
+    }
+
 } // namespace BannonEngine
