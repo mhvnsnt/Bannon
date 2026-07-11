@@ -250,6 +250,21 @@ export class TelegramBotService {
                 return;
             }
 
+            // /orders — view the shared dev-order inbox (written by Telegram free-text AND the
+            // in-game GOD MODE OS terminal via /api/orders; drained by the autonomous agent loop).
+            if (incomingText === '/orders') {
+                try {
+                    const qp = path.join(process.cwd(), 'command_queue.json');
+                    let q: any[] = [];
+                    try { const j = JSON.parse(fs.readFileSync(qp, 'utf8')); q = Array.isArray(j) ? j : (j.orders || []); } catch (e) { q = []; }
+                    const lines = q.slice(-15).map((o: any, i: number) => `${i + 1}. [${o.status || 'queued'}] ${(o.text || '').slice(0, 120)}${o.from ? '  _(' + o.from + ')_' : ''}`);
+                    await this.bot.sendMessage(senderChatId, q.length ? `📥 *Dev order inbox* (${q.length} queued — agent drains on next loop):\n\n${lines.join('\n')}` : '📥 *Dev order inbox empty.* Send any message to queue an order, or use the in-game GOD MODE OS terminal.', { parse_mode: 'Markdown' });
+                } catch (err: any) {
+                    await this.bot.sendMessage(senderChatId, `❌ Could not read the queue: ${err.message}`);
+                }
+                return;
+            }
+
             if (incomingText === '/singularity') {
                 await this.bot.sendMessage(senderChatId, "🌌 *INITIATING SINGULARITY PROTOCOL...*");
                 await this.bot.sendMessage(senderChatId, "_Spawning 100 autonomous worker threads to run Monte Carlo simulations on the Euphoria Physics Engine..._");
@@ -410,13 +425,12 @@ export class TelegramBotService {
                     const queuePath = path.join(process.cwd(), 'command_queue.json');
                     let queue = [];
                     if (fs.existsSync(queuePath)) {
+                        // (was JSON.parse(queuePath) — parsed the PATH string, always threw, and only
+                        // worked via the catch fallback. Read the file directly.)
                         try {
-                            queue = JSON.parse(queuePath);
-                        } catch (e) {
-                            try {
-                                queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
-                            } catch (e) { queue = []; }
-                        }
+                            queue = JSON.parse(fs.readFileSync(queuePath, 'utf8'));
+                            if (!Array.isArray(queue)) queue = (queue as any).orders || [];
+                        } catch (e) { queue = []; }
                     }
                     queue.push({ role: 'user', text: msg.text, timestamp: new Date().toISOString() });
                     fs.writeFileSync(queuePath, JSON.stringify(queue, null, 2), 'utf8');
