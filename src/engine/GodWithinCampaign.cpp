@@ -112,4 +112,32 @@ namespace BannonEngine {
         std::cout << "[SYSTEM] Tyneshia acts as the Anchor of Reality, breaking Feral Menace domains. Available in Act 4 and NG+." << std::endl;
     }
 
+    void GodWithinCampaign::startNewGamePlus() {
+        std::cout << "[SYSTEM] NEW GAME PLUS INITIATED: The Queen Ascendant." << std::endl;
+        std::cout << "[SYSTEM] Timeline rewound to Act 1. POV permanently locked to Queen Tyneshia." << std::endl;
+        std::cout << "[SYSTEM] Dual-narrative autonomous world state active. Bannon fights in the basement; you rule upstairs." << std::endl;
+    }
+
+    void GodWithinCampaign::switchPOVToTyneshia() {
+        std::cout << "[POV SHIFT] Control transferred to Queen Tyneshia (The Anchor of Reality)." << std::endl;
+        std::cout << "[MECHANICS] VPW Engine adapted. Brawling replaced with Reality Checks and Environmental Leverage." << std::endl;
+    }
+
+    void GodWithinCampaign::delegateToCody(const std::string& targetCharacter) {
+        std::cout << "[DELEGATE] Tyneshia commands 'Cannon' Cody Callahan." << std::endl;
+        std::cout << "[ACTION] Cannon Cody hits a full-speed cannonball spear on " << targetCharacter << "!" << std::endl;
+        std::cout << "[POV SHIFT] Temporary control granted to Cody for brawler combat." << std::endl;
+    }
+
+    void GodWithinCampaign::triggerFinalBossFight(const std::string& bossName) {
+        std::cout << "[FINAL BOSS] Engaging " << bossName << " in The Vacancy." << std::endl;
+        std::cout << "[MECHANICS] Target is a Denial Grappler. Standard strikes/grapples will miss or glitch." << std::endl;
+        std::cout << "[OBJECTIVE] Destroy the physical ring architecture to eliminate glitch mobility." << std::endl;
+    }
+
+    void GodWithinCampaign::executeTyneshiaRealityCheck(const std::string& targetCharacter) {
+        std::cout << "[REALITY CHECK] Tyneshia delivers a stiff, open-hand strike to " << targetCharacter << "." << std::endl;
+        std::cout << "[OUTCOME] " << targetCharacter << "'s stamina drops to zero. Encounter de-escalated via pure authority." << std::endl;
+    }
+
 } // namespace BannonEngine

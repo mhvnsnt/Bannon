@@ -58,6 +58,21 @@ namespace BannonEngine {
         void routeToGorillaPosition();
         void enterBroadcastBooth();
 
+        // Act 3 Late Stages
+        void enterVIPElevator();
+        void enterOwnersBox();
+        void enterUndergroundGarage();
+
+        // Act 4 & Act 5 & Epilogue
+        void enterBroadcastBoothTyneshiaPOV();
+        void enterAct5TheVacancy();
+        void enterEpilogue();
+
+        // New Game Plus (The Queen Ascendant)
+        void enterNGPlusGorillaPosition();
+        void enterNGPlusBoardroom();
+        void enterNGPlusServerFarm();
+
     private:
         GodWithinCampaign* campaign;
     };

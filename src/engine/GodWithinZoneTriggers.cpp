@@ -202,4 +202,59 @@ namespace BannonEngine {
         campaign->unlockTyneshiaPlayable();
     }
 
+    void GodWithinZoneTriggers::enterVIPElevator() {
+        std::cout << "[ZONE TRIGGER] Entered: VIP Elevator (Ascension). Heavy vibrations." << std::endl;
+        std::cout << "[ENCOUNTER] Joseph Alaka (Titan - Taped Armor Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::NEON_SHATTER);
+    }
+
+    void GodWithinZoneTriggers::enterOwnersBox() {
+        std::cout << "[ZONE TRIGGER] Entered: Owner's Box Hallway. Immaculate white carpet." << std::endl;
+        std::cout << "[ENCOUNTER] 1v4 Gauntlet: Cassian Thorne, Stan Combs, Great White North, Edwin Kennedy (Corporate Algorithms)." << std::endl;
+        std::cout << "[NARRATIVE] Onyx waiting in the shattered window." << std::endl;
+    }
+
+    void GodWithinZoneTriggers::enterUndergroundGarage() {
+        std::cout << "[ZONE TRIGGER] Entered: Underground VIP Garage (The Hunt). Damp concrete, exhaust." << std::endl;
+        std::cout << "[ENCOUNTER] Great White North (Fleeing in Luxury SUV) detected." << std::endl;
+        campaign->enableRigidBodyPhysics("Luxury SUV");
+    }
+
+    void GodWithinZoneTriggers::enterBroadcastBoothTyneshiaPOV() {
+        std::cout << "[ZONE TRIGGER] Re-entered: Broadcast Booth (Act 4)." << std::endl;
+        campaign->switchPOVToTyneshia();
+        std::cout << "[ENCOUNTER] Alliance Elite Guards ambushing." << std::endl;
+    }
+
+    void GodWithinZoneTriggers::enterAct5TheVacancy() {
+        std::cout << "[ZONE TRIGGER] Entered: The Vacancy (Broken Ring Floor)." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::BLOOD_RAIN_WASH);
+        campaign->triggerFinalBossFight("Onyx");
+    }
+
+    void GodWithinZoneTriggers::enterEpilogue() {
+        std::cout << "[ZONE TRIGGER] Entered: Epilogue (Autonomy & Trust Ending)." << std::endl;
+        std::cout << "[NARRATIVE] Ring collapsed. Onyx pinned by reality." << std::endl;
+        std::cout << "[NARRATIVE] Allies present: Queen Tyneshia, Cannon Cody, Kenji, Nikolai, Rey, Curtis." << std::endl;
+    }
+
+    void GodWithinZoneTriggers::enterNGPlusGorillaPosition() {
+        campaign->startNewGamePlus();
+        std::cout << "[ZONE TRIGGER] Entered: Gorilla Position (NG+). Crisp reality lighting." << std::endl;
+        std::cout << "[ENCOUNTER] Heath Broker blocking the Executive Suites." << std::endl;
+        campaign->executeTyneshiaRealityCheck("Heath Broker");
+    }
+
+    void GodWithinZoneTriggers::enterNGPlusBoardroom() {
+        std::cout << "[ZONE TRIGGER] Entered: Main Boardroom. Mahogany and corporate carpet." << std::endl;
+        std::cout << "[ENCOUNTER] Stan Combs and Elite Enforcers." << std::endl;
+        campaign->enableRigidBodyPhysics("Glass Pitcher & Mahogany Table");
+    }
+
+    void GodWithinZoneTriggers::enterNGPlusServerFarm() {
+        std::cout << "[ZONE TRIGGER] Entered: Server Farm (NG+ Ambush)." << std::endl;
+        std::cout << "[ENCOUNTER] Atlas Vance." << std::endl;
+        campaign->delegateToCody("Atlas Vance");
+    }
+
 } // namespace BannonEngine

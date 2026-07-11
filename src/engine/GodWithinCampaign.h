@@ -52,7 +52,14 @@ namespace BannonEngine {
         void examineLoreNode(const std::string& documentName);
         void spawnDynamicEncounter(const std::string& location);
         void unlockTyneshiaPlayable();
-        
+
+        // --- NEW SYSTEMS (Patch v1.1.10 - The Queen Ascendant & Final Act) ---
+        void startNewGamePlus();
+        void switchPOVToTyneshia();
+        void delegateToCody(const std::string& targetCharacter);
+        void triggerFinalBossFight(const std::string& bossName);
+        void executeTyneshiaRealityCheck(const std::string& targetCharacter);
+
         float getCorruption() const { return corruptionMeter; }
 
     private:

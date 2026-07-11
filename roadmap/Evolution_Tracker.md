@@ -144,3 +144,11 @@ This document tracks the cognitive expansion of the God Mode OS Daemon and its i
   - Act 4 / Act 5: Shifted POV to Queen Tyneshia in Act 4, establishing her "Reality Check" and "Delegate" mechanics alongside 'Cannon' Cody Callahan. Built Act 5 "The Vacancy", requiring the player to physically destroy the ring to defeat Onyx's "Denial Grappler" glitch mechanics.
   - Endings: Added Autonomy & Trust Epilogue where saved roster members stand alongside Bannon and Tyneshia.
   - New Game Plus: Implemented "The Queen Ascendant" mode. Unlocks a parallel timeline campaign played entirely as Queen Tyneshia, unmaking the Alliance in the Gorilla Position, Boardroom, and Server Farm while Bannon fights in the basement.
+
+## Patch v1.1.10 - "God Within: Final Boss, Epilogue, & New Game Plus"
+- **Date:** 2026-07-10
+- **Updates:**
+  - Encounter Architecture: Finished Act 3 mapping including the VIP Elevator (Titan), Owner's Box (4v1 Corporate Algorithm Gauntlet), and the Underground Garage (SUV Rigidbody Hunt).
+  - Act 4 / Act 5: Shifted POV to Queen Tyneshia in Act 4, establishing her "Reality Check" and "Delegate" mechanics alongside 'Cannon' Cody Callahan. Built Act 5 "The Vacancy", requiring the player to physically destroy the ring to defeat Onyx's "Denial Grappler" glitch mechanics.
+  - Endings: Added Autonomy & Trust Epilogue where saved roster members stand alongside Bannon and Tyneshia.
+  - New Game Plus: Implemented "The Queen Ascendant" mode. Unlocks a parallel timeline campaign played entirely as Queen Tyneshia, unmaking the Alliance in the Gorilla Position, Boardroom, and Server Farm while Bannon fights in the basement.
