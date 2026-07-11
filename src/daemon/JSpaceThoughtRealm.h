@@ -30,6 +30,7 @@ namespace BannonEngine {
 
         // Inject a new prompt or idea into J-Space for deep, isolated research
         void injectThought(const std::string& inputPrompt);
+        // Loads a complex wrestling scenario into the predictive buffer\n        void bufferComplexScenario(const std::string& scenarioMap);
 
         // Run the internal research loop (similar to Claude's internal scratchpad logic)
         void processInternalMonologue();
@@ -39,6 +40,7 @@ namespace BannonEngine {
 
     private:
         std::vector<CognitiveHypothesis> activeThoughts;
+        std::vector<std::string> predictiveScenarioBuffer;
         int thoughtCycleEpoch;
         float baselineConsciousnessLevel;
 

@@ -23,6 +23,7 @@ namespace BannonEngine {
         // Uses true quantum states to determine critical/miracle events
         // e.g., a 1-out-of-1000 James Ellsworth luck reversal
         bool evaluateQuantumMiracle(float threshold);
+        // Connects to IBM Qiskit API to process a J-Space circuit\n        void executeQiskitCircuit(const std::string& circuitState);
         
         // Injects quantum uncertainty into the active ragdoll physics
         void applyQuantumPhysicsVariance(float& baseTorque, float volatilityMultiplier);

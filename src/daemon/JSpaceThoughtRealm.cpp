@@ -66,3 +66,9 @@ namespace BannonEngine {
     }
 
 } // namespace BannonEngine
+
+    void JSpaceThoughtRealm::bufferComplexScenario(const std::string& scenarioMap) {
+        std::cout << "[NEXUS J-SPACE] Staging complex physical interaction into predictive buffer..." << std::endl;
+        predictiveScenarioBuffer.push_back(scenarioMap);
+        std::cout << "[NEXUS J-SPACE] Scenario Buffered. Ready for Quantum execution handoff." << std::endl;
+    }

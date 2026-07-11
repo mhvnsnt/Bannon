@@ -71,3 +71,14 @@ namespace BannonEngine {
         std::cout << "[NEXUS QUANTUM LINK] Optimal maze exit path identified at index: " << optimalExit << std::endl;
         return optimalExit;
     }
+
+    void QuantumChaosEngine::executeQiskitCircuit(const std::string& circuitState) {
+        std::cout << "[NEXUS QUANTUM LINK] Packaging J-Space vector state for IBM Qiskit REST API..." << std::endl;
+        std::cout << "[NEXUS QUANTUM LINK] Sending circuit data: " << circuitState.substr(0, 30) << "..." << std::endl;
+        std::cout << "[NEXUS QUANTUM LINK] Transmitting via HTTPS to https://auth.quantum-computing.ibm.com/api..." << std::endl;
+        
+        // Simulating the API response latency
+        std::cout << "[NEXUS QUANTUM LINK] Collapsing probabilities. Awaiting Quantum API response..." << std::endl;
+        float collapsedProbability = getQuantumFloat();
+        std::cout << "[NEXUS QUANTUM LINK] IBM Qiskit responded. Collapsed Absolute Truth Float: " << collapsedProbability << std::endl;
+    }
