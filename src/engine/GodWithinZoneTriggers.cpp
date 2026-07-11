@@ -101,4 +101,84 @@ namespace BannonEngine {
         campaign->triggerCinematicTransition(TransitionEffect::TYPEWRITER_FOG);
     }
 
+    void GodWithinZoneTriggers::enterHospitalitySuite() {
+        std::cout << "[ZONE TRIGGER] Entered: Hospitality Suite. Decaying food, humming refrigerators." << std::endl;
+        std::cout << "[ENCOUNTER] Curtis Bowe (Brutus - Butcher Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::HORIZONTAL_SLICE);
+    }
+
+    void GodWithinZoneTriggers::enterLoadingBayHandoff() {
+        std::cout << "[ZONE TRIGGER] Entered: Loading Bay. Bruised purple sky, massive moon." << std::endl;
+        std::cout << "[ENCOUNTER] Finxsse detected. POV Shift to Julian Kaneshiro (Ronin) initiated." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::HORIZONTAL_SLICE);
+    }
+
+    void GodWithinZoneTriggers::enterFreightElevator() {
+        std::cout << "[ZONE TRIGGER] Entered: Freight Elevator. Constant downward momentum." << std::endl;
+        std::cout << "[ENCOUNTER] Joseph Alaka (Titan - Chained Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::GLITCH_SHATTER);
+    }
+
+    void GodWithinZoneTriggers::enterServerFarm() {
+        std::cout << "[ZONE TRIGGER] Entered: Server Farm. Blue and green LEDs, deafening fans." << std::endl;
+        std::cout << "[ENCOUNTER] Zephyr (Cartel Enforcer Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::GLITCH_SHATTER);
+    }
+
+    void GodWithinZoneTriggers::enterMainEvent() {
+        std::cout << "[ZONE TRIGGER] Entered: Gorilla Position -> Live PLE Broadcast." << std::endl;
+        std::cout << "[ENCOUNTER] Stan Combs & Nikolai Petrenko (Golem - Clay Monster -> Real Name Reveal) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::GLITCH_SHATTER);
+    }
+
+    void GodWithinZoneTriggers::enterConcreteBowels() {
+        std::cout << "[ZONE TRIGGER] Entered: Concrete Bowels. Free roam MDickie zone." << std::endl;
+        std::cout << "[ENCOUNTER] Heath Broker detected." << std::endl;
+    }
+
+    void GodWithinZoneTriggers::enterLoadingDockTunnels() {
+        std::cout << "[ZONE TRIGGER] Entered: Loading Dock Tunnels. Free roam MDickie zone." << std::endl;
+        std::cout << "[ENCOUNTER] Akon Warrior detected." << std::endl;
+    }
+
+    void GodWithinZoneTriggers::enterLoadingDockGrounded() {
+        std::cout << "[ZONE TRIGGER] Entered: Loading Dock (Grounded). Cold air, truck headlights." << std::endl;
+        std::cout << "[ENCOUNTER] Nikolai Petrenko (Golem - Straitjacket Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::WHITE_ASH_DISSOLVE);
+    }
+
+    void GodWithinZoneTriggers::enterEquipmentLockUp() {
+        std::cout << "[ZONE TRIGGER] Entered: Equipment Lock-Up. Chainlink fencing, steel chairs." << std::endl;
+        std::cout << "[ENCOUNTER] Machine Tiger detected." << std::endl;
+    }
+
+    void GodWithinZoneTriggers::enterBoilerRoomGrounded() {
+        std::cout << "[ZONE TRIGGER] Entered: Boiler Room (Grounded). Oppressive heat, burning dust." << std::endl;
+        std::cout << "[ENCOUNTER] Rey Fuego (Grounded Shooter Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::WHITE_ASH_DISSOLVE);
+    }
+
+    void GodWithinZoneTriggers::enterInterviewSet() {
+        std::cout << "[ZONE TRIGGER] Entered: Interview Set. Free roam MDickie zone." << std::endl;
+        std::cout << "[ENCOUNTER] Astrid detected." << std::endl;
+    }
+
+    void GodWithinZoneTriggers::enterStorageBay() {
+        std::cout << "[ZONE TRIGGER] Entered: Storage Bay. Old canvas and stale sweat." << std::endl;
+        std::cout << "[ENCOUNTER] Kenji Kaneshiro (Ronin - Paranoia Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::GLITCH_SHATTER);
+    }
+
+    void GodWithinZoneTriggers::enterPropGraveyard() {
+        std::cout << "[ZONE TRIGGER] Entered: Prop Graveyard. Dust, caged work lights." << std::endl;
+        std::cout << "[ENCOUNTER] Cassian Thorne (Vandal - Corporate Guard Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::WHITE_ASH_DISSOLVE);
+    }
+
+    void GodWithinZoneTriggers::enterExecutiveCorridor() {
+        std::cout << "[ZONE TRIGGER] Entered: Executive Corridor. Plush corporate carpet." << std::endl;
+        std::cout << "[ENCOUNTER] Onyx detected. Render override fired." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::WHITE_ASH_DISSOLVE);
+    }
+
 } // namespace BannonEngine

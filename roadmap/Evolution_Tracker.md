@@ -120,3 +120,11 @@ This document tracks the cognitive expansion of the God Mode OS Daemon and its i
   - Characters Remixed: Added Onyx's "static entities" mechanic, transforming empty shells into twisted versions of book/game characters (Kage Oni Remix, Mortus Drowned Remix, Viper Hollow Ego Remix, Atlas Burned Kingdom Remix, Elias Paranoia Remix).
   - Visual Lock: Cain Elias's physical profile locked to a mix of Hoss Delgado and Brock Samson—heavy survivalist enforcer, stripped of clean technician polish.
   - Physics Engine: Added `throwCharacterFromHeight()` method in `GodWithinCampaign` to support MDickie-style window spots (e.g., throwing Viper from the VIP Skybox), complete with survival tracking variables.
+
+## Patch v1.1.8 - "God Within Act 3: Grounded Warfare & Open-World Sandbox"
+- **Date:** 2026-07-10
+- **Updates:**
+  - Action: Built Act 3 physical locations, transitions, and encounters in `GodWithinZoneTriggers`.
+  - Mechanics: Implemented full MDickie roaming autonomy in transition zones (Concrete Bowels, Loading Dock Tunnels, Equipment Lock-Up, Interview Set) where the player can choose to walk past or spontaneously attack non-hostile roster members (Heath Broker, Akon Warrior, Machine Tiger, Astrid). Actions permanently alter the environment and affect the Corruption meter.
+  - Characters Remixed: Transitioned from surreal/magical hallucinations into grounded, psychological warfare. Added "shoot" style transformations: Rey Fuego (Grounded Shooter), Cassian Thorne (Corporate Guard), Kenji Kaneshiro (Paranoid Survivalist), and Nikolai Petrenko (Straitjacket Monster).
+  - Story Progression: Configured the Executive Corridor fork where Onyx physically disrupts the world space, blowing out lights and destroying Stan Combs's office as an environmental storytelling element.

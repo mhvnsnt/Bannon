@@ -34,6 +34,26 @@ namespace BannonEngine {
         void enterArenaRoof();
         void enterSubBasement();
         void enterVIPSkybox();
+        void enterHospitalitySuite();
+
+        // Act 3 MDickie Sandbox & Phase-Shift Zones
+        void enterLoadingBayHandoff();
+        void enterFreightElevator();
+        void enterServerFarm();
+        void enterMainEvent();
+        
+        // Roaming Zones & Grounded Transformations
+        void enterConcreteBowels();
+        void enterLoadingDockTunnels();
+        void enterLoadingDockGrounded();
+        void enterEquipmentLockUp();
+        void enterBoilerRoomGrounded();
+        void enterInterviewSet();
+        void enterStorageBay();
+        void enterPropGraveyard();
+        
+        // Executive Corridor
+        void enterExecutiveCorridor();
 
     private:
         GodWithinCampaign* campaign;
