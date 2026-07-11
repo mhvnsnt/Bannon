@@ -16,7 +16,15 @@ material UUID is stable across every duplicate export) plus the owner's tells:
 | `f8bae5d8` | **BANNON · Muscular alt** | same mask/dreads/trunks, ripped physique, armored gauntlets | `BANNON_muscular.glb` | ⚠️ single-mesh (needs rigready) |
 | `efcf3606` | **MAIME** | white facepaint, denim jeans + silver chains, hoodie | `MAIME.glb` | ✅ named-part rig |
 | `816d669b` | **MAIME · Tattered alt** | white skull facepaint + goatee, black tattered graphic/flame gear, chains | `MAIME_tattered.glb` | ✅ named-part rig (recentered −0.475 X) |
-| `7079dc00` | **ONYX · Corset alt** | white skull facepaint, black studded harness + white studs | `ONYX_corset.glb` | ⚠️ single-mesh (needs rigready) |
+| `2554cf43` | **ONYX · Chola/Spiked** | darker-skinned woman, white chola facepaint, green hair, spiked B&W bodysuit + boots | `ONYX.glb` | ⚠️ single-mesh (needs rigready) |
+| `7079dc00` | **ONYX · Corset/Vamp** | darker-skinned woman, white vamp facepaint, black hair, spiked B&W corset | `ONYX_corset.glb` | ⚠️ single-mesh (needs rigready) |
+
+> **`7079dc00` correction:** an earlier pass mislabeled this "MAIME · Studded" from the texture alone
+> (white facepaint + studs). The owner's `onyxcorsetandvamppaint.glb` upload shares this exact material
+> UUID, confirming it is **Onyx**. `MAIME_studded.glb` was removed and re-banked as `ONYX_corset.glb`.
+>
+> **ONYX** (new canon, "The Obsidian Hex") — registered via `_addChar('ONYX', … archetype:'striker',
+> {fem:1,hips:1.05,glutes:1.12,waist:0.82,bust:0.9})`. Both attires are single-mesh previews needing rigready splits.
 
 ### Mislabels corrected in this pass
 - `BANNON_masked_rigready` (mat `816d669b`) → **Maime (Tattered)**, NOT Bannon.

@@ -13403,6 +13403,9 @@ try{
   _addChar('GRIXF',          { label:'The Manic Fanatic',       col:0x4a1030, accent:0x88ee22, skin:0xcaa070, faction:'Corporate Structure', canon:true, bio:'LP9 — a zealot for the system, all teeth and fervor.', archetype:'brawler' }, 'CARGO_PANTS', 'MOHAWK', {musc:0.64,fat:0.24});
   _addChar('MACHINE_TIGER',  { label:'Counter-Architect',       col:0xe08010, accent:0x111111, skin:0xb07840, faction:'Corporate Structure', canon:true, bio:'LP4 — methodical, structured, engineered to counter Bannon.', archetype:'technician' }, 'SINGLET_2TONE', 'SHORT', {musc:0.68,fat:0.14});
   _addChar('CHAINMAIL',      { label:'The Scarred Vengeance',   col:0x3a3a44, accent:0x8a1a1a, skin:0xc09068, faction:'Corporate Structure', canon:true, bio:'LP8 — armored rage, every scar a debt to collect.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.86,fat:0.3});
+  // ONYX — new canon: darker-skinned woman, white chola/vamp facepaint, spiked corset/bodysuit heel.
+  // GLB attires (ONYX.glb chola/spiked, ONYX_corset.glb corset) bind via charKey; procedural body is the fallback.
+  _addChar('ONYX',           { label:'The Obsidian Hex',        col:0x101014, accent:0xe8e8ee, skin:0x7a4a2e, faction:'Agents of Chaos', canon:true, bio:'Darker than the space between stars — white paint, spiked leather, and a hex for every man who underestimated her.', archetype:'striker' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.5,fat:0.16,fem:1,hips:1.05,glutes:1.12,waist:0.82,bust:0.9});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13706,9 +13709,11 @@ const MODEL_LIBRARY = [
   { name:'BANNON (canon)', url:'assets/models/BANNON.glb', charKey:'BANNON' },
   { name:'MAIME (canon)', url:'assets/models/MAIME.glb', charKey:'MAIME' },
   { name:'MAIME · Tattered', url:'assets/models/MAIME_tattered.glb', charKey:'MAIME' },
+  // ONYX (new canon character) — darker-skinned woman, white chola/vamp facepaint, spiked corset.
+  { name:'ONYX · Chola/Spiked', url:'assets/models/ONYX.glb', charKey:'ONYX', needsRig:true },
+  { name:'ONYX · Corset/Vamp', url:'assets/models/ONYX_corset.glb', charKey:'ONYX', needsRig:true },
   // single-mesh Tripo previews — load but stay STATIC until a named-part (rigready) export exists.
   { name:'BANNON · Muscular (static)', url:'assets/models/BANNON_muscular.glb', charKey:'BANNON', needsRig:true },
-  { name:'MAIME · Studded (static)', url:'assets/models/MAIME_studded.glb', charKey:'MAIME', needsRig:true },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },
@@ -13856,6 +13861,10 @@ function _bindFighterGltf(side, url, name, gltf){
         }
       }
     }catch(e){}
+    // ORIENTATION NORMALIZE: recenter the model's mass on X/Z so it sits on the pelvis point the engine
+    // places it at each frame. Off-center Tripo exports otherwise orbit their own centroid (the "facing
+    // wrong / drifting" look). Y is floored by yBase below; centered models shift ~0 (safe no-op).
+    try{ if(isFinite(box.min.x)&&isFinite(box.max.x)){ var _ncx=(box.min.x+box.max.x)/2, _ncz=(box.min.z+box.max.z)/2; if(Math.abs(_ncx)>0.02||Math.abs(_ncz)>0.02){ obj.position.x-=_ncx; obj.position.z-=_ncz; obj.updateMatrixWorld(true); } } }catch(e){}
     container.userData.mapped = mapped; container.userData.url=url;
     try{ mapped.forEach(function(mp){ var _cs=mp.bone.children, _ch=null; for(var _i=0;_i<_cs.length;_i++){ if(_cs[_i].isBone){_ch=_cs[_i];break;} } if(!_ch&&_cs.length)_ch=_cs[0]; if(_ch){ var _lf=_ch.position.clone(); if(_lf.lengthSq()>1e-9) mp.localFwd=_lf.normalize(); } mp.isLimb=(mp.toJ!=='chest'&&mp.toJ!=='head'); }); }catch(e){}
     try{ container.userData.boneByName=bones; container.userData.mappedSet=new Set(mapped.map(x=>x.bone));
