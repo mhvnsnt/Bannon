@@ -1472,8 +1472,8 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
       <input type="text" class="move-name-input" id="modelUrlCustom" placeholder="https://models.readyplayer.me/XXXX.glb" spellcheck="false">
       <div class="option-row"><button class="opt-chip" id="modelLoadCustom">LOAD THIS URL</button></div>
 
-      <div class="field-label">OR IMPORT A .glb FROM YOUR DEVICE — saved to your library, persists across sessions</div>
-      <input type="file" id="modelFile" accept=".glb,.gltf" style="color:#ffd9a8;width:100%;margin-bottom:12px;font-size:13px;">
+      <div class="field-label">OR IMPORT A .glb / .gltf / .fbx FROM YOUR DEVICE — saved to your library, persists across sessions (.blend: export to .glb/.fbx first)</div>
+      <input type="file" id="modelFile" accept=".glb,.gltf,.fbx" style="color:#ffd9a8;width:100%;margin-bottom:12px;font-size:13px;">
       <div class="field-label">APPLY TO</div>
       <div class="option-row" id="opt-fileslot">
         <button class="opt-chip selected" data-slot="fighter">FIGHTER</button>
@@ -14918,7 +14918,18 @@ function setupInput(){
   document.querySelectorAll('#opt-fileslot .opt-chip').forEach(chip=>chip.addEventListener('click',()=>{ document.querySelectorAll('#opt-fileslot .opt-chip').forEach(c=>c.classList.remove('selected')); chip.classList.add('selected'); _fileSlot=chip.dataset.slot; }));
   const _mf=document.getElementById('modelFile');
   if(_mf) _mf.addEventListener('change',(e)=>{ const file=e.target.files&&e.target.files[0]; if(!file) return; setModelStatus(modelSel,'Loading '+file.name+'...'); const rd=new FileReader();
-    rd.onload=()=>{ try{ const loader=new THREE.GLTFLoader(); loader.parse(rd.result,'',(gltf)=>{
+    var _isFbx=/\.fbx$/i.test(file.name);
+    rd.onload=()=>{ try{
+      if(_isFbx){
+        // FBX (Mixamo / Blender export): FBXLoader.parse returns a Group synchronously; wrap as {scene}
+        // so the shared bind path runs (real bones -> skinned path; else the named-part/chunk auto-rig).
+        if(typeof THREE==='undefined' || !THREE.FBXLoader){ setModelStatus(modelSel,'\u26a0 FBX loader still initializing (or blocked) \u2014 try again in a moment, or export .glb.'); return; }
+        var _fobj; try{ _fobj=new THREE.FBXLoader().parse(rd.result,''); }catch(err){ setModelStatus(modelSel,'Could not parse '+file.name+' ('+err.message+')'); return; }
+        var _nf=file.name.replace(/\.fbx$/i,'');
+        try{ _bindFighterGltf(modelSel,'idb:'+_nf, _nf, {scene:_fobj}); if(typeof BLIB!=='undefined'){ try{ BLIB.saveImported(_nf, rd.result.slice(0)); }catch(_e){} } setModelStatus(modelSel,'Loaded '+file.name+' \u2014 use the size slider'); }catch(err){ setModelStatus(modelSel,'Bind failed: '+err.message); }
+        return;
+      }
+      const loader=new THREE.GLTFLoader(); loader.parse(rd.result,'',(gltf)=>{
         if(_fileSlot==='ring'){ try{ loadCustomRing(gltf); setModelStatus(modelSel,'Ring loaded: '+file.name); }catch(err){ setModelStatus(modelSel,'Ring load failed'); } }
         else { try{ var _nm=file.name.replace(/\.(glb|gltf)$/i,''); _bindFighterGltf(modelSel,'idb:'+_nm, _nm, gltf); if(typeof BLIB!=='undefined'){ try{ BLIB.saveImported(_nm, rd.result.slice(0)); }catch(_e){} } setModelStatus(modelSel,'Loaded '+file.name+' \u2014 use the size slider'); }catch(err){ setModelStatus(modelSel,'Bind failed: '+err.message); } }
       },(err)=>setModelStatus(modelSel,'Could not parse '+file.name)); }catch(err){ setModelStatus(modelSel,'Load error'); } };
