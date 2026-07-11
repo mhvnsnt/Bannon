@@ -258,7 +258,8 @@ export class TelegramBotService {
                 }, 4000);
                 return;
             }
-\n            if (incomingText.includes('help') || incomingText === '/start') {
+
+            if (incomingText.includes('help') || incomingText === '/start') {
                 const helpMenu = `🛠 *BANNON AI Game Dev Agent Control Panel*\n\n` +
                     `You can control the autonomous game dev loop and sync your Bannon repositories using these commands:\n\n` +
                     `🔄 *Repository Sync Commands:*\n` +
