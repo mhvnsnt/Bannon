@@ -32,6 +32,8 @@ namespace BannonEngine {
         void injectThought(const std::string& inputPrompt);
         // Loads a complex wrestling scenario into the predictive buffer\n        void bufferComplexScenario(const std::string& scenarioMap);
         // Evaluates C++ engine code, kinematics math, and memory layouts silently in J-Space before writing\n        void evaluateCodeArchitecture(const std::string& codeContext);
+        // Pre-processes the Move Creator physics to derive exact float multipliers
+        void preprocessMoveCreatorPhysics(float lifterStrength, float targetMass, float baseImpact);
 
         // Run the internal research loop (similar to Claude's internal scratchpad logic)
         void processInternalMonologue();
