@@ -6,7 +6,7 @@
 #include "GodWithinCampaign.h"
 
 // ============================================================================
-// BANNON ENGINE — ACT 1 ARENA ZONE PHYSICAL TRIGGERS
+// BANNON ENGINE — ARENA ZONE PHYSICAL TRIGGERS
 // ============================================================================
 namespace BannonEngine {
 
@@ -24,6 +24,16 @@ namespace BannonEngine {
         void enterUpperConcourse();
         void enterMakeshiftWeightRoom();
         void enterDumpsterCorridor();
+
+        // Act 2 Liminal & Surreal Zones
+        void enterCatwalks();
+        void enterVoidDream();
+        void enterTapeArchive();
+        void enterHallOfMirrors();
+        void enterShowerBlock();
+        void enterArenaRoof();
+        void enterSubBasement();
+        void enterVIPSkybox();
 
     private:
         GodWithinCampaign* campaign;

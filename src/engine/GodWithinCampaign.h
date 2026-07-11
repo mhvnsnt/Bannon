@@ -38,6 +38,9 @@ namespace BannonEngine {
         // Seamless Physical Environment Interaction
         void enterSeamlessSandboxCombat(const std::string& targetCharacter, const std::string& environmentZone);
 
+        // MDickie-Style Destructive Physics & Outcomes
+        void throwCharacterFromHeight(const std::string& targetCharacter, float dropHeight, bool canSurvive);
+
         // Inter-Cutscene Black Screen Transitions
         void triggerCinematicTransition(TransitionEffect effect);
 

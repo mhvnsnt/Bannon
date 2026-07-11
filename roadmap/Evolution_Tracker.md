@@ -112,3 +112,11 @@ This document tracks the cognitive expansion of the God Mode OS Daemon and its i
   - Rendering Hook: Linked Onyx's conditional rendering (`canRenderOnyx()`) specifically to the Maime-State boolean. She remains unrendered/invisible outside of this state.
   - Cinematics: Coded dynamic, unplayable inter-cutscene transitions for "THE GOD WITHIN" title cards (glitches, typewriter fogs, ash dissolves, etc.).
   - Act 1 Mapping: Physically mapped the 8 non-canon encounter triggers to their respective arena locations (Loading Dock for Ronin, Dumpster Corridor for Zephyr, Boiler Room for Golem, etc.).
+
+## Patch v1.1.7 - "God Within Act 2: Liminal Spaces & Destructive Physics"
+- **Date:** 2026-07-10
+- **Updates:**
+  - Action: Built Act 2 Liminal, Psychedelic, and Eerie zones for the physical open-world.
+  - Characters Remixed: Added Onyx's "static entities" mechanic, transforming empty shells into twisted versions of book/game characters (Kage Oni Remix, Mortus Drowned Remix, Viper Hollow Ego Remix, Atlas Burned Kingdom Remix, Elias Paranoia Remix).
+  - Visual Lock: Cain Elias's physical profile locked to a mix of Hoss Delgado and Brock Samson—heavy survivalist enforcer, stripped of clean technician polish.
+  - Physics Engine: Added `throwCharacterFromHeight()` method in `GodWithinCampaign` to support MDickie-style window spots (e.g., throwing Viper from the VIP Skybox), complete with survival tracking variables.

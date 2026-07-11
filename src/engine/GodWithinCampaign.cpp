@@ -24,7 +24,7 @@ namespace BannonEngine {
         // Act 3 Corruption Threshold Trigger
         if (corruptionMeter >= 75.0f && !maimeStateUnlocked) {
             maimeStateUnlocked = true;
-            std::cout << "[GOD WITHIN] CRITICAL: Corruption threshold crossed. Maime-State UNLOCKED." std::endl;
+            std::cout << "[GOD WITHIN] CRITICAL: Corruption threshold crossed. Maime-State UNLOCKED." << std::endl;
             std::cout << "[GOD WITHIN] POV Shift available. Visceral physics engine overridden with 'Feral Menace' matrix." << std::endl;
         }
     }
@@ -42,7 +42,16 @@ namespace BannonEngine {
         std::cout << "[GOD WITHIN] ENGAGING SEAMLESS SANDBOX BRAWL: " << targetCharacter << " in " << environmentZone << std::endl;
         std::cout << "[GOD WITHIN] Camera shifting from over-the-shoulder to dynamic combat tracking." << std::endl;
         std::cout << "[GOD WITHIN] Physics shifted to MDickie/Neckbreaker environmental sandbox rules." << std::endl;
-        std::cout << "[GOD WITHIN] Environmental weapons (Cinderblocks, Hoods, Catering Tables) active." << std::endl;
+        std::cout << "[GOD WITHIN] Environmental weapons active." << std::endl;
+    }
+
+    void GodWithinCampaign::throwCharacterFromHeight(const std::string& targetCharacter, float dropHeight, bool canSurvive) {
+        std::cout << "[GOD WITHIN] MDICKIE PHYSICS: " << targetCharacter << " thrown from height of " << dropHeight << " ft!" << std::endl;
+        if (!canSurvive || dropHeight >= 90.0f) {
+            std::cout << "[GOD WITHIN] OUTCOME: " << targetCharacter << " is incapacitated/dead. Removed from current session." << std::endl;
+        } else {
+            std::cout << "[GOD WITHIN] OUTCOME: " << targetCharacter << " survives with severe injuries. Can return in later acts." << std::endl;
+        }
     }
 
     void GodWithinCampaign::triggerCinematicTransition(TransitionEffect effect) {

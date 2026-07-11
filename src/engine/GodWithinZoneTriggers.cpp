@@ -53,4 +53,52 @@ namespace BannonEngine {
         campaign->triggerCinematicTransition(TransitionEffect::DIGITAL_STATIC_WAVE);
     }
 
+    void GodWithinZoneTriggers::enterCatwalks() {
+        std::cout << "[ZONE TRIGGER] Entered: Catwalks. Liminal space. 90ft drop." << std::endl;
+        std::cout << "[ENCOUNTER] Sombra Negra detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::DIGITAL_STATIC_WAVE);
+    }
+
+    void GodWithinZoneTriggers::enterVoidDream() {
+        std::cout << "[ZONE TRIGGER] Entered: Void Dream. Obsidian mat, infinite darkness." << std::endl;
+        std::cout << "[ENCOUNTER] Solaris Justice detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::GLITCH_SHATTER);
+    }
+
+    void GodWithinZoneTriggers::enterTapeArchive() {
+        std::cout << "[ZONE TRIGGER] Entered: Tape Archive. Claustrophobic, decaying magnetic tape." << std::endl;
+        std::cout << "[ENCOUNTER] Cain Elias (Paranoia Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::WHITE_ASH_DISSOLVE);
+    }
+
+    void GodWithinZoneTriggers::enterHallOfMirrors() {
+        std::cout << "[ZONE TRIGGER] Entered: Hall of Mirrors. Warped geometry, polished glass." << std::endl;
+        std::cout << "[ENCOUNTER] Toma Ishikawa (Kage - Remixed Oni) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::HORIZONTAL_SLICE);
+    }
+
+    void GodWithinZoneTriggers::enterShowerBlock() {
+        std::cout << "[ZONE TRIGGER] Entered: Shower Block. Steam, wet tile, flickering tubes." << std::endl;
+        std::cout << "[ENCOUNTER] Adrian Vess (Mortus - Drowned Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::DIGITAL_STATIC_WAVE);
+    }
+
+    void GodWithinZoneTriggers::enterArenaRoof() {
+        std::cout << "[ZONE TRIGGER] Entered: Arena Roof. Peaceful, cold wind, city skyline." << std::endl;
+        std::cout << "[ENCOUNTER] Stick Up (Awakened Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::WHITE_ASH_DISSOLVE);
+    }
+
+    void GodWithinZoneTriggers::enterSubBasement() {
+        std::cout << "[ZONE TRIGGER] Entered: Sub-Basement Generator Room. Oppressive heat." << std::endl;
+        std::cout << "[ENCOUNTER] Atlas Vance (Burned Kingdom Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::GLITCH_SHATTER);
+    }
+
+    void GodWithinZoneTriggers::enterVIPSkybox() {
+        std::cout << "[ZONE TRIGGER] Entered: VIP Skybox. Psychedelic slow-motion." << std::endl;
+        std::cout << "[ENCOUNTER] Desmond Okafor (Viper - Hollow Ego Remix) detected." << std::endl;
+        campaign->triggerCinematicTransition(TransitionEffect::TYPEWRITER_FOG);
+    }
+
 } // namespace BannonEngine
