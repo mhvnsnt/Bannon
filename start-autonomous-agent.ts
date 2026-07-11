@@ -13,7 +13,7 @@ dotenv.config();
 
 
 const githubToken = process.env.GITHUB_TOKEN || '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';
-const WORKSPACE_DIR = process.env.WORKSPACE_DIR || "/workspace";
+const WORKSPACE_DIR = "/tmp/bannon2";
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
@@ -331,7 +331,7 @@ async function runLoop() {
 
         if (functionCall) {
 
-            console.log(`[Autonomous Daemon] Calling tool: ${functionCall.name}`);
+            console.log(`[Autonomous Daemon] Calling tool: ${functionCall.name} with args:`, JSON.stringify(functionCall.args));
             let result: any = {};
             if (functionCall.name === "workspaceAction") {
                 const { action, path: filePath, content, command } = functionCall.args;
@@ -413,8 +413,8 @@ async function runLoop() {
                 role: 'user',
                 parts: [{ functionResponse: { name: functionCall.name, response: result } }]
             });
-            
-        
+            console.log("[Autonomous Daemon] Tool execution complete, immediately proceeding to next thought...");
+            setTimeout(() => runLoop(), 10000);
         } else {
             history.push({ role: 'model', parts: [{ text: fullText }] });
             if (!hasUserCommand) {
