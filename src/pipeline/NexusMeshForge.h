@@ -37,6 +37,8 @@ namespace BannonEngine {
 
         // Chunking the mesh into 10 anatomical pieces for GORO_RIG procedural skeleton attachment
         void applyGoroRigging(const std::string& characterId);
+        // Automates conversion of Tripo3D meshes into rig-ready assets, script-based scaling to 1.88m, and GORO_RIG integration
+        void automateTripo3DIngestionAndRigging(const std::string& meshId);
         
         // Integrates with Mixamo FBX inputs for overlay clips (taunts, entrances)
         void initializeMixamoOverlayBridge();

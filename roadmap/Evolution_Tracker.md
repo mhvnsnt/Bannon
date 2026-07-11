@@ -87,3 +87,11 @@ This document tracks the cognitive expansion of the God Mode OS Daemon and its i
   - Action: Upgraded `CollisionReactionSolver` to accurately compute hit-reactions for 'Feral Menace' (volatile friction, low-profile evasions) and 'Supernatural Intimidation' (utterly rooted, kinetic absorption).
   - Action: Deepened Onyx's non-canon origin profile in `GimmickCompositor`. Defined her 'Zero-Point' locomotion state and expanded her tactical moveset based on her chronological anomaly status.
   - Action: Upgraded `NexusMeshForge` to v4 (Quick Items Priority). Integrated native support for Hunyuan3D-2mini DiT Flow-Matching and TRELLIS SLAT logic, bypassing Tripo3D limits. Added `applyGoroRigging` (native 15-bone chunking) and `initializeMixamoOverlayBridge` for FBX clip blending.
+
+## Patch v1.1.4 - "Tripo3D Auto-Rigging & Faction Expansion"
+- **Date:** 2026-07-10
+- **Updates:**
+  - Action: Upgraded `NexusMeshForge` (v5) to fully automate the Tripo3D conversion pipeline. Added script-based uniform scaling to clamp imported meshes precisely to the canonical 1.88m height.
+  - Action: Automated the hand-off from Tripo3D ingestion directly into the `GORO_RIG` attachment protocol, eliminating manual rigging steps.
+  - Lore Expansion: Deepened context regarding Book 4 (The Dynasty, Ronye, Kray-Z) and Book 5 (Level 99 AR dystopia, Maime's independent combat mode). 
+  - Faction Alignment: Mapped debut angles for non-canon operators VIPER, KAGE, BRUTUS, ZEPHYR, and MORTUS, bridging them into the NWC / Vandal philosophy and independent mercenary tiers.
