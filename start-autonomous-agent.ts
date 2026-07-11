@@ -6,14 +6,11 @@ import { execSync } from 'child_process';
 import OpenAI from "openai";
 import * as dotenv from "dotenv";
 import axios from "axios";
-import * as Sentry from "@sentry/node";
+
 
 dotenv.config();
 
-Sentry.init({
-  dsn: process.env.SENTRY_DSN || "https://8a6a68297fc9e2fb7dbfcb263bda4f8d@o4507000000000000.ingest.us.sentry.io/4507111111111111",
-  tracesSampleRate: 1.0,
-});
+
 
 const githubToken = process.env.GITHUB_TOKEN || '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';
 const WORKSPACE_DIR = process.env.WORKSPACE_DIR || "/workspace";
@@ -233,7 +230,7 @@ async function runLoop() {
     try {
     console.log("[Autonomous Daemon] Starting iteration...");
 
-    const queuePath = path.resolve(process.cwd(), 'command_queue.json');
+    const queuePath = path.resolve("/tmp/bannon2", 'command_queue.json');
     let hasUserCommand = false;
     if (fs.existsSync(queuePath)) {
         try {
@@ -313,18 +310,11 @@ async function runLoop() {
                 console.log(fullText);
                 success = true;
             }
-        } catch (error: any) {
-             if (error?.status === 429 || error?.message?.includes('RESOURCE_EXHAUSTED')) {
-                console.warn(`[!] ${provider.name} hit rate limit. Swapping to next node...`);
-                Sentry.withScope((scope) => {
-                    scope.setLevel("warning");
-                    scope.setTag("error_type", "rate_limit");
-                    scope.setTag("provider", provider.name);
-                    Sentry.captureMessage(`Rate limit exception hit: ${provider.name} was throttled.`, "warning");
-                });
+        } catch (error: any) { 
+             if (error?.status === 429 || error?.status === 401 || error?.message?.includes('RESOURCE_EXHAUSTED') || error?.message?.includes('Authentication') || error?.message?.includes('rate limit')) {
+                console.warn(`[!] ${provider.name} hit rate limit or auth error. Swapping to next node...`);
                 continue;
              }
-             Sentry.captureException(error);
              throw error;
         }
     }
@@ -440,7 +430,7 @@ async function runLoop() {
 
     } catch (e) {
         console.error("[Autonomous Daemon] Error:", e);
-        Sentry.captureException(e);
+        
     } finally {
         isRunning = false;
     }
@@ -465,7 +455,7 @@ async function loopWithBackoff() {
 }
 setTimeout(loopWithBackoff, 60000);
 
-const queuePathWatch = path.resolve(process.cwd(), 'command_queue.json');
+const queuePathWatch = path.resolve("/tmp/bannon2", 'command_queue.json');
 if (!fs.existsSync(queuePathWatch)) {
     fs.writeFileSync(queuePathWatch, JSON.stringify([]));
 }

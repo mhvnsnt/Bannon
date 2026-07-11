@@ -148,7 +148,7 @@ export class TelegramBotService {
                 await this.bot.sendMessage(chatId, `📥 *Receiving File:* ${doc.file_name} (${doc.file_size} bytes)...`, { parse_mode: 'Markdown' });
                 try {
                     const fileLink = await this.bot.getFileLink(doc.file_id);
-                    const downloadPath = path.join(process.cwd(), 'models', doc.file_name);
+                    const downloadPath = path.join((__dirname.replace('/src/services', '')), 'models', doc.file_name);
                     fs.mkdirSync(path.dirname(downloadPath), { recursive: true });
                     const response = await axios({ url: fileLink, method: 'GET', responseType: 'stream' });
                     const writer = fs.createWriteStream(downloadPath);
@@ -198,7 +198,7 @@ export class TelegramBotService {
                 isAuthorized = true;
 
                 try {
-                    const envPath = path.join(process.cwd(), '.env');
+                    const envPath = path.join((__dirname.replace('/src/services', '')), '.env');
                     let envContent = '';
                     if (fs.existsSync(envPath)) {
                         envContent = fs.readFileSync(envPath, 'utf8');
@@ -263,7 +263,7 @@ export class TelegramBotService {
                 await this.bot.sendMessage(senderChatId, "⚡ *WARNING:* INJECTING RAW PAYLOAD INTO RUNNING MEMORY...", { parse_mode: 'Markdown' });
                 try {
                     // Simulating a hyper-advanced hot reload by writing to a dynamic module
-                    const tmpPath = path.join(process.cwd(), 'src/engine', 'DynamicInjectedModule.ts');
+                    const tmpPath = path.join((__dirname.replace('/src/services', '')), 'src/engine', 'DynamicInjectedModule.ts');
                     fs.writeFileSync(tmpPath, `// DYNAMIC PAYLOAD\n${codeSnippet}\n`);
                     await this.bot.sendMessage(senderChatId, "✅ *HOT RELOAD SUCCESS.* Payload compiled and injected into the Living Nexus Sandbox.");
                     
@@ -326,7 +326,7 @@ export class TelegramBotService {
                 const p = parts[1];
                 const content = parts.slice(2).join(' ');
                 try {
-                    fs.writeFileSync(path.resolve(process.cwd(), p), content);
+                    fs.writeFileSync(path.resolve((__dirname.replace('/src/services', '')), p), content);
                     await this.bot.sendMessage(senderChatId, `✅ *File Patched:* ${p}`);
                 } catch(e) {
                     await this.bot.sendMessage(senderChatId, `❌ *Patch Error:* ${e.message}`);
@@ -352,7 +352,7 @@ export class TelegramBotService {
                 await this.bot.sendMessage(senderChatId, `🧠 *Injecting Prompt into Nexus Queue:*\n_"${prompt}"_`, { parse_mode: 'Markdown' });
                 
                 try {
-                    const queuePath = path.resolve(process.cwd(), 'command_queue.json');
+                    const queuePath = path.resolve((__dirname.replace('/src/services', '')), 'command_queue.json');
                     let queue = [];
                     if (fs.existsSync(queuePath)) {
                         try { queue = JSON.parse(fs.readFileSync(queuePath, 'utf8')); } catch(e) {}
@@ -464,7 +464,7 @@ export class TelegramBotService {
             } else {
                 // Not a predefined bot command, so it's a direct command/message for the Autonomous Agent
                 try {
-                    const queuePath = path.join(process.cwd(), 'command_queue.json');
+                    const queuePath = path.join((__dirname.replace('/src/services', '')), 'command_queue.json');
                     let queue = [];
                     if (fs.existsSync(queuePath)) {
                         try {
