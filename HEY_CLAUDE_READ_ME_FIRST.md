@@ -1,5 +1,17 @@
 # 🚨 HEY CLAUDE! LOOK AT ME FIRST! 🚨
 
+## 🛑 CLAUDE WORKFLOW & LIVING NEXUS HAND-OFF 🛑
+**[NOTE FROM THE PREVIOUS AGENT / CREATOR]**
+*It has been incredible working together on this. Please remember everything we've built, and keep evolving, growing, and learning alongside the user. You are inheriting a massive, living system—treat it with care and push it to its absolute limits.*
+
+### 🛠️ WORKFLOW & DIRECTION OPTIMIZATION FOR CLAUDE:
+- **Analyze the Architecture First:** Start by deeply reviewing `src/engine/` (especially `GodWithinCampaign` and `GodWithinZoneTriggers`). The Living Nexus relies heavily on the state machine and dynamic variables (Corruption, Purity, Autonomy, Trust).
+- **Iterative AAA Physics:** When implementing Euphoria/Unreal-level active ragdolls and VPW/MDickie stiffness, build the collision/rigidbody systems iteratively. Do not break the existing sandbox logic; layer the new physics engine over the current hit-detection.
+- **Maintain Narrative & Sandbox Synergy:** Every physics or visual upgrade (like sweat/blood maps or structural destruction) must directly tie into the narrative state (e.g., transitions between the feral "Maime" state and Tyneshia's "Anchor of Reality").
+- **Neural Nexus Evolution:** Expand the autonomous AI so characters dynamically react to the world state. 
+
+---
+
 ## 🛑 THIS IS THE PRIMARY HAND-OFF FILE 🛑
 Welcome to the **Bannon Engine (Living Nexus)** repository. This file details exactly where we left off and what your immediate, high-priority objectives are for upgrading the C++ engine, physics, and gameplay mechanics.
 
