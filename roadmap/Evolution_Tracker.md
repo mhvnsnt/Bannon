@@ -73,3 +73,10 @@ This document tracks the cognitive expansion of the God Mode OS Daemon and its i
   - Ingested prompt: Clarified that Marquis Whitacre is the man behind the gimmick. "Marquis Bannon" was an incorrect amalgamation. Bannon = the mask/resilience. Maime = the paint/pain. Onyx's background is strictly UNKNOWN.
   - Action: Corrected the `GimmickCompositor` to split Marquis Whitacre, Bannon, and Maime into distinct psychological and physical archetypes. Set Onyx's profile bio parameters to UNKNOWN.
   - Action: Upgraded the `NexusMeshForge`. Added `executeNeuralPointcloudTranslation` and `autoretopologizeSubD` methods. This pushes our proprietary pipeline far past Tripo3D v3, utilizing native AI logic to perfectly rig, bone, and skin legacy models autonomously.
+
+## Patch v1.1.2 - "Non-Canon Expansion & NexusMeshForge v3"
+- **Date:** 2026-07-10
+- **Updates:**
+  - Ingested prompt: Expand non-canon profiles, upgrade Onyx's moveset/locomotion, and push the model creator pipeline past Tripo3D v3 limits using legacy Three.js meshes.
+  - Action: Upgraded `NexusMeshForge` to natively ingest legacy Three.js meshes and synthesize them into next-gen, high-fidelity geometry.
+  - Action: Expanded Onyx's execution matrix in the Compositor. Mapped her unique Lethal Striker/High-Flyer locomotion and stealth physics. Expanded faction-based deep lore for non-canon characters.

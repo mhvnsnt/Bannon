@@ -24,7 +24,6 @@ namespace BannonEngine {
     void GimmickCompositor::initializeRosterProfiles() {
         std::cout << "[NEXUS COMPOSITOR] Ingesting Canon and Non-Canon character profiles into the Evolution Matrix..." << std::endl;
         
-        // CORRECTION: Marquis Whitacre is the man. Bannon is the mask. Maime is the paint.
         ArchetypeBlend whitacreBlend = {"Master Technician", "Cunning Strategist", "Underdog", "", ""};
         assignArchetypes("Marquis Whitacre (The Man)", whitacreBlend);
 
@@ -37,11 +36,18 @@ namespace BannonEngine {
         ArchetypeBlend johnFordBlend = {"Explosive Powerhouse", "Absolute Mass", "Brawler", "Unstoppable Force", ""};
         assignArchetypes("John Ford", johnFordBlend);
         
-        // CORRECTION: Onyx Profile - Background Canonically Unknown
+        // DEEP LORE: Onyx (Non-Canon Faction operative)
         std::cout << "[NEXUS LORE] Onyx Bio: Real Name [UNKNOWN], DOB [UNKNOWN], Birthplace [UNKNOWN]." << std::endl;
-        ArchetypeBlend onyxBlend = {"Lethal Striker", "Sadistic Brawler", "Fearless High-Flyer", "Intimidation Aura", ""};
+        std::cout << "[NEXUS KINEMATICS] Onyx Locomotion Override: Lethal Striker base paired with stealth-oriented Feral Agility." << std::endl;
+        std::cout << "[NEXUS KINEMATICS] Onyx Moveset: High-angle surgical strikes, evasive grappling, no wasted mass." << std::endl;
+        ArchetypeBlend onyxBlend = {"Lethal Striker", "Sadistic Brawler", "Fearless High-Flyer", "Feral Agility", "Intimidation Aura"};
         assignArchetypes("Onyx", onyxBlend);
         
+        // DEEP LORE: Expanding Non-Canon faction characters
+        std::cout << "[NEXUS LORE] Zephyr Bio: The Ghost of the Grid. Uses legacy Three.js framework history." << std::endl;
+        ArchetypeBlend zephyrBlend = {"Evasive Tactician", "Fearless High-Flyer", "Lethal Precision", "Underdog", ""};
+        assignArchetypes("Zephyr", zephyrBlend);
+
         ArchetypeBlend kageBlend = {"Dark Arts Striker", "Evasive Tactician", "Psychological Menace", "Feral Agility", ""};
         assignArchetypes("Kage", kageBlend);
         
