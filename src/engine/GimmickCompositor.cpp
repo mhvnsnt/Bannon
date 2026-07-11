@@ -23,3 +23,21 @@ namespace BannonEngine {
     }
 
 } // namespace BannonEngine
+
+    void GimmickCompositor::initializeRosterProfiles() {
+        std::cout << "[NEXUS COMPOSITOR] Ingesting Canon and Non-Canon character profiles into the Evolution Matrix..." << std::endl;
+        
+        ArchetypeBlend marquisBlend = {"Cunning Strategist", "Master Technician", "Psychological Menace", "Unstoppable Force", ""};
+        assignArchetypes("Marquis Bannon", marquisBlend);
+        
+        ArchetypeBlend johnFordBlend = {"Explosive Powerhouse", "Absolute Mass", "Brawler", "Unstoppable Force", ""};
+        assignArchetypes("John Ford", johnFordBlend);
+        
+        ArchetypeBlend onyxBlend = {"Lethal Striker", "Sadistic Brawler", "Fearless High-Flyer", "Intimidation Aura", ""};
+        assignArchetypes("Onyx", onyxBlend);
+        
+        ArchetypeBlend kageBlend = {"Dark Arts Striker", "Evasive Tactician", "Psychological Menace", "Feral Agility", ""};
+        assignArchetypes("Kage", kageBlend);
+        
+        std::cout << "[NEXUS COMPOSITOR] Roster Profiles Mapped. Float logic bound to active execution states." << std::endl;
+    }

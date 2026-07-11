@@ -29,6 +29,8 @@ namespace BannonEngine {
 
         // Pre-calculates the final float array for the physics engine
         void compilePhysicsMultipliers();
+        // Pre-loads the Canon and Non-Canon rosters into the active memory
+        void initializeRosterProfiles();
 
     private:
         ArchetypeBlend activeBlend;
