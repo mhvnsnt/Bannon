@@ -16,7 +16,7 @@ material UUID is stable across every duplicate export) plus the owner's tells:
 | `f8bae5d8` | **BANNON · Muscular alt** | same mask/dreads/trunks, ripped physique, armored gauntlets | `BANNON_muscular.glb` | ⚠️ single-mesh (needs rigready) |
 | `efcf3606` | **MAIME** | white facepaint, denim jeans + silver chains, hoodie | `MAIME.glb` | ✅ named-part rig |
 | `816d669b` | **MAIME · Tattered alt** | white skull facepaint + goatee, black tattered graphic/flame gear, chains | `MAIME_tattered.glb` | ✅ named-part rig (recentered −0.475 X) |
-| `7079dc00` | **MAIME · Studded alt** | white skull facepaint, black studded harness + white studs | `MAIME_studded.glb` | ⚠️ single-mesh (needs rigready) |
+| `7079dc00` | **ONYX · Corset alt** | white skull facepaint, black studded harness + white studs | `ONYX_corset.glb` | ⚠️ single-mesh (needs rigready) |
 
 ### Mislabels corrected in this pass
 - `BANNON_masked_rigready` (mat `816d669b`) → **Maime (Tattered)**, NOT Bannon.

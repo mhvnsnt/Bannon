@@ -11394,7 +11394,7 @@ function loadRing3D(){
   if (!B64) return;
   if (typeof THREE==='undefined' || !THREE.GLTFLoader) return;
   if (arenaIdx===2) return;                          // void theme has no ring
-  let loader; try{ loader=new THREE.GLTFLoader(); }catch(e){ return; }
+  let loader; try{ loader = url.match(/\.fbx$/i) ? (THREE.FBXLoader ? new THREE.FBXLoader() : new THREE.GLTFLoader()) : new THREE.GLTFLoader(); }catch(e){ return; }
   let buf; try{ buf=b64ToArrayBuffer(B64); }catch(e){ return; }
   loader.parse(buf, '', (gltf)=>{
     try{
@@ -13809,6 +13809,21 @@ function _bindFighterGltf(side, url, name, gltf){
     const sc=s*(MODEL_CFG.userScale||1);
     container.scale.setScalar(sc);
     container.userData.yBase = -container.userData.minY*sc;
+
+    // Orientation-normalize + single-static flag (Ported from tools)
+    let _meshCount = 0; obj.traverse(o => { if(o.isMesh) _meshCount++; });
+    let isSingleStatic = (Object.keys(bones).length === 0 && _meshCount <= 1);
+    if(isSingleStatic) {
+        container.userData.needsSplit = true;
+    }
+    // Normalize facing + recenter
+    const _ctr = new THREE.Vector3();
+    box.getCenter(_ctr);
+    obj.position.x -= _ctr.x;
+    obj.position.z -= _ctr.z;
+    obj.position.y -= box.min.y;
+    container.updateMatrixWorld(true);
+
     // ===== RIGID AUTO-RIG for unrigged models (e.g. Goro: 0 bones, separate mesh chunks) =====
     // Build a humanoid skeleton at the rig's rest layout (scaled to this mesh), attach each chunk to
     // its nearest bone, and register the segments so the EXISTING retarget drives it. Gated to models
@@ -13844,6 +13859,16 @@ function _bindFighterGltf(side, url, name, gltf){
     }catch(e){}
     f.model=container; f.modelUrl=url; scene.add(container); setProcVisible(f,false);
     try{ if(window.applyShapeMorphs) window.applyShapeMorphs(f); }catch(_){}   // sculpt the fresh mesh to the fighter's current CAW/DNA shape
+
+    // Wire auto-rig-on-import -> DNA-CAW base
+    if(container.userData.autoRig || isSingleStatic) {
+        try {
+            if(typeof window.BANNON_DNA !== 'undefined') {
+                f.dna = JSON.parse(JSON.stringify(window.BANNON_DNA.baseTemplate || {}));
+            }
+        } catch(e) {}
+    }
+
     _rigSense(side, name, bones, mapped, container, s);
   }catch(e){ setModelStatus(side,'⚠ Bind error. Built-in body kept.'); removeFighterModel(side); }
 }
