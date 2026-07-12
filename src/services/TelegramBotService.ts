@@ -42,8 +42,22 @@ export class TelegramBotService {
         try {
             // Dynamically import to keep client-side Vite bundle clean
             const TelegramBotClass = (await import('node-telegram-bot-api')).default;
-            this.bot = new TelegramBotClass(this.token, { polling: true });
-            
+            this.bot = new TelegramBotClass(this.token, {
+                polling: { interval: 1000, autoStart: true, params: { timeout: 30 } }
+            });
+            try { await this.bot.deleteWebhook({ drop_pending_updates: false }); } catch (_) {}
+            // SELF-HEALING: no polling_error handler = a 409 (two instances after a redeploy — the #1
+            // "bot stopped working" cause) or a network blip kills the loop forever. Recover from it.
+            this.bot.on('polling_error', (err: any) => {
+                const msg = (err && (err.message || err.code)) || String(err);
+                if (/409|conflict/i.test(msg)) {
+                    console.warn('[TelegramBotService] 409 conflict (another instance polling). Backing off 15s, restarting…');
+                    try { this.bot.stopPolling(); } catch (_) {}
+                    setTimeout(() => { try { this.bot.startPolling({ restart: true }); } catch (_) {} }, 15000);
+                } else { console.error(`[TelegramBotService] polling_error: ${msg}`); }
+            });
+            this.bot.on('error', (err: any) => console.error(`[TelegramBotService] bot error: ${err && err.message}`));
+
             console.log(`🤖 [TelegramBotService] Active token verified. Listening for command vectors...`);
             this.setupListeners();
             this.startProactiveEngine();
@@ -141,6 +155,8 @@ export class TelegramBotService {
         };
 
         this.bot.on('message', async (msg: any) => {
+            const _scid = (msg && msg.chat && msg.chat.id);
+            try {
             const incomingText = (msg.text || '').toLowerCase().trim();
             const senderChatId = msg.chat.id;
             const senderUsername = msg.from?.username || '';
@@ -438,6 +454,10 @@ export class TelegramBotService {
                 } catch (err: any) {
                     await this.bot.sendMessage(senderChatId, `❌ *Failed to queue command:* ${err.message}`, { parse_mode: 'Markdown' });
                 }
+            }
+            } catch (e: any) {
+                console.error('[TelegramBotService] message handler error (loop kept alive):', e && e.message);
+                try { if (_scid) await this.bot.sendMessage(_scid, '\u26a0\ufe0f Hit an error on that one \u2014 logged, still online.'); } catch (_) {}
             }
         });
     }
