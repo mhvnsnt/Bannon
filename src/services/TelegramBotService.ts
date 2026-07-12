@@ -291,6 +291,42 @@ export class TelegramBotService {
                 return;
             }
 
+            // /snapshot <MODEL> — VISUAL TELEMETRY: render the model headless (tools/model_preview)
+            // and send the PNG straight to this chat. /models lists what's snapshot-able.
+            if (incomingText === '/models') {
+                try {
+                    const dir = path.join(process.cwd(), 'assets', 'models');
+                    const list = fs.readdirSync(dir).filter(f => f.endsWith('.glb')).map(f => f.replace(/\.glb$/, ''));
+                    await this.bot.sendMessage(senderChatId, `🧍 *Models* (use /snapshot <name>):\n${list.join('\n')}`, { parse_mode: 'Markdown' });
+                } catch (e: any) { await this.bot.sendMessage(senderChatId, `❌ ${e.message}`); }
+                return;
+            }
+            if (incomingText.startsWith('/snapshot')) {
+                const name = (msg.text || '').replace(/^\/snapshot/i, '').trim() || 'BANNON';
+                const glb = path.join(process.cwd(), 'assets', 'models', `${name}.glb`);
+                if (!fs.existsSync(glb)) { await this.bot.sendMessage(senderChatId, `❌ No model "${name}". Try /models`); return; }
+                await this.bot.sendMessage(senderChatId, `📸 Rendering *${name}*…`, { parse_mode: 'Markdown' });
+                try {
+                    const outDir = path.join(process.cwd(), 'tools', 'model_preview', 'shots');
+                    execSync(`node tools/model_preview/snapshot.cjs "${glb}" "${outDir}" "${name}"`, { cwd: process.cwd(), timeout: 180000 });
+                    const shot = path.join(outDir, `${name}_fq.png`);
+                    if (fs.existsSync(shot)) await this.bot.sendPhoto(senderChatId, shot, { caption: `${name} — headless render (auto-rig verified)` });
+                    else await this.bot.sendMessage(senderChatId, '⚠️ Render produced no frame (headless Chromium missing on this host?)');
+                } catch (e: any) { await this.bot.sendMessage(senderChatId, `❌ Snapshot failed: ${(e.message || '').slice(0, 200)}`); }
+                return;
+            }
+            // /generate <prompt> — fire the Tripo text->3D pipeline (needs TRIPO_API_KEY + credits);
+            // the result auto-skins and banks, then /snapshot it.
+            if (incomingText.startsWith('/generate')) {
+                const prompt = (msg.text || '').replace(/^\/generate/i, '').trim();
+                if (!prompt) { await this.bot.sendMessage(senderChatId, 'Usage: /generate a masked luchador in silver gear'); return; }
+                await this.bot.sendMessage(senderChatId, '⚒️ Generation queued (Tripo). I will report when it lands.');
+                try {
+                    execSync(`nohup node tools/tripo/generate.mjs --prompt "${prompt.replace(/"/g, '')}" --name CUSTOM_${Date.now().toString(36)} >> /tmp/tripo_gen.log 2>&1 &`, { cwd: process.cwd(), shell: '/bin/bash' });
+                } catch (e: any) { await this.bot.sendMessage(senderChatId, `❌ ${(e.message || '').slice(0, 160)}`); }
+                return;
+            }
+
             // /orders — view the shared dev-order inbox (written by Telegram free-text AND the
             // in-game GOD MODE OS terminal via /api/orders; drained by the autonomous agent loop).
             if (incomingText === '/orders') {

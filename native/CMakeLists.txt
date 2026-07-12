@@ -44,3 +44,8 @@ add_test(NAME solvers COMMAND test_solvers)
 add_executable(test_persona tests/test_persona.cpp)
 target_link_libraries(test_persona bannon_core)
 add_test(NAME persona COMMAND test_persona)
+
+# 4-quadrant release matrix (A slam/B drop/X throw/Y toss) + weapon mass/stamina physics
+add_executable(test_weapon tests/test_weapon.cpp)
+target_link_libraries(test_weapon bannon_core)
+add_test(NAME weapon COMMAND test_weapon)
