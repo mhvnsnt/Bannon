@@ -13434,6 +13434,11 @@ try{
   // CODY CALLAHAN — canon manager, NOW ALSO FIGHTABLE ("Cannon Cody" fights in God Within Act 3.5).
   // GLB attire CODY_gear.glb (heavyset hairy brawler, beard, blue-plaid trunks, yellow wristbands).
   _addChar('CODY_CALLAHAN',  { label:'The Corduroy Kid',        col:0x27374a, accent:0xf2c230, skin:0xe7bd96, faction:'Corporate Structure', canon:true, bio:'Toxic manager, exposed nerve — no mask, no armor, pure loyalty and deterioration. When the bell rings anyway, he throws hands like a bar fight.', archetype:'brawler' }, 'TRUNKS', 'SHORT', {musc:0.5,fat:0.62});
+  // STICK-UP "Jackboy" (canon, owner-made) — street-level high-flyer, carries a cross; LEAP OF FAITH swanton.
+  _addChar('STICK_UP',       { label:'Jackboy',                 col:0xe0187a, accent:0xc0c0c8, skin:0x4a2c1c, faction:'Independent Variables', canon:true, bio:'Street-level believer, gold cross around his neck — the betrayer turned true. Swanton off anything.', archetype:'highFlyer' }, 'CARGO_PANTS', 'DREADS', {musc:0.62,fat:0.1});
+  // CIPHER + ECHO (owner-made, Onyx's God Within stable — profiles from canon/godwithin/noncanon_roster.md)
+  _addChar('CIPHER',         { label:'The Undefined',           col:0x101014, accent:0x22ff88, skin:0x3a2418, faction:'Agents of Chaos', canon:true, bio:'Life Path recalculates every read — offense genuinely non-deterministic. Feral black-sludge maniac off the numerology engine.', archetype:'brawler' }, 'LONG_TIGHTS', 'DREADS', {musc:0.66,fat:0.12});
+  _addChar('ECHO',           { label:'The Reflection',          col:0x1a1a22, accent:0xcc2255, skin:0x5a3a28, faction:'Agents of Chaos', canon:true, bio:'No Life Path of her own — hers is whatever you run. No signature offense; she hits you with your own move.', archetype:'technician' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.5,fat:0.15,fem:1,hips:1.0,glutes:1.05,waist:0.85,bust:0.85});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13770,6 +13775,12 @@ const MODEL_LIBRARY = [
   // gear + snakeskin-pants street attire. Auto-skinned (v4.2) from the owner's Tripo uploads.
   { name:'CAIN ELIAS · Ring/Entrance', url:'assets/models/CAIN_ELIAS_ring.glb', charKey:'CAIN_ELIAS' },
   { name:'CAIN ELIAS · Snakeskin', url:'assets/models/CAIN_ELIAS_snakeskin.glb', charKey:'CAIN_ELIAS' },
+  { name:'STICK-UP · Jackboy', url:'assets/models/STICKUP.glb', charKey:'STICK_UP' },
+  { name:'CIPHER', url:'assets/models/CIPHER.glb', charKey:'CIPHER' },
+  { name:'ECHO', url:'assets/models/ECHO.glb', charKey:'ECHO' },
+  { name:'ONYX · Street', url:'assets/models/ONYX_street.glb', charKey:'ONYX' },
+  { name:'CODY · Sober', url:'assets/models/CODY_sober.glb', charKey:'CODY_CALLAHAN' },
+  { name:'CODY · Stressed', url:'assets/models/CODY_stressed.glb', charKey:'CODY_CALLAHAN' },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },

@@ -49,3 +49,13 @@ is the C++ port, where these same identities carry over as authored bodies.
 - **CAIN ELIAS "The Executioner"** (canon, LP6) — Undertaker-inspired. `CAIN_ELIAS_ring.glb`
   (leather coat + purple tie entrance/cutscene gear) + `CAIN_ELIAS_snakeskin.glb` (snakeskin-pants
   street attire). Skinned by tools/rigready/skin.cjs (multi-texture PBR: normal+base+metallic).
+
+## Batch 2 (owner-made, auto-skinned v4.2, multi-texture PBR)
+- **STICK-UP "Jackboy"** (canon, Independent Variables) — shirtless, silver cross chain, pink cargo
+  joggers, dreads. `STICKUP.glb`. Registered highFlyer.
+- **CIPHER "The Undefined"** (Onyx's God Within stable) — feral black-sludge maniac, non-deterministic
+  offense. `CIPHER.glb`. Registered brawler.
+- **ECHO "The Reflection"** (Onyx's stable) — mimic/read, hits you with your own move. `ECHO.glb`.
+- **ONYX · Street** — `ONYX_street.glb` (new attire).
+- **CODY · Sober / Stressed** — `CODY_sober.glb`, `CODY_stressed.glb` (canon manager, alt states).
+NOTE: onyxstraightjacketskirt.glb was a truncated Drive upload — owner to re-upload.
