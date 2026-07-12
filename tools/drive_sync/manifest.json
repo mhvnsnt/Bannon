@@ -760,7 +760,7 @@
   "id": "1QV5r7S2Y9P832pSeMx4Rj4BZDWUI0ayA",
   "ok": false,
   "reason": "truncated",
-  "at": "2026-07-12T04:52:28.358Z"
+  "at": "2026-07-12T08:33:49.548Z"
  },
  "onyxstreetgear.glb": {
   "id": "1E9q_xjeHo7tykfRb-hEx0d-ecvwIXhMX",
@@ -806,9 +806,9 @@
  },
  "2k moves 2k28.zip": {
   "id": "1SjNTCC4zXelINHzt2n5U5-vW7phK82bF",
-  "ok": false,
-  "reason": "wwe2k18-pac-mod-pack: proprietary .pac motion archives — unreadable by our engine AND ripped 2K assets (legal no-go for the game). Reference only; NOT ingested.",
-  "at": "2026-07-12T04:59:42.450Z"
+  "ok": true,
+  "size": 76314806,
+  "at": "2026-07-12T08:33:51.176Z"
  },
  "AlternatingForearms.fbx": {
   "id": "147NindMhA2sze7JDwpJf2MAyQCZOG1AW",
@@ -1133,5 +1133,173 @@
   "ok": true,
   "size": 1982368,
   "at": "2026-07-12T04:54:03.475Z"
+ },
+ "AssistedCutter.fbx": {
+  "id": "1od9zNxbU35kqwWc6xghTxaXmGsQieqJA",
+  "ok": true,
+  "size": 11816944,
+  "at": "2026-07-12T08:33:52.506Z"
+ },
+ "BrainBuster.fbx": {
+  "id": "1D16l2rB5owYS7MM4z7moFZsvuqYWIYVz",
+  "ok": true,
+  "size": 7253472,
+  "at": "2026-07-12T08:33:53.629Z"
+ },
+ "Brian_Cage.fbx": {
+  "id": "1t9pRFskg0rJoBWQL8M2OUiW0j8K0lMgy",
+  "ok": true,
+  "size": 2429184,
+  "at": "2026-07-12T08:33:54.918Z"
+ },
+ "Cartwheel.fbx": {
+  "id": "1OCTTpoVRJexqqMUNM6eo_kgIKy_gU8sD",
+  "ok": true,
+  "size": 3618064,
+  "at": "2026-07-12T08:33:56.151Z"
+ },
+ "Chris_Jericho.fbx": {
+  "id": "1rQ2U53gM86NEYNlI5BGKQThF_ci2hufT",
+  "ok": true,
+  "size": 2991360,
+  "at": "2026-07-12T08:33:57.362Z"
+ },
+ "CrotchChop.fbx": {
+  "id": "1EwIvedMITE7ba9WVDfYG4IVpii9PCpNx",
+  "ok": true,
+  "size": 3564624,
+  "at": "2026-07-12T08:33:58.513Z"
+ },
+ "DDT.fbx": {
+  "id": "1skcTj4a7UZvqbJ1yVD5Y6s5fOjbFSg0n",
+  "ok": true,
+  "size": 8314512,
+  "at": "2026-07-12T08:33:59.754Z"
+ },
+ "DragonScrew.fbx": {
+  "id": "1yIAzi3a1TFkQDFZV7x5AxDTC6BcFEkkE",
+  "ok": true,
+  "size": 7136304,
+  "at": "2026-07-12T08:34:00.927Z"
+ },
+ "FaceGouge.fbx": {
+  "id": "1y0ab8tQHaOHRkhxDu70PusDZmvpqdby4",
+  "ok": true,
+  "size": 6729072,
+  "at": "2026-07-12T08:34:02.258Z"
+ },
+ "Fatality.fbx": {
+  "id": "1Pyk0lvljoeYJq2tDeFNaA0HR5Qw_-xiO",
+  "ok": true,
+  "size": 11954832,
+  "at": "2026-07-12T08:34:03.676Z"
+ },
+ "GermanSuplex.fbx": {
+  "id": "1mt3l2fPnOSqo89BNLjK3eq8NBA_AQGXg",
+  "ok": true,
+  "size": 6594672,
+  "at": "2026-07-12T08:34:04.799Z"
+ },
+ "HurricaneRana.fbx": {
+  "id": "1jTQnD2IxDMHRH_s3csKt9C6p4t1BmN5j",
+  "ok": true,
+  "size": 6951472,
+  "at": "2026-07-12T08:34:06.028Z"
+ },
+ "NeckBreaker.fbx": {
+  "id": "1kUKcwuCulLzzayNg9OCtP0nHl56JG_I7",
+  "ok": true,
+  "size": 8280256,
+  "at": "2026-07-12T08:34:07.252Z"
+ },
+ "PopUpGermanSuplex.fbx": {
+  "id": "1qUtPNGHkSqrQvO3IR8PsPp6g4ySV_yLW",
+  "ok": true,
+  "size": 10429792,
+  "at": "2026-07-12T08:34:08.543Z"
+ },
+ "SchoolBoySuperkick.fbx": {
+  "id": "1P4t1sZX1r07ecodtv0hlb8Zc7GKm0m6U",
+  "ok": true,
+  "size": 7210928,
+  "at": "2026-07-12T08:34:09.658Z"
+ },
+ "ShoulderBag.fbx": {
+  "id": "1Sxb_mqp-g5Ey2iWLiNHcU2ZwdcuHwq-W",
+  "ok": true,
+  "size": 8764864,
+  "at": "2026-07-12T08:34:10.933Z"
+ },
+ "SnapPiledrivers.fbx": {
+  "id": "1cGk0JaQTdig1e33EZf0xiU2c1EIsiuyh",
+  "ok": true,
+  "size": 12095472,
+  "at": "2026-07-12T08:34:12.216Z"
+ },
+ "SpinningArmsSpread.fbx": {
+  "id": "1qffcODabwaUQGtd8C3NGV222QbAmCZMW",
+  "ok": true,
+  "size": 3841392,
+  "at": "2026-07-12T08:34:13.446Z"
+ },
+ "Suplex.fbx": {
+  "id": "1jsIB7RHjBS9cmgluRbg27u9wX-9vF3t8",
+  "ok": true,
+  "size": 6508560,
+  "at": "2026-07-12T08:34:14.586Z"
+ },
+ "TableImpact.fbx": {
+  "id": "1vD9A7NyOClCtg_BBjLoes3MXLmnw7lgi",
+  "ok": true,
+  "size": 8110240,
+  "at": "2026-07-12T08:34:15.755Z"
+ },
+ "Tau_ButtSlap.fbx": {
+  "id": "1nNZ9VVkLqVOP-MDHj_T2M28bP8wfcb5r",
+  "ok": true,
+  "size": 3029920,
+  "at": "2026-07-12T08:34:17.084Z"
+ },
+ "Tau_Diva.fbx": {
+  "id": "1qX3NS_RwHbTe9OdVlbvuTGHK7yQWyA7f",
+  "ok": true,
+  "size": 4177712,
+  "at": "2026-07-12T08:34:18.151Z"
+ },
+ "Tau_GameOver.fbx": {
+  "id": "1qLhxmr2Jdft1jY83MkBpr50M9rVzwJfa",
+  "ok": true,
+  "size": 3666512,
+  "at": "2026-07-12T08:34:19.216Z"
+ },
+ "Tau_GeneralFemale.fbx": {
+  "id": "1YmlZ8_yA4YOKGuXhRs_YXEZOlRmtiueJ",
+  "ok": true,
+  "size": 3042416,
+  "at": "2026-07-12T08:34:20.392Z"
+ },
+ "Tau_HEADCRACK.fbx": {
+  "id": "1crBK53loWMgOZLL_P8fbNhAOp76lNcdq",
+  "ok": true,
+  "size": 4222416,
+  "at": "2026-07-12T08:34:21.457Z"
+ },
+ "Taunt_KofiKingston.fbx": {
+  "id": "1r-0i2bFH-2hnRtLN-0QNetFNFpGbddT0",
+  "ok": true,
+  "size": 3269920,
+  "at": "2026-07-12T08:34:22.629Z"
+ },
+ "VerticalBrainBuster.fbx": {
+  "id": "1VdURcuyAMAH1wRkDgoBD2UHNJvCZkRwV",
+  "ok": true,
+  "size": 9446384,
+  "at": "2026-07-12T08:34:23.903Z"
+ },
+ "WBTC.fbx": {
+  "id": "1T0kv6sava7XvLAx5WT-tR66ryetcedHV",
+  "ok": true,
+  "size": 3603440,
+  "at": "2026-07-12T08:34:25.018Z"
  }
 }
