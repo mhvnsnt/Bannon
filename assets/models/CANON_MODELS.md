@@ -44,3 +44,8 @@ pipeline. Same fix, they just need the split.
 Registered in `MODEL_LIBRARY` (BANNON_v150.html) with `charKey` so they appear as selectable
 alternate attires per fighter. These are the **Three.js-era** attires; per the roadmap the AAA target
 is the C++ port, where these same identities carry over as authored bodies.
+
+## Canon additions (owner-made, auto-skinned via v4.2)
+- **CAIN ELIAS "The Executioner"** (canon, LP6) — Undertaker-inspired. `CAIN_ELIAS_ring.glb`
+  (leather coat + purple tie entrance/cutscene gear) + `CAIN_ELIAS_snakeskin.glb` (snakeskin-pants
+  street attire). Skinned by tools/rigready/skin.cjs (multi-texture PBR: normal+base+metallic).

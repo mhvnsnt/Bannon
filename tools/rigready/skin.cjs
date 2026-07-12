@@ -286,20 +286,30 @@ function main(){
   BONES.forEach((b,i)=>{ const p=JW[b[1]]; const parent=b[3]?JW[BONES[boneIdx[b[3]]][1]]:[0,0,0];
     nodes.push({name:b[0], translation:[p[0]-parent[0], p[1]-parent[1], p[2]-parent[2]]}); });
   BONES.forEach((b,i)=>{ if(b[3]!=null){ const pn=nodes[boneIdx[b[3]]+1]; pn.children=pn.children||[]; pn.children.push(i+1); } });
-  // texture
-  const outImages=[],outTextures=[];
-  if(json.images&&json.images.length){ const img=json.images[0],bv=json.bufferViews[img.bufferView];
+  // textures — copy ALL images/textures/samplers so multi-map PBR materials (normal + baseColor +
+  // metallicRoughness, as newer Tripo exports ship) keep every index valid. Copying only images[0]
+  // dangled texture refs 1..n and crashed GLTFLoader ("reading 'extensions'").
+  const outImages=[],outTextures=[],outSamplers=(json.samplers||[]).map(x=>Object.assign({},x));
+  const imgRemap={};
+  (json.images||[]).forEach((img,ix)=>{
+    if(img.bufferView==null) { imgRemap[ix]=outImages.length; outImages.push(Object.assign({},img)); return; }
+    const bv=json.bufferViews[img.bufferView];
     const data=bin.slice(bv.byteOffset||0,(bv.byteOffset||0)+bv.byteLength);
     outViews.push({buffer:0,byteOffset:bufOff,byteLength:data.length}); bufParts.push(data);
     const pad=(4-(data.length%4))%4; if(pad)bufParts.push(Buffer.alloc(pad)); bufOff+=data.length+pad;
-    outImages.push({mimeType:img.mimeType,bufferView:outViews.length-1}); outTextures.push({source:0}); }
+    imgRemap[ix]=outImages.length; outImages.push({mimeType:img.mimeType,bufferView:outViews.length-1});
+  });
+  (json.textures||[]).forEach(tex=>{
+    const t={}; if(tex.source!=null)t.source=imgRemap[tex.source]!=null?imgRemap[tex.source]:tex.source;
+    if(tex.sampler!=null)t.sampler=tex.sampler; outTextures.push(t);
+  });
   const outJson={ asset:{version:'2.0',generator:'BANNON skinned auto-rigger v3'},
     scene:0, scenes:[{nodes:[0, 1]}], nodes,
     meshes:[{name:'body',primitives:[{attributes:attrs,indices:iAcc,material:0}]}],
     skins:[{inverseBindMatrices:ibmAcc, joints:BONES.map((_,i)=>i+1), skeleton:1}],
     accessors:outAcc, bufferViews:outViews, buffers:[{byteLength:bufOff}],
     materials:[json.materials[0]], images:outImages, textures:outTextures };
-  if(json.samplers&&json.samplers.length) outJson.samplers=json.samplers.slice(0,1);
+  if(outSamplers.length) outJson.samplers=outSamplers;
   let js=JSON.stringify(outJson); while(js.length%4)js+=' ';
   const jb=Buffer.from(js,'utf8'), bb=Buffer.concat(bufParts);
   const total=12+8+jb.length+8+bb.length, out=Buffer.alloc(total);

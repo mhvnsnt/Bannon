@@ -29,19 +29,23 @@ function fetchText(url) {
 function listFolder() {
   const html = fetchText(`https://drive.google.com/drive/folders/${FOLDER}`);
   const out = {};
-  // Primary: Drive's embedded JS data — ["<fileId>",["<parentId>"],"<name>", …
-  const re = /\["([-\w]{25,44})",\["[-\w]{25,44}"\],"((?:[^"\\]|\\.){3,90}?\.(?:glb|gltf|fbx|zip|blend))"/gi;
   let m;
-  while ((m = re.exec(html))) { const name = JSON.parse('"' + m[2] + '"'); if (!out[name]) out[name] = m[1]; }
-  // Fallback: pair each visible filename with the closest preceding data-id
+  // Drive's grid DOM (2026 format): each file row carries data-id="<fileId>[-0-N]" and the name lives
+  // in aria-label="<name.ext> <TYPE> …". Pair each aria-label filename with the nearest preceding
+  // 33-char base file id. Robust to lazy-load ordering; dedupe by the base id.
+  const ids = []; const idRe = /data-id="([-\w]{28,44}?)(?:-\d+-\d+)?"/g;
+  while ((m = idRe.exec(html))) ids.push({ id: m[1], idx: m.index });
+  const nmRe = /aria-label="((?:[^"\\]|\\.){3,120}?\.(?:glb|gltf|fbx|zip|blend))(?=[ "])/gi;
+  const seen = new Set();
+  while ((m = nmRe.exec(html))) {
+    const name = m[1].replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    let best = null; for (const p of ids) { if (p.idx < m.index) best = p; else break; }
+    if (best && !seen.has(best.id) && !out[name]) { out[name] = best.id; seen.add(best.id); }
+  }
+  // legacy JS-island fallback (older Drive HTML)
   if (Object.keys(out).length === 0) {
-    const ids = []; const idRe = /data-id="([-\w]{20,})"/g;
-    while ((m = idRe.exec(html))) ids.push({ id: m[1], idx: m.index });
-    const nmRe = />([^<>"\\/]{3,90}\.(?:glb|gltf|fbx|zip|blend))</gi;
-    while ((m = nmRe.exec(html))) {
-      let best = null; for (const p of ids) { if (p.idx < m.index) best = p; else break; }
-      if (best && !out[m[1]]) out[m[1]] = best.id;
-    }
+    const re = /\["([-\w]{25,44})",\["[-\w]{25,44}"\],"((?:[^"\\]|\\.){3,90}?\.(?:glb|gltf|fbx|zip|blend))"/gi;
+    while ((m = re.exec(html))) { const name = JSON.parse('"' + m[2] + '"'); if (!out[name]) out[name] = m[1]; }
   }
   return out;
 }
