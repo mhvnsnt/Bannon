@@ -9,3 +9,4 @@ forged_characters.json
 mocap_metadata.json
 *.log
 .env
+assets/models/incoming/

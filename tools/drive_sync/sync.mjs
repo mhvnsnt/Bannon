@@ -27,29 +27,32 @@ function fetchText(url) {
 }
 
 function listFolder() {
-  const html = fetchText(`https://drive.google.com/drive/folders/${FOLDER}`);
+  // embeddedfolderview returns the COMPLETE flat listing (no lazy-load cap that the folder page has).
+  const html = fetchText(`https://drive.google.com/embeddedfolderview?id=${FOLDER}#list`);
   const out = {};
-  let m;
-  // Drive's grid DOM (2026 format): each file row carries data-id="<fileId>[-0-N]" and the name lives
-  // in aria-label="<name.ext> <TYPE> …". Pair each aria-label filename with the nearest preceding
-  // 33-char base file id. Robust to lazy-load ordering; dedupe by the base id.
-  const ids = []; const idRe = /data-id="([-\w]{28,44}?)(?:-\d+-\d+)?"/g;
-  while ((m = idRe.exec(html))) ids.push({ id: m[1], idx: m.index });
-  const nmRe = /aria-label="((?:[^"\\]|\\.){3,120}?\.(?:glb|gltf|fbx|zip|blend))(?=[ "])/gi;
-  const seen = new Set();
-  while ((m = nmRe.exec(html))) {
-    const name = m[1].replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-    let best = null; for (const p of ids) { if (p.idx < m.index) best = p; else break; }
-    if (best && !seen.has(best.id) && !out[name]) { out[name] = best.id; seen.add(best.id); }
+  // each row: <div class="flip-entry" id="entry-<fileId>"> … <div class="flip-entry-title">NAME</div>
+  const parts = html.split(/flip-entry"\s+id="entry-/);
+  for (let i = 1; i < parts.length; i++) {
+    const idm = parts[i].match(/^([-\w]{20,})"/); if (!idm) continue;
+    const nm = parts[i].match(/flip-entry-title[^>]*>([^<]+)</); if (!nm) continue;
+    let name = nm[1].trim().replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    if (!/\.(glb|gltf|fbx|zip|blend)$/i.test(name)) continue;
+    name = name.replace(/[\/\\]/g, '_');   // filenames with a slash -> safe on disk
+    if (!out[name]) out[name] = idm[1];
   }
-  // legacy JS-island fallback (older Drive HTML)
+  // fallback: the old folder-page grid DOM parser, if embeddedfolderview is ever blocked
   if (Object.keys(out).length === 0) {
-    const re = /\["([-\w]{25,44})",\["[-\w]{25,44}"\],"((?:[^"\\]|\\.){3,90}?\.(?:glb|gltf|fbx|zip|blend))"/gi;
-    while ((m = re.exec(html))) { const name = JSON.parse('"' + m[2] + '"'); if (!out[name]) out[name] = m[1]; }
+    const h2 = fetchText(`https://drive.google.com/drive/folders/${FOLDER}`);
+    const ids = []; let m; const idRe = /data-id="([-\w]{28,44}?)(?:-\d+-\d+)?"/g;
+    while ((m = idRe.exec(h2))) ids.push({ id: m[1], idx: m.index });
+    const nmRe = /aria-label="((?:[^"\\]|\\.){3,120}?\.(?:glb|gltf|fbx|zip|blend))(?=[ "])/gi;
+    const seen = new Set();
+    while ((m = nmRe.exec(h2))) { const name = m[1].replace(/&amp;/g, '&');
+      let best = null; for (const p of ids) { if (p.idx < m.index) best = p; else break; }
+      if (best && !seen.has(best.id) && !out[name]) { out[name] = best.id; seen.add(best.id); } }
   }
   return out;
 }
-
 function glbHeaderOk(file) {
   try {
     const fd = fs.openSync(file, 'r'); const b = Buffer.alloc(12); fs.readSync(fd, b, 0, 12, 0); fs.closeSync(fd);
