@@ -1,0 +1,14 @@
+{
+  "_note": "Curated text->3D prompts for the GAME-ONLY fighters the agents are cleared to generate (see CLAUDE.md MODEL OWNERSHIP DIRECTIVE). Do NOT add book/canon characters or Onyx's stable here — those are the owner's. Style suffix keeps them a consistent roster.",
+  "_style": "full-body pro wrestler, T-pose, game-ready, clean single mesh, PBR textured, neutral background, symmetrical, muscular athletic build, no props",
+  "characters": {
+    "VIPER":  { "charKey": "VIPER",  "prompt": "a lean southpaw counter-puncher wrestler, icy pale-blue and silver ring gear, cold calculating look, snake-scale trim, short slick hair" },
+    "KAGE":   { "charKey": "KAGE",   "prompt": "a karate-style wrestler in a black shadow gi vest with torn sleeves, dark hood down, mysterious ninja-adjacent, matte black and charcoal" },
+    "BRUTUS": { "charKey": "BRUTUS", "prompt": "a massive iron brawler wrestler, heavy muscle, rust-red and gunmetal armored trunks, wrist chains, shaved head, scarred" },
+    "ZEPHYR": { "charKey": "ZEPHYR", "prompt": "an agile capoeira wrestler, lean and fast, teal and white flowing wind-motif gear, loose baggy pants, athletic barefoot-look boots" },
+    "MORTUS": { "charKey": "MORTUS", "prompt": "a grim grappler death-archetype wrestler, bone-white body paint over black, skeletal rib motif, tattered black shroud shorts, gaunt intimidating" },
+    "RONIN":  { "charKey": "RONIN",  "prompt": "a masterless-samurai wrestler, deep crimson and black lacquer-armor trunks, topknot, single shoulder guard, disciplined" },
+    "TITAN":  { "charKey": "TITAN",  "prompt": "a colossal powerhouse wrestler, enormous frame, bronze and navy singlet straps, granite-jaw, championship-giant presence" },
+    "GOLEM":  { "charKey": "GOLEM",  "prompt": "a heavy stone-golem-themed wrestler, cracked rocky grey skin texture, earthen brown trunks, immovable mass, glowing seam accents" }
+  }
+}

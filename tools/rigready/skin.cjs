@@ -220,6 +220,37 @@ function main(){
     }
     wl=nw;
   }
+  // 6.5 ANATOMICAL CLAMPS (v4.2) — hard rules that make the classic artifacts IMPOSSIBLE:
+  //  - "hips widen when legs move": verts ABOVE the hip-joint line may not carry UpLeg/Leg/Foot
+  //    weight (they belong to Hips/Spine) -> bending a leg can never drag the pelvis sideways.
+  //  - torso verts above the shoulder line and inboard of the shoulder joints may not carry
+  //    Arm/ForeArm/Hand weight -> raising an arm can never shear the chest.
+  //  - mirror-side block: left-limb bones may not touch verts on the right half beyond a small
+  //    midline margin (and vice versa) -> zero cross-body pull, guaranteed.
+  {
+    const LEG_L=[boneIdx.LeftUpLeg,boneIdx.LeftLeg,boneIdx.LeftFoot], LEG_R=[boneIdx.RightUpLeg,boneIdx.RightLeg,boneIdx.RightFoot];
+    const ARM_L=[boneIdx.LeftArm,boneIdx.LeftForeArm,boneIdx.LeftHand], ARM_R=[boneIdx.RightArm,boneIdx.RightForeArm,boneIdx.RightHand];
+    const hipY=Math.max(JW.hipJtL[1],JW.hipJtR[1]) + hy*0.05;      // above this: no leg bones
+    const shY =Math.min(JW.shJtL[1],JW.shJtR[1]);                   // torso/arm split height
+    const shZL=JW.shJtL[2]*0.75, shZR=JW.shJtR[2]*0.75;             // inboard of shoulders: no arm bones
+    const midM=hy*0.02;                                             // midline margin (z=0 plane)
+    let clamped=0;
+    for(let v=0;v<nV;v++){
+      const y=pos[v*3+1], z=pos[v*3+2];
+      let es=wl[v], n0=es.length;
+      es=es.filter(e=>{
+        if(y>hipY && (LEG_L.includes(e.b)||LEG_R.includes(e.b))) return false;
+        if(y>shY && z<shZL && z>shZR && (ARM_L.includes(e.b)||ARM_R.includes(e.b))) return false;
+        if(z> midM && (LEG_R.includes(e.b)||ARM_R.includes(e.b))) return false;   // left-half vert, right-side bone
+        if(z<-midM && (LEG_L.includes(e.b)||ARM_L.includes(e.b))) return false;   // right-half vert, left-side bone
+        return true;
+      });
+      if(!es.length) es=[wl[v].reduce((a,c)=>c.w>a.w?c:a)];
+      if(es.length!==n0){ clamped++; let tot=0; for(const e of es)tot+=e.w; for(const e of es)e.w/=tot; }
+      wl[v]=es;
+    }
+    console.log(`  anatomical clamps: ${clamped} verts corrected (no leg weights above hips, no cross-body pull)`);
+  }
   // 7. prune weak influences (<0.06) + renormalize — inside a limb the dominant bone should own the
   // vert almost fully; blends belong ONLY in the narrow joint bands (production-rigger behavior)
   for(let v=0;v<nV;v++){ let es=wl[v].filter(e=>e.w>=0.06);
