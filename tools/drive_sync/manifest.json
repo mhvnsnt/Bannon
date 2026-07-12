@@ -806,9 +806,9 @@
  },
  "2k moves 2k28.zip": {
   "id": "1SjNTCC4zXelINHzt2n5U5-vW7phK82bF",
-  "ok": true,
-  "size": 76314806,
-  "at": "2026-07-12T04:52:30.370Z"
+  "ok": false,
+  "reason": "wwe2k18-pac-mod-pack: proprietary .pac motion archives — unreadable by our engine AND ripped 2K assets (legal no-go for the game). Reference only; NOT ingested.",
+  "at": "2026-07-12T04:59:42.450Z"
  },
  "AlternatingForearms.fbx": {
   "id": "147NindMhA2sze7JDwpJf2MAyQCZOG1AW",
@@ -1119,8 +1119,8 @@
  "uploads_files_147201_Steel_Steps.zip": {
   "id": "1gXTpQZB3oCuxSy1IezNlvSFcrygUhNPk",
   "ok": true,
-  "size": 90380,
-  "at": "2026-07-12T04:54:00.448Z"
+  "reason": "duplicate of the Steel Steps zip already at repo root",
+  "at": "2026-07-12T04:59:42.450Z"
  },
  "ViolenceParty.fbx": {
   "id": "1kTAj4NAc0knC6N8BtYJfxi2ChFY77p5c",
