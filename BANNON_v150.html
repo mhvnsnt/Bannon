@@ -13779,6 +13779,7 @@ const MODEL_LIBRARY = [
   { name:'CIPHER', url:'assets/models/CIPHER.glb', charKey:'CIPHER' },
   { name:'ECHO', url:'assets/models/ECHO.glb', charKey:'ECHO' },
   { name:'ONYX · Street', url:'assets/models/ONYX_street.glb', charKey:'ONYX' },
+  { name:'ONYX · Straightjacket', url:'assets/models/ONYX_straightjacket.glb', charKey:'ONYX' },
   { name:'CODY · Sober', url:'assets/models/CODY_sober.glb', charKey:'CODY_CALLAHAN' },
   { name:'CODY · Stressed', url:'assets/models/CODY_stressed.glb', charKey:'CODY_CALLAHAN' },
   { name:'King', url:'embedded:king' },
@@ -30276,7 +30277,22 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
             'Walking Backwards (1).fbx', 'Walking Backwards.fbx', 'Walking.fbx', 'Zombie Dying.fbx', 'Zombie Punching.fbx'
         ];
 
-        console.log(`[FBX BATCH] Starting bulk import of ${ASSETS.length} FBX files...`);
+        // WRESTLING-MOVE CLIPS banked in the repo (assets/mocap/drive/, pulled from the owner's Drive
+        // folders) — real move mocap that feeds STUDIO.clips and then every fighter's moveset.
+        const COMBAT_CLIPS = [
+            'Chokeslam.fbx','DoubleSuplex.fbx','HammerlockDDT.fbx','Tombstone.fbx','JayKick.fbx',
+            'ApronJayKick.fbx','StereoSuperkick.fbx','TagSuperkick.fbx','StrongZero.fbx',
+            'ViolenceParty.fbx','FenceM-Kick.fbx','Drop Kick (1).fbx','Kip Up.fbx','Queshada 2.fbx',
+            'Esquiva 3.fbx','Esquiva 4 (1).fbx','Ginga Forward.fbx','Fall B Loop.fbx','Taunt2.fbx',
+            'Baseball Hit.fbx','Big Body Blow.fbx','Big Rib Hit.fbx','Body Jab Cross.fbx','Body Block.fbx',
+            'Brutal Assassination.fbx','Breakdance Uprock To Ground.fbx','Breakdance Footwork To Freeze.fbx'
+        ];
+        let FILES = [...new Set([...ASSETS, ...COMBAT_CLIPS])];
+        // when the daemon serves us, ask IT for the real list (includes everything drive-sync pulled)
+        try { const lr = await fetch('/api/list-mocap-files'); if (lr.ok) { const lj = await lr.json();
+            const names = (lj.files || lj || []).map(f => (typeof f === 'string' ? f : f.name)).filter(n => /\.fbx$/i.test(n));
+            if (names.length > FILES.length) FILES = names; } } catch (_e) {}
+        console.log(`[FBX BATCH] Starting bulk import of ${FILES.length} FBX files...`);
         const loader = new THREE.FBXLoader();
         let loadedCount = 0;
 
@@ -30284,7 +30300,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         if (typeof STUDIO === 'undefined') window.STUDIO = { clips: {} };
         STUDIO.clips = STUDIO.clips || {};
 
-        for (const file of ASSETS) {
+        for (const file of FILES) {
             try {
                 // LAG FIX (the "can't even make them fight" freeze): this loop used to fetch + SYNC-parse
                 // ~78 FBX files back-to-back on the main thread, starting 1s after page load — right on
@@ -30294,8 +30310,11 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
                     await new Promise(r => setTimeout(r, 2000));
                 }
                 await new Promise(r => (window.requestAnimationFrame || setTimeout)(() => setTimeout(r, 120)));
-                const response = await fetch('/' + encodeURIComponent(file));
-                if (!response.ok) continue;
+                // repo layout first (works on GitHub Pages / a downloaded folder), then legacy root
+                let response = await fetch('assets/mocap/drive/' + encodeURIComponent(file)).catch(() => null);
+                if (!response || !response.ok) response = await fetch('assets/mocap/' + encodeURIComponent(file)).catch(() => null);
+                if (!response || !response.ok) response = await fetch('/' + encodeURIComponent(file)).catch(() => null);
+                if (!response || !response.ok) continue;
                 const buffer = await response.arrayBuffer();
                 
                 const clipName = file.replace(/\.fbx$/i, '').toUpperCase().replace(/[^A-Z0-9]/g, '_');

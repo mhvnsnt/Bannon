@@ -10,7 +10,8 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
-const FOLDER = process.env.BANNON_DRIVE_FOLDER || '19k_jmuiUYsAubZyx_bUL0m8svyYmevM5';
+// ALL the owner's drop folders — add new folder ids here (or BANNON_DRIVE_FOLDER env, comma-separated)
+const FOLDERS = (process.env.BANNON_DRIVE_FOLDER || '19k_jmuiUYsAubZyx_bUL0m8svyYmevM5,1chJYomdZW6E7jqUUHZTn1w9wLTakRfvG').split(',').map(s => s.trim()).filter(Boolean);
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
 const MANIFEST = path.join(ROOT, 'tools/drive_sync/manifest.json');
 const DRY = process.argv.includes('--dry');
@@ -26,7 +27,7 @@ function fetchText(url) {
   return execSync(`curl -sS -L "${url}"`, { maxBuffer: 64 * 1024 * 1024 }).toString('utf8');
 }
 
-function listFolder() {
+function listFolder(FOLDER) {
   // embeddedfolderview returns the COMPLETE flat listing (no lazy-load cap that the folder page has).
   const html = fetchText(`https://drive.google.com/embeddedfolderview?id=${FOLDER}#list`);
   const out = {};
@@ -63,7 +64,8 @@ function glbHeaderOk(file) {
 
 function main() {
   const manifest = fs.existsSync(MANIFEST) ? JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) : {};
-  const files = listFolder();
+  const files = {};
+  for (const f of FOLDERS) { try { Object.assign(files, listFolder(f)); } catch (e) { console.error(`[drive-sync] folder ${f} unreadable: ${e.message.split('\n')[0]}`); } }
   const names = Object.keys(files);
   console.log(`[drive-sync] folder lists ${names.length} files; manifest has ${Object.keys(manifest).length}`);
   let synced = 0, skipped = 0, failed = 0;

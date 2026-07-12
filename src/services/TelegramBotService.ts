@@ -16,7 +16,7 @@ export class TelegramBotService {
     private chatId: string;
 
     constructor() {
-        this.token = process.env.TELEGRAM_BOT_TOKEN || '8867602832:AAFv-BujSUiAGR-RjIJVr5snBtIT8u99aqk';
+        this.token = process.env.TELEGRAM_BOT_TOKEN || '8867602832:AAFv-BujSUiAGR-RjIJVr5snBtIT8u99aqk';   // @LivingNexusBannonBot — BANNON's own bot; codedummy uses @CODEDUMMYBOT. NEVER share one token across two pollers (409 conflict kills both).
         this.chatId = process.env.TELEGRAM_CHAT_ID || '';
     }
 
