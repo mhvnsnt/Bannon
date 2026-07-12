@@ -414,3 +414,18 @@ Independent BUST slider (0.6 flat..1.6 pronounced) x fem, seeded per female: Tyn
 Karma 1.0 / Tightrope 0.72 — the "some sexy, some regular" diversity axis.
 Network allowlist is LIVE for curl fetches (cdnjs/github-raw/HF 200) — pull assets directly; the
 Playwright harness stays on the vendored copies (Chromium proxies differ).
+
+## MODEL OWNERSHIP DIRECTIVE (binding — owner set 2026-07-12, do NOT ask again)
+Who generates which character models, so the agents never wait on or duplicate the owner:
+- **OWNER makes (agents NEVER auto-generate these):** every BOOK/canon character (the 41-canon roster
+  — Bannon/Maime/Solaris, Atlas Vance, Cassian Thorne, Cain Elias, Cody, Zenith, Finxsse, Stick-Up,
+  Tightrope, the JPCW/AWE rosters, etc.) AND **Onyx's game-only stable: CIPHER, ECHO, STATIC, HOLLOW,
+  ONYX, and "the other Onyx teammate"** the owner is still designing. Owner uploads these to the Drive
+  folder; the pipeline auto-skins + banks them but does NOT invent them.
+- **AGENTS make (auto-generate + auto-attach freely):** characters that appeared ONLY in the GAME and
+  NEVER in the books and currently have only procedural three.js bodies — **VIPER, KAGE, BRUTUS,
+  ZEPHYR, MORTUS, RONIN, TITAN, GOLEM** (arena/test fighters, unclaimed by canon). Generate via the
+  Tripo/forge pipeline (tools/tripo/), auto-skin (tools/rigready/skin.cjs v4.2), bank to
+  assets/models/, wire into MODEL_LIBRARY + CANON_MODELS.md, verify with the harness.
+- Curated generation prompts for the agent-made set live in `tools/tripo/gen_prompts.json`. When in
+  doubt whether a character is owner's or agents', it's the OWNER'S — do not generate.

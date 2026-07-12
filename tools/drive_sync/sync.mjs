@@ -10,7 +10,8 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 
-const FOLDER = process.env.BANNON_DRIVE_FOLDER || '19k_jmuiUYsAubZyx_bUL0m8svyYmevM5';
+// ALL the owner's drop folders — add new folder ids here (or BANNON_DRIVE_FOLDER env, comma-separated)
+const FOLDERS = (process.env.BANNON_DRIVE_FOLDER || '19k_jmuiUYsAubZyx_bUL0m8svyYmevM5,1chJYomdZW6E7jqUUHZTn1w9wLTakRfvG').split(',').map(s => s.trim()).filter(Boolean);
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '../..');
 const MANIFEST = path.join(ROOT, 'tools/drive_sync/manifest.json');
 const DRY = process.argv.includes('--dry');
@@ -26,26 +27,33 @@ function fetchText(url) {
   return execSync(`curl -sS -L "${url}"`, { maxBuffer: 64 * 1024 * 1024 }).toString('utf8');
 }
 
-function listFolder() {
-  const html = fetchText(`https://drive.google.com/drive/folders/${FOLDER}`);
+function listFolder(FOLDER) {
+  // embeddedfolderview returns the COMPLETE flat listing (no lazy-load cap that the folder page has).
+  const html = fetchText(`https://drive.google.com/embeddedfolderview?id=${FOLDER}#list`);
   const out = {};
-  // Primary: Drive's embedded JS data — ["<fileId>",["<parentId>"],"<name>", …
-  const re = /\["([-\w]{25,44})",\["[-\w]{25,44}"\],"((?:[^"\\]|\\.){3,90}?\.(?:glb|gltf|fbx|zip|blend))"/gi;
-  let m;
-  while ((m = re.exec(html))) { const name = JSON.parse('"' + m[2] + '"'); if (!out[name]) out[name] = m[1]; }
-  // Fallback: pair each visible filename with the closest preceding data-id
+  // each row: <div class="flip-entry" id="entry-<fileId>"> … <div class="flip-entry-title">NAME</div>
+  const parts = html.split(/flip-entry"\s+id="entry-/);
+  for (let i = 1; i < parts.length; i++) {
+    const idm = parts[i].match(/^([-\w]{20,})"/); if (!idm) continue;
+    const nm = parts[i].match(/flip-entry-title[^>]*>([^<]+)</); if (!nm) continue;
+    let name = nm[1].trim().replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    if (!/\.(glb|gltf|fbx|zip|blend)$/i.test(name)) continue;
+    name = name.replace(/[\/\\]/g, '_');   // filenames with a slash -> safe on disk
+    if (!out[name]) out[name] = idm[1];
+  }
+  // fallback: the old folder-page grid DOM parser, if embeddedfolderview is ever blocked
   if (Object.keys(out).length === 0) {
-    const ids = []; const idRe = /data-id="([-\w]{20,})"/g;
-    while ((m = idRe.exec(html))) ids.push({ id: m[1], idx: m.index });
-    const nmRe = />([^<>"\\/]{3,90}\.(?:glb|gltf|fbx|zip|blend))</gi;
-    while ((m = nmRe.exec(html))) {
+    const h2 = fetchText(`https://drive.google.com/drive/folders/${FOLDER}`);
+    const ids = []; let m; const idRe = /data-id="([-\w]{28,44}?)(?:-\d+-\d+)?"/g;
+    while ((m = idRe.exec(h2))) ids.push({ id: m[1], idx: m.index });
+    const nmRe = /aria-label="((?:[^"\\]|\\.){3,120}?\.(?:glb|gltf|fbx|zip|blend))(?=[ "])/gi;
+    const seen = new Set();
+    while ((m = nmRe.exec(h2))) { const name = m[1].replace(/&amp;/g, '&');
       let best = null; for (const p of ids) { if (p.idx < m.index) best = p; else break; }
-      if (best && !out[m[1]]) out[m[1]] = best.id;
-    }
+      if (best && !seen.has(best.id) && !out[name]) { out[name] = best.id; seen.add(best.id); } }
   }
   return out;
 }
-
 function glbHeaderOk(file) {
   try {
     const fd = fs.openSync(file, 'r'); const b = Buffer.alloc(12); fs.readSync(fd, b, 0, 12, 0); fs.closeSync(fd);
@@ -56,7 +64,8 @@ function glbHeaderOk(file) {
 
 function main() {
   const manifest = fs.existsSync(MANIFEST) ? JSON.parse(fs.readFileSync(MANIFEST, 'utf8')) : {};
-  const files = listFolder();
+  const files = {};
+  for (const f of FOLDERS) { try { Object.assign(files, listFolder(f)); } catch (e) { console.error(`[drive-sync] folder ${f} unreadable: ${e.message.split('\n')[0]}`); } }
   const names = Object.keys(files);
   console.log(`[drive-sync] folder lists ${names.length} files; manifest has ${Object.keys(manifest).length}`);
   let synced = 0, skipped = 0, failed = 0;

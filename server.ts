@@ -250,14 +250,17 @@ async function startServer() {
       const mocapDir = path.join(workspaceRoot, 'assets', 'mocap');
       const allFiles = new Set<string>();
 
-      // Read from assets/mocap directory
-      if (fs.existsSync(mocapDir)) {
-        fs.readdirSync(mocapDir).forEach(f => {
-          const lower = f.toLowerCase();
-          if (lower.endsWith('.fbx') || lower.endsWith('.glb') || lower.endsWith('.gltf')) {
-            allFiles.add(f);
-          }
-        });
+      // Read from assets/mocap directory + the drive-sync bank (assets/mocap/drive — where the
+      // owner's Drive uploads land; the combat move clips live there)
+      for (const dir of [mocapDir, path.join(mocapDir, 'drive')]) {
+        if (fs.existsSync(dir)) {
+          fs.readdirSync(dir).forEach(f => {
+            const lower = f.toLowerCase();
+            if (lower.endsWith('.fbx') || lower.endsWith('.glb') || lower.endsWith('.gltf')) {
+              allFiles.add(f);
+            }
+          });
+        }
       }
 
       // Read from workspace root (as fallback)
@@ -332,10 +335,14 @@ async function startServer() {
     const file = req.params.file;
     const ext = file.split('.').pop()?.toLowerCase();
     if (ext && ['fbx', 'glb', 'gltf', 'bin'].includes(ext)) {
-      // Check assets/mocap first
+      // Check assets/mocap first, then the drive-sync bank
       const pMocap = path.join(process.cwd(), 'assets', 'mocap', file);
       if (fs.existsSync(pMocap)) {
         return res.sendFile(pMocap);
+      }
+      const pDrive = path.join(process.cwd(), 'assets', 'mocap', 'drive', file);
+      if (fs.existsSync(pDrive)) {
+        return res.sendFile(pDrive);
       }
       // Fallback to workspace root
       const pRoot = path.join(process.cwd(), file);

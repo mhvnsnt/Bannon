@@ -220,6 +220,37 @@ function main(){
     }
     wl=nw;
   }
+  // 6.5 ANATOMICAL CLAMPS (v4.2) — hard rules that make the classic artifacts IMPOSSIBLE:
+  //  - "hips widen when legs move": verts ABOVE the hip-joint line may not carry UpLeg/Leg/Foot
+  //    weight (they belong to Hips/Spine) -> bending a leg can never drag the pelvis sideways.
+  //  - torso verts above the shoulder line and inboard of the shoulder joints may not carry
+  //    Arm/ForeArm/Hand weight -> raising an arm can never shear the chest.
+  //  - mirror-side block: left-limb bones may not touch verts on the right half beyond a small
+  //    midline margin (and vice versa) -> zero cross-body pull, guaranteed.
+  {
+    const LEG_L=[boneIdx.LeftUpLeg,boneIdx.LeftLeg,boneIdx.LeftFoot], LEG_R=[boneIdx.RightUpLeg,boneIdx.RightLeg,boneIdx.RightFoot];
+    const ARM_L=[boneIdx.LeftArm,boneIdx.LeftForeArm,boneIdx.LeftHand], ARM_R=[boneIdx.RightArm,boneIdx.RightForeArm,boneIdx.RightHand];
+    const hipY=Math.max(JW.hipJtL[1],JW.hipJtR[1]) + hy*0.05;      // above this: no leg bones
+    const shY =Math.min(JW.shJtL[1],JW.shJtR[1]);                   // torso/arm split height
+    const shZL=JW.shJtL[2]*0.75, shZR=JW.shJtR[2]*0.75;             // inboard of shoulders: no arm bones
+    const midM=hy*0.02;                                             // midline margin (z=0 plane)
+    let clamped=0;
+    for(let v=0;v<nV;v++){
+      const y=pos[v*3+1], z=pos[v*3+2];
+      let es=wl[v], n0=es.length;
+      es=es.filter(e=>{
+        if(y>hipY && (LEG_L.includes(e.b)||LEG_R.includes(e.b))) return false;
+        if(y>shY && z<shZL && z>shZR && (ARM_L.includes(e.b)||ARM_R.includes(e.b))) return false;
+        if(z> midM && (LEG_R.includes(e.b)||ARM_R.includes(e.b))) return false;   // left-half vert, right-side bone
+        if(z<-midM && (LEG_L.includes(e.b)||ARM_L.includes(e.b))) return false;   // right-half vert, left-side bone
+        return true;
+      });
+      if(!es.length) es=[wl[v].reduce((a,c)=>c.w>a.w?c:a)];
+      if(es.length!==n0){ clamped++; let tot=0; for(const e of es)tot+=e.w; for(const e of es)e.w/=tot; }
+      wl[v]=es;
+    }
+    console.log(`  anatomical clamps: ${clamped} verts corrected (no leg weights above hips, no cross-body pull)`);
+  }
   // 7. prune weak influences (<0.06) + renormalize — inside a limb the dominant bone should own the
   // vert almost fully; blends belong ONLY in the narrow joint bands (production-rigger behavior)
   for(let v=0;v<nV;v++){ let es=wl[v].filter(e=>e.w>=0.06);
@@ -255,20 +286,30 @@ function main(){
   BONES.forEach((b,i)=>{ const p=JW[b[1]]; const parent=b[3]?JW[BONES[boneIdx[b[3]]][1]]:[0,0,0];
     nodes.push({name:b[0], translation:[p[0]-parent[0], p[1]-parent[1], p[2]-parent[2]]}); });
   BONES.forEach((b,i)=>{ if(b[3]!=null){ const pn=nodes[boneIdx[b[3]]+1]; pn.children=pn.children||[]; pn.children.push(i+1); } });
-  // texture
-  const outImages=[],outTextures=[];
-  if(json.images&&json.images.length){ const img=json.images[0],bv=json.bufferViews[img.bufferView];
+  // textures — copy ALL images/textures/samplers so multi-map PBR materials (normal + baseColor +
+  // metallicRoughness, as newer Tripo exports ship) keep every index valid. Copying only images[0]
+  // dangled texture refs 1..n and crashed GLTFLoader ("reading 'extensions'").
+  const outImages=[],outTextures=[],outSamplers=(json.samplers||[]).map(x=>Object.assign({},x));
+  const imgRemap={};
+  (json.images||[]).forEach((img,ix)=>{
+    if(img.bufferView==null) { imgRemap[ix]=outImages.length; outImages.push(Object.assign({},img)); return; }
+    const bv=json.bufferViews[img.bufferView];
     const data=bin.slice(bv.byteOffset||0,(bv.byteOffset||0)+bv.byteLength);
     outViews.push({buffer:0,byteOffset:bufOff,byteLength:data.length}); bufParts.push(data);
     const pad=(4-(data.length%4))%4; if(pad)bufParts.push(Buffer.alloc(pad)); bufOff+=data.length+pad;
-    outImages.push({mimeType:img.mimeType,bufferView:outViews.length-1}); outTextures.push({source:0}); }
+    imgRemap[ix]=outImages.length; outImages.push({mimeType:img.mimeType,bufferView:outViews.length-1});
+  });
+  (json.textures||[]).forEach(tex=>{
+    const t={}; if(tex.source!=null)t.source=imgRemap[tex.source]!=null?imgRemap[tex.source]:tex.source;
+    if(tex.sampler!=null)t.sampler=tex.sampler; outTextures.push(t);
+  });
   const outJson={ asset:{version:'2.0',generator:'BANNON skinned auto-rigger v3'},
     scene:0, scenes:[{nodes:[0, 1]}], nodes,
     meshes:[{name:'body',primitives:[{attributes:attrs,indices:iAcc,material:0}]}],
     skins:[{inverseBindMatrices:ibmAcc, joints:BONES.map((_,i)=>i+1), skeleton:1}],
     accessors:outAcc, bufferViews:outViews, buffers:[{byteLength:bufOff}],
     materials:[json.materials[0]], images:outImages, textures:outTextures };
-  if(json.samplers&&json.samplers.length) outJson.samplers=json.samplers.slice(0,1);
+  if(outSamplers.length) outJson.samplers=outSamplers;
   let js=JSON.stringify(outJson); while(js.length%4)js+=' ';
   const jb=Buffer.from(js,'utf8'), bb=Buffer.concat(bufParts);
   const total=12+8+jb.length+8+bb.length, out=Buffer.alloc(total);
