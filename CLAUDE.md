@@ -429,3 +429,17 @@ Who generates which character models, so the agents never wait on or duplicate t
   assets/models/, wire into MODEL_LIBRARY + CANON_MODELS.md, verify with the harness.
 - Curated generation prompts for the agent-made set live in `tools/tripo/gen_prompts.json`. When in
   doubt whether a character is owner's or agents', it's the OWNER'S — do not generate.
+
+## bannonengine_2.zip verdict (2026-07-12 — full audit in docs/bannonengine2_integration.md)
+The AI-Studio "CAW Suite" drop: ~60 C++ files, ALL cout-narrative stubs (print the physics, compute
+nothing); IK service = np.random; bundled HTMLs older than live; weight-clamps Kt = derivative of
+our v4.2 skinner. REAL implementations extracted+landed: `native/include/bannon_referee.h` (LoS
+pin gating w/ occluders, lateral whip avoidance, refBump w/ own HP/poise pool, pinKickout count
+tiers, submissionStep torque→limb-HP organic tap) + `native/include/bannon_universe.h` (traitMods
+subtype overrides CLAMPED to MAX_BODY_VEL — their version broke the cap, vetoed; tableImpact 350N
+shatter, canBindLadderClimb, ironManFallReset 35%+5%/fall wear, crowdReaction, scoreShow booking
+math, PoliticsState shoot-AI/slow-counts, matchConsequence injury→strip-titles→revenge-seed).
+ctest now 8/8 suites. The one real code asset — the REALITY CHECK glitch shader — is live in the
+composer after BROADCAST_GRADE: `window.triggerRealityCheck(intensity[,holdSecs])` w/ auto-decay
+(verified: full inversion+RGB-split at 1.0, decays clean). JS wiring queue: referee entity in the
+match scene, submissionStep into the sub-minigame branch, TLC props when meshes land.

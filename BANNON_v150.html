@@ -15413,6 +15413,43 @@ init();
         u.uOn.value = window.BROADCAST_GRADE?1:0; u.uTime.value=(performance.now()%100000)/1000;
         u.uSat.value=G.sat; u.uCon.value=G.con; u.uWarm.value=G.warm; u.uVig.value=G.vig; u.uGrain.value=G.grain; u.uShadow.value=G.shadow;
       }catch(_){} }, 100);
+      // ---- REALITY CHECK pass (from the bannonengine_2 drop — the one real code asset in it) ----
+      // God Within distortion: chromatic-aberration glitch + wave warp + local inversion at high
+      // intensity. Fired by story beats ("The Anchor" moments, Maime leakage, daemon events) via
+      // window.triggerRealityCheck(intensity[,holdSecs]) — intensity auto-decays back to clean.
+      const realityShader = {
+        uniforms: { tDiffuse:{value:null}, uTime:{value:0}, uAmt:{value:0} },
+        vertexShader: 'varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+        fragmentShader: [
+          'uniform sampler2D tDiffuse; uniform float uTime; uniform float uAmt; varying vec2 vUv;',
+          'void main(){',
+          '  if(uAmt <= 0.001){ gl_FragColor = texture2D(tDiffuse, vUv); return; }',
+          '  vec2 p = vUv + vec2(sin(uTime*10.0 + vUv.y*20.0)*0.05*uAmt, 0.0);',      // wave warp
+          '  float off = uAmt * (sin(uTime*10.0)*0.01 + 0.006);',                     // RGB split
+          '  float r = texture2D(tDiffuse, vec2(p.x+off, p.y)).r;',
+          '  float g = texture2D(tDiffuse, p).g;',
+          '  float b = texture2D(tDiffuse, vec2(p.x-off, p.y)).b;',
+          '  vec3 c = vec3(r,g,b);',
+          '  float lum = dot(c, vec3(0.299,0.587,0.114));',
+          '  c = mix(c, vec3(lum), 0.3*uAmt);',                                       // drain color
+          '  c = mix(c, vec3(1.0)-c, smoothstep(0.65,1.0,uAmt)*0.85);',               // local inversion at max
+          '  gl_FragColor = vec4(clamp(c,0.0,1.0), 1.0);',
+          '}'].join('\n')
+      };
+      const realityPass = new THREE.ShaderPass(realityShader);
+      composer.addPass(realityPass);
+      window.__realityPass = realityPass;
+      window.__realityState = { amt:0, hold:0 };
+      window.triggerRealityCheck = function(intensity, holdSecs){
+        const s = window.__realityState;
+        s.amt = Math.max(0, Math.min(1, intensity===undefined?1:intensity));
+        s.hold = (holdSecs===undefined?0.8:holdSecs);
+        try{ console.log('[REALITY CHECK] intensity', s.amt); }catch(_){}
+      };
+      setInterval(()=>{ try{ const s=window.__realityState, u=realityPass.uniforms;
+        if(s.hold>0) s.hold -= 0.1; else if(s.amt>0) s.amt = Math.max(0, s.amt-0.08);  // decay to clean
+        u.uAmt.value = s.amt; u.uTime.value = (performance.now()%100000)/1000;
+      }catch(_){} }, 100);
       if(THREE.GammaCorrectionShader){
         composer.addPass(new THREE.ShaderPass(THREE.GammaCorrectionShader));
       }
