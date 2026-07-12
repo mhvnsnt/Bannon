@@ -44,3 +44,20 @@ add_test(NAME solvers COMMAND test_solvers)
 add_executable(test_persona tests/test_persona.cpp)
 target_link_libraries(test_persona bannon_core)
 add_test(NAME persona COMMAND test_persona)
+
+# 4-quadrant release matrix (A slam/B drop/X throw/Y toss) + weapon mass/stamina physics
+add_executable(test_weapon tests/test_weapon.cpp)
+target_link_libraries(test_weapon bannon_core)
+add_test(NAME weapon COMMAND test_weapon)
+
+# referee AI (LoS pin gating, predictive avoidance, ref bumps) + pin kickout tiers + submission
+# torque→limb-HP organic tap-out — real implementations of the bannonengine_2 stub specs
+add_executable(test_referee tests/test_referee.cpp)
+target_link_libraries(test_referee bannon_core)
+add_test(NAME referee COMMAND test_referee)
+
+# universe/modes layer: trait subtypes, TLC physics, iron-man wear, crowd kinetics, GM booking,
+# friction politics, God Within consequences
+add_executable(test_universe tests/test_universe.cpp)
+target_link_libraries(test_universe bannon_core)
+add_test(NAME universe COMMAND test_universe)

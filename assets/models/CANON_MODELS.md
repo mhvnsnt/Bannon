@@ -59,3 +59,9 @@ is the C++ port, where these same identities carry over as authored bodies.
 - **ONYX · Street** — `ONYX_street.glb` (new attire).
 - **CODY · Sober / Stressed** — `CODY_sober.glb`, `CODY_stressed.glb` (canon manager, alt states).
 NOTE: onyxstraightjacketskirt.glb was a truncated Drive upload — owner to re-upload.
+
+## Batch 3 (owner-made, auto-skinned v4.2 — geodesic weights + anatomical clamps)
+- **CIPHER · Minion** — `CIPHER_minion.glb` (alt attire, Onyx's stable).
+- **CIPHER · Feral** — `CIPHER_feral.glb` (alt attire, Onyx's stable).
+- **CAIN ELIAS · Wrestling Gear** — `CAIN_ELIAS_gear.glb` (in-ring gear, third Cain attire).
+All three: 16-bone Mixamo-named skeleton, skinned, auto-scaled 1.85 m, multi-texture PBR carried.
