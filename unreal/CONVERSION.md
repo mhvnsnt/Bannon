@@ -11,13 +11,13 @@ rewrite. `[x]` = landed in `unreal/`, `[~]` = laws in `native/` (ready to wire),
 - [x] Laws surface — `UBannonLaws` (constants, RollStableAim, SubmissionStep, PinKickout).
 
 ## Combat & physics (laws already in native/, wire to Chaos/AnimBP)
-- [~] Active ragdoll (15 joints, PD drive) — `bannon_rig.h`/`bannon_ragdoll.h` → PhysicsAsset +
-      Physical Animation Component; MAX_BODY_VEL = Chaos per-body clamp.
+- [x] Active ragdoll (15 joints, PD drive) — `UBannonRagdollComponent`: PhysicsAsset + Physical
+      Animation, poise-scaled motors, MAX_BODY_VEL per-body clamp AFTER the solve. Needs the engine to test.
 - [~] Strikes / weight-transfer power / knockback — `bannon_strike.h` → on-hit events on `ABannonFighter`.
 - [~] Grapple positions / lift / carry / release matrix — `bannon_grapple.h` + `bannon_weapon.h`
       releaseImpulse → animation-driven pose + Physical Animation profiles per phase.
 - [~] Weapons (mass stamina tax, integrity, TLC table/ladder) — `bannon_weapon.h`/`bannon_universe.h`.
-- [~] Referee entity (LoS pin gating, avoidance, bumps) — `bannon_referee.h` → an AI controller + LoS trace.
+- [x] Referee entity (LoS pin gating, avoidance, bumps) — `ABannonReferee` (native refHasLineOfSight/refAvoidanceVelocity/refBump).
 - [~] Submissions (torque→limb-HP→organic tap) — `bannon_referee.h submissionStep` (surfaced in UBannonLaws).
 - [x] Two-layer health (HP + poise decoupled) + stamina — `ABannonFighter`.
 
@@ -36,7 +36,8 @@ rewrite. `[x]` = landed in `unreal/`, `[~]` = laws in `native/` (ready to wire),
 - [ ] God Within RPG mode / skill trees — later.
 
 ## Presentation
-- [ ] Arena / ring / crowd — the Tripo env models (assets/reference/env_snapshots) → static/skeletal meshes.
+- [x] Arena impacts (post/table) — `ABannonArena` (native env-contact + tableImpact). Meshes: Tripo env set, TODO.
+- [x] Crowd kinetic reaction — `UBannonCrowd` (native crowdReaction). Niagara/instanced visual: TODO.
 - [ ] BROADCAST_GRADE post pass — PostProcessVolume + material.
 - [ ] REALITY CHECK glitch — post-process material (triggerRealityCheck → a material param).
 
