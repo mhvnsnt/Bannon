@@ -160,11 +160,40 @@ function main(){
   const adj=new Map(); const link=(a,b)=>{ if(a===b)return; let l=adj.get(a); if(!l){l=[];adj.set(a,l);} if(l.indexOf(b)<0)l.push(b); };
   for(let t=0;t<idx.length;t+=3){ const a=weld[idx[t]],b=weld[idx[t+1]],c=weld[idx[t+2]];
     link(a,b);link(b,a);link(b,c);link(c,b);link(a,c);link(c,a); }
-  // 3. seeds: adaptive radius per bone until enough seeds
+  // 2.5 A-POSE LIMB-SEPARATION (v4.4) — the reason models tear: they ship in an A-pose with the
+  // HANDS resting against the THIGHS, so the two surfaces weld/link at the contact and the geodesic
+  // Dijkstra flows the ARM bone label straight down into the thigh (measured: ~60% of leg verts
+  // skinned to arms -> the leg flies out when the arm swings). Arm and leg are NEVER anatomically
+  // adjacent — they only ever connect THROUGH the torso — so any arm<->leg adjacency edge is a pose
+  // artifact. Classify each welded vert by nearest limb FAMILY (arm / leg / torso) and CUT every
+  // arm<->leg edge before the solve. This makes the rig POSE-AGNOSTIC: it skins an A-pose (arms
+  // down) or a T-pose (arms out) correctly, no re-posing required. Toggle BANNON_LIMBCUT=0.
+  const ARMg=['LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand'].map(n=>boneIdx[n]).filter(i=>i!=null);
+  const LEGg=['LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot'].map(n=>boneIdx[n]).filter(i=>i!=null);
+  const TORg=['Hips','Spine','Neck','Head'].map(n=>boneIdx[n]).filter(i=>i!=null);
+  const _dMin=(v,g)=>{ let m=Infinity; for(const i of g){ const d=capDist(v,i); if(d<m)m=d; } return m; };
+  const fam=new Map();   // welded vid -> 0 arm / 1 leg / 2 torso (limb family by nearest segment group)
+  const LIMBCUT = process.env.BANNON_LIMBCUT !== '0';
+  if (LIMBCUT) {
+    for(const v of adj.keys()){ const a=_dMin(v,ARMg), l=_dMin(v,LEGg), t=_dMin(v,TORg);
+      fam.set(v, (a<=l&&a<=t)?0 : (l<=t)?1 : 2); }
+    let cut=0;
+    for(const [v,nbrs] of adj){ const fv=fam.get(v);
+      if(fv===2) continue;                                   // torso links stay
+      for(let k=nbrs.length-1;k>=0;k--){ const fn=fam.get(nbrs[k]);
+        if((fv===0&&fn===1)||(fv===1&&fn===0)){ nbrs.splice(k,1); cut++; } }  // sever arm<->leg
+    }
+    console.log(`  A-pose limb separation: ${cut} arm<->leg contact edges cut (geodesic can't bridge hand->thigh)`);
+  }
+  const isArmBone=i=>ARMg.includes(i), isLegBone=i=>LEGg.includes(i);
+  // 3. seeds: adaptive radius per bone until enough seeds. FAMILY-GATED (v4.4): an ARM bone may not
+  // seed on a LEG-family vert and vice-versa — otherwise the hand hanging on the thigh seeds the
+  // thigh directly as ARM (the edge-cut only stops geodesic FLOW, not direct seeding).
   const SRC=new Map();   // welded vid -> [{bone,d0}]
   BONES.forEach((b,i)=>{ let r=hy*0.03, seeds=[], tries=0;
+    const badFam = LIMBCUT ? (isArmBone(i)?1 : isLegBone(i)?0 : -1) : -1;   // family this bone must NOT seed
     while(seeds.length<30 && tries<6){ seeds=[];
-      for(const v of adj.keys()){ const d=capDist(v,i); if(d<r) seeds.push([v,d]); }
+      for(const v of adj.keys()){ if(badFam>=0 && fam.get(v)===badFam) continue; const d=capDist(v,i); if(d<r) seeds.push([v,d]); }
       r*=1.7; tries++; }
     for(const [v,d] of seeds){ let l=SRC.get(v); if(!l){l=[];SRC.set(v,l);} l.push({bone:i,d0:d}); }
   });
