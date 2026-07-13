@@ -12,6 +12,7 @@
 # queue priority so the 3D step actually completes. Owner is authenticated as 'Dmn52'; drop a token in
 # the env and this finishes end to end. Falls back across several 3D Spaces so one being down != fatal.
 import json, os, sys, shutil, subprocess, traceback
+import requests
 from gradio_client import Client, handle_file
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -27,7 +28,8 @@ POSE = ("Full-body character reference, single pro wrestler standing front-facin
         "character, clean symmetrical, no logos, no text, no watermark.")
 
 def client(space):
-    return Client(space, hf_token=HF, verbose=False) if HF else Client(space, verbose=False)
+    # gradio_client 2.5.x: auth kwarg is `token` (reads HF_TOKEN); a token gives ZeroGPU queue priority.
+    return Client(space, token=HF, verbose=False) if HF else Client(space, verbose=False)
 
 def text_to_image(key, desc):
     out = os.path.join(IMG_DIR, f"{key}.png")
@@ -49,21 +51,34 @@ def _find_glb(x):
             if g: return g
     return None
 
+def _dl_static(c, path, out):
+    # some 3D Spaces (frogleo) return the GLB as a /static/ server path, not a local file — fetch it.
+    url = c.src.rstrip("/") + path
+    hdr = {"Authorization": f"Bearer {HF}"} if HF else {}
+    r = requests.get(url, headers=hdr, timeout=180); r.raise_for_status()
+    open(out, "wb").write(r.content)
+    return out if r.content[:4] == b"glTF" else None
+
 def image_to_3d(key, img):
     out = os.path.join(INCOMING, f"{key}_gen.glb")
-    attempts = [
-        ("frogleo/Image-to-3D",   lambda c: c.predict(handle_file(img), 30, 5.0, 42, 256, 8000, api_name="/gen_shape")),
-        ("tencent/Hunyuan3D-2",   lambda c: c.predict(caption="", image=handle_file(img), steps=30, guidance_scale=5.0,
-                                                       seed=42, octree_resolution=256, check_box_rembg=True,
-                                                       num_chunks=8000, randomize_seed=False, api_name="/generation_all")),
-    ]
-    for space, call in attempts:
-        try:
-            print("  3D via", space, flush=True)
-            g = _find_glb(call(client(space)))
-            if g: shutil.copy(g, out); print("  glb ->", out, os.path.getsize(out), "bytes", flush=True); return out
-        except Exception as e:
-            print("  ", space, "failed:", str(e)[:140], flush=True)
+    # TEXTURED spaces first (Hunyuan/TRELLIS) for real skin/gear; frogleo = geometry-only fallback.
+    # Hunyuan /generation_all currently 500s intermittently — try it, then fall back.
+    try:
+        c = client("tencent/Hunyuan3D-2")
+        g = _find_glb(c.predict(caption="", image=handle_file(img), steps=30, guidance_scale=5.0, seed=42,
+                                octree_resolution=256, check_box_rembg=True, num_chunks=8000,
+                                randomize_seed=False, api_name="/generation_all"))
+        if g: shutil.copy(g, out); print("  glb[hunyuan textured] ->", out, flush=True); return out
+    except Exception as e:
+        print("   hunyuan failed:", str(e)[:120], flush=True)
+    try:
+        c = client("frogleo/Image-to-3D")
+        r = c.predict(handle_file(img), 30, 5.0, 42, 256, 8000, api_name="/gen_shape")
+        # r[2] = /static/.../white_mesh.glb (geometry only)
+        if isinstance(r, (list, tuple)) and len(r) > 2 and isinstance(r[2], str) and r[2].endswith(".glb"):
+            if _dl_static(c, r[2], out): print("  glb[frogleo geometry] ->", out, flush=True); return out
+    except Exception as e:
+        print("   frogleo failed:", str(e)[:120], flush=True)
     return None
 
 def skin_and_bank(key, raw):

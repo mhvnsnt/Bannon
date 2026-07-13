@@ -1,42 +1,24 @@
 {
-  "_note": "Curated text->3D prompts for the GAME-ONLY fighters the agents are cleared to generate (see CLAUDE.md MODEL OWNERSHIP DIRECTIVE). Do NOT add book/canon characters or Onyx's stable here \u2014 those are the owner's. Style suffix keeps them a consistent roster.",
-  "_style": "full-body pro wrestler, T-pose, game-ready, clean single mesh, PBR textured, neutral background, symmetrical, muscular athletic build, no props",
-  "characters": {
-    "VIPER": {
-      "charKey": "VIPER",
-      "prompt": "a lean southpaw counter-puncher wrestler, icy pale-blue and silver ring gear, cold calculating look, snake-scale trim, short slick hair"
-    },
-    "KAGE": {
-      "charKey": "KAGE",
-      "prompt": "a karate-style wrestler in a black shadow gi vest with torn sleeves, dark hood down, mysterious ninja-adjacent, matte black and charcoal"
-    },
-    "BRUTUS": {
-      "charKey": "BRUTUS",
-      "prompt": "a massive iron brawler wrestler, heavy muscle, rust-red and gunmetal armored trunks, wrist chains, shaved head, scarred"
-    },
-    "ZEPHYR": {
-      "charKey": "ZEPHYR",
-      "prompt": "an agile capoeira wrestler, lean and fast, teal and white flowing wind-motif gear, loose baggy pants, athletic barefoot-look boots"
-    },
-    "MORTUS": {
-      "charKey": "MORTUS",
-      "prompt": "a grim grappler death-archetype wrestler, bone-white body paint over black, skeletal rib motif, tattered black shroud shorts, gaunt intimidating"
-    },
-    "RONIN": {
-      "charKey": "RONIN",
-      "prompt": "a masterless-samurai wrestler, deep crimson and black lacquer-armor trunks, topknot, single shoulder guard, disciplined"
-    },
-    "TITAN": {
-      "charKey": "TITAN",
-      "prompt": "a colossal powerhouse wrestler, enormous frame, bronze and navy singlet straps, granite-jaw, championship-giant presence"
-    },
-    "GOLEM": {
-      "charKey": "GOLEM",
-      "prompt": "a heavy stone-golem-themed wrestler, cracked rocky grey skin texture, earthen brown trunks, immovable mass, glowing seam accents"
-    }
+  "_note": "Curated prompts for the GAME-ONLY fighters agents may generate (CLAUDE.md MODEL OWNERSHIP DIRECTIVE). Book/canon chars + Onyx's stable are the owner's — never here.",
+
+  "_rules": {
+    "1_no_trademarked_logos": "NEVER put real brand/promotion logos on anything (WWE/AEW/Nike/etc). If a mark is wanted, invent a PROPRIETARY Bannon-universe emblem; otherwise leave gear blank. Always modify any logo-like motif to something original to our universe.",
+    "2_coherent_attire_only": "Believable pro-wrestling attire ONLY. NO nonsensical gear — no weird suspenders, no nipple straps/attachments, no floating pieces, nothing without a real wrestling rationale. Every element must make sense in context.",
+    "3_ethnicity_is_identity": "Race/ethnicity is part of the character. Generate the specified ethnicity with the right skin tone; keep the roster diverse. Known so far: VIPER, ZEPHYR, GOLEM = Black (various tones). Owner names others.",
+    "4_semirealistic_likeness": "Semi-realistic pro-wrestler LIKENESS (WWE 2K / Fire Pro / sim-game fidelity) that matches the character's gimmick, fighting style, psychology, and race — grounded athletes, NOT cartoon superheroes.",
+    "5_clean_seed": "Full-body, front-facing, symmetrical A-pose, plain flat white background = a clean image->3D seed."
   },
-  "env_ring": "professional wrestling ring, elevated wooden deck platform, dark canvas mat with subtle center logo, black skirted fabric apron with pleats, four steel corner posts with ball tops, padded turnbuckles, NO ropes, realistic PBR materials, game-ready prop",
-  "env_arena_bowl": "indoor wrestling arena bowl, raked stadium seating sections rising on all four sides, dark industrial ceiling with truss-mounted stage lights, center floor open for a ring, entrance stage with LED screen and ramp, realistic PBR, game-ready environment",
-  "env_barricade": "wrestling ringside barricade section, black padded guardrail with fan-facing banner skirt, steel frame, modular straight segment, game-ready prop",
-  "env_steel_steps": "wrestling ring steel entry steps, two-tier brushed steel staircase, worn metal, game-ready prop"
+  "_style": "full-body front-facing symmetrical A-pose, arms slightly away from the body, feet shoulder-width, plain flat white background, even studio lighting, semi-realistic photoreal pro-wrestler likeness, grounded and lifelike, full figure head to boots centered. ATTIRE IS STRICT: plain solid-color trunks or tights and boots only, bare chest with absolutely NO straps and NO suspenders and NO singlet straps over the shoulders, completely blank gear surfaces with NO logos, NO emblems, NO brand marks, NO text, NO symbols anywhere on trunks kneepads boots or wrists — clean unmarked professional wrestling gear",
+  "_negative": "suspenders, shoulder straps, singlet straps, logos, brand logo, WWE logo, emblem, text, watermark, symbols, cartoon, superhero costume, nipple straps, floating gear, nonsensical straps",
+
+  "characters": {
+    "VIPER":  { "charKey": "VIPER",  "ethnicity": "Black (deep brown skin)", "prompt": "a lean Black southpaw counter-puncher pro wrestler, deep brown skin, short slick fade, icy pale-blue and gunmetal-silver trunks and kickpads with a subtle scale texture, taped wrists, cold calculating expression, athletic cruiserweight build" },
+    "KAGE":   { "charKey": "KAGE",   "ethnicity": "East Asian", "prompt": "an East Asian karate-striker pro wrestler, black shadow-gi vest with torn sleeves over bare chest, black trunks and shin guards, close-cropped hair, lean muscular, intense disciplined stare" },
+    "BRUTUS": { "charKey": "BRUTUS", "ethnicity": "White (rugged pale)", "prompt": "a massive iron-brawler pro wrestler, rugged pale scarred skin, shaved head, rust-red and gunmetal singlet bottom with a thick plated belt, wrist chains, heavyweight powerhouse build" },
+    "ZEPHYR": { "charKey": "ZEPHYR", "ethnicity": "Black (warm brown skin)", "prompt": "an agile Black capoeira-style high-flyer pro wrestler, warm brown skin, short twists, teal and white wind-motif trunks and long tights, barefoot-look wrestling boots, lean fast athletic build" },
+    "MORTUS": { "charKey": "MORTUS", "ethnicity": "Pale (painted)", "prompt": "a grim death-archetype pro wrestler, bone-white and black skull body paint, gaunt lean frame, tattered black shroud shorts and torn wrist tape, sunken intense eyes" },
+    "RONIN":  { "charKey": "RONIN",  "ethnicity": "East Asian", "prompt": "a masterless-samurai pro wrestler, East Asian, topknot, deep crimson and black lacquered-armor-styled trunks and kickpads with a single shoulder guard, disciplined stern look, athletic build" },
+    "TITAN":  { "charKey": "TITAN",  "ethnicity": "White (tanned)", "prompt": "a colossal powerhouse pro wrestler, tanned rugged skin, square jaw, bronze and navy singlet straps over a huge frame, championship-giant presence, super-heavyweight build" },
+    "GOLEM":  { "charKey": "GOLEM",  "ethnicity": "Black (dark brown, stone gimmick)", "prompt": "a colossal Black super-heavyweight pro wrestler with a living-stone gimmick, dark brown complexion showing through cracked earthen-grey stone-textured skin, earthen brown trunks and boots, faint glowing seams along the cracks, immovable massive build" }
+  }
 }
