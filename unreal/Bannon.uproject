@@ -1,0 +1,23 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "",
+	"Category": "Game",
+	"Description": "BANNON — physics-first pro-wrestling. Native UE5 port of the Three.js engine; the combat/physics LAWS come from ../native (the same header-only core the web build uses).",
+	"Modules": [
+		{
+			"Name": "BannonCore",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "ControlRig",
+			"Enabled": true
+		},
+		{
+			"Name": "PhysicsControl",
+			"Enabled": true
+		}
+	]
+}
