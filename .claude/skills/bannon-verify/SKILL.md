@@ -54,3 +54,10 @@ Chromium lives at `/opt/pw-browsers/chromium-1194/chrome-linux/chrome` (launch w
 Verify → commit (with what was MEASURED in the message) → push each brick. Read
 `CLAUDE.md` first every session; `docs/mocap_orientation_master_prompt.md` is binding
 for any move/pose work.
+- **freecamEnter() is a CAW MODEL-VIEWER — it HIDES ringProcGroup/ring3D AND every fighter except
+  the freecam target** (by design, for model isolation). Screenshots taken after freecamEnter show
+  a ringless void with one fighter — NOT a bug. For environment/match shots: set `FREECAM.on=true`
+  directly, stub `freecamTarget=()=>null` (kills the per-frame chest-follow lerp), and never call
+  freecamEnter. applyFreeCam lerps tx/tz to the target fighter's chest every frame otherwise.
+- The composer means `renderer.info.render` only reflects the LAST pass (1 call / 1 triangle =
+  the gamma quad). Don't read it as "nothing rendered".

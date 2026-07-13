@@ -13439,6 +13439,13 @@ try{
   // CIPHER + ECHO (owner-made, Onyx's God Within stable — profiles from canon/godwithin/noncanon_roster.md)
   _addChar('CIPHER',         { label:'The Undefined',           col:0x101014, accent:0x22ff88, skin:0x3a2418, faction:'Agents of Chaos', canon:true, bio:'Life Path recalculates every read — offense genuinely non-deterministic. Feral black-sludge maniac off the numerology engine.', archetype:'brawler' }, 'LONG_TIGHTS', 'DREADS', {musc:0.66,fat:0.12});
   _addChar('ECHO',           { label:'The Reflection',          col:0x1a1a22, accent:0xcc2255, skin:0x5a3a28, faction:'Agents of Chaos', canon:true, bio:'No Life Path of her own — hers is whatever you run. No signature offense; she hits you with your own move.', archetype:'technician' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.5,fat:0.15,fem:1,hips:1.0,glutes:1.05,waist:0.85,bust:0.85});
+  // HALL NIGHTER (canon, Book 6) — the Showstopper/Heartbreak Kid archetype, NWC. Toothpick-flicking
+  // "chico" swagger, heel-turned-respected; loses to Finxsse at Fight Night (Banyan Ring) and fist-bumps
+  // after. Sworn enemy of Triple X ("sold out... went corporate") — their clash is prophesied legendary.
+  _addChar('HALL_NIGHTER',   { label:'The Showstopper',         col:0xd42a5a, accent:0xe8c840, skin:0xe0b088, faction:'NWC', canon:true, bio:'Heartbreak-Kid swagger, toothpick flick, tunes up the band in the corner. NWC respects violence — he IS the violence with showtime lighting.', archetype:'highFlyer' }, 'TIGHTS', 'LONG', {musc:0.62,fat:0.12});
+  // STATIC (GAME-ONLY, Onyx's stable w/ CIPHER/ECHO/HOLLOW) — owner attached the Enzo-style model:
+  // undersized motor-mouth spitfire, talks you into mistakes, swarm offense, eats bumps huge.
+  _addChar('STATIC',         { label:'The Interference',        col:0x14141a, accent:0x44ccff, skin:0xd9a066, faction:'Agents of Chaos', canon:false, bio:'Pure signal noise — a hundred words a minute and none of them respectful. Small enough to dodge, loud enough to drown a broadcast, crazy enough to dive first.', archetype:'highFlyer' }, 'CARGO_PANTS', 'FADE', {musc:0.5,fat:0.1});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13462,12 +13469,18 @@ try{
     MR_ZERO_POINT:   { name:'THE ZERO POINT DROP',       kind:'grapple', pos:'DDT',         deliver:'spike' },
     GREAT_WHITE_NORTH:{ name:'THE FROSTBITE DRIVER',     kind:'grapple', pos:'BRAINBUSTER', deliver:'spike' },
     SOMBRA_NEGRA:    { name:'LA TRAMPA DE PLATA',        kind:'strike' },
-    RAJA_ASCENDANT:  { name:'THE DHARMA DRIVER',         kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  }
+    RAJA_ASCENDANT:  { name:'THE DHARMA DRIVER',         kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  },
+    HALL_NIGHTER:    { name:'THE CURTAIN CALL',          kind:'strike' },
+    STATIC:          { name:'DEAD AIR',                  kind:'grapple', pos:'DDT',         deliver:'spike' }
   });
   // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
   window.CHAR_FINISHERS = Object.assign(window.CHAR_FINISHERS||{}, {
     FINXSSE:  { style:'Lesnar/Guerrero hybrid — speed+power showman', sig:'CHAINSNATCHER — jumping double-knee backstabber', fin:'GETBACKK — fireman-carry tornado slam (F5-class violence)', props:['gold jeweled diamond cross (stolen from Chainlink)'] },
-    STICK_UP: { fin:['LEAP OF FAITH — swanton bomb','SUPER LEAP OF FAITH — swanton 450 splash','FIRE THUNDER DRIVER','TWIST OF FATE — theatrical twisting cutter/stunner'] }
+    STICK_UP: { fin:['LEAP OF FAITH — swanton bomb','SUPER LEAP OF FAITH — swanton 450 splash','FIRE THUNDER DRIVER','TWIST OF FATE — theatrical twisting cutter/stunner'] },
+    // Book 6 canon + stable identities (owner model drops 2026-07-12):
+    HALL_NIGHTER: { style:'HBK Showstopper archetype — charismatic showman flyer, sells huge, peaks late; toothpick flick, tunes up the band in the corner before the kick', sig:'FLYING FOREARM + kip-up · diving elbow drop off the top', fin:'THE CURTAIN CALL — tune-up-the-band superkick out of the corner', rivalry:'Triple X ("sold out... went corporate") — prophesied legendary clash', canonNote:'loses to Finxsse at Fight Night in the Banyan Ring, post-match fist bump: NWC respects violence' },
+    STATIC:       { style:'Enzo-class motor-mouth spitfire (GAME-ONLY, Onyx stable w/ CIPHER/ECHO/HOLLOW) — undersized swarm offense, talks constantly, baits mistakes, eats bumps huge and pops right back up', sig:'WHITE NOISE RUSH — leaping forearm flurry off the ropes', fin:'DEAD AIR — leaping tornado DDT', voice:'a hundred words a minute, none of them respectful' },
+    CIPHER:       { style:'feral no-mask no-hair mode = Blackheart Lio Rush-class gimmick (owner spec 2026-07-12): explosive short bursts, unhinged pace shifts, sludge-black paint', fin:'non-deterministic — the numerology engine picks the kill move' }
   });
   // v153 FINISHER WIRING — named finishers resolve through the REAL grapple physics (no cinematic
   // canned path): kind 'grapple' auto-runs grab -> named position lift -> delivery; kind 'strike'
@@ -13786,6 +13799,11 @@ const MODEL_LIBRARY = [
   { name:'CIPHER · Minion', url:'assets/models/CIPHER_minion.glb', charKey:'CIPHER' },
   { name:'CIPHER · Feral', url:'assets/models/CIPHER_feral.glb', charKey:'CIPHER' },
   { name:'CAIN ELIAS · Wrestling Gear', url:'assets/models/CAIN_ELIAS_gear.glb', charKey:'CAIN_ELIAS' },
+  // 2026-07-12 owner drops: HALL NIGHTER (Book 6 canon, Showstopper/HBK archetype) + STATIC
+  // (game-only, Onyx's stable — Enzo-style motor-mouth spitfire) with alt attire.
+  { name:'HALL NIGHTER (canon)', url:'assets/models/HALL_NIGHTER.glb', charKey:'HALL_NIGHTER' },
+  { name:'STATIC', url:'assets/models/STATIC.glb', charKey:'STATIC' },
+  { name:'STATIC · Attire 2', url:'assets/models/STATIC_alt.glb', charKey:'STATIC' },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },
