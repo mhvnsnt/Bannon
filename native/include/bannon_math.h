@@ -63,6 +63,17 @@ struct Quat {
     }
 };
 
+// quaternion from three orthonormal basis vectors (right, up, forward) — matrix→quat, no renderer.
+inline Quat quatFromBasis(const Vec3& r, const Vec3& u, const Vec3& f) {
+    float m00=r.x, m10=r.y, m20=r.z, m01=u.x, m11=u.y, m21=u.z, m02=f.x, m12=f.y, m22=f.z;
+    float tr = m00 + m11 + m22; Quat q;
+    if (tr > 0) { float s = std::sqrt(tr + 1.0f) * 2.0f; q.w = 0.25f*s; q.x = (m21-m12)/s; q.y = (m02-m20)/s; q.z = (m10-m01)/s; }
+    else if (m00 > m11 && m00 > m22) { float s = std::sqrt(1.0f+m00-m11-m22)*2.0f; q.w=(m21-m12)/s; q.x=0.25f*s; q.y=(m01+m10)/s; q.z=(m02+m20)/s; }
+    else if (m11 > m22) { float s = std::sqrt(1.0f+m11-m00-m22)*2.0f; q.w=(m02-m20)/s; q.x=(m01+m10)/s; q.y=0.25f*s; q.z=(m12+m21)/s; }
+    else { float s = std::sqrt(1.0f+m22-m00-m11)*2.0f; q.w=(m10-m01)/s; q.x=(m02+m20)/s; q.y=(m12+m21)/s; q.z=0.25f*s; }
+    q.normalize(); return q;
+}
+
 // smallest rotation taking `from` to `to` (used by PD controllers to compute joint error)
 inline Quat rotationBetween(const Vec3& from, const Vec3& to) {
     Vec3 f = from.normalized(), t = to.normalized();
