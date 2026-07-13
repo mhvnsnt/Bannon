@@ -61,3 +61,9 @@ add_test(NAME referee COMMAND test_referee)
 add_executable(test_universe tests/test_universe.cpp)
 target_link_libraries(test_universe bannon_core)
 add_test(NAME universe COMMAND test_universe)
+
+# animation/skinning bridge: the Three.js -> UE5/Unity port layer — roll-stable bone aim +
+# limb-family A-pose skin separation, portable + testable, maps to UE Control Rig
+add_executable(test_anim_bridge tests/test_anim_bridge.cpp)
+target_link_libraries(test_anim_bridge bannon_core)
+add_test(NAME anim_bridge COMMAND test_anim_bridge)

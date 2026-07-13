@@ -13403,7 +13403,12 @@ try{
   _addChar('AGENT_CANUCK',   { label:'Communicative Rebel',    col:0xb02020, accent:0xffffff, skin:0xe8c9a8, faction:'Alliance', canon:true, bio:'Exposes corporate hypocrisy — agile, witty, submission-sharp.', archetype:'highFlyer' }, 'TIGHTS', 'SHORT', {musc:0.58,fat:0.18});
   _addChar('CELTIC_FURY',    { label:'Pure Freedom',           col:0x1a5a2a, accent:0xe8e0d0, skin:0xe6c8a8, faction:'Alliance', canon:true, bio:'Chaotic brawler — the wildness Marquis is reclaiming.', archetype:'brawler' }, 'CARGO_PANTS', 'MOHAWK', {musc:0.7,fat:0.32});
   _addChar('REY_FUEGO',      { label:'El Beso del Sol',        col:0xd42a2a, accent:0xffd700, skin:0xc08a54, faction:'Alliance', canon:true, bio:'Joyful performance — aéreo, high-flying showmanship.', archetype:'highFlyer' }, 'TIGHTS', 'SHORT', {musc:0.55,fat:0.12});
-  _addChar('EL_TORO_DE_ORO', { label:'Honorable Partner',      col:0xb8860b, accent:0x111111, skin:0xa5683c, faction:'Alliance', canon:true, bio:'Power lucha — authentic loyalty in gold.', archetype:'powerhouse' }, 'TRUNKS', 'SHORT', {musc:0.8,fat:0.34});
+  // EL TORO DE ORO — the BULL-HEADED MINOTAUR (owner canon 2026-07-13): Batista "Evolution" cocky
+  // enforcer crossed with Batista "Leviathan"-era beast — a Spanish luchador power matador with an
+  // actual minotaur bull head, snobby and cocky out of the ring, unruly raging animal in it.
+  // Batista-class moveset + extras. NOT to be confused with Pablo (who is nicknamed "the Minotaur"
+  // but is human-headed). His model (EL_TORO_DE_ORO.glb) carries the bull head.
+  _addChar('EL_TORO_DE_ORO', { label:'The Golden Beast',        col:0xb8860b, accent:0x111111, skin:0xa5683c, faction:'Alliance', canon:true, bio:'A minotaur in a matador’s gold — cocky Evolution-era enforcer swagger over a Leviathan’s raging bull-headed unruliness. Snob outside the ropes, animal inside them. Batista-class power with horns.', archetype:'powerhouse' }, 'TRUNKS', 'SHORT', {musc:0.86,fat:0.3});
   // Corporate Structure:
   _addChar('CAIN_ELIAS',     { label:'The Executioner',        col:0x14141a, accent:0x8a0f0f, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'The ultimate enforcer — past trauma made physical, the test of resolve.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.88,fat:0.24});
   _addChar('ASTRID',         { label:'The Ice Maiden',         col:0xd8e4ee, accent:0x4a7a9a, skin:0xeed9c0, faction:'Corporate Structure', canon:true, bio:'Cold structuralist — efficiency as ideology.', archetype:'technician' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.6,fat:0.12,fem:1,hips:0.98,waist:0.84,bust:0.9});
@@ -13439,6 +13444,25 @@ try{
   // CIPHER + ECHO (owner-made, Onyx's God Within stable — profiles from canon/godwithin/noncanon_roster.md)
   _addChar('CIPHER',         { label:'The Undefined',           col:0x101014, accent:0x22ff88, skin:0x3a2418, faction:'Agents of Chaos', canon:true, bio:'Life Path recalculates every read — offense genuinely non-deterministic. Feral black-sludge maniac off the numerology engine.', archetype:'brawler' }, 'LONG_TIGHTS', 'DREADS', {musc:0.66,fat:0.12});
   _addChar('ECHO',           { label:'The Reflection',          col:0x1a1a22, accent:0xcc2255, skin:0x5a3a28, faction:'Agents of Chaos', canon:true, bio:'No Life Path of her own — hers is whatever you run. No signature offense; she hits you with your own move.', archetype:'technician' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.5,fat:0.15,fem:1,hips:1.0,glutes:1.05,waist:0.85,bust:0.85});
+  // HALL NIGHTER (canon, Book 6) — the Showstopper/Heartbreak Kid archetype, NWC. Toothpick-flicking
+  // "chico" swagger, heel-turned-respected; loses to Finxsse at Fight Night (Banyan Ring) and fist-bumps
+  // after. Sworn enemy of Triple X ("sold out... went corporate") — their clash is prophesied legendary.
+  _addChar('HALL_NIGHTER',   { label:'The Showstopper',         col:0xd42a5a, accent:0xe8c840, skin:0xe0b088, faction:'NWC', canon:true, bio:'Heartbreak-Kid swagger, toothpick flick, tunes up the band in the corner. NWC respects violence — he IS the violence with showtime lighting.', archetype:'highFlyer' }, 'TIGHTS', 'LONG', {musc:0.62,fat:0.12});
+  // STATIC (GAME-ONLY, Onyx's stable w/ CIPHER/ECHO/HOLLOW) — owner attached the Enzo-style model:
+  // undersized motor-mouth spitfire, talks you into mistakes, swarm offense, eats bumps huge.
+  _addChar('STATIC',         { label:'The Interference',        col:0x14141a, accent:0x44ccff, skin:0xd9a066, faction:'Agents of Chaos', canon:false, bio:'Pure signal noise — a hundred words a minute and none of them respectful. Small enough to dodge, loud enough to drown a broadcast, crazy enough to dive first.', archetype:'highFlyer' }, 'CARGO_PANTS', 'FADE', {musc:0.5,fat:0.1});
+  // HOLLOW (owner-made, Onyx's God Within stable w/ CIPHER/ECHO/STATIC) — Super Dragon-inspired:
+  // stiff, violent, technically brutal death-move junkie; masked, silent, all business.
+  _addChar('HOLLOW',         { label:'The Void Made Flesh',     col:0x0c0c10, accent:0x9a1a1a, skin:0x6a4a34, faction:'Agents of Chaos', canon:false, bio:'A masked absence where a man should be — Super-Dragon-stiff, all curb stomps and psycho drivers. Says nothing, breaks everything.', archetype:'technician' }, 'LONG_TIGHTS', 'BALD', {musc:0.7,fat:0.12});
+  // PABLO "The Minotaur" (canon) — NOT El Toro de Oro; a minotaur-headed monster heel with a Black
+  // Reign/Golden Bull attire set. Bully-brawler powerhouse.
+  // PABLO "The Minotaur" — nicknamed for his labyrinthine brawling, but HUMAN-HEADED (the bull head
+  // belongs to El Toro de Oro). Attires: painted (PABLO.glb), a "Golden Bull" (English) set
+  // (PABLO_goldenbull.glb), and a Black Reign set (PABLO_blackreign.glb). Bully powerhouse.
+  _addChar('PABLO',          { label:'The Minotaur',            col:0x2a1810, accent:0xc8a020, skin:0x7a4a2e, faction:'Independent Variables', canon:true, bio:'They call him the Minotaur for the maze of pain he drags you through — no bull head, just a bull’s temper. Gores, mauls and tramples; wears the Golden Bull colors when he wants to be feared.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.86,fat:0.34});
+  // TRIPLE XXX (Book canon) — Triple-H archetype reskinned around hedonism/XXX excess: cerebral but
+  // "part animal, high-class snob." Corporate enforcer, Hall Nighter's prophesied rival.
+  _addChar('TRIPLE_XXX',     { label:'The Cerebral Hedonist',   col:0x101820, accent:0x2a6acc, skin:0xe0b088, faction:'Corporate Structure', canon:true, bio:'The Game with the mask off — cerebral in the ring, an animal everywhere else. Sold out, went corporate, and never looked back. Sledgehammer swagger dressed in excess.', archetype:'powerhouse' }, 'TIGHTS', 'LONG', {musc:0.78,fat:0.16});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13462,12 +13486,21 @@ try{
     MR_ZERO_POINT:   { name:'THE ZERO POINT DROP',       kind:'grapple', pos:'DDT',         deliver:'spike' },
     GREAT_WHITE_NORTH:{ name:'THE FROSTBITE DRIVER',     kind:'grapple', pos:'BRAINBUSTER', deliver:'spike' },
     SOMBRA_NEGRA:    { name:'LA TRAMPA DE PLATA',        kind:'strike' },
-    RAJA_ASCENDANT:  { name:'THE DHARMA DRIVER',         kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  }
+    RAJA_ASCENDANT:  { name:'THE DHARMA DRIVER',         kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  },
+    HALL_NIGHTER:    { name:'THE CURTAIN CALL',          kind:'strike' },
+    STATIC:          { name:'DEAD AIR',                  kind:'grapple', pos:'DDT',         deliver:'spike' },
+    HOLLOW:          { name:'THE VANISHING POINT',       kind:'grapple', pos:'TIGER_DRIVER',deliver:'spike' },
+    PABLO:           { name:'THE GORING',                kind:'grapple', pos:'POWERBOMB',   deliver:'slam'  },
+    TRIPLE_XXX:      { name:'THE LAST INDULGENCE',       kind:'grapple', pos:'DDT',         deliver:'spike' }
   });
   // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
   window.CHAR_FINISHERS = Object.assign(window.CHAR_FINISHERS||{}, {
     FINXSSE:  { style:'Lesnar/Guerrero hybrid — speed+power showman', sig:'CHAINSNATCHER — jumping double-knee backstabber', fin:'GETBACKK — fireman-carry tornado slam (F5-class violence)', props:['gold jeweled diamond cross (stolen from Chainlink)'] },
-    STICK_UP: { fin:['LEAP OF FAITH — swanton bomb','SUPER LEAP OF FAITH — swanton 450 splash','FIRE THUNDER DRIVER','TWIST OF FATE — theatrical twisting cutter/stunner'] }
+    STICK_UP: { fin:['LEAP OF FAITH — swanton bomb','SUPER LEAP OF FAITH — swanton 450 splash','FIRE THUNDER DRIVER','TWIST OF FATE — theatrical twisting cutter/stunner'] },
+    // Book 6 canon + stable identities (owner model drops 2026-07-12):
+    HALL_NIGHTER: { style:'HBK Showstopper archetype — charismatic showman flyer, sells huge, peaks late; toothpick flick, tunes up the band in the corner before the kick', sig:'FLYING FOREARM + kip-up · diving elbow drop off the top', fin:'THE CURTAIN CALL — tune-up-the-band superkick out of the corner', rivalry:'Triple X ("sold out... went corporate") — prophesied legendary clash', canonNote:'loses to Finxsse at Fight Night in the Banyan Ring, post-match fist bump: NWC respects violence' },
+    STATIC:       { style:'Enzo-class motor-mouth spitfire (GAME-ONLY, Onyx stable w/ CIPHER/ECHO/HOLLOW) — undersized swarm offense, talks constantly, baits mistakes, eats bumps huge and pops right back up', sig:'WHITE NOISE RUSH — leaping forearm flurry off the ropes', fin:'DEAD AIR — leaping tornado DDT', voice:'a hundred words a minute, none of them respectful' },
+    CIPHER:       { style:'feral no-mask no-hair mode = Blackheart Lio Rush-class gimmick (owner spec 2026-07-12): explosive short bursts, unhinged pace shifts, sludge-black paint', fin:'non-deterministic — the numerology engine picks the kill move' }
   });
   // v153 FINISHER WIRING — named finishers resolve through the REAL grapple physics (no cinematic
   // canned path): kind 'grapple' auto-runs grab -> named position lift -> delivery; kind 'strike'
@@ -13786,6 +13819,26 @@ const MODEL_LIBRARY = [
   { name:'CIPHER · Minion', url:'assets/models/CIPHER_minion.glb', charKey:'CIPHER' },
   { name:'CIPHER · Feral', url:'assets/models/CIPHER_feral.glb', charKey:'CIPHER' },
   { name:'CAIN ELIAS · Wrestling Gear', url:'assets/models/CAIN_ELIAS_gear.glb', charKey:'CAIN_ELIAS' },
+  // 2026-07-12 owner drops: HALL NIGHTER (Book 6 canon, Showstopper/HBK archetype) + STATIC
+  // (game-only, Onyx's stable — Enzo-style motor-mouth spitfire) with alt attire.
+  { name:'HALL NIGHTER (canon)', url:'assets/models/HALL_NIGHTER.glb', charKey:'HALL_NIGHTER' },
+  { name:'STATIC', url:'assets/models/STATIC.glb', charKey:'STATIC' },
+  { name:'STATIC · Attire 2', url:'assets/models/STATIC_alt.glb', charKey:'STATIC' },
+  // 2026-07-13 owner drop — new canon + stable models (auto-skinned v4.2, multi-attire):
+  { name:'HOLLOW', url:'assets/models/HOLLOW.glb', charKey:'HOLLOW' },
+  { name:'EDWIN KENNEDY · Mustached Mogul', url:'assets/models/EDWIN_KENNEDY.glb', charKey:'EDWIN_KENNEDY' },
+  { name:'EDWIN KENNEDY · Unchained', url:'assets/models/EDWIN_KENNEDY_unchained.glb', charKey:'EDWIN_KENNEDY' },
+  { name:'PABLO · Minotaur (painted)', url:'assets/models/PABLO.glb', charKey:'PABLO' },
+  { name:'PABLO · Golden Bull', url:'assets/models/PABLO_goldenbull.glb', charKey:'PABLO' },
+  { name:'PABLO · Black Reign', url:'assets/models/PABLO_blackreign.glb', charKey:'PABLO' },
+  { name:'QUEEN TYNESHIA · Ring Gear', url:'assets/models/TYNESHIA.glb', charKey:'QUEEN_TYNESHIA' },
+  { name:'QUEEN TYNESHIA · Street/Manager', url:'assets/models/TYNESHIA_street.glb', charKey:'QUEEN_TYNESHIA' },
+  { name:'TRIPLE XXX · Attire 1', url:'assets/models/TRIPLE_XXX.glb', charKey:'TRIPLE_XXX' },
+  { name:'TRIPLE XXX · Blue Tights', url:'assets/models/TRIPLE_XXX_tights.glb', charKey:'TRIPLE_XXX' },
+  { name:'TRIPLE XXX · Blue Trunks', url:'assets/models/TRIPLE_XXX_trunks.glb', charKey:'TRIPLE_XXX' },
+  { name:'TRIPLE XXX · Suit/Manager', url:'assets/models/TRIPLE_XXX_suit.glb', charKey:'TRIPLE_XXX' },
+  { name:'EL TORO DE ORO · Matador', url:'assets/models/EL_TORO_DE_ORO.glb', charKey:'EL_TORO_DE_ORO' },
+  { name:'STAN "HONEY" COMBS · Ring Gear', url:'assets/models/STAN_COMBS_gear.glb', charKey:'STAN_COMBS' },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },
@@ -13847,9 +13900,37 @@ function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MO
 // that character fights on EITHER side. A model imported or AI-generated for "BANNON" then follows
 // Bannon everywhere; another character gets a different unique model. Takes priority over the per-side
 // CHOSEN_MODEL fallback. =====
+// DEFAULT CHARACTER MODELS — the canon roster's AAA GLB bodies auto-load in a match so you fight AS
+// the authored/skinned model, NOT the procedural three.js tube. Owner directive (2026-07-13): "tired
+// of seeing all these three.js models — get the Tripo models appearing in game." Every char here has
+// a banked skinned GLB (16-bone, geodesic + anatomical clamps). A user pick in the model menu still
+// overrides (localStorage CHAR_MODEL wins). Add a row when a new canon model banks.
+const CHAR_MODEL_DEFAULTS = {
+  BANNON:{url:'assets/models/BANNON.glb',name:'BANNON (canon)'},
+  MAIME:{url:'assets/models/MAIME.glb',name:'MAIME (canon)'},
+  ONYX:{url:'assets/models/ONYX_skinned.glb',name:'ONYX'},
+  CODY_CALLAHAN:{url:'assets/models/CODY_gear_skinned.glb',name:'CODY · Gear'},
+  CAIN_ELIAS:{url:'assets/models/CAIN_ELIAS_gear.glb',name:'CAIN ELIAS · Gear'},
+  STICK_UP:{url:'assets/models/STICKUP.glb',name:'STICK-UP'},
+  CIPHER:{url:'assets/models/CIPHER.glb',name:'CIPHER'},
+  ECHO:{url:'assets/models/ECHO.glb',name:'ECHO'},
+  STATIC:{url:'assets/models/STATIC.glb',name:'STATIC'},
+  HOLLOW:{url:'assets/models/HOLLOW.glb',name:'HOLLOW'},
+  HALL_NIGHTER:{url:'assets/models/HALL_NIGHTER.glb',name:'HALL NIGHTER'},
+  EDWIN_KENNEDY:{url:'assets/models/EDWIN_KENNEDY.glb',name:'EDWIN KENNEDY'},
+  PABLO:{url:'assets/models/PABLO.glb',name:'PABLO'},
+  QUEEN_TYNESHIA:{url:'assets/models/TYNESHIA.glb',name:'QUEEN TYNESHIA'},
+  TRIPLE_XXX:{url:'assets/models/TRIPLE_XXX.glb',name:'TRIPLE XXX'},
+  EL_TORO_DE_ORO:{url:'assets/models/EL_TORO_DE_ORO.glb',name:'EL TORO DE ORO'},
+  STAN_COMBS:{url:'assets/models/STAN_COMBS_gear.glb',name:'STAN COMBS'}
+};
 let CHAR_MODEL = (function(){ try{ var r=localStorage.getItem('bannonCharModels'); if(r) return JSON.parse(r); }catch(e){} return {}; })();
 function charModelKey(f){ var n=(typeof fname==='function'?fname(f):(f&&f.opts&&f.opts.name))||''; return String(n).toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
-function applyCharModels(){ ['p1','p2'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; var ck=charModelKey(f); var cm=ck&&CHAR_MODEL[ck]; if(cm&&cm.url){ try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
+// user-saved binding wins; otherwise fall back to the canon default. Toggle off with AUTO_CHAR_MODELS=false.
+window.AUTO_CHAR_MODELS = (window.AUTO_CHAR_MODELS!==undefined)?window.AUTO_CHAR_MODELS:true;
+function charModelFor(ck){ if(!ck) return null; if(CHAR_MODEL[ck]&&CHAR_MODEL[ck].url) return CHAR_MODEL[ck];
+  if(window.AUTO_CHAR_MODELS && CHAR_MODEL_DEFAULTS[ck]) return CHAR_MODEL_DEFAULTS[ck]; return null; }
+function applyCharModels(){ ['p1','p2'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
 function assignCharModel(charKey, url, name){ if(!charKey) return; charKey=charKey.toUpperCase(); try{ if(url){ CHAR_MODEL[charKey]={url:url,name:name||charKey}; } else { delete CHAR_MODEL[charKey]; } localStorage.setItem('bannonCharModels',JSON.stringify(CHAR_MODEL)); }catch(e){} }
 // Bind the model currently shown on a side to that side's CHARACTER so it persists as theirs.
 function assignCurrentModelToChar(side){ var f=fighterFor(side); if(!f) return; var ck=charModelKey(f);
@@ -14007,6 +14088,28 @@ const _invP=new THREE.Quaternion(), _dl=new THREE.Vector3(), _rfl=new THREE.Vect
 const _DEG=Math.PI/180, LIM_LIMB=170*_DEG, LIM_SPINE=88*_DEG;
 // clamp a target local quaternion to within maxRad of the bone's rest pose (kills 360-degree spin/flip artifacts; real poses never exceed this)
 function _clampQ(t, r, maxRad){ let d=t.x*r.x+t.y*r.y+t.z*r.z+t.w*r.w; if(d<0)d=-d; if(d>1)d=1; const ang=2*Math.acos(d); if(ang>maxRad && ang>1e-3) t.slerp(r, 1-maxRad/ang); }
+// ROLL-STABLE LIMB AIM (fixes the "spiral-collapse leg" bug): setFromUnitVectors gives an
+// UNDEFINED roll about the aim axis, so a limb whose target is near-vertical can flip the wrong
+// way (mirror-symmetric legs producing asymmetric collapse — verified: left thigh drove away from
+// its target). Instead build FULL orthonormal frames for rest-fwd and target-dir sharing ONE up
+// reference (the world axis least parallel to the aim), so the roll is deterministic. Output is the
+// bone's LOCAL quaternion that points localFwd at targetLocalDir. Toggle window.STABLE_LIMB_AIM.
+const _rbR=new THREE.Vector3(),_rbU=new THREE.Vector3(),_rbF=new THREE.Vector3(),
+      _tbR=new THREE.Vector3(),_tbU=new THREE.Vector3(),_tbF=new THREE.Vector3(),
+      _upH=new THREE.Vector3(),_rbM=new THREE.Matrix4(),_tbM=new THREE.Matrix4(),
+      _rq0=new THREE.Quaternion(),_tq0=new THREE.Quaternion();
+function _aimLocal(localFwd, targetLocalDir, outQ){
+  _tbF.copy(targetLocalDir); if(_tbF.lengthSq()<1e-9){ outQ.identity(); return outQ; } _tbF.normalize();
+  _rbF.copy(localFwd).normalize();
+  const ax=Math.abs(_tbF.x),ay=Math.abs(_tbF.y),az=Math.abs(_tbF.z);            // up = axis least parallel to the aim
+  if(ay<=ax&&ay<=az) _upH.set(0,1,0); else if(az<=ax&&az<=ay) _upH.set(0,0,1); else _upH.set(1,0,0);
+  _tbR.crossVectors(_upH,_tbF); if(_tbR.lengthSq()<1e-6){ _upH.set(1,0,0); _tbR.crossVectors(_upH,_tbF); } _tbR.normalize(); _tbU.crossVectors(_tbF,_tbR);
+  _rbR.crossVectors(_upH,_rbF); if(_rbR.lengthSq()<1e-6){ _upH.set(1,0,0); _rbR.crossVectors(_upH,_rbF); } _rbR.normalize(); _rbU.crossVectors(_rbF,_rbR);
+  _tbM.makeBasis(_tbR,_tbU,_tbF); _rbM.makeBasis(_rbR,_rbU,_rbF);
+  _tq0.setFromRotationMatrix(_tbM); _rq0.setFromRotationMatrix(_rbM);
+  outQ.copy(_tq0).multiply(_rq0.invert());
+  return outQ;
+}
 function updateFighterModel(f){
   const m=f.model; if(!m) return;
   const root = f.ragdoll ? f.V.pelvis.pos : f.worldJoint('pelvis');
@@ -14028,9 +14131,17 @@ function updateFighterModel(f){
           // Kills the old world-locked spine/neck 'owl twist' (both fighters wrenched to one world heading).
           if(par){ par.getWorldQuaternion(_mPQ); _invP.copy(_mPQ).invert(); _dl.copy(_mDir).applyQuaternion(_invP); } else { _dl.copy(_mDir); }
           const _rlq=mp.bone.userData.restQuat||_idQ;
-          _rfl.copy(mp.localFwd).applyQuaternion(_rlq);
-          _qd.setFromUnitVectors(_rfl, _dl);
-          _qw.copy(_qd).multiply(_rlq);
+          if(mp.isLimb && window.STABLE_LIMB_AIM!==false){
+            // roll-stable aim: deterministic frame-to-frame roll -> no spiral-collapse. _dl is in
+            // parent space; localFwd is bone-local (== parent-space at rest for identity restQuat).
+            _rfl.copy(mp.localFwd).applyQuaternion(_rlq);
+            _aimLocal(_rfl, _dl, _qd);
+            _qw.copy(_qd).multiply(_rlq);
+          } else {
+            _rfl.copy(mp.localFwd).applyQuaternion(_rlq);
+            _qd.setFromUnitVectors(_rfl, _dl);
+            _qw.copy(_qd).multiply(_rlq);
+          }
           const _grapPose = (f.state==='grabbed'||f.state==='grab'||f.state==='deliver');
           // during a hold/throw, let the model COMMIT to the rig's slam/fold pose: wider bend + faster catch-up,
           // so the body actually lays back / folds instead of staying upright and re-facing (the 'spin' look).
@@ -14586,6 +14697,7 @@ function setupInput(){
     if (!meter || !needle || !zone) return;
     if (meter._subActive) return; // already running
     meter._subActive = true;
+    meter._subT0 = 0; meter._subLastT = 0;                     // real-time hold clock reset
     meter.classList.add('active');
     if (lbl) lbl.textContent = type === 'PIN' ? 'PIN ATTEMPT' : 'SUBMISSION';
     if (tapHint) tapHint.textContent = 'TAP ZONE BUTTON RAPIDLY TO ESCAPE';
@@ -14601,8 +14713,32 @@ function setupInput(){
     let vel = 2.2 + Math.random() * 1.4;  // px per tick (faster = harder)
     let dir = 1;
     let ticks = 0;
-    const maxTicks = 220;  // ~4.4s at 50ms
+    const maxTicks = 220;  // hard ceiling only — the ORGANIC tap below usually decides first
     let escaped = false;
+    // PHYSICAL TORQUE MODEL (native bannon_referee.h submissionStep): the UI drives real joint
+    // torque -> rotation past the anatomical limit drains LOCAL limb HP -> the tap-out is
+    // constraint failure (limb wrecked, or deep strain with no stamina left), not a timer.
+    const subMx = (typeof MAX_STAMINA!=='undefined')?MAX_STAMINA:440;
+    // hold-local stamina pool: you do NOT regen while someone cranks the joint — the engine's
+    // idle regen would refill the victim mid-hold, so the pool only moves DOWN and is written
+    // back each tick (min) so the rest of the engine sees the drain.
+    let holdStam = (victim&&victim.stamina!=null)?victim.stamina:subMx*0.5;
+    const subJoint = { rot:0, limit:1.2, limbHp:1000 };
+    const crank01 = ()=>{ const m=(attacker&&attacker.momentum!=null)?attacker.momentum:50; return Math.min(1, 0.55+0.45*(m/100)); };
+    const resist01 = ()=> Math.max(0, Math.min(1, holdStam/subMx));
+    let subTapped = false;
+    function subStep(dt){
+      const cr=crank01(), rs=resist01();
+      subJoint.rot = Math.max(0, subJoint.rot + (cr - rs*0.8)*1.5*dt);
+      holdStam = Math.max(0, holdStam - (rs*22 + cr*6)*dt);                    // fighting the hold gasses
+      if (victim && victim.stamina!=null) victim.stamina = Math.min(victim.stamina, holdStam);
+      if (subJoint.rot > subJoint.limit){ subJoint.limbHp = Math.max(0, subJoint.limbHp - (subJoint.rot - subJoint.limit)*120*dt); }
+      const strain = subJoint.rot / subJoint.limit;
+      meter._subStrain = strain;                               // exposed for the landing decision + telemetry
+      subTapped = (subJoint.limbHp<=0) || (strain>0.92 && holdStam < subMx*0.06);
+      // deep strain squeezes the escape window — cranked joints are harder to slip
+      if (strain>0.75 && zone && !zone._shrunk){ zone._shrunk=true; try{ zone.style.width=(parseFloat(zone.style.width)*0.6)+'%'; }catch(e){} }
+    }
 
     const tick = setInterval(()=>{
       if (!meter._subActive){ clearInterval(tick); return; }
@@ -14611,8 +14747,24 @@ function setupInput(){
       if (needlePos <= 0){ needlePos = 0; dir = 1; }
       needle.style.left = (needlePos / trackW * 100) + '%';
       ticks++;
-      if (ticks >= maxTicks && !escaped){
-        // Time expired — submission lands / pin successful
+      // REAL-TIME dt: under CPU load (weak phones, heavy scenes) setInterval stretches — a
+      // tick-count model would stretch the hold with it. Measure wall time, cap the step.
+      const _now = performance.now();
+      const _dt = Math.min(0.1, (_now - (meter._subLastT || _now)) / 1000);
+      meter._subLastT = _now;
+      if (type !== 'PIN') subStep(_dt || 0.02);                // torque only on holds, not covers
+      const holdElapsed = (meter._subT0 = meter._subT0 || _now, (_now - meter._subT0) / 1000);
+      if ((subTapped || holdElapsed >= 4.4) && !escaped){
+        // hold resolved — but a hold that never built real strain doesn't "land" on a clock:
+        // the fresh defender physically powers out instead (organic escape, no damage).
+        if (type !== 'PIN' && !subTapped && (meter._subStrain||0) < 0.5){
+          clearInterval(tick);
+          meter.classList.remove('active');
+          meter._subActive = false;
+          if (meter._cleanEscape) meter._cleanEscape();
+          if (typeof announce === 'function') announce('POWERED OUT', (victim.opts&&victim.opts.name)||'');
+          return;
+        }
         clearInterval(tick);
         meter.classList.remove('active');
         meter._subActive = false;
@@ -14687,6 +14839,7 @@ function setupInput(){
     victim.state = 'pinnedDown';
     victim.stateTime = 0;
     victim._pinBy = attacker;
+    try{ window.__refPin={a:attacker, v:victim}; }catch(e){}   // BANNON_REF moves in to count
 
     const trackW = 256;
     const victimHpRatio = clamp(victim.hp / (victim.maxHp || 10000), 0, 1);
@@ -14716,7 +14869,13 @@ function setupInput(){
       if (needlePos <= 0){ needlePos = 0; dir = 1; }
       needle.style.left = (needlePos / trackW * 100) + '%';
       
-      refTimer += 20; 
+      // LoS-GATED COUNT (native bannon_referee.h law): the count only advances while the ref is
+      // up AND has a clear sightline to the pinned shoulders — bumped/blocked ref = no count.
+      var refSees = !window.BANNON_REF || BANNON_REF.canCount(victim);
+      var _pnow = performance.now();                            // real-time count clock (CPU-load proof)
+      var _pdt = Math.min(100, _pnow - (meter._pinLastT || _pnow)); meter._pinLastT = _pnow;
+      if (refSees){ refTimer += (_pdt || 20); meter._losWarned = false; }
+      else if (!meter._losWarned){ meter._losWarned = true; try{ if(typeof announce==='function') announce(window.BANNON_REF&&BANNON_REF.isDown()?'NO REFEREE':'REF CAN\'T SEE IT','the count is held'); }catch(e){} }
       if (refTimer >= 1500) {
         refTimer = 0;
         refCount++;
@@ -14732,14 +14891,15 @@ function setupInput(){
           
           victim.hp = 0;
           if (typeof announce === 'function') announce('referee: THREE!!! PINNED!', attacker.opts && attacker.opts.name || 'BANNON');
-          
+
           attacker.state = 'idle';
           attacker.stateTime = 0;
           attacker._pinTarget = null;
-          
+
           victim.state = 'down';
           victim.stateTime = 0;
           victim._pinBy = null;
+          try{ window.__refPin=null; }catch(e){}
         }
       }
 
@@ -14778,7 +14938,8 @@ function setupInput(){
         victim.state = 'stagger';
         victim.stateTime = 0;
         victim._pinBy = null;
-        
+        try{ window.__refPin=null; }catch(e){}
+
         if (typeof spawnMatDust === 'function') spawnMatDust(victim.x, victim.z, 2.5);
       } else {
         zone.style.background = 'rgba(230, 20, 20, 0.8)';
@@ -36117,6 +36278,310 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 
   window.GODOS={ open:open, close:close, toggle:toggle, exec:exec };
   console.log('%c[GOD MODE OS] neuralink armed — ` to summon, /order routes to the away-time coders','color:#7CFC00');
+})();
+</script>
+<script>
+// ============================================================================
+// BANNON_REF — the referee as a PHYSICAL ENTITY (JS wiring of native/include/bannon_referee.h).
+// Vision-gated pin counts (LoS cone + body occlusion), predictive lateral avoidance of whips/
+// carries, real ref bumps (velocity contact -> he goes down, counts suspend). Additive: spawns
+// only during fights, zero effect when absent; startPin gates its count on BANNON_REF.canCount().
+// ============================================================================
+(function(){
+  var R={ g:null, down:0, vx:0, vz:0, x:2.4, z:-1.9, yaw:0, _prev:{}, _bobT:0, countAnim:0 };
+  function build(){
+    if(R.g || typeof THREE==='undefined' || typeof scene==='undefined') return;
+    var g=new THREE.Group();
+    // striped shirt canvas (zebra)
+    var C=document.createElement('canvas'); C.width=64; C.height=64; var x=C.getContext('2d');
+    for(var i=0;i<8;i++){ x.fillStyle=(i%2)?'#111':'#eee'; x.fillRect(i*8,0,8,64); }
+    var shirtTex=new THREE.CanvasTexture(C);
+    var shirt=new THREE.MeshStandardMaterial({map:shirtTex, roughness:0.85});
+    var slacks=new THREE.MeshStandardMaterial({color:0x14141a, roughness:0.9});
+    var skin=new THREE.MeshStandardMaterial({color:0xd9a066, roughness:0.6});
+    var torso=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.14,0.52,10), shirt); torso.position.y=1.12; g.add(torso);
+    var head=new THREE.Mesh(new THREE.SphereGeometry(0.115,10,8), skin); head.position.y=1.55; g.add(head);
+    for(var s=-1;s<=1;s+=2){
+      var leg=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.05,0.82,8), slacks); leg.position.set(0.085*s,0.43,0); g.add(leg);
+      var arm=new THREE.Mesh(new THREE.CylinderGeometry(0.042,0.038,0.52,8), shirt); arm.position.set(0.22*s,1.12,0); arm.rotation.z=0.28*s; g.add(arm);
+      if(s===1) R.armR=arm;
+    }
+    g.traverse(function(o){ if(o.isMesh){ o.castShadow=true; } });
+    g.position.set(R.x,0,R.z);
+    scene.add(g); R.g=g;
+  }
+  function fpel(f){ try{ return f.worldJoint('pelvis'); }catch(e){ return null; } }
+  function fchest(f){ try{ return f.worldJoint('chest'); }catch(e){ return null; } }
+  // native refAvoidanceVelocity port: lateral escape off the travel line, jog-capped
+  function avoid(px,pz,mx,mz,mvx,mvz){
+    var sp=Math.hypot(mvx,mvz); if(sp<0.9) return null;
+    var dx=mvx/sp, dz=mvz/sp, rx=px-mx, rz=pz-mz;
+    var along=rx*dx+rz*dz; if(along<0||along>sp*0.6+1.1) return null;
+    var lx=rx-dx*along, lz=rz-dz*along, ld=Math.hypot(lx,lz); if(ld>1.1) return null;
+    var ex,ez; if(ld>1e-4){ ex=lx/ld; ez=lz/ld; } else { ex=-dz; ez=dx; }
+    var u=1-(ld/1.1), m=0.6+1.4*u;
+    return {x:ex*m, z:ez*m};
+  }
+  // native refHasLineOfSight port: view cone to the pinned shoulders + other-body occlusion
+  function hasLoS(victim){
+    if(!R.g) return true;
+    var sm=fchest(victim); if(!sm) return true;
+    var ex=R.x, ey=1.55, ez=R.z;
+    var tx=sm.x-ex, ty=(sm.y||0.2)-ey, tz=sm.z-ez;
+    var dist=Math.hypot(tx,ty,tz); if(dist<1e-3) return true;
+    tx/=dist; ty/=dist; tz/=dist;
+    var fx=Math.sin(R.yaw), fz=Math.cos(R.yaw);
+    if(fx*tx+fz*tz < 0.34) return false;                       // outside ~70° half-angle cone
+    var fs=(typeof fighters!=='undefined')?fighters:[];
+    var pin=victim._pinBy||null;
+    for(var i=0;i<fs.length;i++){ var f=fs[i]; if(!f||f===victim||f===pin) continue;
+      var p=fpel(f); if(!p) continue;
+      var rx=p.x-ex, ry=(p.y||1)-ey, rz=p.z-ez;
+      var t=rx*tx+ry*ty+rz*tz; if(t<=0||t>=dist) continue;
+      var cx=ex+tx*t, cy=ey+ty*t, cz=ez+tz*t;
+      if(Math.hypot(p.x-cx,(p.y||1)-cy,p.z-cz)<0.30) return false;
+    }
+    return true;
+  }
+  function update(dt){
+    try{
+      if(typeof fighters==='undefined'||!fighters||fighters.length<2){ if(R.g)R.g.visible=false; return; }
+      var gs=(typeof gameState!=='undefined')?gameState:null;
+      if(gs && gs!=='fight' && gs!=='fighting'){ if(R.g)R.g.visible=false; return; }
+      build(); if(!R.g) return; R.g.visible=true;
+      if(R.down>0){ // bumped: lie flat, no counting
+        R.down-=dt; R.g.rotation.x+= (-Math.PI/2 - R.g.rotation.x)*Math.min(1,dt*8);
+        R.g.position.y += (0.12-R.g.position.y)*Math.min(1,dt*8);
+        if(R.down<=0){ R.down=0; }
+        return;
+      } else if(R.g.rotation.x<-0.05){ R.g.rotation.x += (0-R.g.rotation.x)*Math.min(1,dt*4); R.g.position.y*= (1-Math.min(1,dt*4)); }
+      var pin=window.__refPin||null;
+      var tx,tz, face;
+      var a=fighters[0], b=fighters[1];
+      var pa=fpel(a), pb=fpel(b); if(!pa||!pb) return;
+      if(pin && pin.v){ // pin: get to the shoulder sightline, kneel-count
+        var vc=fchest(pin.v)||fpel(pin.v);
+        var px=fpel(pin.a)||vc;
+        var ox=vc.x-px.x, oz=vc.z-px.z, od=Math.hypot(ox,oz)||1;
+        tx=vc.x + (oz/od)*1.05; tz=vc.z - (ox/od)*1.05;      // perpendicular to the cover
+        face={x:vc.x,z:vc.z};
+        R.countAnim+=dt*7; if(R.armR){ R.armR.rotation.x = -0.7 - Math.max(0,Math.sin(R.countAnim))*1.2; }
+      } else { // roam: hover off the action midpoint, stay in the ring
+        var mx=(pa.x+pb.x)/2, mz=(pa.z+pb.z)/2, md=Math.hypot(mx,mz)||1;
+        tx=mx + (mx/md)*1.7; tz=mz + (mz/md)*1.7;
+        tx=Math.max(-3.1,Math.min(3.1,tx)); tz=Math.max(-2.1,Math.min(2.1,tz));
+        face={x:mx,z:mz};
+        if(R.armR) R.armR.rotation.x += (0-R.armR.rotation.x)*Math.min(1,dt*6);
+      }
+      // predictive avoidance of fast movers overrides the roam target
+      for(var i=0;i<fighters.length;i++){ var f=fighters[i]; var p=fpel(f); if(!p) continue;
+        var pr=R._prev[i]||p; var mvx=(p.x-pr.x)/Math.max(dt,1e-3), mvz=(p.z-pr.z)/Math.max(dt,1e-3);
+        R._prev[i]={x:p.x,y:p.y,z:p.z};
+        var av=avoid(R.x,R.z,p.x,p.z,mvx,mvz);
+        if(av){ tx=R.x+av.x; tz=R.z+av.z; }
+        // ref bump: fast body inside contact radius floors him (native refBump law)
+        var cd=Math.hypot(p.x-R.x,p.z-R.z), sp=Math.hypot(mvx,mvz);
+        if(cd<0.5 && sp>1.9 && R.down<=0){
+          R.down=2.5+Math.min(sp,3.8)*1.8;
+          try{ if(typeof announce==='function') announce('REF BUMP','the official is DOWN'); }catch(e){}
+        }
+      }
+      // jog toward target (capped ~2.6 m/s — refs jog, they don't sprint)
+      var ddx=tx-R.x, ddz=tz-R.z, dd=Math.hypot(ddx,ddz);
+      if(dd>0.05){ var v=Math.min(2.6, dd*3.2); R.x+=ddx/dd*v*dt; R.z+=ddz/dd*v*dt; }
+      if(face){ var w=Math.atan2(face.x-R.x, face.z-R.z); var dyaw=w-R.yaw; while(dyaw>Math.PI)dyaw-=2*Math.PI; while(dyaw<-Math.PI)dyaw+=2*Math.PI; R.yaw+=dyaw*Math.min(1,dt*6); }
+      R._bobT+=dt*6;
+      R.g.position.set(R.x, (pin?-0.22:0)+Math.sin(R._bobT)*0.01, R.z);
+      R.g.rotation.y=R.yaw;
+    }catch(e){}
+  }
+  var last=performance.now();
+  setInterval(function(){ var n=performance.now(); var dt=Math.min(0.08,(n-last)/1000); last=n; update(dt); }, 33);
+  window.BANNON_REF={ state:R, hasLoS:hasLoS, canCount:function(v){ return R.down<=0 && hasLoS(v); }, isDown:function(){ return R.down>0; } };
+  console.log('%c[BANNON_REF] referee entity armed — LoS-gated counts, lateral whip avoidance, real bumps (native bannon_referee.h laws)','color:#7CFC00');
+})();
+</script>
+<script>
+// ============================================================================
+// BANNON_WEAPONS — weapons as PHYSICAL OBJECTS (native bannon_weapon.h laws in JS).
+// Owner's Drive weapon GLBs (assets/models/props/weapons/): bats, shovel, chair = hand weapons;
+// table + ladder = TLC props. Mass taxes stamina on every swing (whiff 2.5x), integrity dents,
+// barbed wire draws blood, tables shatter past the 350N law, ladders are climbable vantage.
+// Additive: rides the EXISTING controls — while holding, your normal strikes ARE weapon swings.
+// ============================================================================
+(function(){
+  var DB={
+    STEEL_CHAIR : { url:'assets/models/props/weapons/steel_chair.glb',  label:'STEEL CHAIR',      mass:3.5, reach:0.75, integrity:120 },
+    BARBWIRE_BAT: { url:'assets/models/props/weapons/barbwire_bat.glb', label:'BARBED WIRE BAT',  mass:1.4, reach:0.85, integrity:70, bleed:true },
+    BASEBALL_BAT: { url:'assets/models/props/weapons/baseball_bat.glb', label:'BASEBALL BAT',     mass:1.1, reach:0.85, integrity:95 },
+    SHOVEL      : { url:'assets/models/props/weapons/shovel.glb',       label:'OLD SHOVEL',       mass:2.2, reach:1.00, integrity:110 },
+    TABLE       : { url:'assets/models/props/weapons/table.glb',        label:'TABLE',            prop:'table' },
+    LADDER      : { url:'assets/models/props/weapons/ladder.glb',       label:'LADDER',           prop:'ladder' }
+  };
+  var SPAWNS=[ ['STEEL_CHAIR',4.6,0,2.6], ['BASEBALL_BAT',-4.6,0,2.6], ['BARBWIRE_BAT',-4.6,0,-2.6], ['SHOVEL',4.6,0,-2.6],
+               ['TABLE',0,0,3.9], ['LADDER',-5.4,0,0] ];
+  var W={ items:[], spawned:false, chip:null };
+  var MAXSTAM=(typeof MAX_STAMINA!=='undefined')?MAX_STAMINA:440;
+  function loadItem(key,x,y,z){
+    var spec=DB[key]; if(!spec) return;
+    try{
+      var loader=new THREE.GLTFLoader();
+      loader.load(spec.url, function(gltf){
+        try{
+          var obj=gltf.scene; obj.traverse(function(o){ if(o.isMesh){ o.castShadow=true; } });
+          var box=new THREE.Box3().setFromObject(obj), size=new THREE.Vector3(); box.getSize(size);
+          var span=Math.max(size.x,size.y,size.z)||1;
+          var target=spec.prop==='table'?1.8 : spec.prop==='ladder'?1.9 : (spec.reach+0.35);
+          var s=target/span; obj.scale.setScalar(s);
+          box.setFromObject(obj); var ctr=new THREE.Vector3(); box.getCenter(ctr);
+          var g=new THREE.Group(); g.add(obj);
+          obj.position.set(-ctr.x, -box.min.y, -ctr.z);          // rest on the floor
+          g.position.set(x, (spec.prop?-0.85:-0.83), z);          // ringside floor level
+          scene.add(g);
+          var it={ key:key, spec:spec, g:g, holder:null, integrity:spec.integrity||100, broken:false, home:[x,z] };
+          if(spec.prop==='table'){ box.setFromObject(g); it.topY=box.max.y; it.half={x:(box.max.x-box.min.x)/2, z:(box.max.z-box.min.z)/2}; }
+          if(spec.prop==='ladder'){ box.setFromObject(g); it.topY=box.max.y; }
+          W.items.push(it);
+        }catch(e){}
+      }, undefined, function(){ /* GLB missing (e.g. downloaded HTML offline) — weapons just don't spawn */ });
+    }catch(e){}
+  }
+  function spawnAll(){ if(W.spawned || typeof scene==='undefined' || typeof THREE==='undefined' || !THREE.GLTFLoader) return;
+    W.spawned=true; SPAWNS.forEach(function(s){ loadItem(s[0],s[1],s[2],s[3]); }); }
+  function playerF(){ try{ var fs=(typeof fighters!=='undefined')?fighters:[]; for(var i=0;i<fs.length;i++) if(fs[i]&&fs[i].isPlayer) return fs[i]; return fs[0]||null; }catch(e){ return null; } }
+  function nearestItem(f,maxD){ var p; try{ p=f.worldJoint('pelvis'); }catch(e){ return null; }
+    var best=null,bd=maxD; W.items.forEach(function(it){ if(it.holder||it.broken||it.spec.prop) return;
+      var d=Math.hypot(it.g.position.x-p.x, it.g.position.z-p.z); if(d<bd){ bd=d; best=it; } }); return best; }
+  // ── pickup / drop (G key + floating chip; contextual, mobile-friendly) ──
+  function chip(txt){ if(!W.chip){ var c=document.createElement('div'); c.id='weaponChip';
+      c.style.cssText='position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:60;background:rgba(10,12,16,.88);color:#ffd23f;border:1px solid #ffd23f;border-radius:9px;padding:7px 14px;font:bold 13px monospace;display:none;cursor:pointer';
+      c.addEventListener('click',function(){ togglePick(); }); c.addEventListener('touchstart',function(e){ e.preventDefault(); togglePick(); },{passive:false});
+      document.body.appendChild(c); W.chip=c; }
+    if(txt){ W.chip.textContent=txt; W.chip.style.display='block'; } else W.chip.style.display='none'; }
+  function togglePick(){ var f=playerF(); if(!f) return;
+    if(f._weapon){ drop(f); return; }
+    var it=nearestItem(f,0.9); if(!it) return;
+    it.holder=f; f._weapon=it;
+    try{ if(typeof announce==='function') announce(it.spec.label,'picked up'); }catch(e){}
+  }
+  function drop(f){ var it=f._weapon; if(!it) return; it.holder=null; f._weapon=null;
+    try{ var p=f.worldJoint('pelvis'); it.g.position.set(p.x+0.4, -0.83+((Math.abs(p.x)<3.5&&Math.abs(p.z)<2.5)?0.83:0), p.z+0.3); it.g.rotation.set(0,Math.random()*6.28,Math.PI/2*0.9); }catch(e){}
+  }
+  document.addEventListener('keydown',function(e){ if((e.key==='g'||e.key==='G')&&!e.ctrlKey&&!e.metaKey){ var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return; togglePick(); } });
+  // ── swings ride the existing strike pipeline: holding a weapon transforms your strikes ──
+  function hookSwing(){ try{
+    if(!window.Fighter || Fighter.prototype.__weaponHook) return; Fighter.prototype.__weaponHook=true;
+    var _osa=Fighter.prototype.startAttack;
+    Fighter.prototype.startAttack=function(mv){
+      var it=this._weapon;
+      if(it && mv && !mv._weaponized && (mv.cat==='STRIKE'||mv.cat==='KICK'||!mv.cat)){
+        var spec=it.spec, m=Object.assign({},mv);
+        m._weaponized=true;
+        m.name=spec.label+(spec.bleed?' · BARBED':'');
+        m.power=Math.min(100,(mv.power||50)*(1+spec.mass*0.16));           // mass × velocity through DMG_SCALE
+        m.limb='HAND'; m.traj='OVERHAND';
+        // universal mass tax (native swingStaminaCost): mass × swing vel; whiff-check after the arc
+        var swingVel=Math.min(3.8, 2.2+ (mv.power||50)*0.02);
+        var tax=spec.mass*swingVel*1.15;
+        if(this.stamina!=null) this.stamina=Math.max(0,this.stamina-tax);
+        var self=this, opp=null; try{ opp=this.opponent?this.opponent():null; }catch(e){}
+        var inReach=false; try{ if(opp){ var a=this.worldJoint('pelvis'), b=opp.worldJoint('pelvis'); inReach=Math.hypot(a.x-b.x,a.z-b.z) < (spec.reach+0.75); } }catch(e){}
+        if(inReach){
+          it.integrity-=swingVel*spec.mass*0.4;                            // procedural dent budget
+          if(spec.bleed){ try{ if(window.__spawnBlood&&opp){ var h=opp.worldJoint('head'); window.__spawnBlood(h.x,h.y,h.z,1.2); } }catch(e){} }
+          if(it.integrity<=0 && !it.broken){ it.broken=true; it.g.visible=false; this._weapon=null; it.holder=null;
+            try{ if(typeof announce==='function') announce(spec.label+' BROKEN','the weapon gave out'); }catch(e){} }
+        } else {
+          // MOMENTUM WHIFF: over-extension — the 2.5x law (native): tax already paid once, add 1.5x
+          if(this.stamina!=null) this.stamina=Math.max(0,this.stamina-tax*1.5);
+        }
+        if(this.stamina!=null && this.stamina<=0.5){ drop(this); try{ if(typeof announce==='function') announce('WEAPON DROPPED','gassed grip'); }catch(e){} }
+        return _osa.call(this,m);
+      }
+      return _osa.call(this,mv);
+    };
+  }catch(e){} }
+  // ── TLC: table shatter (native tableImpact 350N) + ladder climb vantage ──
+  function tlc(dt){
+    W.items.forEach(function(it){
+      if(it.spec.prop!=='table'||it.broken) return;
+      var fs=(typeof fighters!=='undefined')?fighters:[];
+      for(var i=0;i<fs.length;i++){ var f=fs[i]; if(!f) continue;
+        var p; try{ p=f.worldJoint('pelvis'); }catch(e){ continue; }
+        var pv=f.__wTblPrev||p; var vy=(p.y-pv.y)/Math.max(dt,1e-3); f.__wTblPrev={x:p.x,y:p.y,z:p.z};
+        if(vy<-2.0 && Math.abs(p.x-it.g.position.x)<it.half.x && Math.abs(p.z-it.g.position.z)<it.half.z && p.y<it.topY+0.35 && p.y>it.topY-0.4){
+          var force=100*Math.min(3.8,-vy);                                  // victimMass × velY
+          if(force>350){
+            it.broken=true; it.g.rotation.z=0.5; it.g.position.y-=0.28;     // collapsed wreck
+            try{ f.poise=Math.max(0,(f.poise||100)-(-vy)*8*2.2); f.hp=Math.max(0,f.hp-force*0.9); }catch(e){}
+            try{ if(typeof announce==='function') announce('THROUGH THE TABLE!', (f.opts&&f.opts.name)||''); }catch(e){}
+            try{ if(typeof spawnMatDust==='function') spawnMatDust(p.x,p.z,3.5); }catch(e){}
+          }
+        }
+      }
+    });
+  }
+  // ── per-frame: carried weapons track the hand; chip; TLC ──
+  var last=performance.now();
+  setInterval(function(){
+    var n=performance.now(), dt=Math.min(0.08,(n-last)/1000); last=n;
+    try{
+      spawnAll(); hookSwing();
+      var f=playerF();
+      if(f && !f._weapon){ var near=nearestItem(f,0.9); chip(near?('PICK UP '+near.spec.label+'  [G]'):null); }
+      else if(f && f._weapon){ chip('DROP '+f._weapon.spec.label+'  [G]'); }
+      W.items.forEach(function(it){
+        if(!it.holder) return;
+        try{ var h=it.holder.worldJoint('haR'), c=it.holder.worldJoint('chest');
+          it.g.position.set(h.x,h.y,h.z);
+          it.g.rotation.set(0, Math.atan2(h.x-c.x, h.z-c.z), -0.5); }catch(e){}
+      });
+      tlc(dt);
+    }catch(e){}
+  }, 50);
+  window.BANNON_WEAPONS={ db:DB, items:W.items, pickup:togglePick, _state:W };
+  console.log('%c[BANNON_WEAPONS] 6 owner weapons live — mass stamina tax, integrity, barbed bleed, 350N tables (native bannon_weapon.h laws)','color:#7CFC00');
+})();
+</script>
+<script>
+// ============================================================================
+// CLONED MOVES (legal path) — the owner's recreated move set: OUR mocap clips + OUR physics.
+// tools/moves/wrestling_moves.json embedded as equippable MOVE LIBRARY entries: grapples carry an
+// explicit grapplePos so resolveGrapPos runs them through the REAL positions/lift/deliver physics;
+// strikes ride startAttack. No ripped game data anywhere — names + physics are proprietary.
+// ============================================================================
+(function(){
+  var CLONES=[
+    { name:'TOMBSTONE DRIVER',      cat:'GRAPPLE', grapplePos:'TIGER_DRIVER',    power:92, staminaCost:34, clip:'Tombstone.fbx' },
+    { name:'VERTICAL BRAINBUSTER',  cat:'GRAPPLE', grapplePos:'BRAINBUSTER',     power:88, staminaCost:32, clip:'VerticalBrainBuster.fbx' },
+    { name:'CHOKESLAM HEX',         cat:'GRAPPLE', grapplePos:'CHOKESLAM',       power:85, staminaCost:30, clip:'Chokeslam.fbx' },
+    { name:'DOUBLE-HOOK SUPLEX',    cat:'GRAPPLE', grapplePos:'VERTICAL_SUPLEX', power:80, staminaCost:30, clip:'DoubleSuplex.fbx' },
+    { name:'HAMMERLOCK DDT',        cat:'GRAPPLE', grapplePos:'DDT',             power:76, staminaCost:24, clip:'HammerlockDDT.fbx' },
+    { name:'STRONG ZERO',           cat:'GRAPPLE', grapplePos:'BRAINBUSTER',     power:90, staminaCost:34, clip:'StrongZero.fbx' },
+    { name:'WBTC CUTTER',           cat:'GRAPPLE', grapplePos:'DDT',             power:86, staminaCost:28, clip:'WBTC.fbx' },
+    { name:'STEREO SUPERKICK',      cat:'KICK', limb:'KICK', traj:'STRAIGHT', height:'HIGH', power:82, speed:70, staminaCost:18, clip:'StereoSuperkick.fbx', follow:'KNOCKDOWN' },
+    { name:'TAG SUPERKICK',         cat:'KICK', limb:'KICK', traj:'STRAIGHT', height:'HIGH', power:78, speed:72, staminaCost:16, clip:'TagSuperkick.fbx', follow:'KNOCKDOWN' },
+    { name:'JAY KICK',              cat:'KICK', limb:'KICK', traj:'SPINNING', height:'HIGH', power:74, speed:74, staminaCost:14, clip:'JayKick.fbx' },
+    { name:'APRON JAY KICK',        cat:'KICK', limb:'KICK', traj:'SPINNING', height:'HIGH', power:70, speed:72, staminaCost:14, pos:'CORNER', clip:'ApronJayKick.fbx' },
+    { name:'HEADCRACK',             cat:'STRIKE', limb:'ELBOW', traj:'OVERHAND', height:'HIGH', power:84, speed:60, staminaCost:20, clip:'Tau_HEADCRACK.fbx', follow:'KNOCKDOWN' },
+    { name:'VIOLENCE PARTY',        cat:'STRIKE', limb:'ELBOW', traj:'HOOK', height:'MID', power:72, speed:82, staminaCost:22, clip:'ViolenceParty.fbx' },
+    { name:'CLONE DROPKICK',        cat:'KICK', limb:'KICK', traj:'STRAIGHT', height:'MID', power:68, speed:76, staminaCost:15, clip:'Drop Kick.fbx' }
+  ];
+  var tries=0;
+  var t=setInterval(function(){
+    tries++;
+    try{
+      if(window.customMoves && Array.isArray(window.customMoves)){
+        var have={}; window.customMoves.forEach(function(m){ have[m.name]=1; });
+        var added=0;
+        CLONES.forEach(function(c){ if(!have[c.name]){ window.customMoves.push(Object.assign({style:'CLONE', source:'CLONE'},c)); added++; } });
+        window.CLONED_MOVES=CLONES;
+        if(added) console.log('%c[CLONED MOVES] '+added+' recreated moves pooled into the MOVE LIBRARY (physics-routed via resolveGrapPos)','color:#7CFC00');
+        clearInterval(t);
+      }
+    }catch(e){}
+    if(tries>40) clearInterval(t);
+  }, 500);
 })();
 </script>
 </body>

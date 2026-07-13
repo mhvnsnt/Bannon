@@ -160,11 +160,40 @@ function main(){
   const adj=new Map(); const link=(a,b)=>{ if(a===b)return; let l=adj.get(a); if(!l){l=[];adj.set(a,l);} if(l.indexOf(b)<0)l.push(b); };
   for(let t=0;t<idx.length;t+=3){ const a=weld[idx[t]],b=weld[idx[t+1]],c=weld[idx[t+2]];
     link(a,b);link(b,a);link(b,c);link(c,b);link(a,c);link(c,a); }
-  // 3. seeds: adaptive radius per bone until enough seeds
+  // 2.5 A-POSE LIMB-SEPARATION (v4.4) — the reason models tear: they ship in an A-pose with the
+  // HANDS resting against the THIGHS, so the two surfaces weld/link at the contact and the geodesic
+  // Dijkstra flows the ARM bone label straight down into the thigh (measured: ~60% of leg verts
+  // skinned to arms -> the leg flies out when the arm swings). Arm and leg are NEVER anatomically
+  // adjacent — they only ever connect THROUGH the torso — so any arm<->leg adjacency edge is a pose
+  // artifact. Classify each welded vert by nearest limb FAMILY (arm / leg / torso) and CUT every
+  // arm<->leg edge before the solve. This makes the rig POSE-AGNOSTIC: it skins an A-pose (arms
+  // down) or a T-pose (arms out) correctly, no re-posing required. Toggle BANNON_LIMBCUT=0.
+  const ARMg=['LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand'].map(n=>boneIdx[n]).filter(i=>i!=null);
+  const LEGg=['LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot'].map(n=>boneIdx[n]).filter(i=>i!=null);
+  const TORg=['Hips','Spine','Neck','Head'].map(n=>boneIdx[n]).filter(i=>i!=null);
+  const _dMin=(v,g)=>{ let m=Infinity; for(const i of g){ const d=capDist(v,i); if(d<m)m=d; } return m; };
+  const fam=new Map();   // welded vid -> 0 arm / 1 leg / 2 torso (limb family by nearest segment group)
+  const LIMBCUT = process.env.BANNON_LIMBCUT !== '0';
+  if (LIMBCUT) {
+    for(const v of adj.keys()){ const a=_dMin(v,ARMg), l=_dMin(v,LEGg), t=_dMin(v,TORg);
+      fam.set(v, (a<=l&&a<=t)?0 : (l<=t)?1 : 2); }
+    let cut=0;
+    for(const [v,nbrs] of adj){ const fv=fam.get(v);
+      if(fv===2) continue;                                   // torso links stay
+      for(let k=nbrs.length-1;k>=0;k--){ const fn=fam.get(nbrs[k]);
+        if((fv===0&&fn===1)||(fv===1&&fn===0)){ nbrs.splice(k,1); cut++; } }  // sever arm<->leg
+    }
+    console.log(`  A-pose limb separation: ${cut} arm<->leg contact edges cut (geodesic can't bridge hand->thigh)`);
+  }
+  const isArmBone=i=>ARMg.includes(i), isLegBone=i=>LEGg.includes(i);
+  // 3. seeds: adaptive radius per bone until enough seeds. FAMILY-GATED (v4.4): an ARM bone may not
+  // seed on a LEG-family vert and vice-versa — otherwise the hand hanging on the thigh seeds the
+  // thigh directly as ARM (the edge-cut only stops geodesic FLOW, not direct seeding).
   const SRC=new Map();   // welded vid -> [{bone,d0}]
   BONES.forEach((b,i)=>{ let r=hy*0.03, seeds=[], tries=0;
+    const badFam = LIMBCUT ? (isArmBone(i)?1 : isLegBone(i)?0 : -1) : -1;   // family this bone must NOT seed
     while(seeds.length<30 && tries<6){ seeds=[];
-      for(const v of adj.keys()){ const d=capDist(v,i); if(d<r) seeds.push([v,d]); }
+      for(const v of adj.keys()){ if(badFam>=0 && fam.get(v)===badFam) continue; const d=capDist(v,i); if(d<r) seeds.push([v,d]); }
       r*=1.7; tries++; }
     for(const [v,d] of seeds){ let l=SRC.get(v); if(!l){l=[];SRC.set(v,l);} l.push({bone:i,d0:d}); }
   });
@@ -230,26 +259,53 @@ function main(){
   {
     const LEG_L=[boneIdx.LeftUpLeg,boneIdx.LeftLeg,boneIdx.LeftFoot], LEG_R=[boneIdx.RightUpLeg,boneIdx.RightLeg,boneIdx.RightFoot];
     const ARM_L=[boneIdx.LeftArm,boneIdx.LeftForeArm,boneIdx.LeftHand], ARM_R=[boneIdx.RightArm,boneIdx.RightForeArm,boneIdx.RightHand];
+    const ARM_ALL=[...ARM_L,...ARM_R], LEG_ALL=[...LEG_L,...LEG_R];
     const hipY=Math.max(JW.hipJtL[1],JW.hipJtR[1]) + hy*0.05;      // above this: no leg bones
     const shY =Math.min(JW.shJtL[1],JW.shJtR[1]);                   // torso/arm split height
     const shZL=JW.shJtL[2]*0.75, shZR=JW.shJtR[2]*0.75;             // inboard of shoulders: no arm bones
     const midM=hy*0.02;                                             // midline margin (z=0 plane)
-    let clamped=0;
+    // PROXIMITY GUARD (v4.3): the geodesic mis-labels lower-body verts to the ARMS when the hands
+    // hang near the thighs in an A-pose (the hand is closer ALONG THE SURFACE than the hip bone up
+    // top). Result: ~60% of leg verts skinned to arms -> the leg mesh flies out when the arm swings
+    // (the "spiral/spike leg" the whole model tears into). Fix: a vert may keep ARM weight only if
+    // it is physically closer to an ARM segment than to any LEG segment (and vice-versa). Genuine
+    // hand verts stay with the hand; thigh verts lose the bad arm bleed.
+    const minSeg=(v,idxs)=>{ let m=Infinity; for(const i of idxs){ if(i==null)continue; const d=capDist(v,i); if(d<m)m=d; } return m; };
+    const HAND=[boneIdx.LeftHand,boneIdx.RightHand].filter(i=>i!=null);
+    const handR=hy*0.08;   // snug glove radius: below the hips, ONLY verts this close to a HAND
+                           // segment AND closer to the hand than to any leg may keep arm weight —
+                           // everything else is leg (the A-pose hand rests on the thigh, so distance
+                           // alone can't separate them; scope arm-below-hip tightly to the glove).
+    let clamped=0, prox=0;
     for(let v=0;v<nV;v++){
       const y=pos[v*3+1], z=pos[v*3+2];
       let es=wl[v], n0=es.length;
+      const dArm=minSeg(v,ARM_ALL), dLeg=minSeg(v,LEG_ALL);
+      const belowHip = y < hipY;
+      const dHand = belowHip ? minSeg(v,HAND) : Infinity;
+      const isGlove = belowHip && dHand < handR && dHand < dLeg;  // a genuine hand vert down at thigh level
+      // family membership with a DECISIVE margin (0.6x). Below the hips, default to LEGS unless the
+      // vert is inside the tight glove radius — the hanging hand can never claim the thigh.
+      const armVert = isGlove || (!belowHip && dArm < dLeg*0.6);
+      const legVert = belowHip ? !isGlove : (dLeg < dArm*0.6);
       es=es.filter(e=>{
         if(y>hipY && (LEG_L.includes(e.b)||LEG_R.includes(e.b))) return false;
         if(y>shY && z<shZL && z>shZR && (ARM_L.includes(e.b)||ARM_R.includes(e.b))) return false;
         if(z> midM && (LEG_R.includes(e.b)||ARM_R.includes(e.b))) return false;   // left-half vert, right-side bone
         if(z<-midM && (LEG_L.includes(e.b)||ARM_L.includes(e.b))) return false;   // right-half vert, left-side bone
+        if(legVert && ARM_ALL.includes(e.b)){ prox++; return false; }             // leg vert must not carry ARM weight
+        if(armVert && LEG_ALL.includes(e.b)){ prox++; return false; }             // arm vert must not carry LEG weight
         return true;
       });
-      if(!es.length) es=[wl[v].reduce((a,c)=>c.w>a.w?c:a)];
+      if(!es.length){ // everything got stripped -> assign to the nearest correct-family bone by segment distance
+        const fam = legVert?LEG_ALL:armVert?ARM_ALL:null;
+        if(fam){ let bi=fam[0],bd=Infinity; for(const i of fam){ if(i==null)continue; const d=capDist(v,i); if(d<bd){bd=d;bi=i;} } es=[{b:bi,w:1}]; }
+        else es=[wl[v].reduce((a,c)=>c.w>a.w?c:a)];
+      }
       if(es.length!==n0){ clamped++; let tot=0; for(const e of es)tot+=e.w; for(const e of es)e.w/=tot; }
       wl[v]=es;
     }
-    console.log(`  anatomical clamps: ${clamped} verts corrected (no leg weights above hips, no cross-body pull)`);
+    console.log(`  anatomical clamps: ${clamped} verts corrected (${prox} arm<->leg proximity strips; no leg weights above hips, no cross-body pull)`);
   }
   // 7. prune weak influences (<0.06) + renormalize — inside a limb the dominant bone should own the
   // vert almost fully; blends belong ONLY in the narrow joint bands (production-rigger behavior)

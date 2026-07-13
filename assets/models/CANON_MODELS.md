@@ -65,3 +65,14 @@ NOTE: onyxstraightjacketskirt.glb was a truncated Drive upload — owner to re-u
 - **CIPHER · Feral** — `CIPHER_feral.glb` (alt attire, Onyx's stable).
 - **CAIN ELIAS · Wrestling Gear** — `CAIN_ELIAS_gear.glb` (in-ring gear, third Cain attire).
 All three: 16-bone Mixamo-named skeleton, skinned, auto-scaled 1.85 m, multi-texture PBR carried.
+
+## Batch 4 (owner drops 2026-07-12, auto-skinned v4.2)
+- **HALL NIGHTER** (canon, Book 6 — Showstopper/HBK archetype, NWC) — `HALL_NIGHTER.glb`. Full
+  identity wired: The Showstopper, highFlyer archetype, THE CURTAIN CALL superkick finisher,
+  Triple X rivalry (canon/06). ~970k verts — decimation pass queued.
+- **STATIC "The Interference"** (GAME-ONLY, Onyx's stable w/ CIPHER/ECHO/HOLLOW) — owner attached
+  the Enzo-style model: `STATIC.glb` + `STATIC_alt.glb` (attire 2). Motor-mouth spitfire highFlyer,
+  DEAD AIR (leaping tornado DDT) finisher. Verified bound in-ring (harness).
+- CIPHER feral note from owner filename: "Blackheart Lio Rush AEW 2026 style gimmick" — wired into
+  CHAR_FINISHERS.CIPHER.
+- onyxstraightjacketskirt.glb STILL truncated on Drive — owner re-upload needed.
