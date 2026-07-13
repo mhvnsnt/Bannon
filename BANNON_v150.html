@@ -13403,7 +13403,12 @@ try{
   _addChar('AGENT_CANUCK',   { label:'Communicative Rebel',    col:0xb02020, accent:0xffffff, skin:0xe8c9a8, faction:'Alliance', canon:true, bio:'Exposes corporate hypocrisy — agile, witty, submission-sharp.', archetype:'highFlyer' }, 'TIGHTS', 'SHORT', {musc:0.58,fat:0.18});
   _addChar('CELTIC_FURY',    { label:'Pure Freedom',           col:0x1a5a2a, accent:0xe8e0d0, skin:0xe6c8a8, faction:'Alliance', canon:true, bio:'Chaotic brawler — the wildness Marquis is reclaiming.', archetype:'brawler' }, 'CARGO_PANTS', 'MOHAWK', {musc:0.7,fat:0.32});
   _addChar('REY_FUEGO',      { label:'El Beso del Sol',        col:0xd42a2a, accent:0xffd700, skin:0xc08a54, faction:'Alliance', canon:true, bio:'Joyful performance — aéreo, high-flying showmanship.', archetype:'highFlyer' }, 'TIGHTS', 'SHORT', {musc:0.55,fat:0.12});
-  _addChar('EL_TORO_DE_ORO', { label:'Honorable Partner',      col:0xb8860b, accent:0x111111, skin:0xa5683c, faction:'Alliance', canon:true, bio:'Power lucha — authentic loyalty in gold.', archetype:'powerhouse' }, 'TRUNKS', 'SHORT', {musc:0.8,fat:0.34});
+  // EL TORO DE ORO — the BULL-HEADED MINOTAUR (owner canon 2026-07-13): Batista "Evolution" cocky
+  // enforcer crossed with Batista "Leviathan"-era beast — a Spanish luchador power matador with an
+  // actual minotaur bull head, snobby and cocky out of the ring, unruly raging animal in it.
+  // Batista-class moveset + extras. NOT to be confused with Pablo (who is nicknamed "the Minotaur"
+  // but is human-headed). His model (EL_TORO_DE_ORO.glb) carries the bull head.
+  _addChar('EL_TORO_DE_ORO', { label:'The Golden Beast',        col:0xb8860b, accent:0x111111, skin:0xa5683c, faction:'Alliance', canon:true, bio:'A minotaur in a matador’s gold — cocky Evolution-era enforcer swagger over a Leviathan’s raging bull-headed unruliness. Snob outside the ropes, animal inside them. Batista-class power with horns.', archetype:'powerhouse' }, 'TRUNKS', 'SHORT', {musc:0.86,fat:0.3});
   // Corporate Structure:
   _addChar('CAIN_ELIAS',     { label:'The Executioner',        col:0x14141a, accent:0x8a0f0f, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'The ultimate enforcer — past trauma made physical, the test of resolve.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.88,fat:0.24});
   _addChar('ASTRID',         { label:'The Ice Maiden',         col:0xd8e4ee, accent:0x4a7a9a, skin:0xeed9c0, faction:'Corporate Structure', canon:true, bio:'Cold structuralist — efficiency as ideology.', archetype:'technician' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.6,fat:0.12,fem:1,hips:0.98,waist:0.84,bust:0.9});
@@ -13451,7 +13456,10 @@ try{
   _addChar('HOLLOW',         { label:'The Void Made Flesh',     col:0x0c0c10, accent:0x9a1a1a, skin:0x6a4a34, faction:'Agents of Chaos', canon:false, bio:'A masked absence where a man should be — Super-Dragon-stiff, all curb stomps and psycho drivers. Says nothing, breaks everything.', archetype:'technician' }, 'LONG_TIGHTS', 'BALD', {musc:0.7,fat:0.12});
   // PABLO "The Minotaur" (canon) — NOT El Toro de Oro; a minotaur-headed monster heel with a Black
   // Reign/Golden Bull attire set. Bully-brawler powerhouse.
-  _addChar('PABLO',          { label:'The Minotaur',            col:0x2a1810, accent:0xc8a020, skin:0x7a4a2e, faction:'Independent Variables', canon:true, bio:'A bull-headed nightmare dragged up from the labyrinth — gores, mauls, and tramples. Do not confuse the beast with El Toro de Oro; this one has no honor to lose.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.86,fat:0.34});
+  // PABLO "The Minotaur" — nicknamed for his labyrinthine brawling, but HUMAN-HEADED (the bull head
+  // belongs to El Toro de Oro). Attires: painted (PABLO.glb), a "Golden Bull" (English) set
+  // (PABLO_goldenbull.glb), and a Black Reign set (PABLO_blackreign.glb). Bully powerhouse.
+  _addChar('PABLO',          { label:'The Minotaur',            col:0x2a1810, accent:0xc8a020, skin:0x7a4a2e, faction:'Independent Variables', canon:true, bio:'They call him the Minotaur for the maze of pain he drags you through — no bull head, just a bull’s temper. Gores, mauls and tramples; wears the Golden Bull colors when he wants to be feared.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.86,fat:0.34});
   // TRIPLE XXX (Book canon) — Triple-H archetype reskinned around hedonism/XXX excess: cerebral but
   // "part animal, high-class snob." Corporate enforcer, Hall Nighter's prophesied rival.
   _addChar('TRIPLE_XXX',     { label:'The Cerebral Hedonist',   col:0x101820, accent:0x2a6acc, skin:0xe0b088, faction:'Corporate Structure', canon:true, bio:'The Game with the mask off — cerebral in the ring, an animal everywhere else. Sold out, went corporate, and never looked back. Sledgehammer swagger dressed in excess.', archetype:'powerhouse' }, 'TIGHTS', 'LONG', {musc:0.78,fat:0.16});
