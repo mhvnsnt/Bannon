@@ -8,7 +8,7 @@
 // broken upload never lands in the repo.
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
+import { execSync, execFileSync } from 'child_process';
 
 // ALL the owner's drop folders — add new folder ids here (or BANNON_DRIVE_FOLDER env, comma-separated)
 const FOLDERS = (process.env.BANNON_DRIVE_FOLDER || '19k_jmuiUYsAubZyx_bUL0m8svyYmevM5,1chJYomdZW6E7jqUUHZTn1w9wLTakRfvG').split(',').map(s => s.trim()).filter(Boolean);
@@ -24,7 +24,21 @@ const DEST = (name) => {
 };
 
 function fetchText(url) {
-  return execSync(`curl -sS -L "${url}"`, { maxBuffer: 64 * 1024 * 1024 }).toString('utf8');
+  return execFileSync('curl', ['-sS', '-L', url], { maxBuffer: 64 * 1024 * 1024 }).toString('utf8');
+}
+
+// Owner filenames are free-form sentences (quotes, parens, 300+ chars) — they broke the shell-based
+// fetch and can exceed the 255-byte filename limit. Local name = sanitized + capped; the manifest
+// keeps the ORIGINAL Drive name as the key and records the local mapping.
+function safeLocal(name) {
+  const ext = (name.match(/\.[a-z0-9]+$/i) || [''])[0];
+  let base = name.slice(0, name.length - ext.length)
+    .replace(/["'`$\\]/g, '')
+    .replace(/[^\w\s().,&#@!+-]/g, '_')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (base.length > 80) base = base.slice(0, 80).trim();
+  return (base || 'file') + ext;
 }
 
 function listFolder(FOLDER) {
@@ -72,11 +86,12 @@ function main() {
   for (const name of names) {
     const id = files[name];
     if (manifest[name] && manifest[name].id === id && manifest[name].ok) continue;  // already synced this exact upload
-    const dest = DEST(name);
-    if (DRY) { console.log(`[dry] would fetch: ${name} (${id})`); continue; }
+    const dest = DEST(safeLocal(name));
+    if (DRY) { console.log(`[dry] would fetch: ${name} (${id}) -> ${path.basename(dest)}`); continue; }
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     try {
-      execSync(`curl -sS -L -o "${dest}" "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t"`, { timeout: 300000 });
+      execFileSync('curl', ['-sS', '-L', '--retry', '3', '-o', dest,
+        `https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t`], { timeout: 300000 });
       const sz = fs.statSync(dest).size;
       const isGlb = /\.glb$/i.test(name);
       if (sz < 2048 || (isGlb && !glbHeaderOk(dest))) {
@@ -86,7 +101,7 @@ function main() {
         skipped++;
       } else {
         console.log(`[drive-sync] synced ${name} -> ${path.relative(ROOT, dest)} (${sz} bytes)`);
-        manifest[name] = { id, ok: true, size: sz, at: new Date().toISOString() };
+        manifest[name] = { id, ok: true, size: sz, local: path.relative(ROOT, dest), at: new Date().toISOString() };
         synced++;
       }
     } catch (e) {

@@ -476,3 +476,24 @@ match scene, submissionStep into the sub-minigame branch, TLC props when meshes 
   New owner models ~970k verts — decimation pass on skinner output QUEUED (phones will feel it).
 - TLC props: table/ladder meshes still not in Drive — native tableImpact/canBindLadderClimb ready,
   JS wiring waits on meshes.
+
+## v158 (2026-07-13 — models fight for real: auto-load + the leg-collapse fix)
+- **GLB MODELS AUTO-LOAD IN-GAME** (owner: "tired of seeing the three.js models"): `CHAR_MODEL_DEFAULTS`
+  seeds every canon char that has a banked skinned GLB, so picking them = fighting AS the AAA model,
+  not the procedural tube. `charModelFor()` = user-saved binding wins, else the canon default;
+  `window.AUTO_CHAR_MODELS` toggle. applyCharModels() already ran at match start — the registry was
+  just empty. Verified: BANNON + HALL_NIGHTER auto-bind + fight as their GLBs.
+- **ROLL-STABLE LIMB AIM — the "spiral-collapse leg" fix** (`_aimLocal`, `window.STABLE_LIMB_AIM`):
+  the GLB retarget drove each limb with `setFromUnitVectors(restFwd, targetDir)`, whose roll about
+  the aim axis is UNDEFINED — near-vertical leg targets flipped the wrong way (verified: left thigh
+  curFwd z=+0.25 while its target was z=-0.20; mirror-symmetric right leg tracked fine → a handedness
+  bug). Fix: build FULL orthonormal frames for rest-fwd and target-dir sharing ONE up reference (the
+  world axis least parallel to the aim) so the roll is deterministic. Applied to limbs only (spine/
+  neck/head keep the working path). The raw skinned GLBs were always perfect (model_preview proved
+  it) — the jank was 100% this engine retarget. Verified: HALL_NIGHTER legs went from a dark spiral
+  spike to coherent jeans+boots; BANNON un-regressed.
+- WEAPONS + CLONED MOVES live (see prior commit): 6 owner weapon GLBs (native bannon_weapon.h laws),
+  cloned-move library entries routed through resolveGrapPos + real physics.
+- STILL QUEUED: decimate the ~1M-vert owner models (phones will choke) — the skinner needs a
+  quadric/cluster pass on output; STATIC's GLB sometimes still on the procedural body (80MB parse
+  race — auto-load only fired p1 in one test); onyxstraightjacketskirt Drive upload still truncated.

@@ -13446,6 +13446,15 @@ try{
   // STATIC (GAME-ONLY, Onyx's stable w/ CIPHER/ECHO/HOLLOW) — owner attached the Enzo-style model:
   // undersized motor-mouth spitfire, talks you into mistakes, swarm offense, eats bumps huge.
   _addChar('STATIC',         { label:'The Interference',        col:0x14141a, accent:0x44ccff, skin:0xd9a066, faction:'Agents of Chaos', canon:false, bio:'Pure signal noise — a hundred words a minute and none of them respectful. Small enough to dodge, loud enough to drown a broadcast, crazy enough to dive first.', archetype:'highFlyer' }, 'CARGO_PANTS', 'FADE', {musc:0.5,fat:0.1});
+  // HOLLOW (owner-made, Onyx's God Within stable w/ CIPHER/ECHO/STATIC) — Super Dragon-inspired:
+  // stiff, violent, technically brutal death-move junkie; masked, silent, all business.
+  _addChar('HOLLOW',         { label:'The Void Made Flesh',     col:0x0c0c10, accent:0x9a1a1a, skin:0x6a4a34, faction:'Agents of Chaos', canon:false, bio:'A masked absence where a man should be — Super-Dragon-stiff, all curb stomps and psycho drivers. Says nothing, breaks everything.', archetype:'technician' }, 'LONG_TIGHTS', 'BALD', {musc:0.7,fat:0.12});
+  // PABLO "The Minotaur" (canon) — NOT El Toro de Oro; a minotaur-headed monster heel with a Black
+  // Reign/Golden Bull attire set. Bully-brawler powerhouse.
+  _addChar('PABLO',          { label:'The Minotaur',            col:0x2a1810, accent:0xc8a020, skin:0x7a4a2e, faction:'Independent Variables', canon:true, bio:'A bull-headed nightmare dragged up from the labyrinth — gores, mauls, and tramples. Do not confuse the beast with El Toro de Oro; this one has no honor to lose.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.86,fat:0.34});
+  // TRIPLE XXX (Book canon) — Triple-H archetype reskinned around hedonism/XXX excess: cerebral but
+  // "part animal, high-class snob." Corporate enforcer, Hall Nighter's prophesied rival.
+  _addChar('TRIPLE_XXX',     { label:'The Cerebral Hedonist',   col:0x101820, accent:0x2a6acc, skin:0xe0b088, faction:'Corporate Structure', canon:true, bio:'The Game with the mask off — cerebral in the ring, an animal everywhere else. Sold out, went corporate, and never looked back. Sledgehammer swagger dressed in excess.', archetype:'powerhouse' }, 'TIGHTS', 'LONG', {musc:0.78,fat:0.16});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13471,7 +13480,10 @@ try{
     SOMBRA_NEGRA:    { name:'LA TRAMPA DE PLATA',        kind:'strike' },
     RAJA_ASCENDANT:  { name:'THE DHARMA DRIVER',         kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  },
     HALL_NIGHTER:    { name:'THE CURTAIN CALL',          kind:'strike' },
-    STATIC:          { name:'DEAD AIR',                  kind:'grapple', pos:'DDT',         deliver:'spike' }
+    STATIC:          { name:'DEAD AIR',                  kind:'grapple', pos:'DDT',         deliver:'spike' },
+    HOLLOW:          { name:'THE VANISHING POINT',       kind:'grapple', pos:'TIGER_DRIVER',deliver:'spike' },
+    PABLO:           { name:'THE GORING',                kind:'grapple', pos:'POWERBOMB',   deliver:'slam'  },
+    TRIPLE_XXX:      { name:'THE LAST INDULGENCE',       kind:'grapple', pos:'DDT',         deliver:'spike' }
   });
   // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
   window.CHAR_FINISHERS = Object.assign(window.CHAR_FINISHERS||{}, {
@@ -13804,6 +13816,21 @@ const MODEL_LIBRARY = [
   { name:'HALL NIGHTER (canon)', url:'assets/models/HALL_NIGHTER.glb', charKey:'HALL_NIGHTER' },
   { name:'STATIC', url:'assets/models/STATIC.glb', charKey:'STATIC' },
   { name:'STATIC · Attire 2', url:'assets/models/STATIC_alt.glb', charKey:'STATIC' },
+  // 2026-07-13 owner drop — new canon + stable models (auto-skinned v4.2, multi-attire):
+  { name:'HOLLOW', url:'assets/models/HOLLOW.glb', charKey:'HOLLOW' },
+  { name:'EDWIN KENNEDY · Mustached Mogul', url:'assets/models/EDWIN_KENNEDY.glb', charKey:'EDWIN_KENNEDY' },
+  { name:'EDWIN KENNEDY · Unchained', url:'assets/models/EDWIN_KENNEDY_unchained.glb', charKey:'EDWIN_KENNEDY' },
+  { name:'PABLO · Minotaur (painted)', url:'assets/models/PABLO.glb', charKey:'PABLO' },
+  { name:'PABLO · Golden Bull', url:'assets/models/PABLO_goldenbull.glb', charKey:'PABLO' },
+  { name:'PABLO · Black Reign', url:'assets/models/PABLO_blackreign.glb', charKey:'PABLO' },
+  { name:'QUEEN TYNESHIA · Ring Gear', url:'assets/models/TYNESHIA.glb', charKey:'QUEEN_TYNESHIA' },
+  { name:'QUEEN TYNESHIA · Street/Manager', url:'assets/models/TYNESHIA_street.glb', charKey:'QUEEN_TYNESHIA' },
+  { name:'TRIPLE XXX · Attire 1', url:'assets/models/TRIPLE_XXX.glb', charKey:'TRIPLE_XXX' },
+  { name:'TRIPLE XXX · Blue Tights', url:'assets/models/TRIPLE_XXX_tights.glb', charKey:'TRIPLE_XXX' },
+  { name:'TRIPLE XXX · Blue Trunks', url:'assets/models/TRIPLE_XXX_trunks.glb', charKey:'TRIPLE_XXX' },
+  { name:'TRIPLE XXX · Suit/Manager', url:'assets/models/TRIPLE_XXX_suit.glb', charKey:'TRIPLE_XXX' },
+  { name:'EL TORO DE ORO · Matador', url:'assets/models/EL_TORO_DE_ORO.glb', charKey:'EL_TORO_DE_ORO' },
+  { name:'STAN "HONEY" COMBS · Ring Gear', url:'assets/models/STAN_COMBS_gear.glb', charKey:'STAN_COMBS' },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },
@@ -13865,9 +13892,37 @@ function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MO
 // that character fights on EITHER side. A model imported or AI-generated for "BANNON" then follows
 // Bannon everywhere; another character gets a different unique model. Takes priority over the per-side
 // CHOSEN_MODEL fallback. =====
+// DEFAULT CHARACTER MODELS — the canon roster's AAA GLB bodies auto-load in a match so you fight AS
+// the authored/skinned model, NOT the procedural three.js tube. Owner directive (2026-07-13): "tired
+// of seeing all these three.js models — get the Tripo models appearing in game." Every char here has
+// a banked skinned GLB (16-bone, geodesic + anatomical clamps). A user pick in the model menu still
+// overrides (localStorage CHAR_MODEL wins). Add a row when a new canon model banks.
+const CHAR_MODEL_DEFAULTS = {
+  BANNON:{url:'assets/models/BANNON.glb',name:'BANNON (canon)'},
+  MAIME:{url:'assets/models/MAIME.glb',name:'MAIME (canon)'},
+  ONYX:{url:'assets/models/ONYX_skinned.glb',name:'ONYX'},
+  CODY_CALLAHAN:{url:'assets/models/CODY_gear_skinned.glb',name:'CODY · Gear'},
+  CAIN_ELIAS:{url:'assets/models/CAIN_ELIAS_gear.glb',name:'CAIN ELIAS · Gear'},
+  STICK_UP:{url:'assets/models/STICKUP.glb',name:'STICK-UP'},
+  CIPHER:{url:'assets/models/CIPHER.glb',name:'CIPHER'},
+  ECHO:{url:'assets/models/ECHO.glb',name:'ECHO'},
+  STATIC:{url:'assets/models/STATIC.glb',name:'STATIC'},
+  HOLLOW:{url:'assets/models/HOLLOW.glb',name:'HOLLOW'},
+  HALL_NIGHTER:{url:'assets/models/HALL_NIGHTER.glb',name:'HALL NIGHTER'},
+  EDWIN_KENNEDY:{url:'assets/models/EDWIN_KENNEDY.glb',name:'EDWIN KENNEDY'},
+  PABLO:{url:'assets/models/PABLO.glb',name:'PABLO'},
+  QUEEN_TYNESHIA:{url:'assets/models/TYNESHIA.glb',name:'QUEEN TYNESHIA'},
+  TRIPLE_XXX:{url:'assets/models/TRIPLE_XXX.glb',name:'TRIPLE XXX'},
+  EL_TORO_DE_ORO:{url:'assets/models/EL_TORO_DE_ORO.glb',name:'EL TORO DE ORO'},
+  STAN_COMBS:{url:'assets/models/STAN_COMBS_gear.glb',name:'STAN COMBS'}
+};
 let CHAR_MODEL = (function(){ try{ var r=localStorage.getItem('bannonCharModels'); if(r) return JSON.parse(r); }catch(e){} return {}; })();
 function charModelKey(f){ var n=(typeof fname==='function'?fname(f):(f&&f.opts&&f.opts.name))||''; return String(n).toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
-function applyCharModels(){ ['p1','p2'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; var ck=charModelKey(f); var cm=ck&&CHAR_MODEL[ck]; if(cm&&cm.url){ try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
+// user-saved binding wins; otherwise fall back to the canon default. Toggle off with AUTO_CHAR_MODELS=false.
+window.AUTO_CHAR_MODELS = (window.AUTO_CHAR_MODELS!==undefined)?window.AUTO_CHAR_MODELS:true;
+function charModelFor(ck){ if(!ck) return null; if(CHAR_MODEL[ck]&&CHAR_MODEL[ck].url) return CHAR_MODEL[ck];
+  if(window.AUTO_CHAR_MODELS && CHAR_MODEL_DEFAULTS[ck]) return CHAR_MODEL_DEFAULTS[ck]; return null; }
+function applyCharModels(){ ['p1','p2'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
 function assignCharModel(charKey, url, name){ if(!charKey) return; charKey=charKey.toUpperCase(); try{ if(url){ CHAR_MODEL[charKey]={url:url,name:name||charKey}; } else { delete CHAR_MODEL[charKey]; } localStorage.setItem('bannonCharModels',JSON.stringify(CHAR_MODEL)); }catch(e){} }
 // Bind the model currently shown on a side to that side's CHARACTER so it persists as theirs.
 function assignCurrentModelToChar(side){ var f=fighterFor(side); if(!f) return; var ck=charModelKey(f);
@@ -14025,6 +14080,28 @@ const _invP=new THREE.Quaternion(), _dl=new THREE.Vector3(), _rfl=new THREE.Vect
 const _DEG=Math.PI/180, LIM_LIMB=170*_DEG, LIM_SPINE=88*_DEG;
 // clamp a target local quaternion to within maxRad of the bone's rest pose (kills 360-degree spin/flip artifacts; real poses never exceed this)
 function _clampQ(t, r, maxRad){ let d=t.x*r.x+t.y*r.y+t.z*r.z+t.w*r.w; if(d<0)d=-d; if(d>1)d=1; const ang=2*Math.acos(d); if(ang>maxRad && ang>1e-3) t.slerp(r, 1-maxRad/ang); }
+// ROLL-STABLE LIMB AIM (fixes the "spiral-collapse leg" bug): setFromUnitVectors gives an
+// UNDEFINED roll about the aim axis, so a limb whose target is near-vertical can flip the wrong
+// way (mirror-symmetric legs producing asymmetric collapse — verified: left thigh drove away from
+// its target). Instead build FULL orthonormal frames for rest-fwd and target-dir sharing ONE up
+// reference (the world axis least parallel to the aim), so the roll is deterministic. Output is the
+// bone's LOCAL quaternion that points localFwd at targetLocalDir. Toggle window.STABLE_LIMB_AIM.
+const _rbR=new THREE.Vector3(),_rbU=new THREE.Vector3(),_rbF=new THREE.Vector3(),
+      _tbR=new THREE.Vector3(),_tbU=new THREE.Vector3(),_tbF=new THREE.Vector3(),
+      _upH=new THREE.Vector3(),_rbM=new THREE.Matrix4(),_tbM=new THREE.Matrix4(),
+      _rq0=new THREE.Quaternion(),_tq0=new THREE.Quaternion();
+function _aimLocal(localFwd, targetLocalDir, outQ){
+  _tbF.copy(targetLocalDir); if(_tbF.lengthSq()<1e-9){ outQ.identity(); return outQ; } _tbF.normalize();
+  _rbF.copy(localFwd).normalize();
+  const ax=Math.abs(_tbF.x),ay=Math.abs(_tbF.y),az=Math.abs(_tbF.z);            // up = axis least parallel to the aim
+  if(ay<=ax&&ay<=az) _upH.set(0,1,0); else if(az<=ax&&az<=ay) _upH.set(0,0,1); else _upH.set(1,0,0);
+  _tbR.crossVectors(_upH,_tbF); if(_tbR.lengthSq()<1e-6){ _upH.set(1,0,0); _tbR.crossVectors(_upH,_tbF); } _tbR.normalize(); _tbU.crossVectors(_tbF,_tbR);
+  _rbR.crossVectors(_upH,_rbF); if(_rbR.lengthSq()<1e-6){ _upH.set(1,0,0); _rbR.crossVectors(_upH,_rbF); } _rbR.normalize(); _rbU.crossVectors(_rbF,_rbR);
+  _tbM.makeBasis(_tbR,_tbU,_tbF); _rbM.makeBasis(_rbR,_rbU,_rbF);
+  _tq0.setFromRotationMatrix(_tbM); _rq0.setFromRotationMatrix(_rbM);
+  outQ.copy(_tq0).multiply(_rq0.invert());
+  return outQ;
+}
 function updateFighterModel(f){
   const m=f.model; if(!m) return;
   const root = f.ragdoll ? f.V.pelvis.pos : f.worldJoint('pelvis');
@@ -14046,9 +14123,17 @@ function updateFighterModel(f){
           // Kills the old world-locked spine/neck 'owl twist' (both fighters wrenched to one world heading).
           if(par){ par.getWorldQuaternion(_mPQ); _invP.copy(_mPQ).invert(); _dl.copy(_mDir).applyQuaternion(_invP); } else { _dl.copy(_mDir); }
           const _rlq=mp.bone.userData.restQuat||_idQ;
-          _rfl.copy(mp.localFwd).applyQuaternion(_rlq);
-          _qd.setFromUnitVectors(_rfl, _dl);
-          _qw.copy(_qd).multiply(_rlq);
+          if(mp.isLimb && window.STABLE_LIMB_AIM!==false){
+            // roll-stable aim: deterministic frame-to-frame roll -> no spiral-collapse. _dl is in
+            // parent space; localFwd is bone-local (== parent-space at rest for identity restQuat).
+            _rfl.copy(mp.localFwd).applyQuaternion(_rlq);
+            _aimLocal(_rfl, _dl, _qd);
+            _qw.copy(_qd).multiply(_rlq);
+          } else {
+            _rfl.copy(mp.localFwd).applyQuaternion(_rlq);
+            _qd.setFromUnitVectors(_rfl, _dl);
+            _qw.copy(_qd).multiply(_rlq);
+          }
           const _grapPose = (f.state==='grabbed'||f.state==='grab'||f.state==='deliver');
           // during a hold/throw, let the model COMMIT to the rig's slam/fold pose: wider bend + faster catch-up,
           // so the body actually lays back / folds instead of staying upright and re-facing (the 'spin' look).
@@ -36306,6 +36391,189 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   setInterval(function(){ var n=performance.now(); var dt=Math.min(0.08,(n-last)/1000); last=n; update(dt); }, 33);
   window.BANNON_REF={ state:R, hasLoS:hasLoS, canCount:function(v){ return R.down<=0 && hasLoS(v); }, isDown:function(){ return R.down>0; } };
   console.log('%c[BANNON_REF] referee entity armed — LoS-gated counts, lateral whip avoidance, real bumps (native bannon_referee.h laws)','color:#7CFC00');
+})();
+</script>
+<script>
+// ============================================================================
+// BANNON_WEAPONS — weapons as PHYSICAL OBJECTS (native bannon_weapon.h laws in JS).
+// Owner's Drive weapon GLBs (assets/models/props/weapons/): bats, shovel, chair = hand weapons;
+// table + ladder = TLC props. Mass taxes stamina on every swing (whiff 2.5x), integrity dents,
+// barbed wire draws blood, tables shatter past the 350N law, ladders are climbable vantage.
+// Additive: rides the EXISTING controls — while holding, your normal strikes ARE weapon swings.
+// ============================================================================
+(function(){
+  var DB={
+    STEEL_CHAIR : { url:'assets/models/props/weapons/steel_chair.glb',  label:'STEEL CHAIR',      mass:3.5, reach:0.75, integrity:120 },
+    BARBWIRE_BAT: { url:'assets/models/props/weapons/barbwire_bat.glb', label:'BARBED WIRE BAT',  mass:1.4, reach:0.85, integrity:70, bleed:true },
+    BASEBALL_BAT: { url:'assets/models/props/weapons/baseball_bat.glb', label:'BASEBALL BAT',     mass:1.1, reach:0.85, integrity:95 },
+    SHOVEL      : { url:'assets/models/props/weapons/shovel.glb',       label:'OLD SHOVEL',       mass:2.2, reach:1.00, integrity:110 },
+    TABLE       : { url:'assets/models/props/weapons/table.glb',        label:'TABLE',            prop:'table' },
+    LADDER      : { url:'assets/models/props/weapons/ladder.glb',       label:'LADDER',           prop:'ladder' }
+  };
+  var SPAWNS=[ ['STEEL_CHAIR',4.6,0,2.6], ['BASEBALL_BAT',-4.6,0,2.6], ['BARBWIRE_BAT',-4.6,0,-2.6], ['SHOVEL',4.6,0,-2.6],
+               ['TABLE',0,0,3.9], ['LADDER',-5.4,0,0] ];
+  var W={ items:[], spawned:false, chip:null };
+  var MAXSTAM=(typeof MAX_STAMINA!=='undefined')?MAX_STAMINA:440;
+  function loadItem(key,x,y,z){
+    var spec=DB[key]; if(!spec) return;
+    try{
+      var loader=new THREE.GLTFLoader();
+      loader.load(spec.url, function(gltf){
+        try{
+          var obj=gltf.scene; obj.traverse(function(o){ if(o.isMesh){ o.castShadow=true; } });
+          var box=new THREE.Box3().setFromObject(obj), size=new THREE.Vector3(); box.getSize(size);
+          var span=Math.max(size.x,size.y,size.z)||1;
+          var target=spec.prop==='table'?1.8 : spec.prop==='ladder'?1.9 : (spec.reach+0.35);
+          var s=target/span; obj.scale.setScalar(s);
+          box.setFromObject(obj); var ctr=new THREE.Vector3(); box.getCenter(ctr);
+          var g=new THREE.Group(); g.add(obj);
+          obj.position.set(-ctr.x, -box.min.y, -ctr.z);          // rest on the floor
+          g.position.set(x, (spec.prop?-0.85:-0.83), z);          // ringside floor level
+          scene.add(g);
+          var it={ key:key, spec:spec, g:g, holder:null, integrity:spec.integrity||100, broken:false, home:[x,z] };
+          if(spec.prop==='table'){ box.setFromObject(g); it.topY=box.max.y; it.half={x:(box.max.x-box.min.x)/2, z:(box.max.z-box.min.z)/2}; }
+          if(spec.prop==='ladder'){ box.setFromObject(g); it.topY=box.max.y; }
+          W.items.push(it);
+        }catch(e){}
+      }, undefined, function(){ /* GLB missing (e.g. downloaded HTML offline) — weapons just don't spawn */ });
+    }catch(e){}
+  }
+  function spawnAll(){ if(W.spawned || typeof scene==='undefined' || typeof THREE==='undefined' || !THREE.GLTFLoader) return;
+    W.spawned=true; SPAWNS.forEach(function(s){ loadItem(s[0],s[1],s[2],s[3]); }); }
+  function playerF(){ try{ var fs=(typeof fighters!=='undefined')?fighters:[]; for(var i=0;i<fs.length;i++) if(fs[i]&&fs[i].isPlayer) return fs[i]; return fs[0]||null; }catch(e){ return null; } }
+  function nearestItem(f,maxD){ var p; try{ p=f.worldJoint('pelvis'); }catch(e){ return null; }
+    var best=null,bd=maxD; W.items.forEach(function(it){ if(it.holder||it.broken||it.spec.prop) return;
+      var d=Math.hypot(it.g.position.x-p.x, it.g.position.z-p.z); if(d<bd){ bd=d; best=it; } }); return best; }
+  // ── pickup / drop (G key + floating chip; contextual, mobile-friendly) ──
+  function chip(txt){ if(!W.chip){ var c=document.createElement('div'); c.id='weaponChip';
+      c.style.cssText='position:fixed;left:50%;bottom:150px;transform:translateX(-50%);z-index:60;background:rgba(10,12,16,.88);color:#ffd23f;border:1px solid #ffd23f;border-radius:9px;padding:7px 14px;font:bold 13px monospace;display:none;cursor:pointer';
+      c.addEventListener('click',function(){ togglePick(); }); c.addEventListener('touchstart',function(e){ e.preventDefault(); togglePick(); },{passive:false});
+      document.body.appendChild(c); W.chip=c; }
+    if(txt){ W.chip.textContent=txt; W.chip.style.display='block'; } else W.chip.style.display='none'; }
+  function togglePick(){ var f=playerF(); if(!f) return;
+    if(f._weapon){ drop(f); return; }
+    var it=nearestItem(f,0.9); if(!it) return;
+    it.holder=f; f._weapon=it;
+    try{ if(typeof announce==='function') announce(it.spec.label,'picked up'); }catch(e){}
+  }
+  function drop(f){ var it=f._weapon; if(!it) return; it.holder=null; f._weapon=null;
+    try{ var p=f.worldJoint('pelvis'); it.g.position.set(p.x+0.4, -0.83+((Math.abs(p.x)<3.5&&Math.abs(p.z)<2.5)?0.83:0), p.z+0.3); it.g.rotation.set(0,Math.random()*6.28,Math.PI/2*0.9); }catch(e){}
+  }
+  document.addEventListener('keydown',function(e){ if((e.key==='g'||e.key==='G')&&!e.ctrlKey&&!e.metaKey){ var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return; togglePick(); } });
+  // ── swings ride the existing strike pipeline: holding a weapon transforms your strikes ──
+  function hookSwing(){ try{
+    if(!window.Fighter || Fighter.prototype.__weaponHook) return; Fighter.prototype.__weaponHook=true;
+    var _osa=Fighter.prototype.startAttack;
+    Fighter.prototype.startAttack=function(mv){
+      var it=this._weapon;
+      if(it && mv && !mv._weaponized && (mv.cat==='STRIKE'||mv.cat==='KICK'||!mv.cat)){
+        var spec=it.spec, m=Object.assign({},mv);
+        m._weaponized=true;
+        m.name=spec.label+(spec.bleed?' · BARBED':'');
+        m.power=Math.min(100,(mv.power||50)*(1+spec.mass*0.16));           // mass × velocity through DMG_SCALE
+        m.limb='HAND'; m.traj='OVERHAND';
+        // universal mass tax (native swingStaminaCost): mass × swing vel; whiff-check after the arc
+        var swingVel=Math.min(3.8, 2.2+ (mv.power||50)*0.02);
+        var tax=spec.mass*swingVel*1.15;
+        if(this.stamina!=null) this.stamina=Math.max(0,this.stamina-tax);
+        var self=this, opp=null; try{ opp=this.opponent?this.opponent():null; }catch(e){}
+        var inReach=false; try{ if(opp){ var a=this.worldJoint('pelvis'), b=opp.worldJoint('pelvis'); inReach=Math.hypot(a.x-b.x,a.z-b.z) < (spec.reach+0.75); } }catch(e){}
+        if(inReach){
+          it.integrity-=swingVel*spec.mass*0.4;                            // procedural dent budget
+          if(spec.bleed){ try{ if(window.__spawnBlood&&opp){ var h=opp.worldJoint('head'); window.__spawnBlood(h.x,h.y,h.z,1.2); } }catch(e){} }
+          if(it.integrity<=0 && !it.broken){ it.broken=true; it.g.visible=false; this._weapon=null; it.holder=null;
+            try{ if(typeof announce==='function') announce(spec.label+' BROKEN','the weapon gave out'); }catch(e){} }
+        } else {
+          // MOMENTUM WHIFF: over-extension — the 2.5x law (native): tax already paid once, add 1.5x
+          if(this.stamina!=null) this.stamina=Math.max(0,this.stamina-tax*1.5);
+        }
+        if(this.stamina!=null && this.stamina<=0.5){ drop(this); try{ if(typeof announce==='function') announce('WEAPON DROPPED','gassed grip'); }catch(e){} }
+        return _osa.call(this,m);
+      }
+      return _osa.call(this,mv);
+    };
+  }catch(e){} }
+  // ── TLC: table shatter (native tableImpact 350N) + ladder climb vantage ──
+  function tlc(dt){
+    W.items.forEach(function(it){
+      if(it.spec.prop!=='table'||it.broken) return;
+      var fs=(typeof fighters!=='undefined')?fighters:[];
+      for(var i=0;i<fs.length;i++){ var f=fs[i]; if(!f) continue;
+        var p; try{ p=f.worldJoint('pelvis'); }catch(e){ continue; }
+        var pv=f.__wTblPrev||p; var vy=(p.y-pv.y)/Math.max(dt,1e-3); f.__wTblPrev={x:p.x,y:p.y,z:p.z};
+        if(vy<-2.0 && Math.abs(p.x-it.g.position.x)<it.half.x && Math.abs(p.z-it.g.position.z)<it.half.z && p.y<it.topY+0.35 && p.y>it.topY-0.4){
+          var force=100*Math.min(3.8,-vy);                                  // victimMass × velY
+          if(force>350){
+            it.broken=true; it.g.rotation.z=0.5; it.g.position.y-=0.28;     // collapsed wreck
+            try{ f.poise=Math.max(0,(f.poise||100)-(-vy)*8*2.2); f.hp=Math.max(0,f.hp-force*0.9); }catch(e){}
+            try{ if(typeof announce==='function') announce('THROUGH THE TABLE!', (f.opts&&f.opts.name)||''); }catch(e){}
+            try{ if(typeof spawnMatDust==='function') spawnMatDust(p.x,p.z,3.5); }catch(e){}
+          }
+        }
+      }
+    });
+  }
+  // ── per-frame: carried weapons track the hand; chip; TLC ──
+  var last=performance.now();
+  setInterval(function(){
+    var n=performance.now(), dt=Math.min(0.08,(n-last)/1000); last=n;
+    try{
+      spawnAll(); hookSwing();
+      var f=playerF();
+      if(f && !f._weapon){ var near=nearestItem(f,0.9); chip(near?('PICK UP '+near.spec.label+'  [G]'):null); }
+      else if(f && f._weapon){ chip('DROP '+f._weapon.spec.label+'  [G]'); }
+      W.items.forEach(function(it){
+        if(!it.holder) return;
+        try{ var h=it.holder.worldJoint('haR'), c=it.holder.worldJoint('chest');
+          it.g.position.set(h.x,h.y,h.z);
+          it.g.rotation.set(0, Math.atan2(h.x-c.x, h.z-c.z), -0.5); }catch(e){}
+      });
+      tlc(dt);
+    }catch(e){}
+  }, 50);
+  window.BANNON_WEAPONS={ db:DB, items:W.items, pickup:togglePick, _state:W };
+  console.log('%c[BANNON_WEAPONS] 6 owner weapons live — mass stamina tax, integrity, barbed bleed, 350N tables (native bannon_weapon.h laws)','color:#7CFC00');
+})();
+</script>
+<script>
+// ============================================================================
+// CLONED MOVES (legal path) — the owner's recreated move set: OUR mocap clips + OUR physics.
+// tools/moves/wrestling_moves.json embedded as equippable MOVE LIBRARY entries: grapples carry an
+// explicit grapplePos so resolveGrapPos runs them through the REAL positions/lift/deliver physics;
+// strikes ride startAttack. No ripped game data anywhere — names + physics are proprietary.
+// ============================================================================
+(function(){
+  var CLONES=[
+    { name:'TOMBSTONE DRIVER',      cat:'GRAPPLE', grapplePos:'TIGER_DRIVER',    power:92, staminaCost:34, clip:'Tombstone.fbx' },
+    { name:'VERTICAL BRAINBUSTER',  cat:'GRAPPLE', grapplePos:'BRAINBUSTER',     power:88, staminaCost:32, clip:'VerticalBrainBuster.fbx' },
+    { name:'CHOKESLAM HEX',         cat:'GRAPPLE', grapplePos:'CHOKESLAM',       power:85, staminaCost:30, clip:'Chokeslam.fbx' },
+    { name:'DOUBLE-HOOK SUPLEX',    cat:'GRAPPLE', grapplePos:'VERTICAL_SUPLEX', power:80, staminaCost:30, clip:'DoubleSuplex.fbx' },
+    { name:'HAMMERLOCK DDT',        cat:'GRAPPLE', grapplePos:'DDT',             power:76, staminaCost:24, clip:'HammerlockDDT.fbx' },
+    { name:'STRONG ZERO',           cat:'GRAPPLE', grapplePos:'BRAINBUSTER',     power:90, staminaCost:34, clip:'StrongZero.fbx' },
+    { name:'WBTC CUTTER',           cat:'GRAPPLE', grapplePos:'DDT',             power:86, staminaCost:28, clip:'WBTC.fbx' },
+    { name:'STEREO SUPERKICK',      cat:'KICK', limb:'KICK', traj:'STRAIGHT', height:'HIGH', power:82, speed:70, staminaCost:18, clip:'StereoSuperkick.fbx', follow:'KNOCKDOWN' },
+    { name:'TAG SUPERKICK',         cat:'KICK', limb:'KICK', traj:'STRAIGHT', height:'HIGH', power:78, speed:72, staminaCost:16, clip:'TagSuperkick.fbx', follow:'KNOCKDOWN' },
+    { name:'JAY KICK',              cat:'KICK', limb:'KICK', traj:'SPINNING', height:'HIGH', power:74, speed:74, staminaCost:14, clip:'JayKick.fbx' },
+    { name:'APRON JAY KICK',        cat:'KICK', limb:'KICK', traj:'SPINNING', height:'HIGH', power:70, speed:72, staminaCost:14, pos:'CORNER', clip:'ApronJayKick.fbx' },
+    { name:'HEADCRACK',             cat:'STRIKE', limb:'ELBOW', traj:'OVERHAND', height:'HIGH', power:84, speed:60, staminaCost:20, clip:'Tau_HEADCRACK.fbx', follow:'KNOCKDOWN' },
+    { name:'VIOLENCE PARTY',        cat:'STRIKE', limb:'ELBOW', traj:'HOOK', height:'MID', power:72, speed:82, staminaCost:22, clip:'ViolenceParty.fbx' },
+    { name:'CLONE DROPKICK',        cat:'KICK', limb:'KICK', traj:'STRAIGHT', height:'MID', power:68, speed:76, staminaCost:15, clip:'Drop Kick.fbx' }
+  ];
+  var tries=0;
+  var t=setInterval(function(){
+    tries++;
+    try{
+      if(window.customMoves && Array.isArray(window.customMoves)){
+        var have={}; window.customMoves.forEach(function(m){ have[m.name]=1; });
+        var added=0;
+        CLONES.forEach(function(c){ if(!have[c.name]){ window.customMoves.push(Object.assign({style:'CLONE', source:'CLONE'},c)); added++; } });
+        window.CLONED_MOVES=CLONES;
+        if(added) console.log('%c[CLONED MOVES] '+added+' recreated moves pooled into the MOVE LIBRARY (physics-routed via resolveGrapPos)','color:#7CFC00');
+        clearInterval(t);
+      }
+    }catch(e){}
+    if(tries>40) clearInterval(t);
+  }, 500);
 })();
 </script>
 </body>
