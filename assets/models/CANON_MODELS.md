@@ -58,7 +58,7 @@ is the C++ port, where these same identities carry over as authored bodies.
 - **ECHO "The Reflection"** (Onyx's stable) — mimic/read, hits you with your own move. `ECHO.glb`.
 - **ONYX · Street** — `ONYX_street.glb` (new attire).
 - **CODY · Sober / Stressed** — `CODY_sober.glb`, `CODY_stressed.glb` (canon manager, alt states).
-NOTE: onyxstraightjacketskirt.glb was a truncated Drive upload — owner to re-upload.
+NOTE: onyxstraightjacketskirtnew.glb (owner re-upload) integrated — skinned v4.4, banked as ONYX_straightjacket.glb.
 
 ## Batch 3 (owner-made, auto-skinned v4.2 — geodesic weights + anatomical clamps)
 - **CIPHER · Minion** — `CIPHER_minion.glb` (alt attire, Onyx's stable).
