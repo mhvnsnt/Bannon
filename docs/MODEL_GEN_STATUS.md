@@ -33,3 +33,19 @@ call. Both paths are one owner-side unblock away.
   the v4.4 A-pose rigger) — the moment a generated GLB exists, it's in-game within minutes.
 
 Tell me which unblock you want (credits, GPU deploy, or seed images) and the 8 fighters get bodies.
+
+
+## UPDATE (2026-07-13) — free HF pipeline built + proven halfway
+Built `tools/gen/hf_pipeline.py` (text→image→3D on HF public GPU Spaces, no Tripo credits) and ran it:
+- **text→image WORKS anonymously** — generated all 8 concept sheets (front-facing A-pose, plain bg,
+  ideal image→3D seeds) via FLUX.1-schnell → `assets/reference/agent_fighters/*.png`. These double as
+  the reference art AND the seeds for the 3D step (and the owner's hybrid: swap any you don't like).
+- **image→3D is one HF token away.** The 3D Spaces (Hunyuan3D-2 / InstantMesh / frogleo) run on
+  ZeroGPU; anonymous requests are refused ("No GPU available after 60s — create an account for higher
+  priority"). With `HF_TOKEN` set (owner is authenticated as Dmn52; a free/PRO token gives queue
+  priority) the same script finishes end to end: `HF_TOKEN=hf_xxx python3 tools/gen/hf_pipeline.py`.
+  Then it auto-skins (v4.4) + banks each as `assets/models/<NAME>.glb`.
+
+So generation is no longer blocked on Tripo credits at all — it's a free HF token for GPU priority.
+Drop `HF_TOKEN` in the env and the 8 fighters get bodies; or keep using Tripo credits with the
+existing tools/tripo path. Concept images are committed now regardless.
