@@ -14604,6 +14604,7 @@ function setupInput(){
     if (!meter || !needle || !zone) return;
     if (meter._subActive) return; // already running
     meter._subActive = true;
+    meter._subT0 = 0; meter._subLastT = 0;                     // real-time hold clock reset
     meter.classList.add('active');
     if (lbl) lbl.textContent = type === 'PIN' ? 'PIN ATTEMPT' : 'SUBMISSION';
     if (tapHint) tapHint.textContent = 'TAP ZONE BUTTON RAPIDLY TO ESCAPE';
@@ -14619,8 +14620,32 @@ function setupInput(){
     let vel = 2.2 + Math.random() * 1.4;  // px per tick (faster = harder)
     let dir = 1;
     let ticks = 0;
-    const maxTicks = 220;  // ~4.4s at 50ms
+    const maxTicks = 220;  // hard ceiling only — the ORGANIC tap below usually decides first
     let escaped = false;
+    // PHYSICAL TORQUE MODEL (native bannon_referee.h submissionStep): the UI drives real joint
+    // torque -> rotation past the anatomical limit drains LOCAL limb HP -> the tap-out is
+    // constraint failure (limb wrecked, or deep strain with no stamina left), not a timer.
+    const subMx = (typeof MAX_STAMINA!=='undefined')?MAX_STAMINA:440;
+    // hold-local stamina pool: you do NOT regen while someone cranks the joint — the engine's
+    // idle regen would refill the victim mid-hold, so the pool only moves DOWN and is written
+    // back each tick (min) so the rest of the engine sees the drain.
+    let holdStam = (victim&&victim.stamina!=null)?victim.stamina:subMx*0.5;
+    const subJoint = { rot:0, limit:1.2, limbHp:1000 };
+    const crank01 = ()=>{ const m=(attacker&&attacker.momentum!=null)?attacker.momentum:50; return Math.min(1, 0.55+0.45*(m/100)); };
+    const resist01 = ()=> Math.max(0, Math.min(1, holdStam/subMx));
+    let subTapped = false;
+    function subStep(dt){
+      const cr=crank01(), rs=resist01();
+      subJoint.rot = Math.max(0, subJoint.rot + (cr - rs*0.8)*1.5*dt);
+      holdStam = Math.max(0, holdStam - (rs*22 + cr*6)*dt);                    // fighting the hold gasses
+      if (victim && victim.stamina!=null) victim.stamina = Math.min(victim.stamina, holdStam);
+      if (subJoint.rot > subJoint.limit){ subJoint.limbHp = Math.max(0, subJoint.limbHp - (subJoint.rot - subJoint.limit)*120*dt); }
+      const strain = subJoint.rot / subJoint.limit;
+      meter._subStrain = strain;                               // exposed for the landing decision + telemetry
+      subTapped = (subJoint.limbHp<=0) || (strain>0.92 && holdStam < subMx*0.06);
+      // deep strain squeezes the escape window — cranked joints are harder to slip
+      if (strain>0.75 && zone && !zone._shrunk){ zone._shrunk=true; try{ zone.style.width=(parseFloat(zone.style.width)*0.6)+'%'; }catch(e){} }
+    }
 
     const tick = setInterval(()=>{
       if (!meter._subActive){ clearInterval(tick); return; }
@@ -14629,8 +14654,24 @@ function setupInput(){
       if (needlePos <= 0){ needlePos = 0; dir = 1; }
       needle.style.left = (needlePos / trackW * 100) + '%';
       ticks++;
-      if (ticks >= maxTicks && !escaped){
-        // Time expired — submission lands / pin successful
+      // REAL-TIME dt: under CPU load (weak phones, heavy scenes) setInterval stretches — a
+      // tick-count model would stretch the hold with it. Measure wall time, cap the step.
+      const _now = performance.now();
+      const _dt = Math.min(0.1, (_now - (meter._subLastT || _now)) / 1000);
+      meter._subLastT = _now;
+      if (type !== 'PIN') subStep(_dt || 0.02);                // torque only on holds, not covers
+      const holdElapsed = (meter._subT0 = meter._subT0 || _now, (_now - meter._subT0) / 1000);
+      if ((subTapped || holdElapsed >= 4.4) && !escaped){
+        // hold resolved — but a hold that never built real strain doesn't "land" on a clock:
+        // the fresh defender physically powers out instead (organic escape, no damage).
+        if (type !== 'PIN' && !subTapped && (meter._subStrain||0) < 0.5){
+          clearInterval(tick);
+          meter.classList.remove('active');
+          meter._subActive = false;
+          if (meter._cleanEscape) meter._cleanEscape();
+          if (typeof announce === 'function') announce('POWERED OUT', (victim.opts&&victim.opts.name)||'');
+          return;
+        }
         clearInterval(tick);
         meter.classList.remove('active');
         meter._subActive = false;
@@ -14705,6 +14746,7 @@ function setupInput(){
     victim.state = 'pinnedDown';
     victim.stateTime = 0;
     victim._pinBy = attacker;
+    try{ window.__refPin={a:attacker, v:victim}; }catch(e){}   // BANNON_REF moves in to count
 
     const trackW = 256;
     const victimHpRatio = clamp(victim.hp / (victim.maxHp || 10000), 0, 1);
@@ -14734,7 +14776,13 @@ function setupInput(){
       if (needlePos <= 0){ needlePos = 0; dir = 1; }
       needle.style.left = (needlePos / trackW * 100) + '%';
       
-      refTimer += 20; 
+      // LoS-GATED COUNT (native bannon_referee.h law): the count only advances while the ref is
+      // up AND has a clear sightline to the pinned shoulders — bumped/blocked ref = no count.
+      var refSees = !window.BANNON_REF || BANNON_REF.canCount(victim);
+      var _pnow = performance.now();                            // real-time count clock (CPU-load proof)
+      var _pdt = Math.min(100, _pnow - (meter._pinLastT || _pnow)); meter._pinLastT = _pnow;
+      if (refSees){ refTimer += (_pdt || 20); meter._losWarned = false; }
+      else if (!meter._losWarned){ meter._losWarned = true; try{ if(typeof announce==='function') announce(window.BANNON_REF&&BANNON_REF.isDown()?'NO REFEREE':'REF CAN\'T SEE IT','the count is held'); }catch(e){} }
       if (refTimer >= 1500) {
         refTimer = 0;
         refCount++;
@@ -14750,14 +14798,15 @@ function setupInput(){
           
           victim.hp = 0;
           if (typeof announce === 'function') announce('referee: THREE!!! PINNED!', attacker.opts && attacker.opts.name || 'BANNON');
-          
+
           attacker.state = 'idle';
           attacker.stateTime = 0;
           attacker._pinTarget = null;
-          
+
           victim.state = 'down';
           victim.stateTime = 0;
           victim._pinBy = null;
+          try{ window.__refPin=null; }catch(e){}
         }
       }
 
@@ -14796,7 +14845,8 @@ function setupInput(){
         victim.state = 'stagger';
         victim.stateTime = 0;
         victim._pinBy = null;
-        
+        try{ window.__refPin=null; }catch(e){}
+
         if (typeof spawnMatDust === 'function') spawnMatDust(victim.x, victim.z, 2.5);
       } else {
         zone.style.background = 'rgba(230, 20, 20, 0.8)';
@@ -36135,6 +36185,127 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 
   window.GODOS={ open:open, close:close, toggle:toggle, exec:exec };
   console.log('%c[GOD MODE OS] neuralink armed — ` to summon, /order routes to the away-time coders','color:#7CFC00');
+})();
+</script>
+<script>
+// ============================================================================
+// BANNON_REF — the referee as a PHYSICAL ENTITY (JS wiring of native/include/bannon_referee.h).
+// Vision-gated pin counts (LoS cone + body occlusion), predictive lateral avoidance of whips/
+// carries, real ref bumps (velocity contact -> he goes down, counts suspend). Additive: spawns
+// only during fights, zero effect when absent; startPin gates its count on BANNON_REF.canCount().
+// ============================================================================
+(function(){
+  var R={ g:null, down:0, vx:0, vz:0, x:2.4, z:-1.9, yaw:0, _prev:{}, _bobT:0, countAnim:0 };
+  function build(){
+    if(R.g || typeof THREE==='undefined' || typeof scene==='undefined') return;
+    var g=new THREE.Group();
+    // striped shirt canvas (zebra)
+    var C=document.createElement('canvas'); C.width=64; C.height=64; var x=C.getContext('2d');
+    for(var i=0;i<8;i++){ x.fillStyle=(i%2)?'#111':'#eee'; x.fillRect(i*8,0,8,64); }
+    var shirtTex=new THREE.CanvasTexture(C);
+    var shirt=new THREE.MeshStandardMaterial({map:shirtTex, roughness:0.85});
+    var slacks=new THREE.MeshStandardMaterial({color:0x14141a, roughness:0.9});
+    var skin=new THREE.MeshStandardMaterial({color:0xd9a066, roughness:0.6});
+    var torso=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.14,0.52,10), shirt); torso.position.y=1.12; g.add(torso);
+    var head=new THREE.Mesh(new THREE.SphereGeometry(0.115,10,8), skin); head.position.y=1.55; g.add(head);
+    for(var s=-1;s<=1;s+=2){
+      var leg=new THREE.Mesh(new THREE.CylinderGeometry(0.055,0.05,0.82,8), slacks); leg.position.set(0.085*s,0.43,0); g.add(leg);
+      var arm=new THREE.Mesh(new THREE.CylinderGeometry(0.042,0.038,0.52,8), shirt); arm.position.set(0.22*s,1.12,0); arm.rotation.z=0.28*s; g.add(arm);
+      if(s===1) R.armR=arm;
+    }
+    g.traverse(function(o){ if(o.isMesh){ o.castShadow=true; } });
+    g.position.set(R.x,0,R.z);
+    scene.add(g); R.g=g;
+  }
+  function fpel(f){ try{ return f.worldJoint('pelvis'); }catch(e){ return null; } }
+  function fchest(f){ try{ return f.worldJoint('chest'); }catch(e){ return null; } }
+  // native refAvoidanceVelocity port: lateral escape off the travel line, jog-capped
+  function avoid(px,pz,mx,mz,mvx,mvz){
+    var sp=Math.hypot(mvx,mvz); if(sp<0.9) return null;
+    var dx=mvx/sp, dz=mvz/sp, rx=px-mx, rz=pz-mz;
+    var along=rx*dx+rz*dz; if(along<0||along>sp*0.6+1.1) return null;
+    var lx=rx-dx*along, lz=rz-dz*along, ld=Math.hypot(lx,lz); if(ld>1.1) return null;
+    var ex,ez; if(ld>1e-4){ ex=lx/ld; ez=lz/ld; } else { ex=-dz; ez=dx; }
+    var u=1-(ld/1.1), m=0.6+1.4*u;
+    return {x:ex*m, z:ez*m};
+  }
+  // native refHasLineOfSight port: view cone to the pinned shoulders + other-body occlusion
+  function hasLoS(victim){
+    if(!R.g) return true;
+    var sm=fchest(victim); if(!sm) return true;
+    var ex=R.x, ey=1.55, ez=R.z;
+    var tx=sm.x-ex, ty=(sm.y||0.2)-ey, tz=sm.z-ez;
+    var dist=Math.hypot(tx,ty,tz); if(dist<1e-3) return true;
+    tx/=dist; ty/=dist; tz/=dist;
+    var fx=Math.sin(R.yaw), fz=Math.cos(R.yaw);
+    if(fx*tx+fz*tz < 0.34) return false;                       // outside ~70° half-angle cone
+    var fs=(typeof fighters!=='undefined')?fighters:[];
+    var pin=victim._pinBy||null;
+    for(var i=0;i<fs.length;i++){ var f=fs[i]; if(!f||f===victim||f===pin) continue;
+      var p=fpel(f); if(!p) continue;
+      var rx=p.x-ex, ry=(p.y||1)-ey, rz=p.z-ez;
+      var t=rx*tx+ry*ty+rz*tz; if(t<=0||t>=dist) continue;
+      var cx=ex+tx*t, cy=ey+ty*t, cz=ez+tz*t;
+      if(Math.hypot(p.x-cx,(p.y||1)-cy,p.z-cz)<0.30) return false;
+    }
+    return true;
+  }
+  function update(dt){
+    try{
+      if(typeof fighters==='undefined'||!fighters||fighters.length<2){ if(R.g)R.g.visible=false; return; }
+      var gs=(typeof gameState!=='undefined')?gameState:null;
+      if(gs && gs!=='fight' && gs!=='fighting'){ if(R.g)R.g.visible=false; return; }
+      build(); if(!R.g) return; R.g.visible=true;
+      if(R.down>0){ // bumped: lie flat, no counting
+        R.down-=dt; R.g.rotation.x+= (-Math.PI/2 - R.g.rotation.x)*Math.min(1,dt*8);
+        R.g.position.y += (0.12-R.g.position.y)*Math.min(1,dt*8);
+        if(R.down<=0){ R.down=0; }
+        return;
+      } else if(R.g.rotation.x<-0.05){ R.g.rotation.x += (0-R.g.rotation.x)*Math.min(1,dt*4); R.g.position.y*= (1-Math.min(1,dt*4)); }
+      var pin=window.__refPin||null;
+      var tx,tz, face;
+      var a=fighters[0], b=fighters[1];
+      var pa=fpel(a), pb=fpel(b); if(!pa||!pb) return;
+      if(pin && pin.v){ // pin: get to the shoulder sightline, kneel-count
+        var vc=fchest(pin.v)||fpel(pin.v);
+        var px=fpel(pin.a)||vc;
+        var ox=vc.x-px.x, oz=vc.z-px.z, od=Math.hypot(ox,oz)||1;
+        tx=vc.x + (oz/od)*1.05; tz=vc.z - (ox/od)*1.05;      // perpendicular to the cover
+        face={x:vc.x,z:vc.z};
+        R.countAnim+=dt*7; if(R.armR){ R.armR.rotation.x = -0.7 - Math.max(0,Math.sin(R.countAnim))*1.2; }
+      } else { // roam: hover off the action midpoint, stay in the ring
+        var mx=(pa.x+pb.x)/2, mz=(pa.z+pb.z)/2, md=Math.hypot(mx,mz)||1;
+        tx=mx + (mx/md)*1.7; tz=mz + (mz/md)*1.7;
+        tx=Math.max(-3.1,Math.min(3.1,tx)); tz=Math.max(-2.1,Math.min(2.1,tz));
+        face={x:mx,z:mz};
+        if(R.armR) R.armR.rotation.x += (0-R.armR.rotation.x)*Math.min(1,dt*6);
+      }
+      // predictive avoidance of fast movers overrides the roam target
+      for(var i=0;i<fighters.length;i++){ var f=fighters[i]; var p=fpel(f); if(!p) continue;
+        var pr=R._prev[i]||p; var mvx=(p.x-pr.x)/Math.max(dt,1e-3), mvz=(p.z-pr.z)/Math.max(dt,1e-3);
+        R._prev[i]={x:p.x,y:p.y,z:p.z};
+        var av=avoid(R.x,R.z,p.x,p.z,mvx,mvz);
+        if(av){ tx=R.x+av.x; tz=R.z+av.z; }
+        // ref bump: fast body inside contact radius floors him (native refBump law)
+        var cd=Math.hypot(p.x-R.x,p.z-R.z), sp=Math.hypot(mvx,mvz);
+        if(cd<0.5 && sp>1.9 && R.down<=0){
+          R.down=2.5+Math.min(sp,3.8)*1.8;
+          try{ if(typeof announce==='function') announce('REF BUMP','the official is DOWN'); }catch(e){}
+        }
+      }
+      // jog toward target (capped ~2.6 m/s — refs jog, they don't sprint)
+      var ddx=tx-R.x, ddz=tz-R.z, dd=Math.hypot(ddx,ddz);
+      if(dd>0.05){ var v=Math.min(2.6, dd*3.2); R.x+=ddx/dd*v*dt; R.z+=ddz/dd*v*dt; }
+      if(face){ var w=Math.atan2(face.x-R.x, face.z-R.z); var dyaw=w-R.yaw; while(dyaw>Math.PI)dyaw-=2*Math.PI; while(dyaw<-Math.PI)dyaw+=2*Math.PI; R.yaw+=dyaw*Math.min(1,dt*6); }
+      R._bobT+=dt*6;
+      R.g.position.set(R.x, (pin?-0.22:0)+Math.sin(R._bobT)*0.01, R.z);
+      R.g.rotation.y=R.yaw;
+    }catch(e){}
+  }
+  var last=performance.now();
+  setInterval(function(){ var n=performance.now(); var dt=Math.min(0.08,(n-last)/1000); last=n; update(dt); }, 33);
+  window.BANNON_REF={ state:R, hasLoS:hasLoS, canCount:function(v){ return R.down<=0 && hasLoS(v); }, isDown:function(){ return R.down>0; } };
+  console.log('%c[BANNON_REF] referee entity armed — LoS-gated counts, lateral whip avoidance, real bumps (native bannon_referee.h laws)','color:#7CFC00');
 })();
 </script>
 </body>

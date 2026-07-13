@@ -443,3 +443,36 @@ ctest now 8/8 suites. The one real code asset — the REALITY CHECK glitch shade
 composer after BROADCAST_GRADE: `window.triggerRealityCheck(intensity[,holdSecs])` w/ auto-decay
 (verified: full inversion+RGB-split at 1.0, decays clean). JS wiring queue: referee entity in the
 match scene, submissionStep into the sub-minigame branch, TLC props when meshes land.
+
+## v157 pass (2026-07-13 — referee entity + physical submissions + mocap plan + env refs)
+- **BANNON_REF** (end-of-file script block): the referee as a physical entity — zebra-shirt
+  procedural body, roams off the action midpoint, ports native bannon_referee.h laws to JS:
+  LoS cone + body-occlusion pin gating (`BANNON_REF.canCount(victim)`), lateral whip avoidance,
+  ref bumps (fast body <0.5m → down 2.5+v·1.8s, counts suspend, "REF BUMP"). startPin's count
+  only advances while `canCount` (announces REF CAN'T SEE IT / NO REFEREE once per stall);
+  `window.__refPin` set/cleared at pin start/3-count/kickout drives his count positioning+arm.
+- **PHYSICAL SUBMISSIONS** (_v77StartSubmission, non-PIN path): native submissionStep model —
+  crank(momentum) vs resist(stamina) → joint rot past 1.2 limit → local limbHp drain → ORGANIC
+  tap (limbHp 0, or strain>0.92 w/ gas<6%); hold-local stamina pool (no regen mid-hold, engine
+  stamina clamped down each tick); strain>0.75 shrinks the escape zone; zero-strain holds at the
+  4.4s ceiling = "POWERED OUT" (no damage). Verified: gassed taps ~2.5s hp→0; fresh powers out.
+- **REAL-TIME CLOCKS**: sub + pin counts now advance on measured wall-time (capped dt), not tick
+  counts — under CPU load setInterval stretches (harness swiftshader 2.3Hz!; weak phones too) and
+  tick-count models stretched holds/counts with it. Same lesson class as the v152 crowd-lag fix.
+- **HARNESS GOTCHA (recorded in bannon-verify)**: freecamEnter() is the CAW MODEL-VIEWER — it
+  HIDES ringProcGroup + all other fighters BY DESIGN. Every "ringless void" screenshot ever taken
+  through it was this. Env/match shots: `FREECAM.on=true; freecamTarget=()=>null;` — never call
+  freecamEnter. Also renderer.info.render only shows the last composer pass (1 call/1 tri ≠ broken).
+- **ENV REFERENCE SET**: assets/reference/env_snapshots/ (14 shots, styled + clean-bloom) + README
+  brief + tools/tripo/gen_prompts.json env_* prompts — the Tripo image seeds for the environment
+  upgrade. Ring GLB should come WITHOUT ropes (verlet ropes stay procedural).
+- **docs/mocap_accuracy_plan.md** (BINDING): FBX clips = accuracy reference for authored grapple
+  phases (clip-sample at phase boundaries → diff → correct direction then magnitude, orientation
+  master prompt first); RagdollBlendMatrix spine-release, EmergentBotchMatrix hard-sever,
+  velocity-clipped dives, modes matrix (2K BroadcastEventMatrix / Tekken story splines / GM math /
+  God Within RPG) distilled from the owner's long-updates txts.
+- HALL_NIGHTER (Book 6 Showstopper) + STATIC 'The Interference' (Onyx stable, Enzo-model) live:
+  skins banked, identities, finishers (THE CURTAIN CALL / DEAD AIR), STATIC bind verified in-ring.
+  New owner models ~970k verts — decimation pass on skinner output QUEUED (phones will feel it).
+- TLC props: table/ladder meshes still not in Drive — native tableImpact/canBindLadderClimb ready,
+  JS wiring waits on meshes.
