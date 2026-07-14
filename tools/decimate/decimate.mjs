@@ -30,14 +30,27 @@ async function main() {
   const targetTris = arg('tris', 60000);
   const ratio = tris > 0 ? Math.min(1, targetTris / tris) : 1;
 
+  // Drop textures with no backing image BEFORE compression — a null source slot makes
+  // textureCompress throw ("Cannot read properties of undefined (reading 'source')") and
+  // abort the whole (otherwise valuable) geometry decimation. Detaching them is harmless.
+  for (const tex of doc.getRoot().listTextures()) {
+    if (!tex.getImage()) { tex.dispose(); }
+  }
+
   await doc.transform(
     weld({ tolerance: 0.0001 }),                     // merge coincident verts (helps the simplifier)
     simplify({ simplifier: MeshoptSimplifier, ratio, error: 0.01, lockBorder: false }),  // skin-aware decimate
     dedup(),
-    // textures: 4K PBR maps dominate the file size — resize + WebP (skinning untouched).
-    textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [TEX, TEX], quality: 85 }),
-    prune(),                                          // drop anything now-unused
+    prune(),                                          // drop anything now-unused (incl. orphaned textures)
   );
+
+  // textures: 4K PBR maps dominate the file size — resize + WebP (skinning untouched).
+  // Isolated in its own try so one bad texture can't cost us the geometry win.
+  try {
+    await doc.transform(textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [TEX, TEX], quality: 85 }));
+  } catch (e) {
+    console.warn(`  (texture compress skipped: ${e.message})`);
+  }
 
   await io.write(outP, doc);
 
