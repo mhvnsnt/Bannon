@@ -13463,6 +13463,24 @@ try{
   // TRIPLE XXX (Book canon) — Triple-H archetype reskinned around hedonism/XXX excess: cerebral but
   // "part animal, high-class snob." Corporate enforcer, Hall Nighter's prophesied rival.
   _addChar('TRIPLE_XXX',     { label:'The Cerebral Hedonist',   col:0x101820, accent:0x2a6acc, skin:0xe0b088, faction:'Corporate Structure', canon:true, bio:'The Game with the mask off — cerebral in the ring, an animal everywhere else. Sold out, went corporate, and never looked back. Sledgehammer swagger dressed in excess.', archetype:'powerhouse' }, 'TIGHTS', 'LONG', {musc:0.78,fat:0.16});
+  // v159 NEW OWNER MODEL DROP (2026-07-14) — identities for the freshly-skinned Drive characters so
+  // they appear in ROSTER_ALL, get a stat block + guard style, and bind to their AAA GLBs below.
+  // KOBRA — Viper's brother + former tag partner, turned rival ("stopped caring about the code").
+  // Venomous southpaw striker like his brother but colder and dirtier; Black (deep brown, Viper's kin).
+  _addChar('KOBRA',          { label:'The Venom',               col:0x0f2a14, accent:0x66ff33, skin:0x6a4326, faction:'Independent Variables', canon:false, bio:"Viper's brother and old tag partner — until he stopped caring about the code. Coils, waits, then strikes with everything; a dirtier, colder mirror of his brother's counter-game.", archetype:'striker' }, 'LONG_TIGHTS', 'SHORT', {musc:0.62,fat:0.12});
+  // MASTER SENSEI — Sauce-Walka-flavored flashy trash-talker with a mock-"sensei" martial gimmick;
+  // over-the-top drip and confidence. Rose attire (MASTER_SENSEI_rose.glb) = SSJ-Rose pink-hair look.
+  _addChar('MASTER_SENSEI',  { label:'The Sauce Sensei',        col:0xd4af37, accent:0xff33cc, skin:0x7a4a2e, faction:'Independent Variables', canon:false, bio:'All flash, all mouth, all sauce — a self-styled martial-arts master who teaches "lessons" nobody asked for. Snap kicks and showboat combos wrapped in gold and swagger.', archetype:'striker' }, 'TIGHTS', 'FADE', {musc:0.66,fat:0.16});
+  // WRECK PATTERSON — Jeff-Hardy daredevil crossed with a Damian-Priest dark edge: risk-everything
+  // high-flyer, face paint, arm sleeves, dives off anything. Attires: default / yellow title tee /
+  // graphic tee / God-Within demon shirt.
+  _addChar('WRECK_PATTERSON',{ label:'The Living Wreck',         col:0x2a1a3a, accent:0xc0c0c8, skin:0xc08a54, faction:'Independent Variables', canon:false, bio:'A daredevil with a death wish and a dark streak — paint-streaked, sleeve-tatted, and willing to throw his body off anything that stands. Beautiful disaster meets condemned reckoning.', archetype:'highFlyer' }, 'CARGO_PANTS', 'LONG', {musc:0.6,fat:0.12});
+  // NPC FINXSSE (Book canon) — "N.P.C. Finesse": a running-gag enhancement talent orbiting Finxsse's
+  // world, the guy who exists to make stars look good — until the glitch in him fires back.
+  _addChar('NPC_FINXSSE',    { label:'The Enhancement Talent',   col:0x1a1a22, accent:0x33ffcc, skin:0xa5683c, faction:'Independent Variables', canon:true, bio:'The perpetual jobber of the OTTR world — "N.P.C. Finesse," there to put others over. Predictable by design, right up until his programming misfires and he steals one.', archetype:'freeAgent' }, 'TRUNKS', 'SHORT', {musc:0.55,fat:0.2});
+  // TEXTBOOK AARON RUBEN (Book canon) — grizzled by-the-numbers veteran, comedy-technician: every hold
+  // is chapter-and-verse, every spot telegraphed and somehow still landed. The wily old pro.
+  _addChar('AARON_RUBEN',    { label:'Textbook',                 col:0xb02a2a, accent:0xf0e8d8, skin:0xd9a066, faction:'Free Agent', canon:true, bio:'A thirty-year man who wrestles straight out of the manual — chain wrestling by the numbers, comedy timing sharpened by decades. Underestimate the fundamentals and he schools you.', archetype:'technician' }, 'SINGLET', 'SHORT', {musc:0.5,fat:0.34});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13491,7 +13509,12 @@ try{
     STATIC:          { name:'DEAD AIR',                  kind:'grapple', pos:'DDT',         deliver:'spike' },
     HOLLOW:          { name:'THE VANISHING POINT',       kind:'grapple', pos:'TIGER_DRIVER',deliver:'spike' },
     PABLO:           { name:'THE GORING',                kind:'grapple', pos:'POWERBOMB',   deliver:'slam'  },
-    TRIPLE_XXX:      { name:'THE LAST INDULGENCE',       kind:'grapple', pos:'DDT',         deliver:'spike' }
+    TRIPLE_XXX:      { name:'THE LAST INDULGENCE',       kind:'grapple', pos:'DDT',         deliver:'spike' },
+    KOBRA:           { name:'THE ENVENOMATION',          kind:'grapple', pos:'CHOKESLAM',   deliver:'choke' },
+    MASTER_SENSEI:   { name:'THE FINAL LESSON',          kind:'strike' },
+    WRECK_PATTERSON: { name:'THE WRECKING BALL',         kind:'strike' },
+    NPC_FINXSSE:     { name:'THE HARD RESET',            kind:'grapple', pos:'DDT',         deliver:'spike' },
+    AARON_RUBEN:     { name:'BY THE BOOK',               kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  }
   });
   // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
   window.CHAR_FINISHERS = Object.assign(window.CHAR_FINISHERS||{}, {
@@ -13839,6 +13862,22 @@ const MODEL_LIBRARY = [
   { name:'TRIPLE XXX · Suit/Manager', url:'assets/models/TRIPLE_XXX_suit.glb', charKey:'TRIPLE_XXX' },
   { name:'EL TORO DE ORO · Matador', url:'assets/models/EL_TORO_DE_ORO.glb', charKey:'EL_TORO_DE_ORO' },
   { name:'STAN "HONEY" COMBS · Ring Gear', url:'assets/models/STAN_COMBS_gear.glb', charKey:'STAN_COMBS' },
+  // 2026-07-14 owner drop — new + game-only fighters (auto-skinned v4.4 A-pose rigger, decimated):
+  { name:'VIPER · Default', url:'assets/models/VIPER.glb', charKey:'VIPER' },
+  { name:'BRUTUS', url:'assets/models/BRUTUS.glb', charKey:'BRUTUS' },
+  { name:'TITAN · Attire 1', url:'assets/models/TITAN.glb', charKey:'TITAN' },
+  { name:'TITAN · White/Masked', url:'assets/models/TITAN_white.glb', charKey:'TITAN' },
+  { name:'TITAN · Unmasked', url:'assets/models/TITAN_unmasked.glb', charKey:'TITAN' },
+  { name:'KOBRA', url:'assets/models/KOBRA.glb', charKey:'KOBRA' },
+  { name:'MASTER SENSEI · Sauce', url:'assets/models/MASTER_SENSEI.glb', charKey:'MASTER_SENSEI' },
+  { name:'MASTER SENSEI · Rose', url:'assets/models/MASTER_SENSEI_rose.glb', charKey:'MASTER_SENSEI' },
+  { name:'WRECK PATTERSON · Default', url:'assets/models/WRECK_PATTERSON.glb', charKey:'WRECK_PATTERSON' },
+  { name:'WRECK PATTERSON · Title Tee', url:'assets/models/WRECK_PATTERSON_attire2.glb', charKey:'WRECK_PATTERSON' },
+  { name:'WRECK PATTERSON · Graphic Tee', url:'assets/models/WRECK_PATTERSON_attire3.glb', charKey:'WRECK_PATTERSON' },
+  { name:'WRECK PATTERSON · God Within', url:'assets/models/WRECK_PATTERSON_godwithin.glb', charKey:'WRECK_PATTERSON' },
+  { name:'NPC FINXSSE', url:'assets/models/NPC_FINXSSE.glb', charKey:'NPC_FINXSSE' },
+  { name:'AARON RUBEN · Textbook', url:'assets/models/AARON_RUBEN.glb', charKey:'AARON_RUBEN' },
+  { name:'CAIN ELIAS · God Within', url:'assets/models/CAIN_ELIAS_godwithin.glb', charKey:'CAIN_ELIAS' },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },
@@ -13922,7 +13961,16 @@ const CHAR_MODEL_DEFAULTS = {
   QUEEN_TYNESHIA:{url:'assets/models/TYNESHIA.glb',name:'QUEEN TYNESHIA'},
   TRIPLE_XXX:{url:'assets/models/TRIPLE_XXX.glb',name:'TRIPLE XXX'},
   EL_TORO_DE_ORO:{url:'assets/models/EL_TORO_DE_ORO.glb',name:'EL TORO DE ORO'},
-  STAN_COMBS:{url:'assets/models/STAN_COMBS_gear.glb',name:'STAN COMBS'}
+  STAN_COMBS:{url:'assets/models/STAN_COMBS_gear.glb',name:'STAN COMBS'},
+  // v159 owner drop (2026-07-14) — auto-load the freshly skinned + decimated AAA GLBs
+  VIPER:{url:'assets/models/VIPER.glb',name:'VIPER'},
+  BRUTUS:{url:'assets/models/BRUTUS.glb',name:'BRUTUS'},
+  TITAN:{url:'assets/models/TITAN.glb',name:'TITAN'},
+  KOBRA:{url:'assets/models/KOBRA.glb',name:'KOBRA'},
+  MASTER_SENSEI:{url:'assets/models/MASTER_SENSEI.glb',name:'MASTER SENSEI'},
+  WRECK_PATTERSON:{url:'assets/models/WRECK_PATTERSON.glb',name:'WRECK PATTERSON'},
+  NPC_FINXSSE:{url:'assets/models/NPC_FINXSSE.glb',name:'NPC FINXSSE'},
+  AARON_RUBEN:{url:'assets/models/AARON_RUBEN.glb',name:'AARON RUBEN'}
 };
 let CHAR_MODEL = (function(){ try{ var r=localStorage.getItem('bannonCharModels'); if(r) return JSON.parse(r); }catch(e){} return {}; })();
 function charModelKey(f){ var n=(typeof fname==='function'?fname(f):(f&&f.opts&&f.opts.name))||''; return String(n).toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
