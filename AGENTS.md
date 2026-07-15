@@ -9,5 +9,8 @@ Never ask for permission to monitor; just do it until merged.
 ### RECURSIVE TASK VERIFICATION
 Before executing any task, GET the latest commit on main and check if that task was already completed in the last 3 commits. If it was, skip it and move to the next task.
 
+### WORK RULES
+Never work on tasks not explicitly in the current PLANNED list. Finding related code in the repo is not permission to extend it.
+
 ### PLANNED
 - None.
