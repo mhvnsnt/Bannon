@@ -36739,6 +36739,56 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         originalHit.call(this, move);
     };
 })();
+
+(function() {
+    const originalUpdate = Fighter.prototype.update;
+    Fighter.prototype.update = function(dt) {
+        // AI Lockup logic
+        if (this.isAI && this.state === 'idle' && this.stamina > 40 && Math.random() < 0.6 && this.target && this.distanceTo(this.target) < 100) {
+           this.initLockup();
+        }
+        
+        // Lockup state processing
+        if (this.state === 'lockup') {
+            this.stateTime += dt;
+            if (this.stateTime > 3.0) { // 3s break
+                this.state = 'idle';
+                this.target.state = 'idle';
+                this.stateTime = 0;
+            } else {
+                // Struggle mechanic every 0.4s
+                if (!this.lastStruggle || this.stateTime - this.lastStruggle > 0.4) {
+                    this.lastStruggle = this.stateTime;
+                    const roll = Math.random() * (this.stamina + this.target.stamina);
+                    if (roll < this.stamina) {
+                        this.struggleScore += 15;
+                        this.target.struggleScore -= 15;
+                    } else {
+                        this.struggleScore -= 15;
+                        this.target.struggleScore += 15;
+                    }
+                    if (this.struggleScore >= 100) this.winLockup();
+                    else if (this.target.struggleScore >= 100) this.target.winLockup();
+                }
+            }
+        }
+        originalUpdate.call(this, dt);
+    };
+
+    Fighter.prototype.initLockup = function() {
+        this.state = 'lockup';
+        this.target.state = 'lockup';
+        this.struggleScore = 50;
+        this.target.struggleScore = 50;
+        console.log('STRUGGLE!');
+    };
+
+    Fighter.prototype.winLockup = function() {
+        this.state = 'attack';
+        this.target.state = 'stumble';
+        this.target.stateTime = 0;
+    };
+})();
 </script>
 </body>
 </html>
