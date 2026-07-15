@@ -12,7 +12,7 @@ const F = 'BANNON_v150.html';
 const src = fs.readFileSync(F, 'utf8');
 const lines = src.split('\n').length;
 
-const MIN_LINES = -200;   // raise this as the file legitimately grows; never let a merge sink below it
+const MIN_LINES = 36403;   // raise this as the file legitimately grows; never let a merge sink below it
 const SENTINELS = [
   ['multi-man match engine',      'MATCH RULES + MULTI-MAN ENGINE'],
   ['menu multi-slots',            'MULTI_TYPES'],
