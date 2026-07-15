@@ -1,170 +1,76 @@
-
-(function() {
-    // Environmental Object Prototype
-    window.EnvObject = function(type, x, y) {
-        this.type = type; // 'table' or 'ladder'
-        this.hp = 100;
-        this.x = x; this.y = y;
-        this.broken = false;
-    };
-
-    Fighter.prototype.checkEnvCollisions = function() {
-        if (this.velocity > 500 && this.state === 'attack') {
-            // Check collision with objects...
-            // Simplified: check against table
-            if (this.target && this.target.type === 'table' && this.target.hp > 0) {
-                this.target.hp = 0;
-                this.target.broken = true;
-                this.target.state = 'broken';
-                this.state = 'hurt';
-                this.hp -= 15;
-                showFighterLabel(this, 'TABLE!');
-                console.log('TABLE!');
-            }
-        }
-    };
-    
-    // Add check to update loop
-    const originalUpdate = Fighter.prototype.update;
-    Fighter.prototype.update = function(dt) {
-        this.checkEnvCollisions();
-        originalUpdate.call(this, dt);
-    };
-})();
-(function() {
-    Fighter.prototype.initSubmission = function(target) {
-        this.state = 'submitting';
-        this.target = target;
-        target.state = 'submitted';
-        this.subProgress = 50;
-        showFighterLabel(this, 'SUBMISSION!');
-        showFighterLabel(target, 'SUBMISSION!');
-    };
-
-    const originalUpdate = Fighter.prototype.update;
-    Fighter.prototype.update = function(dt) {
-        if (this.state === 'submitting') {
-            // Button mash mechanic placeholder
-            // In reality, this would check inputs
-            this.subProgress += (Math.random() - 0.5) * 5;
-            if (this.subProgress >= 100) {
-                this.state = 'idle';
-                this.target.state = 'knockout';
-                showFighterLabel(this, 'TAP OUT!');
-            }
-        }
-        originalUpdate.call(this, dt);
-    };
-})();
-
-(function() {
-    Fighter.prototype.processReversal = function(type) {
-        // type: Breaker, Block, Dodge, Mid-move
-        this.state = 'idle';
-        showFighterLabel(this, type.toUpperCase() + '!');
-        console.log('Reversal: ' + type);
-        
-        // Specific logic per type could be added here
-        if (type === 'Breaker') {
-            this.target.state = 'stumble';
-        }
-    };
-})();
-
-(function() {
-    // New states: apron, tree-of-woe, avalanche, corner-seated
-    Fighter.prototype.setPositionalState = function(state) {
-        this.state = state;
-        showFighterLabel(this, state.replace('-', ' ').toUpperCase());
-        console.log('Positional State: ' + state);
-    };
-})();
-
-(function() {
-    const originalInit = Fighter.prototype.init || function() {};
-    Fighter.prototype.init = function() {
-        originalInit.call(this);
-        this.damageMap = { head: 0, torso: 0, limbs: 0 };
-    };
-    
-    const originalHit = Fighter.prototype.handleHit || function() {};
-    Fighter.prototype.handleHit = function(move) {
-        if (!this.damageMap) this.damageMap = { head: 0, torso: 0, limbs: 0 };
-        const zone = move.zone || 'torso';
-        this.damageMap[zone] += 5;
-        if (this.damageMap[zone] > 30) {
-            showFighterLabel(this, zone.toUpperCase() + ' DAMAGED!');
-        }
-        originalHit.call(this, move);
-    };
-})();
-
-(function() {
-    Fighter.prototype.transitionGroundState = function(newState) {
-        // newState: mount, guard, back-take
-        this.groundState = newState;
-        showFighterLabel(this, newState.toUpperCase());
-        console.log('Ground State: ' + newState);
-    };
-})();
-
-(function() {
-    window.PromotionSim = {
-        bookMatch: function(f1, f2) {
-            console.log('Booking: ' + f1.name + ' vs ' + f2.name);
-            showFighterLabel(f1, 'MATCH BOOKED');
-            showFighterLabel(f2, 'MATCH BOOKED');
-        }
-    };
-})();
-
-(function() {
-    window.Crowd = {
-        momentum: 50,
-        updateMomentum: function(delta) {
-            this.momentum = Math.max(0, Math.min(100, this.momentum + delta));
-            console.log('Crowd Momentum: ' + this.momentum);
-        }
-    };
-    
-    // Hook hit to update momentum
-    const originalHit = Fighter.prototype.handleHit || function() {};
-    Fighter.prototype.handleHit = function(move) {
-        Crowd.updateMomentum(move.isHeavy ? 5 : 2);
-        originalHit.call(this, move);
-    };
-})();
-
+{"name":"BANNON_v150.html","path":"BANNON_v150.html","sha":"3bd01adc4007a5ec01f92aaa5fa89932066cc905","size":5601,"url":"https://api.github.com/repos/mhvnsnt/Bannon/contents/BANNON_v150.html?ref=main","html_url":"https://github.com/mhvnsnt/Bannon/blob/main/BANNON_v150.html","git_url":"https://api.github.com/repos/mhvnsnt/Bannon/git/blobs/3bd01adc4007a5ec01f92aaa5fa89932066cc905","download_url":"https://raw.githubusercontent.com/mhvnsnt/Bannon/main/BANNON_v150.html","type":"file","content":"CihmdW5jdGlvbigpIHsKICAgIC8vIEVudmlyb25tZW50YWwgT2JqZWN0IFBy\nb3RvdHlwZQogICAgd2luZG93LkVudk9iamVjdCA9IGZ1bmN0aW9uKHR5cGUs\nIHgsIHkpIHsKICAgICAgICB0aGlzLnR5cGUgPSB0eXBlOyAvLyAndGFibGUn\nIG9yICdsYWRkZXInCiAgICAgICAgdGhpcy5ocCA9IDEwMDsKICAgICAgICB0\naGlzLnggPSB4OyB0aGlzLnkgPSB5OwogICAgICAgIHRoaXMuYnJva2VuID0g\nZmFsc2U7CiAgICB9OwoKICAgIEZpZ2h0ZXIucHJvdG90eXBlLmNoZWNrRW52\nQ29sbGlzaW9ucyA9IGZ1bmN0aW9uKCkgewogICAgICAgIGlmICh0aGlzLnZl\nbG9jaXR5ID4gNTAwICYmIHRoaXMuc3RhdGUgPT09ICdhdHRhY2snKSB7CiAg\nICAgICAgICAgIC8vIENoZWNrIGNvbGxpc2lvbiB3aXRoIG9iamVjdHMuLi4K\nICAgICAgICAgICAgLy8gU2ltcGxpZmllZDogY2hlY2sgYWdhaW5zdCB0YWJs\nZQogICAgICAgICAgICBpZiAodGhpcy50YXJnZXQgJiYgdGhpcy50YXJnZXQu\ndHlwZSA9PT0gJ3RhYmxlJyAmJiB0aGlzLnRhcmdldC5ocCA+IDApIHsKICAg\nICAgICAgICAgICAgIHRoaXMudGFyZ2V0LmhwID0gMDsKICAgICAgICAgICAg\nICAgIHRoaXMudGFyZ2V0LmJyb2tlbiA9IHRydWU7CiAgICAgICAgICAgICAg\nICB0aGlzLnRhcmdldC5zdGF0ZSA9ICdicm9rZW4nOwogICAgICAgICAgICAg\nICAgdGhpcy5zdGF0ZSA9ICdodXJ0JzsKICAgICAgICAgICAgICAgIHRoaXMu\naHAgLT0gMTU7CiAgICAgICAgICAgICAgICBzaG93RmlnaHRlckxhYmVsKHRo\naXMsICdUQUJMRSEnKTsKICAgICAgICAgICAgICAgIGNvbnNvbGUubG9nKCdU\nQUJMRSEnKTsKICAgICAgICAgICAgfQogICAgICAgIH0KICAgIH07CiAgICAK\nICAgIC8vIEFkZCBjaGVjayB0byB1cGRhdGUgbG9vcAogICAgY29uc3Qgb3Jp\nZ2luYWxVcGRhdGUgPSBGaWdodGVyLnByb3RvdHlwZS51cGRhdGU7CiAgICBG\naWdodGVyLnByb3RvdHlwZS51cGRhdGUgPSBmdW5jdGlvbihkdCkgewogICAg\nICAgIHRoaXMuY2hlY2tFbnZDb2xsaXNpb25zKCk7CiAgICAgICAgb3JpZ2lu\nYWxVcGRhdGUuY2FsbCh0aGlzLCBkdCk7CiAgICB9Owp9KSgpOwooZnVuY3Rp\nb24oKSB7CiAgICBGaWdodGVyLnByb3RvdHlwZS5pbml0U3VibWlzc2lvbiA9\nIGZ1bmN0aW9uKHRhcmdldCkgewogICAgICAgIHRoaXMuc3RhdGUgPSAnc3Vi\nbWl0dGluZyc7CiAgICAgICAgdGhpcy50YXJnZXQgPSB0YXJnZXQ7CiAgICAg\nICAgdGFyZ2V0LnN0YXRlID0gJ3N1Ym1pdHRlZCc7CiAgICAgICAgdGhpcy5z\ndWJQcm9ncmVzcyA9IDUwOwogICAgICAgIHNob3dGaWdodGVyTGFiZWwodGhp\ncywgJ1NVQk1JU1NJT04hJyk7CiAgICAgICAgc2hvd0ZpZ2h0ZXJMYWJlbCh0\nYXJnZXQsICdTVUJNSVNTSU9OIScpOwogICAgfTsKCiAgICBjb25zdCBvcmln\naW5hbFVwZGF0ZSA9IEZpZ2h0ZXIucHJvdG90eXBlLnVwZGF0ZTsKICAgIEZp\nZ2h0ZXIucHJvdG90eXBlLnVwZGF0ZSA9IGZ1bmN0aW9uKGR0KSB7CiAgICAg\nICAgaWYgKHRoaXMuc3RhdGUgPT09ICdzdWJtaXR0aW5nJykgewogICAgICAg\nICAgICAvLyBCdXR0b24gbWFzaCBtZWNoYW5pYyBwbGFjZWhvbGRlcgogICAg\nICAgICAgICAvLyBJbiByZWFsaXR5LCB0aGlzIHdvdWxkIGNoZWNrIGlucHV0\ncwogICAgICAgICAgICB0aGlzLnN1YlByb2dyZXNzICs9IChNYXRoLnJhbmRv\nbSgpIC0gMC41KSAqIDU7CiAgICAgICAgICAgIGlmICh0aGlzLnN1YlByb2dy\nZXNzID49IDEwMCkgewogICAgICAgICAgICAgICAgdGhpcy5zdGF0ZSA9ICdp\nZGxlJzsKICAgICAgICAgICAgICAgIHRoaXMudGFyZ2V0LnN0YXRlID0gJ2tu\nb2Nrb3V0JzsKICAgICAgICAgICAgICAgIHNob3dGaWdodGVyTGFiZWwodGhp\ncywgJ1RBUCBPVVQhJyk7CiAgICAgICAgICAgIH0KICAgICAgICB9CiAgICAg\nICAgb3JpZ2luYWxVcGRhdGUuY2FsbCh0aGlzLCBkdCk7CiAgICB9Owp9KSgp\nOwoKKGZ1bmN0aW9uKCkgewogICAgRmlnaHRlci5wcm90b3R5cGUucHJvY2Vz\nc1JldmVyc2FsID0gZnVuY3Rpb24odHlwZSkgewogICAgICAgIC8vIHR5cGU6\nIEJyZWFrZXIsIEJsb2NrLCBEb2RnZSwgTWlkLW1vdmUKICAgICAgICB0aGlz\nLnN0YXRlID0gJ2lkbGUnOwogICAgICAgIHNob3dGaWdodGVyTGFiZWwodGhp\ncywgdHlwZS50b1VwcGVyQ2FzZSgpICsgJyEnKTsKICAgICAgICBjb25zb2xl\nLmxvZygnUmV2ZXJzYWw6ICcgKyB0eXBlKTsKICAgICAgICAKICAgICAgICAv\nLyBTcGVjaWZpYyBsb2dpYyBwZXIgdHlwZSBjb3VsZCBiZSBhZGRlZCBoZXJl\nCiAgICAgICAgaWYgKHR5cGUgPT09ICdCcmVha2VyJykgewogICAgICAgICAg\nICB0aGlzLnRhcmdldC5zdGF0ZSA9ICdzdHVtYmxlJzsKICAgICAgICB9CiAg\nICB9Owp9KSgpOwoKKGZ1bmN0aW9uKCkgewogICAgLy8gTmV3IHN0YXRlczog\nYXByb24sIHRyZWUtb2Ytd29lLCBhdmFsYW5jaGUsIGNvcm5lci1zZWF0ZWQK\nICAgIEZpZ2h0ZXIucHJvdG90eXBlLnNldFBvc2l0aW9uYWxTdGF0ZSA9IGZ1\nbmN0aW9uKHN0YXRlKSB7CiAgICAgICAgdGhpcy5zdGF0ZSA9IHN0YXRlOwog\nICAgICAgIHNob3dGaWdodGVyTGFiZWwodGhpcywgc3RhdGUucmVwbGFjZSgn\nLScsICcgJykudG9VcHBlckNhc2UoKSk7CiAgICAgICAgY29uc29sZS5sb2co\nJ1Bvc2l0aW9uYWwgU3RhdGU6ICcgKyBzdGF0ZSk7CiAgICB9Owp9KSgpOwoK\nKGZ1bmN0aW9uKCkgewogICAgY29uc3Qgb3JpZ2luYWxJbml0ID0gRmlnaHRl\nci5wcm90b3R5cGUuaW5pdCB8fCBmdW5jdGlvbigpIHt9OwogICAgRmlnaHRl\nci5wcm90b3R5cGUuaW5pdCA9IGZ1bmN0aW9uKCkgewogICAgICAgIG9yaWdp\nbmFsSW5pdC5jYWxsKHRoaXMpOwogICAgICAgIHRoaXMuZGFtYWdlTWFwID0g\neyBoZWFkOiAwLCB0b3JzbzogMCwgbGltYnM6IDAgfTsKICAgIH07CiAgICAK\nICAgIGNvbnN0IG9yaWdpbmFsSGl0ID0gRmlnaHRlci5wcm90b3R5cGUuaGFu\nZGxlSGl0IHx8IGZ1bmN0aW9uKCkge307CiAgICBGaWdodGVyLnByb3RvdHlw\nZS5oYW5kbGVIaXQgPSBmdW5jdGlvbihtb3ZlKSB7CiAgICAgICAgaWYgKCF0\naGlzLmRhbWFnZU1hcCkgdGhpcy5kYW1hZ2VNYXAgPSB7IGhlYWQ6IDAsIHRv\ncnNvOiAwLCBsaW1iczogMCB9OwogICAgICAgIGNvbnN0IHpvbmUgPSBtb3Zl\nLnpvbmUgfHwgJ3RvcnNvJzsKICAgICAgICB0aGlzLmRhbWFnZU1hcFt6b25l\nXSArPSA1OwogICAgICAgIGlmICh0aGlzLmRhbWFnZU1hcFt6b25lXSA+IDMw\nKSB7CiAgICAgICAgICAgIHNob3dGaWdodGVyTGFiZWwodGhpcywgem9uZS50\nb1VwcGVyQ2FzZSgpICsgJyBEQU1BR0VEIScpOwogICAgICAgIH0KICAgICAg\nICBvcmlnaW5hbEhpdC5jYWxsKHRoaXMsIG1vdmUpOwogICAgfTsKfSkoKTsK\nCihmdW5jdGlvbigpIHsKICAgIEZpZ2h0ZXIucHJvdG90eXBlLnRyYW5zaXRp\nb25Hcm91bmRTdGF0ZSA9IGZ1bmN0aW9uKG5ld1N0YXRlKSB7CiAgICAgICAg\nLy8gbmV3U3RhdGU6IG1vdW50LCBndWFyZCwgYmFjay10YWtlCiAgICAgICAg\ndGhpcy5ncm91bmRTdGF0ZSA9IG5ld1N0YXRlOwogICAgICAgIHNob3dGaWdo\ndGVyTGFiZWwodGhpcywgbmV3U3RhdGUudG9VcHBlckNhc2UoKSk7CiAgICAg\nICAgY29uc29sZS5sb2coJ0dyb3VuZCBTdGF0ZTogJyArIG5ld1N0YXRlKTsK\nICAgIH07Cn0pKCk7CgooZnVuY3Rpb24oKSB7CiAgICB3aW5kb3cuUHJvbW90\naW9uU2ltID0gewogICAgICAgIGJvb2tNYXRjaDogZnVuY3Rpb24oZjEsIGYy\nKSB7CiAgICAgICAgICAgIGNvbnNvbGUubG9nKCdCb29raW5nOiAnICsgZjEu\nbmFtZSArICcgdnMgJyArIGYyLm5hbWUpOwogICAgICAgICAgICBzaG93Rmln\naHRlckxhYmVsKGYxLCAnTUFUQ0ggQk9PS0VEJyk7CiAgICAgICAgICAgIHNo\nb3dGaWdodGVyTGFiZWwoZjIsICdNQVRDSCBCT09LRUQnKTsKICAgICAgICB9\nCiAgICB9Owp9KSgpOwoKKGZ1bmN0aW9uKCkgewogICAgd2luZG93LkNyb3dk\nID0gewogICAgICAgIG1vbWVudHVtOiA1MCwKICAgICAgICB1cGRhdGVNb21l\nbnR1bTogZnVuY3Rpb24oZGVsdGEpIHsKICAgICAgICAgICAgdGhpcy5tb21l\nbnR1bSA9IE1hdGgubWF4KDAsIE1hdGgubWluKDEwMCwgdGhpcy5tb21lbnR1\nbSArIGRlbHRhKSk7CiAgICAgICAgICAgIGNvbnNvbGUubG9nKCdDcm93ZCBN\nb21lbnR1bTogJyArIHRoaXMubW9tZW50dW0pOwogICAgICAgIH0KICAgIH07\nCiAgICAKICAgIC8vIEhvb2sgaGl0IHRvIHVwZGF0ZSBtb21lbnR1bQogICAg\nY29uc3Qgb3JpZ2luYWxIaXQgPSBGaWdodGVyLnByb3RvdHlwZS5oYW5kbGVI\naXQgfHwgZnVuY3Rpb24oKSB7fTsKICAgIEZpZ2h0ZXIucHJvdG90eXBlLmhh\nbmRsZUhpdCA9IGZ1bmN0aW9uKG1vdmUpIHsKICAgICAgICBDcm93ZC51cGRh\ndGVNb21lbnR1bShtb3ZlLmlzSGVhdnkgPyA1IDogMik7CiAgICAgICAgb3Jp\nZ2luYWxIaXQuY2FsbCh0aGlzLCBtb3ZlKTsKICAgIH07Cn0pKCk7Cgo8c2Ny\naXB0PgooZnVuY3Rpb24oKSB7CiAgICAvLyAxLiB0cmFuc2l0aW9uR3JvdW5k\nU3RhdGUKICAgIEZpZ2h0ZXIucHJvdG90eXBlLnRyYW5zaXRpb25Hcm91bmRT\ndGF0ZSA9IGZ1bmN0aW9uKG5ld1N0YXRlKSB7CiAgICAgICAgdGhpcy5ncm91\nbmRTdGF0ZSA9IG5ld1N0YXRlOwogICAgICAgIC8vIExvZ2ljOiBwbGF5IGFu\naW1hdGlvbiwgdXBkYXRlIGNvbGxpc2lvbiBtYXNrCiAgICAgICAgc2hvd0Zp\nZ2h0ZXJMYWJlbCh0aGlzLCAnR1JPVU5EOiAnICsgbmV3U3RhdGUudG9VcHBl\nckNhc2UoKSk7CiAgICB9OwogICAgLy8gMi4gdXBkYXRlTW9tZW50dW0KICAg\nIHdpbmRvdy5Dcm93ZC51cGRhdGVNb21lbnR1bSA9IGZ1bmN0aW9uKGRlbHRh\nKSB7CiAgICAgICAgdGhpcy5tb21lbnR1bSA9IE1hdGgubWF4KDAsIE1hdGgu\nbWluKDEwMCwgdGhpcy5tb21lbnR1bSArIGRlbHRhKSk7CiAgICAgICAgLy8g\nTG9naWM6IHRyaWdnZXIgdmlzdWFsIHNoaWZ0cyBpbiBIVUQgYmFzZWQgb24g\nbW9tZW50dW0KICAgIH07CiAgICAvLyAzLiBib29rTWF0Y2gKICAgIHdpbmRv\ndy5Qcm9tb3Rpb25TaW0uYm9va01hdGNoID0gZnVuY3Rpb24oZjEsIGYyKSB7\nCiAgICAgICAgLy8gTG9naWM6IGdlbmVyYXRlIG1hdGNoIGNhcmQgZGF0YSBz\ndHJ1Y3R1cmUKICAgICAgICBzaG93RmlnaHRlckxhYmVsKGYxLCAnTUFUQ0g6\nICcgKyBmMi5uYW1lKTsKICAgIH07CiAgICAvLyA0LiBzZXRQb3NpdGlvbmFs\nU3RhdGUKICAgIEZpZ2h0ZXIucHJvdG90eXBlLnNldFBvc2l0aW9uYWxTdGF0\nZSA9IGZ1bmN0aW9uKHN0YXRlKSB7CiAgICAgICAgdGhpcy5zdGF0ZSA9IHN0\nYXRlOwogICAgICAgIC8vIExvZ2ljOiBzd2l0Y2ggbW92ZW1lbnQgYW5pbSBz\nZXQgdG8gcG9zaXRpb24tc3BlY2lmaWMKICAgICAgICBzaG93RmlnaHRlckxh\nYmVsKHRoaXMsIHN0YXRlLnRvVXBwZXJDYXNlKCkpOwogICAgfTsKICAgIC8v\nIDUuIHByb2Nlc3NSZXZlcnNhbAogICAgRmlnaHRlci5wcm90b3R5cGUucHJv\nY2Vzc1JldmVyc2FsID0gZnVuY3Rpb24odHlwZSkgewogICAgICAgIHRoaXMu\nc3RhdGUgPSAnaWRsZSc7CiAgICAgICAgLy8gTG9naWM6IHBsYXkgcmV2ZXJz\nYWwgYW5pbWF0aW9uLCBicmVhayBvcHBvbmVudCBjb21ibwogICAgICAgIHNo\nb3dGaWdodGVyTGFiZWwodGhpcywgdHlwZS50b1VwcGVyQ2FzZSgpKTsKICAg\nIH07Cn0pKCk7Cjwvc2NyaXB0PgoK\n","encoding":"base64","_links":{"self":"https://api.github.com/repos/mhvnsnt/Bannon/contents/BANNON_v150.html?ref=main","git":"https://api.github.com/repos/mhvnsnt/Bannon/git/blobs/3bd01adc4007a5ec01f92aaa5fa89932066cc905","html":"https://github.com/mhvnsnt/Bannon/blob/main/BANNON_v150.html"}
 <script>
 (function() {
-    // 1. transitionGroundState
-    Fighter.prototype.transitionGroundState = function(newState) {
-        this.groundState = newState;
-        // Logic: play animation, update collision mask
-        showFighterLabel(this, 'GROUND: ' + newState.toUpperCase());
+    // 1 & 3: Stun and Damage Prototype Additions
+    Fighter.prototype.initGameMechanics = function() {
+        this.stunMeter = 0;
+        this.reversalWindow = 0;
+        this.damageMap = { head: 0, torso: 0, limbs: 0 };
     };
-    // 2. updateMomentum
-    window.Crowd.updateMomentum = function(delta) {
-        this.momentum = Math.max(0, Math.min(100, this.momentum + delta));
-        // Logic: trigger visual shifts in HUD based on momentum
+
+    const originalUpdate = Fighter.prototype.update;
+    Fighter.prototype.update = function(dt) {
+        if (this.stunMeter === undefined) this.initGameMechanics();
+
+        // Stun Decay
+        if (this.stunMeter > 0 && this.state !== 'stunned') {
+            this.stunMeter = Math.max(0, this.stunMeter - (8 * dt));
+        }
+        
+        // Reversal Window
+        if (this.reversalWindow > 0) this.reversalWindow -= dt;
+
+        // Damage Modifiers
+        this.applyDamageModifiers();
+
+        // Stun State Logic
+        if (this.state === 'stunned') {
+            this.stateTimer -= dt;
+            if (this.stateTimer <= 0) {
+                this.state = 'idle';
+                this.stunMeter = 0;
+            }
+        }
+        
+        originalUpdate.call(this, dt);
     };
-    // 3. bookMatch
-    window.PromotionSim.bookMatch = function(f1, f2) {
-        // Logic: generate match card data structure
-        showFighterLabel(f1, 'MATCH: ' + f2.name);
+
+    Fighter.prototype.applyDamageModifiers = function() {
+        // Simple mock of applying logic
+        if (this.damageMap.head > 40) {/* accuracy reduced */}
+        if (this.damageMap.torso > 50) {/* stamina regen reduced */}
     };
-    // 4. setPositionalState
-    Fighter.prototype.setPositionalState = function(state) {
-        this.state = state;
-        // Logic: switch movement anim set to position-specific
-        showFighterLabel(this, state.toUpperCase());
+
+    const originalHit = Fighter.prototype.handleHit || function() {};
+    Fighter.prototype.handleHit = function(move) {
+        if (this.stunMeter === undefined) this.initGameMechanics();
+        
+        // Stun Accumulation
+        if (move.isHeavy) {
+            this.stunMeter = Math.min(100, this.stunMeter + (move.power * 0.35));
+            if (this.stunMeter >= 100) {
+                this.state = 'stunned';
+                this.stateTimer = 1.2;
+                this.stunMeter = 0;
+                showFighterLabel(this, 'STUNNED');
+            }
+        }
+        
+        // Damage Accumulation
+        const zone = move.zone || 'torso';
+        this.damageMap[zone] += 5;
+        
+        originalHit.call(this, move);
     };
-    // 5. processReversal
-    Fighter.prototype.processReversal = function(type) {
-        this.state = 'idle';
-        // Logic: play reversal animation, break opponent combo
-        showFighterLabel(this, type.toUpperCase());
+
+    // 2: Reversal logic
+    Fighter.prototype.processReversal = function() {
+        this.target.state = 'stumble';
+        this.target.stateTimer = 0.6;
+        this.state = 'attack';
+        showFighterLabel(this, 'REVERSAL!');
+        this.reversalWindow = 0;
     };
 })();
 </script>
-
+}
