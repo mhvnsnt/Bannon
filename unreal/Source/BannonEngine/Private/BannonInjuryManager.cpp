@@ -1,20 +1,15 @@
 // Copyright BANNON.
 #include "BannonInjuryManager.h"
-#include "BannonFighterCharacter.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
-void UBannonInjuryManager::RegisterInjury(AActor* Fighter, FName BodyPart, float DamageAmount)
+void UBannonInjuryManager::RegisterInjury(AActor* Fighter, FName BodyPart, float Severity)
 {
-    ABannonFighterCharacter* FighterChar = Cast<ABannonFighterCharacter>(Fighter);
-    if (FighterChar)
+    ACharacter* Char = Cast<ACharacter>(Fighter);
+    if (Char && BodyPart == FName("Leg"))
     {
-        if (BodyPart == FName("Head"))
-        {
-            FighterChar->HeadCutAlpha = FMath::Clamp(FighterChar->HeadCutAlpha + (DamageAmount * 0.01f), 0.0f, 1.0f);
-        }
-        else if (BodyPart == FName("Torso"))
-        {
-            FighterChar->TorsoBruiseAlpha = FMath::Clamp(FighterChar->TorsoBruiseAlpha + (DamageAmount * 0.01f), 0.0f, 1.0f);
-        }
-        FighterChar->RefreshDamageMaterials();
+        float NewSpeed = FMath::Clamp(600.0f * (1.0f - (Severity * 0.5f)), 100.0f, 600.0f);
+        Char->GetCharacterMovement()->MaxWalkSpeed = NewSpeed;
+        UE_LOG(LogTemp, Log, TEXT("Applied Leg Injury Penalty: Speed %f"), NewSpeed);
     }
 }
