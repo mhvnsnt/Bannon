@@ -31,3 +31,29 @@
         originalUpdate.call(this, dt);
     };
 })();
+(function() {
+    Fighter.prototype.initSubmission = function(target) {
+        this.state = 'submitting';
+        this.target = target;
+        target.state = 'submitted';
+        this.subProgress = 50;
+        showFighterLabel(this, 'SUBMISSION!');
+        showFighterLabel(target, 'SUBMISSION!');
+    };
+
+    const originalUpdate = Fighter.prototype.update;
+    Fighter.prototype.update = function(dt) {
+        if (this.state === 'submitting') {
+            // Button mash mechanic placeholder
+            // In reality, this would check inputs
+            this.subProgress += (Math.random() - 0.5) * 5;
+            if (this.subProgress >= 100) {
+                this.state = 'idle';
+                this.target.state = 'knockout';
+                showFighterLabel(this, 'TAP OUT!');
+            }
+        }
+        originalUpdate.call(this, dt);
+    };
+})();
+
