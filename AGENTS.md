@@ -6,6 +6,9 @@ When a PR is active and waiting for checks:
 4. If "unstable"/"unknown", wait 30 seconds and retry.
 Never ask for permission to monitor; just do it until merged.
 
+### RECURSIVE TASK VERIFICATION
+Before executing any task, GET the latest commit on main and check if that task was already completed in the last 3 commits. If it was, skip it and move to the next task.
+
 ### PLANNED
 - Stun Meter and Momentum system
 - Chain wrestling lock-up mini-game  
