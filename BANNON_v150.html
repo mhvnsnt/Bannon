@@ -140,6 +140,63 @@
         if (!document.fullscreenElement) document.documentElement.requestFullscreen();
         else if (document.exitFullscreen) document.exitFullscreen();
     }
-    </script>
+    
+<script>
+(function() {
+    // Input tracking
+    Fighter.prototype.initLockupMechanics = function() {
+        this.lastGrabTime = 0;
+        this.struggleScore = 50;
+    };
+
+    const originalUpdate = Fighter.prototype.update || function() {};
+    Fighter.prototype.update = function(dt) {
+        if (this.lastGrabTime === undefined) this.initLockupMechanics();
+
+        if (this.state === 'lockup') {
+            this.stateTimer += dt;
+            if (this.stateTimer > 3.0) {
+                this.state = 'idle';
+                this.target.state = 'idle';
+            } else {
+                // Struggle logic
+                if (Math.random() < 0.2) { // Every ~0.4s
+                    const roll = Math.random() * (this.stamina + this.target.stamina);
+                    if (roll < this.stamina) this.struggleScore += 10;
+                    else this.struggleScore -= 10;
+
+                    if (this.struggleScore >= 100) {
+                        this.state = 'attack';
+                        this.target.state = 'stumble';
+                        this.target.stateTimer = 0.8;
+                        showFighterLabel(this, 'WON LOCKUP');
+                    }
+                }
+            }
+        }
+        originalUpdate.call(this, dt);
+    };
+
+    // Integrate into input handling
+    const originalInput = Fighter.prototype.handleInput || function() {};
+    Fighter.prototype.handleInput = function(action) {
+        if (action === 'GRAB') {
+            const now = Date.now();
+            if (this.target && this.target.lastGrabTime && (now - this.target.lastGrabTime < 300) && this.distanceTo(this.target) < 100) {
+                this.state = 'lockup';
+                this.target.state = 'lockup';
+                this.stateTimer = 0;
+                this.struggleScore = 50;
+                this.target.struggleScore = 50;
+                showFighterLabel(this, 'STRUGGLE!');
+                showFighterLabel(this.target, 'STRUGGLE!');
+            }
+            this.lastGrabTime = now;
+        }
+        originalInput.call(this, action);
+    };
+})();
+</script>
+</script>
     
 }
