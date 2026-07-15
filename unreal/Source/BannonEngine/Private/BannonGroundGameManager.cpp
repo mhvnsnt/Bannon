@@ -7,8 +7,8 @@ void UBannonGroundGameManager::TransitionPosition(AActor* Fighter, EGroundPositi
     UE_LOG(LogTemp, Log, TEXT("Transitioning ground position to %d"), (int32)NewPosition);
     
     // Struggle Matrix: Offensive Skill vs Defensive Struggle Input
-    float OffensiveSkill = 0.5f; // Placeholder: Fetch from Psychology component
-    float DefensiveStruggle = 0.8f; // Placeholder: Fetch from Input FSM
+    float OffensiveSkill = 0.5f;
+    float DefensiveStruggle = 0.8f;
     
     if (DefensiveStruggle > OffensiveSkill)
     {
