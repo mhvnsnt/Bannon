@@ -99,3 +99,12 @@
     };
 })();
 
+(function() {
+    Fighter.prototype.transitionGroundState = function(newState) {
+        // newState: mount, guard, back-take
+        this.groundState = newState;
+        showFighterLabel(this, newState.toUpperCase());
+        console.log('Ground State: ' + newState);
+    };
+})();
+
