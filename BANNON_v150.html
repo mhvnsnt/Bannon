@@ -108,3 +108,13 @@
     };
 })();
 
+(function() {
+    window.PromotionSim = {
+        bookMatch: function(f1, f2) {
+            console.log('Booking: ' + f1.name + ' vs ' + f2.name);
+            showFighterLabel(f1, 'MATCH BOOKED');
+            showFighterLabel(f2, 'MATCH BOOKED');
+        }
+    };
+})();
+
