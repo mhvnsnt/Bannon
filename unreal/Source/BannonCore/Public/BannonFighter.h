@@ -28,10 +28,22 @@ public:
 
 	// apply an incoming impact — poise-driven crumple, HP damage through DMG_SCALE. Mirrors the
 	// native applyImpact law (native/src/wrestler_state.cpp) so tuning stays in one place.
+	virtual void Tick(float DeltaTime) override;
+
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float StunMeter = 0.0f;
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") bool bIsStunned = false;
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float ReversalWindow = 0.0f;
+
 	UFUNCTION(BlueprintCallable, Category="Bannon|Combat")
 	void ApplyImpact(float Impact);
 
 	// idle regen (call each tick with whether idle).
+	virtual void Tick(float DeltaTime) override;
+
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float StunMeter = 0.0f;
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") bool bIsStunned = false;
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float ReversalWindow = 0.0f;
+
 	UFUNCTION(BlueprintCallable, Category="Bannon|Combat")
 	void RegenStamina(bool bIdle, float Dt);
 };
