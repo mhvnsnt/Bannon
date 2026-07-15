@@ -34,6 +34,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") bool bIsStunned = false;
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float ReversalWindow = 0.0f;
 
+	UFUNCTION(BlueprintCallable, Category="Bannon|Combat") void InitLockup(ABannonFighter* Target);
+	void UpdateLockup(ABannonFighter* Target, float Dt);
+
 	UFUNCTION(BlueprintCallable, Category="Bannon|Combat")
 	void ApplyImpact(float Impact);
 
@@ -43,6 +46,9 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float StunMeter = 0.0f;
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") bool bIsStunned = false;
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float ReversalWindow = 0.0f;
+
+	UFUNCTION(BlueprintCallable, Category="Bannon|Combat") void InitLockup(ABannonFighter* Target);
+	void UpdateLockup(ABannonFighter* Target, float Dt);
 
 	UFUNCTION(BlueprintCallable, Category="Bannon|Combat")
 	void RegenStamina(bool bIdle, float Dt);
