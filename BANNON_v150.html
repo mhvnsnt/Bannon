@@ -118,3 +118,20 @@
     };
 })();
 
+(function() {
+    window.Crowd = {
+        momentum: 50,
+        updateMomentum: function(delta) {
+            this.momentum = Math.max(0, Math.min(100, this.momentum + delta));
+            console.log('Crowd Momentum: ' + this.momentum);
+        }
+    };
+    
+    // Hook hit to update momentum
+    const originalHit = Fighter.prototype.handleHit || function() {};
+    Fighter.prototype.handleHit = function(move) {
+        Crowd.updateMomentum(move.isHeavy ? 5 : 2);
+        originalHit.call(this, move);
+    };
+})();
+
