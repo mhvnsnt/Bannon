@@ -3,8 +3,8 @@
 
 void UBannonGroundGameManager::TransitionPosition(AActor* Fighter, EGroundPosition NewPosition)
 {
-    // Implementation of FSM logic
-    UE_LOG(LogTemp, Log, TEXT("Transitioning ground position to %d"), (int32)NewPosition);
+    // FSM Logic for Ground Transitions
+    UE_LOG(LogTemp, Log, TEXT("Ground FSM Transitioning to: %d"), (int32)NewPosition);
     
-    // Wire up defensive struggle/offense technical skill matrix here
+    // Wire up input-based struggle versus skill matrix logic here
 }
