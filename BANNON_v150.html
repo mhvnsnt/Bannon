@@ -36700,6 +36700,45 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         originalUpdate.call(this, dt);
     };
 })();
+
+(function() {
+    const originalUpdate = Fighter.prototype.update;
+    Fighter.prototype.update = function(dt) {
+        if (!this.stunMeter) this.stunMeter = 0;
+        
+        // Decay
+        if (this.stunMeter > 0) {
+            this.stunMeter = Math.max(0, this.stunMeter - (8 * dt));
+        }
+
+        // Stun logic
+        if (this.state === 'stun') {
+            this.stateTime += dt;
+            if (this.stateTime > 1.2) {
+                this.state = 'idle';
+                this.stateTime = 0;
+                this.stunMeter = 0;
+            }
+        }
+        
+        originalUpdate.call(this, dt);
+    };
+
+    // Assuming there's a hit handler or similar
+    const originalHit = Fighter.prototype.handleHit || function() {};
+    Fighter.prototype.handleHit = function(move) {
+        if (move.isHeavy) {
+            this.stunMeter += (Math.random() * 15 + 20); // 20-35
+            if (this.stunMeter >= 100) {
+                this.state = 'stun';
+                this.stateTime = 0;
+                this.stunMeter = 0;
+                console.log('STUNNED!');
+            }
+        }
+        originalHit.call(this, move);
+    };
+})();
 </script>
 </body>
 </html>
