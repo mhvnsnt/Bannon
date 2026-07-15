@@ -4098,6 +4098,11 @@ Fighter.prototype.solveArmIK = function(){ /* superseded by post-step solveLimbI
 // ATTACK / BLOCK / HURT / STUMBLE POSES  +  MESH RENDER
 // ============================================================================
 Fighter.prototype.startAttack = function(move){
+  move.cancelWindow = move.cancelWindow || 0.15;
+  this._committed = false;
+  const f = this;
+  setTimeout(() => { if (f.state === 'attack') f._committed = true; }, move.cancelWindow * 1000);
+
   if (this.state==='attack' && this.attackPhase < ((this.isPlayer && this.stamina > (this.maxStamina||100)*0.2) ? 0 : 0.6)) return false;   // v133: zero gate for player while stamina holds — instant chain; gassed = 0.6
   if (this.ragdoll || this.state==='down' || this.state==='getup' || this.state==='grabbed' || this.state==='deliver' || this.state==='ropeexit') return false; // v101.5: ropeexit added
   if (this.stamina < 8) return false;
@@ -19165,6 +19170,11 @@ init();
   // 1) RECOVERY LOCK — no new action while the strike is finishing its arc
   const _sa = Fighter.prototype.startAttack;
   Fighter.prototype.startAttack = function(move){
+  move.cancelWindow = move.cancelWindow || 0.15;
+  this._committed = false;
+  const f = this;
+  setTimeout(() => { if (f.state === 'attack') f._committed = true; }, move.cancelWindow * 1000);
+
     if (window.RECOVERY_LOCK!==false && this.state==='attack' && this.attackPhase>0.6 && this.attackPhase<0.95 && !(this.isPlayer && this.stamina > (this.maxStamina||100)*0.2)) return false;   // v133: no recovery-lock at all for the player while stamina holds; re-engages only when gassed
     return _sa.apply(this, arguments);
   };
@@ -33985,6 +33995,11 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   // AI and gassed-player still use the original phase/recovery gates.
   const _origSA = Fighter.prototype.startAttack;
   Fighter.prototype.startAttack = function(move){
+  move.cancelWindow = move.cancelWindow || 0.15;
+  this._committed = false;
+  const f = this;
+  setTimeout(() => { if (f.state === 'attack') f._committed = true; }, move.cancelWindow * 1000);
+
     const _fresh = this.isPlayer && this.stamina > (this.maxStamina||100)*0.2;
     if (_fresh){
       const _prevRL = window.RECOVERY_LOCK;
