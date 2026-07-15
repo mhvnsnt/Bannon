@@ -1,5 +1,6 @@
 // Copyright BANNON.
 #include "BannonArchetypeManager.h"
+#include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
 
 void UBannonArchetypeManager::ApplyArchetype(AActor* Fighter, EBannonArchetype Archetype)
@@ -7,15 +8,21 @@ void UBannonArchetypeManager::ApplyArchetype(AActor* Fighter, EBannonArchetype A
     ACharacter* Char = Cast<ACharacter>(Fighter);
     if (!Char) return;
 
-    if (Archetype == EBannonArchetype::Powerhouse)
+    UCharacterMovementComponent* MoveComp = Char->GetCharacterMovement();
+    if (!MoveComp) return;
+
+    switch(Archetype)
     {
-        // Example: Powerhouse gets strength boost
-        Char->GetCharacterMovement()->MaxWalkSpeed = 400.0f; // Slower, heavier
-        UE_LOG(LogTemp, Log, TEXT("Applied Powerhouse stat modifiers"));
-    }
-    else if (Archetype == EBannonArchetype::HighFlyer)
-    {
-        Char->GetCharacterMovement()->JumpZVelocity = 800.0f; // Higher jump
-        UE_LOG(LogTemp, Log, TEXT("Applied HighFlyer stat modifiers"));
+        case EBannonArchetype::Powerhouse:
+            MoveComp->MaxWalkSpeed = 300.0f; // Heavy, slow
+            UE_LOG(LogTemp, Log, TEXT("Applied Powerhouse: Reduced Speed, Increased Strength"));
+            break;
+        case EBannonArchetype::HighFlyer:
+            MoveComp->JumpZVelocity = 1200.0f; // High agility
+            UE_LOG(LogTemp, Log, TEXT("Applied HighFlyer: Increased Jump"));
+            break;
+        default:
+            MoveComp->MaxWalkSpeed = 600.0f;
+            break;
     }
 }
