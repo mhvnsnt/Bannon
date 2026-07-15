@@ -71,3 +71,12 @@
     };
 })();
 
+(function() {
+    // New states: apron, tree-of-woe, avalanche, corner-seated
+    Fighter.prototype.setPositionalState = function(state) {
+        this.state = state;
+        showFighterLabel(this, state.replace('-', ' ').toUpperCase());
+        console.log('Positional State: ' + state);
+    };
+})();
+
