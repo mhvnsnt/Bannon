@@ -41,6 +41,13 @@ rewrite. `[x]` = landed in `unreal/`, `[~]` = laws in `native/` (ready to wire),
 - [ ] BROADCAST_GRADE post pass — PostProcessVolume + material.
 - [ ] REALITY CHECK glitch — post-process material (triggerRealityCheck → a material param).
 
+## Creation suite (WWE-2K-style menus — owner spec, BINDING)
+- [ ] Superstar creation (CAW) — UMG mirroring the 2K create-a-wrestler flow; backed by BANNON_DNA schema.
+- [ ] Arena creation/editor — ring, apron, barricades, ramp, trons/mini-trons/Titantron, stage, bowl, lighting.
+- [ ] Moveset creation — per-position slots + sig/fin, 2K moveset-editor layout; backed by MOVESET_DB.
+- [ ] Entrance creation — tron video, pyro, lighting, music, motion timeline.
+- [ ] Menus match 2K layout + contents exactly (owner requirement).
+
 ## Retained
 - Three.js `BANNON_v150.html` becomes the low-poly retro / training-dummy tier + rapid design sandbox.
 

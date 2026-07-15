@@ -497,3 +497,33 @@ match scene, submissionStep into the sub-minigame branch, TLC props when meshes 
 - STILL QUEUED: decimate the ~1M-vert owner models (phones will choke) — the skinner needs a
   quadric/cluster pass on output; STATIC's GLB sometimes still on the procedural body (80MB parse
   race — auto-load only fired p1 in one test); onyxstraightjacketskirt Drive upload still truncated.
+
+## CHARACTER GENERATION RULES (binding — owner set 2026-07-13, do NOT repeat back)
+When agents generate models/attire (tools/gen/hf_pipeline.py, tools/tripo/*), obey ALL of these — they
+also live in tools/tripo/gen_prompts.json `_rules`:
+1. **NO trademarked logos.** Never put real brand/promotion marks (WWE/AEW/Nike/etc) on anything. If a
+   logo motif is wanted, invent a PROPRIETARY Bannon-universe emblem based on the idea; otherwise leave
+   gear blank. Always modify any logo-like thing to something original to our universe.
+2. **Coherent attire ONLY.** Believable pro-wrestling gear — NO nonsensical pieces (weird suspenders,
+   nipple straps/attachments, floating bits without context). Everything must have a real rationale.
+3. **Ethnicity is identity.** Generate the character's specified race + skin tone; keep the roster
+   diverse. Locked so far: VIPER, ZEPHYR, GOLEM = Black (various tones). Owner names others as we go.
+4. **Semi-realistic LIKENESS.** WWE 2K / Fire Pro / sim-game fidelity that matches the character's
+   gimmick, fighting style, psychology, and race — grounded athletes, NOT cartoon superheroes.
+5. **Clean seed pose.** Full-body front-facing symmetrical A-pose, plain flat white bg (image→3D seed).
+FREE GEN PATH: `HF_TOKEN=<bannon agent key> python3 tools/gen/hf_pipeline.py [NAME…]` — text→image
+(Qwen/FLUX, works) → image→3D (Hunyuan textured / frogleo geometry) → auto-skin v4.4 → bank. The
+token gives ZeroGPU queue priority (anonymous = "no GPU"). Hunyuan /generation_all 500s intermittently
+(textured); frogleo gives untextured geometry — texture quality is the tuning gap to close.
+The FIRST AI DRAFT of all 8 (milestone) is archived at assets/reference/agent_fighters/draft1_first_ai/.
+
+## WWE-STYLE CREATION SUITE (owner spec 2026-07-13 — BINDING target for the UE port)
+The full creation suite must look/feel like the WWE 2K menus down to layout + contents:
+- **Superstar creation** (CAW): the 2K create-a-wrestler flow — body/face morph, attire layers,
+  materials/logos (proprietary only, rule #1), paint, hair, entrance gear vs ring gear.
+- **Arena creation**: ring, apron, **barricades**, **ramp**, **trons + mini-trons + Titantron**,
+  stage/entrance set, crowd/bowl, lighting — an arena EDITOR (place/scale/skin parts).
+- **Moveset creation**: per-position move slots, signatures/finishers, the 2K moveset editor layout.
+- **Entrance creation**: entrance video/tron, pyro, lighting, music, motion timeline.
+Build these as UE UMG screens mirroring the 2K menus (layout + contents), backed by the native DNA/
+moveset schemas. Tracked in unreal/CONVERSION.md.

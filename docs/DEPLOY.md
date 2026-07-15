@@ -37,3 +37,22 @@ status is tracked in `unreal/CONVERSION.md`.
 The current owner models are ~80 MB each (≈1 M verts). That's heavy for a phone and for CDN streaming.
 The queued **decimation pass** (skin-weight-preserving, ~40–60k tris) drops them to a few MB each —
 which makes the website load instantly and the APK small. It's the same fix that helps phone perf.
+
+## FOREVER-FREE hosting (updated — GitHub Pages needs Pro for private repos, Railway trial expired)
+The game is STATIC (HTML + models streamed from the GitHub raw CDN), so it doesn't need a server or
+Railway at all. Best forever-free options, no trial:
+- **Firebase Hosting (recommended — you already have it).** `bash tools/deploy/build_hosting.sh &&
+  firebase deploy --only hosting`. `firebase.json` serves `hosting_public/index.html`; the 80MB models
+  are NOT uploaded — the engine streams them from `raw.githubusercontent.com/mhvnsnt/Bannon/main/`
+  (the built-in CDN fallback), so you stay under the free storage/transfer limits. Free forever.
+- **Cloudflare Pages / Netlify** — free, unlimited-ish bandwidth, connect the repo, build command
+  `bash tools/deploy/build_hosting.sh`, publish dir `hosting_public`. Great for a private repo.
+- **Supabase** — you have it, but it's a DB/Storage/Auth backend, not a static host. Use its Storage
+  for a public models bucket if you want models off GitHub; the HTML still wants Firebase/CF Pages.
+- **Railway/Render** — server hosting; fine but overkill for a static game and the free tiers are
+  stingy. Skip unless you want the daemon/generation backend hosted (separate concern).
+
+REQUIREMENT for hosted play with ALL models: the models must be on `main` (the CDN serves `main`).
+Merge this branch to main, deploy the HTML to Firebase, open the URL — every canon model streams in.
+NOTE: the ~80MB models make streaming slow; the queued decimation pass (~5MB each) makes hosted play
+snappy AND cheap — it's the one thing that most improves the "play the full game online" experience.
