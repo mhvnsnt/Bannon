@@ -19,11 +19,15 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Stats") float StrikeMass = 1.0f;
 
 	// Combat Systems
-	virtual void Tick(float DeltaTime) override;
-
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float StunMeter = 0.0f;
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") bool bIsStunned = false;
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float ReversalWindow = 0.0f;
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float SubmissionProgress = 0.0f;
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") bool bIsSubmitting = false;
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float HeadCut = 0.0f;
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float TorsoBruise = 0.0f;
+	virtual void Tick(float DeltaTime) override;
+
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float SubmissionProgress = 0.0f;
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") bool bIsSubmitting = false;
 
