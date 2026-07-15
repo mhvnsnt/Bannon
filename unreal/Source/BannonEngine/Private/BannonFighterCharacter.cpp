@@ -3,11 +3,8 @@
 
 void ABannonFighterCharacter::RefreshDamageMaterials()
 {
+    // Scalar Parameter Mapping
+    // GetMesh()->SetScalarParameterValueOnMaterials(FName("HeadCutAlpha"), HeadCutAlpha);
+    // GetMesh()->SetScalarParameterValueOnMaterials(FName("TorsoBruiseAlpha"), TorsoBruiseAlpha);
     UE_LOG(LogTemp, Log, TEXT("Refreshing damage materials: HeadCut=%f, TorsoBruise=%f"), HeadCutAlpha, TorsoBruiseAlpha);
-}
-
-void ABannonFighterCharacter::TransitionGroundPosition(FName NewPosition)
-{
-    // Transition: mount -> guard -> back-take
-    UE_LOG(LogTemp, Log, TEXT("Transitioning ground position to: %s"), *NewPosition.ToString());
 }
