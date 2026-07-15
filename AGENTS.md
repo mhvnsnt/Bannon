@@ -10,8 +10,6 @@ Never ask for permission to monitor; just do it until merged.
 Before executing any task, GET the latest commit on main and check if that task was already completed in the last 3 commits. If it was, skip it and move to the next task.
 
 ### PLANNED
-- Stun Meter and Momentum system
-- Chain wrestling lock-up mini-game  
 - Dual submission system
 - 5 reversal types (standard done, add: Breaker, Block, Dodge, Mid-move)
 - Full positional taxonomy (apron, tree-of-woe, avalanche, corner seated)
