@@ -26,6 +26,7 @@ public:
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") bool bIsSubmitting = false;
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float HeadCut = 0.0f;
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float TorsoBruise = 0.0f;
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") FName GroundPosition = "None";
 	virtual void Tick(float DeltaTime) override;
 
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|Combat") float SubmissionProgress = 0.0f;
