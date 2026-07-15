@@ -80,3 +80,22 @@
     };
 })();
 
+(function() {
+    const originalInit = Fighter.prototype.init || function() {};
+    Fighter.prototype.init = function() {
+        originalInit.call(this);
+        this.damageMap = { head: 0, torso: 0, limbs: 0 };
+    };
+    
+    const originalHit = Fighter.prototype.handleHit || function() {};
+    Fighter.prototype.handleHit = function(move) {
+        if (!this.damageMap) this.damageMap = { head: 0, torso: 0, limbs: 0 };
+        const zone = move.zone || 'torso';
+        this.damageMap[zone] += 5;
+        if (this.damageMap[zone] > 30) {
+            showFighterLabel(this, zone.toUpperCase() + ' DAMAGED!');
+        }
+        originalHit.call(this, move);
+    };
+})();
+
