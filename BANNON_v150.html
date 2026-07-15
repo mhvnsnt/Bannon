@@ -135,3 +135,36 @@
     };
 })();
 
+<script>
+(function() {
+    // 1. transitionGroundState
+    Fighter.prototype.transitionGroundState = function(newState) {
+        this.groundState = newState;
+        // Logic: play animation, update collision mask
+        showFighterLabel(this, 'GROUND: ' + newState.toUpperCase());
+    };
+    // 2. updateMomentum
+    window.Crowd.updateMomentum = function(delta) {
+        this.momentum = Math.max(0, Math.min(100, this.momentum + delta));
+        // Logic: trigger visual shifts in HUD based on momentum
+    };
+    // 3. bookMatch
+    window.PromotionSim.bookMatch = function(f1, f2) {
+        // Logic: generate match card data structure
+        showFighterLabel(f1, 'MATCH: ' + f2.name);
+    };
+    // 4. setPositionalState
+    Fighter.prototype.setPositionalState = function(state) {
+        this.state = state;
+        // Logic: switch movement anim set to position-specific
+        showFighterLabel(this, state.toUpperCase());
+    };
+    // 5. processReversal
+    Fighter.prototype.processReversal = function(type) {
+        this.state = 'idle';
+        // Logic: play reversal animation, break opponent combo
+        showFighterLabel(this, type.toUpperCase());
+    };
+})();
+</script>
+
