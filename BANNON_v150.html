@@ -714,6 +714,20 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 .touch .action-grid { display:grid; }
 /* pill btn already defined above in new WWE 2K26 block */
 @media (orientation:portrait) { #pillBtns { bottom:calc(248px + var(--safe-bot)); left:4px; } }
+
+<style>
+.event-label {
+    position: absolute;
+    font-size: 11px;
+    opacity: 0;
+    color: #ffffff;
+    font-family: monospace;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    text-align: center;
+    width: 100px;
+}
+</style>
 </style>
 <style>
 /* ===== BANNON STUDIO ===== */
@@ -8440,7 +8454,7 @@ Fighter.prototype.grappleDeliver = function(type, aim){
   // are TOSS-tier inversion arcs, not slam-tier, regardless of their damage `type` classification.
   const _vsuplexFamily = (this.grapplePos==='VERTICAL_SUPLEX'||this.grapplePos==='TIGER_SUPLEX'||this.grapplePos==='DRAGON_SUPLEX');
   const _eliteCovered = (window.ELITE_MOVES && ['CANADIAN_DESTROYER','DDT','BUTTERFLY_DDT','TIGER_DRIVER','BRAINBUSTER','VERTICAL_SUPLEX','ELECTRIC_CHAIR'].indexOf(this.grapplePos)>=0);
-  if ((this.isPlayer || this.opts) && !_eliteCovered) announce(variant.label + (isBridge?' — BRIDGE':''), this.who());
+  if ((this.isPlayer || this.opts) && !_eliteCovered) showFighterLabel(this, variant.label + (isBridge?' — BRIDGE':'')));
   let basePow, vH, vV, downImp;
   // v74 VELOCITY TIER — deliberate, named scale instead of incidental per-type numbers:
   //   DROP (lowest, lazy downward) < SLAM < THROW (decent) < TOSS (highest, full suplex arc)
@@ -9564,7 +9578,7 @@ Fighter.prototype.startDive = function(type, sb){
   this._diveArc = (d.arc + (sb?DIVE.spring:0)) * DIVE.arc;
   const _vPre = this._sbFrom==='apron' ? 'SLINGSHOT ' : (this._sbFrom==='mid' ? 'SPRINGBOARD ' : '');
   this._sbFrom = null;
-  announce(_vPre + d.label, this.who());
+  showFighterLabel(this, _vPre + d.label));
 };
 Fighter.prototype.exitAerial = function(){
   this.state='idle'; this.stateTime=0; this.airLift=0; this.spin=0; this._airPitch=0; this.climbT=0; this.perchCorner=null; this.diveType=null;
@@ -9962,7 +9976,7 @@ function applyDamage(opp, dmg, attacker, move, forceDown){
     
     if (Math.random() < bustOpenChance && !opp.isBleeding) {
       opp.isBleeding = true;
-      if (typeof announce === 'function') announce('BUSTED OPEN! bleeding from the head!', opp.opts && opp.opts.name || 'VIPER');
+      if (typeof announce === 'function') showFighterLabel(this, 'BUSTED OPEN! bleeding from the head!');
     }
   }
   
@@ -10520,7 +10534,7 @@ Fighter.prototype.zoneAction = function(){
     this._slamTarget = 1;
     this.hitKick  = { T:0.26, t:0.26, dx:throwDir, mag:0.10, reg:'b' };
     opp.hitKick   = { T:0.22, t:0.22, dx:throwDir, mag:0.09, reg:'b' };
-    if (this.isPlayer || this.opts) announce(fromZone==='APRON' ? 'OFF THE APRON!' : 'OVER THE TOP ROPE!', this.who());
+    if (this.isPlayer || this.opts) showFighterLabel(this, fromZone==='APRON' ? 'OFF THE APRON!' : 'OVER THE TOP ROPE!'));
     camShake = Math.max(camShake||0, 0.5); triggerHitStop(0.08);
     return true;
   }
@@ -10531,7 +10545,7 @@ Fighter.prototype.zoneAction = function(){
     if (Math.abs(this.x) < AH-1.8 && Math.abs(this.z) < (typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2)-1.8) return false;
     const ap = this._apronPos();
     this.zone='APRON'; this.apronSide=ap.side; this.x=ap.x; this.z=ap.z; this._zoneHold=0;
-    if (this.isPlayer) announce('OUT TO THE APRON', this.opts?this.opts.name:'BANNON');
+    if (this.isPlayer) showFighterLabel(this, 'OUT TO THE APRON');
     return true;
   } else if (this.zone==='APRON'){
     const AHZ=typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2;
@@ -10543,14 +10557,14 @@ Fighter.prototype.zoneAction = function(){
     else { this.z=-(AHZ+0.95); }
     this.zone='FLOOR'; this.zoneY=FLY; this._zoneHold=0;
     this.hitKick = { T:0.30, t:0.30, dx:0, mag:0.06, reg:'l' };
-    if (this.isPlayer) announce('TO THE FLOOR', this.opts?this.opts.name:'BANNON');
+    if (this.isPlayer) showFighterLabel(this, 'TO THE FLOOR');
     return true;
   } else { // FLOOR
     const nearApron = Math.abs(this.x) <= AH+1.25 || Math.abs(this.z) <= (typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2)+1.25;
     if (!nearApron) return false;
     const ap = this._apronPos();
     this.zone='APRON'; this.apronSide=ap.side; this.zoneY=0; this.x=ap.x; this.z=ap.z; this._zoneHold=0;
-    if (this.isPlayer) announce('BACK ON THE APRON', this.opts?this.opts.name:'BANNON');
+    if (this.isPlayer) showFighterLabel(this, 'BACK ON THE APRON');
     return true;
   }
 };
@@ -10639,7 +10653,7 @@ function buildBehaviorTree() {
         if (f.style !== 'PHILLY_SHELL') {
           f.style = 'PHILLY_SHELL';
           if (typeof announce === 'function' && Math.random() < 0.04) {
-            announce('TACTICAL SHIFT', (f.opts && f.opts.name || 'FIGHTER') + ' switch to defensive Philly Shell');
+            showFighterLabel(this, 'TACTICAL SHIFT') + ' switch to defensive Philly Shell');
           }
         }
 
@@ -10655,7 +10669,7 @@ function buildBehaviorTree() {
           const did = f.zoneAction();
           if (did){
             f._breatherCD = rand(6, 11);   // won't try again for a while — prevents repeated yo-yoing
-            if (typeof announce === 'function') announce('STALLING OUTSIDE', (f.opts && f.opts.name || 'FIGHTER') + ' buys time to recover');
+            if (typeof announce === 'function') showFighterLabel(this, 'STALLING OUTSIDE') + ' buys time to recover');
             return 'SUCCESS';
           }
         }
@@ -11970,7 +11984,7 @@ function playerAttack(kind){
       // GRAB again at lockup = spin behind / back to front (toggles the whole move set)
       if (kind==='grab'){
         p.grappleMode = (p.grappleMode==='rear') ? 'front' : 'rear';
-        announce(p.grappleMode==='rear' ? 'REAR WAISTLOCK' : 'FRONT LOCKUP', 'BANNON');
+        showFighterLabel(this, p.grappleMode==='rear' ? 'REAR WAISTLOCK' : 'FRONT LOCKUP');
         return;
       }
       // 5-way direction from the stick/keys
@@ -11984,7 +11998,7 @@ function playerAttack(kind){
       if (posName){
         p.grapplePos = posName;
         p.craneLift = GRAPPLE_POSITIONS[posName].lift0||0; p.craneTwist=0;
-        announce(GRAPPLE_POSITIONS[posName].label, 'BANNON');
+        showFighterLabel(this, GRAPPLE_POSITIONS[posName].label);
         // FIXED v74: this used to set grappleStage=3 directly, SKIPPING the entire lift/hoist stage (stage 2)
         // for the player — the powerbomb-family tuck/hoist/rotate-to-shoulders animation, and every other
         // move's lift pose, only ever played for the AI's auto-advance path. Now the player passes through
@@ -12162,7 +12176,7 @@ function playerAttack(kind){
     // shot. Falls back to CHAR_FINISHERS.sig when nothing is equipped.
     const eqSig=pickEquipped(p,'SIGNATURE',(opp && !opp.isDown()));
     if (eqSig && (eqSig.cat==='GRAPPLE'||eqSig.cat==='THROW') && opp && !opp.isDown() && p.startGrab()){
-      announce(eqSig.name+'  [FINISHER BANKED]', fname(p));
+      showFighterLabel(this, eqSig.name+'  [FINISHER BANKED]'));
       // ANY MOVE FROM ANY POSITION: run the equipped signature through ITS OWN grapple position.
       const _sp=window.resolveGrapPos?window.resolveGrapPos(eqSig):null;
       if(_sp){ p.grapplePos=_sp; p.grappleMode=(GRAPPLE_POSITIONS[_sp]&&GRAPPLE_POSITIONS[_sp].rear)?'rear':'front'; p.craneLift=(GRAPPLE_POSITIONS[_sp]||{}).lift0||0; p.craneTwist=0; p._aiGrapChosen=true; }
@@ -12176,7 +12190,7 @@ function playerAttack(kind){
       ? (window.CHAR_FINISHERS[_sk].sig+'').split('—')[0].trim() : 'SIGNATURE');
     const sm=Object.assign({}, (eqSig||m), { name:_sig, power:Math.max(85, eqSig?(eqSig.power||85):85), follow:'KNOCKDOWN', _loaded:true, _signature:true });
     flashScreen(0.4); camShake=Math.max(camShake,0.35);
-    announce(_sig+'  [FINISHER BANKED]', fname(p));
+    showFighterLabel(this, _sig+'  [FINISHER BANKED]'));
     p.startAttack(sm); return;
   }
   // FINISHER: full momentum + power-mod special = the character's NAMED finisher.
@@ -12198,7 +12212,7 @@ function playerAttack(kind){
         // ANY MOVE FROM ANY POSITION: an equipped grapple finisher runs through ITS OWN position
         // (German->rear waistlock, Powerbomb->headscissors, etc.); default finisher keeps FF.pos.
         const posKey=(eqFin&&window.resolveGrapPos)?window.resolveGrapPos(eqFin):((FF&&FF.pos)||null);
-        announce(finName, fname(p));
+        showFighterLabel(this, finName));
         if (posKey){ p.grapplePos=posKey; p.grappleMode=(GRAPPLE_POSITIONS[posKey]&&GRAPPLE_POSITIONS[posKey].rear)?'rear':'front'; p.craneLift=(GRAPPLE_POSITIONS[posKey]||{}).lift0||0; p.craneTwist=0; }
         p._aiGrapChosen=true; p.grappleStage=2; p.stateTime=0;
         const _ld=((GRAPPLE_POSITIONS[posKey]||{}).liftDur||0.7); p._liftMinT=_ld;
@@ -12213,7 +12227,7 @@ function playerAttack(kind){
     if (eqFin && eqFin.cat!=='GRAPPLE' && eqFin.cat!=='THROW'){ Object.assign(m, { limb:eqFin.limb, traj:eqFin.traj, height:eqFin.height, cat:eqFin.cat }); }
     m.power = 100; m.follow='KNOCKDOWN'; m._loaded=true; m._finisher=true;
     m.name = eqFin ? eqFin.name : (FF ? FF.name : (m.name||'FINISHER'));
-    announce(m.name, fname(p));
+    showFighterLabel(this, m.name));
   }
   p.startAttack(m);
 }
@@ -13158,7 +13172,7 @@ function loop(now){
 // ============================================================================
 // ROUND / MATCH FLOW
 // ============================================================================
-function announce(text, sub){
+function showFighterLabel(this, text){
   document.getElementById('announce-text').textContent=text;
   document.getElementById('announce-sub').textContent=sub||'';
   const a=document.getElementById('announcer');
@@ -13178,7 +13192,7 @@ function startRound(){
     if (roundTimer<=10) tEl.classList.add('warning'); else tEl.classList.remove('warning');
     if (roundTimer<=0){ clearInterval(roundTimerInterval); timeUp(); }
   },1000);
-  announce('FIGHT', 'ROUND '+currentRound);
+  showFighterLabel(this, 'FIGHT');
 }
 function timeUp(){
   const a=fighters[0], b=fighters[1];
@@ -13194,7 +13208,7 @@ function endRound(winner){
   const nm = fname(winner);
   const decisive = (fighters[0].hp<=0 || fighters[1].hp<=0);
   gameState='roundend';
-  announce(nm+(decisive?' — K.O.':' TAKES IT'), 'ROUND '+currentRound);
+  showFighterLabel(this, nm+(decisive?' — K.O.':' TAKES IT'));
   if (typeof saveMatchState==='function') saveMatchState();  // persist round scores immediately
   const matchOver = p1Rounds>=ROUNDS_TO_WIN || p2Rounds>=ROUNDS_TO_WIN;
   if (matchOver){
@@ -13223,7 +13237,7 @@ function endMatch(winner){
   if (typeof clearActiveFightState==='function') clearActiveFightState();
   const nm = fname(winner);
   document.getElementById('winnerName').textContent = nm;
-  announce(nm+' WINS', p1Rounds+' — '+p2Rounds);
+  showFighterLabel(this, nm+' WINS');
   setTimeout(()=>{ show('winnerMenu'); }, 1500);
 }
 // back-compat: any leftover KO callbacks route to endRound
@@ -13567,7 +13581,7 @@ try{
   };
   window.personaModsFor = function(f){ return window.PERSONA_MODS[window.personaFor(f)] || window.PERSONA_MODS.NEUTRAL; };
   // God Within / story-mode hook: swap the live persona mid-match (mask on/off, paint breaking through)
-  window.setPersona = function(f, key){ if(f && window.PERSONA_MODS[key]){ f._persona=key; if(typeof announce==='function' && window.PERSONA_MODS[key].label) try{ announce(window.PERSONA_MODS[key].label.toUpperCase(), ''); }catch(_){}} };
+  window.setPersona = function(f, key){ if(f && window.PERSONA_MODS[key]){ f._persona=key; if(typeof announce==='function' && window.PERSONA_MODS[key].label) try{ showFighterLabel(this, window.PERSONA_MODS[key].label.toUpperCase()); }catch(_){}} };
   window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
     BANNON:        { name:'THE STRUCTURAL COLLAPSE',   kind:'grapple', pos:'BACK_SUPLEX',     deliver:'toss', sub:'THE RING OF SATURN' },   // CANON (Book 1): deadlift German suplex -> Ring of Saturn submission, held until the opponent is visibly broken
     MAIME:         { name:'VERBAL LEAKAGE',            kind:'grapple', pos:'DDT',             deliver:'spike' },   // the alter-ego's raw spike — unfiltered violence
@@ -14815,7 +14829,7 @@ function setupInput(){
           meter.classList.remove('active');
           meter._subActive = false;
           if (meter._cleanEscape) meter._cleanEscape();
-          if (typeof announce === 'function') announce('POWERED OUT', (victim.opts&&victim.opts.name)||'');
+          if (typeof announce === 'function') showFighterLabel(this, 'POWERED OUT')||'');
           return;
         }
         clearInterval(tick);
@@ -14824,12 +14838,12 @@ function setupInput(){
         if (type === 'PIN' && victim){
           // trigger knockdown/KO
           if (victim.hp !== undefined) victim.hp = Math.max(0, victim.hp - 180);
-          if (typeof announce === 'function') announce('1 … 2 … 3', attacker.opts&&attacker.opts.name||'BANNON');
+          if (typeof announce === 'function') showFighterLabel(this, '1 … 2 … 3');
         } else if (victim){
           // v152 SUBMISSION MATCH: a landed submission IS the finish (tapout), not just damage
           if (window.MATCH_SETUP && MATCH_SETUP.matchType==='SUBMISSION'){
             if (victim.hp !== undefined) victim.hp = 0;
-            if (typeof announce === 'function') announce('TAP OUT', (attacker.opts&&attacker.opts.name)||'');
+            if (typeof announce === 'function') showFighterLabel(this, 'TAP OUT')||'');
           } else if (victim.hp !== undefined) victim.hp = Math.max(0, victim.hp - 120);
         }
       }
@@ -14928,14 +14942,14 @@ function setupInput(){
       var _pnow = performance.now();                            // real-time count clock (CPU-load proof)
       var _pdt = Math.min(100, _pnow - (meter._pinLastT || _pnow)); meter._pinLastT = _pnow;
       if (refSees){ refTimer += (_pdt || 20); meter._losWarned = false; }
-      else if (!meter._losWarned){ meter._losWarned = true; try{ if(typeof announce==='function') announce(window.BANNON_REF&&BANNON_REF.isDown()?'NO REFEREE':'REF CAN\'T SEE IT','the count is held'); }catch(e){} }
+      else if (!meter._losWarned){ meter._losWarned = true; try{ if(typeof announce==='function') showFighterLabel(this, window.BANNON_REF&&BANNON_REF.isDown()?'NO REFEREE':'REF CAN\'T SEE IT'); }catch(e){} }
       if (refTimer >= 1500) {
         refTimer = 0;
         refCount++;
         if (refCount === 1) {
-          if (typeof announce === 'function') announce('referee: ONE!', attacker.opts && attacker.opts.name || 'BANNON');
+          if (typeof announce === 'function') showFighterLabel(this, 'referee: ONE!');
         } else if (refCount === 2) {
-          if (typeof announce === 'function') announce('referee: TWO!!', attacker.opts && attacker.opts.name || 'BANNON');
+          if (typeof announce === 'function') showFighterLabel(this, 'referee: TWO!!');
         } else if (refCount >= 3 && !escaped) {
           clearInterval(tick);
           meter.classList.remove('active');
@@ -14943,7 +14957,7 @@ function setupInput(){
           if (meter._cleanEscape) meter._cleanEscape();
           
           victim.hp = 0;
-          if (typeof announce === 'function') announce('referee: THREE!!! PINNED!', attacker.opts && attacker.opts.name || 'BANNON');
+          if (typeof announce === 'function') showFighterLabel(this, 'referee: THREE!!! PINNED!');
 
           attacker.state = 'idle';
           attacker.stateTime = 0;
@@ -23516,7 +23530,7 @@ Fighter.prototype._releaseSlam = function() {
         em = window.ELITE_MOVES.ONE_WINGED_ANGEL;
       if (em) {
         em.setup(this, s.opp);
-        if (typeof announce === 'function') announce(em.label, this.isPlayer ? 'BANNON' : (this.opts && this.opts.name));
+        if (typeof announce === 'function') showFighterLabel(this, em.label));
       }
     } catch(e) {}
   }
@@ -23835,7 +23849,7 @@ setTimeout(fixButtons, 400); // belt-and-suspenders after async panel builders r
         const ap=this._apronPos();
         this.zone='APRON'; this.apronSide=ap.side;
         this.x=ap.x; this.z=ap.z; this._zoneHold=0;
-        try{announce('APRON',null,0.6);}catch(e){}
+        try{showFighterLabel(this, 'APRON');}catch(e){}
       }
     } else if(this.zone==='APRON'){
       this.zoneY=0;
@@ -23861,7 +23875,7 @@ setTimeout(fixButtons, 400); // belt-and-suspenders after async panel builders r
         else{ this.z=-(AHZ+0.95); }
         this.zone='FLOOR'; this.zoneY=FLY; this._zoneHold=0;
         try{this.hitKick={T:0.32,t:0.32,dx:0,mag:0.07,reg:'l'};}catch(e){}
-        try{announce('FLOOR',null,0.5);}catch(e){}
+        try{showFighterLabel(this, 'FLOOR');}catch(e){}
       }
     } else { // FLOOR
       this.zoneY=FLY;
@@ -23875,7 +23889,7 @@ setTimeout(fixButtons, 400); // belt-and-suspenders after async panel builders r
         const ap=this._apronPos();
         this.zone='APRON'; this.apronSide=ap.side;
         this.x=ap.x; this.z=ap.z; this.zoneY=0; this._zoneHold=0;
-        try{announce('APRON',null,0.5);}catch(e){}
+        try{showFighterLabel(this, 'APRON');}catch(e){}
       }
     }
   };
@@ -28594,8 +28608,7 @@ if (_origCouple && !_origCouple._v98){
       this._slamTarget = 1;
       this.hitKick  = { T:0.28, t:0.28, dx:sx, mag:0.10, reg:'b' };
       opp.hitKick   = { T:0.24, t:0.24, dx:sx, mag:0.09, reg:'b' };
-      try{ announce(fromZone==='APRON' ? 'OFF THE APRON!' : 'OVER THE TOP ROPE!',
-        this.isPlayer ? 'BANNON' : (this.opts && this.opts.name)); }catch(e){}
+      try{ showFighterLabel(this, fromZone==='APRON' ? 'OFF THE APRON!' : 'OVER THE TOP ROPE!')); }catch(e){}
       if (typeof camShake !== 'undefined') camShake = Math.max(camShake || 0, 0.5);
       try{ triggerHitStop(0.08); }catch(e){}
       return true;
@@ -33081,7 +33094,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         
         if (Math.random() < bustOpenChance && !def.isBleeding) {
           def.isBleeding = true;
-          if (typeof announce==='function') announce("Busted open! He's bleeding from the head!", def.opts&&def.opts.name);
+          if (typeof announce==='function') showFighterLabel(this, "Busted open! He's bleeding from the head!");
           if (window.__addStainDecal && def.J && def.J.head) window.__addStainDecal(def.J.head.pos.x, def.J.head.pos.z, 0.6, false);
         }
       }
@@ -35581,7 +35594,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
           try{ if(typeof dressFighter==='function') dressFighter(f); }catch(_){}
           try{ if(typeof applyForgeMorphs==='function') applyForgeMorphs(f); }catch(_){}
         }
-        announce && announce(MT()==='ROYALE'?'BATTLE ROYALE':(want===3?'TRIPLE THREAT':'FOUR-WAY'), fighters.length+' COMPETITORS');
+        announce && showFighterLabel(this, MT()==='ROYALE'?'BATTLE ROYALE':(want===3?'TRIPLE THREAT':'FOUR-WAY'));
       }
       _mkMiniBars();
     }catch(e){ window.__logErr&&window.__logErr('multiSpawn', e); }
@@ -35594,7 +35607,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     try{
       if (typeof fighters!=='undefined' && fighters && fighters.length>2){
         for (const f of fighters){ if (f.hp<=0 && !f._eliminated){ f._eliminated=true;
-          announce && announce((typeof fname==='function'?fname(f):'FIGHTER')+' ELIMINATED',''); } }
+          announce && showFighterLabel(this, (typeof fname==='function'?fname(f):'FIGHTER')+' ELIMINATED'); } }
         const alive=fighters.filter(f=>!f._eliminated && f.hp>0);
         if (alive.length>1){ for (const f of fighters) f._koTriggered=false; return; }   // fight on
         if (alive.length===1) return _origDW(alive[0]);
@@ -35635,7 +35648,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         if (f.isDown() && f.hp<(f.maxHp||300)*0.55){
           f._lmsT=(f._lmsT||0)+0.25;
           const c=Math.floor(f._lmsT);
-          if (c>(f._lmsAnn||0) && c<=10){ f._lmsAnn=c; announce('REF COUNT  '+c, (typeof fname==='function'?fname(f):'')+' IS DOWN'); }
+          if (c>(f._lmsAnn||0) && c<=10){ f._lmsAnn=c; showFighterLabel(this, 'REF COUNT  '+c):'')+' IS DOWN'); }
           if (f._lmsT>=10 && !f._koTriggered){ f._koTriggered=true; const w=f.opponent(); f.hp=0; setTimeout(()=>declareWinner(w),900); }
         } else { f._lmsT=0; f._lmsAnn=0; }
       }
@@ -35650,7 +35663,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         if (MT()==='FIRSTBLOOD' && typeof gameState!=='undefined' && gameState==='fight' && !window.__fbDone && typeof fighters!=='undefined' && fighters){
           let bf=null,bd=1e9; for (const f of fighters){ const d=(f.x-x)*(f.x-x)+(f.z-z)*(f.z-z); if (d<bd){ bd=d; bf=f; } }
           if (bf){ window.__fbDone=true; const w=bf.opponent(); bf.hp=Math.min(bf.hp, 1);
-            announce('FIRST BLOOD', (typeof fname==='function'?fname(w):'')+' WINS');
+            showFighterLabel(this, 'FIRST BLOOD'):'')+' WINS');
             setTimeout(()=>{ bf.hp=0; declareWinner(w); }, 1200); }
         }
       }catch(_){}
@@ -35697,7 +35710,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         try{ if (sev>0.55 && f.triggerKnockdown) f.triggerKnockdown(-dx/d*0.6, 0.9+sev*0.6); else if (f.enterStumble) f.enterStumble(-dx/d, 30*sev); }catch(_){}
         if (typeof camShake!=='undefined') camShake=Math.max(camShake, 0.35+0.45*sev);
         if (typeof triggerHitStop==='function') triggerHitStop(0.05+0.07*sev);
-        if (typeof announce==='function') announce('INTO THE POST', (typeof fname==='function'?fname(f):'')+' EATS STEEL');
+        if (typeof announce==='function') showFighterLabel(this, 'INTO THE POST'):'')+' EATS STEEL');
         break;
       }
     }
@@ -35757,7 +35770,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       def.momentum=Math.min(100,(def.momentum||0)+16);
       if (typeof camShake!=='undefined') camShake=Math.max(camShake,0.3);
       if (typeof triggerHitStop==='function') triggerHitStop(0.07);
-      if (typeof announce==='function') announce('REVERSAL!', (typeof fname==='function'?fname(def):''));
+      if (typeof announce==='function') showFighterLabel(this, 'REVERSAL!'):''));
       return true;
     }catch(_){ return false; }
   };
@@ -36446,7 +36459,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         var cd=Math.hypot(p.x-R.x,p.z-R.z), sp=Math.hypot(mvx,mvz);
         if(cd<0.5 && sp>1.9 && R.down<=0){
           R.down=2.5+Math.min(sp,3.8)*1.8;
-          try{ if(typeof announce==='function') announce('REF BUMP','the official is DOWN'); }catch(e){}
+          try{ if(typeof announce==='function') showFighterLabel(this, 'REF BUMP'); }catch(e){}
         }
       }
       // jog toward target (capped ~2.6 m/s — refs jog, they don't sprint)
@@ -36525,7 +36538,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     if(f._weapon){ drop(f); return; }
     var it=nearestItem(f,0.9); if(!it) return;
     it.holder=f; f._weapon=it;
-    try{ if(typeof announce==='function') announce(it.spec.label,'picked up'); }catch(e){}
+    try{ if(typeof announce==='function') showFighterLabel(this, it.spec.label); }catch(e){}
   }
   function drop(f){ var it=f._weapon; if(!it) return; it.holder=null; f._weapon=null;
     try{ var p=f.worldJoint('pelvis'); it.g.position.set(p.x+0.4, -0.83+((Math.abs(p.x)<3.5&&Math.abs(p.z)<2.5)?0.83:0), p.z+0.3); it.g.rotation.set(0,Math.random()*6.28,Math.PI/2*0.9); }catch(e){}
@@ -36553,12 +36566,12 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
           it.integrity-=swingVel*spec.mass*0.4;                            // procedural dent budget
           if(spec.bleed){ try{ if(window.__spawnBlood&&opp){ var h=opp.worldJoint('head'); window.__spawnBlood(h.x,h.y,h.z,1.2); } }catch(e){} }
           if(it.integrity<=0 && !it.broken){ it.broken=true; it.g.visible=false; this._weapon=null; it.holder=null;
-            try{ if(typeof announce==='function') announce(spec.label+' BROKEN','the weapon gave out'); }catch(e){} }
+            try{ if(typeof announce==='function') showFighterLabel(this, spec.label+' BROKEN'); }catch(e){} }
         } else {
           // MOMENTUM WHIFF: over-extension — the 2.5x law (native): tax already paid once, add 1.5x
           if(this.stamina!=null) this.stamina=Math.max(0,this.stamina-tax*1.5);
         }
-        if(this.stamina!=null && this.stamina<=0.5){ drop(this); try{ if(typeof announce==='function') announce('WEAPON DROPPED','gassed grip'); }catch(e){} }
+        if(this.stamina!=null && this.stamina<=0.5){ drop(this); try{ if(typeof announce==='function') showFighterLabel(this, 'WEAPON DROPPED'); }catch(e){} }
         return _osa.call(this,m);
       }
       return _osa.call(this,mv);
@@ -36577,7 +36590,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
           if(force>350){
             it.broken=true; it.g.rotation.z=0.5; it.g.position.y-=0.28;     // collapsed wreck
             try{ f.poise=Math.max(0,(f.poise||100)-(-vy)*8*2.2); f.hp=Math.max(0,f.hp-force*0.9); }catch(e){}
-            try{ if(typeof announce==='function') announce('THROUGH THE TABLE!', (f.opts&&f.opts.name)||''); }catch(e){}
+            try{ if(typeof announce==='function') showFighterLabel(this, 'THROUGH THE TABLE!')||''); }catch(e){}
             try{ if(typeof spawnMatDust==='function') spawnMatDust(p.x,p.z,3.5); }catch(e){}
           }
         }
@@ -36701,94 +36714,25 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     };
 })();
 
-(function() {
-    const originalUpdate = Fighter.prototype.update;
-    Fighter.prototype.update = function(dt) {
-        if (!this.stunMeter) this.stunMeter = 0;
-        
-        // Decay
-        if (this.stunMeter > 0) {
-            this.stunMeter = Math.max(0, this.stunMeter - (8 * dt));
-        }
-
-        // Stun logic
-        if (this.state === 'stun') {
-            this.stateTime += dt;
-            if (this.stateTime > 1.2) {
-                this.state = 'idle';
-                this.stateTime = 0;
-                this.stunMeter = 0;
-            }
-        }
-        
-        originalUpdate.call(this, dt);
-    };
-
-    // Assuming there's a hit handler or similar
-    const originalHit = Fighter.prototype.handleHit || function() {};
-    Fighter.prototype.handleHit = function(move) {
-        if (move.isHeavy) {
-            this.stunMeter += (Math.random() * 15 + 20); // 20-35
-            if (this.stunMeter >= 100) {
-                this.state = 'stun';
-                this.stateTime = 0;
-                this.stunMeter = 0;
-                console.log('STUNNED!');
-            }
-        }
-        originalHit.call(this, move);
-    };
-})();
-
-(function() {
-    const originalUpdate = Fighter.prototype.update;
-    Fighter.prototype.update = function(dt) {
-        // AI Lockup logic
-        if (this.isAI && this.state === 'idle' && this.stamina > 40 && Math.random() < 0.6 && this.target && this.distanceTo(this.target) < 100) {
-           this.initLockup();
-        }
-        
-        // Lockup state processing
-        if (this.state === 'lockup') {
-            this.stateTime += dt;
-            if (this.stateTime > 3.0) { // 3s break
-                this.state = 'idle';
-                this.target.state = 'idle';
-                this.stateTime = 0;
-            } else {
-                // Struggle mechanic every 0.4s
-                if (!this.lastStruggle || this.stateTime - this.lastStruggle > 0.4) {
-                    this.lastStruggle = this.stateTime;
-                    const roll = Math.random() * (this.stamina + this.target.stamina);
-                    if (roll < this.stamina) {
-                        this.struggleScore += 15;
-                        this.target.struggleScore -= 15;
-                    } else {
-                        this.struggleScore -= 15;
-                        this.target.struggleScore += 15;
-                    }
-                    if (this.struggleScore >= 100) this.winLockup();
-                    else if (this.target.struggleScore >= 100) this.target.winLockup();
-                }
-            }
-        }
-        originalUpdate.call(this, dt);
-    };
-
-    Fighter.prototype.initLockup = function() {
-        this.state = 'lockup';
-        this.target.state = 'lockup';
-        this.struggleScore = 50;
-        this.target.struggleScore = 50;
-        console.log('STRUGGLE!');
-    };
-
-    Fighter.prototype.winLockup = function() {
-        this.state = 'attack';
-        this.target.state = 'stumble';
-        this.target.stateTime = 0;
-    };
-})();
+<script>
+function showFighterLabel(fighter, text) {
+    const id = (fighter.isPlayer) ? 'p1-event-label' : 'p2-event-label';
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.style.opacity = '0.72';
+    // position it under HUD
+    const hud = document.getElementById(fighter.isPlayer ? 'p1-hp' : 'p2-hp');
+    if (hud) {
+        const rect = hud.getBoundingClientRect();
+        el.style.left = rect.left + 'px';
+        el.style.top = (rect.bottom + 5) + 'px';
+    }
+    setTimeout(() => { el.style.opacity = '0'; }, 1800);
+}
 </script>
+</script>
+
+<div id="p1-event-label" class="event-label"></div>
+<div id="p2-event-label" class="event-label"></div>
 </body>
 </html>
