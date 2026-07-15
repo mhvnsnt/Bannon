@@ -40,4 +40,5 @@ public:
 	void UpdateSubmission(float Dt);
 
 	UFUNCTION(BlueprintCallable, Category="Bannon|Combat") void TransitionGroundPosition(FName NewPosition);
+	UFUNCTION(BlueprintCallable, Category="Bannon|Combat") void ExecuteReversal(FName ReversalType);
 };
