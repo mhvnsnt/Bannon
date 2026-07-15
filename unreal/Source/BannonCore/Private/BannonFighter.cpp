@@ -35,3 +35,12 @@ void ABannonFighter::Tick(float DeltaTime)
     if (StunMeter > 0 && !bIsStunned) StunMeter = FMath::Max(0.0f, StunMeter - (8.0f * DeltaTime));
     if (ReversalWindow > 0) ReversalWindow -= DeltaTime;
 }
+
+void ABannonFighter::InitLockup(ABannonFighter* Target)
+{
+    // Simplified lockup
+}
+void ABannonFighter::UpdateLockup(ABannonFighter* Target, float Dt)
+{
+    // Simplified struggle logic
+}
