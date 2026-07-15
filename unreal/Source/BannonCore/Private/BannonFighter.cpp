@@ -47,3 +47,12 @@ void ABannonFighter::TransitionGroundPosition(FName NewPosition)
 {
     GroundPosition = NewPosition;
 }
+
+void ABannonFighter::ExecuteReversal(FName ReversalType)
+{
+    // Breaker, Block, Dodge, Mid-move logic
+    if (ReversalType == "Breaker") { /* Logic */ }
+    else if (ReversalType == "Block") { /* Logic */ }
+    else if (ReversalType == "Dodge") { /* Logic */ }
+    else if (ReversalType == "MidMove") { /* Logic */ }
+}
