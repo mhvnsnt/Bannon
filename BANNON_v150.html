@@ -36598,6 +36598,33 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     if(tries>40) clearInterval(t);
   }, 500);
 })();
+
+(function() {
+    const originalUpdate = Fighter.prototype.update;
+    Fighter.prototype.update = function(dt) {
+        if ((this.state === 'block' || this.state === 'hurt') && !this.reversalWindowActive) {
+            if (!this.reversalWindowOpen) {
+                this.reversalWindowOpen = true;
+                const f = this;
+                setTimeout(() => { f.reversalWindowOpen = false; }, 200);
+            }
+            if (this.reversalWindowOpen && (this.J || (this.isAI && Math.random() < 0.25))) {
+               this.reversalWindowOpen = false;
+               this.reversalWindowActive = true;
+               console.log('REVERSAL!');
+               // Reversal logic: cancel attacker, set stumble
+               if (this.target) {
+                   this.target.state = 'stumble';
+                   this.target.stateTime = 0;
+               }
+               this.state = 'attack';
+               this.attackPhase = 0;
+               setTimeout(() => { this.reversalWindowActive = false; }, 600);
+            }
+        }
+        originalUpdate.call(this, dt);
+    };
+})();
 </script>
 </body>
 </html>
