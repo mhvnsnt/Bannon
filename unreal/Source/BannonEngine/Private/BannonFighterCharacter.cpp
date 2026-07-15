@@ -3,6 +3,11 @@
 
 void ABannonFighterCharacter::RefreshDamageMaterials()
 {
-    // Implementation: Update Material Instance scalar parameters based on Alpha values
     UE_LOG(LogTemp, Log, TEXT("Refreshing damage materials: HeadCut=%f, TorsoBruise=%f"), HeadCutAlpha, TorsoBruiseAlpha);
+}
+
+void ABannonFighterCharacter::TransitionGroundPosition(FName NewPosition)
+{
+    // Transition: mount -> guard -> back-take
+    UE_LOG(LogTemp, Log, TEXT("Transitioning ground position to: %s"), *NewPosition.ToString());
 }
