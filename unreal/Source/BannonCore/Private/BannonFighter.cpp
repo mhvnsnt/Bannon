@@ -4,7 +4,11 @@
 
 ABannonFighter::ABannonFighter(){	PrimaryActorTick.bCanEverTick = true;	HP = bannon::MAX_HP; Poise = 100.0f; Stamina = bannon::MAX_STAMINA;}
 
-void ABannonFighter::ApplyImpact(float Impact){	
+void ABannonFighter::ApplyImpact(float Impact)
+{
+	StunMeter = FMath::Min(100.0f, StunMeter + (Impact * 0.35f));
+	if (StunMeter >= 100.0f) { bIsStunned = true; StunMeter = 0.0f; }
+	
     // Damage accumulation & Stun
     if (Impact > 50.0f) HeadCut = FMath::Min(1.0f, HeadCut + 0.1f);
     else if (Impact > 20.0f) TorsoBruise = FMath::Min(1.0f, TorsoBruise + 0.05f);
@@ -55,4 +59,12 @@ void ABannonFighter::ExecuteReversal(FName ReversalType)
     else if (ReversalType == "Block") { /* Logic */ }
     else if (ReversalType == "Dodge") { /* Logic */ }
     else if (ReversalType == "MidMove") { /* Logic */ }
+}
+
+
+void ABannonFighter::Tick(float DeltaTime)
+{
+    Super::Tick(DeltaTime);
+    if (StunMeter > 0 && !bIsStunned) StunMeter = FMath::Max(0.0f, StunMeter - (8.0f * DeltaTime));
+    if (ReversalWindow > 0) ReversalWindow -= DeltaTime;
 }
