@@ -13,4 +13,11 @@ Before executing any task, GET the latest commit on main and check if that task 
 Never work on tasks not explicitly in the current PLANNED list. Finding related code in the repo is not permission to extend it.
 
 ### PLANNED
-- None.
+- Chain wrestling lock-up (full integration)
+- Dual submission system
+- Promotion/booking sim
+- Crowd momentum
+- Visible damage blend shapes (cuts/swelling rendering)
+- Ground game full position transitions
+- Ladder as weapon
+- 4 remaining reversal types: Breaker, Block, Dodge, Mid-move
