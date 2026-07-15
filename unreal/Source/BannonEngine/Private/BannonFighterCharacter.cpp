@@ -3,5 +3,10 @@
 
 void ABannonFighterCharacter::RefreshDamageMaterials()
 {
-    UE_LOG(LogTemp, Log, TEXT("Refreshing damage materials: HeadCut=%f, TorsoBruise=%f"), HeadCutAlpha, TorsoBruiseAlpha);
+    UMeshComponent* MeshComp = GetMesh();
+    if (MeshComp)
+    {
+        MeshComp->SetScalarParameterValueOnMaterials(FName("HeadCutAlpha"), HeadCutAlpha);
+        MeshComp->SetScalarParameterValueOnMaterials(FName("TorsoBruiseAlpha"), TorsoBruiseAlpha);
+    }
 }
