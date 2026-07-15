@@ -1,25 +1,16 @@
 // Copyright BANNON.
 #include "BannonFighterCharacter.h"
 
-ABannonFighterCharacter::ABannonFighterCharacter()
-{
-    TauntManager = CreateDefaultSubobject<UBannonTauntManager>(TEXT("TauntManager"));
-}
-
 void ABannonFighterCharacter::RefreshDamageMaterials()
 {
     UMeshComponent* MeshComp = GetMesh();
     if (MeshComp)
     {
-        MeshComp->SetScalarParameterValueOnMaterials(FName("HeadCutAlpha"), HeadCutAlpha);
-        MeshComp->SetScalarParameterValueOnMaterials(FName("TorsoBruiseAlpha"), TorsoBruiseAlpha);
-    }
-}
-
-void ABannonFighterCharacter::TriggerTaunt(FName TauntID)
-{
-    if (TauntManager)
-    {
-        TauntManager->ExecuteTaunt(this, TauntID);
+        // Dynamic Clamping
+        float ClampedHeadAlpha = FMath::Clamp(HeadCutAlpha, 0.0f, 1.0f);
+        float ClampedTorsoAlpha = FMath::Clamp(TorsoBruiseAlpha, 0.0f, 1.0f);
+        
+        MeshComp->SetScalarParameterValueOnMaterials(FName("HeadCutAlpha"), ClampedHeadAlpha);
+        MeshComp->SetScalarParameterValueOnMaterials(FName("TorsoBruiseAlpha"), ClampedTorsoAlpha);
     }
 }
