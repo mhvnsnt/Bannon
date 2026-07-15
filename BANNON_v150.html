@@ -57,3 +57,17 @@
     };
 })();
 
+(function() {
+    Fighter.prototype.processReversal = function(type) {
+        // type: Breaker, Block, Dodge, Mid-move
+        this.state = 'idle';
+        showFighterLabel(this, type.toUpperCase() + '!');
+        console.log('Reversal: ' + type);
+        
+        // Specific logic per type could be added here
+        if (type === 'Breaker') {
+            this.target.state = 'stumble';
+        }
+    };
+})();
+
