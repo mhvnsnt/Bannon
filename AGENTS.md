@@ -64,10 +64,10 @@ Use the GitHub API to fetch the remote main version, resolve the conflict (keep 
 To prevent "tech-larping" and ensure absolute integrity:
 1. **SHIPPED vs. PLANNED Split**: Every single status update or task completion summary MUST have a hard, labeled split:
    - **### SHIPPED
-- **Procedural Strike Physics**: Built `server/modes/proceduralHitReaction.ts` (Phase 4 #27). Implemented velocity and vector math to calculate Glancing Blows vs Direct Hits. The physics engine now dynamically scales knockback force using the relative mass ratio of the attacker and defender, converting heavy strikes directly into ragdoll knockdowns.
-- **Neural Opponent AI (Multi-Threat)**: Built `server/modes/neuralOpponentAI.ts` (Phase 8 #61 & #63). Engineered an AI prioritization loop that factors in stamina, aggression, cowardice, and distance. AI actively computes whether to attack, flee, or scavenge weapons dynamically frame-by-frame.
-- **Medical & Laceration Engine**: Built `server/modes/lacerationBloodSystem.ts` (Phase 9 #72). Programmed localized damage tracking that spawns severe lacerations and dynamically expands the canvas blood pool radius based on head trauma and weapon impacts.
-- **Morph Target & Blendshape Logic Engine**: Built `server/modes/creationMorphTargets.ts` (Phase 3 #25).
+- **Interactive Crowd Mechanics**: Built `server/modes/interactiveCrowd.ts` (Phase 3 #16 & 17). Engineered an entity proximity system where individual crowd members have physics states. If a wrestler is thrown over the barricade (ragdolling in mid-air), crowd members mathematically calculate the trajectory and trigger a 'Fleeing' state. Alternatively, if proximity is stable, crowd members hand off weapons to the wrestler.
+- **Contract Negotiation LLM Engine**: Built `server/modes/contractNegotiation.ts` (Phase 6 #42). Implemented a contract negotiation state machine where a wrestler's demands scale multiplicatively based on their Star Power, Loyalty, and Greed. The LLM processes counter-offers asking for higher merch cuts and VIP perks.
+- **Contract & Crowd UI Diagnostics**: Appended monitors to `Dashboard.tsx` to visualize real-time navmesh logic (fleeing fans) and the backend mathematics of the contract negotiation engine.
+- **Procedural Strike Physics**: Built `server/modes/proceduralHitReaction.ts` (Phase 4 #27).
 
 ### PLANNED
 
