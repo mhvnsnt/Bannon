@@ -387,6 +387,43 @@ export default function Dashboard() {
         </div>
       </div>
 
+
+      {/* Euphoria-Style Active Ragdoll Physics Monitor */}
+      <div className="bg-neutral-800 p-6 rounded-xl border border-orange-500/30 mb-8 shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-orange-400" />
+            <h3 className="text-lg font-semibold text-orange-300">Active Ragdoll Balance Matrix</h3>
+          </div>
+          <span className="flex items-center gap-2 text-xs font-bold text-orange-400 bg-orange-900/20 px-2 py-1 rounded border border-orange-500/30">
+            DYNAMIC COLLISION
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Entity Physics State</h4>
+                <div className="font-mono text-xs text-orange-200">
+                    <div><span className="text-neutral-500">Current State:</span> PARTIAL_RAGDOLL</div>
+                    <div><span className="text-neutral-500">Center of Mass Offset:</span> 0.65 / 1.0 (Staggering)</div>
+                    <div><span className="text-neutral-500">Angular Velocity:</span> 0.22 (Spinning)</div>
+                    <div><span className="text-neutral-500">Concussion Factor:</span> 0.45 (Dazed)</div>
+                    <div className="w-full bg-neutral-800 h-2 mt-2 rounded overflow-hidden">
+                        <div className="bg-orange-500 h-full" style={{ width: '65%' }}></div>
+                    </div>
+                </div>
+            </div>
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Impact Event Log</h4>
+                <div className="font-mono text-xs text-orange-200">
+                    <div><span className="text-neutral-500">[0.0s] Strike Hit:</span> RightLeg</div>
+                    <div><span className="text-neutral-500">[0.0s] Force/Mass Ratio:</span> 420.5 N / 105 kg</div>
+                    <div><span className="text-neutral-500">[0.1s] Fatigue Mod:</span> 1.4x (Stamina Low)</div>
+                    <div><span className="text-neutral-500">[0.2s] Engine Event:</span> Transition to PAC Blend</div>
+                </div>
+            </div>
+        </div>
+      </div>
+
       {/* Local Infrastructure */}
       <div className="bg-neutral-800 p-6 rounded-xl border border-neutral-700 mb-8 shrink-0">
         <div className="flex items-center gap-2 mb-6">
