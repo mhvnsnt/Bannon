@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle2, AlertTriangle, FileWarning, Clock, Info, Server, Cpu, Database, Flame, Volume2, Orbit, TrendingUp, UserCog, Users, Handshake, Activity } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertTriangle, FileWarning, Clock, Info, Server, Cpu, Database, Flame, Volume2, Orbit, TrendingUp, UserCog, Users, Handshake, Activity, Footprints, Network } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Markdown from 'react-markdown';
 
@@ -546,6 +546,72 @@ export default function Dashboard() {
                     <div><span className="text-neutral-500">Initial Offer:</span> $400k/yr, 15% Merch</div>
                     <div><span className="text-neutral-500">Decision:</span> <span className="text-red-400">REJECTED</span></div>
                     <div><span className="text-neutral-500">Counter:</span> "Counters with $690,000/yr and First Class Travel perk."</div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+
+      {/* ALS & Motion Matching Monitor */}
+      <div className="bg-neutral-800 p-6 rounded-xl border border-indigo-500/30 mb-8 shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Footprints className="w-5 h-5 text-indigo-400" />
+            <h3 className="text-lg font-semibold text-indigo-300">ALS-R Locomotion Engine</h3>
+          </div>
+          <span className="flex items-center gap-2 text-xs font-bold text-indigo-400 bg-indigo-900/20 px-2 py-1 rounded border border-indigo-500/30">
+            MOTION MATCHING ACTIVE
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Joystick Input Vector</h4>
+                <div className="font-mono text-xs text-indigo-200">
+                    <div><span className="text-neutral-500">Raw X/Y:</span> [0.82, -0.41]</div>
+                    <div><span className="text-neutral-500">Magnitude:</span> 0.91 (Run Threshold)</div>
+                    <div><span className="text-neutral-500">Acceleration Curve:</span> +0.02 delta</div>
+                </div>
+            </div>
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Locomotion State</h4>
+                <div className="font-mono text-xs text-indigo-200">
+                    <div><span className="text-neutral-500">Current Gait:</span> <span className="text-green-400">RUN</span></div>
+                    <div><span className="text-neutral-500">Pivot Active:</span> false</div>
+                    <div><span className="text-neutral-500">Stance:</span> Upright</div>
+                    <div><span className="text-neutral-500">Velocity:</span> 450.0 u/s</div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      {/* GGPO Netcode Rollback Monitor */}
+      <div className="bg-neutral-800 p-6 rounded-xl border border-emerald-500/30 mb-8 shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Network className="w-5 h-5 text-emerald-400" />
+            <h3 className="text-lg font-semibold text-emerald-300">GGPO Rollback Netcode</h3>
+          </div>
+          <span className="flex items-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-900/20 px-2 py-1 rounded border border-emerald-500/30">
+            PEER-TO-PEER SYNC
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Simulation State</h4>
+                <div className="font-mono text-xs text-emerald-200">
+                    <div><span className="text-neutral-500">Local Frame:</span> 14,022</div>
+                    <div><span className="text-neutral-500">Remote Frame Est:</span> 14,019</div>
+                    <div><span className="text-neutral-500">Ping:</span> 42ms</div>
+                    <div><span className="text-neutral-500">Checksum:</span> 0xDEADBEEF</div>
+                </div>
+            </div>
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Prediction Buffer</h4>
+                <div className="font-mono text-xs text-emerald-200">
+                    <div><span className="text-neutral-500">History Buffer Size:</span> 60 frames</div>
+                    <div><span className="text-neutral-500">Rollback Status:</span> <span className="text-emerald-500">CLEAN</span></div>
+                    <div><span className="text-neutral-500">Last Prediction Miss:</span> 420 frames ago</div>
+                    <div><span className="text-neutral-500">Correction Cost:</span> ~0.4ms tick</div>
                 </div>
             </div>
         </div>
