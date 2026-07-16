@@ -63,27 +63,40 @@ Use the GitHub API to fetch the remote main version, resolve the conflict (keep 
 ## Status Reporting Protocols
 To prevent "tech-larping" and ensure absolute integrity:
 1. **SHIPPED vs. PLANNED Split**: Every single status update or task completion summary MUST have a hard, labeled split:
-   - **### SHIPPED**: List actual modified file paths, line numbers, and precise functional outcomes of code that is written and compiled. Include real runtime verification logs/outputs.
-   - **
-### SHIPPED
-- Fixed CreationSuite syntax errors.
-- Parsed Book Lore logic in `src/lib/storyEngine.ts` to map into Career Mode Rivalry Contexts.
-- Implemented Pride/MMA Match Flow state machine handling Rounds, Point Decisions, and Ref Stoppages (`server/modes/mmaFlow.ts`).
-- Expanded Dashboard Real-Time Engine Monitor for deep visibility into character memory and career stats.
-- Added Match Sequencing Visualizer UI interactions in Dashboard.
-- Unified `characterMemory` syncing in Career Mode to prevent reset upon show-to-show transitions.
-- Scaffolded MDickie-style Backstage/Free-Roaming hooks via `Backstage_Roam` sequence state logic.
-- Resolved `calculateStrengthOutcome` duplicate key warning in `server/bannonLogic.ts`.
-
-### SHIPPED
-- Write parser logic that reads Book Lore files from `/src/lib/storyEngine.ts` and maps them into Career Mode Rivalry Contexts.
-- Implement Pride/MMA Match Flow state machine handling Rounds, Point Decisions, and Ref Stoppages in native match flow sequences.
-- Expand `/src/pages/Dashboard.tsx` and Asset Manager UI components for deep visibility into real-time variable states during development (Memory, Stats).
-- Sync all UI states seamlessly through the new `characterMemory` block to prevent resetting stats upon show-to-show transitions.
-- Expand MDickie-style Backstage/Free-Roaming mechanics across Career, Universe, Story, and God Within Modes to allow character movement, dialogue, brawling, and relationship forging (`server/modes/backstage.ts`).
-- Add Match Sequencing Visualizer UI to preview, toggle, and edit intro/outro/promo segments before a show.
+   - **### SHIPPED
+- **Overpass API Environment Generator**: Built the `server/world/environmentGenerator.ts` script to act as the Node.js orchestrator pulling raw JSON vector paths from `https://overpass-api.de`. This script reads latitude/longitude nodes and maps them cleanly into `GameSplinePath` objects ready to pipe straight into Unreal Engine 5 PCG (Procedural Content Generation) and C++ spline configurations for free-roaming zones.
+- **World Generation Diagnostics UI**: Pushed the real-time Overpass data pipeline monitor to `src/pages/Dashboard.tsx`, confirming live hook states for UE5 splines and explicit GAS boundaries.
+- **Multi-Stage Submission Core Logic**: Built the submission mathematics in `server/modes/submissionSystem.ts`. The state machine dynamically calculates a pressure gauge delta by scaling the attacker's analog input against their stamina pool, weighed against the defender's remaining stamina and isolated `LimbHealth`. Added `distanceToRopes` triggers to force automatic rope breaks.
+- **Submission Diagnostics UI**: Wired up the "Submission Loop Diagnostics" monitor on the front-end dashboard to track real-time gauge pressure, stamina advantages, and specific targeted limb HP.
+- **Grapple & Tie-Up State Machine**: Architected the collar-and-elbow tie-up core loop mathematically weighting `LimbHealth` vs. active `stamina`.
+- **Limb Targeting & IK Translators**: Built discrete hitbox logic (`server/hitboxLogic.ts`) mapping 6 physical quadrants to active UE5 FBIK offsets.
 
 ### PLANNED
-- [None at this time, all tracks are complete]
+
+**PHASE 1: UE5 AAA Framework Integration & Core Physics**
+- **Integrate Advanced Locomotion System Refactored (ALS-R)**: Port ALS-R (C++) into the Bannon Engine for seamless 8-way directional movement, turning in place, and transition to active ragdoll (get-up animations).
+- **Rollback Netcode via GGPO**: Integrate open-source GGPO for frame-perfect peer-to-peer fighting mechanics and strike registration.
+- **Active Ragdoll & Physical Animation (PAC)**: Hook UE5 Physical Animation Components and Control Rig to the Bannon skeletal meshes. Simulate hit reactions dynamically based on strike velocity and mass ratio.
+- **UE5.4 Native Motion Matching**: Migrate locomotion state machines to Motion Matching for hyper-realistic movement and weight shifting in the ring.
+- **Dynamic IK Rigging (Full Body IK)**: Hook up FBIK for foot placement on ring ropes, turnbuckles, and grappling hand placement on varying opponent sizes.
+- **God Within Mode - Gameplay Ability System (GAS)**: Implement GAS *exclusively* for the God Within mode to manage the ontological tree of life skill tree, discrete buffs, and RPG-like progression. (Do NOT use GAS for core wrestling mechanics/brawling).
+
+**PHASE 2: Gameplay Depth & Core Mechanics**
+- **Bespoke Physics & State Logic for Wrestling**: Develop custom physics-driven state machines and joint constraint manipulations for grappling, avoiding traditional RPG frameworks like GAS for the main ring gameplay.
+- **Stamina & Adrenaline Engine**: Flesh out the backend math for stamina depletion. Heavy moves should cost more stamina. Add the 'Second Wind' mechanic.
+- **Limb Targeting System**: Implement discrete hitboxes (Head, Torso, Arms, Legs) that accumulate damage and apply Inverse Kinematics penalties (e.g., limping, slower strike speed).
+- **Test of Strength / Lock-up Minigame**: Refine the frontend UI and backend state machine for collar-and-elbow tie-ups.
+- **Submission System**: Build a multi-stage submission minigame (analog stick / pressure based) with rope-break detection.
+
+**PHASE 3: Creation Suite Expansion**
+- **Morph Target (Blendshape) Integration**: Map the frontend body sliders to UE5 MetaHuman/Custom blendshapes for true face and body sculpting.
+- **Custom Move Set Editor**: Build a timeline visualizer where users can stitch together `MoveSegments` and assign frame-data properties (startup, active, recovery).
+- **Attire Layering System**: Add Z-order masking and material instances to allow clipping-free clothing layers.
+
+**PHASE 4: Career & Universe Mode Depth**
+- **Dynamic Rivalry Engine**: Implement an LLM-driven event generator that reads `characterMemory` and triggers backstage ambushes or contract signings based on morale.
+- **Match Card Generator Logic**: Enhance `FederationManager` to automatically book PPV cards based on power rankings and active rivalries.
+- **Backstage Brawl Interactions**: Hook up weapon physics (chairs, tables, monitors) to the active ragdoll system for backstage environments.
+- **God Within / Promotor Mode Expansion**: Add the UI and backend logic for managing federation budgets, TV ratings, and superstar morale.
 
 ## GIT IS NOT AVAILABLE — USE GITHUB API INSTEAD
