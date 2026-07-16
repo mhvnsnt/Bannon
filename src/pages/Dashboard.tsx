@@ -353,6 +353,40 @@ export default function Dashboard() {
         </div>
       </div>
 
+
+      {/* Procedural Environment Generation Monitor */}
+      <div className="bg-neutral-800 p-6 rounded-xl border border-emerald-500/30 mb-8 shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Globe className="w-5 h-5 text-emerald-400" />
+            <h3 className="text-lg font-semibold text-emerald-300">Overpass API Procedural Generator</h3>
+          </div>
+          <span className="flex items-center gap-2 text-xs font-bold text-emerald-400 bg-emerald-900/20 px-2 py-1 rounded border border-emerald-500/30">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            FETCHING GEO-NODES
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Data Pipeline (Node.js {'->'} UE5)</h4>
+                <div className="font-mono text-xs text-emerald-200">
+                    <div><span className="text-neutral-500">Source:</span> https://overpass-api.de</div>
+                    <div><span className="text-neutral-500">Target Bounds:</span> [31.95, -83.79] to [31.98, -83.75]</div>
+                    <div><span className="text-neutral-500">Parsed Splines:</span> 142 Active Ways</div>
+                    <div><span className="text-neutral-500">UE5 PCG Hook:</span> Ready (Awaiting Mesh Spawn)</div>
+                </div>
+            </div>
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">GAS Alignment Check</h4>
+                <div className="font-mono text-xs text-green-200">
+                    <div><span className="text-neutral-500">Core Brawling:</span> Strict Physical IK (No GAS)</div>
+                    <div><span className="text-neutral-500">God Within Mode:</span> GAS Active (Skill Trees)</div>
+                    <div><span className="text-neutral-500">Free-Roam Locomotion:</span> ALS-R Bound</div>
+                </div>
+            </div>
+        </div>
+      </div>
+
       {/* Local Infrastructure */}
       <div className="bg-neutral-800 p-6 rounded-xl border border-neutral-700 mb-8 shrink-0">
         <div className="flex items-center gap-2 mb-6">
