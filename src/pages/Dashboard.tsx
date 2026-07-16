@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle2, AlertTriangle, FileWarning, Clock, Info, Server, Cpu, Database } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { Users, Handshake, useState, useEffect } from 'react';
+import { Users, Handshake, RefreshCw, CheckCircle2, AlertTriangle, FileWarning, Clock, Info, Server, Cpu, Database } from 'lucide-react';
+import { Users, Handshake, supabase } from '../lib/supabase';
 import Markdown from 'react-markdown';
 
 
@@ -484,6 +484,68 @@ export default function Dashboard() {
                     <div><span className="text-neutral-500">Threat Target:</span> Player_01</div>
                     <div><span className="text-neutral-500">Computed Action:</span> <span className="text-red-400">DEFEND / RETREAT</span></div>
                     <div><span className="text-neutral-500">Reasoning:</span> "Stamina critical. Cowardice trait overriding combat."</div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+
+      {/* Crowd Physics & Interactivity Monitor */}
+      <div className="bg-neutral-800 p-6 rounded-xl border border-pink-500/30 mb-8 shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-pink-400" />
+            <h3 className="text-lg font-semibold text-pink-300">Crowd Entity Engine</h3>
+          </div>
+          <span className="flex items-center gap-2 text-xs font-bold text-pink-400 bg-pink-900/20 px-2 py-1 rounded border border-pink-500/30">
+            DYNAMIC NAVMESH
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Wrestler Proximity (Barricade)</h4>
+                <div className="font-mono text-xs text-pink-200">
+                    <div><span className="text-neutral-500">Distance to Row 1:</span> 65 cm</div>
+                    <div><span className="text-neutral-500">Wrestler State:</span> Airborne (Ragdoll)</div>
+                    <div><span className="text-neutral-500">Crowd Cell 04:</span> <span className="text-red-400">FLEEING</span></div>
+                </div>
+            </div>
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Event Logs</h4>
+                <div className="font-mono text-xs text-pink-200">
+                    <div>>> Crowd member A-14 scrambles out of the way of crashing wrestler!</div>
+                    <div className="mt-1">>> Crowd member B-02 passes weapon (Steel Chair) to wrestler!</div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      {/* Contract Negotiation & Economy Monitor */}
+      <div className="bg-neutral-800 p-6 rounded-xl border border-yellow-500/30 mb-8 shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Handshake className="w-5 h-5 text-yellow-400" />
+            <h3 className="text-lg font-semibold text-yellow-300">LLM Contract Engine</h3>
+          </div>
+          <span className="flex items-center gap-2 text-xs font-bold text-yellow-400 bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/30">
+            FEDERATION FINANCES
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Wrestler Leverage State</h4>
+                <div className="font-mono text-xs text-yellow-200">
+                    <div><span className="text-neutral-500">Superstar:</span> PAC</div>
+                    <div><span className="text-neutral-500">Star Power:</span> 92/100</div>
+                    <div><span className="text-neutral-500">LLM Tone:</span> <span className="text-yellow-500">Greedy</span></div>
+                </div>
+            </div>
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Negotiation Result</h4>
+                <div className="font-mono text-xs text-yellow-200">
+                    <div><span className="text-neutral-500">Initial Offer:</span> $400k/yr, 15% Merch</div>
+                    <div><span className="text-neutral-500">Decision:</span> <span className="text-red-400">REJECTED</span></div>
+                    <div><span className="text-neutral-500">Counter:</span> "Counters with $690,000/yr and First Class Travel perk."</div>
                 </div>
             </div>
         </div>
