@@ -424,6 +424,71 @@ export default function Dashboard() {
         </div>
       </div>
 
+
+      {/* Procedural Physics & Hit Reaction Monitor */}
+      <div className="bg-neutral-800 p-6 rounded-xl border border-orange-500/30 mb-8 shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Activity className="w-5 h-5 text-orange-400" />
+            <h3 className="text-lg font-semibold text-orange-300">Physics: Strike Momentum Matrix</h3>
+          </div>
+          <span className="flex items-center gap-2 text-xs font-bold text-orange-400 bg-orange-900/20 px-2 py-1 rounded border border-orange-500/30">
+            GLANCING BLOW SIMULATOR
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Impact Vector Analysis</h4>
+                <div className="font-mono text-xs text-orange-200">
+                    <div><span className="text-neutral-500">Attacker Mass:</span> 120kg</div>
+                    <div><span className="text-neutral-500">Defender Mass:</span> 85kg</div>
+                    <div><span className="text-neutral-500">Mass Ratio:</span> 1.41x (Advantage)</div>
+                    <div><span className="text-neutral-500">Trajectory:</span> Off-center (Angle: 0.12)</div>
+                </div>
+            </div>
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Hit Reaction Result</h4>
+                <div className="font-mono text-xs text-orange-200">
+                    <div><span className="text-neutral-500">Hit Type:</span> <span className="text-yellow-400">GLANCING BLOW</span></div>
+                    <div><span className="text-neutral-500">Damage Mult:</span> 0.3x</div>
+                    <div><span className="text-neutral-500">Knockback Force:</span> 420N</div>
+                    <div><span className="text-neutral-500">Ragdoll State:</span> Safe (Constraint Intact)</div>
+                </div>
+            </div>
+        </div>
+      </div>
+
+      {/* Neural AI & Aggression Monitor */}
+      <div className="bg-neutral-800 p-6 rounded-xl border border-cyan-500/30 mb-8 shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Cpu className="w-5 h-5 text-cyan-400" />
+            <h3 className="text-lg font-semibold text-cyan-300">Neural Network AI Logic</h3>
+          </div>
+          <span className="flex items-center gap-2 text-xs font-bold text-cyan-400 bg-cyan-900/20 px-2 py-1 rounded border border-cyan-500/30">
+            BRAWLER PATHFINDING
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Active AI Tendency Profile</h4>
+                <div className="font-mono text-xs text-cyan-200">
+                    <div><span className="text-neutral-500">Aggression Level:</span> 85% (Relentless)</div>
+                    <div><span className="text-neutral-500">Weapon Usage:</span> 20% (Clean Fighter)</div>
+                    <div><span className="text-neutral-500">Stamina Pool:</span> 15% (Critical)</div>
+                </div>
+            </div>
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Next Frame Decision</h4>
+                <div className="font-mono text-xs text-cyan-200">
+                    <div><span className="text-neutral-500">Threat Target:</span> Player_01</div>
+                    <div><span className="text-neutral-500">Computed Action:</span> <span className="text-red-400">DEFEND / RETREAT</span></div>
+                    <div><span className="text-neutral-500">Reasoning:</span> "Stamina critical. Cowardice trait overriding combat."</div>
+                </div>
+            </div>
+        </div>
+      </div>
+
       {/* Local Infrastructure */}
       <div className="bg-neutral-800 p-6 rounded-xl border border-neutral-700 mb-8 shrink-0">
         <div className="flex items-center gap-2 mb-6">
