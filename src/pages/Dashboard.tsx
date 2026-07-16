@@ -617,6 +617,40 @@ export default function Dashboard() {
         </div>
       </div>
 
+
+      {/* Euphoria-Style Physics & Constraints Monitor */}
+      <div className="bg-neutral-800 p-6 rounded-xl border border-purple-500/30 mb-8 shrink-0">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Orbit className="w-5 h-5 text-purple-400" />
+            <h3 className="text-lg font-semibold text-purple-300">Euphoria Physics & Constraints</h3>
+          </div>
+          <span className="flex items-center gap-2 text-xs font-bold text-purple-400 bg-purple-900/20 px-2 py-1 rounded border border-purple-500/30">
+            ACTIVE RAGDOLL HYBRID
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Procedural Balance & IK</h4>
+                <div className="font-mono text-xs text-purple-200">
+                    <div><span className="text-neutral-500">Center of Mass Z:</span> 92.4 cm</div>
+                    <div><span className="text-neutral-500">Horizontal Velocity:</span> 150 u/s</div>
+                    <div><span className="text-neutral-500">Recovery Status:</span> <span className="text-yellow-400">StumbleBackward</span></div>
+                    <div><span className="text-neutral-500">Foot Placement Z-Offset:</span> +4.2 cm (Turnbuckle)</div>
+                </div>
+            </div>
+            <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
+                <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Joints & Verlet Ropes</h4>
+                <div className="font-mono text-xs text-purple-200">
+                    <div><span className="text-neutral-500">Rope Node [14] Tension:</span> <span className="text-red-400">HIGH</span></div>
+                    <div><span className="text-neutral-500">Target Bone:</span> Arm_L</div>
+                    <div><span className="text-neutral-500">Submission Torque:</span> 142 deg (Max: 135)</div>
+                    <div><span className="text-neutral-500">Tear Risk:</span> <span className="text-red-400">CRITICAL</span></div>
+                </div>
+            </div>
+        </div>
+      </div>
+
       {/* Local Infrastructure */}
       <div className="bg-neutral-800 p-6 rounded-xl border border-neutral-700 mb-8 shrink-0">
         <div className="flex items-center gap-2 mb-6">
