@@ -1,6 +1,6 @@
-import { Users, Handshake, useState, useEffect } from 'react';
-import { Users, Handshake, RefreshCw, CheckCircle2, AlertTriangle, FileWarning, Clock, Info, Server, Cpu, Database } from 'lucide-react';
-import { Users, Handshake, supabase } from '../lib/supabase';
+import { useState, useEffect } from 'react';
+import { RefreshCw, CheckCircle2, AlertTriangle, FileWarning, Clock, Info, Server, Cpu, Database, Flame, Volume2, Orbit, TrendingUp, UserCog, Users, Handshake, Activity } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 import Markdown from 'react-markdown';
 
 
@@ -513,8 +513,8 @@ export default function Dashboard() {
             <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50">
                 <h4 className="text-sm font-medium text-neutral-400 mb-2 border-b border-neutral-700 pb-1">Event Logs</h4>
                 <div className="font-mono text-xs text-pink-200">
-                    <div>>> Crowd member A-14 scrambles out of the way of crashing wrestler!</div>
-                    <div className="mt-1">>> Crowd member B-02 passes weapon (Steel Chair) to wrestler!</div>
+                    <div>&gt;&gt; Crowd member A-14 scrambles out of the way of crashing wrestler!</div>
+                    <div className="mt-1">&gt;&gt; Crowd member B-02 passes weapon (Steel Chair) to wrestler!</div>
                 </div>
             </div>
         </div>
