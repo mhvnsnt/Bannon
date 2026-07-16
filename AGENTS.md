@@ -64,12 +64,10 @@ Use the GitHub API to fetch the remote main version, resolve the conflict (keep 
 To prevent "tech-larping" and ensure absolute integrity:
 1. **SHIPPED vs. PLANNED Split**: Every single status update or task completion summary MUST have a hard, labeled split:
    - **### SHIPPED
-- **Overpass API Environment Generator**: Built the `server/world/environmentGenerator.ts` script to act as the Node.js orchestrator pulling raw JSON vector paths from `https://overpass-api.de`. This script reads latitude/longitude nodes and maps them cleanly into `GameSplinePath` objects ready to pipe straight into Unreal Engine 5 PCG (Procedural Content Generation) and C++ spline configurations for free-roaming zones.
-- **World Generation Diagnostics UI**: Pushed the real-time Overpass data pipeline monitor to `src/pages/Dashboard.tsx`, confirming live hook states for UE5 splines and explicit GAS boundaries.
-- **Multi-Stage Submission Core Logic**: Built the submission mathematics in `server/modes/submissionSystem.ts`. The state machine dynamically calculates a pressure gauge delta by scaling the attacker's analog input against their stamina pool, weighed against the defender's remaining stamina and isolated `LimbHealth`. Added `distanceToRopes` triggers to force automatic rope breaks.
-- **Submission Diagnostics UI**: Wired up the "Submission Loop Diagnostics" monitor on the front-end dashboard to track real-time gauge pressure, stamina advantages, and specific targeted limb HP.
-- **Grapple & Tie-Up State Machine**: Architected the collar-and-elbow tie-up core loop mathematically weighting `LimbHealth` vs. active `stamina`.
-- **Limb Targeting & IK Translators**: Built discrete hitbox logic (`server/hitboxLogic.ts`) mapping 6 physical quadrants to active UE5 FBIK offsets.
+- **Procedural Strike Physics**: Built `server/modes/proceduralHitReaction.ts` (Phase 4 #27). Implemented velocity and vector math to calculate Glancing Blows vs Direct Hits. The physics engine now dynamically scales knockback force using the relative mass ratio of the attacker and defender, converting heavy strikes directly into ragdoll knockdowns.
+- **Neural Opponent AI (Multi-Threat)**: Built `server/modes/neuralOpponentAI.ts` (Phase 8 #61 & #63). Engineered an AI prioritization loop that factors in stamina, aggression, cowardice, and distance. AI actively computes whether to attack, flee, or scavenge weapons dynamically frame-by-frame.
+- **Medical & Laceration Engine**: Built `server/modes/lacerationBloodSystem.ts` (Phase 9 #72). Programmed localized damage tracking that spawns severe lacerations and dynamically expands the canvas blood pool radius based on head trauma and weapon impacts.
+- **Morph Target & Blendshape Logic Engine**: Built `server/modes/creationMorphTargets.ts` (Phase 3 #25).
 
 ### PLANNED
 
