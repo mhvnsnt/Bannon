@@ -274,3 +274,5 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 - **Physics Core Merge**: Unified the `Ragdoll` & `GrappleGrip` UE5 C++ properties (from the Claude solver) with the newer submission and reversal hooks built on `main`.
 
 - **Surrounding Game Pipeline (MDickie Meta-Loop)**: Expanded `bbTranslationService.ts` and `bannonOrchestrator.ts` to identify and route `Tournaments.bb`, `Teams.bb`, and `Rivalries.bb`. Applied meta-heuristics to convert global procedural bracket arrays into `RelationalDatabaseSchema` flags targeting the Node.js backend (`dist/meta/`), successfully isolating them from physics processing.
+
+- **Career & Negotiations Meta-Loop (`Career.bb`, `Negotiations.bb`)**: Completed extraction of MDickie core contract loops and `starPower` multipliers by wiring `applySurroundingGameHeuristics` directly into `astDomainRouter`. Successfully translated the decay curves of wrestler contracts (decaying `contractWeeks`) into pure JSON metadata structures via dynamic `RelationalDatabaseSchema` mapping.
