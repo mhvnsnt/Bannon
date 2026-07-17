@@ -9,6 +9,9 @@
 #include "GameFramework/Character.h"
 #include "BannonFighter.generated.h"
 
+class UBannonRagdollComponent;
+class UBannonGrappleGrip;
+
 UCLASS()
 class BANNONCORE_API ABannonFighter : public ACharacter
 {
@@ -16,6 +19,16 @@ class BANNONCORE_API ABannonFighter : public ACharacter
 
 public:
 	ABannonFighter();
+
+	// the physical body driver (active ragdoll: poise-scaled motors / velocity-drive, MAX_BODY_VEL cap).
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Bannon|Physics") UBannonRagdollComponent* Ragdoll = nullptr;
+	// the hand<->body grip used to lift/carry an opponent as a real physical load.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Bannon|Physics") UBannonGrappleGrip* Grip = nullptr;
+
+	// grab VICTIM: blend the victim's ragdoll up so it's simulating, then grip the nearest body to our
+	// hand socket. Returns true if the grip took (a real physical catch, not a canned attach).
+	UFUNCTION(BlueprintCallable, Category="Bannon|Combat")
+	bool GrappleGrab(ABannonFighter* Victim, FName HandSocket);
 
 	// two-layer health — poise drives crumple and is INDEPENDENT of HP (never couple them).
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|State") float HP = 10000.0f;      // MAX_HP

@@ -1,11 +1,34 @@
 // Copyright BANNON.
 #include "BannonFighter.h"
 #include "BannonBridge.h"
+#include "BannonRagdollComponent.h"
+#include "BannonGrappleGrip.h"
+#include "Components/SkeletalMeshComponent.h"
 
 ABannonFighter::ABannonFighter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	HP = bannon::MAX_HP; Poise = 100.0f; Stamina = bannon::MAX_STAMINA;
+
+	// assemble the physical body: active-ragdoll driver + grapple grip (both ActorComponents).
+	Ragdoll = CreateDefaultSubobject<UBannonRagdollComponent>(TEXT("Ragdoll"));
+	Grip    = CreateDefaultSubobject<UBannonGrappleGrip>(TEXT("GrappleGrip"));
+}
+
+bool ABannonFighter::GrappleGrab(ABannonFighter* Victim, FName HandSocket)
+{
+	if (!Victim || !Grip) return false;
+	USkeletalMeshComponent* VMesh = Victim->GetMesh();
+	USkeletalMeshComponent* AMesh = GetMesh();
+	if (!VMesh || !AMesh) return false;
+
+	// the victim must be simulating for a physical catch — pop its ragdoll blend up first.
+	if (Victim->Ragdoll) Victim->Ragdoll->ImpactBlend(1.0f);
+	VMesh->SetAllBodiesBelowSimulatePhysics(FName(TEXT("Hips")), true, true);
+
+	const FVector HandPos = AMesh->DoesSocketExist(HandSocket)
+		? AMesh->GetSocketLocation(HandSocket) : AMesh->GetComponentLocation();
+	return Grip->GripNearest(VMesh, HandPos);
 }
 
 void ABannonFighter::ApplyImpact(float Impact)
