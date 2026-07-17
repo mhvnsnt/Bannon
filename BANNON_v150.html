@@ -3554,6 +3554,23 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
       // keep both feet on the mat (a planted foot never floats)
       if (this.J.ftL.tgt && this.J.ftL.tgt.y < 0.02) this.J.ftL.tgt.y = 0.02;
       if (this.J.ftR.tgt && this.J.ftR.tgt.y < 0.02) this.J.ftR.tgt.y = 0.02;
+
+      // ACTIVE UPRIGHT-BALANCE RECOVERY — the spring-target analog of sergioabreu-g/active-ragdolls'
+      // UPRIGHT_TORQUE (corrective torque toward vertical, scaled nonlinearly by tilt). With the feet
+      // planted, actively pull the torso back over the base of support proportional to how far it has
+      // leaned — so a shoved fighter RIGHTS himself instead of the legs flailing out. Gentle by design;
+      // toggle BALANCE_RECOVER. Pulls chest/neck/head toward the pelvis's vertical line over the base.
+      if (window.BALANCE_RECOVER !== false && this.J.pelvis){
+        const _pxL = this.J.pelvis.tgt ? this.J.pelvis.tgt.x : this.J.pelvis.pos.x;
+        const _rg = (window.BALANCE_GAIN!=null?window.BALANCE_GAIN:0.9);
+        ['chest','neck','head','spineMid'].forEach((jn, _i)=>{
+          const j=this.J[jn]; if(!j||!j.tgt) return;
+          const off = j.tgt.x - _pxL;                 // horizontal lean of this segment past the pelvis
+          const ramp = Math.min(1, Math.abs(off)/0.28);  // nonlinear: the more it leans, the harder it rights (the uprightTorque curve)
+          const pull = Math.min(1, dt*3.2*_rg*(0.4+0.6*ramp)) * (0.55 + 0.18*_i); // upper segments right more
+          j.tgt.x = j.tgt.x - off*pull;
+        });
+      }
     } else { this._reactAnchorL=null; this._reactAnchorR=null; this._reactStepped=0; }
   }
 

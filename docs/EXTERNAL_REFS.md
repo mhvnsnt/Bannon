@@ -19,6 +19,25 @@ router + moves extractor) and distilled `tools/bbparse/out/` — 191-move catalo
 position taxonomy, 49-function AI state-machine map, Attacks/Anims/Gameplay function maps, Values
 constants. Raw `.bb` NOT committed (third-party). See `tools/bbparse/README.md`.
 
+## CLONED + MINED (2026-07-17 — owner: "clone them in and integrate", the big repos too large to upload)
+Cloned into scratchpad (NOT committed — third-party source), mined for transferable technique:
+- **sergioabreu-g/active-ragdolls** (Unity) — ⭐ the balance solver. Its `UPRIGHT_TORQUE` mode (corrective
+  torque toward vertical, scaled nonlinearly by tilt angle) is exactly the "recover balance over planted
+  feet instead of flailing" the owner wants. **INTEGRATED**: added the spring-target analog as ACTIVE
+  UPRIGHT-BALANCE RECOVERY next to the foot-plant in BANNON_v150.html (`window.BALANCE_RECOVER`) — a
+  shoved fighter now rights his torso over the base. Also has STABILIZER_JOINT + a grip module (parallels
+  our grapple grip). This is the direct answer to the feet-flail complaint; the same `UPRIGHT_TORQUE`
+  model is what the UE port's ragdoll should use for standing balance (feeds `UBannonRagdollComponent`).
+- **batnom/Boxing-Mate** (Unity boxing) — punch/block **cadence + combo timing** (progressive speed, less
+  delay between shots at higher levels). Reference for strike windup/recovery windows + the reversal
+  timing window (our DODGE/REV) — fold into `bannon_strike.h` tuning + the MOVESET stat blocks.
+- **shrekshao/SwordsmanshipU3D** (Unity, Mount&Blade/流星蝴蝶剑 scheme) — **directional swing** control
+  (drag a pattern → swing direction + quality drives the skeleton anim). Reference for weapon-strike
+  DIRECTIONALITY (our steel cable / weapon moves) + mocap-quality-from-input — informs the weapon combat
+  + the move authoring, not a code port (it's Unity C#).
+- **awillsousa/EyeofTiger** (Unity boxing, eye-tracking) — boxing movement only; the eye-gaze control is
+  irrelevant to us. Not cloned (low transfer value); listed for completeness.
+
 ## HIGH-VALUE — CLONE / REFERENCE NEXT (UE combat port)
 ### 3. OnlyHands / ArenaBrawler_Demo (noahbutcher97) — UE5.3 physics fighting, source-only
 The single best match for our UE combat port. Real, advanced C++ systems (69 headers), no content bloat:
