@@ -36732,5 +36732,82 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   }, 500);
 })();
 </script>
+
+<!-- ============================================================================================
+     BANNON UNIVERSE — the surrounding-game shell (career/booking loop). Structured from the MDickie
+     Wrestling MPire system map (docs/SURROUNDING_GAME.md) onto BANNON canon: AWE + JPCW promotions,
+     the ROSTER_ALL() roster, titles, records, momentum, injuries, auto-booking, sim/play, weekly news.
+     Data engine only (like BANNON_DNA) — persists to localStorage; the CREATION-SUITE hub gets the UI.
+     Native anchors (booking score, match consequence) live in native/include/bannon_universe.h.
+     ============================================================================================ -->
+<script>
+window.BANNON_UNIVERSE = (function(){
+  const KEY = 'bannon_universe_v1';
+  const PROMOS = ['AWE','JPCW'];
+  function roster(){ try{ return (window.ROSTER_ALL ? window.ROSTER_ALL() : []); }catch(e){ return []; } }
+  function load(){ try{ const s=localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){} return null; }
+  function save(u){ try{ localStorage.setItem(KEY, JSON.stringify(u)); }catch(e){} return u; }
+  // a fighter's booking rating (drives the sim + who contends) — weighted stats + current momentum.
+  function rating(f){ const s=(f&&f.stats)||{}; return (s.power||100)*0.9 + (s.speed||100)*0.7 + (s.chin||90)*0.5 + (s.hp||9000)/120 + ((f&&f.momentum)||0)*2; }
+  // which promotion a fighter belongs to (faction-derived, split by canon lore: Corporate/Alliance -> AWE).
+  function promoOf(f){ const fac=(f&&f.faction)||''; if(/Corporate|Alliance/i.test(fac)) return 'AWE'; let h=0, n=(f&&f.name)||''; for(let i=0;i<n.length;i++) h=(h+n.charCodeAt(i))|0; return (h%2) ? 'JPCW' : 'AWE'; }
+
+  function newUniverse(){
+    const R=roster(); const fighters={};
+    R.forEach(c=>{ fighters[c.name]={ name:c.name, faction:c.faction, archetype:c.archetype, stats:c.stats||{},
+      promo:null, wins:0, losses:0, momentum:0, injuredWeeks:0, title:null }; });
+    Object.values(fighters).forEach(f=> f.promo=promoOf(f));
+    const u={ v:1, week:1, promos:PROMOS, fighters, titles:{'AWE World':null,'JPCW World':null,'Inter-Promotional':null}, card:[], news:[], history:[] };
+    // seed champions = top-rated available per promotion
+    PROMOS.forEach(p=>{ const pool=Object.values(fighters).filter(x=>x.promo===p).sort((a,b)=>rating(b)-rating(a)); if(pool[0]){ u.titles[p+' World']=pool[0].name; pool[0].title=p+' World'; } });
+    u.card=bookWeek(u);
+    return save(u);
+  }
+  function get(){ return load()||newUniverse(); }
+  function reset(){ try{ localStorage.removeItem(KEY); }catch(e){} return newUniverse(); }
+
+  // AUTO-BOOK a week's card: title main-events (champ vs top available contender, same promo) + undercard.
+  function bookWeek(u){
+    const avail=Object.values(u.fighters).filter(f=>f.injuredWeeks<=0).sort((a,b)=>rating(b)-rating(a));
+    const used={}; const card=[];
+    for(const t of Object.keys(u.titles)){ const champ=u.titles[t]; const c=champ&&u.fighters[champ]; if(!c||c.injuredWeeks>0) continue;
+      const cont=avail.find(f=>f.name!==champ && !used[f.name] && (t.indexOf('Inter')>=0 || f.promo===c.promo));
+      if(!cont) continue; used[champ]=used[cont.name]=1; card.push({a:champ,b:cont.name,title:t,main:true}); }
+    const rest=avail.filter(f=>!used[f.name]);
+    for(let i=0;i+1<rest.length && card.length<8;i+=2) card.push({a:rest[i].name,b:rest[i+1].name,title:null,main:false});
+    return card;
+  }
+
+  // resolve one match: winner by rating + variance; updates records/momentum/titles/injuries/news/history.
+  function applyResult(u,m,winner,loser){
+    const W=u.fighters[winner], L=u.fighters[loser]; if(!W||!L) return null;
+    W.wins++; L.losses++; W.momentum=Math.min(20,(W.momentum||0)+2); L.momentum=Math.max(-10,(L.momentum||0)-1);
+    if(m.title && u.titles[m.title]===loser){ u.titles[m.title]=winner; L.title=null; W.title=m.title; u.news.push(`W${u.week}: ${winner} DETHRONED ${loser} for the ${m.title} title!`); }
+    else if(m.title) u.news.push(`W${u.week}: ${winner} retained the ${m.title} title vs ${loser}.`);
+    if(Math.random()<0.06){ L.injuredWeeks=1+Math.floor(Math.random()*3); u.news.push(`W${u.week}: ${loser} injured — out ${L.injuredWeeks}wk.`); }
+    u.history.push({week:u.week,a:m.a,b:m.b,winner,title:m.title||null});
+    return {winner,loser,title:m.title||null};
+  }
+  function simMatch(u,m){ const A=u.fighters[m.a], B=u.fighters[m.b]; if(!A||!B) return null;
+    const rA=rating(A)*(0.8+Math.random()*0.5), rB=rating(B)*(0.8+Math.random()*0.5);
+    return applyResult(u, m, rA>=rB?m.a:m.b, rA>=rB?m.b:m.a); }
+
+  // play the player's booked match live through the real fight engine; call recordPlayer() with the winner after.
+  function playMatch(m){ try{ window.MATCH_SETUP={p1Name:m.a,p2Name:m.b,p1Control:'YOU',p2Control:'CPU'}; (window.startFight||function(){})(); }catch(e){} return m; }
+  function recordPlayer(u,m,winnerName){ if(m) m._done=1; return applyResult(u, m, winnerName, winnerName===m.a?m.b:m.a); }
+
+  // ADVANCE the week: sim every unplayed card match, decay injuries, roll news window, re-book, +1 week.
+  function advanceWeek(u){ u=u||get();
+    (u.card||[]).forEach(m=>{ if(!m._done){ simMatch(u,m); m._done=1; } });
+    Object.values(u.fighters).forEach(f=>{ if(f.injuredWeeks>0) f.injuredWeeks--; });
+    u.week++; u.news=u.news.slice(-40); u.card=bookWeek(u); return save(u);
+  }
+  function standings(u){ u=u||get(); return Object.values(u.fighters)
+    .sort((a,b)=>((b.wins-b.losses)-(a.wins-a.losses))||(rating(b)-rating(a)))
+    .slice(0,24).map(f=>({name:f.name,promo:f.promo,w:f.wins,l:f.losses,mom:f.momentum,title:f.title})); }
+
+  return { KEY, newUniverse, reset, get, save, bookWeek, simMatch, applyResult, playMatch, recordPlayer, advanceWeek, standings, rating, promoOf };
+})();
+</script>
 </body>
 </html>
