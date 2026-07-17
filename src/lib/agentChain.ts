@@ -1,3 +1,4 @@
+import { BlitzTextIngestionService } from '../parser/bbLexerPipeline.ts';
 import { CodeGenLogger } from './firestore.ts';
 
 export interface ChainConfig {
