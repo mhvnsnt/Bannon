@@ -36743,23 +36743,33 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 <script>
 window.BANNON_UNIVERSE = (function(){
   const KEY = 'bannon_universe_v1';
-  const PROMOS = ['AWE','JPCW'];
+  const PROMOS = ['AWE','JPCW','NWC'];   // canon companies: AWE (Kennedy) + JPCW (Combs global) + NWC (Book 6)
   function roster(){ try{ return (window.ROSTER_ALL ? window.ROSTER_ALL() : []); }catch(e){ return []; } }
   function load(){ try{ const s=localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){} return null; }
   function save(u){ try{ localStorage.setItem(KEY, JSON.stringify(u)); }catch(e){} return u; }
   // a fighter's booking rating (drives the sim + who contends) — weighted stats + current momentum.
   function rating(f){ const s=(f&&f.stats)||{}; return (s.power||100)*0.9 + (s.speed||100)*0.7 + (s.chin||90)*0.5 + (s.hp||9000)/120 + ((f&&f.momentum)||0)*2; }
-  // which promotion a fighter belongs to (faction-derived, split by canon lore: Corporate/Alliance -> AWE).
-  function promoOf(f){ const fac=(f&&f.faction)||''; if(/Corporate|Alliance/i.test(fac)) return 'AWE'; let h=0, n=(f&&f.name)||''; for(let i=0;i<n.length;i++) h=(h+n.charCodeAt(i))|0; return (h%2) ? 'JPCW' : 'AWE'; }
+  // which promotion a fighter belongs to (faction/bio-derived, canon lore): NWC faction -> NWC; a JPCW
+  // strong-style mention -> JPCW; Corporate/Alliance -> AWE (Kennedy's promotion + its faces); else hash-split.
+  function promoOf(f){ const fac=(f&&f.faction)||'', bio=(f&&f.bio)||'';
+    if(/NWC/i.test(fac)) return 'NWC';
+    if(/JPCW/i.test(bio)) return 'JPCW';
+    if(/Corporate|Alliance/i.test(fac)) return 'AWE';
+    let h=0, n=(f&&f.name)||''; for(let i=0;i<n.length;i++) h=(h+n.charCodeAt(i))|0; return PROMOS[h%PROMOS.length]; }
+  // face/heel/tweener from faction (Promos.bb allegiance): Alliance = faces, Corporate/Agents = heels, else tweener.
+  function allegianceOf(fac){ fac=fac||''; if(/Alliance/i.test(fac)) return 'face'; if(/Corporate|Agents/i.test(fac)) return 'heel'; return 'tweener'; }
 
   function newUniverse(){
     const R=roster(); const fighters={};
-    R.forEach(c=>{ fighters[c.name]={ name:c.name, faction:c.faction, archetype:c.archetype, stats:c.stats||{},
-      promo:null, wins:0, losses:0, momentum:0, injuredWeeks:0, title:null }; });
+    R.forEach(c=>{ fighters[c.name]={ name:c.name, faction:c.faction, bio:c.bio||'', archetype:c.archetype, stats:c.stats||{},
+      promo:null, allegiance:allegianceOf(c.faction), wins:0, losses:0, momentum:0, injuredWeeks:0, title:null,
+      team:null, contractWeeks:26+Math.floor(Math.random()*52) }; });
     Object.values(fighters).forEach(f=> f.promo=promoOf(f));
-    const u={ v:1, week:1, promos:PROMOS, fighters, titles:{'AWE World':null,'JPCW World':null,'Inter-Promotional':null}, card:[], news:[], history:[] };
+    const titles={}; PROMOS.forEach(p=> titles[p+' World']=null); titles['Inter-Promotional']=null;
+    const u={ v:1, week:1, promos:PROMOS, fighters, titles, card:[], news:[], history:[], teams:{}, tournament:null };
     // seed champions = top-rated available per promotion
-    PROMOS.forEach(p=>{ const pool=Object.values(fighters).filter(x=>x.promo===p).sort((a,b)=>rating(b)-rating(a)); if(pool[0]){ u.titles[p+' World']=pool[0].name; pool[0].title=p+' World'; } });
+    PROMOS.forEach(p=>{ const pool=Object.values(fighters).filter(x=>x.promo===p).sort((a,b)=>rating(b)-rating(a)); if(pool[0]){ titles[p+' World']=pool[0].name; pool[0].title=p+' World'; } });
+    seedTeams(u);
     u.card=bookWeek(u);
     return save(u);
   }
@@ -36799,14 +36809,39 @@ window.BANNON_UNIVERSE = (function(){
   // ADVANCE the week: sim every unplayed card match, decay injuries, roll news window, re-book, +1 week.
   function advanceWeek(u){ u=u||get();
     (u.card||[]).forEach(m=>{ if(!m._done){ simMatch(u,m); m._done=1; } });
-    Object.values(u.fighters).forEach(f=>{ if(f.injuredWeeks>0) f.injuredWeeks--; });
+    Object.values(u.fighters).forEach(f=>{ if(f.injuredWeeks>0) f.injuredWeeks--; if(f.contractWeeks>0) f.contractWeeks--; });
     u.week++; u.news=u.news.slice(-40); u.card=bookWeek(u); return save(u);
   }
   function standings(u){ u=u||get(); return Object.values(u.fighters)
     .sort((a,b)=>((b.wins-b.losses)-(a.wins-a.losses))||(rating(b)-rating(a)))
-    .slice(0,24).map(f=>({name:f.name,promo:f.promo,w:f.wins,l:f.losses,mom:f.momentum,title:f.title})); }
+    .slice(0,24).map(f=>({name:f.name,promo:f.promo,w:f.wins,l:f.losses,mom:f.momentum,title:f.title,align:f.allegiance})); }
 
-  return { KEY, newUniverse, reset, get, save, bookWeek, simMatch, applyResult, playMatch, recordPlayer, advanceWeek, standings, rating, promoOf };
+  // ===== MDickie SURROUNDING LAYERS (docs/SURROUNDING_GAME.md) — all data-engine, verified headless =====
+  // ---- Promos / Relationships / Turns (Promos.bb) ----
+  function turnHeel(u,name){ const f=u.fighters[name]; if(!f) return u; f.allegiance='heel'; f.momentum=Math.max(f.momentum,4); u.news.push(`W${u.week}: ${name} TURNED HEEL.`); return save(u); }
+  function turnFace(u,name){ const f=u.fighters[name]; if(!f) return u; f.allegiance='face'; f.momentum=Math.max(f.momentum,4); u.news.push(`W${u.week}: ${name} TURNED FACE.`); return save(u); }
+  function rivalsOf(u,name){ const f=u.fighters[name]; if(!f) return []; // cross-allegiance same-promo top fighters = natural rivals
+    return Object.values(u.fighters).filter(x=>x.promo===f.promo&&x.name!==name&&x.allegiance!==f.allegiance).sort((a,b)=>rating(b)-rating(a)).slice(0,3).map(x=>x.name); }
+  // ---- Tag Teams (Teams.bb) ----
+  function seedTeams(u){ const byPromo={}; Object.values(u.fighters).forEach(f=>{ (byPromo[f.promo]=byPromo[f.promo]||[]).push(f); });
+    let tid=1; Object.values(byPromo).forEach(list=>{ const al=list.filter(f=>!f.team); for(let i=0;i+1<al.length && i<6;i+=2){ if(al[i].allegiance===al[i+1].allegiance){ const nm='Tag Team '+(tid++); u.teams[nm]={name:nm,members:[al[i].name,al[i+1].name],promo:al[i].promo}; al[i].team=al[i+1].team=nm; } } }); }
+  function formTeam(u,a,b,teamName){ const A=u.fighters[a],B=u.fighters[b]; if(!A||!B) return u; const nm=teamName||(a+' & '+b); u.teams[nm]={name:nm,members:[a,b],promo:A.promo}; A.team=B.team=nm; u.news.push(`W${u.week}: ${a} & ${b} formed ${nm}.`); return save(u); }
+  // ---- Contracts / Free Agency (Negotiations.bb) ----
+  function worth(f){ return Math.round(rating(f) + (f.wins-f.losses)*8 + (f.title?200:0)); }
+  function freeAgents(u){ u=u||get(); return Object.values(u.fighters).filter(f=>f.contractWeeks<=0).map(f=>({name:f.name,worth:worth(f),promo:f.promo})); }
+  function sign(u,name,promo){ const f=u.fighters[name]; if(!f) return u; f.promo=promo; f.contractWeeks=26+Math.floor(Math.random()*52); f.title=null; f.team=null; u.news.push(`W${u.week}: ${promo} SIGNED ${name} (worth ${worth(f)}).`); return save(u); }
+  // ---- Rankings / Contendership ----
+  function rankings(u,promo){ u=u||get(); return Object.values(u.fighters).filter(f=>f.promo===promo&&f.injuredWeeks<=0)
+    .sort((a,b)=>rating(b)-rating(a)).slice(0,10).map((f,i)=>({rank:i+1,name:f.name,rating:Math.round(rating(f)),title:f.title,align:f.allegiance})); }
+  // ---- Tournaments (Tournaments.bb) ----
+  function generateTournament(u,promo,size){ u=u||get(); size=size||8; const pool=Object.values(u.fighters).filter(f=>f.promo===promo&&f.injuredWeeks<=0).sort((a,b)=>rating(b)-rating(a)).slice(0,size).map(f=>f.name);
+    u.tournament={promo,round:1,alive:pool.slice(),bracketLog:[]}; u.news.push(`W${u.week}: ${promo} announced a ${pool.length}-man tournament.`); return save(u); }
+  function simTournament(u){ u=u||get(); if(!u.tournament) return null; const t=u.tournament;
+    while(t.alive.length>1){ const next=[]; for(let i=0;i+1<t.alive.length;i+=2){ const A=u.fighters[t.alive[i]],B=u.fighters[t.alive[i+1]]; const w=(rating(A)*(0.8+Math.random()*0.5)>=rating(B)*(0.8+Math.random()*0.5))?t.alive[i]:t.alive[i+1]; t.bracketLog.push({round:t.round,a:t.alive[i],b:t.alive[i+1],winner:w}); next.push(w); } if(t.alive.length%2) next.push(t.alive[t.alive.length-1]); t.alive=next; t.round++; }
+    const champ=t.alive[0]; if(u.fighters[champ]) u.fighters[champ].momentum+=5; u.news.push(`W${u.week}: ${champ} WON the ${t.promo} tournament!`); const res={winner:champ,rounds:t.round-1,log:t.bracketLog}; u.tournament=null; save(u); return res; }
+
+  return { KEY, PROMOS, newUniverse, reset, get, save, bookWeek, simMatch, applyResult, playMatch, recordPlayer, advanceWeek, standings, rating, promoOf, allegianceOf,
+           turnHeel, turnFace, rivalsOf, seedTeams, formTeam, worth, freeAgents, sign, rankings, generateTournament, simTournament };
 })();
 </script>
 </body>

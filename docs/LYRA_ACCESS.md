@@ -5,26 +5,34 @@ account into a GitHub repo **under your `mhvnsnt` account** — this session can
 `mhvnsnt` (it refused `EpicGames/UnrealEngine`: "cross-tier adds are not supported"). Once Lyra lives at
 `mhvnsnt/lyra`, I run `add_repo mhvnsnt/lyra` and integrate it directly.
 
-## Easiest path — the standalone Lyra download (recommended)
-You don't need the whole 100GB engine. Lyra ships as its own sample project.
-1. **Epic Games Launcher → Unreal Engine → Learn** (or Samples/Marketplace) → find **"Lyra Starter
-   Game"** → **Create Project** (or Download). You get a `LyraStarterGame/` folder on your PC.
-2. Make a new **private** repo on GitHub: `mhvnsnt/lyra` (private is fine — I can still add it).
-3. Push it. In a terminal in the `LyraStarterGame/` folder:
-   ```
-   git init
-   git lfs install            # Lyra has big binary Content; LFS keeps the push sane
-   git lfs track "*.uasset" "*.umap"
-   git add .gitattributes
-   git add .
-   git commit -m "Lyra Starter Game (Epic sample, my Epic-account access)"
-   git branch -M main
-   git remote add origin https://github.com/mhvnsnt/lyra.git
-   git push -u origin main
-   ```
-   (If `git lfs` isn't installed: get it from git-lfs.com, or skip LFS and just `git add .` — the push is
-   bigger but works.)
-4. Tell me it's up. I'll `add_repo mhvnsnt/lyra` and start integrating.
+## First, the honest catch: this step needs a computer (Windows or Mac)
+The **Epic Games Launcher is desktop-only** — there's no Android/iPhone version, and Lyra's project files
+only exist on a PC/Mac after you "Create Project". So this one part can't be done from your phone. You need
+to borrow/use a Windows or Mac computer once to do the steps below; after that everything's back in GitHub
+and I take over. (No coding — the GitHub Desktop path below has zero terminal commands.)
+
+## Easiest path — Epic Launcher → GitHub Desktop (no command line)
+Lyra is already in your Epic Library, so:
+1. On the PC/Mac, open **Epic Games Launcher → Unreal Engine → Library** (or the **Learn** tab). Find
+   **Lyra Starter Game** → click **Create Project** → choose a folder → it writes a `LyraStarterGame/`
+   folder to disk. (This is the "get it out of the launcher" step you were missing — "Create Project" is
+   what turns the library entry into real files.)
+2. Install **GitHub Desktop** (desktop.github.com) and sign in with your `mhvnsnt` GitHub.
+3. In GitHub Desktop: **File → Add Local Repository → choose the `LyraStarterGame/` folder**. It'll say
+   it's not a git repo yet → click **"create a repository"** → set name `lyra`, keep it **Private** →
+   **Create Repository**.
+4. It shows all the files as changes → type a summary ("Lyra Starter Game") → **Commit to main** →
+   **Publish repository** (keep **Private** checked). Done — it's now at `github.com/mhvnsnt/lyra`.
+   - If it warns about large files, tick **"use Git LFS"** if offered; otherwise it's fine, just slower.
+5. Tell me it's up. I run `add_repo mhvnsnt/lyra` and start integrating the systems.
+
+### Terminal alternative (if you prefer)
+In the `LyraStarterGame/` folder, after making an empty private `mhvnsnt/lyra` repo on github.com:
+```
+git init && git lfs install && git lfs track "*.uasset" "*.umap"
+git add . && git commit -m "Lyra Starter Game (my Epic-account access)"
+git branch -M main && git remote add origin https://github.com/mhvnsnt/lyra.git && git push -u origin main
+```
 
 ## What I actually need for integration (if the full push is a pain)
 For mining Lyra's systems and adopting them (foot-IK locomotion, Motion Warping, GAS combat — see
