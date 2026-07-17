@@ -64,6 +64,15 @@ Use the GitHub API to fetch the remote main version, resolve the conflict (keep 
 To prevent "tech-larping" and ensure absolute integrity:
 1. **SHIPPED vs. PLANNED Split**: Every single status update or task completion summary MUST have a hard, labeled split:
    - **### SHIPPED
+- **Pipeline Test Utility**: Built `src/parser/bbASTParser.test.ts`. Authored a local validation script to run a mock `.bb` schema (Wrestler type, Global Dim, Function blocks) through the `TranslationService`.
+- **Domain Verification**: Confirmed that when passed as `Career.bb` (Meta), the service successfully routes and renders a Node.js TypeScript interface with pure-function templates.
+- **Physics Engine Isolation**: Confirmed that when passed as `Attacks.bb` (Physics), the service routes it strictly into C++ structures (`struct`) and `std::vector` components.
+- **Truncation Watchdog Test Utility**: Built `src/lib/agentChain.test.ts`. Validated the recursive file-extraction loop logic by mocking a 65,536 token-limit breach (`MAX_TOKENS`).
+- **Anchor Extraction Validation**: Confirmed the agent successfully halts parsing, extracts the precise number of trailing anchor lines (simulating the break point), and correctly generates the automatic `[Last Valid Code Anchor]` continuation prompt.
+- **Continuous Payload Stitching**: Verified that the second execution pass automatically inherits the iterative injection prompt and stitches the output directly to the data stream without missing structural elements.
+- **Bannon Master Orchestrator**: Built `src/lib/bannonOrchestrator.ts`. Engineered the master compilation loop orchestration sequence intended to consume `manifesto-registry.json` and iterate across all pending dependencies.
+- **Global Chain Instantiation**: Instantiated the `AutonomousChainingAgent` directly into the orchestrator, coupling the lexer, translation matrix, and truncation bypass system into a unified execution object.
+- **Dynamic File Router**: Programmed the target destination logic to safely route and write resolved outputs to `dist/server/native/` for physics/C++ elements, and `dist/meta/` for Node.js structural outputs.
 - **Legacy BB Lexer Pipeline**: Built `src/parser/bbLexerPipeline.ts`. Created streaming lexer to tokenize and structure legacy Blitz3D `.bb` files into JSON ASTs, handling functions, types, fields, and globals while stripping directives.
 - **AST Domain Router**: Built `src/parser/astDomainRouter.ts`. Implemented structural interpreter mapping to split legacy procedural variables into C++ rigid body structures or Node.js meta backend databases.
 - **Parser Matrix Blueprint**: Authored `config/parserMappingRules.md`. Explicitly defined legacy paradigm conversion rules, Poise engine isolation constraints, and hard-coded constant mappings for target architectures.
