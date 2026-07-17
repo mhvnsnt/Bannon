@@ -266,3 +266,9 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 *   **Zero Placeholders**: Explicitly forbidden from emitting `// TODO` or `// Code remains the same` tags. Every block must be full structural logic.
 *   **Code Separation**: Separate creative asset logic from mathematical physics algorithms to prevent data corruption across compilation layers.
 *   **Next Module Anchor**: Automatically stage the next file path in the compilation queue upon successful file completion.
+
+### SHIPPED
+- **Conflict Resolution on Main**: Pushed resolved versions of `unreal/Source/BannonCore/Public/BannonFighter.h`, `unreal/Source/BannonCore/Private/BannonFighter.cpp`, and `BANNON_v150.html` to `main`.
+- **Conflict Resolution on PR Branch**: Pushed identically resolved files to `claude/grapple-solver-model-fixes-oar0pg` to immediately unblock the pending Pull Request.
+- **HTML Integrity Restoration**: Recovered the primary monolithic logic for `BANNON_v150.html` (the 2.3MB frontend) that was temporarily overwritten by unhooked snippet testing, splicing the active `main` features safely back into the stable UI module.
+- **Physics Core Merge**: Unified the `Ragdoll` & `GrappleGrip` UE5 C++ properties (from the Claude solver) with the newer submission and reversal hooks built on `main`.
