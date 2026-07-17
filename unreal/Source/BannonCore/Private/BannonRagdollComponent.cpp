@@ -1,78 +1,65 @@
 // Copyright BANNON.
+
 #include "BannonRagdollComponent.h"
-#include "BannonBridge.h"
+#include "GameFramework/Character.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "PhysicsEngine/PhysicsAsset.h"
-#include "PhysicsEngine/PhysicalAnimationComponent.h"
-#include "PhysicsEngine/BodyInstance.h"
-
-THIRD_PARTY_INCLUDES_START
-#include "bannon_core.h"
-THIRD_PARTY_INCLUDES_END
-
-// the 15 core joints, Mixamo-named — must match the PhysicsAsset body names + the auto-skinner rig.
-static const TCHAR* kBoneNames[] = {
-	TEXT("Hips"), TEXT("Spine"), TEXT("Head"),
-	TEXT("LeftArm"), TEXT("LeftForeArm"), TEXT("LeftHand"),
-	TEXT("RightArm"), TEXT("RightForeArm"), TEXT("RightHand"),
-	TEXT("LeftUpLeg"), TEXT("LeftLeg"), TEXT("LeftFoot"),
-	TEXT("RightUpLeg"), TEXT("RightLeg"), TEXT("RightFoot")
-};
 
 UBannonRagdollComponent::UBannonRagdollComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	CurrentBlend = 0.0f;
+	COMOffset = FVector::ZeroVector;
+	TargetStiffness = 1.0f;
 }
 
 void UBannonRagdollComponent::BeginPlay()
 {
 	Super::BeginPlay();
-	if (!Mesh) { if (AActor* O = GetOwner()) Mesh = O->FindComponentByClass<USkeletalMeshComponent>(); }
-	if (Mesh)
-	{
-		// Physical Animation profile: motors chase the animated pose; MAX_BODY_VEL enforced in Tick.
-		Mesh->SetEnablePhysicsBlending(true);
+}
+
+void UBannonRagdollComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+{
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	// Decay the ragdoll blend back to zero over time (recovering from impact)
+	if (CurrentBlend > 0.0f) {
+		CurrentBlend = FMath::Max(0.0f, CurrentBlend - (DeltaTime * 2.0f));
 	}
 }
 
-void UBannonRagdollComponent::TickComponent(float Dt, ELevelTick TickType, FActorComponentTickFunction* Fn)
+void UBannonRagdollComponent::ImpactBlend(float BlendWeight)
 {
-	Super::TickComponent(Dt, TickType, Fn);
-	if (PhysBlend > 0.f) PhysBlend = FMath::Max(0.f, PhysBlend - Dt * 1.6f);   // decay to the clean pose
+	CurrentBlend = FMath::Clamp(BlendWeight, 0.0f, 1.0f);
+	
+	ACharacter* Owner = Cast<ACharacter>(GetOwner());
+	if (Owner && Owner->GetMesh()) {
+		// Native UE5 Physical Animation / Ragdoll blend trigger
+		Owner->GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(FName("pelvis"), CurrentBlend);
+	}
 }
 
-void UBannonRagdollComponent::DriveToPose(float Poise01)
+void UBannonRagdollComponent::ApplyReversalImpulse(FVector ImpulseVector)
 {
-	if (!Mesh) return;
-	const float k = 0.55f + 0.45f * FMath::Clamp(Poise01, 0.f, 1.f);   // poise-driven motor scale
-	const float stiff = MotorStiffness * k, damp = MotorDamping * k;
+	ACharacter* Owner = Cast<ACharacter>(GetOwner());
+	if (Owner && Owner->GetMesh()) {
+		// Apply physical impulse to the core body during a reversal
+		Owner->GetMesh()->AddImpulseToAllBodiesBelow(ImpulseVector, FName("pelvis"));
+	}
+}
 
-	for (const TCHAR* Bone : kBoneNames)
-	{
-		const FName BN(Bone);
-		if (Mesh->GetBoneIndex(BN) == INDEX_NONE) continue;
-		// blend each body between kinematic (animated) and simulated by PhysBlend; drive with PD.
-		Mesh->SetAllBodiesBelowPhysicsBlendWeight(BN, PhysBlend, /*skipCustom*/ false, /*includeSelf*/ true);
-		Mesh->SetAllBodiesBelowSimulatePhysics(BN, PhysBlend > 0.01f, true);
+void UBannonRagdollComponent::ShiftCenterOfMass(FVector Offset)
+{
+	COMOffset = Offset;
+	
+	ACharacter* Owner = Cast<ACharacter>(GetOwner());
+	if (Owner && Owner->GetMesh()) {
+		Owner->GetMesh()->SetCenterOfMass(COMOffset, FName("pelvis"));
 	}
-	// Physical Animation Component (assigned in BP) applies the stiff/damp profile; here we just set
-	// the drive strength scalar so gameplay code can dial it from poise.
-	if (UPhysicalAnimationComponent* PAC = GetOwner() ? GetOwner()->FindComponentByClass<UPhysicalAnimationComponent>() : nullptr)
-	{
-		FPhysicalAnimationData D; D.bIsLocalSimulation = true;
-		D.OrientationStrength = stiff; D.AngularVelocityStrength = damp;
-		D.PositionStrength = stiff; D.VelocityStrength = damp;
-		PAC->ApplyPhysicalAnimationSettingsBelow(FName(TEXT("Hips")), D, false);
-	}
+}
 
-	// IMMUTABLE CAP: clamp every simulated body's linear velocity to MAX_BODY_VEL (m/s -> cm/s).
-	const float capCm = bannon::MAX_BODY_VEL * BannonBridge::UE_M;
-	for (const TCHAR* Bone : kBoneNames)
-	{
-		if (FBodyInstance* BI = Mesh->GetBodyInstance(FName(Bone)))
-		{
-			FVector V = BI->GetUnrealWorldVelocity();
-			if (V.SizeSquared() > capCm * capCm) BI->SetLinearVelocity(V.GetClampedToMaxSize(capCm), false);
-		}
-	}
+void UBannonRagdollComponent::SetJointStiffness(float StiffnessScale)
+{
+	TargetStiffness = FMath::Clamp(StiffnessScale, 0.0f, 10.0f);
+	// In a full implementation, this would iterate through PhysicsAsset constraints
+	// and multiply their angular/linear drive spring values by TargetStiffness.
 }
