@@ -288,3 +288,14 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
   1. Build Phase 2 C++ Headers: Create the `BannonBalanceMatrix` component to implement the Procedural Balance Recovery Matrix (blending from ragdoll to animation).
   2. Implement `BannonProceduralIK` for weapon grip IK, improvised affordances, and limb-specific ragdoll triggers.
   3. Expand the Python pipeline to batch push Phase 2 dependencies to GitHub in one sweep.
+
+### SHIPPED
+- **Phase 2 Procedural IK & Balance Matrix**: Constructed `BannonBalanceMatrix` and `BannonProceduralIK` components to handle procedural ragdoll transitions based on angular velocity thresholds and dynamic weapon grip IK attachments, bridging the gap between root motion animation and Euphoria-style physics compliance.
+
+### NEXT EXECUTING SEQUENCE
+- **File Paths**: `unreal/Source/BannonCore/Public/BannonPhysicsCollider.h`, `unreal/Source/BannonCore/Private/BannonPhysicsCollider.cpp`, `unreal/Source/BannonCore/Public/BannonDynamicRope.h`
+- **Line Ranges**: 1-100
+- **Technical Steps**:
+  1. Build remaining Phase 2 components: Mass-Driven Collision Hulls (`BannonPhysicsCollider`) for calculating strike impact forces based on limb velocity vectors and mass ratios.
+  2. Build Verlet Rope Physics Simulation (`BannonDynamicRope`) for real-time tension calculation when bodies hit the ropes.
+  3. Execute extraction loop for `Moves.bb` and `Anims.bb` to test deep physics structural mapping.
