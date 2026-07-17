@@ -302,3 +302,6 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 
 - **Phase 2 Mass Colliders & Dynamic Ropes**: Finalized Phase 2 components by building `BannonPhysicsCollider` (implementing velocity-based impact kinetic energy scaling relative to defender mass) and `BannonDynamicRope` (calculating rope tension and rebound multipliers).
 - **Physics AST Domain Mapping (`Moves.bb`, `Anims.bb`)**: Confirmed the `astDomainRouter` correctly bridges legacy Blitz3D `Type Moves` and `Type Anims` definitions directly into C++ `struct` headers intended for the UE5 physics core, successfully bypassing Node.js meta extraction.
+
+- **Phase 3 Contextual Props & Interactive Crowd**: Created `BannonPropSpawner` to dynamically load sandbox elements (tables, barricades) into the physics grid, bridging standard objects with UE5 Chaos destruction logic. Created `BannonCrowdAgent` that evaluates wrestler trajectory vectors to calculate procedural fleeing pathfinding (navmesh) versus object handoff IK logic based on proximity.
+- **Phase 3 Meta Extraction Loop**: Successfully bridged the legacy extraction of `News.bb` and `Promos.bb` into the `dist/meta/` Node.js backend.
