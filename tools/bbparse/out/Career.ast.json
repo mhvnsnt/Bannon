@@ -1,0 +1,654 @@
+{
+ "file": "Career.bb",
+ "functions": [
+  {
+   "name": "ConfirmUniverse",
+   "args": "",
+   "line": 8,
+   "calls": [
+    "CreateTimer",
+    "WaitTimer",
+    "KeyDown",
+    "ButtonPressed",
+    "MouseDown",
+    "ManageMusic",
+    "JoyYDir",
+    "gLogo",
+    "font",
+    "Outline",
+    "DrawOption",
+    "MouseX",
+    "MouseY",
+    "KeyHit",
+    "Screenshot",
+    "Loader",
+    "SwitchSlot",
+    "slotActive",
+    "SaveUniverse",
+    "SaveProgress",
+    "SaveWorld",
+    "SaveChars",
+    "SavePhotos",
+    "fedRoster",
+    "fedSize",
+    "fedBooker"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "Calendar",
+   "args": "",
+   "line": 121,
+   "calls": [
+    "charFed",
+    "GenerateArena",
+    "gamSchedule",
+    "gamVenue",
+    "gamAtmos",
+    "TranslateAttendance",
+    "gamAttendance",
+    "gamRopes",
+    "gamPads",
+    "gamCanvas",
+    "gamApron",
+    "gamMatting",
+    "CreateTimer",
+    "WaitTimer",
+    "KeyDown",
+    "ButtonPressed",
+    "Or",
+    "MouseDown",
+    "MouseY",
+    "gamSegments",
+    "BlockAccess",
+    "ManageMusic",
+    "JoyYDir",
+    "JoyXDir",
+    "GetMonth",
+    "MouseXSpeed",
+    "gFed",
+    "DrawFedProfile",
+    "font",
+    "gMonth",
+    "Outline",
+    "GetDate",
+    "MouseX",
+    "GetWeek",
+    "InjuryDate",
+    "gEvent",
+    "gHistory",
+    "fontStat",
+    "GetNightRating",
+    "gamNightScore"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "Production",
+   "args": "",
+   "line": 416,
+   "calls": [
+    "CreateTimer",
+    "charFed",
+    "WaitTimer",
+    "KeyDown",
+    "ButtonPressed",
+    "MouseDown",
+    "ManageMusic",
+    "JoyYDir",
+    "JoyXDir",
+    "gamAgreement",
+    "fedProduction",
+    "gFed",
+    "DrawFedProfile",
+    "MouseX",
+    "MouseY",
+    "gProduction",
+    "DrawOption",
+    "fontStat",
+    "Outline",
+    "prodCost",
+    "font",
+    "KeyHit",
+    "Screenshot"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GenerateCareer",
+   "args": "",
+   "line": 572,
+   "calls": [
+    "gamAgreement",
+    "GetRealDate",
+    "ResetSchedule",
+    "gamSchedule",
+    "gamVenue",
+    "GenerateArena",
+    "charFed",
+    "gamAttendance",
+    "GenerateAttendance",
+    "TranslateAttendance",
+    "cupSize",
+    "fedOldPopularity",
+    "fedPopularity",
+    "fedOldReputation",
+    "fedReputation",
+    "charTitles",
+    "fedHistCount",
+    "fedHistChar",
+    "fedHistPartner",
+    "fedHistDate",
+    "fedHistYear",
+    "WriteHistory",
+    "fedChampWorld",
+    "fedChampInter",
+    "fedChampTag",
+    "fedCupHolder",
+    "fedProduction",
+    "RankPromotions",
+    "ResetTVRatings",
+    "showPopularity",
+    "showRanked",
+    "showList",
+    "showOldList",
+    "showOldRanked",
+    "ResetHealthStatus",
+    "ResetOldValues",
+    "ResetCareerStatus",
+    "charContract",
+    "charHealth",
+    "charToughness"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ResetHealthStatus",
+   "args": "char",
+   "line": 677,
+   "calls": [
+    "charHealth",
+    "charVacant",
+    "charTrainCourse",
+    "charInjured",
+    "charOldInjured",
+    "charLimb"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ResetCareerStatus",
+   "args": "char",
+   "line": 691,
+   "calls": [
+    "charAge",
+    "charPeaked",
+    "charFed",
+    "charMatches",
+    "charWins",
+    "charExperience",
+    "GetValue",
+    "GenerateContract"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ResetSchedule",
+   "args": "start",
+   "line": 720,
+   "calls": [
+    "gamSchedule",
+    "GetWeek",
+    "gamRivalFed",
+    "gamOpponent",
+    "gamMatch",
+    "gamGimmick",
+    "gamPromo",
+    "gamResult",
+    "gamVenue",
+    "gamAttendance",
+    "gamAtmos",
+    "gamRopes",
+    "gamPads",
+    "gamCanvas",
+    "gamApron",
+    "gamMatting",
+    "gamSegments",
+    "gamMatchScore",
+    "gamMatchHardcore",
+    "gamMatchFormat",
+    "gamMatchWinner",
+    "gamMatchLoser",
+    "gamNightScore",
+    "gamNightHardcore",
+    "cupSize",
+    "GenerateArena",
+    "charFed",
+    "GenerateAttendance",
+    "TranslateAttendance"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetRealDate",
+   "args": "",
+   "line": 771,
+   "calls": [
+    "GetDate"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetDate",
+   "args": "month,week",
+   "line": 789,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "GetMonth",
+   "args": "date",
+   "line": 795,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "GetWeek",
+   "args": "date",
+   "line": 805,
+   "calls": [
+    "GetMonth"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "DescribeDate",
+   "args": "",
+   "line": 811,
+   "calls": [
+    "GetWeek",
+    "GetMonth"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "NextDate",
+   "args": "",
+   "line": 818,
+   "calls": [
+    "gamSchedule"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "CourtDate",
+   "args": "",
+   "line": 827,
+   "calls": [
+    "gamSchedule"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LastResult",
+   "args": "",
+   "line": 836,
+   "calls": [
+    "gamSchedule",
+    "gamResult"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LastEvent",
+   "args": "",
+   "line": 849,
+   "calls": [
+    "gamSchedule"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "OpponentBooked",
+   "args": "char",
+   "line": 861,
+   "calls": [
+    "gamSchedule",
+    "gamOpponent"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "CountClients",
+   "args": "char",
+   "line": 870,
+   "calls": [
+    "fedSize",
+    "charFed",
+    "fedRoster",
+    "charManager"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetMatchRules",
+   "args": "match",
+   "line": 880,
+   "calls": [
+    "fedSize"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "AddGimmick",
+   "args": "gimmick",
+   "line": 1033,
+   "calls": [
+    "charFed",
+    "fedProduction",
+    "gamAttendance",
+    "gamAgreement"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "AssignOpponent",
+   "args": "char,date,task",
+   "line": 1095,
+   "calls": [
+    "fedRoster",
+    "charFed",
+    "fedSize",
+    "gamSchedule",
+    "gamRivalFed",
+    "TitleHolder",
+    "fedChampTag",
+    "fedChampInter",
+    "fedChampWorld",
+    "FindEnemy",
+    "Or",
+    "Until",
+    "charRelationship",
+    "charPopularity",
+    "charPartner",
+    "charHeel",
+    "fedBooker",
+    "charRole",
+    "charVacant",
+    "TournamentStatus",
+    "charHealth",
+    "InjuryStatus",
+    "charLimb",
+    "charManager",
+    "charFought",
+    "pChar"
+   ],
+   "doc": "0=main, 1=additional"
+  },
+  {
+   "name": "AssignPartner",
+   "args": "char,task",
+   "line": 1172,
+   "calls": [
+    "fedRoster",
+    "charFed",
+    "fedSize",
+    "charPartner",
+    "fedChampTag",
+    "TitleHolder",
+    "charRelationship",
+    "charHeel",
+    "charHealth",
+    "Or",
+    "charVacant",
+    "TournamentStatus",
+    "charLimb",
+    "charRole",
+    "pChar",
+    "charManager",
+    "TournamentSelected"
+   ],
+   "doc": "-1=permanent, 0=for match, 1=for tournament"
+  },
+  {
+   "name": "AssignReferee",
+   "args": "",
+   "line": 1218,
+   "calls": [
+    "gamSchedule",
+    "fedRoster",
+    "fedSize",
+    "charRole",
+    "fedBooker",
+    "charVacant",
+    "TournamentStatus",
+    "charHealth",
+    "Or",
+    "InjuryStatus",
+    "charFed",
+    "charLimb",
+    "And",
+    "gamRivalFed",
+    "pChar",
+    "charPartner",
+    "charManager"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "InjuryStatus",
+   "args": "char",
+   "line": 1251,
+   "calls": [
+    "charInjured"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "OldInjuryStatus",
+   "args": "char",
+   "line": 1260,
+   "calls": [
+    "charOldInjured"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "IdentifyInjury",
+   "args": "char",
+   "line": 1269,
+   "calls": [
+    "charInjured"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "InjuryDate",
+   "args": "date",
+   "line": 1278,
+   "calls": [
+    "gamSchedule"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "CountExperience",
+   "args": "char,promotion",
+   "line": 1288,
+   "calls": [
+    "charExperience"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "CountMatches",
+   "args": "char,promotion",
+   "line": 1301,
+   "calls": [
+    "charMatches"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "CountWins",
+   "args": "char,promotion",
+   "line": 1314,
+   "calls": [
+    "charWins"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetWinRate",
+   "args": "char,promotion",
+   "line": 1327,
+   "calls": [
+    "charWins",
+    "charMatches",
+    "CountWins",
+    "CountMatches"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "CountTitles",
+   "args": "char,promotion",
+   "line": 1337,
+   "calls": [
+    "charTitles"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "CountRelationships",
+   "args": "char,task",
+   "line": 1352,
+   "calls": [
+    "charFed",
+    "charRelationship"
+   ],
+   "doc": "-1=enemies, 1=friends"
+  },
+  {
+   "name": "CountRealRelationships",
+   "args": "char,task",
+   "line": 1364,
+   "calls": [
+    "charFed",
+    "charRealRelationship"
+   ],
+   "doc": "-1=enemies, 1=friends"
+  },
+  {
+   "name": "AllegianceRatio",
+   "args": "cyc,style",
+   "line": 1376,
+   "calls": [
+    "fedSize",
+    "fedRoster",
+    "charHeel"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "CountSalaries",
+   "args": "promotion,task",
+   "line": 1386,
+   "calls": [
+    "fedSize",
+    "fedRoster",
+    "charArrived",
+    "fedBooker",
+    "charSalary",
+    "charFed",
+    "charVacant",
+    "Or",
+    "charWorked",
+    "charClause",
+    "InjuryStatus"
+   ],
+   "doc": "0=in theory, 1=after clauses"
+  },
+  {
+   "name": "CountProductions",
+   "args": "promotion",
+   "line": 1409,
+   "calls": [
+    "fedProduction"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ProductionCosts",
+   "args": "promotion,task",
+   "line": 1418,
+   "calls": [
+    "gamSchedule",
+    "And",
+    "fedProduction",
+    "prodCost"
+   ],
+   "doc": "0=in theory, 1=based on show"
+  },
+  {
+   "name": "PromotionPotential",
+   "args": "promotion",
+   "line": 1429,
+   "calls": [
+    "charFed",
+    "fedProduction"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TitleHolder",
+   "args": "char,title",
+   "line": 1445,
+   "calls": [
+    "fedChampTag",
+    "charFed",
+    "fedChampInter",
+    "fedChampWorld"
+   ],
+   "doc": "0=most prestigious, 1=find world, 2=find inter, 3=find tags"
+  },
+  {
+   "name": "ImportantChar",
+   "args": "char",
+   "line": 1463,
+   "calls": [
+    "fedBooker"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ConstructInterPromotional",
+   "args": "match",
+   "line": 1471,
+   "calls": [
+    "ResetCharacters",
+    "GetMatchRules",
+    "AddGimmick",
+    "pChar",
+    "fedChampInter",
+    "charFed",
+    "gamRivalFed",
+    "fedChampTag",
+    "fedChampWorld",
+    "TitleHolder",
+    "charVacant",
+    "fedRoster",
+    "fedSize",
+    "Until",
+    "FindCharacter",
+    "AssignReferee"
+   ],
+   "doc": "1=inter champions, 2=tag champions, 3=world champions, 4=8-man war"
+  }
+ ],
+ "types": [],
+ "globals": [],
+ "consts": [],
+ "dims": [],
+ "lineCount": 1527
+}
