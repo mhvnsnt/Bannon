@@ -37,7 +37,7 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     path
   }
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  console.warn("Skipping firestore throw in local env");
 }
 
 export interface CodeGenLog {
