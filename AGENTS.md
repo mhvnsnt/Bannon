@@ -335,3 +335,13 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
   - Integrated the proprietary Match Types (First Blood, Iron Man, Cage) into the Universe matrix, ensuring unhooked procedural rules apply properly to booking and standings.
   - Built the `BannonSoundtrackEngine` (`.h` / `.cpp` in UE5 & React Node) dynamically streaming optimized `.ogg` Vorbis tracks to handle the "M. Heaven$ent" jukebox (menu, entrance, game loop context).
   - Wired the UNIVERSE UI directly to the central `App.tsx` routing, making it accessible from the sidebar.
+
+### SHIPPED (PHASE 14 - MDICKIE MISSING LAYERS)
+- **C++ Data Structures for Missing Systems**: Created native C++ structural definitions and header/source pairs for the remaining MDickie legacy logic tiers:
+  - `BannonContractMatrix`: Financial deduction, merch heat multipliers, and creative control override logic.
+  - `BannonPoliticsEngine`: Faction clustering, face/heel dynamic turns, morale physics, and mid-match action-driven betrayals.
+  - `BannonAnatomicalTrauma`: Persistent anatomical degradation isolated from the immediate HP pool (concussive trauma lowering max poise ceilings). Includes 'The Vice Matrix' logic for chemical enhancements triggering catastrophic failures.
+  - `BannonShootState`: Handling non-cooperative physics and sandbagging (low morale triggers zeroed joint compliance).
+- **Node-to-C++ Script Tearing Orchestrator**: Built `src/lib/bannonUniverseOrchestrator.ts` to manage the "Script Torn" decision matrix, giving the AI Promoter the ability to force audible matches if TV ratings dip, with options to Comply, Sabotage, Plead, or walk out (Ultimatum).
+- **Universe UI Expansion**: Enhanced `UniverseHub.tsx` with dedicated sub-panels to monitor the **Booking & Leverage** (script tearing matrices and cross-promotion warfare), **Politics & Heat** (cliques, dirt sheet leaks), and **Medical/Trauma** (anatomical wear and chemical tolls).
+- **Audio Fault Isolation**: Implemented `scripts/audio_chunker.py` utilizing the `soundfile` library chunking iterator to stream massive `.wav` assets dynamically without exhausting the RAM limits causing prior segfaults.
