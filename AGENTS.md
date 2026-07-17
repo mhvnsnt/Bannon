@@ -225,3 +225,30 @@ To prevent "tech-larping" and ensure absolute integrity:
 - **God Within / Promotor Mode Expansion**: Add the UI and backend logic for managing federation budgets, TV ratings, and superstar morale.
 
 ## GIT IS NOT AVAILABLE — USE GITHUB API INSTEAD
+
+## Autonomous Chaining Agent Protocol
+
+### 1. System Objective
+To bypass the 65,536 server-side output token restriction by implementing an automated, recursive file-extraction loop. The agent must systematically digest the full repository structure inside the 1M token input window and output complete, production-ready C++ modules sequentially without placeholders, truncations, or conversational filler.
+
+### 2. Ingestion & Mapping Architecture
+*   **Repo Mapping Phase**: Every cycle begins by validating the global codebase map. 
+*   **Target Selection**: Isolate the specific C++ header or implementation file required next in the dependency chain.
+*   **State Alignment**: The agent must anchor its generation directly to the exact file paths, verified class variables, and structural constants of the active repository.
+
+### 3. Chaining & Looping Execution Rules
+*   **Hard Cap Maximization**: Force `maxOutputTokens` to 65,536 for every execution pass.
+*   **Truncation Watchdog**: Scan the payload termination status. If terminated by `MAX_TOKENS`, extract the exact trailing 20 lines of code as the continuation anchor.
+*   **Iterative Injection Prompt**: Format the consecutive request payload automatically using the local script:
+    "Resume the exact C++ generation stream from [Last Valid Code Anchor]. Maintain absolute structural integrity. Zero preamble. Resume syntax."
+*   **Stitcher Output**: Direct the streaming payload straight to the local workspace destination file (`.cpp` / `.h`) until an explicit `STOP` condition or complete file termination is verified.
+
+### 4. Zero-Interrogative Autonomous Routing
+*   **Interrogative Prompts Disabled**: The agent is strictly forbidden from asking clarifying questions, requesting permission, or prompting the operator to choose the next repository, file, or code block.
+*   **Deterministic Next-Step Selection**: The agent must autonomously evaluate the current compilation deficits, determine the absolute best-fit open-source reference module from the known dependency matrix, and immediately execute the next extraction sequence.
+*   **Command-Driven Execution**: Deliver bare outputs and structural directives. Move directly from completion of one block straight into the architecture of the next logical block without pause.
+
+### 5. Operational Boundaries
+*   **Zero Placeholders**: Explicitly forbidden from emitting `// TODO` or `// Code remains the same` tags. Every block must be full structural logic.
+*   **Code Separation**: Separate creative asset logic from mathematical physics algorithms to prevent data corruption across compilation layers.
+*   **Next Module Anchor**: Automatically stage the next file path in the compilation queue upon successful file completion.
