@@ -38,7 +38,7 @@ const SOUNDTRACK = [
 ];
 
 export default function UniverseHub() {
-    const [activeTab, setActiveTab] = useState<'promotions' | 'match_types' | 'jukebox'>('promotions');
+    const [activeTab, setActiveTab] = useState<'promotions' | 'match_types' | 'jukebox' | 'booking' | 'politics' | 'medical'>('promotions');
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrack, setCurrentTrack] = useState(SOUNDTRACK[0]);
 
@@ -54,24 +54,42 @@ export default function UniverseHub() {
                 </div>
             </div>
 
-            <div className="flex gap-4 mb-8 border-b border-neutral-800 pb-2">
+            <div className="flex gap-4 mb-8 border-b border-neutral-800 pb-2 overflow-x-auto scrollbar-none">
                 <button 
                     onClick={() => setActiveTab('promotions')}
-                    className={`px-4 py-2 text-sm font-bold tracking-wider uppercase transition-colors ${activeTab === 'promotions' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
+                    className={`px-4 py-2 text-sm font-bold tracking-wider uppercase whitespace-nowrap transition-colors ${activeTab === 'promotions' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
                 >
-                    Promotions & Factions
+                    Promotions
                 </button>
                 <button 
                     onClick={() => setActiveTab('match_types')}
-                    className={`px-4 py-2 text-sm font-bold tracking-wider uppercase transition-colors ${activeTab === 'match_types' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
+                    className={`px-4 py-2 text-sm font-bold tracking-wider uppercase whitespace-nowrap transition-colors ${activeTab === 'match_types' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
                 >
-                    Match Types & Rules
+                    Rules
+                </button>
+                <button 
+                    onClick={() => setActiveTab('booking')}
+                    className={`px-4 py-2 text-sm font-bold tracking-wider uppercase whitespace-nowrap transition-colors ${activeTab === 'booking' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
+                >
+                    Booking & Leverage
+                </button>
+                <button 
+                    onClick={() => setActiveTab('politics')}
+                    className={`px-4 py-2 text-sm font-bold tracking-wider uppercase whitespace-nowrap transition-colors ${activeTab === 'politics' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
+                >
+                    Politics & Heat
+                </button>
+                <button 
+                    onClick={() => setActiveTab('medical')}
+                    className={`px-4 py-2 text-sm font-bold tracking-wider uppercase whitespace-nowrap transition-colors ${activeTab === 'medical' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
+                >
+                    Trauma Matrix
                 </button>
                 <button 
                     onClick={() => setActiveTab('jukebox')}
-                    className={`px-4 py-2 text-sm font-bold tracking-wider uppercase transition-colors ${activeTab === 'jukebox' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
+                    className={`px-4 py-2 text-sm font-bold tracking-wider uppercase whitespace-nowrap transition-colors ${activeTab === 'jukebox' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
                 >
-                    Jukebox (M. Heaven$ent)
+                    Jukebox
                 </button>
             </div>
 
@@ -114,6 +132,126 @@ export default function UniverseHub() {
                                 </div>
                             </div>
                         ))}
+                    </div>
+                )}
+
+                {activeTab === 'booking' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+                            <h3 className="text-xl font-bold mb-4 text-white">The Script Torn Decision Matrix</h3>
+                            <p className="text-neutral-400 mb-6 text-sm">When live ratings dip, the AI Promoter forces an audible. Choose your response path.</p>
+                            
+                            <div className="space-y-4">
+                                <div className="p-4 bg-indigo-900/20 border border-indigo-500/30 rounded-lg">
+                                    <div className="font-bold text-indigo-400">1. Comply (The Company Man)</div>
+                                    <div className="text-xs text-neutral-400 mt-1">Accept forced audible. +Boss Approval, -Heat</div>
+                                </div>
+                                <div className="p-4 bg-red-900/20 border border-red-500/30 rounded-lg">
+                                    <div className="font-bold text-red-400">2. Sabotage (The Shoot)</div>
+                                    <div className="text-xs text-neutral-400 mt-1">Trigger STATE_SHOOT. -Boss Approval, +Massive Heat, High suspension risk.</div>
+                                </div>
+                                <div className="p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                                    <div className="font-bold text-amber-400">3. Plead (The Beggar)</div>
+                                    <div className="text-xs text-neutral-400 mt-1">Rolls BossApprovalRating. Restores match or enforces audible.</div>
+                                </div>
+                                <div className="p-4 bg-green-900/20 border border-green-500/30 rounded-lg">
+                                    <div className="font-bold text-green-400">4. Ultimatum (The Walkout)</div>
+                                    <div className="text-xs text-neutral-400 mt-1">Rolls DrawPower vs EgoRoll. Restores match or Instant Termination.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+                            <h3 className="text-xl font-bold mb-4 text-white">Cross-Promotion Warfare</h3>
+                            <p className="text-neutral-400 mb-6 text-sm">The Forbidden Door mechanics.</p>
+                            
+                            <div className="space-y-4">
+                                <div className="p-4 bg-neutral-800/50 rounded-lg">
+                                    <div className="font-bold text-white">Hostile AI Promoters</div>
+                                    <div className="text-xs text-neutral-400 mt-1">Rival promoters actively scout and outbid you for top talent.</div>
+                                </div>
+                                <div className="p-4 bg-neutral-800/50 rounded-lg">
+                                    <div className="font-bold text-white">Title Hostaging</div>
+                                    <div className="text-xs text-neutral-400 mt-1">Champions with expiring contracts take titles to rival promotions, freezing prestige.</div>
+                                </div>
+                                <div className="p-4 bg-neutral-800/50 rounded-lg">
+                                    <div className="font-bold text-white">Invasion Angles</div>
+                                    <div className="text-xs text-neutral-400 mt-1">Randomized events where rival factions initiate run-ins during live main events.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'politics' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+                            <h3 className="text-xl font-bold mb-4 text-white">Locker Room Politics & Heat Engine</h3>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-neutral-800/50 rounded-lg border-l-4 border-indigo-500">
+                                    <div className="font-bold text-white">Clique Clustering Algorithm</div>
+                                    <div className="text-sm text-neutral-400 mt-1">Dynamic factions dictate run-ins, tag teams, and walkouts based on shared alignments.</div>
+                                </div>
+                                <div className="p-4 bg-neutral-800/50 rounded-lg border-l-4 border-red-500">
+                                    <div className="font-bold text-white">Action-Driven Betrayals</div>
+                                    <div className="text-sm text-neutral-400 mt-1">Breaking joint constraints (friendly fire) instantly severs relationship arrays mid-match.</div>
+                                </div>
+                                <div className="p-4 bg-neutral-800/50 rounded-lg border-l-4 border-amber-500">
+                                    <div className="font-bold text-white">Morale Physics</div>
+                                    <div className="text-sm text-neutral-400 mt-1">Forcing over wrestlers to job to low-heat veterans causes sandbagging and missed cues.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+                            <h3 className="text-xl font-bold mb-4 text-white">Dirt Sheet & Social Volatility</h3>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-neutral-800/50 rounded-lg">
+                                    <div className="font-bold text-white">The Leak Matrix</div>
+                                    <div className="text-sm text-neutral-400 mt-1">Unhappy wrestlers leak finish results to dirt sheets.</div>
+                                </div>
+                                <div className="p-4 bg-neutral-800/50 rounded-lg">
+                                    <div className="font-bold text-white">Smark Crowd Logic</div>
+                                    <div className="text-sm text-neutral-400 mt-1">If a finish leaks, crowds flip alignments. Faces are booed, Heels cheered.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'medical' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+                            <h3 className="text-xl font-bold mb-4 text-white">Anatomical Wear & Trauma</h3>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-neutral-800/50 rounded-lg">
+                                    <div className="font-bold text-white">Persistent Poise Degradation</div>
+                                    <div className="text-sm text-neutral-400 mt-1">Repeated concussive trauma permanently lowers poise recovery rate until surgery.</div>
+                                </div>
+                                <div className="p-4 bg-neutral-800/50 rounded-lg">
+                                    <div className="font-bold text-white">Surgical Rehab Trade-offs</div>
+                                    <div className="text-sm text-neutral-400 mt-1">Surgery sidelines entities for months, dropping heat. Ignoring it permanently drops Max HP below 10,000 limit.</div>
+                                </div>
+                                <div className="p-4 bg-neutral-800/50 rounded-lg">
+                                    <div className="font-bold text-white">Targeted Limb Bounties</div>
+                                    <div className="text-sm text-neutral-400 mt-1">Rivals place bounties on specific limbs. Pay out to economy matrix upon structural failure.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-neutral-900 border border-neutral-800 rounded-xl p-6">
+                            <h3 className="text-xl font-bold mb-4 text-white">Chemical Enhancements</h3>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-neutral-800/50 rounded-lg border-l-4 border-purple-500">
+                                    <div className="font-bold text-white">The Vice Matrix</div>
+                                    <div className="text-sm text-neutral-400 mt-1">Opt-in chemical states push MAX_BODY_VEL past 3.8m/s cap and mitigate poise degradation.</div>
+                                </div>
+                                <div className="p-4 bg-neutral-800/50 rounded-lg border-l-4 border-red-500">
+                                    <div className="font-bold text-white">Biological Toll</div>
+                                    <div className="text-sm text-neutral-400 mt-1">Massive increase in probability of mid-match catastrophic failure (e.g. tearing a quad while running).</div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
 
