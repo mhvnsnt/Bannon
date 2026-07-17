@@ -22,6 +22,16 @@ three.js loads from its CDN, models stream via the in-engine CDN fallback (raw.g
 `main`). To turn it on once: repo **Settings → Pages → Source = GitHub Actions** (one click), then the
 workflow deploys automatically. Visit the URL on phone or desktop — same saves both places.
 
+## Install as an app (mobile-first PWA — Android + iPhone)
+The game is now a PWA: `manifest.json` + icons + fullscreen/landscape display metas ship beside
+`index.html` (both the Pages workflow and `build_hosting.sh` copy them). On the hosted URL:
+- **Android (Chrome):** menu → **Add to Home screen** / **Install app** → launches fullscreen, no
+  browser chrome, its own icon — indistinguishable from a native app. (This is how the owner plays.)
+- **iPhone (Safari):** Share → **Add to Home Screen** → fullscreen web-app.
+Touch controls (floating joystick + the 3×2 action grid) are already on for touch devices. The
+CREATION SUITE (create-a-wrestler, move forge, models, studio, director, arena) is a 3×3 tile hub on
+the MAIN menu; the pause menu is in-match controls only.
+
 ## Option 2 — APK (Android)
 The repo already has an Android WebView shell (`app/`, from the God-Mode drop). The lightweight path:
 point its WebView at the Pages URL above → an installable APK that loads the always-current game.

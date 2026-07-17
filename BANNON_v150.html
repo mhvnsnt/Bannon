@@ -239,9 +239,17 @@ NEVER rename existing functions or variables.
 -->
 <html lang="en"><head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BANNON">
 <meta name="theme-color" content="#000000">
+<!-- MOBILE-FIRST / installable app (Android + iPhone "Add to Home Screen" -> fullscreen, no browser
+     chrome). Manifest + icons are self-contained in the repo; hosting copies them beside index.html. -->
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
 <title>BANNON v151 (combat-freeze fix: angle-wrap infinite loop)</title>
 
 <!-- THREE.js loaded SYNCHRONOUSLY before inline script: no race condition -->
@@ -649,6 +657,24 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 .menu-sub { font-family:'Share Tech Mono'; font-size:clamp(9px, 1.4vw, 11px); color:rgba(255,215,0,0.7); letter-spacing:5px; margin-top:6px; margin-bottom:24px; }
 .menu-sub::before, .menu-sub::after { content:'◆'; margin:0 14px; color:var(--fire); }
 .menu-btn-grid { display:grid; grid-template-columns:1fr; gap:9px; max-width:340px; margin:0 auto; }
+/* CREATION HUB — the 3×3 tile grid of creation/editor subsystems. Lives on the MAIN MENU (these are
+   NOT in-match/pause items). Touch-first: big tap targets, scrolls if the phone is short. */
+.hub-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; max-width:420px; margin:16px auto 0;
+  width:100%; }
+.hub-tile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
+  aspect-ratio:1/1; min-height:84px; padding:8px 6px; background:linear-gradient(160deg, rgba(40,10,0,0.7), rgba(20,10,30,0.5));
+  border:1px solid var(--fire); border-radius:12px; color:var(--white); cursor:pointer; transition:all 0.16s;
+  box-shadow:0 0 12px rgba(255,69,0,0.18); text-align:center; -webkit-tap-highlight-color:transparent; }
+.hub-tile:active, .hub-tile:hover { background:linear-gradient(160deg, var(--blood), var(--fire)); color:var(--gold);
+  transform:scale(0.97); box-shadow:0 0 20px var(--fire); }
+.hub-tile .hub-ico { font-size:26px; line-height:1; filter:drop-shadow(0 0 6px currentColor); }
+.hub-tile .hub-lbl { font-family:'Bebas Neue'; font-size:clamp(11px, 2.6vw, 14px); letter-spacing:2px; line-height:1.05; }
+.hub-tile.soon { opacity:0.62; }
+.hub-tile.soon::after { content:'SOON'; position:absolute; }
+.hub-title { font-family:'Share Tech Mono'; font-size:10px; letter-spacing:4px; color:rgba(255,215,0,0.65);
+  margin:20px auto 0; }
+.match-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; max-width:420px; margin:10px auto 0; }
+@media (max-width:380px){ .hub-tile { min-height:72px; } }
 .menu-btn { font-family:'Bebas Neue'; font-size:clamp(18px, 3.4vw, 24px); letter-spacing:5px; padding:13px 18px; background:linear-gradient(90deg, rgba(40,0,0,0.6), rgba(60,20,0,0.4)); color:var(--white); border:1px solid var(--fire); cursor:pointer; transition:all 0.18s; position:relative; box-shadow:0 0 14px rgba(255,69,0,0.25); text-shadow:0 0 8px currentColor; }
 .menu-btn:active, .menu-btn:hover { background:linear-gradient(90deg, var(--blood), var(--fire)); color:var(--gold); transform:translateX(4px); box-shadow:0 0 22px var(--fire); }
 .menu-btn.gold { border-color:var(--gold); color:var(--gold); box-shadow:0 0 14px rgba(255,215,0,0.3); }
@@ -821,12 +847,25 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
     <div class="menu-sub">FIRE RAT · SCORPIO REIGN · LP3</div>
     <div class="menu-btn-grid">
       <button class="menu-btn gold" id="btnFight">FIGHT <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnMoves">MOVE CREATOR <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnArena">ARENA: <span id="arenaName">FIRE PIT</span> <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnDiff">DIFFICULTY: <span id="diffName">VETERAN</span> <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnMainDir">DIRECTOR <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnMainStudio">STUDIO <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnOpp">OPPONENT: <span id="oppName">VIPER</span> <span class="arrow">▶</span></button>
+    </div>
+    <div class="match-row">
+      <button class="menu-btn" id="btnArena">ARENA: <span id="arenaName">FIRE PIT</span></button>
+      <button class="menu-btn" id="btnDiff">DIFFICULTY: <span id="diffName">VETERAN</span></button>
+      <button class="menu-btn" id="btnOpp" style="grid-column:1 / -1;">OPPONENT: <span id="oppName">VIPER</span></button>
+    </div>
+    <div class="hub-title">◆ CREATION SUITE ◆</div>
+    <!-- 3×3 CREATION HUB — creation/editor subsystems, MAIN-MENU accessible (moved out of the pause
+         menu where they never belonged). WWE-2K-style create hub. -->
+    <div class="hub-grid">
+      <button class="hub-tile" id="btnHubSuperstar"><span class="hub-ico">🤼</span><span class="hub-lbl">SUPERSTAR</span></button>
+      <button class="hub-tile" id="btnHubMoves"><span class="hub-ico">🥊</span><span class="hub-lbl">MOVE FORGE</span></button>
+      <button class="hub-tile" id="btnHubModels"><span class="hub-ico">🧍</span><span class="hub-lbl">MODELS</span></button>
+      <button class="hub-tile" id="btnHubTune"><span class="hub-ico">🎛️</span><span class="hub-lbl">CREATIVE CTRL</span></button>
+      <button class="hub-tile" id="btnMainStudio"><span class="hub-ico">🎬</span><span class="hub-lbl">STUDIO</span></button>
+      <button class="hub-tile" id="btnMainDir"><span class="hub-ico">🎥</span><span class="hub-lbl">DIRECTOR</span></button>
+      <button class="hub-tile" id="btnHubArena"><span class="hub-ico">🏟️</span><span class="hub-lbl">ARENA</span></button>
+      <button class="hub-tile soon" id="btnHubArenaEd"><span class="hub-ico">🛠️</span><span class="hub-lbl">ARENA CREATOR</span></button>
+      <button class="hub-tile soon" id="btnHubEntrance"><span class="hub-ico">🎆</span><span class="hub-lbl">ENTRANCE</span></button>
     </div>
     <div style="margin-top:18px; font-family:'Share Tech Mono'; font-size:9px; color:#666; letter-spacing:3px;">v77 · WWE 2K26 CONTROLS · VISCERAL PRO WRESTLING</div>
   </div>
@@ -835,14 +874,11 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 <div class="menu-overlay hidden" id="pauseMenu">
   <div class="menu-inner">
     <div class="pause-title">PAUSED</div>
+    <!-- PAUSE = in-match controls ONLY. Creation/editor subsystems live on the MAIN MENU's 3×3
+         CREATION SUITE hub (they are not pause-appropriate). -->
     <div class="menu-btn-grid">
       <button class="menu-btn gold" id="btnResume">RESUME <span class="arrow">▶</span></button>
       <button class="menu-btn" id="btnRematch">REMATCH <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnPauseMoves">MOVE CREATOR <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnPauseModels">FIGHTER MODELS <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnPauseTune">CREATIVE CONTROL <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnPauseStudio">STUDIO <span class="arrow">▶</span></button>
-      <button class="menu-btn" id="btnPauseDir">DIRECTOR <span class="arrow">▶</span></button>
       <button class="menu-btn" id="btnPauseCam">CAMERA: BROADCAST <span class="arrow">▶</span></button>
       <button class="menu-btn" id="btnToMain">MAIN MENU <span class="arrow">▶</span></button>
     </div>
@@ -15173,17 +15209,28 @@ function setupInput(){
   // ── HOOK MENU BUTTONS TO ALSO SAVE ────────────────────────────────────────────────────────────
   // menu buttons
   document.getElementById('btnFight').addEventListener('click', startFight);
-  document.getElementById('btnMoves').addEventListener('click', openCreator);
+  // MAIN-MENU CREATION HUB (3×3): each tile opens its subsystem overlay. All null-guarded so a layout
+  // change never throws. Moved here from the pause menu (they are not pause-appropriate).
+  const _wire=(id,fn)=>{ const el=document.getElementById(id); if(el&&fn) el.addEventListener('click',fn); };
+  _wire('btnHubSuperstar', typeof openModelLab==='function'?openModelLab:null);   // create-a-wrestler / CAW morph lives in the model lab
+  _wire('btnHubMoves',     typeof openCreator==='function'?openCreator:null);     // MOVE FORGE
+  _wire('btnHubModels',    typeof openModelLab==='function'?openModelLab:null);   // fighter model import/select
+  _wire('btnHubTune',      typeof openTuneLab==='function'?openTuneLab:null);     // CREATIVE CONTROL
+  _wire('btnHubArena',     ()=>{ arenaIdx=(arenaIdx+1)%ARENAS.length; const an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; buildArena(); saveMatchState(); });
+  _wire('btnHubArenaEd',   ()=>{ try{ (window.toast||alert)('Arena Creator — coming with the arena editor (barricades/ramp/trons/Titantron).'); }catch(e){} });
+  _wire('btnHubEntrance',  ()=>{ try{ (window.toast||alert)('Entrance Creator — coming with the entrance timeline (pyro/tron/music).'); }catch(e){} });
   document.getElementById('btnArena').addEventListener('click', ()=>{ arenaIdx=(arenaIdx+1)%ARENAS.length; document.getElementById('arenaName').textContent=ARENAS[arenaIdx]; buildArena(); saveMatchState(); });
   document.getElementById('btnDiff').addEventListener('click', ()=>{ difficulty=(difficulty+1)%3; document.getElementById('diffName').textContent=DIFF_NAMES[difficulty]; saveMatchState(); });
   document.getElementById('btnOpp').addEventListener('click', ()=>{ opponentIdx=(opponentIdx+1)%OPPONENTS.length; document.getElementById('oppName').textContent=OPPONENTS[opponentIdx].name; saveMatchState(); });
 
   document.getElementById('btnResume').addEventListener('click', resumeGame);
   document.getElementById('btnRematch').addEventListener('click', startFight);
-  document.getElementById('btnPauseMoves').addEventListener('click', openCreator);
-  document.getElementById('btnPauseModels').addEventListener('click', openModelLab);
-  document.getElementById('btnPauseTune').addEventListener('click', openTuneLab);
-  
+  // (MOVE CREATOR / FIGHTER MODELS / CREATIVE CONTROL removed from the pause menu — now on the main
+  // menu's CREATION SUITE hub. Guards below keep any lingering references safe.)
+  _wire('btnPauseMoves',  typeof openCreator==='function'?openCreator:null);
+  _wire('btnPauseModels', typeof openModelLab==='function'?openModelLab:null);
+  _wire('btnPauseTune',   typeof openTuneLab==='function'?openTuneLab:null);
+
   const camBtn = document.getElementById('btnPauseCam');
   if (camBtn) {
     camBtn.innerHTML = 'CAMERA: ' + (CAM_CFG.mode === 'action' ? 'LURCHING' : 'BROADCAST') + ' <span class="arrow">▶</span>';
@@ -36322,7 +36369,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   document.addEventListener('keydown', function(e){ if(e.key==='`' && !e.ctrlKey && !e.metaKey){ var t=e.target; if(t && (t.tagName==='INPUT'||t.tagName==='TEXTAREA')) return; toggle(); } });
   setInterval(function(){ try{
     if(document.getElementById('btnPauseGodos')) return;
-    var pb=document.getElementById('btnPauseTune')||document.getElementById('btnPauseModels')||document.getElementById('btnPauseMoves');
+    var pb=document.getElementById('btnToMain')||document.getElementById('btnPauseCam')||document.getElementById('btnPauseTune');
     if(pb&&pb.parentNode){ var b=document.createElement('button'); b.id='btnPauseGodos'; b.textContent='◈ GOD MODE OS'; b.setAttribute('style',pb.getAttribute('style')||''); b.onclick=toggle; pb.parentNode.appendChild(b); }
   }catch(_){ } }, 1500);
 
