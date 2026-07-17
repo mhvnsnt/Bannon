@@ -1,18 +1,35 @@
 // Copyright BANNON.
+
 #pragma once
+
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "BannonFighter.generated.h"
+
+class UBannonRagdollComponent;
+class UBannonGrappleGrip;
 
 UCLASS()
 class BANNONCORE_API ABannonFighter : public ACharacter
 {
 	GENERATED_BODY()
+
 public:
 	ABannonFighter();
 
-	// Stats
-	UPROPERTY(BlueprintReadOnly, Category="Bannon|State") float HP = 10000.0f;
+	// the physical body driver (active ragdoll: poise-scaled motors / velocity-drive, MAX_BODY_VEL cap).
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Bannon|Physics") 
+	UBannonRagdollComponent* Ragdoll = nullptr;
+
+	// the hand<->body grip used to lift/carry an opponent as a real physical load.
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Bannon|Physics") 
+	UBannonGrappleGrip* Grip = nullptr;
+
+	UFUNCTION(BlueprintCallable, Category="Bannon|Combat")
+	bool GrappleGrab(ABannonFighter* Victim, FName HandSocket);
+
+	// Stats (two-layer health — poise drives crumple and is INDEPENDENT of HP)
+	UPROPERTY(BlueprintReadOnly, Category="Bannon|State") float HP = 10000.0f; // MAX_HP
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|State") float Poise = 100.0f;
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|State") float Stamina = 440.0f;
 	UPROPERTY(BlueprintReadOnly, Category="Bannon|State") bool bCrumpled = false;
