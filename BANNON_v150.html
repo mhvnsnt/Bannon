@@ -13475,9 +13475,10 @@ try{
   // high-flyer, face paint, arm sleeves, dives off anything. Attires: default / yellow title tee /
   // graphic tee / God-Within demon shirt.
   _addChar('WRECK_PATTERSON',{ label:'The Living Wreck',         col:0x2a1a3a, accent:0xc0c0c8, skin:0xc08a54, faction:'Independent Variables', canon:false, bio:'A daredevil with a death wish and a dark streak — paint-streaked, sleeve-tatted, and willing to throw his body off anything that stands. Beautiful disaster meets condemned reckoning.', archetype:'highFlyer' }, 'CARGO_PANTS', 'LONG', {musc:0.6,fat:0.12});
-  // NPC FINXSSE (Book canon) — "N.P.C. Finesse": a running-gag enhancement talent orbiting Finxsse's
-  // world, the guy who exists to make stars look good — until the glitch in him fires back.
-  _addChar('NPC_FINXSSE',    { label:'The Enhancement Talent',   col:0x1a1a22, accent:0x33ffcc, skin:0xa5683c, faction:'Independent Variables', canon:true, bio:'The perpetual jobber of the OTTR world — "N.P.C. Finesse," there to put others over. Predictable by design, right up until his programming misfires and he steals one.', archetype:'freeAgent' }, 'TRUNKS', 'SHORT', {musc:0.55,fat:0.2});
+  // NPC FINXSSE (Book canon) — this IS Finxsse (Narvin Jackson) repping his rap group NPC = "No Problem
+  // Crashin" (crash-out energy). Same gravity-defying high-flyer, crew colors on. NOT a gag/jobber — a
+  // crew-branded persona of the canon flyer. (owner correction 2026-07-17.)
+  _addChar('NPC_FINXSSE',    { label:'No Problem Crashin',       col:0x6a2a8c, accent:0x00ffd0, skin:0x7a5a3c, faction:'Alliance', canon:true, bio:'Finxsse — Narvin Jackson — with the crew in the building: NPC, "No Problem Crashin." Same top-rope-is-home high-flyer, all crash-out energy, dares gravity to say no. Reps the group hard.', archetype:'highFlyer' }, 'BODYSUIT', 'AFRO', {musc:0.72,fat:0.1});
   // TEXTBOOK AARON RUBEN (Book canon) — grizzled by-the-numbers veteran, comedy-technician: every hold
   // is chapter-and-verse, every spot telegraphed and somehow still landed. The wily old pro.
   _addChar('AARON_RUBEN',    { label:'Textbook',                 col:0xb02a2a, accent:0xf0e8d8, skin:0xd9a066, faction:'Free Agent', canon:true, bio:'A thirty-year man who wrestles straight out of the manual — chain wrestling by the numbers, comedy timing sharpened by decades. Underestimate the fundamentals and he schools you.', archetype:'technician' }, 'SINGLET', 'SHORT', {musc:0.5,fat:0.34});
@@ -13513,7 +13514,7 @@ try{
     KOBRA:           { name:'THE ENVENOMATION',          kind:'grapple', pos:'CHOKESLAM',   deliver:'choke' },
     MASTER_SENSEI:   { name:'THE FINAL LESSON',          kind:'strike' },
     WRECK_PATTERSON: { name:'THE WRECKING BALL',         kind:'strike' },
-    NPC_FINXSSE:     { name:'THE HARD RESET',            kind:'grapple', pos:'DDT',         deliver:'spike' },
+    NPC_FINXSSE:     { name:'THE CRASH OUT',             kind:'grapple', pos:'FIREMANS_CARRY', deliver:'slam'  },
     AARON_RUBEN:     { name:'BY THE BOOK',               kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  }
   });
   // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
@@ -13875,7 +13876,8 @@ const MODEL_LIBRARY = [
   { name:'WRECK PATTERSON · Title Tee', url:'assets/models/WRECK_PATTERSON_attire2.glb', charKey:'WRECK_PATTERSON' },
   { name:'WRECK PATTERSON · Graphic Tee', url:'assets/models/WRECK_PATTERSON_attire3.glb', charKey:'WRECK_PATTERSON' },
   { name:'WRECK PATTERSON · God Within', url:'assets/models/WRECK_PATTERSON_godwithin.glb', charKey:'WRECK_PATTERSON' },
-  { name:'NPC FINXSSE', url:'assets/models/NPC_FINXSSE.glb', charKey:'NPC_FINXSSE' },
+  { name:'NPC FINXSSE · No Problem Crashin', url:'assets/models/NPC_FINXSSE.glb', charKey:'NPC_FINXSSE' },
+  { name:'FINXSSE · NPC (crew)', url:'assets/models/NPC_FINXSSE.glb', charKey:'FINXSSE' },   // same man — Finxsse repping NPC
   { name:'AARON RUBEN · Textbook', url:'assets/models/AARON_RUBEN.glb', charKey:'AARON_RUBEN' },
   { name:'CAIN ELIAS · God Within', url:'assets/models/CAIN_ELIAS_godwithin.glb', charKey:'CAIN_ELIAS' },
   { name:'King', url:'embedded:king' },
