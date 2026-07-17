@@ -56,6 +56,37 @@ export class TelegramAgent {
         }
       });
 
+      // /character — guided character-design dialogue. The owner drives model generation; this lets
+      // the bot ASK HIM for the details it needs (ethnicity/skin tone, gimmick, fighting style,
+      // attire, moveset, finisher) per the binding CHARACTER GENERATION RULES, then turns his answers
+      // into a clean image->3D gen prompt. Routes through the (now local-first) no-limit model.
+      this.bot.command("character", async (ctx) => {
+        const name = ctx.message.text.replace(/^\/character\b/i, "").trim();
+        const framing = [
+          "You are BANNON's character designer. The OWNER is generating a wrestler model and needs help.",
+          "RULES (binding): (1) NO trademarked logos — invent proprietary Bannon-universe marks instead;",
+          "(2) coherent pro-wrestling attire only — no nonsense straps/suspenders/floating gear;",
+          "(3) ethnicity is identity — always set race + skin tone, keep the roster diverse;",
+          "(4) semi-realistic sim-game likeness matching the gimmick/style/psychology; (5) clean A-pose seed.",
+          name ? `The character is: "${name}".` : "The owner did not name a character yet.",
+          "Ask him SHORT, specific clarifying questions for anything missing (ethnicity/skin tone, body",
+          "type, gimmick, fighting style, hair, attire layers, finisher). When you have enough, output a",
+          "single tight image->3D generation prompt in the gen_prompts.json _style format. Be concise.",
+        ].join(" ");
+        await ctx.reply(`[Character Designer] Let's build ${name || "a new fighter"}. Working…`);
+        try {
+          const response = await modelRouter.route({
+            prompt: framing,
+            taskType: "CHAT",
+            context: { source: "telegram_character", user: ctx.message.from.username || "unknown" },
+            taskId: "tgchar_" + Date.now(),
+          });
+          await ctx.reply(response && response.length ? response.substring(0, 4000) : "[Designer] No response from the local model — is the Ollama node online?");
+        } catch (e: any) {
+          await ctx.reply(`[Designer] Failed: ${e.message}`);
+        }
+      });
+
       this.bot.on("text", async (ctx) => {
         const userInput = ctx.message.text;
 

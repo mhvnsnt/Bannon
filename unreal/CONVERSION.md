@@ -13,9 +13,24 @@ rewrite. `[x]` = landed in `unreal/`, `[~]` = laws in `native/` (ready to wire),
 ## Combat & physics (laws already in native/, wire to Chaos/AnimBP)
 - [x] Active ragdoll (15 joints, PD drive) — `UBannonRagdollComponent`: PhysicsAsset + Physical
       Animation, poise-scaled motors, MAX_BODY_VEL per-body clamp AFTER the solve. Needs the engine to test.
+      v159: two proven techniques ported from tigershan1130/UE5-active-ragdoll-with-floating-capsule:
+      `DriveBodyVelocities()` (velocity-drive active ragdoll — push each body's lin/ang velocity toward
+      the animated target, weighted by poise·(1−PhysBlend), the AnimNode approach as an alternative to
+      the Physical-Animation motors) and `ApplyHitReaction()` (impulse to the struck body + a
+      `PelvisCoupling` share into the hips, so a limb hit whips the whole body — the reference's signature).
+- [x] Floating-capsule movement — `UBannonFloatingCapsuleMovement`: a SIMULATED capsule that hovers on a
+      damped ride-spring (downward ray → `−k·(dist−RideHeight) − c·vZ`), horizontal input as force,
+      MAX_BODY_VEL-capped. The rigid-body character controller that lets the active ragdoll walk while
+      staying fully physical (shovable, climbs steps free). Adapted from the same reference's
+      `UTsPhysicsCharacterMovement`. Needs the engine to test.
 - [~] Strikes / weight-transfer power / knockback — `bannon_strike.h` → on-hit events on `ABannonFighter`.
 - [~] Grapple positions / lift / carry / release matrix — `bannon_grapple.h` + `bannon_weapon.h`
       releaseImpulse → animation-driven pose + Physical Animation profiles per phase.
+      v159: `UBannonGrappleGrip` — the physical hand↔body weld (the web `_gripPts` done for real in
+      Chaos): `GripNearest` finds the nearest SIMULATING victim ragdoll body to the attacker's hand and
+      clamps a `UPhysicsHandleComponent` onto that bone; `UpdateGrip` drags it to the hand each frame (a
+      real carried load); `Release` flings it with the deliver-kind impulse, MAX_BODY_VEL-capped. Grab
+      search + physics-handle technique from noahbutcher97/OnlyHands (`OHPhysicsHandler`).
 - [~] Weapons (mass stamina tax, integrity, TLC table/ladder) — `bannon_weapon.h`/`bannon_universe.h`.
 - [x] Referee entity (LoS pin gating, avoidance, bumps) — `ABannonReferee` (native refHasLineOfSight/refAvoidanceVelocity/refBump).
 - [~] Submissions (torque→limb-HP→organic tap) — `bannon_referee.h submissionStep` (surfaced in UBannonLaws).
@@ -37,6 +52,12 @@ rewrite. `[x]` = landed in `unreal/`, `[~]` = laws in `native/` (ready to wire),
 
 ## Presentation
 - [x] Arena impacts (post/table) — `ABannonArena` (native env-contact + tableImpact). Meshes: Tripo env set, TODO.
+- [x] Ring palette parity — `FBannonRingColors` carries the EXACT web ring colors (fire/cold/void:
+      floor/accent/deck/post/matBase, documented against buildArena) + `ApplyThemeColors()` pushes them
+      onto dynamic material instances (deck matte, posts chrome 0.95/0.12, pads matte accent). The mat
+      uses the baked BANNON-logo albedo `assets/ring/bannon_mat_fire.png` (+ standalone
+      `bannon_mat_logo.png`) so the upgraded ring reads identical to the Three.js one, higher fidelity.
+      Remaining: author the actual ring StaticMeshes (deck/mat/posts/pads) + hook the mat texture in-editor.
 - [x] Crowd kinetic reaction — `UBannonCrowd` (native crowdReaction). Niagara/instanced visual: TODO.
 - [ ] BROADCAST_GRADE post pass — PostProcessVolume + material.
 - [ ] REALITY CHECK glitch — post-process material (triggerRealityCheck → a material param).

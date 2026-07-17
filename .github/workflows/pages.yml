@@ -26,8 +26,11 @@ jobs:
       - uses: actions/checkout@v4
       - name: Assemble site (HTML only; models stream from the repo CDN fallback)
         run: |
-          mkdir -p _site
+          mkdir -p _site _site/assets/icons
           cp BANNON_v150.html _site/index.html
+          # PWA: manifest + icons beside index.html so the game installs as an app (Add to Home Screen).
+          cp manifest.json _site/manifest.json
+          cp assets/icons/icon-192.png assets/icons/icon-512.png assets/icons/apple-touch-icon.png _site/assets/icons/ || true
           # a tiny landing note (optional) — the game is the index.
           printf 'User-agent: *\nAllow: /\n' > _site/robots.txt
       - uses: actions/upload-pages-artifact@v3
