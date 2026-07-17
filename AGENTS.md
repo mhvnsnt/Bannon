@@ -312,3 +312,7 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 
 - **Phase 5 Submission & Limb Physics**: Engineered `BannonJointLockConstraint` to map submission leverage using procedural height/mass deltas, applying direct torque/angular impulses to UE5 Physics Asset (PhAT) joint limits (triggering dislocations if the threshold breaks). 
 - **Phase 5 Desperation Tap-Outs**: Built `BannonDesperationIK` for procedural rope-break stretches querying the nearest spline, and frantic procedural hand-slamming into the Z-floor based on submission pressure > 95%.
+
+- **Phase 6 Career & Ontological Core**: Crafted `BannonOntologicalMatrix` to tie underlying cosmic/moral alignments (Spiritual Energy, Vengeance) dynamically to RPG physical attributes. Included defection algorithms mapping morale and TV exposure to rival promotion jump percentages.
+- **Phase 6 LLM Promo Matrix**: Developed `BannonPromoBattleEngine` linking LLM keyword detection (e.g., 'Betrayal') directly to momentum buffs and rivalry graph hostility escalations for organic, unscripted storyline bridging.
+- **Career Domain Telemetry**: Verified `Rivalries.bb` and `Contracts.bb` structural definitions successfully compiled directly into `dist/meta/` Node.js relational schemas via the autonomous loop.
