@@ -3523,6 +3523,40 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
     }
   }
 
+  // ===== EUPHORIA-STYLE FOOT PLANT DURING HIT REACTIONS (owner: when hit/pushed the legs flail and the
+  // feet skate/step back-and-forward; keep the feet PLANTED and gripping the mat, absorb the hit in the
+  // upper body, and only take a deliberate CATCH-STEP when balance is genuinely lost — like Euphoria /
+  // RDR2 / Endorphin.) Mirrors the proven walk-time world-lock (anchor world-X, hold local target =
+  // anchor - bodyX). Standing reaction states only; skips ragdoll/down/air/grapple. Toggle FOOT_PLANT. =====
+  if (window.FOOT_PLANT !== false && this.J && this.J.ftL && this.J.ftR){
+    const _rs = this.state;
+    const _react = (_rs==='flinch'||_rs==='hurt'||_rs==='stun'||_rs==='stumble');
+    const _grounded = !(this.ragdoll||this.airLift||(this.isDown&&this.isDown())||_rs==='getup'||_rs==='grab'||_rs==='grabbed'||_rs==='throw'||_rs==='deliver'||_rs==='dive'||_rs==='vault'||_rs==='climb');
+    if (_react && _grounded){
+      const _bx = this.x||0;
+      // capture each foot's WORLD-X anchor on entering the reaction (feet grip where they stood)
+      if (this._reactAnchorL==null) this._reactAnchorL = _bx + this.J.ftL.pos.x;
+      if (this._reactAnchorR==null) this._reactAnchorR = _bx + this.J.ftR.pos.x;
+      // base-of-support: how far the pelvis (COM) may drift from a foot before that foot must STEP
+      const _TRIG = (window.FOOT_STEP_TRIG!=null?window.FOOT_STEP_TRIG:0.42);
+      const _px = _bx + (this.J.pelvis?this.J.pelvis.pos.x:0);
+      const _dL = _px - this._reactAnchorL, _dR = _px - this._reactAnchorR;
+      // CATCH-STEP: if the COM has drifted past the support base over a foot, replant THAT foot under the
+      // COM (a deliberate step to catch balance) instead of letting the leg flail out from under him.
+      if (Math.abs(_dL) > _TRIG){ this._reactAnchorL = _px - Math.sign(_dL)*_TRIG*0.6; if(typeof this.footfall==='function'&&!this._reactStepped){ this.footfall(); this._reactStepped=1; } }
+      if (Math.abs(_dR) > _TRIG){ this._reactAnchorR = _px - Math.sign(_dR)*_TRIG*0.6; if(typeof this.footfall==='function'&&!this._reactStepped){ this.footfall(); this._reactStepped=1; } }
+      // GLUE the foot (and ankle) targets to the world anchors — this is what kills the skate/flail.
+      const _gl = Math.min(1, dt*18);
+      if (this.J.ftL.tgt) this.J.ftL.tgt.x = lerp(this.J.ftL.tgt.x, this._reactAnchorL - _bx, _gl);
+      if (this.J.ftR.tgt) this.J.ftR.tgt.x = lerp(this.J.ftR.tgt.x, this._reactAnchorR - _bx, _gl);
+      if (this.J.ankL&&this.J.ankL.tgt) this.J.ankL.tgt.x = lerp(this.J.ankL.tgt.x, this._reactAnchorL - _bx, _gl*0.7);
+      if (this.J.ankR&&this.J.ankR.tgt) this.J.ankR.tgt.x = lerp(this.J.ankR.tgt.x, this._reactAnchorR - _bx, _gl*0.7);
+      // keep both feet on the mat (a planted foot never floats)
+      if (this.J.ftL.tgt && this.J.ftL.tgt.y < 0.02) this.J.ftL.tgt.y = 0.02;
+      if (this.J.ftR.tgt && this.J.ftR.tgt.y < 0.02) this.J.ftR.tgt.y = 0.02;
+    } else { this._reactAnchorL=null; this._reactAnchorR=null; this._reactStepped=0; }
+  }
+
   let hl = 0.07;
   if (this.state==='attack') hl = 0.045;
   else if (this.state==='flinch') hl = 0.06;
@@ -36486,7 +36520,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       // jog toward target (capped ~2.6 m/s — refs jog, they don't sprint)
       var ddx=tx-R.x, ddz=tz-R.z, dd=Math.hypot(ddx,ddz);
       if(dd>0.05){ var v=Math.min(2.6, dd*3.2); R.x+=ddx/dd*v*dt; R.z+=ddz/dd*v*dt; }
-      if(face){ var w=Math.atan2(face.x-R.x, face.z-R.z); var dyaw=w-R.yaw; while(dyaw>Math.PI)dyaw-=2*Math.PI; while(dyaw<-Math.PI)dyaw+=2*Math.PI; R.yaw+=dyaw*Math.min(1,dt*6); }
+      if(face){ var w=Math.atan2(face.x-R.x, face.z-R.z); var dyaw=w-R.yaw; dyaw = isFinite(dyaw) ? (dyaw - 2*Math.PI*Math.round(dyaw/(2*Math.PI))) : 0; /* v159: O(1) finite-safe wrap — the old while-loops hang forever if yaw blows up to Infinity (frozen match) */ R.yaw+=dyaw*Math.min(1,dt*6); }
       R._bobT+=dt*6;
       R.g.position.set(R.x, (pin?-0.22:0)+Math.sin(R._bobT)*0.01, R.z);
       R.g.rotation.y=R.yaw;
