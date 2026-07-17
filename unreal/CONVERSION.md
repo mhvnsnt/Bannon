@@ -13,6 +13,16 @@ rewrite. `[x]` = landed in `unreal/`, `[~]` = laws in `native/` (ready to wire),
 ## Combat & physics (laws already in native/, wire to Chaos/AnimBP)
 - [x] Active ragdoll (15 joints, PD drive) — `UBannonRagdollComponent`: PhysicsAsset + Physical
       Animation, poise-scaled motors, MAX_BODY_VEL per-body clamp AFTER the solve. Needs the engine to test.
+      v159: two proven techniques ported from tigershan1130/UE5-active-ragdoll-with-floating-capsule:
+      `DriveBodyVelocities()` (velocity-drive active ragdoll — push each body's lin/ang velocity toward
+      the animated target, weighted by poise·(1−PhysBlend), the AnimNode approach as an alternative to
+      the Physical-Animation motors) and `ApplyHitReaction()` (impulse to the struck body + a
+      `PelvisCoupling` share into the hips, so a limb hit whips the whole body — the reference's signature).
+- [x] Floating-capsule movement — `UBannonFloatingCapsuleMovement`: a SIMULATED capsule that hovers on a
+      damped ride-spring (downward ray → `−k·(dist−RideHeight) − c·vZ`), horizontal input as force,
+      MAX_BODY_VEL-capped. The rigid-body character controller that lets the active ragdoll walk while
+      staying fully physical (shovable, climbs steps free). Adapted from the same reference's
+      `UTsPhysicsCharacterMovement`. Needs the engine to test.
 - [~] Strikes / weight-transfer power / knockback — `bannon_strike.h` → on-hit events on `ABannonFighter`.
 - [~] Grapple positions / lift / carry / release matrix — `bannon_grapple.h` + `bannon_weapon.h`
       releaseImpulse → animation-driven pose + Physical Animation profiles per phase.

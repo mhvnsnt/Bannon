@@ -1,0 +1,64 @@
+[
+ {
+  "file": "Moves.bb",
+  "domain": "move DB (frame data + positions)",
+  "functions": 19,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0,
+  "moves": 191,
+  "categories": {
+   "STANDING MOVE SEQUENCES": 125,
+   "DDT": 2,
+   "tornado DDT": 18,
+   "reverse DDT": 4,
+   "MDKO": 42
+  }
+ },
+ {
+  "file": "Attacks.bb",
+  "domain": "C++ rigid-body / poise params",
+  "functions": 23,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "AI.bb",
+  "domain": "native/ai (brawler state machine)",
+  "functions": 49,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "Anims.bb",
+  "domain": "anim clip ranges -> STUDIO clips / move DB",
+  "functions": 37,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "Gameplay.bb",
+  "domain": "native/ai + combat loop",
+  "functions": 26,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "Values.bb",
+  "domain": "balance constants -> config",
+  "functions": 10,
+  "types": 0,
+  "globals": 263,
+  "consts": 0,
+  "dims": 757
+ }
+]
