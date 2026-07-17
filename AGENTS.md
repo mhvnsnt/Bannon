@@ -309,3 +309,6 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 - **Phase 4 Procedural Grappling & Tie-Ups**: Designed `BannonTieUpConstraint` to orchestrate dynamic collar-and-elbow tie-ups using FBIK calculations mapped directly to opponent shoulder/neck delta scales. Includes weight detection thresholds for lift failures to simulate massive strain. 
 - **Phase 4 Reversal & Physics Counters**: Built `BannonCounterMatrix` for intercepting airborne wrestlers and mapping reversal impulses (torque vectors) natively to the physics engine instead of playing canned reversal animations.
 - **Physics Domain Telemetry**: Verified `Moves.bb` and `Anims.bb` structural definitions successfully compiled directly into `dist/server/native/` routing paths via `AutonomousChainingAgent` orchestration.
+
+- **Phase 5 Submission & Limb Physics**: Engineered `BannonJointLockConstraint` to map submission leverage using procedural height/mass deltas, applying direct torque/angular impulses to UE5 Physics Asset (PhAT) joint limits (triggering dislocations if the threshold breaks). 
+- **Phase 5 Desperation Tap-Outs**: Built `BannonDesperationIK` for procedural rope-break stretches querying the nearest spline, and frantic procedural hand-slamming into the Z-floor based on submission pressure > 95%.
