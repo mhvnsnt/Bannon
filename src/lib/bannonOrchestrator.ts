@@ -16,6 +16,9 @@ export class BannonOrchestrator {
         const mockRegistry = [
             { moduleId: 'Career.bb', status: 'PENDING' },
             { moduleId: 'Attacks.bb', status: 'PENDING' },
+            { moduleId: 'Tournaments.bb', status: 'PENDING' },
+            { moduleId: 'Teams.bb', status: 'PENDING' },
+            { moduleId: 'Rivalries.bb', status: 'PENDING' },
             { moduleId: 'src/native/ai/combatStateMachine.cpp', status: 'PENDING' }
         ];
 
@@ -35,7 +38,8 @@ export class BannonOrchestrator {
             const outputWriter = async (content: string) => {
                 let targetDir = 'dist/meta/';
                 
-                if (entry.moduleId.endsWith('.cpp') || entry.moduleId.endsWith('.h') || entry.moduleId === 'Attacks.bb' || entry.moduleId === 'Moves.bb') {
+                if (entry.moduleId.endsWith('.cpp') || entry.moduleId.endsWith('.h') || 
+                    ['Attacks.bb', 'Moves.bb', 'AI.bb', 'Gameplay.bb'].includes(entry.moduleId)) {
                     targetDir = 'dist/server/native/';
                 }
                 
