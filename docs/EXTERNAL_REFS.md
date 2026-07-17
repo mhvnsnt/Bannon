@@ -39,6 +39,17 @@ Built on the SAME `ProjectSR` active-ragdoll base as #1. Headers to reference:
 `PitBeastCareerSaveGame` (career persistence → informs our DNA/career save). Also has a TS/React front
 layer. HARVEST: the gait state machine (walk/run cycle for active ragdoll) + combat-physics component.
 
+### 4b. urban-mayhem web prototype (owner remix) — React+Three open-world brawler
+GTA/Def-Jam-lineage open world: `OSMCity`, `Vehicle`, `MassEntityCrowd`, `FactionMapUI`, `ChopShopUI`,
+`CharacterCreation`, `CombatLogFeed`, and a **`MobileHUD`** (relevant to our mobile-first pass). HARVEST:
+the MobileHUD touch layout + faction/city systems as reference for the Urban-Reign-style environmental
+brawling + multi-man chaos the QUALITY_BAR calls for. Reference, not a port.
+### 4c. God-Within "War Room" / Bannon base (owner remix) — React+Three fighter engine
+A `FighterEngine.ts` + `CharacterState.ts` + `ChunkManager` + `InputStore` + `ParticleSystem` base
+("Bannon base if we don't have one yet"). We DO have a deeper engine (BANNON_v150.html + native/), so
+this is reference — mine `FighterEngine.ts`'s state model + the God-Within particle/war-room framing for
+the God Within mode. Reference, not a port.
+
 ## REFERENCE-ONLY (mine selectively, not a port target)
 ### 5. mphysicsfightingsandbox_2 — Android (Kotlin) + UE content (740 uasset) + 29 more MDickie `.bb`
 Mixed sandbox. The extra `.bb` files can be run through `tools/bbparse/` if the owner wants more MDickie

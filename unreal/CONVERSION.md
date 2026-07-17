@@ -52,6 +52,12 @@ rewrite. `[x]` = landed in `unreal/`, `[~]` = laws in `native/` (ready to wire),
 
 ## Presentation
 - [x] Arena impacts (post/table) — `ABannonArena` (native env-contact + tableImpact). Meshes: Tripo env set, TODO.
+- [x] Ring palette parity — `FBannonRingColors` carries the EXACT web ring colors (fire/cold/void:
+      floor/accent/deck/post/matBase, documented against buildArena) + `ApplyThemeColors()` pushes them
+      onto dynamic material instances (deck matte, posts chrome 0.95/0.12, pads matte accent). The mat
+      uses the baked BANNON-logo albedo `assets/ring/bannon_mat_fire.png` (+ standalone
+      `bannon_mat_logo.png`) so the upgraded ring reads identical to the Three.js one, higher fidelity.
+      Remaining: author the actual ring StaticMeshes (deck/mat/posts/pads) + hook the mat texture in-editor.
 - [x] Crowd kinetic reaction — `UBannonCrowd` (native crowdReaction). Niagara/instanced visual: TODO.
 - [ ] BROADCAST_GRADE post pass — PostProcessVolume + material.
 - [ ] REALITY CHECK glitch — post-process material (triggerRealityCheck → a material param).
