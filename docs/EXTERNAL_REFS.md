@@ -56,6 +56,31 @@ if/when we package the UE build to Android. Not a port target.
 | tigershan1130/UE5-active-ragdoll-with-floating-capsule | active ragdoll + floating capsule (ported) | done |
 | MDickie Wrestling MPire fork | move taxonomy + AI + booking meta (ingested) | done |
 
+## Owner's FULL repo library (from his phone screenshot 2026-07-17 — the "pull from more repos" roadmap)
+The owner has a whole stash of physics-fighting / combat repos staged to share. Cataloged here so none
+are forgotten. IN HAND = already uploaded + triaged above; PENDING = owner to upload, target for
+`add_repo`/clone when we work it. All get the same guardrails (additive, superiority-veto, no 3rd-party
+source committed, no trademarked content).
+| Repo (zip) | Size | Status | Likely harvest value |
+|------------|------|--------|----------------------|
+| m-physics-fighting-sandbox (2) | 11 MB | IN HAND | Android/Kotlin + UE content + extra MDickie `.bb` |
+| ArenaBrawler_Demo (OnlyHands) | 580 KB | IN HAND ⭐ | UE5 physics-fighting C++ — top UE-combat target |
+| UE5-active-ragdoll-floating-capsule | 8 MB | IN HAND ✓ ported | active ragdoll + floating capsule |
+| WrestlingMPireRemix | 409 KB | IN HAND ✓ ingested | move taxonomy + AI + booking |
+| open-source-games | 16 KB | IN HAND | discovery index only |
+| **EyeofTiger** | 252 MB | PENDING | large — likely a full fighting/boxing game (assets+code); eval on upload |
+| **Fighting-Physics-Simulation** | 186 MB | PENDING ⭐ | physics-fight sim — directly on-goal; harvest combat physics |
+| **FightingGame3D** | 87 MB | PENDING | 3D fighting game — combat/state-machine reference |
+| **Boxing-Mate** | 88 MB | PENDING | boxing sim — strike/weight-transfer reference (EA-UFC-like) |
+| **SwordsmanshipU3D** | 53 MB | PENDING | Unity melee/weapon physics — weapon-combat reference |
+| **Retro3DGraphicsCollection** | 3 KB | PENDING | retro shader/graphics snippets (low-poly "training dummy" tier) |
+| **remix_-urban-mayhem-web-proto** | 4 MB | PENDING | web brawler prototype — possibly our own remix lineage |
+| **badass-quest** (owner mention, not shown) | — | PENDING | eval on link |
+
+Priority order when the owner uploads them: Fighting-Physics-Simulation → Boxing-Mate → FightingGame3D →
+SwordsmanshipU3D (weapons) → EyeofTiger → the rest. Each: triage → extract transformative patterns →
+clamp to our physics laws → cite. NONE ship another game's names/assets/logos.
+
 ## Guardrails (unchanged, binding)
 - **Additive-only, physics-first, superiority veto** (AGENTS.md): only pull a pattern in if it beats what
   we have. Our `MAX_BODY_VEL`, poise-decoupled HP, and post-constraint velocity clamp are immutable —
