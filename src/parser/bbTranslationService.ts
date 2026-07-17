@@ -21,21 +21,31 @@ export class TranslationService {
         return 'Meta'; // Fallback
     }
     
-    // Inject custom heuristics for Surrounding Game layers
-    public applySurroundingGameHeuristics(ast: any[], filename: string): any[] {
-        if (filename === 'Tournaments.bb' || filename === 'Teams.bb' || filename === 'Career.bb') {
-            // Find global multidimensional arrays representing brackets or rankings
-            // and attach meta-tags so astDomainRouter converts them to NoSQL schemas
-            ast.forEach(node => {
-                if (node.type === 'Global' && (node.name.includes('Tournament') || node.name.includes('Rank'))) {
-                    node.metaType = 'RelationalDatabaseSchema';
+    // Inject custom heuristics for Surrounding Game layers and Career mechanics
+    public applySurroundingGameHeuristics(astObj: any, filename: string): any {
+        if (!astObj || !astObj.ast) return astObj;
+        
+        const fileHeuristics = ['Tournaments.bb', 'Teams.bb', 'Career.bb', 'Negotiations.bb', 'Rivalries.bb'];
+        
+        if (fileHeuristics.includes(filename)) {
+            // Find global multidimensional arrays representing brackets, rankings, or contract decay matrices
+            // and attach meta-tags so astDomainRouter converts them to JSON/NoSQL schemas
+            astObj.ast.forEach((node: any) => {
+                if (node.type === 'Global') {
+                    if (node.identifier.includes('Tournament') || node.identifier.includes('Rank') || 
+                        node.identifier.includes('contractWeeks') || node.identifier.includes('starPower')) {
+                        node.metaType = 'RelationalDatabaseSchema';
+                    }
                 }
-                if (node.type === 'Function' && (node.name.includes('Book') || node.name.includes('Turn'))) {
-                    node.metaType = 'NodeJS_Service_Route';
+                if (node.type === 'Function') {
+                    if (node.identifier.includes('Book') || node.identifier.includes('Turn') ||
+                        node.identifier.includes('decayContract') || node.identifier.includes('Negotiate')) {
+                        node.metaType = 'NodeJS_Service_Route';
+                    }
                 }
             });
         }
-        return ast;
+        return astObj;
     }
 
     public async digestModule(filename: string, rawText: string): Promise<{ success: boolean; output?: string; error?: string }> {
