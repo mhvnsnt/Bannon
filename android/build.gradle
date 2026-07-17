@@ -1,0 +1,5 @@
+// Root build file. AGP + Gradle are provided by CI (gradle/actions/setup-gradle); no wrapper jar is
+// committed (binary). See .github/workflows/android.yml — it runs `gradle assembleDebug`.
+plugins {
+    id 'com.android.application' version '8.1.4' apply false
+}
