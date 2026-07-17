@@ -26,6 +26,11 @@ rewrite. `[x]` = landed in `unreal/`, `[~]` = laws in `native/` (ready to wire),
 - [~] Strikes / weight-transfer power / knockback — `bannon_strike.h` → on-hit events on `ABannonFighter`.
 - [~] Grapple positions / lift / carry / release matrix — `bannon_grapple.h` + `bannon_weapon.h`
       releaseImpulse → animation-driven pose + Physical Animation profiles per phase.
+      v159: `UBannonGrappleGrip` — the physical hand↔body weld (the web `_gripPts` done for real in
+      Chaos): `GripNearest` finds the nearest SIMULATING victim ragdoll body to the attacker's hand and
+      clamps a `UPhysicsHandleComponent` onto that bone; `UpdateGrip` drags it to the hand each frame (a
+      real carried load); `Release` flings it with the deliver-kind impulse, MAX_BODY_VEL-capped. Grab
+      search + physics-handle technique from noahbutcher97/OnlyHands (`OHPhysicsHandler`).
 - [~] Weapons (mass stamina tax, integrity, TLC table/ladder) — `bannon_weapon.h`/`bannon_universe.h`.
 - [x] Referee entity (LoS pin gating, avoidance, bumps) — `ABannonReferee` (native refHasLineOfSight/refAvoidanceVelocity/refBump).
 - [~] Submissions (torque→limb-HP→organic tap) — `bannon_referee.h submissionStep` (surfaced in UBannonLaws).
