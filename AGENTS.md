@@ -64,6 +64,11 @@ Use the GitHub API to fetch the remote main version, resolve the conflict (keep 
 To prevent "tech-larping" and ensure absolute integrity:
 1. **SHIPPED vs. PLANNED Split**: Every single status update or task completion summary MUST have a hard, labeled split:
    - **### SHIPPED
+- **Legacy BB Lexer Pipeline**: Built `src/parser/bbLexerPipeline.ts`. Created streaming lexer to tokenize and structure legacy Blitz3D `.bb` files into JSON ASTs, handling functions, types, fields, and globals while stripping directives.
+- **AST Domain Router**: Built `src/parser/astDomainRouter.ts`. Implemented structural interpreter mapping to split legacy procedural variables into C++ rigid body structures or Node.js meta backend databases.
+- **Parser Matrix Blueprint**: Authored `config/parserMappingRules.md`. Explicitly defined legacy paradigm conversion rules, Poise engine isolation constraints, and hard-coded constant mappings for target architectures.
+- **Agent Chain BB Watchdog**: Updated `src/lib/agentChain.ts`. Hooked the BB Lexer directly into the recursive autonomous loop to intercept and validate AST tokens before committing any legacy code extraction pass to the remote repository.
+
 - **Interactive Crowd Mechanics**: Built `server/modes/interactiveCrowd.ts` (Phase 3 #16 & 17). Engineered an entity proximity system where individual crowd members have physics states. If a wrestler is thrown over the barricade (ragdolling in mid-air), crowd members mathematically calculate the trajectory and trigger a 'Fleeing' state. Alternatively, if proximity is stable, crowd members hand off weapons to the wrestler.
 - **Contract Negotiation LLM Engine**: Built `server/modes/contractNegotiation.ts` (Phase 6 #42). Implemented a contract negotiation state machine where a wrestler's demands scale multiplicatively based on their Star Power, Loyalty, and Greed. The LLM processes counter-offers asking for higher merch cuts and VIP perks.
 - **Contract & Crowd UI Diagnostics**: Appended monitors to `Dashboard.tsx` to visualize real-time navmesh logic (fleeing fans) and the backend mathematics of the contract negotiation engine.
