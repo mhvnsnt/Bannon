@@ -56,6 +56,29 @@ Feature plugin on Lyra**, and Lyra provides the "full game" shell.
   uploaded yet) — pull when ready for more fighting styles/state machines; fold into the GAS ability set.
 - **Lyra** = the shell that ties them all into one complete game.
 
+## Lyra systems to ADOPT for fidelity (physics / combat / visuals / reactions)
+The owner: *pull as much from Lyra as gives us better physics, combat, visual fidelity, and real
+fighting/movements/reactions.* I can't clone Lyra here (Epic-private + EULA), but its systems are
+well-documented and map to concrete UE pieces we add to the port. Adopt, in priority:
+1. **Locomotion + foot placement (real movement/reactions)** — Lyra's Animation Blueprint uses
+   distance-matching + turn-in-place + strafe/lean sets and **Control Rig foot IK** so feet plant on the
+   ground and don't skate. This is the AAA version of the foot-plant we just added in the web build —
+   adopt Lyra's foot-IK Control Rig + distance-matched locomotion for the UE fighter. (Highest fidelity win.)
+2. **Motion Warping** — Lyra ships Motion Warping; it makes an attacker's animation *land accurately* on
+   a moving target. Exactly what grapples/finishers/irish-whips need so the move connects instead of
+   sliding. Adopt for the grapple/finisher abilities (pairs with `UBannonGrappleGrip`).
+3. **GAS combat** — abilities/attributes/effects/cooldowns; our strikes/grapples/subs become GameplayAbilities
+   granted by an AbilitySet (see the mapping table above). Lyra's ability + cost/cooldown patterns are the
+   reference implementation.
+4. **Physical Animation + hit reactions** — Lyra blends animation with physics for reactions; combine with
+   our `UBannonRagdollComponent` velocity-drive + `ApplyHitReaction` + the active-ragdoll UPRIGHT_TORQUE
+   balance (see EXTERNAL_REFS) so a hit whips the body but the fighter rights himself over planted feet.
+5. **Visual fidelity** — Lyra's post-process volume, Lumen/GI settings, and CommonUI scalable HUD. Adopt the
+   rendering/settings baseline; keep our BROADCAST_GRADE + REALITY CHECK looks ported as post materials.
+6. **CommonUI + settings + save** — the shell for the creation suite screens + options + persistence.
+Each is a UE-editor adoption (add the plugin/system, wire our components/abilities into it) — tracked in
+`unreal/CONVERSION.md`. None change the physics LAWS (those stay in `native/`).
+
 ## Bottom line
 BANNON-on-Lyra is real and it's the right call — and the work splits cleanly: I keep our combat/physics a
 drop-in Game Feature + write the assembly specs here; the Lyra pull, editor wiring, and Android package
