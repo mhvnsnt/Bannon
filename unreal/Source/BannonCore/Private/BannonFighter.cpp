@@ -65,8 +65,23 @@ void ABannonFighter::Tick(float DeltaTime)
     if (bIsSubmitting) UpdateSubmission(DeltaTime);
 }
 
-void ABannonFighter::InitLockup(ABannonFighter* Target) { }
-void ABannonFighter::UpdateLockup(ABannonFighter* Target, float Dt) { }
+void ABannonFighter::InitLockup(ABannonFighter* Target) 
+{ 
+    // Trigger physical IK lockup blending if valid target
+    if (Target) {
+        // Physical resistance simulation based on target mass
+        Poise -= (Target->StrikeMass * 2.0f); 
+    }
+}
+
+void ABannonFighter::UpdateLockup(ABannonFighter* Target, float Dt) 
+{ 
+    // Drain stamina during physical tie-up based on mass delta
+    if (Target && Stamina > 0.0f) {
+        float MassDelta = FMath::Max(0.0f, Target->StrikeMass - StrikeMass);
+        Stamina -= (10.0f + (MassDelta * 5.0f)) * Dt;
+    }
+}
 
 void ABannonFighter::InitSubmission(ABannonFighter* Target)
 {
@@ -78,7 +93,14 @@ void ABannonFighter::UpdateSubmission(float Dt)
 {
     SubmissionProgress += (FMath::RandRange(-2.0f, 2.0f));
     SubmissionProgress = FMath::Clamp(SubmissionProgress, 0.0f, 100.0f);
-    if (SubmissionProgress >= 100.0f || SubmissionProgress <= 0.0f) bIsSubmitting = false;
+    if (SubmissionProgress >= 100.0f || SubmissionProgress <= 0.0f) {
+        bIsSubmitting = false;
+        // On submission break, apply massive poise damage to the loser
+        if (SubmissionProgress <= 0.0f) {
+            Poise = 0.0f; 
+            bCrumpled = true;
+        }
+    }
 }
 
 void ABannonFighter::TransitionGroundPosition(FName NewPosition)
@@ -88,9 +110,29 @@ void ABannonFighter::TransitionGroundPosition(FName NewPosition)
 
 void ABannonFighter::ExecuteReversal(FName ReversalType)
 {
-    // Breaker, Block, Dodge, Mid-move logic
-    if (ReversalType == "Breaker") { /* Logic */ }
-    else if (ReversalType == "Block") { /* Logic */ }
-    else if (ReversalType == "Dodge") { /* Logic */ }
-    else if (ReversalType == "MidMove") { /* Logic */ }
+    // Mass-driven reversal dynamics. If we're caught in a grip, break it.
+    if (ReversalType == "Breaker") { 
+        if (Grip && Grip->IsGripping()) {
+            Grip->ReleaseGrip();
+        }
+        // Apply an outward impulse via ragdoll logic if grabbed
+        if (Ragdoll) {
+            Ragdoll->ApplyReversalImpulse(FVector::UpVector * 500.0f + GetActorForwardVector() * 250.0f);
+        }
+        Poise = FMath::Min(100.0f, Poise + 20.0f);
+    }
+    else if (ReversalType == "Block") { 
+        // Rigid body posture lock
+        if (Ragdoll) Ragdoll->SetJointStiffness(1.0f); // Max stiffness for impact absorption
+        Poise += 10.0f;
+    }
+    else if (ReversalType == "Dodge") { 
+        // Lower hitbox profile via physics blend
+        if (Ragdoll) Ragdoll->ImpactBlend(0.2f);
+        Stamina = FMath::Max(0.0f, Stamina - 15.0f);
+    }
+    else if (ReversalType == "MidMove") { 
+        // Desperation mid-air ragdoll shift to alter center of mass
+        if (Ragdoll) Ragdoll->ShiftCenterOfMass(FVector(0.0f, 0.0f, -50.0f));
+    }
 }
