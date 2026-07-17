@@ -299,3 +299,6 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
   1. Build remaining Phase 2 components: Mass-Driven Collision Hulls (`BannonPhysicsCollider`) for calculating strike impact forces based on limb velocity vectors and mass ratios.
   2. Build Verlet Rope Physics Simulation (`BannonDynamicRope`) for real-time tension calculation when bodies hit the ropes.
   3. Execute extraction loop for `Moves.bb` and `Anims.bb` to test deep physics structural mapping.
+
+- **Phase 2 Mass Colliders & Dynamic Ropes**: Finalized Phase 2 components by building `BannonPhysicsCollider` (implementing velocity-based impact kinetic energy scaling relative to defender mass) and `BannonDynamicRope` (calculating rope tension and rebound multipliers).
+- **Physics AST Domain Mapping (`Moves.bb`, `Anims.bb`)**: Confirmed the `astDomainRouter` correctly bridges legacy Blitz3D `Type Moves` and `Type Anims` definitions directly into C++ `struct` headers intended for the UE5 physics core, successfully bypassing Node.js meta extraction.
