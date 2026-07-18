@@ -37284,6 +37284,176 @@ window.BANNON_UNIVERSE = (function(){
            ego, loyalty, rivalInterest, demands, negotiate, bookingBreach, promoBattle, scoreLine, rivalry, feud, topFeuds };
 })();
 </script>
+<!-- ============================================================================================
+     BANNON STORY — the surrounding-game NARRATIVE layer (the MDickie Wrestling Empire meta, turned
+     proprietary + wired into OUR universe): ENTRANCES, VICTORIES, BACKSTAGE AREAS + MEETINGS,
+     DIALOGUE with branching choices, RELATIONSHIPS/ALLEGIANCE/TURNS, and weekly EVENTS/NEWS.
+     Ports MDickie's Meetings.bb (RiskFormal/Casual/PostMatch meetings -> AdjustAttitude),
+     Promos.bb (Speak/ChangeRelationship/ChangeAllegiance/PushTurn/FormTeam/AnnounceBreakup) and
+     News.bb (FindEvents/AddEvent/WinEffect) as real branching logic. Reads roster + allegiance +
+     rivalries from BANNON_UNIVERSE and stablemates from CHAR_STABLES; drives entrance/victory music
+     through BANNON_JUKEBOX. Persistent in localStorage. No trademarks — proprietary universe names.
+     ============================================================================================ -->
+<script>
+window.BANNON_STORY = (function(){
+  const KEY='bannon_story_v1';
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function U(){ return (window.BANNON_UNIVERSE && window.BANNON_UNIVERSE.get) ? window.BANNON_UNIVERSE.get() : null; }
+  function rosterKeys(){ try{ return (window.ROSTER_ALL?window.ROSTER_ALL():[]).map(c=>c.key||c.name).filter(Boolean); }catch(e){ return []; } }
+  function label(k){ try{ return (window.CHAR_META&&window.CHAR_META[k]&&window.CHAR_META[k].label)?k.replace(/_/g,' '):k.replace(/_/g,' '); }catch(e){ return k; } }
+  function factionOf(k){ try{ return (window.CHAR_META&&window.CHAR_META[k]&&window.CHAR_META[k].faction)||'Free Agent'; }catch(e){ return 'Free Agent'; } }
+  function stableOf(k){ try{ return (window.CHAR_META&&window.CHAR_META[k]&&window.CHAR_META[k].stable)||null; }catch(e){ return null; } }
+  function stablemates(k){ const s=stableOf(k); if(!s||!window.CHAR_STABLES) return [];
+    for(const id in window.CHAR_STABLES){ const st=window.CHAR_STABLES[id]; if(st.name===s||id===s) return (st.members||[]).filter(m=>m!==k); } return []; }
+
+  // ---- persistent story state (relationships/attitude/alignment/turn heat) ----
+  function fresh(){ return { rel:{}, align:{}, attitude:{}, turnHeat:{}, events:[], week:0 }; }
+  function load(){ try{ const s=localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){} return null; }
+  function save(st){ try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} return st; }
+  let STATE=load()||fresh();
+  function relId(a,b){ return [a,b].sort().join('::'); }
+  // relationship -100 (bitter enemies) .. +100 (tight allies). Seeded from stable (allies) + rivalry (enemies).
+  function rel(a,b){ if(a===b) return 100; const id=relId(a,b); if(STATE.rel[id]!=null) return STATE.rel[id];
+    let base=0; if(stablemates(a).includes(b)) base+=60; else if(factionOf(a)===factionOf(b)) base+=20;
+    try{ const rv=(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.rivalsOf)?window.BANNON_UNIVERSE.rivalsOf(U(),a):[]; if(rv&&rv.includes&&rv.includes(b)) base-=60; }catch(e){}
+    STATE.rel[id]=clamp(base,-100,100); return STATE.rel[id]; }
+  function changeRel(a,b,d){ const id=relId(a,b); STATE.rel[id]=clamp((STATE.rel[id]!=null?STATE.rel[id]:rel(a,b))+d,-100,100); save(STATE); return STATE.rel[id]; }
+  // alignment: 'face' (hero) / 'heel' (villain) / 'tweener'. Seed from faction.
+  function align(k){ if(STATE.align[k]) return STATE.align[k];
+    const f=factionOf(k); const a=(f==='The Alliance')?'face':((f==='Corporate Structure'||f==='Agents of Chaos')?'heel':'tweener');
+    STATE.align[k]=a; return a; }
+  function attitude(k){ return STATE.attitude[k]!=null?STATE.attitude[k]:50; }
+  function adjustAttitude(k,d){ STATE.attitude[k]=clamp(attitude(k)+d,0,100); save(STATE); return STATE.attitude[k]; }
+
+  // ---- ENTRANCES (World.bb presentation + jukebox theme) ----
+  const ENTRANCE_STYLES=['pyro-blast','slow-stalk','high-energy sprint','arrogant strut','lights-out ritual','crowd-pander','no-nonsense march'];
+  function entranceOf(k){
+    const styleIdx=Math.abs(hash(k))%ENTRANCE_STYLES.length;
+    let music=null; try{ if(window.BANNON_JUKEBOX){ const cfg=window.BANNON_JUKEBOX.cfg?window.BANNON_JUKEBOX.cfg():null; music=(window.BANNON_JUKEBOX.entranceFor?window.BANNON_JUKEBOX.entranceFor(k):null); } }catch(e){}
+    return { fighter:k, name:label(k), style:ENTRANCE_STYLES[styleIdx], align:align(k),
+      pyro: align(k)==='heel'?'red columns':'gold sparks', tron:label(k).toUpperCase(), music };
+  }
+  // play an entrance: cue the jukebox entrance theme + announce. (Visual staging hooks the arena/atmos.)
+  function playEntrance(k){ const e=entranceOf(k);
+    try{ if(window.BANNON_JUKEBOX && window.BANNON_JUKEBOX.playEntrance) window.BANNON_JUKEBOX.playEntrance(k); }catch(_){}
+    try{ if(typeof announce==='function') announce(e.name+' — '+e.style.toUpperCase(), 'ENTRANCE'); }catch(_){}
+    return e; }
+
+  // ---- VICTORIES (celebration + WinEffect on story state) ----
+  const VICTORY_STYLES={ face:['pose on the turnbuckle','high-five the front row','raise the title high'],
+    heel:['smirk over the fallen','demand respect','pose in disgust at the crowd'],
+    tweener:['nod and walk off','stare down the hard camera','shrug it off'] };
+  function playVictory(winner, loser){
+    const a=align(winner), pool=VICTORY_STYLES[a]||VICTORY_STYLES.tweener;
+    const cele=pool[Math.abs(hash(winner+(STATE.week||0)))%pool.length];
+    adjustAttitude(winner, +6); if(loser) adjustAttitude(loser, -4);
+    try{ if(window.BANNON_JUKEBOX && window.BANNON_JUKEBOX.playVictory) window.BANNON_JUKEBOX.playVictory(winner); }catch(_){}
+    try{ if(typeof announce==='function') announce(label(winner)+' — '+cele.toUpperCase(), 'VICTORY'); }catch(_){}
+    addEvent(`${label(winner)} beat ${loser?label(loser):'their opponent'} and ${cele}.`,'result');
+    return { winner, celebration:cele }; }
+
+  // ---- BACKSTAGE AREAS + MEETINGS (Meetings.bb: formal/casual/post-match -> attitude/relationship) ----
+  const AREAS=[
+    {id:'locker_room', name:'Locker Room', mood:'tense camaraderie'},
+    {id:'catering',    name:'Catering',    mood:'loose, gossipy'},
+    {id:'gorilla',     name:'Gorilla Position', mood:'pre-match nerves'},
+    {id:'parking_lot', name:'Parking Lot', mood:'where things get settled'},
+    {id:'promo_stage', name:'Interview Stage', mood:'on the record'},
+    {id:'trainers_room',name:"Trainer's Room", mood:'battered and honest'},
+    {id:'office',      name:"Promoter's Office", mood:'power and politics'}
+  ];
+  function areas(){ return AREAS.slice(); }
+  // a backstage meeting between two fighters in an area -> a dialogue with branching choices.
+  function meeting(a,b,areaId){ const area=AREAS.find(x=>x.id===areaId)||AREAS[0];
+    const r=rel(a,b);
+    const tone = r>40?'friendly': r<-40?'hostile':'wary';
+    return { a, b, aName:label(a), bName:label(b), area:area.name, mood:area.mood, tone, rel:r,
+      choices: dialogueChoices(a,b,tone) }; }
+
+  // ---- DIALOGUE + BRANCHES (Promos.bb: Speak + choices -> ChangeRelationship/Allegiance/Turn/Team) ----
+  function dialogueChoices(a,b,tone){
+    // every choice has an outcome that mutates real story state (relationship/turn/team/allegiance).
+    return [
+      { id:'respect', text:'Show respect', outcome:'rel+', line:`"You earned it out there."` },
+      { id:'insult',  text:'Run them down', outcome:'rel-', line:`"You don't belong in my ring."` },
+      { id:'recruit', text:'Pitch an alliance', outcome:'team', line:`"Together, nobody touches us."` },
+      { id:'challenge',text:'Issue a challenge', outcome:'feud', line:`"You and me. No excuses."` },
+      { id:'betray',  text:'Plant the seed of a turn', outcome:'turn', line:`"Your friends aren't who you think."` }
+    ]; }
+  // resolve a dialogue choice -> real consequences (this is the branch logic).
+  function choose(a,b,choiceId){ let res={a,b,choice:choiceId};
+    if(choiceId==='respect'){ res.rel=changeRel(a,b,+18); res.text=`${label(a)} and ${label(b)} came to an understanding.`; addEvent(res.text,'promo'); }
+    else if(choiceId==='insult'){ res.rel=changeRel(a,b,-22); res.text=`${label(a)} disrespected ${label(b)} — heat rising.`; addEvent(res.text,'promo'); STATE.turnHeat[relId(a,b)]=clamp((STATE.turnHeat[relId(a,b)]||0)+15,0,100); }
+    else if(choiceId==='recruit'){ res.rel=changeRel(a,b,+12);
+      if(rel(a,b)>=55){ res.team=formTeamStory(a,b); res.text=`${label(a)} & ${label(b)} FORMED A TEAM.`; }
+      else res.text=`${label(b)} isn't ready to team with ${label(a)} yet.`; addEvent(res.text,'team'); }
+    else if(choiceId==='challenge'){ res.feud=true; STATE.turnHeat[relId(a,b)]=clamp((STATE.turnHeat[relId(a,b)]||0)+25,0,100);
+      try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.rivalry) window.BANNON_UNIVERSE.rivalry(U(),a,b); }catch(_){}
+      res.text=`${label(a)} CHALLENGED ${label(b)} — a feud is born.`; addEvent(res.text,'feud'); }
+    else if(choiceId==='betray'){ res.rel=changeRel(a,b,-15); const heat=STATE.turnHeat[relId(a,b)]=clamp((STATE.turnHeat[relId(a,b)]||0)+20,0,100);
+      if(heat>=60){ res.turn=pushTurn(b); res.text=`${label(b)} TURNED ${res.turn.toUpperCase()} — the seed took root.`; }
+      else res.text=`${label(a)} planted doubt in ${label(b)}'s mind.`; addEvent(res.text,'turn'); }
+    save(STATE); return res; }
+
+  // ---- TURNS (Promos.bb PushTurn) + TEAMS (FormTeam) + BREAKUP (AnnounceBreakup) ----
+  function pushTurn(k){ const cur=align(k); const next= cur==='heel'?'face': cur==='face'?'heel':'heel';
+    STATE.align[k]=next; save(STATE);
+    try{ if(next==='heel'&&window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.turnHeel) window.BANNON_UNIVERSE.turnHeel(U(),k);
+         if(next==='face'&&window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.turnFace) window.BANNON_UNIVERSE.turnFace(U(),k); }catch(_){}
+    addEvent(`${label(k)} turned ${next.toUpperCase()}.`,'turn'); return next; }
+  function formTeamStory(a,b){ changeRel(a,b,+25);
+    try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.formTeam) window.BANNON_UNIVERSE.formTeam(U(),a,b); }catch(_){}
+    return {a,b,name:`${label(a)} & ${label(b)}`}; }
+  function breakup(a,b){ changeRel(a,b,-45); STATE.turnHeat[relId(a,b)]=80;
+    addEvent(`${label(a)} & ${label(b)} EXPLODED — the team is finished.`,'turn'); save(STATE); return true; }
+
+  // ---- EVENTS / NEWS (News.bb: FindEvents/AddEvent/WinEffect) ----
+  function addEvent(text,type){ STATE.events.unshift({ w:STATE.week||0, type:type||'news', text }); if(STATE.events.length>200) STATE.events.length=200; save(STATE); return STATE.events[0]; }
+  function events(n){ return STATE.events.slice(0,n||20); }
+  // roll a random weekly backstage event across the roster (the MDickie "something always happens" engine).
+  const EVENT_TABLE=['confrontation','alliance','betrayal','callout','contract-drama','injury-scare','locker-room-fight','respect'];
+  function rollWeeklyEvent(){ const R=rosterKeys(); if(R.length<2) return null;
+    const a=R[Math.floor(Math.random()*R.length)]; let b=R[Math.floor(Math.random()*R.length)]; let g=0; while(b===a&&g++<8) b=R[Math.floor(Math.random()*R.length)];
+    const t=EVENT_TABLE[Math.floor(Math.random()*EVENT_TABLE.length)];
+    if(t==='confrontation'){ changeRel(a,b,-12); return addEvent(`${label(a)} confronted ${label(b)} backstage.`,'confrontation'); }
+    if(t==='alliance'){ if(rel(a,b)>30){ formTeamStory(a,b); return addEvent(`${label(a)} & ${label(b)} shook hands on an alliance.`,'alliance'); } changeRel(a,b,+10); return addEvent(`${label(a)} reached out to ${label(b)}.`,'alliance'); }
+    if(t==='betrayal'){ const h=STATE.turnHeat[relId(a,b)]=clamp((STATE.turnHeat[relId(a,b)]||0)+18,0,100); if(h>=60){ pushTurn(b); return addEvent(`${label(b)} BETRAYED ${label(a)}!`,'betrayal'); } changeRel(a,b,-14); return addEvent(`Tension between ${label(a)} and ${label(b)} is boiling.`,'betrayal'); }
+    if(t==='callout'){ try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.rivalry) window.BANNON_UNIVERSE.rivalry(U(),a,b); }catch(_){}; return addEvent(`${label(a)} called out ${label(b)} for a match.`,'callout'); }
+    if(t==='contract-drama'){ return addEvent(`${label(a)}'s contract talks with ${factionOf(a)} hit a snag.`,'contract'); }
+    if(t==='injury-scare'){ adjustAttitude(a,-8); return addEvent(`${label(a)} tweaked something in training — nothing serious.`,'injury'); }
+    if(t==='locker-room-fight'){ changeRel(a,b,-20); return addEvent(`A locker-room fight broke out: ${label(a)} vs ${label(b)}.`,'fight'); }
+    changeRel(a,b,+8); return addEvent(`${label(a)} earned ${label(b)}'s respect this week.`,'respect'); }
+  function advanceStoryWeek(n){ n=n||1; let out=[]; for(let i=0;i<n;i++){ STATE.week=(STATE.week||0)+1; const rolls=1+Math.floor(Math.random()*3); for(let j=0;j<rolls;j++){ const e=rollWeeklyEvent(); if(e) out.push(e); } } save(STATE); return out; }
+
+  function hash(s){ s=String(s); let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h+s.charCodeAt(i))|0; } return h; }
+  function reset(){ STATE=fresh(); save(STATE); return STATE; }
+  function state(){ return STATE; }
+
+  return { KEY, state, reset, save:()=>save(STATE),
+    rel, changeRel, align, pushTurn, attitude, adjustAttitude,
+    entranceOf, playEntrance, playVictory,
+    areas, meeting, dialogueChoices, choose, formTeam:formTeamStory, breakup,
+    addEvent, events, rollWeeklyEvent, advanceStoryWeek, stablemates };
+})();
+// STORY HOOKS into the live match: entrance on fight start, victory on winner (guarded, additive).
+(function(){
+  try{
+    if(typeof window.startFight==='function' && !window.startFight.__storyWrapped){
+      const _sf=window.startFight; window.startFight=function(){ const r=_sf.apply(this,arguments);
+        try{ const ms=window.MATCH_SETUP||{}; if(window.BANNON_STORY){ if(ms.p1Name)window.BANNON_STORY.playEntrance(String(ms.p1Name).toUpperCase().replace(/[^A-Z0-9]/g,'_')); } }catch(e){}
+        return r; };
+      window.startFight.__storyWrapped=true;
+    }
+    if(typeof window.declareWinner==='function' && !window.declareWinner.__storyWrapped){
+      const _dw=window.declareWinner; window.declareWinner=function(w,l){ const r=_dw.apply(this,arguments);
+        try{ if(window.BANNON_STORY && w){ const wk=String((w&&w.specName)||(w&&w.opts&&w.opts.name)||w||'').toUpperCase().replace(/[^A-Z0-9]/g,'_');
+          const lk=l?String((l&&l.specName)||(l&&l.opts&&l.opts.name)||l||'').toUpperCase().replace(/[^A-Z0-9]/g,'_'):null; if(wk)window.BANNON_STORY.playVictory(wk,lk); } }catch(e){}
+        return r; };
+      window.declareWinner.__storyWrapped=true;
+    }
+  }catch(e){}
+})();
+</script>
 <script>
 
 (function() {
