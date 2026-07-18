@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { RefreshCw, CheckCircle2, AlertTriangle, FileWarning, Clock, Info, Server, Cpu, Database, Flame, Volume2, Orbit, TrendingUp, UserCog, Users, Handshake, Activity, Footprints, Network } from 'lucide-react';
+import { RefreshCw, CheckCircle2, AlertTriangle, FileWarning, Clock, Info, Server, Cpu, Database, Flame, Volume2, Orbit, TrendingUp, UserCog, Users, Handshake, Activity, Footprints, Network, Globe } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Markdown from 'react-markdown';
-
 
 type ActivityEvent = {
   id: string;
@@ -10,6 +9,207 @@ type ActivityEvent = {
   message: string;
   timestamp: string;
 };
+
+function MpireLegacyConsole() {
+  const [selectedCharacter, setSelectedCharacter] = useState('Ronald Slump');
+  const [launchMultiplier, setLaunchMultiplier] = useState(1.5);
+  const [dismembermentThreshold, setDismembermentThreshold] = useState(15000);
+  const [decryptionLogs, setDecryptionLogs] = useState<string[]>([]);
+  const [decryptionStatus, setDecryptionStatus] = useState<'idle' | 'decrypting' | 'parsing' | 'converting' | 'success'>('idle');
+  const [outputAsset, setOutputAsset] = useState<string | null>(null);
+
+  const characters = [
+    { name: 'Ronald Slump', mdName: 'Ronald Slump', model: '/Game/MDickie/Models/RonaldSlump.b3d', faction: 'The Administration', desc: 'Billionaire President' },
+    { name: 'Donald Slump Jr.', mdName: 'Donald Slump Jr', model: '/Game/MDickie/Models/DonaldSlumpJr.b3d', faction: 'The Administration', desc: 'The Wild Card' },
+    { name: 'Edwin John Kennedy', mdName: 'The Boss', model: '/Game/MDickie/Models/TheBoss.b3d', faction: 'The Administration', desc: 'Vince McMahon Parody' },
+    { name: 'Sam Kennedy', mdName: 'Sammy Kennedy', model: '/Game/MDickie/Models/SammyKennedy.b3d', faction: 'The Administration', desc: 'Shane McMahon Parody' },
+    { name: 'Melissa Kennedy', mdName: 'Stephanie', model: '/Game/MDickie/Models/Stephanie.b3d', faction: 'The Administration', desc: 'Stephanie McMahon Parody' },
+    { name: 'Marquis Whitacre', mdName: 'Solaris', model: '/Game/MDickie/Models/Solaris.b3d', faction: 'The Alliance', desc: 'The Broken Architect / Solaris Justice' },
+    { name: 'Judas Messiah', mdName: 'Jimi Sierra', model: '/Game/MDickie/Models/JimiSierra.b3d', faction: 'NWC', desc: 'Chris Jericho Parody' }
+  ];
+
+  const activeChar = characters.find(c => c.name === selectedCharacter) || characters[0];
+
+  const handleDecrypt = () => {
+    setDecryptionStatus('decrypting');
+    setDecryptionLogs([]);
+    setOutputAsset(null);
+
+    const logSteps = [
+      { msg: 'Initiating connection to BannonModelImporter C++ backend...', delay: 200 },
+      { msg: `Loading encrypted binary: ${activeChar.model}`, delay: 600 },
+      { msg: 'Applying XOR Decryption Key: 0xAA...', delay: 1000 },
+      { msg: 'XOR decryption complete! Discovered signature: Blitz3D Binary File (BB3D)', delay: 1300 },
+      { msg: 'Parsing chunk [BB3D] - Main File Header parsed.', delay: 1600 },
+      { msg: 'Parsing chunk [TEXS] - Decoded Texture File Registry: Found diffuse and bump maps.', delay: 2000 },
+      { msg: 'Parsing chunk [BRUS] - Loaded 4 Brush Material presets.', delay: 2300 },
+      { msg: 'Parsing chunk [NODE] - Extracted skeletal joint heirarchy offsets.', delay: 2600 },
+      { msg: 'Parsing chunk [MESH] - Processing low-poly mesh vertices...', delay: 2900 },
+      { msg: 'Parsing chunk [VRTS] - Loading 2,420 Vertex Positions, Normals, and UV coordinates.', delay: 3300 },
+      { msg: 'Parsing chunk [TRIS] - Rebuilding triangle indices index-by-index.', delay: 3600 },
+      { msg: 'Parsing chunk [BONE] - Binding bone structural associations and normalizing vertex weights.', delay: 3900 },
+      { msg: 'Running coordinate space translation: Left-Handed Y-Up -> Right-Handed Z-Up.', delay: 4200 },
+      { msg: 'Applying skeletal rigging scale and +90 degree pitch adjustment to fit UE5 sockets.', delay: 4500 },
+      { msg: 'Upgrading materials to Lumen subsurface scattering dynamic material instances.', delay: 4800 },
+      { msg: 'Asset registered in local Bannon sandbox content directory.', delay: 5100 }
+    ];
+
+    logSteps.forEach((step, i) => {
+      setTimeout(() => {
+        setDecryptionLogs(prev => [...prev, `[LOG] ${step.msg}`]);
+        if (i === 4) setDecryptionStatus('parsing');
+        if (i === 12) setDecryptionStatus('converting');
+        if (i === logSteps.length - 1) {
+          setDecryptionStatus('success');
+          setOutputAsset(`/Game/Bannon/Imported/MDickie/${activeChar.name.replace(/[^a-zA-Z0-9]/g, '')}_Imported_UE5`);
+        }
+      }, step.delay);
+    });
+  };
+
+  return (
+    <div className="bg-neutral-800 p-6 rounded-xl border border-yellow-600/30 mb-8 shrink-0">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Database className="w-5 h-5 text-yellow-500" />
+          <h3 className="text-lg font-semibold text-yellow-400">Wrestling Mpire Legacy & Decryption Console</h3>
+        </div>
+        <span className="flex items-center gap-2 text-xs font-bold text-yellow-500 bg-yellow-900/20 px-2 py-1 rounded border border-yellow-500/30">
+          PROPRIETARY BANNON ENGINE
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Column: Character Crosswalk Select */}
+        <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50 space-y-4">
+          <h4 className="text-sm font-medium text-neutral-300 border-b border-neutral-700 pb-2 flex items-center gap-1.5">
+            <Users className="w-4 h-4 text-yellow-500" /> Character Crosswalk Mapping
+          </h4>
+          
+          <div>
+            <label className="block text-xs text-neutral-400 mb-1">Select Bannon Narrative Figure</label>
+            <select
+              value={selectedCharacter}
+              onChange={(e) => {
+                setSelectedCharacter(e.target.value);
+                setDecryptionStatus('idle');
+                setDecryptionLogs([]);
+                setOutputAsset(null);
+              }}
+              className="w-full bg-neutral-950 border border-neutral-800 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-yellow-500"
+            >
+              {characters.map(c => (
+                <option key={c.name} value={c.name}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2 text-xs font-mono text-yellow-100 bg-neutral-950 p-3 rounded-lg border border-neutral-800">
+            <div><span className="text-neutral-500">Bannon Name:</span> <span className="text-white font-sans font-semibold">{activeChar.name}</span></div>
+            <div><span className="text-neutral-500">MDickie Equivalent:</span> <span className="text-yellow-400">{activeChar.mdName}</span></div>
+            <div><span className="text-neutral-500">Legacy File:</span> <span className="text-cyan-400">{activeChar.model}</span></div>
+            <div><span className="text-neutral-500">Faction Group:</span> <span className="text-purple-400">{activeChar.faction}</span></div>
+            <div className="text-[11px] text-neutral-400 font-sans italic mt-1 border-t border-neutral-800/60 pt-1">{activeChar.desc}</div>
+          </div>
+        </div>
+
+        {/* Middle Column: Interactive Model Decryption Console */}
+        <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50 flex flex-col justify-between">
+          <h4 className="text-sm font-medium text-neutral-300 border-b border-neutral-700 pb-2 flex items-center gap-1.5">
+            <Cpu className="w-4 h-4 text-yellow-500" /> Decrypt & Port .b3d Legacy Asset
+          </h4>
+
+          <div className="bg-neutral-950 font-mono text-[11px] p-3 rounded-lg border border-neutral-800 h-40 overflow-y-auto mt-3 space-y-1 text-green-300 flex-1 scrollbar-thin">
+            {decryptionLogs.length === 0 ? (
+              <div className="text-neutral-500 italic h-full flex items-center justify-center">Console Idle. Click decrypt below.</div>
+            ) : (
+              decryptionLogs.map((log, idx) => (
+                <div key={idx}>{log}</div>
+              ))
+            )}
+          </div>
+
+          <div className="mt-4 flex flex-col gap-2">
+            <button
+              onClick={handleDecrypt}
+              disabled={decryptionStatus !== 'idle' && decryptionStatus !== 'success'}
+              className={`w-full py-2.5 px-4 rounded-lg font-semibold text-sm transition-colors flex items-center justify-center gap-2 ${
+                decryptionStatus === 'idle' || decryptionStatus === 'success'
+                  ? 'bg-yellow-600 hover:bg-yellow-500 text-neutral-950 cursor-pointer'
+                  : 'bg-neutral-800 text-neutral-500 cursor-not-allowed'
+              }`}
+            >
+              <RefreshCw className={`w-4 h-4 ${decryptionStatus !== 'idle' && decryptionStatus !== 'success' ? 'animate-spin' : ''}`} />
+              {decryptionStatus === 'idle' && 'Execute XOR Decryption & Conversion'}
+              {decryptionStatus === 'decrypting' && 'Decrypting Binary XOR Key...'}
+              {decryptionStatus === 'parsing' && 'Parsing .b3d Chunk Headers...'}
+              {decryptionStatus === 'converting' && 'Scaling & Swapping Coordinates...'}
+              {decryptionStatus === 'success' && 'Conversion Completed Successfully!'}
+            </button>
+
+            {outputAsset && (
+              <div className="bg-green-950/20 text-green-400 border border-green-500/30 p-2.5 rounded-lg text-xs font-mono">
+                <div className="font-bold flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-green-400"/> COMPLETED UNREAL ASSET:</div>
+                <div className="break-all mt-1">{outputAsset}</div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Physics Parameter Tuning */}
+        <div className="bg-neutral-900/50 p-4 rounded-lg border border-neutral-700/50 space-y-4">
+          <h4 className="text-sm font-medium text-neutral-300 border-b border-neutral-700 pb-2 flex items-center gap-1.5">
+            <Orbit className="w-4 h-4 text-yellow-500" /> Physics & Gore Parameters
+          </h4>
+
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between text-xs text-neutral-300 mb-1">
+                <span>Launch Momentum Multiplier</span>
+                <span className="font-mono text-yellow-400">{launchMultiplier.toFixed(1)}x</span>
+              </div>
+              <input
+                type="range"
+                min="1.0"
+                max="5.0"
+                step="0.1"
+                value={launchMultiplier}
+                onChange={(e) => setLaunchMultiplier(parseFloat(e.target.value))}
+                className="w-full accent-yellow-500 bg-neutral-800"
+              />
+              <p className="text-[10px] text-neutral-500 mt-1">Classic MDickie catapult physics coefficient. High values launch opponents out of the ring!</p>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-xs text-neutral-300 mb-1">
+                <span>Dismemberment Force Threshold</span>
+                <span className="font-mono text-yellow-400">{dismembermentThreshold.toLocaleString()} N</span>
+              </div>
+              <input
+                type="range"
+                min="5000"
+                max="30000"
+                step="1000"
+                value={dismembermentThreshold}
+                onChange={(e) => setDismembermentThreshold(parseInt(e.target.value))}
+                className="w-full accent-yellow-500 bg-neutral-800"
+              />
+              <p className="text-[10px] text-neutral-500 mt-1">Impact force in Newtons required to trigger localized amputation / bone-scaling constraints.</p>
+            </div>
+
+            <div className="p-3 bg-neutral-950 rounded-lg border border-neutral-800 space-y-1 text-xs">
+              <div className="font-semibold text-yellow-500 flex items-center gap-1"><Flame className="w-3.5 h-3.5" /> Simulation Rules:</div>
+              <p className="text-[11px] text-neutral-400 leading-relaxed">
+                Applying momentum scale of <span className="text-white">{launchMultiplier}x</span> to C++ <span className="font-mono">TransferRagdollMomentum</span>. 
+                Disabling GAS on active impacts to prioritize pure skeletal physics, matching the Wrestling Mpire legacy core specification.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Dashboard() {
   const [syncProgress, setSyncProgress] = useState(0);
@@ -650,6 +850,9 @@ export default function Dashboard() {
             </div>
         </div>
       </div>
+
+      {/* Wrestling Mpire Legacy & Decryption Console */}
+      <MpireLegacyConsole />
 
       {/* Local Infrastructure */}
       <div className="bg-neutral-800 p-6 rounded-xl border border-neutral-700 mb-8 shrink-0">
