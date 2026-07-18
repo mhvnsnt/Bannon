@@ -1,11 +1,22 @@
 #include "BannonClothTearing.h"
 
-void UBannonClothTearing::EvaluateClothStress(float GrappleTension, float ClothDurability, bool& bIsTorn)
+UBannonClothTearing::UBannonClothTearing()
 {
-    // Cloth Tearing & Simulation: Attire stretches and rips based on grapple constraint tension
-    // When tension exceeds structural durability, triggers material swap or Chaos cloth destruction
-    if (GrappleTension > (ClothDurability * 10.0f))
+    PrimaryComponentTick.bCanEverTick = true;
+}
+
+void UBannonClothTearing::BeginPlay()
+{
+    Super::BeginPlay();
+}
+
+void UBannonClothTearing::EvaluateClothStress(FName ClothSection, float CurrentTension, float TearThreshold)
+{
+    if (CurrentTension > TearThreshold && !TornSections.Contains(ClothSection))
     {
-        bIsTorn = true; 
+        TornSections.Add(ClothSection);
+        UE_LOG(LogTemp, Warning, TEXT("Bannon Rendering: CLOTH TEAR! %s tension (%f) exceeded threshold. Swapping material masks."), *ClothSection.ToString(), CurrentTension);
+        
+        // Trigger material mask update to reveal torn edges / skin underneath
     }
 }
