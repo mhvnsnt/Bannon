@@ -1,16 +1,20 @@
 #include "BannonMoraleDefection.h"
 
-void UBannonMoraleDefection::EvaluateMoraleDefection(int32 DaysOffTV, float CurrentMorale, float RivalOfferMultiplier, bool& bWillDefect)
+void UBannonMoraleDefection::EvaluateDefectionRisk(float WrestlerMorale, int32 WeeksOffTV, bool& bWillDefectToRival)
 {
-    // MDickie Legacy: Morale drops if kept off TV. Low morale + good rival offer = defection.
-    float DefectionThreshold = 30.0f; // Below 30 morale is dangerous
-    if (DaysOffTV > 14 && CurrentMorale < DefectionThreshold)
+    // MDickie-style federation jumping. If a wrestler is kept off TV and morale drops, they will jump ship.
+    if (WrestlerMorale < 30.0f && WeeksOffTV > 4)
     {
-        float DefectChance = (DefectionThreshold - CurrentMorale) * RivalOfferMultiplier;
-        bWillDefect = (FMath::RandRange(0.0f, 100.0f) < DefectChance);
+        // 50% chance to jump ship if disgruntled and ignored
+        bWillDefectToRival = (FMath::RandRange(0, 100) < 50);
+    }
+    else if (WrestlerMorale < 10.0f)
+    {
+        // Guaranteed defection if completely miserable
+        bWillDefectToRival = true;
     }
     else
     {
-        bWillDefect = false;
+        bWillDefectToRival = false;
     }
 }
