@@ -1,9 +1,11 @@
 # Objective model-bind check (stop eyeballing renders)
 
 There is NO known-good skinned model in the repo — every skinned GLB is broken through the ENGINE
-RETARGET, not the model. The ONE thing that renders correctly is the procedural body. So this tool
-uses the procedural rig as the yardstick: it binds a GLB on a fighter, drops to idle, and MEASURES
-where the driven bones land vs. where the procedural rig puts them.
+RETARGET, not the model. This tool does NOT assume any render is "clean". It uses the procedural
+FIGHT RIG (the physics skeleton the retarget is supposed to follow) as an internal-consistency
+yardstick: it binds a GLB on a fighter, drops to idle, and MEASURES whether each driven GLB bone
+actually lands where the physics joint it's mapped to is. If a GLB's LeftHand bone doesn't track the
+rig's left-hand joint, the bind is wrong — independent of anyone's visual judgment.
 
 `node tools/model_diag/objcheck.cjs` (needs the pwtest harness) prints:
 - PROCEDURAL RIG (reference): haL/haR/ftL/ftR/chest/head world positions.

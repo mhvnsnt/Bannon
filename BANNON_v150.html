@@ -14303,8 +14303,8 @@ function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MO
 // overrides (localStorage CHAR_MODEL wins). Add a row when a new canon model banks.
 const CHAR_MODEL_DEFAULTS = {
   // BANNON: no default GLB — every BANNON GLB currently breaks through the ENGINE RETARGET (chunk-rig
-  // contorts; UniRig-rigged shows reversed arms/guard + missing feet). Until the retarget/orientation is
-  // fixed and MEASURED-correct, fall back to the procedural body (owner: "loads cleaner than the rest").
+  // contorts; UniRig-rigged measured with reversed arms/guard + foot mesh not deforming). Until the
+  // retarget/orientation is fixed and MEASURED-correct against the physics rig, no GLB default is set.
   // BANNON:{url:'assets/models/BANNON_rigged.glb',name:'BANNON (canon)'},   // re-enable when retarget verified
   MAIME:{url:'assets/models/MAIME.glb',name:'MAIME (canon)'},
   ONYX:{url:'assets/models/ONYX_skinned.glb',name:'ONYX'},
