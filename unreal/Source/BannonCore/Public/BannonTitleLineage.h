@@ -4,6 +4,21 @@
 #include "UObject/NoExportTypes.h"
 #include "BannonTitleLineage.generated.h"
 
+USTRUCT(BlueprintType)
+struct FTitleReignRecord
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadWrite, Category="Bannon|Universe")
+    FString ChampionID;
+
+    UPROPERTY(BlueprintReadWrite, Category="Bannon|Universe")
+    int32 DaysHeld;
+
+    UPROPERTY(BlueprintReadWrite, Category="Bannon|Universe")
+    int32 Defenses;
+};
+
 UCLASS()
 class BANNONCORE_API UBannonTitleLineage : public UObject
 {
@@ -11,5 +26,5 @@ class BANNONCORE_API UBannonTitleLineage : public UObject
 
 public:
     UFUNCTION(BlueprintCallable, Category="Bannon|Universe")
-    void TransferChampionship(const FString& NewChampion, const FString& OldChampion, int32 MatchDay, UPARAM(ref) TMap<FString, int32>& TitleHistory);
+    void UpdateTitleLineage(const FString& BeltID, const FString& NewChampionID, UPARAM(ref) TMap<FString, FTitleReignRecord>& CurrentChampions, UPARAM(ref) TArray<FTitleReignRecord>& HistoricalLedger);
 };
