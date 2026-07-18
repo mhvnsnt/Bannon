@@ -37503,6 +37503,129 @@ window.BANNON_STORY = (function(){
   }catch(e){}
 })();
 </script>
+<!-- ============================================================================================
+     BANNON CAREER — the MDickie Wrestling Empire career-sim pillars, proprietary + wired onto the
+     BANNON_UNIVERSE state: AGING + physical decline, deep INJURIES (cause/severity/bodypart/recovery/
+     effect), RETIREMENT + HALL OF FAME, locker-room MORALE, and SHOW ECONOMICS (attendance/gate/
+     ratings). Plus a match COMMENTARY generator. Operates on BANNON_UNIVERSE.get() (no parallel state)
+     and hooks advanceWeek so a simmed universe ages/heals/retires on its own. All proprietary.
+     ============================================================================================ -->
+<script>
+window.BANNON_CAREER = (function(){
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function U(){ return (window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get)?window.BANNON_UNIVERSE.get():null; }
+  function hash(s){ s=String(s); let h=0; for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0; return h; }
+  function label(k){ return String(k).replace(/_/g,' '); }
+
+  // ---- AGING + physical decline (MDickie: fighters have a prime, then fade) ----
+  function seed(u){ u=u||U(); if(!u) return null;
+    Object.values(u.fighters).forEach(f=>{ if(f.age==null){
+      const h=Math.abs(hash(f.name));
+      f.age = 22 + (h%18);                       // debut age 22-39
+      f.peak = 28 + (h%6);                       // peak 28-33
+      f.durability = 55 + (h%40);               // injury resistance 55-94
+      f.physical = 100;                          // physical condition 0-100 (declines with age/injuries)
+      f.morale = 60 + (h%30);                    // 0-100
+      f.injuries = f.injuries || [];             // [{part,severity,weeksLeft,cause}]
+      f.matches = f.matches||((f.wins||0)+(f.losses||0));
+      f.retired = false;
+    }});
+    return u; }
+  // physical condition as a function of age relative to peak (bell decline after peak)
+  function condition(f){ if(f.physical!=null) return Math.round(f.physical); const past=Math.max(0,(f.age||28)-(f.peak||30)); return clamp(100-past*3.2,25,100); }
+  function ageWeek(u){ u=u||U(); if(!u) return; seed(u);
+    Object.values(u.fighters).forEach(f=>{ if(f.retired) return;
+      if((u.week%12)===0) f.age=(f.age||28)+1;                 // ~a year every 12 weeks
+      const past=Math.max(0,(f.age||28)-(f.peak||30));
+      const inj=(f.injuries||[]).reduce((s,i)=>s+i.severity,0);
+      f.physical=clamp(100 - past*2.4 - inj*4 + (f.physical!=null?0:0), 20, 100);
+      // heal injuries
+      f.injuries=(f.injuries||[]).filter(i=>{ i.weeksLeft-=1; return i.weeksLeft>0; });
+      if((f.injuries||[]).length===0) f.injuredWeeks=Math.max(0,(f.injuredWeeks||0)-1);
+    });
+    return u; }
+
+  // ---- INJURIES (cause/severity/part/recovery/effect) ----
+  const PARTS=['neck','shoulder','ribs','knee','ankle','back','head (concussion)','arm','hand'];
+  function injure(name, opts){ const u=U(); if(!u||!u.fighters[name]) return null; seed(u); const f=u.fighters[name]; opts=opts||{};
+    const sev = opts.severity!=null?opts.severity : (1+Math.floor(Math.random()*3));   // 1 minor .. 3 major
+    const weeks = sev*sev*2;                                                            // 2/8/18 weeks
+    const part = opts.part||PARTS[Math.abs(hash(name+u.week+PARTS.length))%PARTS.length];
+    const rec={ part, severity:sev, weeksLeft:weeks, cause:opts.cause||'match damage' };
+    (f.injuries=f.injuries||[]).push(rec); f.injuredWeeks=Math.max(f.injuredWeeks||0, weeks);
+    f.physical=clamp((f.physical!=null?f.physical:100)-sev*6,15,100); f.morale=clamp((f.morale||60)-sev*4,0,100);
+    try{ if(window.BANNON_UNIVERSE&&u.news) u.news.unshift(`W${u.week}: ${label(name)} suffered a ${part} injury (${['','minor','moderate','major'][sev]}) — out ~${weeks}w.`); }catch(e){}
+    try{ if(window.BANNON_STORY) window.BANNON_STORY.addEvent(`${label(name)} injured (${part}).`,'injury'); }catch(e){}
+    try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(u); }catch(e){}  // get() re-parses; persist the mutation
+    return rec; }
+  function isHurt(name){ const u=U(); const f=u&&u.fighters[name]; return !!(f&&((f.injuredWeeks||0)>0||(f.injuries||[]).length>0)); }
+
+  // ---- MORALE (from booking, wins, relationships) ----
+  function morale(name){ const u=U(); const f=u&&u.fighters[name]; return f?clamp(f.morale!=null?f.morale:60,0,100):60; }
+  function adjustMorale(name,d){ const u=U(); const f=u&&u.fighters[name]; if(!f) return; f.morale=clamp((f.morale!=null?f.morale:60)+d,0,100);
+    try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(u); }catch(e){} return f.morale; }
+  function moraleWeek(u){ u=u||U(); if(!u) return; seed(u);
+    Object.values(u.fighters).forEach(f=>{ if(f.retired) return;
+      const rec=(f.wins||0)-(f.losses||0); let d=clamp(rec*0.4,-4,4);
+      if(f.title) d+=2; if((f.injuries||[]).length) d-=2; if((f.contractWeeks||99)<8) d-=2;
+      f.morale=clamp((f.morale!=null?f.morale:60)+d,0,100);
+    }); }
+
+  // ---- RETIREMENT + HALL OF FAME ----
+  function checkRetire(u){ u=u||U(); if(!u) return []; seed(u); u.hallOfFame=u.hallOfFame||[]; const out=[];
+    Object.values(u.fighters).forEach(f=>{ if(f.retired) return;
+      const old=(f.age||28)>=(38+ (Math.abs(hash(f.name))%8));    // 38-45 retire age
+      const broken=condition(f)<32 && (f.injuries||[]).length>=2;
+      const demoralized=morale(f.name)<12;
+      if(old||broken||demoralized){ f.retired=true; f.title=null;
+        const legend=(f.wins||0)>=(f.losses||0) && ((f.wins||0)+(f.losses||0))>20;
+        u.hallOfFame.push({ name:f.name, age:f.age, wins:f.wins||0, losses:f.losses||0, legend, reason: old?'age':(broken?'injuries':'lost the fire') });
+        out.push(f.name);
+        try{ u.news.unshift(`W${u.week}: ${label(f.name)} RETIRED (${old?'age':broken?'injuries':'morale'})${legend?' — a future Hall of Famer.':'.'}`); }catch(e){}
+        try{ if(window.BANNON_STORY) window.BANNON_STORY.addEvent(`${label(f.name)} retired.`,'retire'); }catch(e){}
+      }
+    }); return out; }
+  function hallOfFame(){ const u=U(); return (u&&u.hallOfFame)||[]; }
+
+  // ---- SHOW ECONOMICS (attendance / gate / rating) ----
+  const VENUES=[ {name:'The Armory',cap:2500}, {name:'Civic Center',cap:8000}, {name:'The Dome',cap:42000},
+    {name:'Backlot Yard',cap:600}, {name:'Grand Arena',cap:18000}, {name:'Underground Club',cap:400} ];
+  function showEconomics(u, card){ u=u||U(); if(!u) return null; seed(u);
+    const venue=VENUES[Math.abs(hash('wk'+u.week))%VENUES.length];
+    const stars=(card||u.card||[]).reduce((s,m)=>{ const a=u.fighters[m.a||m.p1], b=u.fighters[m.b||m.p2];
+      const r=(a?(window.BANNON_UNIVERSE.rating(a)):50)+(b?(window.BANNON_UNIVERSE.rating(b)):50); return s+r; },0);
+    const feudHeat=(window.BANNON_STORY&&window.BANNON_STORY.state)?Object.keys(window.BANNON_STORY.state().turnHeat||{}).length:0;
+    const draw=clamp(0.35 + stars/1200 + feudHeat*0.02, 0.2, 1.0);
+    const attendance=Math.round(venue.cap*draw);
+    const ticket=25+Math.round(draw*70);
+    const gate=attendance*ticket;
+    const rating=clamp(4 + stars/60 + feudHeat*0.1, 3, 10);   // TV rating 3-10
+    return { venue:venue.name, capacity:venue.cap, attendance, ticket, gate, rating:+rating.toFixed(1), soldOut:attendance>=venue.cap*0.97 }; }
+
+  // ---- MATCH COMMENTARY (proprietary play-by-play) ----
+  const CALLS={
+    bigMove:['What a collision!','He got ALL of that!','Bodies flying in there!','The ring shook on that one!','You could hear that in the cheap seats!'],
+    nearFall:['Kickout! I can’t believe it!','So close to three!','How did they get the shoulder up?!','A heartbeat from over!'],
+    reversal:['Countered out of nowhere!','Scouted it perfectly!','Turned it right around!'],
+    finisher:['This could be it!','They’re setting up for the end!','Lights out if they hit this!'],
+    taunt:['Playing to the crowd now.','All showmanship — but is it wise?','Soaking it in.'],
+    injury:['That looked bad — hope they’re alright.','They’re favoring that limb.','The trainer is watching closely.'],
+    victory:['It’s over! What a war!','And the winner — statement made!','They stand tall tonight!'] };
+  function commentary(kind){ const pool=CALLS[kind]||CALLS.bigMove; return pool[Math.floor(Math.random()*pool.length)]; }
+  // optional live hook: speak a line to the announce/toast layer
+  function callLive(kind, who){ const line=commentary(kind); try{ if(typeof announce==='function') announce(line, who||'COMMENTARY'); }catch(e){} return line; }
+
+  // ---- weekly tick hook onto BANNON_UNIVERSE.advanceWeek ----
+  function tickWeek(u){ u=u||U(); if(!u) return; seed(u); ageWeek(u); moraleWeek(u); checkRetire(u);
+    try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(u); }catch(e){} return u; }
+  (function(){ try{ const UNI=window.BANNON_UNIVERSE; if(UNI && UNI.advanceWeek && !UNI.advanceWeek.__careerWrapped){
+    const _aw=UNI.advanceWeek; UNI.advanceWeek=function(){ const r=_aw.apply(this,arguments); try{ tickWeek(); }catch(e){} return r; }; UNI.advanceWeek.__careerWrapped=true; }
+  }catch(e){} })();
+
+  return { seed, condition, ageWeek, injure, isHurt, morale, adjustMorale, moraleWeek,
+    checkRetire, hallOfFame, showEconomics, commentary, callLive, tickWeek, VENUES };
+})();
+</script>
 <script>
 
 (function() {
