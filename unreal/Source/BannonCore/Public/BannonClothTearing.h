@@ -1,15 +1,25 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
+#include "Components/ActorComponent.h"
 #include "BannonClothTearing.generated.h"
 
-UCLASS()
-class BANNONCORE_API UBannonClothTearing : public UObject
+// Phase 10 #82: Cloth Tearing & Simulation
+UCLASS(ClassGroup=(Bannon), meta=(BlueprintSpawnableComponent))
+class BANNONCORE_API UBannonClothTearing : public UActorComponent
 {
     GENERATED_BODY()
 
-public:
+public:    
+    UBannonClothTearing();
+
+    // Attire that stretches and tears based on physics constraints tearing
     UFUNCTION(BlueprintCallable, Category="Bannon|Rendering")
-    void EvaluateClothStress(float GrappleTension, float ClothDurability, UPARAM(ref) bool& bIsTorn);
+    void EvaluateClothStress(FName ClothSection, float CurrentTension, float TearThreshold);
+
+protected:
+    virtual void BeginPlay() override;
+
+private:
+    TArray<FName> TornSections;
 };
