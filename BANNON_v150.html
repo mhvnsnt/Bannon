@@ -14302,10 +14302,10 @@ function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MO
 // a banked skinned GLB (16-bone, geodesic + anatomical clamps). A user pick in the model menu still
 // overrides (localStorage CHAR_MODEL wins). Add a row when a new canon model banks.
 const CHAR_MODEL_DEFAULTS = {
-  // v160: UniRig-rigged (open-source auto-rig) + bone-renamed to Mixamo -> binds as a real SKINNED mesh
-  // (28-joint skeleton, all 4 limbs+spine+head driven), verified clean in-harness. Replaces the unskinned
-  // BANNON.glb statue that only chunk-rigged into a contorted pile.
-  BANNON:{url:'assets/models/BANNON_rigged.glb',name:'BANNON (canon)'},
+  // BANNON: no default GLB — every BANNON GLB currently breaks through the ENGINE RETARGET (chunk-rig
+  // contorts; UniRig-rigged shows reversed arms/guard + missing feet). Until the retarget/orientation is
+  // fixed and MEASURED-correct, fall back to the procedural body (owner: "loads cleaner than the rest").
+  // BANNON:{url:'assets/models/BANNON_rigged.glb',name:'BANNON (canon)'},   // re-enable when retarget verified
   MAIME:{url:'assets/models/MAIME.glb',name:'MAIME (canon)'},
   ONYX:{url:'assets/models/ONYX_skinned.glb',name:'ONYX'},
   CODY_CALLAHAN:{url:'assets/models/CODY_gear_skinned.glb',name:'CODY · Gear'},
