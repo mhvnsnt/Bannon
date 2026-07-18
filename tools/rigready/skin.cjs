@@ -1,5 +1,11 @@
 #!/usr/bin/env node
-/* BANNON skinned auto-rigger v4 — GEODESIC (surface-aware) weights, Pinocchio/bone-heat lineage.
+/* !!! DEPRECATED (owner directive 2026-07-18) — DO NOT USE FOR CHARACTER RIGGING !!!
+ * This inverse-distance heuristic skinner produces BROKEN fighters in-engine: stretched smears,
+ * invisible/torn limbs, unrendered holes. Use a real open-source auto-rigger instead: UniRig
+ * (tools/unirig/rig.sh or rig_via_space.py; see docs/MODEL_RIGGING.md). Kept only as historical
+ * reference — never point CHAR_MODEL_DEFAULTS at this script's output.
+ *
+ * BANNON skinned auto-rigger v4 — GEODESIC (surface-aware) weights, Pinocchio/bone-heat lineage.
  * Instead of splitting into rigid chunks (visible seams at every bend), this outputs a proper
  * SKINNED GLB: the original mesh stays ONE continuous surface, a 16-bone Mixamo-named skeleton is
  * built inside it, and every vertex gets smooth blended weights (top-4 bones, inverse-distance^4 to
