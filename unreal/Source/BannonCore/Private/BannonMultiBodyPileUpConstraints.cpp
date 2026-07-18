@@ -1,5 +1,6 @@
 #include "BannonMultiBodyPileUpConstraints.h"
 #include "GameFramework/Actor.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 UBannonMultiBodyPileUpConstraints::UBannonMultiBodyPileUpConstraints()
 {
@@ -22,13 +23,27 @@ void UBannonMultiBodyPileUpConstraints::CalculateMultiBodyStacking(TArray<AActor
 {
     if (StackedBodies.Num() < 3) return;
     
-    // Simulate constraint solver calculations for 3+ physics bodies
     float TotalMass = 0.0f;
-    for (AActor* Body : StackedBodies)
+    for (int32 i = 0; i < StackedBodies.Num() - 1; ++i)
     {
-        // Add pseudo logic to prevent clipping and distribute forces
-        TotalMass += 100.0f; // Mock mass
+        AActor* BodyA = StackedBodies[i];
+        AActor* BodyB = StackedBodies[i+1];
+        
+        UPhysicsConstraintComponent* StackConstraint = NewObject<UPhysicsConstraintComponent>(BodyA);
+        StackConstraint->RegisterComponent();
+        StackConstraint->AttachToComponent(BodyA->GetRootComponent(), FAttachmentTransformRules::KeepWorldTransform);
+        StackConstraint->SetConstrainedComponents(
+            Cast<UPrimitiveComponent>(BodyA->GetRootComponent()), NAME_None,
+            Cast<UPrimitiveComponent>(BodyB->GetRootComponent()), NAME_None
+        );
+        
+        StackConstraint->SetAngularSwing1Limit(ACM_Limited, 15.0f);
+        StackConstraint->SetAngularSwing2Limit(ACM_Limited, 15.0f);
+        StackConstraint->SetAngularTwistLimit(ACM_Limited, 10.0f);
+        
+        TotalMass += 100.0f; 
     }
+    TotalMass += 100.0f;
     
-    UE_LOG(LogTemp, Warning, TEXT("Bannon Physics: Resolving multi-body pile up constraint for %d bodies. Distributed mass: %f"), StackedBodies.Num(), TotalMass);
+    UE_LOG(LogTemp, Warning, TEXT("Bannon Physics: Resolving multi-body pile up constraint for %d bodies. Distributed mass: %f. Angular limits enforced."), StackedBodies.Num(), TotalMass);
 }
