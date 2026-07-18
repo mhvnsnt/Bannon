@@ -10,14 +10,31 @@ android {
         applicationId "com.bannon.game"
         minSdk 24            // Android 7.0+ (modern WebView with WebGL2)
         targetSdk 34
-        versionCode 1
+        // versionCode auto-increments from the git commit count so each build is an UPGRADE, never a
+        // "same version" install rejection. Overridable with -PversionCode=N in CI.
+        versionCode (project.hasProperty('versionCode') ? project.versionCode.toInteger() : (System.getenv('BANNON_VERSION_CODE') ? System.getenv('BANNON_VERSION_CODE').toInteger() : 2))
         versionName "1.0"
+    }
+
+    // STABLE signing key — every build (CI or local) signs with the SAME key, so the app installs over
+    // any previous BANNON without an "App not installed" signature-mismatch. This is a fixed sideload
+    // key (like Android's public debug key), NOT a Play-upload secret.
+    signingConfigs {
+        bannon {
+            storeFile file('bannon-release.keystore')
+            storePassword 'bannon123'
+            keyAlias 'bannon'
+            keyPassword 'bannon123'
+        }
     }
 
     buildTypes {
         release {
             minifyEnabled false
-            // debug-signed by default in CI; a release keystore can be wired later for Play upload.
+            signingConfig signingConfigs.bannon
+        }
+        debug {
+            signingConfig signingConfigs.bannon
         }
     }
     compileOptions {
