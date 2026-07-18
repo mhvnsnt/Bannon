@@ -7551,7 +7551,10 @@ const GRAPPLE_POS_NAMES = Object.keys(GRAPPLE_POSITIONS);
 // tag -> exact key match -> label match -> fuzzy name/label containment -> STANDARD.
 window.resolveGrapPos = function(move){
   if(!move) return 'STANDARD';
-  const nm=((move.grapplePos||move.name||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'');
+  // honor an explicit engine position first (move.pos / move.grapplePos from the move library — MDickie +
+  // bannon_move_library entries carry it), then fall back to the move NAME for fuzzy matching.
+  if(move.pos && GRAPPLE_POSITIONS[move.pos]) return move.pos;
+  const nm=((move.grapplePos||move.pos||move.name||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'');
   if(!nm) return 'STANDARD';
   if(GRAPPLE_POSITIONS[nm]) return nm;                                                   // exact key ("POWERBOMB","BACK_SUPLEX")
   for(const k of GRAPPLE_POS_NAMES){ const lb=((GRAPPLE_POSITIONS[k].label||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,''); if(lb && lb===nm) return k; }  // label match ("GERMAN SUPLEX"->BACK_SUPLEX)
@@ -36977,10 +36980,23 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
      ============================================================================================ -->
 <script>
 window.BANNON_MOVE_LIBRARY = (function(){
-  let LIB=null, FBX=null;
+  let LIB=null, FBX=null, MDK=null;
   async function load(){ if(LIB&&FBX) return LIB;
     try{ const r=await fetch('assets/moves/bannon_move_library.json'); LIB=await r.json(); }catch(e){ LIB={grapples:[],dives:[],submissions:[],strikes:[],ground:[]}; }
     try{ const r2=await fetch('assets/moves/fbx_move_map.json'); FBX=await r2.json(); }catch(e){ FBX={positions:{},clips:[]}; }
+    // MDickie Wrestling Empire move vocabulary, turned proprietary + routed through OUR physics.
+    try{ const r3=await fetch('assets/moves/mdickie_moves.json'); MDK=await r3.json();
+      // fold the MDickie grapples/strikes into the library pools (dedup by name) so they show in the
+      // moveset editor and route via resolveGrapPos. Pins/positions/subs kept under their own buckets.
+      if(MDK&&MDK.moves){ const have=new Set(all().map(m=>m.name));
+        MDK.moves.forEach(m=>{ if(have.has(m.name)) return;
+          if(m.dive){ (LIB.dives=LIB.dives||[]).push(m); }
+          else if(m.sub){ (LIB.submissions=LIB.submissions||[]).push(m); }
+          else if(m.kind==='strike'){ (LIB.strikes=LIB.strikes||[]).push(m); }
+          else if(m.kind==='pin'||m.kind==='position'){ /* tracked separately */ }
+          else { (LIB.grapples=LIB.grapples||[]).push(m); }
+        }); }
+    }catch(e){ MDK={moves:[]}; }
     return LIB; }
   function all(){ if(!LIB) return []; return [].concat(LIB.grapples||[],LIB.dives||[],LIB.submissions||[],LIB.strikes||[],LIB.ground||[]); }
   // moves available to a fighting style (technical/powerhouse/highFlyer/brawler/striker/lucha/mma/hardcore/oldSchool/showman)
@@ -37009,9 +37025,10 @@ window.BANNON_MOVE_LIBRARY = (function(){
     if(c.dualPurpose && oppInRange) return { clip:c.clip, mode:'strike', kind:(c.altKind||'strike'), engine:(c.altEngine||'STRIKE_KICK') };
     return { clip:c.clip, mode:'taunt', kind:'taunt', engine:(c.engine||'TAUNT') }; }
   load();
+  function mdickieMoves(){ return (MDK&&MDK.moves)||[]; }
   return { load, all, forStyle, forPosition, resolve, fbxClips, positions, clipsForPosition, clipsForCategory, clipFor,
-           impactTaunts, isImpactTaunt, tauntOrStrike,
-           get lib(){ return LIB; }, get fbx(){ return FBX; } };
+           impactTaunts, isImpactTaunt, tauntOrStrike, mdickieMoves,
+           get lib(){ return LIB; }, get fbx(){ return FBX; }, get mdk(){ return MDK; } };
 })();
 </script>
 
