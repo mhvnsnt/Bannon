@@ -867,6 +867,12 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
       <button class="hub-tile soon" id="btnHubArenaEd"><span class="hub-ico">🛠️</span><span class="hub-lbl">ARENA CREATOR</span></button>
       <button class="hub-tile soon" id="btnHubEntrance"><span class="hub-ico">🎆</span><span class="hub-lbl">ENTRANCE</span></button>
     </div>
+    <!-- JUKEBOX bar — menu/match/entrance/victory music; ＋ adds unlimited tracks (stored locally). -->
+    <div class="match-row" style="grid-template-columns:1fr 1fr 1fr; margin-top:12px;">
+      <button class="menu-btn" id="btnMusicToggle" style="font-size:15px;">♪ MUSIC</button>
+      <button class="menu-btn" id="btnMusicNext" style="font-size:15px;">⏭ NEXT</button>
+      <button class="menu-btn" id="btnMusicAdd" style="font-size:15px;">＋ ADD</button>
+    </div>
     <div style="margin-top:18px; font-family:'Share Tech Mono'; font-size:9px; color:#666; letter-spacing:3px;">v77 · WWE 2K26 CONTROLS · VISCERAL PRO WRESTLING</div>
   </div>
 </div>
@@ -6713,11 +6719,26 @@ Fighter.prototype.applyMesh = function(){
         d.rotation.set(Math.sin(a)*lean, 0, -Math.cos(a)*lean);
         d.scale.set(_ms*0.85, _ms*0.62, _ms*0.85); }
     } else {
+      // HANGING LOCS (Bannon): a Cylinder's default axis is +Y (vertical). The old code left
+      // rotation=(0,0,0), so every dread stood as a VERTICAL cylinder clustered at the skull — a
+      // picket-fence of spikes shooting off the head (the "deformed models" the owner saw). FIX:
+      // orient each loc to DRAPE down-and-outward from its scalp anchor (align +Y to the hang dir),
+      // so they read as hanging dreadlocks, not spikes. Anchor the TOP at the scalp; extend down.
+      const _yUp=(window.__dreadUp||(window.__dreadUp=new THREE.Vector3(0,1,0)));
+      const _q=(window.__dreadQ||(window.__dreadQ=new THREE.Quaternion()));
+      const _dir=(window.__dreadD||(window.__dreadD=new THREE.Vector3()));
       for(let i=0;i<s.dreads.length;i++){ const d=s.dreads[i], n=s.dreads.length;
-        const a=(50 + i*(260/(n-1)))*Math.PI/180;                       // arc that skips the ±50° face cone (+x forward)
-        const ax=Math.cos(a)*rr, az=Math.sin(a)*rr, len=d.userData.dreadLen||0.3;
-        d.position.set(h.x + ax, h.y + 0.055*_ms - len*0.5, h.z + az);  // a=0 is +x(face); 50°..310° arc = beside the face, wrapping the BACK
-        d.rotation.set(0,0,0); d.scale.setScalar(_ms); } } }
+        const a=(115 + i*(130/(Math.max(2,n)-1)))*Math.PI/180;          // BACK arc only (115°..245°) — behind the head, never over the face
+        const ax=Math.cos(a)*rr, az=Math.sin(a)*rr, len=(d.userData.dreadLen||0.3);
+        // hang straight DOWN with a slight uniform BACKWARD lean (-x is behind; the fighter faces +x).
+        // the per-strand scalp anchor (ax,az) gives the side-to-side spread, so the locs drape parallel
+        // down the back/sides instead of fanning out into spikes.
+        _dir.set(-0.16, -1.0, 0).normalize();
+        _q.setFromUnitVectors(_yUp, _dir);                              // point the loc's +Y along the hang direction
+        d.quaternion.copy(_q);
+        const topY=h.y + 0.02*_ms;                                      // anchor the TOP at the back of the scalp
+        d.position.set(h.x + ax + _dir.x*len*0.5*_ms, topY + _dir.y*len*0.5*_ms, h.z + az + _dir.z*len*0.5*_ms);
+        d.scale.setScalar(_ms); } } }
   // NECKTIE: hangs from the collar down the chest front, riding the torso (chest -> pelvis line)
   if (s.tie && s.tie.visible){
     const tx=(c.x+p.x)*0.5 + 0.155, ty=c.y*0.62 + p.y*0.38, tz=(c.z+p.z)*0.5;
@@ -13562,10 +13583,9 @@ try{
   // high-flyer, face paint, arm sleeves, dives off anything. Attires: default / yellow title tee /
   // graphic tee / God-Within demon shirt.
   _addChar('WRECK_PATTERSON',{ label:'The Living Wreck',         col:0x2a1a3a, accent:0xc0c0c8, skin:0xc08a54, faction:'Independent Variables', canon:false, bio:'A daredevil with a death wish and a dark streak — paint-streaked, sleeve-tatted, and willing to throw his body off anything that stands. Beautiful disaster meets condemned reckoning.', archetype:'highFlyer' }, 'CARGO_PANTS', 'LONG', {musc:0.6,fat:0.12});
-  // NPC FINXSSE (Book canon) — this IS Finxsse (Narvin Jackson) repping his rap group NPC = "No Problem
-  // Crashin" (crash-out energy). Same gravity-defying high-flyer, crew colors on. NOT a gag/jobber — a
-  // crew-branded persona of the canon flyer. (owner correction 2026-07-17.)
-  _addChar('NPC_FINXSSE',    { label:'No Problem Crashin',       col:0x6a2a8c, accent:0x00ffd0, skin:0x7a5a3c, faction:'Alliance', canon:true, bio:'Finxsse — Narvin Jackson — with the crew in the building: NPC, "No Problem Crashin." Same top-rope-is-home high-flyer, all crash-out energy, dares gravity to say no. Reps the group hard.', archetype:'highFlyer' }, 'BODYSUIT', 'AFRO', {musc:0.72,fat:0.1});
+  // NPC FINXSSE is NOT a separate character — it's Finxsse (Narvin Jackson) repping his rap group NPC
+  // ("No Problem Crashin"). It's an ATTIRE of the canon FINXSSE (owner correction 2026-07-18), wired as
+  // a FINXSSE model in MODEL_LIBRARY below — NOT its own _addChar/roster/finisher entry.
   // TEXTBOOK AARON RUBEN (Book canon) — grizzled by-the-numbers veteran, comedy-technician: every hold
   // is chapter-and-verse, every spot telegraphed and somehow still landed. The wily old pro.
   _addChar('AARON_RUBEN',    { label:'Textbook',                 col:0xb02a2a, accent:0xf0e8d8, skin:0xd9a066, faction:'Free Agent', canon:true, bio:'A thirty-year man who wrestles straight out of the manual — chain wrestling by the numbers, comedy timing sharpened by decades. Underestimate the fundamentals and he schools you.', archetype:'technician' }, 'SINGLET', 'SHORT', {musc:0.5,fat:0.34});
@@ -13601,7 +13621,6 @@ try{
     KOBRA:           { name:'THE ENVENOMATION',          kind:'grapple', pos:'CHOKESLAM',   deliver:'choke' },
     MASTER_SENSEI:   { name:'THE FINAL LESSON',          kind:'strike' },
     WRECK_PATTERSON: { name:'THE WRECKING BALL',         kind:'strike' },
-    NPC_FINXSSE:     { name:'THE CRASH OUT',             kind:'grapple', pos:'FIREMANS_CARRY', deliver:'slam'  },
     AARON_RUBEN:     { name:'BY THE BOOK',               kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  }
   });
   // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
@@ -13963,8 +13982,7 @@ const MODEL_LIBRARY = [
   { name:'WRECK PATTERSON · Title Tee', url:'assets/models/WRECK_PATTERSON_attire2.glb', charKey:'WRECK_PATTERSON' },
   { name:'WRECK PATTERSON · Graphic Tee', url:'assets/models/WRECK_PATTERSON_attire3.glb', charKey:'WRECK_PATTERSON' },
   { name:'WRECK PATTERSON · God Within', url:'assets/models/WRECK_PATTERSON_godwithin.glb', charKey:'WRECK_PATTERSON' },
-  { name:'NPC FINXSSE · No Problem Crashin', url:'assets/models/NPC_FINXSSE.glb', charKey:'NPC_FINXSSE' },
-  { name:'FINXSSE · NPC (crew)', url:'assets/models/NPC_FINXSSE.glb', charKey:'FINXSSE' },   // same man — Finxsse repping NPC
+  { name:'FINXSSE · NPC (No Problem Crashin)', url:'assets/models/NPC_FINXSSE.glb', charKey:'FINXSSE' },
   { name:'AARON RUBEN · Textbook', url:'assets/models/AARON_RUBEN.glb', charKey:'AARON_RUBEN' },
   { name:'CAIN ELIAS · God Within', url:'assets/models/CAIN_ELIAS_godwithin.glb', charKey:'CAIN_ELIAS' },
   { name:'King', url:'embedded:king' },
@@ -14058,7 +14076,6 @@ const CHAR_MODEL_DEFAULTS = {
   KOBRA:{url:'assets/models/KOBRA.glb',name:'KOBRA'},
   MASTER_SENSEI:{url:'assets/models/MASTER_SENSEI.glb',name:'MASTER SENSEI'},
   WRECK_PATTERSON:{url:'assets/models/WRECK_PATTERSON.glb',name:'WRECK PATTERSON'},
-  NPC_FINXSSE:{url:'assets/models/NPC_FINXSSE.glb',name:'NPC FINXSSE'},
   AARON_RUBEN:{url:'assets/models/AARON_RUBEN.glb',name:'AARON RUBEN'}
 };
 let CHAR_MODEL = (function(){ try{ var r=localStorage.getItem('bannonCharModels'); if(r) return JSON.parse(r); }catch(e){} return {}; })();
@@ -15270,6 +15287,10 @@ function setupInput(){
   _wire('btnHubArena',     ()=>{ arenaIdx=(arenaIdx+1)%ARENAS.length; const an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; buildArena(); saveMatchState(); });
   _wire('btnHubArenaEd',   ()=>{ try{ (window.toast||alert)('Arena Creator — coming with the arena editor (barricades/ramp/trons/Titantron).'); }catch(e){} });
   _wire('btnHubEntrance',  ()=>{ try{ (window.toast||alert)('Entrance Creator — coming with the entrance timeline (pyro/tron/music).'); }catch(e){} });
+  // JUKEBOX controls (main menu music bar)
+  _wire('btnMusicToggle',  ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); const v=J.getVolume(); if(v>0){ J._mv=v; J.setVolume(0); const b=document.getElementById('btnMusicToggle'); if(b)b.textContent='♪ MUTED'; } else { J.setVolume(J._mv||0.55); J.menu(); const b=document.getElementById('btnMusicToggle'); if(b)b.textContent='♪ MUSIC'; } });
+  _wire('btnMusicNext',    ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); J.menu(); });
+  _wire('btnMusicAdd',     ()=>{ const J=window.BANNON_JUKEBOX; if(J) J.addTrackPrompt(['menu','match']); });
   document.getElementById('btnArena').addEventListener('click', ()=>{ arenaIdx=(arenaIdx+1)%ARENAS.length; document.getElementById('arenaName').textContent=ARENAS[arenaIdx]; buildArena(); saveMatchState(); });
   document.getElementById('btnDiff').addEventListener('click', ()=>{ difficulty=(difficulty+1)%3; document.getElementById('diffName').textContent=DIFF_NAMES[difficulty]; saveMatchState(); });
   document.getElementById('btnOpp').addEventListener('click', ()=>{ opponentIdx=(opponentIdx+1)%OPPONENTS.length; document.getElementById('oppName').textContent=OPPONENTS[opponentIdx].name; saveMatchState(); });
@@ -36734,6 +36755,146 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 </script>
 
 <!-- ============================================================================================
+     BANNON MOVE LIBRARY — the 2K-level move catalog (assets/moves/bannon_move_library.json), organized
+     by POSITION + STYLE (from the MDickie position taxonomy + WWE-2K depth). Every move maps to a real
+     GRAPPLE_POSITIONS / DIVE_TYPES key so it routes through resolveGrapPos into OUR physics. The moveset
+     editor + AI draw from this to give each character a legible, style-matched arsenal. Data-only loader.
+     ============================================================================================ -->
+<script>
+window.BANNON_MOVE_LIBRARY = (function(){
+  let LIB=null, FBX=null;
+  async function load(){ if(LIB&&FBX) return LIB;
+    try{ const r=await fetch('assets/moves/bannon_move_library.json'); LIB=await r.json(); }catch(e){ LIB={grapples:[],dives:[],submissions:[],strikes:[],ground:[]}; }
+    try{ const r2=await fetch('assets/moves/fbx_move_map.json'); FBX=await r2.json(); }catch(e){ FBX={positions:{},clips:[]}; }
+    return LIB; }
+  function all(){ if(!LIB) return []; return [].concat(LIB.grapples||[],LIB.dives||[],LIB.submissions||[],LIB.strikes||[],LIB.ground||[]); }
+  // moves available to a fighting style (technical/powerhouse/highFlyer/brawler/striker/lucha/mma/hardcore/oldSchool/showman)
+  function forStyle(style){ return all().filter(m=>!m.style || m.style.indexOf(style)>=0); }
+  // moves available from a POSITION (STANDING_FRONT/REAR, GROUNDED_*, CORNER, TOP_ROPE, ...)
+  function forPosition(pos){ return all().filter(m=>m.from===pos || (m.pos===pos)); }
+  // resolve a library move to the engine grapple/dive it drives (through the real physics).
+  function resolve(m){ if(!m) return null; if(m.dive) return {kind:'dive', dive:m.dive, from:m.from}; if(m.sub) return {kind:'sub', hold:m.sub, limb:m.limb}; if(m.kind==='strike') return {kind:'strike', from:m.from, power:m.power};
+    return {kind:'grapple', pos:m.pos||'STANDARD', mode:m.mode||'front', deliver:m.deliver||'slam', power:m.power||60}; }
+  // ---- FBX/Drive clip library (182 mocap clips -> WWE-2K positions; the ANIMATION bases) ----
+  function fbxClips(){ return (FBX&&FBX.clips)||[]; }
+  function positions(){ return (FBX&&FBX.positions)||{}; }
+  // clips available at a WWE-2K position (STANDING_FRONT, CORNER_TO_GROUND, GROUND_TO_STANDING_WAKEUP, ...)
+  function clipsForPosition(pos){ return fbxClips().filter(c=>c.pos===pos); }
+  // clips of a category (grapple/strike/submission/dive/getup/knockdown/reaction/taunt/style_stance/locomotion)
+  function clipsForCategory(cat){ return fbxClips().filter(c=>c.cat===cat); }
+  // best animation clip for an engine grapple/dive/wakeup key (STUDIO.clips name = the clip basename)
+  function clipFor(engineKey){ const c=fbxClips().find(x=>x.engine===engineKey); return c?c.clip:null; }
+  load();
+  return { load, all, forStyle, forPosition, resolve, fbxClips, positions, clipsForPosition, clipsForCategory, clipFor,
+           get lib(){ return LIB; }, get fbx(){ return FBX; } };
+})();
+</script>
+
+<!-- ============================================================================================
+     BANNON JUKEBOX — the soundtrack/music system: menu music, match music, per-character ENTRANCE
+     and VICTORY themes, all reassignable, plus an IndexedDB "add more" path so the owner can drop in
+     unlimited tracks in-game (phone-friendly, no repo bloat). 16 owner tracks banked in assets/audio/.
+     ============================================================================================ -->
+<script>
+window.BANNON_JUKEBOX = (function(){
+  const LS='bannon_jukebox_v1', DB='bannonAudioDB', STORE='tracks';
+  // banked default soundtrack (owner's own music). cat: menu|match|entrance|victory|any. Reassignable.
+  const A='assets/audio/';
+  const DEFAULT_TRACKS=[
+    {id:'bannon_theme', name:"BANNON Theme (a cappella + rain)", url:A+'bannon_theme.m4a', cat:['entrance','menu'], artist:'M'},
+    {id:'opps_fallin',  name:"Opps Fallin (ft Jackboy/Finxsse)", url:A+'opps_fallin.ogg', cat:['entrance','match'], artist:'M'},
+    {id:'gmg_champion', name:"GMG Champion",         url:A+'gmg_champion.ogg', cat:['victory','entrance'], artist:'M'},
+    {id:'dx',           name:"DX",                   url:A+'dx.ogg',   cat:['entrance','match'], artist:'M'},
+    {id:'cult',         name:"Cult",                 url:A+'cult.ogg', cat:['entrance','match'], artist:'M'},
+    {id:'caution',      name:"Caution",              url:A+'caution.ogg', cat:['match','entrance'], artist:'M'},
+    {id:'jeans',        name:"Jeans",                url:A+'jeans.ogg', cat:['menu','match'], artist:'M'},
+    {id:'ceo_mindset',  name:"CEO Mindset (GMG ft M)",url:A+'ceo_mindset.ogg', cat:['menu','entrance'], artist:'M'},
+    {id:'sickness',     name:"Sickness",             url:A+'sickness.mp3', cat:['match','entrance'], artist:'M'},
+    {id:'slo_burn',     name:"Slo Burn",             url:A+'slo_burn.mp3', cat:['menu'], artist:'M'},
+    {id:'dbz',          name:"DBZ",                  url:A+'dbz.m4a', cat:['match','entrance'], artist:'M'},
+    {id:'mars_japanese_denim',name:"Japanese Denim (Mars FMMG)", url:A+'mars_japanese_denim.m4a', cat:['menu','entrance'], artist:'Mars FMMG'},
+    {id:'mars_zumbando',name:"Zumbando (Mars FMMG)", url:A+'mars_zumbando.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
+    {id:'mars_dio',     name:"Dio (Mars FMMG)",      url:A+'mars_dio.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
+    {id:'mars_picadero',name:"Picadero (Mars FMMG)", url:A+'mars_picadero.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
+    {id:'mars_obscuro', name:"Obscuro Cuerno de Chivo (Mars FMMG)", url:A+'mars_obscuro.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
+  ];
+  // default role assignments (canon): BANNON -> his theme; Finxsse/Stick-Up -> the collab.
+  const DEFAULT_CFG={ menu:'ceo_mindset', match:null /* shuffle match pool */, victory:'gmg_champion',
+    entrance:{ BANNON:'bannon_theme', MAIME:'sickness', FINXSSE:'opps_fallin', STICK_UP:'opps_fallin' } };
+
+  let cfg=(function(){ try{ const s=localStorage.getItem(LS); if(s) return Object.assign({},DEFAULT_CFG,JSON.parse(s)); }catch(e){} return JSON.parse(JSON.stringify(DEFAULT_CFG)); })();
+  let userTracks=[];   // IDB-added tracks {id,name,cat,idb:true}; blobs resolved to object URLs on demand
+  const urlCache={};   // id -> objectURL for idb blobs
+  function saveCfg(){ try{ localStorage.setItem(LS, JSON.stringify(cfg)); }catch(e){} }
+  function allTracks(){ return DEFAULT_TRACKS.concat(userTracks); }
+  function trackById(id){ return allTracks().find(t=>t.id===id)||null; }
+  function pool(cat){ return allTracks().filter(t=>(t.cat||[]).indexOf(cat)>=0); }
+
+  // ---- IndexedDB (owner adds unlimited tracks in-game; stored locally, no repo bloat) ----
+  function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open(DB,1); r.onupgradeneeded=e=>{ e.target.result.createObjectStore(STORE,{keyPath:'id'}); }; r.onsuccess=e=>res(e.target.result); r.onerror=e=>rej(e); }); }
+  async function idbPut(rec){ const db=await idb(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put(rec); tx.oncomplete=()=>res(); tx.onerror=rej; }); }
+  async function idbAll(){ try{ const db=await idb(); return await new Promise((res)=>{ const out=[]; const tx=db.transaction(STORE,'readonly'); tx.objectStore(STORE).openCursor().onsuccess=e=>{ const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(out); }; }); }catch(e){ return []; } }
+  async function loadUserTracks(){ const recs=await idbAll(); userTracks=recs.map(r=>({id:r.id,name:r.name,cat:r.cat||['menu','match'],idb:true,artist:r.artist||'you'})); return userTracks; }
+  // add a File/Blob as a track. cat = array of roles. Returns the new id.
+  async function addTrack(file, cat, name){ const id='u_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    await idbPut({id, name:name||file.name||id, cat:cat||['menu','match'], artist:'you', blob:file});
+    await loadUserTracks(); return id; }
+  // pop a file picker and add whatever the owner selects (multi-select ok).
+  function addTrackPrompt(cat){ const inp=document.createElement('input'); inp.type='file'; inp.accept='audio/*'; inp.multiple=true;
+    inp.onchange=async()=>{ for(const f of inp.files){ await addTrack(f, cat||['menu','match'], f.name.replace(/\.[^.]+$/,'')); } try{ (window.toast||function(){})('Added '+inp.files.length+' track(s) to the jukebox.'); }catch(e){} };
+    inp.click(); }
+  async function idbBlobUrl(id){ if(urlCache[id]) return urlCache[id]; const db=await idb(); const rec=await new Promise((res)=>{ const tx=db.transaction(STORE,'readonly'); tx.objectStore(STORE).get(id).onsuccess=e=>res(e.target.result); }); if(!rec||!rec.blob) return null; return urlCache[id]=URL.createObjectURL(rec.blob); }
+  async function srcFor(t){ if(!t) return null; if(t.idb) return await idbBlobUrl(t.id); return t.url; }
+
+  // ---- playback ----
+  const bgAudio=new Audio(); bgAudio.loop=true; bgAudio.preload='auto';
+  const oneShot=new Audio(); oneShot.preload='auto';
+  let vol=(function(){ try{ return +localStorage.getItem('bannon_music_vol')||0.55; }catch(e){ return 0.55; } })();
+  bgAudio.volume=vol; oneShot.volume=Math.min(1,vol+0.1);
+  function setVolume(v){ vol=Math.max(0,Math.min(1,v)); bgAudio.volume=vol; oneShot.volume=Math.min(1,vol+0.1); try{ localStorage.setItem('bannon_music_vol',String(vol)); }catch(e){} }
+  let curBg=null, unlocked=false;
+  async function playBg(t){ if(!t){ bgAudio.pause(); curBg=null; return; } const s=await srcFor(t); if(!s) return; curBg=t.id; bgAudio.src=s; if(unlocked){ bgAudio.play().catch(()=>{}); } }
+  function shuffle(a){ return a.slice().sort(()=>Math.random()-0.5); }
+  // menu: assigned menu track (or shuffle the menu pool)
+  async function menu(){ const t=cfg.menu?trackById(cfg.menu):shuffle(pool('menu'))[0]; bgAudio.loop=true; await playBg(t); }
+  // match: assigned match track (or shuffle the match pool)
+  async function match(){ const t=cfg.match?trackById(cfg.match):shuffle(pool('match'))[0]; bgAudio.loop=true; await playBg(t); }
+  async function stop(){ bgAudio.pause(); curBg=null; }
+  // entrance/victory: one-shots (don't loop), by character where assigned else pool
+  async function entrance(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey])|| (shuffle(pool('entrance'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ oneShot.src=s; if(unlocked) oneShot.play().catch(()=>{}); } return id; }
+  async function victory(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey]&&trackById(cfg.entrance[charKey])&&(pool('victory').some(x=>x.id===cfg.entrance[charKey]))?cfg.entrance[charKey]:cfg.victory)||(shuffle(pool('victory'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ bgAudio.pause(); oneShot.src=s; if(unlocked) oneShot.play().catch(()=>{}); } return id; }
+
+  // assignment API (persisted)
+  function assignMenu(id){ cfg.menu=id; saveCfg(); }
+  function assignMatch(id){ cfg.match=id; saveCfg(); }
+  function assignVictory(id){ cfg.victory=id; saveCfg(); }
+  function assignEntrance(charKey,id){ cfg.entrance=cfg.entrance||{}; cfg.entrance[charKey]=id; saveCfg(); }
+  function list(){ return allTracks().map(t=>({id:t.id,name:t.name,cat:t.cat,artist:t.artist,idb:!!t.idb})); }
+
+  // gesture-unlock (browsers block autoplay until a user interaction) — start menu music on first tap/key.
+  function unlock(){ if(unlocked) return; unlocked=true; try{ if(curBg||bgAudio.src){ bgAudio.play().catch(()=>{}); } else { menu(); } }catch(e){} }
+  ['pointerdown','touchstart','keydown'].forEach(ev=>window.addEventListener(ev, unlock, {once:false, passive:true}));
+
+  // defensive hooks into the existing game events (only if present) — start match music on a fight, menu on menu.
+  function hookGame(){
+    try{ const sf=window.startFight; if(typeof sf==='function' && !sf.__jukeHooked){ window.startFight=function(){ try{ match(); }catch(e){} return sf.apply(this,arguments); }; window.startFight.__jukeHooked=1; } }catch(e){}
+    // VICTORY music on a win — play the winner's assigned victory/entrance theme (else the default).
+    try{ const dw=window.declareWinner; if(typeof dw==='function' && !dw.__jukeHooked){ window.declareWinner=function(w){ try{ let ck=null; if(w){ ck=(typeof charModelKey==='function')?charModelKey(w):String((w.opts&&w.opts.name)||w.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'_'); } victory(ck); }catch(e){} return dw.apply(this,arguments); }; window.declareWinner.__jukeHooked=1; } }catch(e){}
+    // watch for return-to-menu: light poll on gameState
+    let last=null; setInterval(()=>{ try{ const gs=(typeof gameState!=='undefined')?gameState:window.gameState; if(gs===last) return;
+      if((gs==='menu'||String(gs).indexOf('menu')===0) && curBg==null && unlocked){ menu(); } last=gs; }catch(e){} }, 1200);
+  }
+
+  // init: load any owner-added tracks, then hook up. (Menu music starts on first interaction.)
+  loadUserTracks().then(()=>{ hookGame(); });
+
+  return { DEFAULT_TRACKS, list, pool, trackById, addTrack, addTrackPrompt, loadUserTracks,
+           menu, match, stop, entrance, victory, setVolume, getVolume:()=>vol,
+           assignMenu, assignMatch, assignVictory, assignEntrance, cfg:()=>cfg, unlock };
+})();
+</script>
+
+<!-- ============================================================================================
      BANNON UNIVERSE — the surrounding-game shell (career/booking loop). Structured from the MDickie
      Wrestling MPire system map (docs/SURROUNDING_GAME.md) onto BANNON canon: AWE + JPCW promotions,
      the ROSTER_ALL() roster, titles, records, momentum, injuries, auto-booking, sim/play, weekly news.
@@ -36840,12 +37001,64 @@ window.BANNON_UNIVERSE = (function(){
     while(t.alive.length>1){ const next=[]; for(let i=0;i+1<t.alive.length;i+=2){ const A=u.fighters[t.alive[i]],B=u.fighters[t.alive[i+1]]; const w=(rating(A)*(0.8+Math.random()*0.5)>=rating(B)*(0.8+Math.random()*0.5))?t.alive[i]:t.alive[i+1]; t.bracketLog.push({round:t.round,a:t.alive[i],b:t.alive[i+1],winner:w}); next.push(w); } if(t.alive.length%2) next.push(t.alive[t.alive.length-1]); t.alive=next; t.round++; }
     const champ=t.alive[0]; if(u.fighters[champ]) u.fighters[champ].momentum+=5; u.news.push(`W${u.week}: ${champ} WON the ${t.promo} tournament!`); const res={winner:champ,rounds:t.round-1,log:t.bracketLog}; u.tournament=null; save(u); return res; }
 
+  // ===== EXPANDED CONTRACT NEGOTIATION (LLM/MDickie clauses) — mirrors native BannonLLMContractExpansion =====
+  // ego scales with worth/titles/momentum; loyalty is a stable per-fighter trait. Both drive demands.
+  function ego(f){ return Math.min(100, Math.round((worth(f)/9) + (f.title?25:0) + Math.max(0,f.momentum))); }
+  function loyalty(f){ let h=0,n=f.name||''; for(let i=0;i<n.length;i++) h=(h+n.charCodeAt(i)*7)|0; return 25+(Math.abs(h)%60); } // 25..85 stable
+  // rival-promotion interest: how badly another promo wants this fighter (leverage in talks).
+  function rivalInterest(u,f){ return Math.round(worth(f) * (0.5 + (ego(f)/200))); }
+  // what the fighter DEMANDS this negotiation: multi-clause, ego/worth-scaled (Negotiations.bb + LLM clauses).
+  function demands(u,name){ const f=u.fighters[name]; if(!f) return null; const w=worth(f), e=ego(f);
+    return { salary:Math.round(w*10 + e*40), merchCut: e>75?50: e>50?30:15, creativeControl: e>=85,
+      guaranteedWins: e>=90?3: e>=70?1:0, length: e>80?26:52, downside:Math.round(w*4), signBonus:Math.round(w*2*(e/100)) }; }
+  // evaluate an OFFER {salary,merchCut,creativeControl,guaranteedWins,length,signBonus} -> accept/counter/walk.
+  function negotiate(u,name,promo,offer){ u=u||get(); const f=u.fighters[name]; if(!f) return {walk:true,reason:'no such fighter'};
+    offer=offer||{}; const d=demands(u,name), loy=loyalty(f), samePromo=(f.promo===promo);
+    // satisfaction: how well the offer meets salary + key clauses (creative control + merch weigh heavy for big egos)
+    const salOK=(offer.salary||0)>=d.salary*0.9;
+    const ccOK=(!d.creativeControl)||!!offer.creativeControl;
+    const merchOK=(offer.merchCut||0)>=d.merchCut*0.8;
+    let score=(salOK?50:Math.round(50*((offer.salary||0)/Math.max(1,d.salary)))) + (ccOK?25:0) + (merchOK?15:0) + (samePromo?loy*0.1:0);
+    // rival interest raises the bar (they can walk to another promo)
+    const bar=60 + (rivalInterest(u,f)>d.salary?10:0);
+    if(score>=bar){ f.promo=promo; f.contractWeeks=offer.length||d.length; f.creativeControl=!!offer.creativeControl; f.title=samePromo?f.title:null; f.team=samePromo?f.team:null;
+      u.news.push(`W${u.week}: ${name} SIGNED with ${promo}${offer.creativeControl?' (creative control)':''}.`); save(u); return {accept:true,score,promo}; }
+    // low-ball insult -> walk; otherwise counter with the demands
+    if(score< bar*0.55){ u.news.push(`W${u.week}: ${name} WALKED OUT of ${promo} talks — insulted by the offer.`); save(u); return {walk:true,score,reason:'insulting offer',demand:d}; }
+    return {counter:true,score,demand:d,reason:'wants more (salary/creative control/merch)'}; }
+  // MDickie classic: a fighter with creative control booked to lose refuses the job.
+  function bookingBreach(u,name,bookedToLose){ const f=u.fighters[name]; if(!f) return {refuses:false};
+    if(f.creativeControl && bookedToLose){ u.news.push(`W${u.week}: ${name} (creative control) REFUSES to lose tonight.`); return {refuses:true, complain:`Generate an angry refusal: ${name} has creative control and was told to lose.`}; }
+    return {refuses:false}; }
+
+  // ===== EXPANDED PROMO BATTLE (LLM promo mechanics) — mirrors native BannonPromoBattleEngine/LLMPromoMechanics =====
+  // keyword -> heat effect (Promos.bb + LLM). Each promo LINE is an array of these keywords.
+  const PROMO_KW={ betrayal:14, callout:10, insult:8, catchphrase:12, cheapheat:6, threat:9, respect:5, boring:-12, awkward:-10 };
+  function scoreLine(f, keywords){ const cha=(f.stats&&f.stats.speed?60:60) + Math.max(0,f.momentum); let s=cha*0.15;
+    (keywords||[]).forEach(k=>{ s += (PROMO_KW[String(k).toLowerCase()]||0); }); return Math.round(s); }
+  // run a promo battle: aLines/bLines are arrays of keyword-arrays (exchanges). Winner gets momentum+heat.
+  function promoBattle(u,aName,bName,aLines,bLines){ u=u||get(); const A=u.fighters[aName],B=u.fighters[bName]; if(!A||!B) return null;
+    let sa=0,sb=0; const rounds=Math.max((aLines||[]).length,(bLines||[]).length);
+    for(let i=0;i<rounds;i++){ sa+=scoreLine(A,(aLines||[])[i]); sb+=scoreLine(B,(bLines||[])[i]); }
+    const winner=sa>=sb?aName:bName, loser=sa>=sb?bName:aName;
+    u.fighters[winner].momentum=Math.min(20,u.fighters[winner].momentum+3);
+    u.fighters[loser].momentum=Math.max(-10,u.fighters[loser].momentum-1);
+    feud(u,aName,bName,3);   // a promo battle builds the feud
+    u.news.push(`W${u.week}: ${winner} won a promo battle over ${loser} (${sa}-${sb}).`);
+    // mic interrupt -> brawl if the loser is hot and it dragged
+    const brawl = (Math.abs(sa-sb)<8) && rounds>=3;
+    save(u); return {winner,loser,sa,sb,brawl}; }
+  // ---- Rivalry graph (Backstage Politics Matrix) ----
+  function rivKey(a,b){ return [a,b].sort().join('::'); }
+  function rivalry(u,a,b){ u=u||get(); u.rivalries=u.rivalries||{}; return u.rivalries[rivKey(a,b)]||0; }
+  function feud(u,a,b,amt){ u=u||get(); u.rivalries=u.rivalries||{}; const k=rivKey(a,b); u.rivalries[k]=(u.rivalries[k]||0)+(amt||5); return save(u); }
+  function topFeuds(u,n){ u=u||get(); const r=u.rivalries||{}; return Object.keys(r).sort((x,y)=>r[y]-r[x]).slice(0,n||8).map(k=>({pair:k.split('::'),heat:r[k]})); }
+
   return { KEY, PROMOS, newUniverse, reset, get, save, bookWeek, simMatch, applyResult, playMatch, recordPlayer, advanceWeek, standings, rating, promoOf, allegianceOf,
-           turnHeel, turnFace, rivalsOf, seedTeams, formTeam, worth, freeAgents, sign, rankings, generateTournament, simTournament };
+           turnHeel, turnFace, rivalsOf, seedTeams, formTeam, worth, freeAgents, sign, rankings, generateTournament, simTournament,
+           ego, loyalty, rivalInterest, demands, negotiate, bookingBreach, promoBattle, scoreLine, rivalry, feud, topFeuds };
 })();
 </script>
-</body>
-</html>
 <script>
 
 (function() {
@@ -36983,6 +37196,7 @@ window.BANNON_UNIVERSE = (function(){
         originalHit.call(this, move);
     };
 })();
+</script>
 
 <script>
 (function() {
@@ -37016,5 +37230,5 @@ window.BANNON_UNIVERSE = (function(){
     };
 })();
 </script>
-
-</script>
+</body>
+</html>

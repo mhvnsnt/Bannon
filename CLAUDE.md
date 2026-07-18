@@ -527,3 +527,39 @@ The full creation suite must look/feel like the WWE 2K menus down to layout + co
 - **Entrance creation**: entrance video/tron, pyro, lighting, music, motion timeline.
 Build these as UE UMG screens mirroring the 2K menus (layout + contents), backed by the native DNA/
 moveset schemas. Tracked in unreal/CONVERSION.md.
+
+## v160 pass (2026-07-18 — freeze/deform fixes + APK + jukebox + universe layers, ALL harness-verified)
+BINDING session memory so these don't get re-derived:
+- **MODEL "DEFORMATION" = HANGING DREADS RENDERED AS VERTICAL SPIKES (FIXED).** The owner's "all models
+  deformed / bones stretching" was the hanging-dread branch (~line 6721) setting `d.rotation.set(0,0,0)`
+  — a Cylinder's default axis is +Y, so every loc stood as a VERTICAL cylinder clustered at the skull (a
+  picket-fence of head-spikes) on EVERY dreaded char. FIX: orient each loc to DRAPE (quaternion
+  setFromUnitVectors(+Y, hangDir), hangDir=(-0.16,-1,0), back arc 115–245°, top anchored at the scalp).
+  DIAGNOSIS METHOD (reuse): harness close-up (FREECAM.on=true; FREECAM.tx/ty/tz/dist on the fighter,
+  DON'T call freecamEnter) + hide sub-meshes one at a time (seg.dreads/seg.hair) to isolate. Body geometry
+  (`_bgeo`) measured clean the whole time — the deform is always in a SEPARATE sub-mesh (hair/dreads/gear).
+- **GAME-FREEZE AFTER CHAR SELECT = a missing `</script>` from a main merge.** A merged block ended `})();`
+  with no `</script>`, so the browser threw "Unexpected token '<'" and a whole block of Fighter.prototype
+  methods never defined → fight loop threw every frame. ALWAYS run the harness (build.cjs → real browser
+  pageerror check) after merging main; the naive `<script>` regex FALSE-POSITIVES on `<script>` strings in
+  the God-Mode builder data (main carries a 1-tag imbalance that is browser-harmless).
+- **APK BUILD RECIPE THAT WORKS IN-SANDBOX (no UE):** `android/` WebView project + Android SDK 34
+  (`dl.google.com` cmdline-tools → sdkmanager platform-34/build-tools;34/platform-tools) + **JDK 17**
+  (Java 21 breaks AGP 8.1's jlink JdkImageTransform — get Zulu 17 from `cdn.azul.com`, NOT github which is
+  proxy-blocked) → `gradle -p android assembleDebug -Dorg.gradle.java.home=<jdk17>`. Output
+  `android/app/build/outputs/apk/debug/app-debug.apk` (~3.7MB, bundles the game, streams models). SHIPPED
+  the APK to the owner via SendUserFile. `.github/workflows/android.yml` does the same in CI (java 17).
+- **MOVE LIBRARY (2K-level) — `assets/moves/bannon_move_library.json` + `window.BANNON_MOVE_LIBRARY`.** 53
+  moves by position×style, each mapped to a real GRAPPLE_POSITIONS/DIVE_TYPES key → routes through
+  resolveGrapPos into OUR physics. NEXT (owner's standing ask): map the **202 FBX clips in assets/mocap/(drive/)**
+  (loaded via BANNON_LOAD_FBX_LIBRARY → STUDIO.clips) onto library entries; add wake-up / running-corner-to-
+  grounded-opponent / secondary+tertiary positions; fold MDickie moves_catalog (tools/bbparse/out) in with
+  our physics. Legibility = animation pass on top of this catalog.
+- **SURROUNDING GAME (`window.BANNON_UNIVERSE`)** — career/booking + promos/allegiance/turns + tag teams +
+  contracts/free-agency + rankings + tournaments + rivalry graph + expanded LLM contract negotiation +
+  promo battle, 3 promotions (AWE/JPCW/NWC), full ROSTER_ALL. Verified headless. UI (a hub tile) is next.
+- **JUKEBOX (`window.BANNON_JUKEBOX`)** — 16 owner tracks in assets/audio/ (WAVs→OGG via soundfile block-
+  stream), menu/match/entrance/victory, IndexedDB "add more". Main-menu music bar. NPC Finxsse merged INTO
+  Finxsse as an attire (not a separate char). Creation-suite subsystems moved to a MAIN-menu 3×3 hub (out
+  of the pause menu). PWA manifest + icons (installable). Lyra: owner pushes it to a private mhvnsnt/lyra
+  (docs/LYRA_ACCESS.md), then add_repo + integrate (docs/LYRA_BASE.md).

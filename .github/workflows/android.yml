@@ -14,7 +14,7 @@ on:
       - '.github/workflows/android.yml'
 
 permissions:
-  contents: read
+  contents: write   # so the built APK can be committed back to dist/ on main
 
 jobs:
   build-apk:
@@ -43,9 +43,25 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
       - run: gradle -p android assembleDebug --no-daemon
 
-      - name: Upload APK
+      - name: Upload APK (artifact)
         uses: actions/upload-artifact@v4
         with:
           name: BANNON-debug-apk
           path: android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      # Keep the in-repo APK current: on a push to main, commit the freshly built APK to dist/BANNON.apk
+      # so the game app upgrades along with the game/repo. dist/ is NOT in the trigger paths, so this
+      # commit does not re-trigger the workflow (no loop); [skip ci] belt-and-suspenders.
+      - name: Publish APK to dist/ (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/debug/app-debug.apk dist/BANNON.apk
+          git config user.name  "bannon-ci"
+          git config user.email "ci@bannon.local"
+          git add dist/BANNON.apk
+          if git diff --cached --quiet; then echo "APK unchanged"; else
+            git commit -m "ci: rebuild dist/BANNON.apk from ${GITHUB_SHA::7} [skip ci]"
+            git push
+          fi

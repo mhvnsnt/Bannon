@@ -467,3 +467,31 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 ### SHIPPED (PHASE 37 - COURT SYSTEM & FACTION DYNAMICS)
 - **Legacy Court & Lawsuit System**: Built `BannonCourtSystem.cpp/h`. Ported over the classic MDickie lawsuit mechanics. Wrestlers can now procedurally sue rivals for severe backstage injuries, calculating settlement damages based on the defendant's salary tier and injury severity. Added wrongful termination payout matrices for breached Creative Control clauses.
 - **Faction Matrix & Backstage Betrayals**: Built `BannonFactionMatrix.cpp/h`. Engineered a relational database scanner that calculates jealousy thresholds. Allies with high Greed and low Loyalty will procedurally trigger heel-turn betrayals if the player's momentum gets too high. Also implemented a Run-In logic router for spontaneous backstage brawls based on affinity scores.
+
+### SHIPPED (v160 — MOVE LIBRARY / FBX MAP / MODEL-DEFORM FIX / APK — harness-verified)
+- **MODEL DEFORMATION FIXED (the "all models look deformed / bones stretching")**: root cause was the
+  HANGING-DREAD branch leaving `d.rotation.set(0,0,0)` — a Cylinder's default axis is +Y, so every loc
+  stood as a VERTICAL spike clustered at the skull, on EVERY dreaded character. Fixed: locs now DRAPE
+  (quaternion align +Y → down/back hang dir, back-arc anchors). Diagnosis method (reuse): harness
+  close-up (`FREECAM.on=true` + set tx/ty/tz/dist, DON'T call freecamEnter) + hide sub-meshes one at a
+  time (seg.dreads/seg.hair) to isolate. Body geo (`_bgeo`) always measures clean — deform lives in a
+  SEPARATE sub-mesh (hair/dreads/gear).
+- **WWE-2K MOVE LIBRARY + 202 FBX/DRIVE CLIP MAP**: `assets/moves/bannon_move_library.json` (53 moves by
+  position×style → real GRAPPLE_POSITIONS/DIVE_TYPES via resolveGrapPos) + `assets/moves/fbx_move_map.json`
+  (all 182 unique mocap clips classified → category + WWE-2K POSITION). POSITION TAXONOMY (binding for
+  move work): PRIMARY = standing front/rear, grounded head-up/head-down/leg/side, corner front/back,
+  turnbuckle-top, apron. SECONDARY = rope-rebound, springboard, mid-rope, running, irish-whip. TERTIARY =
+  CORNER_TO_GROUND (run from corner onto a downed opp), TREE_OF_WOE, GROUND_TO_STANDING_WAKEUP (the
+  "wake-up" system — getup clips: cover-to-stand/Kip Up/falling-to-roll), DIVE_TO_FLOOR, APRON_TO_RING.
+  `window.BANNON_MOVE_LIBRARY` exposes clipsForPosition/clipsForCategory/clipFor(engineKey). The moveset
+  editor equips a clip as the ANIMATION base; resolveGrapPos drives OUR physics.
+- **CHARACTER RIGS ARE KEPT, NOT SKIPPED** (owner: book characters are based on some, e.g. a Chris-Jericho-
+  based one; also Fin_F10 etc). The 24 `character_rig` FBX (Andrade/Cage/Jericho/…) are flagged
+  `usable:true` in the map — potential playable characters to retexture + import, and they carry bundled
+  animations to harvest. Never discard them.
+- **APK IN THE REPO + AUTO-BUILD**: `dist/BANNON.apk` (WebView app bundling the game) is tracked; CI
+  (`.github/workflows/android.yml`) rebuilds + commits it to dist/ on every push to main so the app
+  upgrades with the game. Build recipe: Android SDK 34 + **JDK 17** (Java 21 breaks AGP 8.1 jlink).
+- **STILL OPEN (owner's standing list — do without reiterating)**: entrances, victories, backstage areas,
+  dialogue/branch/relationship/event cutscenes, expand all shallow UE stubs, fold MDickie moves in with
+  our physics, and the combat-legibility animation pass on top of the move library.
