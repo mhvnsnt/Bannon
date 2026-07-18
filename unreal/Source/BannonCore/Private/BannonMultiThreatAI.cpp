@@ -1,28 +1,31 @@
 #include "BannonMultiThreatAI.h"
 
-int32 UBannonMultiThreatAI::DeterminePrimaryTargetIndex(const TArray<float>& ThreatHealths, const TArray<float>& ThreatDistances)
+void UBannonMultiThreatAI::EvaluateHighestThreat(const TArray<FThreatData>& ActiveThreats, FString& OutPrimaryTargetID)
 {
-    // In a Triple Threat or 4-Way match, AI dynamically calculates the biggest threat
-    // Prioritizing the closest target OR the one closest to winning (highest health / momentum)
-    if (ThreatHealths.Num() == 0 || ThreatHealths.Num() != ThreatDistances.Num()) return -1;
-
-    int32 BestTargetIdx = 0;
+    // In multi-man matches (e.g., Fatal 4-Way), the AI dynamically calculates the biggest threat.
     float HighestThreatScore = -1.0f;
+    OutPrimaryTargetID = TEXT("None");
 
-    for (int32 i = 0; i < ThreatHealths.Num(); i++)
+    for (const FThreatData& Threat : ActiveThreats)
     {
-        // Lower distance = higher threat, higher health = higher threat
-        float DistanceScore = FMath::Clamp(1000.0f - ThreatDistances[i], 0.0f, 1000.0f);
-        float HealthScore = ThreatHealths[i]; 
+        // Closer threats are more dangerous.
+        float ProximityScore = FMath::Clamp(1000.0f - Threat.Distance, 0.0f, 1000.0f) * 0.1f;
         
-        float TotalThreat = (DistanceScore * 0.6f) + (HealthScore * 0.4f);
-        
-        if (TotalThreat > HighestThreatScore)
+        // Healthier threats are more dangerous in the long run.
+        float HealthScore = Threat.Health * 0.5f;
+
+        float TotalScore = ProximityScore + HealthScore;
+
+        // If someone is actively throwing a strike/grapple, they become an immediate emergency priority.
+        if (Threat.bIsCurrentlyAttacking && Threat.Distance < 300.0f)
         {
-            HighestThreatScore = TotalThreat;
-            BestTargetIdx = i;
+            TotalScore += 500.0f; 
+        }
+
+        if (TotalScore > HighestThreatScore)
+        {
+            HighestThreatScore = TotalScore;
+            OutPrimaryTargetID = Threat.WrestlerID;
         }
     }
-    
-    return BestTargetIdx;
 }
