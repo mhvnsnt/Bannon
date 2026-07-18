@@ -1,5 +1,10 @@
 # BANNON — working memory (read me first, every session)
 
+> **⛓️ BINDING: `docs/AI_WORKING_CONTRACT.md` governs HOW every AI works on this game** (scope
+> recognition, FULL-integration protocol, pull-don't-reinvent, no-hallucination/verify-with-senses,
+> no-stubs-as-features, build-one-complete-game, secrets). Read it before acting. It exists because a
+> year of multi-AI work produced spaghetti + false "done" claims — do not repeat that.
+
 Standing context distilled from the owner's direct instructions + the books. `AGENTS.md` is the
 North Star (additive-only, surgical, physics-first); `window.MANIFESTO` / `window.BLUEPRINT` in
 `BANNON_v150.html` are the live soul + roadmap. This file is the session-to-session memory.
@@ -563,3 +568,39 @@ BINDING session memory so these don't get re-derived:
   Finxsse as an attire (not a separate char). Creation-suite subsystems moved to a MAIN-menu 3×3 hub (out
   of the pause menu). PWA manifest + icons (installable). Lyra: owner pushes it to a private mhvnsnt/lyra
   (docs/LYRA_ACCESS.md), then add_repo + integrate (docs/LYRA_BASE.md).
+- **IMPACT-TAUNTS (WWE-2K style, LIVE)** — capoeira (Ginga/Esquiva/Capoeira), breakdance SPINAROONY family
+  (Breakdance Footwork/Freezes), and showman taunts (RapidChestBeating/ButtSlap/ViolenceParty) are BOTH a
+  taunt AND a real strike. Contract in `assets/moves/fbx_move_map.json` (`dualPurpose:true`+`altKind`+
+  `altEngine`; `_dualPurpose` header note) — 15 dual-purpose clips. `BANNON_MOVE_LIBRARY.tauntOrStrike(clip,
+  oppInRange)` picks the mode; `impactTaunts()`/`isImpactTaunt()` added. `window.performTaunt(dir)`
+  (up=crowd/down=disrespect/left=ginga/right=spinaroony) routes strike-mode through the SAME startAttack→
+  registerHit physics (no canned anim). Wired to the touch TAUNT CLUSTER (4 dirs) + keyboard `t`+direction.
+  Verified: in range GINGA→phase 0.52, hitConnected, −155hp; out of range→+8.8 momentum, 0 dmg.
+  GOTCHA (harness): a prior KO ends the match → gameState leaves 'fight' → the loop stops stepping poseAttack
+  → next trial's attackPhase frozen at 0. Reset opp.hp=maxHp + gameState='fight' (or run the trial first).
+  Also strikes run in SLOW MOTION at the harness ~2.3fps (dt pegged 0.05) — wait multiple seconds, don't
+  misread as "attack never fires". Also the internal hit call is the LEXICAL `registerHit` (line ~9889), NOT
+  `window.registerHit` — wrapping window.* to spy on hits is a no-op; measure opp.hp/hitConnected instead.
+- **GOOGLE AI STUDIO src/** — AI Studio mirrors a 35-file React companion app under `src/` to main (creation
+  suite/AI chat/GitHub-sync dashboards). It only ADDS to src/; it has never deleted game files, canon, or
+  assets/moves. When it says it "removed the daemons," that's cleanup of its own sync scripts, not our code.
+  It also does NOT add characters to the playable game — its Dashboard.tsx had only a 7-char demo list.
+  Merged-branch protocol: this branch is fully contained in main — fast-forward onto origin/main and keep going.
+- **v160 BOOK CAST (50 chars + 14 stables added to the GAME roster)** — the owner's missing-character list
+  (Judas Messiah/The Saint/Vain Abel/The Bad Gal/Slime&Prince/Matador/Phoenix/Slick Willy/Bash Bros/High
+  Rollers/Air Jordan+Tank Shackle/Kid Glide/Iron Tusk/Hardcore Harry/Luchador Twins/Corporate Auditors/
+  Repetition/Thinker/Velocity/Cubist/General Vance/Pretty Flacko/Club God/Coven of Gnarly ×6/Degenerates/
+  NWC/Dynasty/Masterpiece/Straight Shooters/Hollywood/Ronald Slump+Jr) wired via `_addChar` (CHAR_META +
+  MOVESET_DB + ROSTER_SPEC from archetype) with faction+stable+proprietary bio, proprietary FINISHER_MOVES,
+  and a new `window.CHAR_STABLES` registry (14 stables, members = roster keys). Verified: all 50 in
+  MOVESET_DB/CHAR_META/FINISHER_MOVES, ROSTER_ALL()=116, 0 pageerrors. Models stay procedural until real
+  skinned GLBs exist — identity/roster first (owner makes canon models per the ownership directive).
+- **MODEL PIPELINE — HONEST STATE (owner override 2026-07-18): STOP hand-writing skinning/rig code.**
+  `tools/rigready/skin.cjs` (my geodesic auto-rigger) produces BROKEN fighters — stretched smears, invisible/
+  torn limbs, unrendered holes; the harness's bloom + 2.3fps made me misjudge them as "coherent" (I was wrong;
+  owner was right). ALSO: several banked `.glb` are UNSKINNED 15-part statues (BANNON.glb/MAIME.glb/CODY_gear.glb/
+  ONYX*.glb — skins:0) that only rigid-chunk-rig in `_bindFighterGltf` (the "skeletal inversion" contortion).
+  DIRECTION: pull a REAL open-source auto-rig/skinning solution (UniRig / AccuRIG / Anything-World / Pinocchio /
+  Mixamo-style) instead of our skinner. Do NOT auto-skin canon/book models (owner's per ownership directive).
+  Probe tool that works: raw-GLB bbox + skin/joint count via GLTFLoader headless (all 61 GLBs load, upright,
+  centered; the broken-ness is skinning weights + unskinned sources, not orientation/scale).

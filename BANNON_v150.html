@@ -7551,7 +7551,10 @@ const GRAPPLE_POS_NAMES = Object.keys(GRAPPLE_POSITIONS);
 // tag -> exact key match -> label match -> fuzzy name/label containment -> STANDARD.
 window.resolveGrapPos = function(move){
   if(!move) return 'STANDARD';
-  const nm=((move.grapplePos||move.name||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'');
+  // honor an explicit engine position first (move.pos / move.grapplePos from the move library — MDickie +
+  // bannon_move_library entries carry it), then fall back to the move NAME for fuzzy matching.
+  if(move.pos && GRAPPLE_POSITIONS[move.pos]) return move.pos;
+  const nm=((move.grapplePos||move.pos||move.name||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,'');
   if(!nm) return 'STANDARD';
   if(GRAPPLE_POSITIONS[nm]) return nm;                                                   // exact key ("POWERBOMB","BACK_SUPLEX")
   for(const k of GRAPPLE_POS_NAMES){ const lb=((GRAPPLE_POSITIONS[k].label||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,''); if(lb && lb===nm) return k; }  // label match ("GERMAN SUPLEX"->BACK_SUPLEX)
@@ -12001,6 +12004,54 @@ function aiEquippedOrPool(f, pool, opp){
   return pool[Math.floor(Math.random()*pool.length)];
 }
 
+// ============================================================================
+// IMPACT-TAUNTS (WWE-2K style) — capoeira Ginga / breakdance spinaroony / showman taunts that double
+// as a TAUNT (crowd pop + momentum) OR a real STRIKE when an opponent is in range. dir = up/down/
+// left/right (taunt cluster button, or 't' + directional hold). The dual-purpose contract lives in
+// assets/moves/fbx_move_map.json (dualPurpose/altKind/altEngine); BANNON_MOVE_LIBRARY.tauntOrStrike()
+// picks the mode from range, then strike-mode routes through the SAME startAttack/registerHit physics
+// as any other strike — no canned animation, our knockback/poise laws apply.
+// ============================================================================
+const TAUNT_CLUSTER = {
+  up:    { clip:'RapidChestBeating',   name:'CALL TO THE CROWD', crowd:true  },
+  down:  { clip:'Tau_ButtSlap',        name:'DISRESPECT',        crowd:false },
+  left:  { clip:'Ginga Forward',       name:'GINGA',             crowd:false },
+  right: { clip:'Breakdance Freezes',  name:'SPINAROONY',        crowd:true  }
+};
+window.performTaunt = function(dir){
+  const p = fighters[0];
+  if (!p || p.ragdoll || (p.isDown&&p.isDown()) || p.state==='down' || p.state==='grabbed' || p.grappling) return;
+  const T = TAUNT_CLUSTER[dir] || TAUNT_CLUSTER.up;
+  const opp = p.opponent ? p.opponent() : (fighters[1]||null);
+  const dist = opp ? Math.hypot(opp.x-p.x,(opp.z||0)-(p.z||0)) : 99;
+  const oppInRange = !!(opp && !opp.ragdoll && !(opp.isDown&&opp.isDown()) && dist < 1.9);
+  const ML = window.BANNON_MOVE_LIBRARY;
+  const res = ML && ML.tauntOrStrike ? ML.tauntOrStrike(T.clip, oppInRange)
+            : { mode:(oppInRange?'strike':'taunt'), engine:'STRIKE_KICK' };
+  if (res.mode==='strike'){
+    // real strike through the player's own moveset — full physics (registerHit knockback + poise)
+    const _pKey=((p.specName||(p.opts&&p.opts.name)||'BANNON')+'').toUpperCase();
+    const set = (typeof getMoves==='function' && (getMoves(_pKey)||getMoves('BANNON'))) || [];
+    const punch = res.engine==='STRIKE_PUNCH';
+    let base = punch ? (set.find(m=>m.cat==='STRIKE'&&m.height!=='LOW')||set.find(m=>m.cat==='STRIKE'))
+                     : (set.find(m=>m.cat==='KICK')||set.find(m=>m.limb&&m.limb.includes&&m.limb.includes('KICK'))||set.find(m=>m.cat==='STRIKE'));
+    base = base || set[0] || {cat:'STRIKE',limb:'RIGHT KICK',power:44};
+    const m = Object.assign({}, base, { name:T.name, cat:base.cat||'STRIKE',
+      traj: punch?'HOOKING':'SPINNING', height: dir==='down'?'LOW':'HIGH',
+      power: Math.round((base.power||44)*1.05), speed:88, follow:'RESET STANCE', _impactTaunt:true });
+    p.momentum = clamp((p.momentum||0)+5,0,100);   // impact-taunts still build a little momentum
+    try{ announce(T.name+'  [IMPACT-TAUNT]', fname(p)); }catch(e){}
+    p.startAttack(m);
+  } else {
+    // pure taunt — crowd pop + momentum + a little composure back
+    p.momentum = clamp((p.momentum||0)+(T.crowd?9:7), 0, 100);
+    p.poise = clamp((p.poise||100)+6, 0, 100);
+    p._tauntT = 0.8;
+    try{ announce(T.name, fname(p)); }catch(e){}
+    try{ if(window.crowdReaction) window.crowdReaction(T.crowd?0.7:0.4); }catch(e){}
+  }
+};
+
 function playerAttack(kind){
   const p = fighters[0];
   if (!p || p.ragdoll || p.state==='down') return;
@@ -13589,6 +13640,71 @@ try{
   // TEXTBOOK AARON RUBEN (Book canon) — grizzled by-the-numbers veteran, comedy-technician: every hold
   // is chapter-and-verse, every spot telegraphed and somehow still landed. The wily old pro.
   _addChar('AARON_RUBEN',    { label:'Textbook',                 col:0xb02a2a, accent:0xf0e8d8, skin:0xd9a066, faction:'Free Agent', canon:true, bio:'A thirty-year man who wrestles straight out of the manual — chain wrestling by the numbers, comedy timing sharpened by decades. Underestimate the fundamentals and he schools you.', archetype:'technician' }, 'SINGLET', 'SHORT', {musc:0.5,fat:0.34});
+  // ============================================================================================
+  // v160 BOOK CAST — the characters + stables the owner flagged as missing from the game roster
+  // (they existed in the books / Google-AI-Studio dashboard but were never in MOVESET_DB, so they
+  // never showed in ROSTER_ALL). Each gets a faction + stable + archetype (seeds stats/style/moves),
+  // proprietary label/bio (no trademarks), and a proprietary finisher below. Models stay procedural
+  // until proper skinned GLBs exist — identity/roster first.
+  // ---- The Administration (Kennedy corporate power) ----
+  _addChar('RONALD_SLUMP',    { label:'The Billionaire President', col:0x1a2b4a, accent:0xd4af37, skin:0xe8c9a8, faction:'Corporate Structure', stable:'The Administration', canon:true, bio:'A gilded blowhard who bought his way to the top of the card and rules by decree — all bluster, all leverage.', archetype:'brawler' }, 'JACKET', 'CAESAR', {musc:0.34,fat:0.5});
+  _addChar('RONALD_SLUMP_JR', { label:'The Wild Card',             col:0x24344f, accent:0xe0c060, skin:0xe6c49c, faction:'Corporate Structure', stable:'The Administration', canon:true, bio:'The heir with something to prove — reckless, entitled, and dangerous precisely because he has nothing to lose.', archetype:'brawler' }, 'JACKET', 'SHORT', {musc:0.52,fat:0.26});
+  _addChar('MELISSA_KENNEDY', { label:'The Heiress Authority',     col:0x2a2038, accent:0xc0a0d0, skin:0xe2b892, faction:'Corporate Structure', stable:'The Degenerates', canon:true, bio:'Boardroom power in ring gear — she books the chaos and sometimes joins it.', archetype:'technician' }, 'LONG_TIGHTS', 'PONYTAIL', {musc:0.42,fat:0.2,fem:1,hips:1.02,glutes:1.05,waist:0.86,bust:1.0});
+  // ---- Individuals ----
+  _addChar('JUDAS_MESSIAH',   { label:'The Savior',                col:0x3a0d0d, accent:0xf0d060, skin:0xe0b088, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'A messianic showman-technician who preaches his own gospel and backs it up with a thousand holds — the self-anointed savior of the business.', archetype:'technician' }, 'TIGHTS', 'LONG', {musc:0.62,fat:0.14});
+  _addChar('THE_SAINT',       { label:'The Straight-Edge Saint',   col:0x101418, accent:0xf0f0f0, skin:0xd9a066, faction:'Independent Variables', stable:'The Straight Shooters', canon:true, bio:'Clean-living zealot with a cult of personality — a submission technician who wants you to be BETTER, by force.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.6,fat:0.12});
+  _addChar('VAIN_ABEL',       { label:'The Vain Monster',          col:0x1a1a1a, accent:0x8b0000, skin:0xc08a54, faction:'Corporate Structure', canon:true, bio:"Cain Elias's estranged brother — a masked, self-obsessed monster who fights for the mirror as much as the win.", archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.92,fat:0.28});
+  _addChar('THE_BAD_GAL',     { label:'The Bad Gal',               col:0x2a0d24, accent:0xff2288, skin:0xd9a066, faction:'Agents of Chaos', canon:true, bio:'Glamour and menace in equal measure — a diva who hits like a brawler and revels in being the villain.', archetype:'brawler' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.5,fat:0.16,fem:1,hips:1.06,glutes:1.12,waist:0.84,bust:1.15});
+  _addChar('THE_MATADOR',     { label:'The Matador',               col:0x8a0d2a, accent:0xffd700, skin:0xc08a54, faction:'Independent Variables', canon:true, bio:'Grace, cape-work and a killer counter — he lets the bull charge, then buries the sword.', archetype:'highFlyer' }, 'TRUNKS', 'SHORT', {musc:0.6,fat:0.12});
+  _addChar('THE_PHOENIX',     { label:'The Phoenix',               col:0xcc4400, accent:0xffcc00, skin:0xd9a066, faction:'Independent Variables', canon:true, bio:'Burns out spectacularly and rises from every beating — a high-flyer who is most dangerous when finished.', archetype:'highFlyer' }, 'TIGHTS', 'LONG', {musc:0.54,fat:0.12});
+  _addChar('SLICK_WILLY',     { label:'"Slick" Willy',             col:0x14243a, accent:0xc0c0c0, skin:0xe0b088, faction:'Free Agent', canon:true, bio:'A silver-tongued ring general — every escape looks like luck until you realize he planned it three moves ago.', archetype:'technician' }, 'LONG_TIGHTS', 'FADE', {musc:0.56,fat:0.18});
+  _addChar('AIR_JORDAN',      { label:'"Air" Jordan · Shackle III',col:0x1a1a2a, accent:0xcc0033, skin:0x6a4326, faction:'Independent Variables', stable:'The Shackles', canon:true, bio:'Third of the Shackle line — hang-time for days, a walking highlight reel who plays above the rim.', archetype:'highFlyer' }, 'TRUNKS', 'FADE', {musc:0.58,fat:0.1});
+  _addChar('TANK_SHACKLE',    { label:'Tank · Shackle IV',         col:0x2a2a1a, accent:0x88aa44, skin:0x6a4326, faction:'Independent Variables', stable:'The Shackles', canon:true, bio:'The fourth Shackle is a rolling fortress — no finesse, all forward, and impossible to move.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.94,fat:0.32});
+  _addChar('KID_GLIDE',       { label:'Kid Glide',                 col:0x0d2a3a, accent:0x33ccff, skin:0xd9a066, faction:'Free Agent', canon:true, bio:'Weightless — a young flyer who seems to hang in the air a beat longer than physics should allow.', archetype:'highFlyer' }, 'SINGLET', 'SHORT', {musc:0.5,fat:0.1});
+  _addChar('IRON_TUSK',       { label:'Iron Tusk',                 col:0x2a2418, accent:0xb0b0b8, skin:0x8a6a4a, faction:'Agents of Chaos', canon:true, bio:'A goring, trampling wall of a man — once he lowers the head, the match is a demolition.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.96,fat:0.36});
+  _addChar('HARDCORE_HARRY',  { label:'"Hardcore" Harry',          col:0x2a1a1a, accent:0xcc3300, skin:0xd9a066, faction:'Independent Variables', canon:true, bio:'A scarred deathmatch lifer who treats tables, tacks and steel as love languages — pain is the point.', archetype:'brawler' }, 'CARGO_PANTS', 'LONG', {musc:0.66,fat:0.26});
+  _addChar('THE_VELOCITY',    { label:'The Velocity',              col:0x0d1a2a, accent:0x00e0d0, skin:0xe0b088, faction:'Free Agent', canon:true, bio:'Pure speed as a philosophy — never stops moving, strikes in bursts, gone before you counter.', archetype:'highFlyer' }, 'SINGLET', 'SHORT', {musc:0.5,fat:0.1});
+  _addChar('THE_CUBIST',      { label:'The Cubist',                col:0x1a1a2a, accent:0xe0e000, skin:0xc08a54, faction:'Agents of Chaos', canon:true, bio:'Deconstructs the human body into angles nobody expects — an abstract, unsettling technician.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.56,fat:0.14});
+  _addChar('GENERAL_VANCE',   { label:'General Vance',             col:0x1a2a1a, accent:0xd4af37, skin:0x7a4a2e, faction:'The Alliance', canon:true, bio:'A battlefield commander in boots — rallies the locker room and leads every charge from the front.', archetype:'powerhouse' }, 'JACKET', 'BUZZ', {musc:0.82,fat:0.24});
+  _addChar('PRETTY_FLACKO',   { label:'Pretty Flacko',             col:0x2a0d2a, accent:0xff66cc, skin:0x6a4326, faction:'Independent Variables', canon:true, bio:'Fashion-forward flash with real snap behind the flex — style AND fight, and he knows it.', archetype:'striker' }, 'TIGHTS', 'FADE', {musc:0.58,fat:0.12});
+  _addChar('CLUB_GOD',        { label:'Club God',                  col:0x14001a, accent:0xaa33ff, skin:0x7a4a2e, faction:'Agents of Chaos', canon:true, bio:'Owns the night — struts to his own rhythm and turns every match into his party.', archetype:'striker' }, 'LONG_TIGHTS', 'FADE', {musc:0.6,fat:0.14});
+  // ---- Tag teams ----
+  _addChar('SLIME',           { label:'Slime',                     col:0x0d2a0d, accent:0x66ff33, skin:0x6a5a2e, faction:'Agents of Chaos', stable:'Slime & Prince', canon:true, bio:'The grimy half of Slime & Prince — does the dirty work while his partner shines.', archetype:'brawler' }, 'CARGO_PANTS', 'LONG', {musc:0.62,fat:0.2});
+  _addChar('PRINCE',          { label:'Prince',                    col:0x1a0d2a, accent:0xffd700, skin:0x6a4326, faction:'Agents of Chaos', stable:'Slime & Prince', canon:true, bio:'The flashy half — royalty attitude, high-flying finish, all the glory.', archetype:'highFlyer' }, 'TIGHTS', 'FADE', {musc:0.54,fat:0.12});
+  _addChar('SPIKE',           { label:'Spike · Bash Brother',      col:0x2a1a0d, accent:0xcc4422, skin:0xd9a066, faction:'Independent Variables', stable:'The Bash Brothers', canon:true, bio:'The heavier Bash Brother — swings first, asks nothing.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.9,fat:0.3});
+  _addChar('HAMMER',          { label:'Hammer · Bash Brother',     col:0x2a2214, accent:0xd0a020, skin:0xd9a066, faction:'Independent Variables', stable:'The Bash Brothers', canon:true, bio:'The relentless Bash Brother — pure percussion, no off switch.', archetype:'brawler' }, 'TRUNKS', 'BUZZ', {musc:0.86,fat:0.28});
+  _addChar('DICE',            { label:'Dice · High Roller',        col:0x14243a, accent:0xd4af37, skin:0xe0b088, faction:'Corporate Structure', stable:'The High Rollers', canon:true, bio:'Gambles on every exchange — cocky, showy, and usually cashing in.', archetype:'striker' }, 'TIGHTS', 'FADE', {musc:0.58,fat:0.16});
+  _addChar('CHIP',            { label:'Chip · High Roller',        col:0x1a2a2a, accent:0xe0c060, skin:0xd9a066, faction:'Corporate Structure', stable:'The High Rollers', canon:true, bio:'The steady hand of the High Rollers — counts cards while his partner counts chickens.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.56,fat:0.16});
+  _addChar('LUCHADOR_RELAMPAGO',{ label:'Relámpago · Luchador Twin',col:0x1a0d3a, accent:0x33ccff, skin:0x8a5a3a, faction:'Independent Variables', stable:'The Luchador Twins', canon:true, bio:'Lightning of the twin duo — blinding tope speed and tandem aerial chaos.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'SHORT', {musc:0.5,fat:0.1});
+  _addChar('LUCHADOR_TRUENO', { label:'Trueno · Luchador Twin',    col:0x3a0d1a, accent:0xffcc00, skin:0x8a5a3a, faction:'Independent Variables', stable:'The Luchador Twins', canon:true, bio:'Thunder of the twin duo — the heavier, harder-landing mirror of his brother.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'SHORT', {musc:0.56,fat:0.12});
+  _addChar('AUDITOR_PRIME',   { label:'Auditor Prime',             col:0x14181c, accent:0x9fb4cc, skin:0xe2b892, faction:'Corporate Structure', stable:'The Corporate Auditors', canon:true, bio:'Every hold is a line item — the lead Auditor collects on debts in the ring.', archetype:'technician' }, 'JACKET', 'CAESAR', {musc:0.54,fat:0.2});
+  _addChar('AUDITOR_SECOND',  { label:'Auditor Second',            col:0x181c20, accent:0xaab8cc, skin:0xd9a066, faction:'Corporate Structure', stable:'The Corporate Auditors', canon:true, bio:'The junior Auditor — enforces the fine print with cold precision.', archetype:'technician' }, 'JACKET', 'SHORT', {musc:0.52,fat:0.2});
+  // ---- The Coven of Gnarly ----
+  _addChar('GRAVE',           { label:'Grave · Coven of Gnarly',   col:0x0a0a0a, accent:0x556677, skin:0x9a8a7a, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'The Coven’s dead weight — a silent, grave-cold powerhouse who buries opponents literally and figuratively.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'LONG', {musc:0.9,fat:0.3});
+  _addChar('JETT_GNARLY',     { label:'Jett Gnarly · Coven Leader',col:0x1a0a1a, accent:0xaa22cc, skin:0x7a4a2e, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'Head of the Coven — a charismatic dark preacher who turns menace into a movement.', archetype:'brawler' }, 'CARGO_PANTS', 'LONG', {musc:0.68,fat:0.18});
+  _addChar('MOKK_GNARLY',     { label:'Mokk Gnarly · Coven',       col:0x0a1a0a, accent:0x338833, skin:0x8a6a4a, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'The Coven’s battering ram — feral strength wrapped in ritual.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.92,fat:0.32});
+  _addChar('RAZOR_GNARLY',    { label:'Razor · Coven',             col:0x1a1a1a, accent:0xcc2222, skin:0xd9a066, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'Edges and cuts — the Coven’s striker, all blades and bad intentions.', archetype:'striker' }, 'LONG_TIGHTS', 'SHORT', {musc:0.62,fat:0.14});
+  _addChar('CRUX',            { label:'Crux · Coven',              col:0x1a0d1a, accent:0x8844aa, skin:0xc08a54, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'The Coven’s technician — ties opponents into crosses they can’t escape.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.58,fat:0.14});
+  _addChar('LUNA_GNARLY',     { label:'Luna · Coven',              col:0x1a1a2a, accent:0xccccff, skin:0xd9a066, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'Moon-pale and airborne — the Coven’s flyer, hauntingly graceful and lethal off the top.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'LONG', {musc:0.48,fat:0.14,fem:1,hips:1.02,glutes:1.06,waist:0.85,bust:0.9});
+  // ---- The Degenerates (Triple X + Hall Nighter already in roster) ----
+  _addChar('THE_DOGG',        { label:'The Dogg · Degenerate',     col:0x14251a, accent:0xd4d400, skin:0xe0b088, faction:'Corporate Structure', stable:'The Degenerates', canon:true, bio:'The crude comedic muscle of the crew — struts, taunts, and lariats you inside out.', archetype:'brawler' }, 'TIGHTS', 'BUZZ', {musc:0.68,fat:0.2});
+  _addChar('ASS_MAN_BILLY',   { label:'Ass-Man Billy · Degenerate',col:0x1a1a14, accent:0xc0c0c0, skin:0xd9a066, faction:'Corporate Structure', stable:'The Degenerates', canon:true, bio:'A gunslinging good-ol’-boy troublemaker — all attitude, cheap shots optional.', archetype:'brawler' }, 'CARGO_PANTS', 'LONG', {musc:0.64,fat:0.22});
+  _addChar('X_KID',           { label:'X-Kid · Degenerate',        col:0x0d1a2a, accent:0x33ccff, skin:0x8a5a3a, faction:'Corporate Structure', stable:'The Degenerates', canon:true, bio:'The high-flying heart of the crew — a springboard machine with a chip on his shoulder.', archetype:'highFlyer' }, 'LONG_TIGHTS', 'PONYTAIL', {musc:0.54,fat:0.1});
+  // ---- The NWC (Judas Messiah already added above) ----
+  _addChar('THE_VANDAL',      { label:'The Vandal · NWC Boss',     col:0x0a0a0a, accent:0xe0e0e0, skin:0xe0b088, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'The outlaw kingpin who spray-paints his takeover on everything — the invading faction’s hollywood heel-in-chief.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.82,fat:0.3});
+  _addChar('VATO',            { label:'Vato · NWC',                col:0x1a1a1a, accent:0x999999, skin:0x7a4a2e, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'The NWC’s brash enforcer — loud, mean, and always looking for the numbers game.', archetype:'brawler' }, 'TIGHTS', 'SHORT', {musc:0.72,fat:0.2});
+  _addChar('BIG_CASH',        { label:'Big Cash · NWC',            col:0x14140a, accent:0xd4af37, skin:0x6a4326, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'Big money, bigger frame — the faction’s payday powerhouse.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.9,fat:0.34});
+  _addChar('AARON_REINER',    { label:'Aaron Reiner · NWC',        col:0x14181c, accent:0xaab8cc, skin:0xe2b892, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'The cerebral one — brought technical credibility to the outlaw crew.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.6,fat:0.16});
+  _addChar('TOXIN',           { label:'Toxin · NWC',               col:0x0d1a0d, accent:0x66ff00, skin:0x8a6a4a, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'Poison in human form — a striker who wears you down with venomous precision.', archetype:'striker' }, 'LONG_TIGHTS', 'SHORT', {musc:0.6,fat:0.14});
+  // ---- The Dynasty & The Masterpiece ----
+  _addChar('KRAY_Z',          { label:'Kray-Z · Dynasty',          col:0x1a0d2a, accent:0xaa33ff, skin:0x6a4326, faction:'Corporate Structure', stable:'The Dynasty', canon:true, bio:'Unpredictable royalty — the Dynasty’s live wire who fights like the rules don’t apply.', archetype:'brawler' }, 'TIGHTS', 'FADE', {musc:0.66,fat:0.16});
+  _addChar('KRUSHA_P',        { label:'Krusha P · Dynasty',        col:0x2a1a0d, accent:0xd0a020, skin:0x6a4326, faction:'Corporate Structure', stable:'The Dynasty', canon:true, bio:'The Dynasty’s demolition arm — crushes first, poses second.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.92,fat:0.3});
+  _addChar('THE_REPETITION',  { label:'The Repetition · Masterpiece',col:0x14181c, accent:0xc0c0c8, skin:0xe0b088, faction:'Corporate Structure', stable:'The Masterpiece', canon:true, bio:'Does the same devastating sequence until it works — inevitability as a finisher.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.6,fat:0.16});
+  _addChar('THE_THINKER',     { label:'The Thinker · Masterpiece', col:0x181c20, accent:0xe0c060, skin:0xd9a066, faction:'Corporate Structure', stable:'The Masterpiece', canon:true, bio:'Chess to everyone else’s checkers — sets traps five moves deep.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.58,fat:0.16});
+  // ---- The Straight Shooters & Hollywood (The Saint already added above) ----
+  _addChar('LOCOMOTIVE',      { label:'Locomotive · Straight Shooter',col:0x2a1a0d, accent:0xcc4422, skin:0x8a6a4a, faction:'Independent Variables', stable:'The Straight Shooters', canon:true, bio:'A runaway freight train of a shooter — once he builds a head of steam nothing stays standing.', archetype:'powerhouse' }, 'SINGLET', 'BUZZ', {musc:0.88,fat:0.28});
+  _addChar('JOHN_FORD',       { label:'John Ford · Hollywood',     col:0x14243a, accent:0xd4af37, skin:0xe0b088, faction:'Corporate Structure', stable:'Hollywood', canon:true, bio:'A leading-man technician who wrestles for the cameras — every match a screen test he intends to win.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.6,fat:0.16});
+  _addChar('THE_BOULDER',     { label:'The Boulder · Hollywood',   col:0x2a2418, accent:0xc0b060, skin:0x7a4a2e, faction:'Independent Variables', stable:'Hollywood', canon:true, bio:'A charismatic mountain of muscle with a catchphrase for every occasion — the people’s powerhouse.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.94,fat:0.24});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13622,6 +13738,78 @@ try{
     MASTER_SENSEI:   { name:'THE FINAL LESSON',          kind:'strike' },
     WRECK_PATTERSON: { name:'THE WRECKING BALL',         kind:'strike' },
     AARON_RUBEN:     { name:'BY THE BOOK',               kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  }
+  });
+  // v160 BOOK CAST finishers (proprietary names, routed through the real physics like the rest):
+  window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
+    RONALD_SLUMP:     { name:'THE HOSTILE TAKEOVER',      kind:'grapple', pos:'SPINEBUSTER',  deliver:'slam'  },
+    RONALD_SLUMP_JR:  { name:'THE INHERITANCE',           kind:'strike' },
+    MELISSA_KENNEDY:  { name:'THE PINK SLIP',             kind:'grapple', pos:'DDT',          deliver:'spike' },
+    JUDAS_MESSIAH:    { name:'THE LAST RITES',            kind:'grapple', pos:'BACK_SUPLEX',  deliver:'bridge'},
+    THE_SAINT:        { name:'THE VICE OF VIRTUE',        kind:'grapple', pos:'BRAINBUSTER',  deliver:'spike' },
+    VAIN_ABEL:        { name:'THE RECKONING',             kind:'grapple', pos:'CHOKESLAM',    deliver:'choke' },
+    THE_BAD_GAL:      { name:'THE FEMME FATALE',          kind:'grapple', pos:'DDT',          deliver:'spike' },
+    THE_MATADOR:      { name:'THE FINAL PASS',            kind:'strike' },
+    THE_PHOENIX:      { name:'THE REBIRTH',               kind:'strike' },
+    SLICK_WILLY:      { name:'THE CON JOB',               kind:'grapple', pos:'REVERSE_DDT',  deliver:'spike' },
+    AIR_JORDAN:       { name:'THE HANG TIME',             kind:'strike' },
+    TANK_SHACKLE:     { name:'THE ARMORED DROP',          kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    KID_GLIDE:        { name:'THE GLIDE PATH',            kind:'strike' },
+    IRON_TUSK:        { name:'THE IMPALEMENT',            kind:'grapple', pos:'SPINEBUSTER',  deliver:'slam'  },
+    HARDCORE_HARRY:   { name:'THE LAST RESORT',           kind:'grapple', pos:'DDT',          deliver:'spike' },
+    THE_VELOCITY:     { name:'TERMINAL VELOCITY',         kind:'strike' },
+    THE_CUBIST:       { name:'THE DECONSTRUCTION',        kind:'grapple', pos:'BUTTERFLY_DDT',deliver:'spike' },
+    GENERAL_VANCE:    { name:'THE FIELD PROMOTION',       kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    PRETTY_FLACKO:    { name:'THE FLEX FINISH',           kind:'strike' },
+    CLUB_GOD:         { name:'LAST CALL',                 kind:'strike' },
+    SLIME:            { name:'THE RESIDUE',               kind:'grapple', pos:'SIDE_SLAM',    deliver:'slam'  },
+    PRINCE:           { name:'THE CORONATION',            kind:'strike' },
+    SPIKE:            { name:'THE SPIKE DROP',            kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    HAMMER:           { name:'THE NAIL',                  kind:'strike' },
+    DICE:             { name:'SNAKE EYES',                kind:'grapple', pos:'DDT',          deliver:'spike' },
+    CHIP:             { name:'THE CASH OUT',              kind:'grapple', pos:'BACKBREAKER',  deliver:'drop'  },
+    LUCHADOR_RELAMPAGO:{ name:'EL RELÁMPAGO',             kind:'strike' },
+    LUCHADOR_TRUENO:  { name:'EL TRUENO',                 kind:'strike' },
+    AUDITOR_PRIME:    { name:'THE FINAL AUDIT',           kind:'grapple', pos:'BRAINBUSTER',  deliver:'spike' },
+    AUDITOR_SECOND:   { name:'THE WRITE-OFF',             kind:'grapple', pos:'BACKBREAKER',  deliver:'drop'  },
+    GRAVE:            { name:'THE BURIAL',                kind:'grapple', pos:'CHOKESLAM',    deliver:'choke' },
+    JETT_GNARLY:      { name:'THE GNARLY GOSPEL',         kind:'grapple', pos:'DDT',          deliver:'spike' },
+    MOKK_GNARLY:      { name:'THE MAULING',               kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    RAZOR_GNARLY:     { name:'THE LACERATION',            kind:'strike' },
+    CRUX:             { name:'THE CROSS TO BEAR',         kind:'grapple', pos:'DDT',          deliver:'spike' },
+    LUNA_GNARLY:      { name:'THE ECLIPSE',               kind:'strike' },
+    THE_DOGG:         { name:'THE PEDIGREE MUTT',         kind:'grapple', pos:'DDT',          deliver:'spike' },
+    ASS_MAN_BILLY:    { name:'THE LAST CALL SALOON',      kind:'strike' },
+    X_KID:            { name:'THE X-FACTOR',              kind:'strike' },
+    THE_VANDAL:       { name:'THE DEFACEMENT',            kind:'grapple', pos:'SPINEBUSTER',  deliver:'slam'  },
+    VATO:             { name:'THE SHAKEDOWN',             kind:'strike' },
+    BIG_CASH:         { name:'THE BANKROLL BOMB',         kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    AARON_REINER:     { name:'THE FINE PRINT',            kind:'grapple', pos:'BRAINBUSTER',  deliver:'spike' },
+    TOXIN:            { name:'THE OVERDOSE',              kind:'strike' },
+    KRAY_Z:           { name:'THE MANIC EPISODE',         kind:'strike' },
+    KRUSHA_P:         { name:'THE DEMOLITION',            kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    THE_REPETITION:   { name:'THE ENCORE',               kind:'grapple', pos:'VERTICAL_SUPLEX',deliver:'drop' },
+    THE_THINKER:      { name:'CHECKMATE',                 kind:'grapple', pos:'REVERSE_DDT',  deliver:'spike' },
+    LOCOMOTIVE:       { name:'THE DERAILMENT',            kind:'grapple', pos:'SPINEBUSTER',  deliver:'slam'  },
+    JOHN_FORD:        { name:'THE FINAL CUT',             kind:'grapple', pos:'DDT',          deliver:'spike' },
+    THE_BOULDER:      { name:'THE ROCK BOTTOM LINE',      kind:'grapple', pos:'SIDE_SLAM',    deliver:'slam'  }
+  });
+  // v160 STABLES / factions the book cast belongs to (feeds Universe booking + faction warfare;
+  // members are roster keys registered above). Data-only; the Universe engine reads it for feuds/teams.
+  window.CHAR_STABLES = Object.assign(window.CHAR_STABLES||{}, {
+    THE_ADMINISTRATION: { name:'The Administration', faction:'Corporate Structure', leader:'RONALD_SLUMP', members:['RONALD_SLUMP','RONALD_SLUMP_JR','EDWIN_KENNEDY','MELISSA_KENNEDY'] },
+    THE_DEGENERATES:    { name:'The Degenerates', faction:'Corporate Structure', leader:'TRIPLE_XXX', members:['TRIPLE_XXX','HALL_NIGHTER','THE_DOGG','ASS_MAN_BILLY','X_KID','MELISSA_KENNEDY'] },
+    THE_NWC:            { name:'The NWC', faction:'Independent Variables', leader:'THE_VANDAL', members:['THE_VANDAL','VATO','BIG_CASH','AARON_REINER','TOXIN','JUDAS_MESSIAH'] },
+    THE_DYNASTY:        { name:'The Dynasty', faction:'Corporate Structure', leader:'KRAY_Z', members:['KRAY_Z','KRUSHA_P'] },
+    THE_MASTERPIECE:    { name:'The Masterpiece', faction:'Corporate Structure', leader:'THE_THINKER', members:['THE_REPETITION','THE_THINKER'] },
+    THE_STRAIGHT_SHOOTERS:{ name:'The Straight Shooters', faction:'Independent Variables', leader:'THE_SAINT', members:['THE_SAINT','LOCOMOTIVE'] },
+    HOLLYWOOD:          { name:'Hollywood', faction:'Corporate Structure', leader:'JOHN_FORD', members:['JOHN_FORD','THE_BOULDER'] },
+    THE_COVEN_OF_GNARLY:{ name:'The Coven of Gnarly', faction:'Agents of Chaos', leader:'JETT_GNARLY', members:['GRAVE','JETT_GNARLY','MOKK_GNARLY','RAZOR_GNARLY','CRUX','LUNA_GNARLY'] },
+    SLIME_AND_PRINCE:   { name:'Slime & Prince', faction:'Agents of Chaos', leader:'PRINCE', members:['SLIME','PRINCE'] },
+    THE_BASH_BROTHERS:  { name:'The Bash Brothers', faction:'Independent Variables', leader:'SPIKE', members:['SPIKE','HAMMER'] },
+    THE_HIGH_ROLLERS:   { name:'The High Rollers', faction:'Corporate Structure', leader:'DICE', members:['DICE','CHIP'] },
+    THE_LUCHADOR_TWINS: { name:'The Luchador Twins', faction:'Independent Variables', leader:'LUCHADOR_RELAMPAGO', members:['LUCHADOR_RELAMPAGO','LUCHADOR_TRUENO'] },
+    THE_CORPORATE_AUDITORS:{ name:'The Corporate Auditors', faction:'Corporate Structure', leader:'AUDITOR_PRIME', members:['AUDITOR_PRIME','AUDITOR_SECOND'] },
+    THE_SHACKLES:       { name:'The Shackles', faction:'Independent Variables', leader:'AIR_JORDAN', members:['AIR_JORDAN','TANK_SHACKLE'] }
   });
   // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
   window.CHAR_FINISHERS = Object.assign(window.CHAR_FINISHERS||{}, {
@@ -14485,6 +14673,16 @@ function setupInput(){
     else if (k===' '){ e.preventDefault(); playerAttack('special'); }
     else if (k==='u') playerAttack('uppercut');
     else if (k==='g') playerAttack('grab');
+    else if (k==='t'){
+      // TAUNT / IMPACT-TAUNT — direction from the held stick (up=crowd, down=disrespect, left=ginga,
+      // right=spinaroony). In range these land as real strikes; out of range they're crowd taunts.
+      let td='up';
+      if (keys['s']||keys['arrowdown']) td='down';
+      else if (keys['a']||keys['arrowleft']) td='left';
+      else if (keys['d']||keys['arrowright']) td='right';
+      else if (keys['w']||keys['arrowup']) td='up';
+      window.performTaunt && window.performTaunt(td);
+    }
     else if (k==='f'){ heldBtns['block']=true; }
     else if (k==='tab'){
       e.preventDefault();
@@ -14753,6 +14951,21 @@ function setupInput(){
         }
       }catch(e){}
     }, 80);
+  })();
+
+  // TAUNT CLUSTER (touch) — 4 directional impact-taunts: up=crowd, down=disrespect, left=ginga,
+  // right=spinaroony. In range they land as real strikes (our physics); out of range = crowd taunt.
+  (function(){
+    const cluster = document.getElementById('tauntCluster');
+    if(!cluster) return;
+    cluster.querySelectorAll('.taunt-btn').forEach(btn=>{
+      const dir = btn.getAttribute('data-dir') || 'up';
+      const fire = (e)=>{ e.preventDefault(); markTouch();
+        window.performTaunt && window.performTaunt(dir);
+        btn.classList.add('armed'); setTimeout(()=>btn.classList.remove('armed'), 280); };
+      btn.addEventListener('touchstart', fire, {passive:false});
+      btn.addEventListener('mousedown', fire);
+    });
   })();
 
   // RUN pill button — hold to sprint (forces runCharge=1 while held; releasing decays naturally)
@@ -25392,18 +25605,21 @@ if (typeof Fighter!=='undefined' && Fighter.prototype.poseGuard && !Fighter.prot
 } catch(e){}
 
 // ── 10. VERSION DISPLAY UPDATE ───────────────────────────────────────────────
+const BANNON_VERSION = (window.BANNON_VERSION = 'v160');   // single source of truth — bump here each pass
 function bumpVersion(){
   try {
+    const V = BANNON_VERSION;
     // ver-badge in top-right HUD
     const vb = document.getElementById('ver-badge');
-    if (vb) vb.textContent = 'BANNON v127';
+    if (vb) vb.textContent = 'BANNON '+V;
     // title tag
     const t = document.querySelector('title');
-    if (t && /BANNON/.test(t.textContent)) t.textContent = t.textContent.replace(/v\d+/, 'v127');
-    // menu footer badge (Share Tech Mono 9px div)
+    if (t && /BANNON/.test(t.textContent)) t.textContent = t.textContent.replace(/v\d+/, V);
+    // menu footer badge (Share Tech Mono 9px div) — catch any stale vNNN badge, not just v7x
     document.querySelectorAll('div,span').forEach(el => {
-      if (/^v7[5-9]/.test((el.textContent||'').trim()) || /BANNON v7[5-9]/.test(el.textContent||''))
-        el.textContent = el.textContent.replace(/v\d+/, 'v127');
+      const tx = (el.textContent||'').trim();
+      if (/^v\d{2,3}$/.test(tx) || /^BANNON v\d{2,3}$/.test(tx))
+        el.textContent = el.textContent.replace(/v\d+/, V);
     });
   } catch(e){}
 }
@@ -25413,7 +25629,7 @@ bumpVersion();
 [400, 1400, 3500, 7000].forEach(ms => setTimeout(() => { try { fixAllPanels(); bumpVersion(); } catch(e){} }, ms));
 
 console.log(
-  '%c⚡ BANNON v127 — Universal touch · Euphoria (head snap · neck whip · leg buckle · dead-weight · floor resonance) · Wobble v2 (4-step + jitter kill) · poseAttack shoulder-roll · directional flinch · breath S-curve',
+  '%c⚡ BANNON v160 — impact-taunts (ginga/spinaroony) · freeze+deform fixes · foot-plant · APK · jukebox · universe · full move library · Euphoria physics',
   'color:#ffd700;font-weight:bold;background:#0d0500;padding:4px 10px'
 );
 
@@ -28766,11 +28982,13 @@ if (_origCouple && !_origCouple._v98){
 })();
 
 // ── Version badge ─────────────────────────────────────────────────────────────
+// (defers to the single BANNON_VERSION source of truth defined earlier — no stale hardcode)
 try{
+  const _V = (window.BANNON_VERSION||'v160');
   const vb = document.getElementById('ver-badge');
-  if (vb) vb.textContent = 'BANNON v103';
+  if (vb) vb.textContent = 'BANNON '+_V;
   const ttl = document.querySelector('title');
-  if (ttl) ttl.textContent = 'BANNON — FIGHTER v103';
+  if (ttl) ttl.textContent = 'BANNON — FIGHTER '+_V;
 }catch(e){}
 
 console.log('[BANNON v98] Floor physics zone-aware · Blood/stain decal Y fixed · Rope contact 0.42→0.10 · Apron combat · Throw-over extended · Tangle · Shadow zone-tracked');
@@ -36762,10 +36980,23 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
      ============================================================================================ -->
 <script>
 window.BANNON_MOVE_LIBRARY = (function(){
-  let LIB=null, FBX=null;
+  let LIB=null, FBX=null, MDK=null;
   async function load(){ if(LIB&&FBX) return LIB;
     try{ const r=await fetch('assets/moves/bannon_move_library.json'); LIB=await r.json(); }catch(e){ LIB={grapples:[],dives:[],submissions:[],strikes:[],ground:[]}; }
     try{ const r2=await fetch('assets/moves/fbx_move_map.json'); FBX=await r2.json(); }catch(e){ FBX={positions:{},clips:[]}; }
+    // MDickie Wrestling Empire move vocabulary, turned proprietary + routed through OUR physics.
+    try{ const r3=await fetch('assets/moves/mdickie_moves.json'); MDK=await r3.json();
+      // fold the MDickie grapples/strikes into the library pools (dedup by name) so they show in the
+      // moveset editor and route via resolveGrapPos. Pins/positions/subs kept under their own buckets.
+      if(MDK&&MDK.moves){ const have=new Set(all().map(m=>m.name));
+        MDK.moves.forEach(m=>{ if(have.has(m.name)) return;
+          if(m.dive){ (LIB.dives=LIB.dives||[]).push(m); }
+          else if(m.sub){ (LIB.submissions=LIB.submissions||[]).push(m); }
+          else if(m.kind==='strike'){ (LIB.strikes=LIB.strikes||[]).push(m); }
+          else if(m.kind==='pin'||m.kind==='position'){ /* tracked separately */ }
+          else { (LIB.grapples=LIB.grapples||[]).push(m); }
+        }); }
+    }catch(e){ MDK={moves:[]}; }
     return LIB; }
   function all(){ if(!LIB) return []; return [].concat(LIB.grapples||[],LIB.dives||[],LIB.submissions||[],LIB.strikes||[],LIB.ground||[]); }
   // moves available to a fighting style (technical/powerhouse/highFlyer/brawler/striker/lucha/mma/hardcore/oldSchool/showman)
@@ -36784,9 +37015,20 @@ window.BANNON_MOVE_LIBRARY = (function(){
   function clipsForCategory(cat){ return fbxClips().filter(c=>c.cat===cat); }
   // best animation clip for an engine grapple/dive/wakeup key (STUDIO.clips name = the clip basename)
   function clipFor(engineKey){ const c=fbxClips().find(x=>x.engine===engineKey); return c?c.clip:null; }
+  // ---- WWE-2K IMPACT-TAUNTS (dualPurpose clips: capoeira Ginga/Esquiva, breakdance spinaroony, showman) ----
+  // clips that are BOTH a taunt and a real strike depending on range at trigger.
+  function impactTaunts(){ return fbxClips().filter(c=>c.dualPurpose); }
+  function isImpactTaunt(clip){ const n=(clip&&clip.clip)||clip; const c=fbxClips().find(x=>x.clip===n); return !!(c&&c.dualPurpose); }
+  // resolve a dual-purpose clip by context: opp in strike range -> STRIKE (our physics registerHit path),
+  // else -> TAUNT (crowd/momentum, no contact). Returns {clip, mode, kind, engine}.
+  function tauntOrStrike(clip, oppInRange){ const n=(clip&&clip.clip)||clip; const c=fbxClips().find(x=>x.clip===n)||{clip:n};
+    if(c.dualPurpose && oppInRange) return { clip:c.clip, mode:'strike', kind:(c.altKind||'strike'), engine:(c.altEngine||'STRIKE_KICK') };
+    return { clip:c.clip, mode:'taunt', kind:'taunt', engine:(c.engine||'TAUNT') }; }
   load();
+  function mdickieMoves(){ return (MDK&&MDK.moves)||[]; }
   return { load, all, forStyle, forPosition, resolve, fbxClips, positions, clipsForPosition, clipsForCategory, clipFor,
-           get lib(){ return LIB; }, get fbx(){ return FBX; } };
+           impactTaunts, isImpactTaunt, tauntOrStrike, mdickieMoves,
+           get lib(){ return LIB; }, get fbx(){ return FBX; }, get mdk(){ return MDK; } };
 })();
 </script>
 
@@ -37057,6 +37299,176 @@ window.BANNON_UNIVERSE = (function(){
   return { KEY, PROMOS, newUniverse, reset, get, save, bookWeek, simMatch, applyResult, playMatch, recordPlayer, advanceWeek, standings, rating, promoOf, allegianceOf,
            turnHeel, turnFace, rivalsOf, seedTeams, formTeam, worth, freeAgents, sign, rankings, generateTournament, simTournament,
            ego, loyalty, rivalInterest, demands, negotiate, bookingBreach, promoBattle, scoreLine, rivalry, feud, topFeuds };
+})();
+</script>
+<!-- ============================================================================================
+     BANNON STORY — the surrounding-game NARRATIVE layer (the MDickie Wrestling Empire meta, turned
+     proprietary + wired into OUR universe): ENTRANCES, VICTORIES, BACKSTAGE AREAS + MEETINGS,
+     DIALOGUE with branching choices, RELATIONSHIPS/ALLEGIANCE/TURNS, and weekly EVENTS/NEWS.
+     Ports MDickie's Meetings.bb (RiskFormal/Casual/PostMatch meetings -> AdjustAttitude),
+     Promos.bb (Speak/ChangeRelationship/ChangeAllegiance/PushTurn/FormTeam/AnnounceBreakup) and
+     News.bb (FindEvents/AddEvent/WinEffect) as real branching logic. Reads roster + allegiance +
+     rivalries from BANNON_UNIVERSE and stablemates from CHAR_STABLES; drives entrance/victory music
+     through BANNON_JUKEBOX. Persistent in localStorage. No trademarks — proprietary universe names.
+     ============================================================================================ -->
+<script>
+window.BANNON_STORY = (function(){
+  const KEY='bannon_story_v1';
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function U(){ return (window.BANNON_UNIVERSE && window.BANNON_UNIVERSE.get) ? window.BANNON_UNIVERSE.get() : null; }
+  function rosterKeys(){ try{ return (window.ROSTER_ALL?window.ROSTER_ALL():[]).map(c=>c.key||c.name).filter(Boolean); }catch(e){ return []; } }
+  function label(k){ try{ return (window.CHAR_META&&window.CHAR_META[k]&&window.CHAR_META[k].label)?k.replace(/_/g,' '):k.replace(/_/g,' '); }catch(e){ return k; } }
+  function factionOf(k){ try{ return (window.CHAR_META&&window.CHAR_META[k]&&window.CHAR_META[k].faction)||'Free Agent'; }catch(e){ return 'Free Agent'; } }
+  function stableOf(k){ try{ return (window.CHAR_META&&window.CHAR_META[k]&&window.CHAR_META[k].stable)||null; }catch(e){ return null; } }
+  function stablemates(k){ const s=stableOf(k); if(!s||!window.CHAR_STABLES) return [];
+    for(const id in window.CHAR_STABLES){ const st=window.CHAR_STABLES[id]; if(st.name===s||id===s) return (st.members||[]).filter(m=>m!==k); } return []; }
+
+  // ---- persistent story state (relationships/attitude/alignment/turn heat) ----
+  function fresh(){ return { rel:{}, align:{}, attitude:{}, turnHeat:{}, events:[], week:0 }; }
+  function load(){ try{ const s=localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){} return null; }
+  function save(st){ try{ localStorage.setItem(KEY, JSON.stringify(st)); }catch(e){} return st; }
+  let STATE=load()||fresh();
+  function relId(a,b){ return [a,b].sort().join('::'); }
+  // relationship -100 (bitter enemies) .. +100 (tight allies). Seeded from stable (allies) + rivalry (enemies).
+  function rel(a,b){ if(a===b) return 100; const id=relId(a,b); if(STATE.rel[id]!=null) return STATE.rel[id];
+    let base=0; if(stablemates(a).includes(b)) base+=60; else if(factionOf(a)===factionOf(b)) base+=20;
+    try{ const rv=(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.rivalsOf)?window.BANNON_UNIVERSE.rivalsOf(U(),a):[]; if(rv&&rv.includes&&rv.includes(b)) base-=60; }catch(e){}
+    STATE.rel[id]=clamp(base,-100,100); return STATE.rel[id]; }
+  function changeRel(a,b,d){ const id=relId(a,b); STATE.rel[id]=clamp((STATE.rel[id]!=null?STATE.rel[id]:rel(a,b))+d,-100,100); save(STATE); return STATE.rel[id]; }
+  // alignment: 'face' (hero) / 'heel' (villain) / 'tweener'. Seed from faction.
+  function align(k){ if(STATE.align[k]) return STATE.align[k];
+    const f=factionOf(k); const a=(f==='The Alliance')?'face':((f==='Corporate Structure'||f==='Agents of Chaos')?'heel':'tweener');
+    STATE.align[k]=a; return a; }
+  function attitude(k){ return STATE.attitude[k]!=null?STATE.attitude[k]:50; }
+  function adjustAttitude(k,d){ STATE.attitude[k]=clamp(attitude(k)+d,0,100); save(STATE); return STATE.attitude[k]; }
+
+  // ---- ENTRANCES (World.bb presentation + jukebox theme) ----
+  const ENTRANCE_STYLES=['pyro-blast','slow-stalk','high-energy sprint','arrogant strut','lights-out ritual','crowd-pander','no-nonsense march'];
+  function entranceOf(k){
+    const styleIdx=Math.abs(hash(k))%ENTRANCE_STYLES.length;
+    let music=null; try{ if(window.BANNON_JUKEBOX){ const cfg=window.BANNON_JUKEBOX.cfg?window.BANNON_JUKEBOX.cfg():null; music=(window.BANNON_JUKEBOX.entranceFor?window.BANNON_JUKEBOX.entranceFor(k):null); } }catch(e){}
+    return { fighter:k, name:label(k), style:ENTRANCE_STYLES[styleIdx], align:align(k),
+      pyro: align(k)==='heel'?'red columns':'gold sparks', tron:label(k).toUpperCase(), music };
+  }
+  // play an entrance: cue the jukebox entrance theme + announce. (Visual staging hooks the arena/atmos.)
+  function playEntrance(k){ const e=entranceOf(k);
+    try{ if(window.BANNON_JUKEBOX && window.BANNON_JUKEBOX.playEntrance) window.BANNON_JUKEBOX.playEntrance(k); }catch(_){}
+    try{ if(typeof announce==='function') announce(e.name+' — '+e.style.toUpperCase(), 'ENTRANCE'); }catch(_){}
+    return e; }
+
+  // ---- VICTORIES (celebration + WinEffect on story state) ----
+  const VICTORY_STYLES={ face:['pose on the turnbuckle','high-five the front row','raise the title high'],
+    heel:['smirk over the fallen','demand respect','pose in disgust at the crowd'],
+    tweener:['nod and walk off','stare down the hard camera','shrug it off'] };
+  function playVictory(winner, loser){
+    const a=align(winner), pool=VICTORY_STYLES[a]||VICTORY_STYLES.tweener;
+    const cele=pool[Math.abs(hash(winner+(STATE.week||0)))%pool.length];
+    adjustAttitude(winner, +6); if(loser) adjustAttitude(loser, -4);
+    try{ if(window.BANNON_JUKEBOX && window.BANNON_JUKEBOX.playVictory) window.BANNON_JUKEBOX.playVictory(winner); }catch(_){}
+    try{ if(typeof announce==='function') announce(label(winner)+' — '+cele.toUpperCase(), 'VICTORY'); }catch(_){}
+    addEvent(`${label(winner)} beat ${loser?label(loser):'their opponent'} and ${cele}.`,'result');
+    return { winner, celebration:cele }; }
+
+  // ---- BACKSTAGE AREAS + MEETINGS (Meetings.bb: formal/casual/post-match -> attitude/relationship) ----
+  const AREAS=[
+    {id:'locker_room', name:'Locker Room', mood:'tense camaraderie'},
+    {id:'catering',    name:'Catering',    mood:'loose, gossipy'},
+    {id:'gorilla',     name:'Gorilla Position', mood:'pre-match nerves'},
+    {id:'parking_lot', name:'Parking Lot', mood:'where things get settled'},
+    {id:'promo_stage', name:'Interview Stage', mood:'on the record'},
+    {id:'trainers_room',name:"Trainer's Room", mood:'battered and honest'},
+    {id:'office',      name:"Promoter's Office", mood:'power and politics'}
+  ];
+  function areas(){ return AREAS.slice(); }
+  // a backstage meeting between two fighters in an area -> a dialogue with branching choices.
+  function meeting(a,b,areaId){ const area=AREAS.find(x=>x.id===areaId)||AREAS[0];
+    const r=rel(a,b);
+    const tone = r>40?'friendly': r<-40?'hostile':'wary';
+    return { a, b, aName:label(a), bName:label(b), area:area.name, mood:area.mood, tone, rel:r,
+      choices: dialogueChoices(a,b,tone) }; }
+
+  // ---- DIALOGUE + BRANCHES (Promos.bb: Speak + choices -> ChangeRelationship/Allegiance/Turn/Team) ----
+  function dialogueChoices(a,b,tone){
+    // every choice has an outcome that mutates real story state (relationship/turn/team/allegiance).
+    return [
+      { id:'respect', text:'Show respect', outcome:'rel+', line:`"You earned it out there."` },
+      { id:'insult',  text:'Run them down', outcome:'rel-', line:`"You don't belong in my ring."` },
+      { id:'recruit', text:'Pitch an alliance', outcome:'team', line:`"Together, nobody touches us."` },
+      { id:'challenge',text:'Issue a challenge', outcome:'feud', line:`"You and me. No excuses."` },
+      { id:'betray',  text:'Plant the seed of a turn', outcome:'turn', line:`"Your friends aren't who you think."` }
+    ]; }
+  // resolve a dialogue choice -> real consequences (this is the branch logic).
+  function choose(a,b,choiceId){ let res={a,b,choice:choiceId};
+    if(choiceId==='respect'){ res.rel=changeRel(a,b,+18); res.text=`${label(a)} and ${label(b)} came to an understanding.`; addEvent(res.text,'promo'); }
+    else if(choiceId==='insult'){ res.rel=changeRel(a,b,-22); res.text=`${label(a)} disrespected ${label(b)} — heat rising.`; addEvent(res.text,'promo'); STATE.turnHeat[relId(a,b)]=clamp((STATE.turnHeat[relId(a,b)]||0)+15,0,100); }
+    else if(choiceId==='recruit'){ res.rel=changeRel(a,b,+12);
+      if(rel(a,b)>=55){ res.team=formTeamStory(a,b); res.text=`${label(a)} & ${label(b)} FORMED A TEAM.`; }
+      else res.text=`${label(b)} isn't ready to team with ${label(a)} yet.`; addEvent(res.text,'team'); }
+    else if(choiceId==='challenge'){ res.feud=true; STATE.turnHeat[relId(a,b)]=clamp((STATE.turnHeat[relId(a,b)]||0)+25,0,100);
+      try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.rivalry) window.BANNON_UNIVERSE.rivalry(U(),a,b); }catch(_){}
+      res.text=`${label(a)} CHALLENGED ${label(b)} — a feud is born.`; addEvent(res.text,'feud'); }
+    else if(choiceId==='betray'){ res.rel=changeRel(a,b,-15); const heat=STATE.turnHeat[relId(a,b)]=clamp((STATE.turnHeat[relId(a,b)]||0)+20,0,100);
+      if(heat>=60){ res.turn=pushTurn(b); res.text=`${label(b)} TURNED ${res.turn.toUpperCase()} — the seed took root.`; }
+      else res.text=`${label(a)} planted doubt in ${label(b)}'s mind.`; addEvent(res.text,'turn'); }
+    save(STATE); return res; }
+
+  // ---- TURNS (Promos.bb PushTurn) + TEAMS (FormTeam) + BREAKUP (AnnounceBreakup) ----
+  function pushTurn(k){ const cur=align(k); const next= cur==='heel'?'face': cur==='face'?'heel':'heel';
+    STATE.align[k]=next; save(STATE);
+    try{ if(next==='heel'&&window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.turnHeel) window.BANNON_UNIVERSE.turnHeel(U(),k);
+         if(next==='face'&&window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.turnFace) window.BANNON_UNIVERSE.turnFace(U(),k); }catch(_){}
+    addEvent(`${label(k)} turned ${next.toUpperCase()}.`,'turn'); return next; }
+  function formTeamStory(a,b){ changeRel(a,b,+25);
+    try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.formTeam) window.BANNON_UNIVERSE.formTeam(U(),a,b); }catch(_){}
+    return {a,b,name:`${label(a)} & ${label(b)}`}; }
+  function breakup(a,b){ changeRel(a,b,-45); STATE.turnHeat[relId(a,b)]=80;
+    addEvent(`${label(a)} & ${label(b)} EXPLODED — the team is finished.`,'turn'); save(STATE); return true; }
+
+  // ---- EVENTS / NEWS (News.bb: FindEvents/AddEvent/WinEffect) ----
+  function addEvent(text,type){ STATE.events.unshift({ w:STATE.week||0, type:type||'news', text }); if(STATE.events.length>200) STATE.events.length=200; save(STATE); return STATE.events[0]; }
+  function events(n){ return STATE.events.slice(0,n||20); }
+  // roll a random weekly backstage event across the roster (the MDickie "something always happens" engine).
+  const EVENT_TABLE=['confrontation','alliance','betrayal','callout','contract-drama','injury-scare','locker-room-fight','respect'];
+  function rollWeeklyEvent(){ const R=rosterKeys(); if(R.length<2) return null;
+    const a=R[Math.floor(Math.random()*R.length)]; let b=R[Math.floor(Math.random()*R.length)]; let g=0; while(b===a&&g++<8) b=R[Math.floor(Math.random()*R.length)];
+    const t=EVENT_TABLE[Math.floor(Math.random()*EVENT_TABLE.length)];
+    if(t==='confrontation'){ changeRel(a,b,-12); return addEvent(`${label(a)} confronted ${label(b)} backstage.`,'confrontation'); }
+    if(t==='alliance'){ if(rel(a,b)>30){ formTeamStory(a,b); return addEvent(`${label(a)} & ${label(b)} shook hands on an alliance.`,'alliance'); } changeRel(a,b,+10); return addEvent(`${label(a)} reached out to ${label(b)}.`,'alliance'); }
+    if(t==='betrayal'){ const h=STATE.turnHeat[relId(a,b)]=clamp((STATE.turnHeat[relId(a,b)]||0)+18,0,100); if(h>=60){ pushTurn(b); return addEvent(`${label(b)} BETRAYED ${label(a)}!`,'betrayal'); } changeRel(a,b,-14); return addEvent(`Tension between ${label(a)} and ${label(b)} is boiling.`,'betrayal'); }
+    if(t==='callout'){ try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.rivalry) window.BANNON_UNIVERSE.rivalry(U(),a,b); }catch(_){}; return addEvent(`${label(a)} called out ${label(b)} for a match.`,'callout'); }
+    if(t==='contract-drama'){ return addEvent(`${label(a)}'s contract talks with ${factionOf(a)} hit a snag.`,'contract'); }
+    if(t==='injury-scare'){ adjustAttitude(a,-8); return addEvent(`${label(a)} tweaked something in training — nothing serious.`,'injury'); }
+    if(t==='locker-room-fight'){ changeRel(a,b,-20); return addEvent(`A locker-room fight broke out: ${label(a)} vs ${label(b)}.`,'fight'); }
+    changeRel(a,b,+8); return addEvent(`${label(a)} earned ${label(b)}'s respect this week.`,'respect'); }
+  function advanceStoryWeek(n){ n=n||1; let out=[]; for(let i=0;i<n;i++){ STATE.week=(STATE.week||0)+1; const rolls=1+Math.floor(Math.random()*3); for(let j=0;j<rolls;j++){ const e=rollWeeklyEvent(); if(e) out.push(e); } } save(STATE); return out; }
+
+  function hash(s){ s=String(s); let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h+s.charCodeAt(i))|0; } return h; }
+  function reset(){ STATE=fresh(); save(STATE); return STATE; }
+  function state(){ return STATE; }
+
+  return { KEY, state, reset, save:()=>save(STATE),
+    rel, changeRel, align, pushTurn, attitude, adjustAttitude,
+    entranceOf, playEntrance, playVictory,
+    areas, meeting, dialogueChoices, choose, formTeam:formTeamStory, breakup,
+    addEvent, events, rollWeeklyEvent, advanceStoryWeek, stablemates };
+})();
+// STORY HOOKS into the live match: entrance on fight start, victory on winner (guarded, additive).
+(function(){
+  try{
+    if(typeof window.startFight==='function' && !window.startFight.__storyWrapped){
+      const _sf=window.startFight; window.startFight=function(){ const r=_sf.apply(this,arguments);
+        try{ const ms=window.MATCH_SETUP||{}; if(window.BANNON_STORY){ if(ms.p1Name)window.BANNON_STORY.playEntrance(String(ms.p1Name).toUpperCase().replace(/[^A-Z0-9]/g,'_')); } }catch(e){}
+        return r; };
+      window.startFight.__storyWrapped=true;
+    }
+    if(typeof window.declareWinner==='function' && !window.declareWinner.__storyWrapped){
+      const _dw=window.declareWinner; window.declareWinner=function(w,l){ const r=_dw.apply(this,arguments);
+        try{ if(window.BANNON_STORY && w){ const wk=String((w&&w.specName)||(w&&w.opts&&w.opts.name)||w||'').toUpperCase().replace(/[^A-Z0-9]/g,'_');
+          const lk=l?String((l&&l.specName)||(l&&l.opts&&l.opts.name)||l||'').toUpperCase().replace(/[^A-Z0-9]/g,'_'):null; if(wk)window.BANNON_STORY.playVictory(wk,lk); } }catch(e){}
+        return r; };
+      window.declareWinner.__storyWrapped=true;
+    }
+  }catch(e){}
 })();
 </script>
 <script>

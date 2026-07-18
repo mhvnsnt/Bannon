@@ -1,5 +1,6 @@
 {
  "_note": "FBX/Drive clip -> WWE-2K move library map. 182 mocap clips (assets/mocap/(drive/)) classified to category + WWE-2K POSITION (primary/secondary/tertiary incl. GROUND_TO_STANDING_WAKEUP + CORNER_TO_GROUND) + engine target. Loaded via BANNON_LOAD_FBX_LIBRARY->STUDIO.clips; moveset editor equips a clip as the ANIMATION BASE, resolveGrapPos drives OUR physics. character_rig = a character skeleton/rig (Andrade/Cage/Jericho/etc.) — NOT skipped: a potential playable character to retexture + import, and it carries bundled animations to harvest into the library.",
+ "_dualPurpose": "WWE-2K impact-taunt contract: entries with dualPurpose:true are BOTH a taunt (default engine, e.g. STANCE/TAUNT/DODGE — crowd/momentum, no contact) AND a real strike when an opponent is in range. altKind='strike' + altEngine (STRIKE_KICK / STRIKE_PUNCH) routes the same clip through the OUR-physics strike path (registerHit power/knockback, poise) instead of the taunt path. Covers capoeira (Ginga/Esquiva/Capoeira), breakdance spinaroony family (Breakdance Footwork/Freezes), and showman impact-taunts (RapidChestBeating/Tau_ButtSlap/ViolenceParty). Engine picks strike-mode when opp within STRIKE range at trigger, else taunt-mode.",
  "positions": {
   "primary": [
    "STANDING_FRONT",
@@ -291,8 +292,13 @@
    "pos": "LOCOMOTION",
    "engine": "STANCE",
    "style": [
-    "showman"
-   ]
+    "showman",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK",
+   "note": "spinaroony-family breakdance taunt that doubles as a spinning legsweep (WWE-2K impact-taunt)"
   },
   {
    "clip": "Breakdance Footwork 3 (1)",
@@ -300,8 +306,13 @@
    "pos": "LOCOMOTION",
    "engine": "STANCE",
    "style": [
-    "showman"
-   ]
+    "showman",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK",
+   "note": "spinaroony-family breakdance taunt / spinning legsweep impact-taunt"
   },
   {
    "clip": "Breakdance Footwork To Freeze",
@@ -309,8 +320,13 @@
    "pos": "LOCOMOTION",
    "engine": "STANCE",
    "style": [
-    "showman"
-   ]
+    "showman",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK",
+   "note": "breakdance footwork into freeze — taunt or spin-through low kick"
   },
   {
    "clip": "Breakdance Freezes",
@@ -318,8 +334,13 @@
    "pos": "LOCOMOTION",
    "engine": "STANCE",
    "style": [
-    "showman"
-   ]
+    "showman",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK",
+   "note": "breakdance freeze taunt / handstand-leg-drop impact-taunt"
   },
   {
    "clip": "Breakdance Ready",
@@ -390,8 +411,12 @@
    "pos": "LOCOMOTION",
    "engine": "STANCE",
    "style": [
-    "lucha"
-   ]
+    "lucha",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
   },
   {
    "clip": "Capoeira (1)",
@@ -399,8 +424,12 @@
    "pos": "LOCOMOTION",
    "engine": "STANCE",
    "style": [
-    "lucha"
-   ]
+    "lucha",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
   },
   {
    "clip": "Cartwheel",
@@ -775,7 +804,10 @@
    "style": [
     "striker",
     "lucha"
-   ]
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
   },
   {
    "clip": "Esquiva 4",
@@ -785,7 +817,10 @@
    "style": [
     "striker",
     "lucha"
-   ]
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
   },
   {
    "clip": "Esquiva 4 (1)",
@@ -795,7 +830,10 @@
    "style": [
     "striker",
     "lucha"
-   ]
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
   },
   {
    "clip": "FaceGouge",
@@ -902,7 +940,10 @@
    "style": [
     "striker",
     "lucha"
-   ]
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
   },
   {
    "clip": "Ginga Forward",
@@ -912,7 +953,10 @@
    "style": [
     "striker",
     "lucha"
-   ]
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
   },
   {
    "clip": "Ginga Sideways 2",
@@ -922,7 +966,10 @@
    "style": [
     "striker",
     "lucha"
-   ]
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
   },
   {
    "clip": "HammerThrow",
@@ -1205,7 +1252,10 @@
    "engine": "TAUNT",
    "style": [
     "showman"
-   ]
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_PUNCH"
   },
   {
    "clip": "ReverseGoozleDivFootStomp",
@@ -1333,7 +1383,10 @@
    "engine": "TAUNT",
    "style": [
     "showman"
-   ]
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_PUNCH"
   },
   {
    "clip": "Tau_Diva",
@@ -1426,7 +1479,10 @@
    "engine": "TAUNT",
    "style": [
     "showman"
-   ]
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_PUNCH"
   },
   {
    "clip": "WBTC",
@@ -1637,5 +1693,6 @@
    "engine": "LOCO",
    "style": []
   }
- ]
+ ],
+ "_physics": "Every move clip carries BANNON physics: engine key -> resolveGrapPos/DIVE_TYPES/SUBMISSION/STRIKE path -> MAX_BODY_VEL-clamped verlet+PD solver. dualPurpose clips fire altKind (impact) when triggered as an attack, or play as a taunt otherwise (WWE-2K impact-taunt model)."
 }
