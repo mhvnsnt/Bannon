@@ -1,15 +1,28 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
+#include "Components/ActorComponent.h"
 #include "BannonAdrenalineMasking.generated.h"
 
-UCLASS()
-class BANNONCORE_API UBannonAdrenalineMasking : public UObject
+// Phase 9 #75: Adrenaline Masking
+UCLASS(ClassGroup=(Bannon), meta=(BlueprintSpawnableComponent))
+class BANNONCORE_API UBannonAdrenalineMasking : public UActorComponent
 {
     GENERATED_BODY()
 
-public:
+public:    
+    UBannonAdrenalineMasking();
+
+    // High momentum temporarily nullifies IK limping penalties (The "Hulking Up" effect)
     UFUNCTION(BlueprintCallable, Category="Bannon|Medical")
-    void CalculateAdrenalineBuff(float MatchMomentum, float LegDamage, UPARAM(ref) float& OutLimpAlphaModifier);
+    void EvaluateAdrenalineRush(float CurrentMomentum, float Threshold);
+
+    UFUNCTION(BlueprintCallable, Category="Bannon|Medical")
+    bool IsLimpingMasked() const;
+
+protected:
+    virtual void BeginPlay() override;
+
+private:
+    bool bIsAdrenalineActive;
 };
