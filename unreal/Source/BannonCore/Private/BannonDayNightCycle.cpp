@@ -1,17 +1,27 @@
 #include "BannonDayNightCycle.h"
 
-void UBannonDayNightCycle::UpdateSunPosition(float DeltaTime, float TimeMultiplier, float& OutSunPitch)
+void UBannonDayNightCycle::CalculateTimeOfDayLighting(float InGameTimeHours, float& OutDirectionalLightIntensity, float& OutSunAnglePitch)
 {
-    // Real-time lighting shifts for open-world sandbox areas
-    TimeOfDay += (DeltaTime * TimeMultiplier);
+    // Real-time lighting shifts for open-world sandbox areas (MDickie style persistent time).
+    // InGameTimeHours is 0.0 to 24.0.
     
-    if (TimeOfDay >= 24.0f)
+    // Normalize time to a 0-1 range for sine wave calculation
+    float NormalizedTime = InGameTimeHours / 24.0f;
+    
+    // Sun angle pitch: -90 (midnight, pointing up) to 90 (noon, pointing down). 
+    // Shifted so 12:00 is straight down.
+    OutSunAnglePitch = FMath::Sin((NormalizedTime - 0.25f) * PI * 2.0f) * 90.0f;
+
+    // Intensity: 0.0 at night, max 10.0 at noon.
+    if (InGameTimeHours >= 6.0f && InGameTimeHours <= 18.0f)
     {
-        TimeOfDay -= 24.0f; // Wrap around
+        // Daytime
+        float DayAlpha = FMath::Sin((InGameTimeHours - 6.0f) / 12.0f * PI);
+        OutDirectionalLightIntensity = DayAlpha * 10.0f;
     }
-    
-    // Map 24 hours to 360 degrees. 0/24 is midnight (Pitch = 90), 12 is noon (Pitch = -90)
-    // Shifted by 6 hours so sunrise (6am) is 0 pitch
-    float TimeOffset = TimeOfDay - 6.0f; 
-    OutSunPitch = (TimeOffset / 24.0f) * -360.0f; 
+    else
+    {
+        // Nighttime
+        OutDirectionalLightIntensity = 0.0f;
+    }
 }
