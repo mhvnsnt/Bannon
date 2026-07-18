@@ -192,7 +192,8 @@
    "style": [
     "brawler",
     "showman"
-   ]
+   ],
+   "carry": false
   },
   {
    "name": "Headlock Takedown",
@@ -503,7 +504,8 @@
    "style": [
     "striker",
     "showman"
-   ]
+   ],
+   "carry": false
   },
   {
    "name": "The Bottom Line",
@@ -514,7 +516,8 @@
    "from": "STANDING_FRONT",
    "style": [
     "powerhouse"
-   ]
+   ],
+   "carry": false
   },
   {
    "name": "Deadlift German",
@@ -560,7 +563,8 @@
    "style": [
     "technical",
     "mma"
-   ]
+   ],
+   "carry": false
   },
   {
    "name": "Island Drop",
@@ -593,7 +597,8 @@
    "from": "STANDING_FRONT",
    "style": [
     "technical"
-   ]
+   ],
+   "carry": false
   },
   {
    "name": "Neck Verdict",
@@ -604,7 +609,8 @@
    "from": "STANDING_FRONT",
    "style": [
     "technical"
-   ]
+   ],
+   "carry": false
   },
   {
    "name": "Hip Verdict",
@@ -639,7 +645,8 @@
    "from": "STANDING_REAR",
    "style": [
     "technical"
-   ]
+   ],
+   "carry": false
   },
   {
    "name": "Scorpio Spear",
@@ -684,7 +691,8 @@
    "style": [
     "highFlyer",
     "striker"
-   ]
+   ],
+   "carry": false
   },
   {
    "name": "Underhook Verdict",
@@ -805,7 +813,8 @@
    "from": "STANDING_FRONT",
    "style": [
     "technical"
-   ]
+   ],
+   "carry": false
   },
   {
    "name": "Gooseneck Toss",

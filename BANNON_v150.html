@@ -7563,6 +7563,47 @@ window.resolveGrapPos = function(move){
   return 'STANDARD';
 };
 
+// CARRY vs INSTANT moves (owner design note): some grapples have a LIFT/HOLD point — you hoist the
+// opponent and can stall (powerbomb, DDT, fireman's carry, piledriver, suplex family, chokeslam,
+// gorilla press). Others POP OFF IMMEDIATELY with no carry/setup — a snap from standing/contact
+// (stunner, cutter, RKO, neckbreaker, bulldog, facebuster/x-factor, russian legsweep, snapmare).
+// isInstantMove() drives the grapple flow: instant = no stage-2 hold, snap straight to a fast 'spike'
+// delivery; carry = the existing lift -> hold -> deliver. Honors an explicit move.carry flag first,
+// then classifies by move name/position.
+window.isInstantMove = function(move){
+  if(!move) return false;
+  if(move.carry===false) return true;
+  if(move.carry===true)  return false;
+  const s=(((move.name||'')+' '+(move.mdickie||'')+' '+(move.pos||'')+' '+(move.grapplePos||''))+'').toUpperCase();
+  return /STUNNER|CUTTER|\bRKO\b|NECKBREAK|BULLDOG|FACEBUSTER|X.?FACTOR|LEG.?SWEEP|SNAPMARE|REVERSE.?DDT|TOE.?HOLD|\bSTUN\b/.test(s);
+};
+window.moveCarry = function(move){ return !window.isInstantMove(move); };
+// run an equipped/named grapple move through the RIGHT flow (real physics either way). instant moves
+// skip the lift/hold and snap; carry moves lift then deliver. Returns true if it launched.
+window.execGrappleMove = function(attacker, move, deliverFallback){
+  if(!attacker || !move) return false;
+  const posKey = window.resolveGrapPos ? window.resolveGrapPos(move) : 'STANDARD';
+  const GP = (typeof GRAPPLE_POSITIONS!=='undefined' && GRAPPLE_POSITIONS[posKey]) ? GRAPPLE_POSITIONS[posKey] : null;
+  const instant = window.isInstantMove(move);
+  attacker.grapplePos = posKey;
+  attacker.grappleMode = (GP && GP.rear) ? 'rear' : (move.mode||'front');
+  attacker.craneTwist = 0;
+  attacker._aiGrapChosen = true;
+  const deliver = move.deliver || (GP && GP.delivery) || deliverFallback || 'slam';
+  if (instant){
+    // NO CARRY: skip the hoist entirely — snap straight to a fast downward delivery.
+    attacker.craneLift = 0; attacker.grappleStage = 3; attacker.stateTime = 0; attacker._liftMinT = 0;
+    setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=3) attacker.grappleDeliver(instant?'spike':deliver, 0); }catch(_){}}, 130);
+  } else {
+    // CARRY: lift to the position's hold, let it read, then deliver.
+    attacker.craneLift = (GP && GP.lift0) || 0.5; attacker.grappleStage = 2; attacker.stateTime = 0;
+    const ld = (GP && GP.liftDur!=null) ? GP.liftDur : 0.7; attacker._liftMinT = ld;
+    setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=2){ attacker.grappleStage=3; attacker.stateTime=0;
+      setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage===3) attacker.grappleDeliver(deliver, 0); }catch(_){}}, 700); } }catch(_){}}, ld*1000+250);
+  }
+  return true;
+};
+
 // getup keyframe poses (LOCAL, forward = +x toward opponent)
 // AUTO-FILL the v7 27-joint skeleton from a legacy 15-joint pose.
 // Derives spineLow/spineMid (interpolated pelvis->chest), clavL/R + scapL/R
@@ -12317,12 +12358,9 @@ function playerAttack(kind){
     const eqSig=pickEquipped(p,'SIGNATURE',(opp && !opp.isDown()));
     if (eqSig && (eqSig.cat==='GRAPPLE'||eqSig.cat==='THROW') && opp && !opp.isDown() && p.startGrab()){
       announce(eqSig.name+'  [FINISHER BANKED]', fname(p));
-      // ANY MOVE FROM ANY POSITION: run the equipped signature through ITS OWN grapple position.
-      const _sp=window.resolveGrapPos?window.resolveGrapPos(eqSig):null;
-      if(_sp){ p.grapplePos=_sp; p.grappleMode=(GRAPPLE_POSITIONS[_sp]&&GRAPPLE_POSITIONS[_sp].rear)?'rear':'front'; p.craneLift=(GRAPPLE_POSITIONS[_sp]||{}).lift0||0; p.craneTwist=0; p._aiGrapChosen=true; }
-      p.grappleStage=2; p.stateTime=0; p._liftMinT=0.5;
-      setTimeout(()=>{ try{ if(p.grappling&&p.grappleStage>=2){ p.grappleStage=3; p.stateTime=0;
-        setTimeout(()=>{ try{ if(p.grappling&&p.grappleStage===3) p.grappleDeliver('signature',0); }catch(_){}}, 600); } }catch(_){}}, 650);
+      // ANY MOVE FROM ANY POSITION + CARRY/INSTANT: execGrappleMove runs the lift-hold flow for carry
+      // moves and snaps instantly (no hoist) for cutters/stunners/etc.
+      window.execGrappleMove(p, eqSig, 'signature');
       return;
     }
     const _sk=((p.specName||(p.opts&&p.opts.name)||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
@@ -12349,17 +12387,11 @@ function playerAttack(kind){
     if (useGrapple && opp && !opp.isDown()){
       if (p.startGrab()){
         const finName=eqFin?eqFin.name:FF.name;
-        // ANY MOVE FROM ANY POSITION: an equipped grapple finisher runs through ITS OWN position
-        // (German->rear waistlock, Powerbomb->headscissors, etc.); default finisher keeps FF.pos.
-        const posKey=(eqFin&&window.resolveGrapPos)?window.resolveGrapPos(eqFin):((FF&&FF.pos)||null);
         announce(finName, fname(p));
-        if (posKey){ p.grapplePos=posKey; p.grappleMode=(GRAPPLE_POSITIONS[posKey]&&GRAPPLE_POSITIONS[posKey].rear)?'rear':'front'; p.craneLift=(GRAPPLE_POSITIONS[posKey]||{}).lift0||0; p.craneTwist=0; }
-        p._aiGrapChosen=true; p.grappleStage=2; p.stateTime=0;
-        const _ld=((GRAPPLE_POSITIONS[posKey]||{}).liftDur||0.7); p._liftMinT=_ld;
-        setTimeout(()=>{ try{ if (p.grappling && p.grappleStage>=2){
-          p.grappleStage=3; p.stateTime=0;
-          setTimeout(()=>{ try{ if (p.grappling && p.grappleStage===3) p.grappleDeliver((FF&&FF.deliver)||'signature', 0); }catch(_){}}, 700);
-        } }catch(_){}}, _ld*1000+250);
+        // ANY MOVE FROM ANY POSITION + CARRY/INSTANT: execGrappleMove picks the lift-hold flow for
+        // carry finishers (powerbomb/suplex/chokeslam) and the instant snap for cutter/stunner/RKO-class.
+        const finMove = eqFin || { name:finName, pos:(FF&&FF.pos), deliver:(FF&&FF.deliver), carry:(FF&&FF.carry) };
+        window.execGrappleMove(p, finMove, (FF&&FF.deliver)||'signature');
         return;
       }
     }
