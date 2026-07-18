@@ -11,5 +11,5 @@ class BANNONCORE_API UBannonAdrenalineMasking : public UObject
 
 public:
     UFUNCTION(BlueprintCallable, Category="Bannon|Medical")
-    void ProcessHulkingUp(float CurrentMomentum, bool bHasLimbDamage, UPARAM(ref) bool& bIgnoreLimpIK);
+    void CalculateAdrenalineBuff(float MatchMomentum, float LegDamage, UPARAM(ref) float& OutLimpAlphaModifier);
 };
