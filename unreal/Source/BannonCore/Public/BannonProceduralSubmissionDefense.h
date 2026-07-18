@@ -11,5 +11,5 @@ class BANNONCORE_API UBannonProceduralSubmissionDefense : public UObject
 
 public:
     UFUNCTION(BlueprintCallable, Category="Bannon|AI")
-    void EvaluateEscapeStrategy(const FVector& DefenderLocation, const TArray<FVector>& RopeSplinePoints, float CurrentStamina, float EscapeDifficulty, UPARAM(ref) FString& OutChosenStrategy, UPARAM(ref) FVector& OutCrawlTarget);
+    void EvaluateEscapeStrategy(float CurrentStamina, float DistanceToRopes, float HoldPressure, UPARAM(ref) bool& bCrawlToRopes, UPARAM(ref) bool& bBruteForceEscape);
 };
