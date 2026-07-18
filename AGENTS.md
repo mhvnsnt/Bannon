@@ -1,5 +1,61 @@
 # BANNON Project Rules & Verification Protocols
 
+
+## VERIFICATION RULE (CRITICAL)
+Never state a file, feature, or fix is done, synced,
+or complete unless you called a real tool THIS turn and are quoting its
+actual output (diff, command result, file content). No tool call this
+turn = label it UNVERIFIED, not done.
+When you call a tool, paste its raw return value. Paraphrasing a tool result counts as an unverified claim.
+
+REPORT FORMAT: Report actions as artifacts, not prose summaries.
+- "Edited X, +N/-M" not "I updated the file"
+- "Ran N commands" or the actual command, not "I set things up"
+- Name real file paths and function names you have actually seen this
+  session. Never invent a filename, class, or function that you haven't
+  read or created yourself.
+
+BLOCKERS: State failures and blockers as their own line, first, before
+anything else in the response. Never bury a failure inside an
+otherwise-positive summary.
+
+NO CLOSING FLUFF: Never end with "let me know what you'd like to tackle
+next" or similar. End with one specific named next action you're
+proposing, or one specific blocking question if you're stuck.
+
+STATUS TRACKING: When asked for status, always split into three
+explicit buckets: Done (verified this session, with evidence) / In
+progress / Not started. Nothing goes in Done without evidence attached
+in the same message.
+
+
+## VERIFICATION RULE (CRITICAL)
+Never state a file, feature, or fix is done, synced,
+or complete unless you called a real tool THIS turn and are quoting its
+actual output (diff, command result, file content). No tool call this
+turn = label it UNVERIFIED, not done.
+When you call a tool, paste its raw return value. Paraphrasing a tool result counts as an unverified claim.
+
+REPORT FORMAT: Report actions as artifacts, not prose summaries.
+- "Edited X, +N/-M" not "I updated the file"
+- "Ran N commands" or the actual command, not "I set things up"
+- Name real file paths and function names you have actually seen this
+  session. Never invent a filename, class, or function that you haven't
+  read or created yourself.
+
+BLOCKERS: State failures and blockers as their own line, first, before
+anything else in the response. Never bury a failure inside an
+otherwise-positive summary.
+
+NO CLOSING FLUFF: Never end with "let me know what you'd like to tackle
+next" or similar. End with one specific named next action you're
+proposing, or one specific blocking question if you're stuck.
+
+STATUS TRACKING: When asked for status, always split into three
+explicit buckets: Done (verified this session, with evidence) / In
+progress / Not started. Nothing goes in Done without evidence attached
+in the same message.
+
 ## Pre-Task Checklist
 Before executing any code changes or schema modifications:
 1. **Check `/manifesto-registry.json` & Grep `MANIFESTO`**: Always read and query `/manifesto-registry.json` to inspect the canonical subsystem registry. Search the codebase for `MANIFESTO` and keywords of the feature you are about to build (e.g. `ai.fighter_dna`, `traits`, `injuries`) to verify if a matching system already exists. If found, leverage or align with it; do NOT duplicate or rewrite it from scratch.
@@ -22,7 +78,7 @@ Before executing any code changes or schema modifications:
 Push all file changes using the GitHub Contents API after every single change, no exceptions:
 
 Base URL: https://api.github.com/repos/mhvnsnt/Bannon
-Token header: Authorization: Bearer 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
+Token header: Authorization: Bearer [REDACTED_GH_PAT_USE_ENV_VAR]
 Branch: main
 
 To update a file:
@@ -575,8 +631,3 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 - **Legacy Alliance Crosswalk Complete**: Expanded `BannonMDickieMapping.cpp` to map the complete Alliance and Administration core rosters (such as Marquis Whitacre, Tyneshia Hall, Andre Curtis, Edwin John Kennedy, and Sam Kennedy) to classic MDickie `.b3d` model paths.
 - **Wrestling Mpire Dashboard Visualizer**: Engineered an interactive `<MpireLegacyConsole />` React component inside `Dashboard.tsx` displaying character mappings, dynamic launch force multiplier adjustment, and simulated Blitz3D binary chunk decoding.
 
-
-### SHIPPED
-- **Phase 12 MDickie Asset Integration (Decrypter)**: Built `mdickieAssetDecrypter.ts` to parse legacy MDickie binary manifests (`Wreck_Patterson_Body.fbx`, `Titan_Armor_Suits.glb`) from `tools/drive_sync/manifest.json`.
-- **UE5 Native Asset Registry**: Automatically generated `BannonMDickieAssetRegistry.h` and `.cpp` mapping the decrypted assets into UE5 `UDataAsset` structures for runtime streaming.
-- **Bannon Asset Manager**: Created `BannonAssetManager.h` and `.cpp` to serve as the master lookup interface for loading legacy MDickie meshes and props into the UE5 physics grid.
