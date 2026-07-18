@@ -36762,8 +36762,11 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
      ============================================================================================ -->
 <script>
 window.BANNON_MOVE_LIBRARY = (function(){
-  let LIB=null;
-  async function load(){ if(LIB) return LIB; try{ const r=await fetch('assets/moves/bannon_move_library.json'); LIB=await r.json(); }catch(e){ LIB={grapples:[],dives:[],submissions:[],strikes:[],ground:[]}; } return LIB; }
+  let LIB=null, FBX=null;
+  async function load(){ if(LIB&&FBX) return LIB;
+    try{ const r=await fetch('assets/moves/bannon_move_library.json'); LIB=await r.json(); }catch(e){ LIB={grapples:[],dives:[],submissions:[],strikes:[],ground:[]}; }
+    try{ const r2=await fetch('assets/moves/fbx_move_map.json'); FBX=await r2.json(); }catch(e){ FBX={positions:{},clips:[]}; }
+    return LIB; }
   function all(){ if(!LIB) return []; return [].concat(LIB.grapples||[],LIB.dives||[],LIB.submissions||[],LIB.strikes||[],LIB.ground||[]); }
   // moves available to a fighting style (technical/powerhouse/highFlyer/brawler/striker/lucha/mma/hardcore/oldSchool/showman)
   function forStyle(style){ return all().filter(m=>!m.style || m.style.indexOf(style)>=0); }
@@ -36772,8 +36775,18 @@ window.BANNON_MOVE_LIBRARY = (function(){
   // resolve a library move to the engine grapple/dive it drives (through the real physics).
   function resolve(m){ if(!m) return null; if(m.dive) return {kind:'dive', dive:m.dive, from:m.from}; if(m.sub) return {kind:'sub', hold:m.sub, limb:m.limb}; if(m.kind==='strike') return {kind:'strike', from:m.from, power:m.power};
     return {kind:'grapple', pos:m.pos||'STANDARD', mode:m.mode||'front', deliver:m.deliver||'slam', power:m.power||60}; }
+  // ---- FBX/Drive clip library (182 mocap clips -> WWE-2K positions; the ANIMATION bases) ----
+  function fbxClips(){ return (FBX&&FBX.clips)||[]; }
+  function positions(){ return (FBX&&FBX.positions)||{}; }
+  // clips available at a WWE-2K position (STANDING_FRONT, CORNER_TO_GROUND, GROUND_TO_STANDING_WAKEUP, ...)
+  function clipsForPosition(pos){ return fbxClips().filter(c=>c.pos===pos); }
+  // clips of a category (grapple/strike/submission/dive/getup/knockdown/reaction/taunt/style_stance/locomotion)
+  function clipsForCategory(cat){ return fbxClips().filter(c=>c.cat===cat); }
+  // best animation clip for an engine grapple/dive/wakeup key (STUDIO.clips name = the clip basename)
+  function clipFor(engineKey){ const c=fbxClips().find(x=>x.engine===engineKey); return c?c.clip:null; }
   load();
-  return { load, all, forStyle, forPosition, resolve, get lib(){ return LIB; } };
+  return { load, all, forStyle, forPosition, resolve, fbxClips, positions, clipsForPosition, clipsForCategory, clipFor,
+           get lib(){ return LIB; }, get fbx(){ return FBX; } };
 })();
 </script>
 
