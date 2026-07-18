@@ -1,39 +1,31 @@
 #include "BannonProceduralSubmissionDefense.h"
 
-void UBannonProceduralSubmissionDefense::EvaluateEscapeStrategy(const FVector& DefenderLocation, const TArray<FVector>& RopeSplinePoints, float CurrentStamina, float EscapeDifficulty, FString& OutChosenStrategy, FVector& OutCrawlTarget)
+void UBannonProceduralSubmissionDefense::EvaluateEscapeStrategy(float CurrentStamina, float DistanceToRopes, float HoldPressure, bool& bCrawlToRopes, bool& bBruteForceEscape)
 {
-    // Deep AI logic for escaping submissions. CPU dynamically analyzes positional geometry vs internal stamina resources.
-    float NearestRopeDist = MAX_FLT;
-    FVector BestTarget = FVector::ZeroVector;
+    // Procedural Submission Defense: AI dynamically chooses between breaking the grip via brute force 
+    // or crawling toward the nearest ring rope based on positional geometry and current stamina levels.
+    
+    bCrawlToRopes = false;
+    bBruteForceEscape = false;
 
-    // 1. Calculate nearest spatial geometry (rope breaks)
-    for (const FVector& RopeNode : RopeSplinePoints)
+    // If stamina is high and the hold isn't completely locked in, try to brute force out
+    if (CurrentStamina > 40.0f && HoldPressure < 80.0f)
     {
-        float Dist = FVector::Dist(DefenderLocation, RopeNode);
-        if (Dist < NearestRopeDist)
-        {
-            NearestRopeDist = Dist;
-            BestTarget = RopeNode;
-        }
+        bBruteForceEscape = true;
     }
-
-    OutCrawlTarget = BestTarget;
-
-    // 2. Evaluate Stamina vs Geometry
-    // If the rope is very close (within 2 meters), always prioritize crawling.
-    // If stamina is critical (< 25%), breaking the grip via brute force is impossible, must crawl out of desperation.
-    if (NearestRopeDist < 200.0f || CurrentStamina < 25.0f)
+    // If we are relatively close to the ropes (e.g. within 300 units), favor the rope break
+    else if (DistanceToRopes < 300.0f)
     {
-        OutChosenStrategy = TEXT("CrawlToRopes");
+        bCrawlToRopes = true;
     }
-    // If stamina is high and the hold isn't overwhelmingly difficult, use brute force to shatter the grip.
-    else if (CurrentStamina > (EscapeDifficulty * 1.5f))
+    // Desperation: If stamina is low and ropes are far, they will still try to crawl but slowly
+    else if (CurrentStamina < 20.0f)
     {
-        OutChosenStrategy = TEXT("BreakGrip");
+        bCrawlToRopes = true;
     }
     else
     {
-        // Fallback: If far from ropes and low stamina, panic/thrash to try and force a scramble.
-        OutChosenStrategy = TEXT("DesperationThrash");
+        // Default to attempting to power out if not near ropes, but success chance will be lower
+        bBruteForceEscape = true;
     }
 }
