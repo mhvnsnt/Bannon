@@ -34,4 +34,15 @@ void UBannonExtendedRoster::LoadExtendedCharacters(TArray<FBookCharacterProfile>
     // The Temple Faction (Lucha Underground Expansion)
     OutRoster.Add({"", "The Matador", "Pentagon Jr Archetype / Cero Miedo", "Lucha", 0, 0, 0});
     OutRoster.Add({"", "The Phoenix", "Rey Fenix Archetype / Aerialist", "Lucha", 0, 0, 0});
+    OutRoster.Add({"", "Luchador Twin A", "Lucha Tag Specialist A", "Lucha", 0, 0, 0});
+    OutRoster.Add({"", "Luchador Twin B", "Lucha Tag Specialist B", "Lucha", 0, 0, 0});
+
+    // Hardcore Veterans & Unaligned
+    OutRoster.Add({"", "Hardcore Harry", "Extreme Rules Veteran", "Unaligned", 0, 0, 0});
+
+    // Corporate Enforcers / Auditors
+    OutRoster.Add({"", "Auditor 1", "IRS Auditor / Debt Collector", "The Administration", 0, 0, 0});
+    OutRoster.Add({"", "Auditor 2", "IRS Auditor / Forensic Accountant", "The Administration", 0, 0, 0});
+    OutRoster.Add({"Ronald Slump", "Ronald Slump", "Billionaire President / Corporate Mastermind", "The Administration", 9, 9, 9});
+    OutRoster.Add({"Donald Slump Jr.", "Donald Slump Jr.", "Sons of Legacy / Corporate Heirs", "The Administration", 8, 8, 8});
 }
