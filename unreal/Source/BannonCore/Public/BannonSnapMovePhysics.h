@@ -9,12 +9,12 @@ class BANNONCORE_API UBannonSnapMovePhysics : public UActorComponent
 {
     GENERATED_BODY()
 
-public:
+public:    
     UBannonSnapMovePhysics();
 
-    // Determines if the current equipped move bypasses the carry/hold phase
+    // Executes a grapple move, bypassing the carry/hold phase if HoldFrames is 0
     UFUNCTION(BlueprintCallable, Category = "Physics|Moves")
-    void ExecuteSnapMove(AActor* Attacker, AActor* Defender, FName MoveType);
+    void ExecuteSnapMove(AActor* Attacker, AActor* Defender, FName MoveType, int32 HoldFrames = 0);
 
     // Forces immediate IK snapping (e.g. snapping hand to defender's neck for a Stunner)
     UFUNCTION(BlueprintCallable, Category = "Physics|Moves")
