@@ -11,5 +11,5 @@ class BANNONCORE_API UBannonMoraleDefection : public UObject
 
 public:
     UFUNCTION(BlueprintCallable, Category="Bannon|Universe")
-    void EvaluateMoraleDefection(int32 DaysOffTV, float CurrentMorale, float RivalOfferMultiplier, UPARAM(ref) bool& bWillDefect);
+    void EvaluateDefectionRisk(float WrestlerMorale, int32 WeeksOffTV, UPARAM(ref) bool& bWillDefectToRival);
 };
