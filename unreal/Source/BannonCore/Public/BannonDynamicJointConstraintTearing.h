@@ -1,18 +1,18 @@
 #pragma once
-
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 #include "BannonDynamicJointConstraintTearing.generated.h"
 
-// Phase 1 #2: Dynamic Joint Constraint Tearing
 UCLASS(ClassGroup=(Bannon), meta=(BlueprintSpawnableComponent))
 class BANNONCORE_API UBannonDynamicJointConstraintTearing : public UActorComponent
 {
     GENERATED_BODY()
-
 public:    
     UBannonDynamicJointConstraintTearing();
+    
+    UFUNCTION(BlueprintCallable, Category="Bannon|Physics")
+    void SimulateHyperExtension(FName JointName, float AppliedTorque);
 
-protected:
-    virtual void BeginPlay() override;
+    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Physics")
+    float TearThreshold;
 };
