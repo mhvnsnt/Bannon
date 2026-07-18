@@ -1,30 +1,30 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
+#include "Components/ActorComponent.h"
 #include "BannonCrowdHeatMemory.generated.h"
 
-USTRUCT(BlueprintType)
-struct FCrowdMemoryEvent
+// Phase 6 #47: Crowd Heat Memory
+UCLASS(ClassGroup=(Bannon), meta=(BlueprintSpawnableComponent))
+class BANNONCORE_API UBannonCrowdHeatMemory : public UActorComponent
 {
     GENERATED_BODY()
 
-    UPROPERTY(BlueprintReadWrite, Category="Bannon|Universe")
-    FString EventDescription;
+public:    
+    UBannonCrowdHeatMemory();
 
-    UPROPERTY(BlueprintReadWrite, Category="Bannon|Universe")
-    float HeatValue;
-};
+    // The audience remembers betrayals or heroics across multiple arena instances
+    UFUNCTION(BlueprintCallable, Category="Bannon|Crowd")
+    void RecordHeatEvent(FName EventType, float Magnitude);
 
-UCLASS()
-class BANNONCORE_API UBannonCrowdHeatMemory : public UObject
-{
-    GENERATED_BODY()
+    // Apply lingering heat to the crowd's baseline reaction at the start of a match
+    UFUNCTION(BlueprintCallable, Category="Bannon|Crowd")
+    float CalculateBaselineHeat(FName FighterID, FName ArenaID);
 
-public:
-    UFUNCTION(BlueprintCallable, Category="Bannon|Universe")
-    void RegisterBetrayalOrHeroic(const FString& WrestlerID, const FString& TargetID, bool bIsBetrayal, UPARAM(ref) TMap<FString, float>& GlobalHeatMatrix);
+protected:
+    virtual void BeginPlay() override;
 
-    UFUNCTION(BlueprintCallable, Category="Bannon|Universe")
-    void CalculateEntranceReaction(const FString& WrestlerID, const TMap<FString, float>& GlobalHeatMatrix, UPARAM(ref) float& OutCrowdVolume, UPARAM(ref) FString& OutReactionType);
+private:
+    // Tracks accumulated heat over time
+    TMap<FName, float> HistoricalHeatMatrix;
 };
