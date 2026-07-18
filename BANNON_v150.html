@@ -867,6 +867,12 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
       <button class="hub-tile soon" id="btnHubArenaEd"><span class="hub-ico">🛠️</span><span class="hub-lbl">ARENA CREATOR</span></button>
       <button class="hub-tile soon" id="btnHubEntrance"><span class="hub-ico">🎆</span><span class="hub-lbl">ENTRANCE</span></button>
     </div>
+    <!-- JUKEBOX bar — menu/match/entrance/victory music; ＋ adds unlimited tracks (stored locally). -->
+    <div class="match-row" style="grid-template-columns:1fr 1fr 1fr; margin-top:12px;">
+      <button class="menu-btn" id="btnMusicToggle" style="font-size:15px;">♪ MUSIC</button>
+      <button class="menu-btn" id="btnMusicNext" style="font-size:15px;">⏭ NEXT</button>
+      <button class="menu-btn" id="btnMusicAdd" style="font-size:15px;">＋ ADD</button>
+    </div>
     <div style="margin-top:18px; font-family:'Share Tech Mono'; font-size:9px; color:#666; letter-spacing:3px;">v77 · WWE 2K26 CONTROLS · VISCERAL PRO WRESTLING</div>
   </div>
 </div>
@@ -15270,6 +15276,10 @@ function setupInput(){
   _wire('btnHubArena',     ()=>{ arenaIdx=(arenaIdx+1)%ARENAS.length; const an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; buildArena(); saveMatchState(); });
   _wire('btnHubArenaEd',   ()=>{ try{ (window.toast||alert)('Arena Creator — coming with the arena editor (barricades/ramp/trons/Titantron).'); }catch(e){} });
   _wire('btnHubEntrance',  ()=>{ try{ (window.toast||alert)('Entrance Creator — coming with the entrance timeline (pyro/tron/music).'); }catch(e){} });
+  // JUKEBOX controls (main menu music bar)
+  _wire('btnMusicToggle',  ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); const v=J.getVolume(); if(v>0){ J._mv=v; J.setVolume(0); const b=document.getElementById('btnMusicToggle'); if(b)b.textContent='♪ MUTED'; } else { J.setVolume(J._mv||0.55); J.menu(); const b=document.getElementById('btnMusicToggle'); if(b)b.textContent='♪ MUSIC'; } });
+  _wire('btnMusicNext',    ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); J.menu(); });
+  _wire('btnMusicAdd',     ()=>{ const J=window.BANNON_JUKEBOX; if(J) J.addTrackPrompt(['menu','match']); });
   document.getElementById('btnArena').addEventListener('click', ()=>{ arenaIdx=(arenaIdx+1)%ARENAS.length; document.getElementById('arenaName').textContent=ARENAS[arenaIdx]; buildArena(); saveMatchState(); });
   document.getElementById('btnDiff').addEventListener('click', ()=>{ difficulty=(difficulty+1)%3; document.getElementById('diffName').textContent=DIFF_NAMES[difficulty]; saveMatchState(); });
   document.getElementById('btnOpp').addEventListener('click', ()=>{ opponentIdx=(opponentIdx+1)%OPPONENTS.length; document.getElementById('oppName').textContent=OPPONENTS[opponentIdx].name; saveMatchState(); });
@@ -36730,6 +36740,110 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     }catch(e){}
     if(tries>40) clearInterval(t);
   }, 500);
+})();
+</script>
+
+<!-- ============================================================================================
+     BANNON JUKEBOX — the soundtrack/music system: menu music, match music, per-character ENTRANCE
+     and VICTORY themes, all reassignable, plus an IndexedDB "add more" path so the owner can drop in
+     unlimited tracks in-game (phone-friendly, no repo bloat). 16 owner tracks banked in assets/audio/.
+     ============================================================================================ -->
+<script>
+window.BANNON_JUKEBOX = (function(){
+  const LS='bannon_jukebox_v1', DB='bannonAudioDB', STORE='tracks';
+  // banked default soundtrack (owner's own music). cat: menu|match|entrance|victory|any. Reassignable.
+  const A='assets/audio/';
+  const DEFAULT_TRACKS=[
+    {id:'bannon_theme', name:"BANNON Theme (a cappella + rain)", url:A+'bannon_theme.m4a', cat:['entrance','menu'], artist:'M'},
+    {id:'opps_fallin',  name:"Opps Fallin (ft Jackboy/Finxsse)", url:A+'opps_fallin.ogg', cat:['entrance','match'], artist:'M'},
+    {id:'gmg_champion', name:"GMG Champion",         url:A+'gmg_champion.ogg', cat:['victory','entrance'], artist:'M'},
+    {id:'dx',           name:"DX",                   url:A+'dx.ogg',   cat:['entrance','match'], artist:'M'},
+    {id:'cult',         name:"Cult",                 url:A+'cult.ogg', cat:['entrance','match'], artist:'M'},
+    {id:'caution',      name:"Caution",              url:A+'caution.ogg', cat:['match','entrance'], artist:'M'},
+    {id:'jeans',        name:"Jeans",                url:A+'jeans.ogg', cat:['menu','match'], artist:'M'},
+    {id:'ceo_mindset',  name:"CEO Mindset (GMG ft M)",url:A+'ceo_mindset.ogg', cat:['menu','entrance'], artist:'M'},
+    {id:'sickness',     name:"Sickness",             url:A+'sickness.mp3', cat:['match','entrance'], artist:'M'},
+    {id:'slo_burn',     name:"Slo Burn",             url:A+'slo_burn.mp3', cat:['menu'], artist:'M'},
+    {id:'dbz',          name:"DBZ",                  url:A+'dbz.m4a', cat:['match','entrance'], artist:'M'},
+    {id:'mars_japanese_denim',name:"Japanese Denim (Mars FMMG)", url:A+'mars_japanese_denim.m4a', cat:['menu','entrance'], artist:'Mars FMMG'},
+    {id:'mars_zumbando',name:"Zumbando (Mars FMMG)", url:A+'mars_zumbando.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
+    {id:'mars_dio',     name:"Dio (Mars FMMG)",      url:A+'mars_dio.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
+    {id:'mars_picadero',name:"Picadero (Mars FMMG)", url:A+'mars_picadero.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
+    {id:'mars_obscuro', name:"Obscuro Cuerno de Chivo (Mars FMMG)", url:A+'mars_obscuro.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
+  ];
+  // default role assignments (canon): BANNON -> his theme; Finxsse/Stick-Up -> the collab.
+  const DEFAULT_CFG={ menu:'ceo_mindset', match:null /* shuffle match pool */, victory:'gmg_champion',
+    entrance:{ BANNON:'bannon_theme', MAIME:'sickness', FINXSSE:'opps_fallin', STICK_UP:'opps_fallin', NPC_FINXSSE:'opps_fallin' } };
+
+  let cfg=(function(){ try{ const s=localStorage.getItem(LS); if(s) return Object.assign({},DEFAULT_CFG,JSON.parse(s)); }catch(e){} return JSON.parse(JSON.stringify(DEFAULT_CFG)); })();
+  let userTracks=[];   // IDB-added tracks {id,name,cat,idb:true}; blobs resolved to object URLs on demand
+  const urlCache={};   // id -> objectURL for idb blobs
+  function saveCfg(){ try{ localStorage.setItem(LS, JSON.stringify(cfg)); }catch(e){} }
+  function allTracks(){ return DEFAULT_TRACKS.concat(userTracks); }
+  function trackById(id){ return allTracks().find(t=>t.id===id)||null; }
+  function pool(cat){ return allTracks().filter(t=>(t.cat||[]).indexOf(cat)>=0); }
+
+  // ---- IndexedDB (owner adds unlimited tracks in-game; stored locally, no repo bloat) ----
+  function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open(DB,1); r.onupgradeneeded=e=>{ e.target.result.createObjectStore(STORE,{keyPath:'id'}); }; r.onsuccess=e=>res(e.target.result); r.onerror=e=>rej(e); }); }
+  async function idbPut(rec){ const db=await idb(); return new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).put(rec); tx.oncomplete=()=>res(); tx.onerror=rej; }); }
+  async function idbAll(){ try{ const db=await idb(); return await new Promise((res)=>{ const out=[]; const tx=db.transaction(STORE,'readonly'); tx.objectStore(STORE).openCursor().onsuccess=e=>{ const c=e.target.result; if(c){ out.push(c.value); c.continue(); } else res(out); }; }); }catch(e){ return []; } }
+  async function loadUserTracks(){ const recs=await idbAll(); userTracks=recs.map(r=>({id:r.id,name:r.name,cat:r.cat||['menu','match'],idb:true,artist:r.artist||'you'})); return userTracks; }
+  // add a File/Blob as a track. cat = array of roles. Returns the new id.
+  async function addTrack(file, cat, name){ const id='u_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+    await idbPut({id, name:name||file.name||id, cat:cat||['menu','match'], artist:'you', blob:file});
+    await loadUserTracks(); return id; }
+  // pop a file picker and add whatever the owner selects (multi-select ok).
+  function addTrackPrompt(cat){ const inp=document.createElement('input'); inp.type='file'; inp.accept='audio/*'; inp.multiple=true;
+    inp.onchange=async()=>{ for(const f of inp.files){ await addTrack(f, cat||['menu','match'], f.name.replace(/\.[^.]+$/,'')); } try{ (window.toast||function(){})('Added '+inp.files.length+' track(s) to the jukebox.'); }catch(e){} };
+    inp.click(); }
+  async function idbBlobUrl(id){ if(urlCache[id]) return urlCache[id]; const db=await idb(); const rec=await new Promise((res)=>{ const tx=db.transaction(STORE,'readonly'); tx.objectStore(STORE).get(id).onsuccess=e=>res(e.target.result); }); if(!rec||!rec.blob) return null; return urlCache[id]=URL.createObjectURL(rec.blob); }
+  async function srcFor(t){ if(!t) return null; if(t.idb) return await idbBlobUrl(t.id); return t.url; }
+
+  // ---- playback ----
+  const bgAudio=new Audio(); bgAudio.loop=true; bgAudio.preload='auto';
+  const oneShot=new Audio(); oneShot.preload='auto';
+  let vol=(function(){ try{ return +localStorage.getItem('bannon_music_vol')||0.55; }catch(e){ return 0.55; } })();
+  bgAudio.volume=vol; oneShot.volume=Math.min(1,vol+0.1);
+  function setVolume(v){ vol=Math.max(0,Math.min(1,v)); bgAudio.volume=vol; oneShot.volume=Math.min(1,vol+0.1); try{ localStorage.setItem('bannon_music_vol',String(vol)); }catch(e){} }
+  let curBg=null, unlocked=false;
+  async function playBg(t){ if(!t){ bgAudio.pause(); curBg=null; return; } const s=await srcFor(t); if(!s) return; curBg=t.id; bgAudio.src=s; if(unlocked){ bgAudio.play().catch(()=>{}); } }
+  function shuffle(a){ return a.slice().sort(()=>Math.random()-0.5); }
+  // menu: assigned menu track (or shuffle the menu pool)
+  async function menu(){ const t=cfg.menu?trackById(cfg.menu):shuffle(pool('menu'))[0]; bgAudio.loop=true; await playBg(t); }
+  // match: assigned match track (or shuffle the match pool)
+  async function match(){ const t=cfg.match?trackById(cfg.match):shuffle(pool('match'))[0]; bgAudio.loop=true; await playBg(t); }
+  async function stop(){ bgAudio.pause(); curBg=null; }
+  // entrance/victory: one-shots (don't loop), by character where assigned else pool
+  async function entrance(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey])|| (shuffle(pool('entrance'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ oneShot.src=s; if(unlocked) oneShot.play().catch(()=>{}); } return id; }
+  async function victory(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey]&&trackById(cfg.entrance[charKey])&&(pool('victory').some(x=>x.id===cfg.entrance[charKey]))?cfg.entrance[charKey]:cfg.victory)||(shuffle(pool('victory'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ bgAudio.pause(); oneShot.src=s; if(unlocked) oneShot.play().catch(()=>{}); } return id; }
+
+  // assignment API (persisted)
+  function assignMenu(id){ cfg.menu=id; saveCfg(); }
+  function assignMatch(id){ cfg.match=id; saveCfg(); }
+  function assignVictory(id){ cfg.victory=id; saveCfg(); }
+  function assignEntrance(charKey,id){ cfg.entrance=cfg.entrance||{}; cfg.entrance[charKey]=id; saveCfg(); }
+  function list(){ return allTracks().map(t=>({id:t.id,name:t.name,cat:t.cat,artist:t.artist,idb:!!t.idb})); }
+
+  // gesture-unlock (browsers block autoplay until a user interaction) — start menu music on first tap/key.
+  function unlock(){ if(unlocked) return; unlocked=true; try{ if(curBg||bgAudio.src){ bgAudio.play().catch(()=>{}); } else { menu(); } }catch(e){} }
+  ['pointerdown','touchstart','keydown'].forEach(ev=>window.addEventListener(ev, unlock, {once:false, passive:true}));
+
+  // defensive hooks into the existing game events (only if present) — start match music on a fight, menu on menu.
+  function hookGame(){
+    try{ const sf=window.startFight; if(typeof sf==='function' && !sf.__jukeHooked){ window.startFight=function(){ try{ match(); }catch(e){} return sf.apply(this,arguments); }; window.startFight.__jukeHooked=1; } }catch(e){}
+    // VICTORY music on a win — play the winner's assigned victory/entrance theme (else the default).
+    try{ const dw=window.declareWinner; if(typeof dw==='function' && !dw.__jukeHooked){ window.declareWinner=function(w){ try{ let ck=null; if(w){ ck=(typeof charModelKey==='function')?charModelKey(w):String((w.opts&&w.opts.name)||w.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'_'); } victory(ck); }catch(e){} return dw.apply(this,arguments); }; window.declareWinner.__jukeHooked=1; } }catch(e){}
+    // watch for return-to-menu: light poll on gameState
+    let last=null; setInterval(()=>{ try{ const gs=(typeof gameState!=='undefined')?gameState:window.gameState; if(gs===last) return;
+      if((gs==='menu'||String(gs).indexOf('menu')===0) && curBg==null && unlocked){ menu(); } last=gs; }catch(e){} }, 1200);
+  }
+
+  // init: load any owner-added tracks, then hook up. (Menu music starts on first interaction.)
+  loadUserTracks().then(()=>{ hookGame(); });
+
+  return { DEFAULT_TRACKS, list, pool, trackById, addTrack, addTrackPrompt, loadUserTracks,
+           menu, match, stop, entrance, victory, setVolume, getVolume:()=>vol,
+           assignMenu, assignMatch, assignVictory, assignEntrance, cfg:()=>cfg, unlock };
 })();
 </script>
 
