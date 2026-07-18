@@ -1,24 +1,31 @@
 #include "BannonAdrenalineMasking.h"
 
-void UBannonAdrenalineMasking::CalculateAdrenalineBuff(float MatchMomentum, float LegDamage, float& OutLimpAlphaModifier)
+UBannonAdrenalineMasking::UBannonAdrenalineMasking()
 {
-    // Adrenaline Masking ("Hulking Up"): High momentum temporarily nullifies IK limping penalties.
-    // Base limp alpha is driven directly by leg damage.
-    float BaseLimp = FMath::Clamp(LegDamage / 100.0f, 0.0f, 1.0f);
-    
-    if (MatchMomentum > 80.0f)
+    PrimaryComponentTick.bCanEverTick = true;
+    bIsAdrenalineActive = false;
+}
+
+void UBannonAdrenalineMasking::BeginPlay()
+{
+    Super::BeginPlay();
+}
+
+void UBannonAdrenalineMasking::EvaluateAdrenalineRush(float CurrentMomentum, float Threshold)
+{
+    if (CurrentMomentum >= Threshold && !bIsAdrenalineActive)
     {
-        // Surging adrenaline suppresses the pain. Limp is completely zeroed out while momentum stays hot.
-        OutLimpAlphaModifier = 0.0f; 
+        bIsAdrenalineActive = true;
+        UE_LOG(LogTemp, Warning, TEXT("Bannon Medical: ADRENALINE RUSH! Fighter is hulking up, ignoring limb penalties."));
     }
-    else if (MatchMomentum > 50.0f)
+    else if (CurrentMomentum < Threshold && bIsAdrenalineActive)
     {
-        // Partial adrenaline masks 50% of the limp.
-        OutLimpAlphaModifier = BaseLimp * 0.5f;
+        bIsAdrenalineActive = false;
+        UE_LOG(LogTemp, Warning, TEXT("Bannon Medical: Adrenaline fade. Injuries return to full effect."));
     }
-    else
-    {
-        // No momentum, full pain response.
-        OutLimpAlphaModifier = BaseLimp;
-    }
+}
+
+bool UBannonAdrenalineMasking::IsLimpingMasked() const
+{
+    return bIsAdrenalineActive;
 }
