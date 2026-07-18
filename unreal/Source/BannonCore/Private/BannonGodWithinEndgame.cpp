@@ -1,17 +1,18 @@
 #include "BannonGodWithinEndgame.h"
 
-void UBannonGodWithinEndgame::ApplyRealityModifiers(float CosmicAlignment, float& GravityScale, float& GameSpeedMultiplier)
+void UBannonGodWithinEndgame::TriggerCosmicAlignment(float CosmicAlignmentScore, bool& bUnlockRealityModifiers, float& OutGravityScale, float& OutTimeDilation)
 {
-    // The God Within Endgame: Achieving maximum cosmic alignment unlocks reality-bending 
-    // sandbox physics modifiers (e.g., low gravity throws, super speed) similar to MDickie cheats.
-    if (CosmicAlignment > 90.0f)
+    // The God Within Endgame: Achieving maximum cosmic alignment unlocks reality-bending sandbox physics modifiers.
+    if (CosmicAlignmentScore >= 100.0f)
     {
-        GravityScale = 0.5f; // Moon gravity for massive air time
-        GameSpeedMultiplier = 1.5f; // Super speed
+        bUnlockRealityModifiers = true;
+        OutGravityScale = 0.5f; // Moon gravity mode unlocked
+        OutTimeDilation = 0.8f; // Matrix slow-motion mode unlocked during strikes
     }
     else
     {
-        GravityScale = 1.0f; // Normal Earth gravity
-        GameSpeedMultiplier = 1.0f; // Normal time
+        bUnlockRealityModifiers = false;
+        OutGravityScale = 1.0f; // Standard Earth gravity
+        OutTimeDilation = 1.0f; // Standard time
     }
 }
