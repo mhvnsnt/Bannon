@@ -30,6 +30,9 @@ void ABannonNeuralNetBrawlerAI::EvaluateCombatEnvironment(FObservationFrame& Out
         OutFrame.TargetTrajectory = TargetCharacter->GetVelocity();
         OutFrame.TargetDistance = FVector::Dist(ControlledPawn->GetActorLocation(), TargetCharacter->GetActorLocation());
         OutFrame.bIsConstraintActive = TargetCharacter->GetMesh()->IsSimulatingPhysics();
+        
+        OutFrame.DistanceToRopes = 100.0f; // Injected spatial geometry distance
+        OutFrame.RopeAlignmentVector = FVector(0.f, 1.f, 0.f); // Orthogonal alignment vector
     }
 }
 
@@ -54,7 +57,6 @@ void ABannonNeuralNetBrawlerAI::TickNeuralInference()
     }
     MemoryTensorBuffer.Add(CurrentFrame);
     
-    // Phase 8: Aggression / Cowardice Matrix
     float SelfPoise = 25.0f; // Sourced from independent Poise Engine state
     float TargetPoise = 35.0f; // Sourced from independent Poise Engine state
     
@@ -63,9 +65,19 @@ void ABannonNeuralNetBrawlerAI::TickNeuralInference()
 
     if (SelfPoise < 30.0f)
     {
-        OptimalVector = CurrentFrame.TargetTrajectory * -2.0f;
-        SelectedAction = TEXT("evade");
-        UE_LOG(LogTemp, Warning, TEXT("Bannon AI: Self poise critical. Weighting Cowardice matrix. Prioritizing spatial repositioning."));
+        if (CurrentFrame.DistanceToRopes < 150.0f)
+        {
+            // Spatial Risk Weighting
+            OptimalVector = CurrentFrame.RopeAlignmentVector * 2.5f;
+            SelectedAction = TEXT("ring_exit");
+            UE_LOG(LogTemp, Warning, TEXT("Bannon AI: Self poise critical and trapped by ropes. Heavily weighting lateral repositioning."));
+        }
+        else
+        {
+            OptimalVector = CurrentFrame.TargetTrajectory * -2.0f;
+            SelectedAction = TEXT("evade");
+            UE_LOG(LogTemp, Warning, TEXT("Bannon AI: Self poise critical. Weighting Cowardice matrix. Prioritizing spatial repositioning."));
+        }
     }
     else if (TargetPoise < 40.0f)
     {
