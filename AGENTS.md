@@ -414,3 +414,9 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 - **Title Belt Lineage Tracking**: Built `BannonTitleLineage.cpp/h`. Engineered an immutable ledger system mapped to the backend that persistently tracks championship histories, reign lengths, and transfer dates.
 - **God Within Reality Modifiers (Endgame)**: Built `BannonGodWithinEndgame.cpp/h`. Recreated the MDickie endgame sandbox modifier system where achieving max cosmic alignment unlocks reality-bending physics multipliers (e.g., low gravity throws, super speed states).
 - **Create-A-Show Economy Engine**: Built `BannonShowEconomy.cpp/h`. Implemented the meta-management budget logic balancing pyrotechnic spectaculars vs. expensive talent rosters to avoid bankruptcy in career scenarios.
+
+### SHIPPED (PHASE 28 - MDICKIE EXTREME SANDBOX & VEHICLE INTERACTIONS)
+- **Explosive Props & Gore Mechanics**: Built `BannonExplosiveProps.cpp/h`. Implemented radial impulse physics for detonating props (dynamite/gas cans) that factor in extreme dismemberment thresholds mirroring MDickie's *Hard Time / Wrestling Mpire* mechanics.
+- **Vehicle Interaction & Sandbox Mounts**: Built `BannonVehicleInteraction.cpp/h`. Engineered impact velocity and mass transfer calculations for driveable arena objects (motorcycles, wheelchairs), applying massive launch vectors upon collision.
+- **Interactive Referee Retaliation AI**: Built `BannonRefRetaliation.cpp/h`. Integrated legacy behavioral logic where referees dynamically switch their internal state machine from 'Officiating' to 'Brawling' if the player attacks them past a specific threshold.
+- **Procedural Stat-Based Mesh Scaling**: Built `BannonStatMeshScaling.cpp/h`. Adapted MDickie character-creator math, allowing RPG attributes (Strength, Agility) to directly and dynamically modify skeletal bone scale transforms, automatically inflating torsos and limbs based on brute power.
