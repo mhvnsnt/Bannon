@@ -7580,20 +7580,47 @@ window.isInstantMove = function(move){
 window.moveCarry = function(move){ return !window.isInstantMove(move); };
 // run an equipped/named grapple move through the RIGHT flow (real physics either way). instant moves
 // skip the lift/hold and snap; carry moves lift then deliver. Returns true if it launched.
+// WWE-2K POSITION-AWARE finisher/signature activation. Three cases, based on what you ALREADY have:
+//   (a) already holding them in the move's OWN position (fireman's + a fireman's-carry finisher) -> DELIVER now.
+//   (b) already in a DIFFERENT carry (fireman's + a powerbomb-family finisher) -> REPOSITION to the
+//       required hoist, then deliver.
+//   (c) not grappling (or instant/no-carry move) -> grab -> hoist -> deliver, or snap for instant moves.
 window.execGrappleMove = function(attacker, move, deliverFallback){
   if(!attacker || !move) return false;
   const posKey = window.resolveGrapPos ? window.resolveGrapPos(move) : 'STANDARD';
   const GP = (typeof GRAPPLE_POSITIONS!=='undefined' && GRAPPLE_POSITIONS[posKey]) ? GRAPPLE_POSITIONS[posKey] : null;
   const instant = window.isInstantMove(move);
-  attacker.grapplePos = posKey;
+  const deliver = move.deliver || (GP && GP.delivery) || deliverFallback || 'slam';
+  const alreadyGrappling = !!(attacker.grappling && attacker.grabTarget);
+  const curPos = attacker.grapplePos;
   attacker.grappleMode = (GP && GP.rear) ? 'rear' : (move.mode||'front');
   attacker.craneTwist = 0;
   attacker._aiGrapChosen = true;
-  const deliver = move.deliver || (GP && GP.delivery) || deliverFallback || 'slam';
+
+  // (a) ALREADY IN THE RIGHT POSITION — deliver straight away (instant snaps; carry drops from the hoist).
+  if (alreadyGrappling && curPos === posKey && attacker.grappleStage >= 2){
+    attacker.grapplePos = posKey; attacker.grappleStage = 3; attacker.stateTime = 0; attacker._liftMinT = 0;
+    setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=3) attacker.grappleDeliver(instant?'spike':deliver, 0); }catch(_){}}, instant?120:220);
+    return true;
+  }
+
+  attacker.grapplePos = posKey;
+
+  // (b) ALREADY IN A DIFFERENT CARRY — reposition into the required hoist, then deliver (fireman's -> powerbomb).
+  if (alreadyGrappling && !instant){
+    attacker.craneLift = (GP && GP.lift0) || 0.5; attacker.grappleStage = 2; attacker.stateTime = 0;
+    const rd = 0.42;                                   // quick transition — already have them up, just re-set the hold
+    attacker._liftMinT = rd;
+    setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=2){ attacker.grappleStage=3; attacker.stateTime=0;
+      setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage===3) attacker.grappleDeliver(deliver, 0); }catch(_){}}, 520); } }catch(_){}}, rd*1000+150);
+    return true;
+  }
+
+  // (c) FROM SCRATCH (not grappling, or an instant no-carry move).
   if (instant){
     // NO CARRY: skip the hoist entirely — snap straight to a fast downward delivery.
     attacker.craneLift = 0; attacker.grappleStage = 3; attacker.stateTime = 0; attacker._liftMinT = 0;
-    setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=3) attacker.grappleDeliver(instant?'spike':deliver, 0); }catch(_){}}, 130);
+    setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=3) attacker.grappleDeliver('spike', 0); }catch(_){}}, 130);
   } else {
     // CARRY: lift to the position's hold, let it read, then deliver.
     attacker.craneLift = (GP && GP.lift0) || 0.5; attacker.grappleStage = 2; attacker.stateTime = 0;
@@ -12350,13 +12377,14 @@ function playerAttack(kind){
   // SIGNATURE (named from CHAR_FINISHERS.sig where authored) — it spends 50 momentum, hits hard,
   // and BANKS a stored finisher (max 3). The banked finisher can be spent any time with MOD+special
   // even below full momentum. Signature meter effectively fills 50% faster (gain boost below 50).
-  if (kind==='jab' && powerMod && (p.momentum||0)>=50 && !p.grappling){
+  if (kind==='jab' && powerMod && (p.momentum||0)>=50 && (!p.grappling || p.grappleStage>=1)){
     p.momentum-=50; p._finBank=Math.min(3,(p._finBank||0)+1);
     // EQUIPPED SIGNATURE: fire the move the player tagged SIGNATURE in the editor (cycling the slots).
     // A grapple-type signature runs the grab->signature path; a strike-type fires as a loaded named
-    // shot. Falls back to CHAR_FINISHERS.sig when nothing is equipped.
+    // shot. Falls back to CHAR_FINISHERS.sig when nothing is equipped. WWE-2K: if you already have a
+    // hold, execGrappleMove delivers from it / repositions — no need to release and re-grab.
     const eqSig=pickEquipped(p,'SIGNATURE',(opp && !opp.isDown()));
-    if (eqSig && (eqSig.cat==='GRAPPLE'||eqSig.cat==='THROW') && opp && !opp.isDown() && p.startGrab()){
+    if (eqSig && (eqSig.cat==='GRAPPLE'||eqSig.cat==='THROW') && opp && !opp.isDown() && (p.grappling || p.startGrab())){
       announce(eqSig.name+'  [FINISHER BANKED]', fname(p));
       // ANY MOVE FROM ANY POSITION + CARRY/INSTANT: execGrappleMove runs the lift-hold flow for carry
       // moves and snaps instantly (no hoist) for cutters/stunners/etc.
@@ -12385,7 +12413,9 @@ function playerAttack(kind){
     const eqFin=pickEquipped(p,'FINISHER',(opp && !opp.isDown()));
     const useGrapple = (eqFin && (eqFin.cat==='GRAPPLE'||eqFin.cat==='THROW')) || (!eqFin && FF && FF.kind==='grapple');
     if (useGrapple && opp && !opp.isDown()){
-      if (p.startGrab()){
+      // WWE-2K: if you already have a hold, fire from it (execGrappleMove delivers/repositions);
+      // otherwise grab first.
+      if (p.grappling || p.startGrab()){
         const finName=eqFin?eqFin.name:FF.name;
         announce(finName, fname(p));
         // ANY MOVE FROM ANY POSITION + CARRY/INSTANT: execGrappleMove picks the lift-hold flow for
