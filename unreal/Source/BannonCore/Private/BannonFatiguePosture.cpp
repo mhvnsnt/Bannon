@@ -1,19 +1,20 @@
 #include "BannonFatiguePosture.h"
 
-void UBannonFatiguePosture::CalculateSpineDeformation(float CurrentStamina, float MaxStamina, float& SpineSlumpPitch)
+void UBannonFatiguePosture::CalculatePostureDeformation(float CurrentStamina, float MaxStamina, float& OutSpineSlumpAlpha, float& OutBreathingIntensity)
 {
-    // Fatigue Posture Deformation: Spine sways and shoulders slump dynamically as stamina empties.
-    // This feeds directly into the AnimBP additive skeletal controls.
+    // Advanced Medical/Fatigue Systems: Posture Deformation.
+    // As the stamina pool empties, the spine physically slumps via Animation Blueprint Control Rig.
     float StaminaPercentage = CurrentStamina / FMath::Max(MaxStamina, 1.0f);
-    
-    if (StaminaPercentage < 0.3f)
+
+    // If stamina drops below 40%, the character starts to heavily slump forward.
+    if (StaminaPercentage < 0.40f)
     {
-        // Inverse relationship: lower stamina = higher forward pitch (slumping)
-        // Max slump at 0 stamina is +25.0 degrees on the spine bone
-        SpineSlumpPitch = FMath::Lerp(25.0f, 0.0f, StaminaPercentage / 0.3f);
+        OutSpineSlumpAlpha = (0.40f - StaminaPercentage) * 2.5f; // Scales from 0.0 to 1.0 slump factor
+        OutBreathingIntensity = 1.0f + ((0.40f - StaminaPercentage) * 5.0f); // Deep, labored chest heaving
     }
     else
     {
-        SpineSlumpPitch = 0.0f; // Perfect posture
+        OutSpineSlumpAlpha = 0.0f; // Perfect posture
+        OutBreathingIntensity = 1.0f; // Normal breathing
     }
 }
