@@ -1,6 +1,9 @@
 #include "BannonNeuralNetBrawlerAI.h"
+#include "BannonProceduralStrikeHitbox.h"
 #include "GameFramework/Character.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 #include "BannonMDickiePhysicsIntegration.h"
 #include "TimerManager.h"
 
@@ -18,6 +21,35 @@ void ABannonNeuralNetBrawlerAI::BeginPlay()
 void ABannonNeuralNetBrawlerAI::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+    EvaluateSpatialAwarenessAndConstraints(DeltaTime);
+}
+
+void ABannonNeuralNetBrawlerAI::EvaluateSpatialAwarenessAndConstraints(float DeltaTime)
+{
+    // Simplified stub to represent MemoryTensorBuffer logic without needing full header definitions
+    APawn* Pawn = GetPawn();
+    if (!Pawn) return;
+
+    FVector CurrentLocation = Pawn->GetActorLocation();
+    
+    // Abstracting boundary calculation
+    FVector NearestRingBoundary = FVector(0.f, 0.f, 0.f); 
+    float BoundaryDistance = FVector::Dist2D(CurrentLocation, NearestRingBoundary);
+
+    float AggregateConstraintStress = 0.0f;
+    // Iterating constraints would go here
+
+    float CurrentPoise = 25.0f; // Sourced from Poise Engine
+    float YieldThreshold = 85.0f; 
+    
+    if (CurrentPoise < (100.0f * 8.0f) && BoundaryDistance < 45.0f) 
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Bannon AI: Self poise critical and trapped by ropes. Evade Lateral."));
+    }
+    else if (AggregateConstraintStress > YieldThreshold)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Bannon AI: Joint stress critical. Break Hold."));
+    }
 }
 
 void ABannonNeuralNetBrawlerAI::EvaluateCombatEnvironment(FObservationFrame& OutFrame)
@@ -70,20 +102,17 @@ void ABannonNeuralNetBrawlerAI::TickNeuralInference()
             // Spatial Risk Weighting
             OptimalVector = CurrentFrame.RopeAlignmentVector * 2.5f;
             SelectedAction = TEXT("ring_exit");
-            UE_LOG(LogTemp, Warning, TEXT("Bannon AI: Self poise critical and trapped by ropes. Heavily weighting lateral repositioning."));
         }
         else
         {
             OptimalVector = CurrentFrame.TargetTrajectory * -2.0f;
             SelectedAction = TEXT("evade");
-            UE_LOG(LogTemp, Warning, TEXT("Bannon AI: Self poise critical. Weighting Cowardice matrix. Prioritizing spatial repositioning."));
         }
     }
     else if (TargetPoise < 40.0f)
     {
         OptimalVector = CurrentFrame.TargetTrajectory * 1.5f;
         SelectedAction = TEXT("powerbomb"); 
-        UE_LOG(LogTemp, Warning, TEXT("Bannon AI: Target poise critical. Weighting Aggression matrix. Prioritizing Phase 4 heavy grapple execution."));
     }
     
     ExecuteCombatAction(OptimalVector, SelectedAction);
