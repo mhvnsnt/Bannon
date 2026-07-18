@@ -1,9 +1,28 @@
 #include "BannonProceduralStrikeHitbox.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "PhysicsEngine/PhysicsConstraintComponent.h"
 
 UBannonProceduralStrikeHitbox::UBannonProceduralStrikeHitbox()
 {
     PrimaryComponentTick.bCanEverTick = false;
+}
+
+void UBannonProceduralStrikeHitbox::CalculateJointConstraintStress(UPhysicsConstraintComponent* TargetJoint, float AppliedVelocity)
+{
+    if (!TargetJoint) return;
+
+    float ClampedVelocity = FMath::Clamp(AppliedVelocity, 0.0f, 3.8f); 
+
+    float CurrentTwist = TargetJoint->ConstraintInstance.GetCurrentTwist();
+    float TwistLimit = TargetJoint->ConstraintInstance.AngularPlasticityLimit;
+    
+    float SimulatedStress = CurrentTwist + (ClampedVelocity * 8.0f); 
+
+    if (SimulatedStress > TwistLimit)
+    {
+        UE_LOG(LogTemp, Warning, TEXT("Bannon Physics: Structural Yield Triggered on %s. Stress: %f"), *TargetJoint->GetFName().ToString(), SimulatedStress);
+        // BroadcastYieldStateToTelemetry(TargetJoint->GetFName(), SimulatedStress);
+    }
 }
 
 void UBannonProceduralStrikeHitbox::CalculateTargetedStrike(FVector AttackerLimbPos, FVector AttackerLimbVelocity, USkeletalMeshComponent* DefenderMesh, FName TargetBone)
@@ -31,7 +50,6 @@ void UBannonProceduralStrikeHitbox::CalculateTargetedStrike(FVector AttackerLimb
     if (FMath::Abs(HitAngleDot) < 0.5f)
     {
         TransferredEnergy *= 0.4f;
-        UE_LOG(LogTemp, Warning, TEXT("Bannon Physics: Glancing blow detected. DotProduct: %f. Transferred energy scaled down."), HitAngleDot);
     }
 
     float PoiseDamage = TransferredEnergy * DMG_SCALE;
