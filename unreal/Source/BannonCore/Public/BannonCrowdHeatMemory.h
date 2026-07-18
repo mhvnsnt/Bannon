@@ -13,10 +13,7 @@ struct FCrowdMemoryEvent
     FString EventDescription;
 
     UPROPERTY(BlueprintReadWrite, Category="Bannon|Universe")
-    float HeatImpact; // Positive for Face pop, Negative for Heel heat
-
-    UPROPERTY(BlueprintReadWrite, Category="Bannon|Universe")
-    int32 WeeksAgo;
+    float HeatValue;
 };
 
 UCLASS()
@@ -26,8 +23,8 @@ class BANNONCORE_API UBannonCrowdHeatMemory : public UObject
 
 public:
     UFUNCTION(BlueprintCallable, Category="Bannon|Universe")
-    void RegisterBetrayalEvent(const FString& WrestlerID, const FString& VictimID, UPARAM(ref) TArray<FCrowdMemoryEvent>& EventHistory);
+    void RegisterBetrayalOrHeroic(const FString& WrestlerID, const FString& TargetID, bool bIsBetrayal, UPARAM(ref) TMap<FString, float>& GlobalHeatMatrix);
 
     UFUNCTION(BlueprintCallable, Category="Bannon|Universe")
-    void CalculateCurrentAudienceAlignment(UPARAM(ref) TArray<FCrowdMemoryEvent>& EventHistory, UPARAM(ref) float& OutCurrentHeatMatrix, UPARAM(ref) FString& OutCrowdReactionType);
+    void CalculateEntranceReaction(const FString& WrestlerID, const TMap<FString, float>& GlobalHeatMatrix, UPARAM(ref) float& OutCrowdVolume, UPARAM(ref) FString& OutReactionType);
 };
