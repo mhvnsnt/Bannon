@@ -1,5 +1,15 @@
 # BANNON Project Rules & Verification Protocols
 
+> ## ⛓️ READ FIRST — `docs/AI_WORKING_CONTRACT.md` is BINDING for every AI (Claude, Google AI Studio, CODEDUMMY, any agent).
+> It exists because a year of multi-AI work produced spaghetti, shallow stubs, and false "done" claims.
+> Non-negotiables: (1) recognize scope — a "full clone / add all X / whole repo" request is a COMPLETE
+> ingest, not a sample (§2 FULL-INTEGRATION PROTOCOL: pull the REAL upstream code, inventory every part
+> into a checklist, port it all turned-proprietary, verify each in the live game, report the checklist
+> honestly); (2) PULL proven open-source over hand-reinventing hard systems (rigging→UniRig, etc.);
+> (3) NEVER claim done/verified/clean/coherent/works unless you observed it this session with a tool —
+> if you couldn't verify, say "NOT verified — why"; (4) no stub presented as a feature; (5) build toward
+> ONE complete game, wired in, not disconnected features. If you can't comply, say so — don't fake it.
+
 ## Pre-Task Checklist
 Before executing any code changes or schema modifications:
 1. **Check `/manifesto-registry.json` & Grep `MANIFESTO`**: Always read and query `/manifesto-registry.json` to inspect the canonical subsystem registry. Search the codebase for `MANIFESTO` and keywords of the feature you are about to build (e.g. `ai.fighter_dna`, `traits`, `injuries`) to verify if a matching system already exists. If found, leverage or align with it; do NOT duplicate or rewrite it from scratch.
@@ -22,7 +32,10 @@ Before executing any code changes or schema modifications:
 Push all file changes using the GitHub Contents API after every single change, no exceptions:
 
 Base URL: https://api.github.com/repos/mhvnsnt/Bannon
-Token header: Authorization: Bearer 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
+Token header: Authorization: Bearer ${GITHUB_TOKEN}   # <-- from an ENV SECRET, never hardcoded.
+# SECURITY: a live PAT was previously committed here in plaintext. It must be REVOKED + ROTATED at
+# github.com/settings/tokens (it is in git history), and the new token supplied only as an environment
+# secret (GITHUB_TOKEN) — never written back into this file. See docs/AI_WORKING_CONTRACT.md §8.
 Branch: main
 
 To update a file:

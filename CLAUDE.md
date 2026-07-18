@@ -1,5 +1,10 @@
 # BANNON — working memory (read me first, every session)
 
+> **⛓️ BINDING: `docs/AI_WORKING_CONTRACT.md` governs HOW every AI works on this game** (scope
+> recognition, FULL-integration protocol, pull-don't-reinvent, no-hallucination/verify-with-senses,
+> no-stubs-as-features, build-one-complete-game, secrets). Read it before acting. It exists because a
+> year of multi-AI work produced spaghetti + false "done" claims — do not repeat that.
+
 Standing context distilled from the owner's direct instructions + the books. `AGENTS.md` is the
 North Star (additive-only, surgical, physics-first); `window.MANIFESTO` / `window.BLUEPRINT` in
 `BANNON_v150.html` are the live soul + roadmap. This file is the session-to-session memory.
