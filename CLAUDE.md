@@ -626,3 +626,10 @@ BINDING session memory so these don't get re-derived:
   Mixamo-style) instead of our skinner. Do NOT auto-skin canon/book models (owner's per ownership directive).
   Probe tool that works: raw-GLB bbox + skin/joint count via GLTFLoader headless (all 61 GLBs load, upright,
   centered; the broken-ness is skinning weights + unskinned sources, not orientation/scale).
+  **SOLVED 2026-07-18 — the working model-fix pipeline (use this, NOT skin.cjs):** hosted `jasongzy/UniRig`
+  space (`/process_pipeline(input,'glb')` via gradio_client, HF_TOKEN in .claude/settings.local.json env) rigs
+  an unskinned GLB into a real 28-joint SKINNED mesh (~25 min on the free ZeroGPU queue, texture kept) →
+  `tools/unirig/rename_bones.cjs` renames bone_N → Mixamo names by skeleton topology → binds through the
+  engine's REAL skinned path (autoRig:false, all 4 limbs+spine+head). BANNON done + verified CLEAN + banked
+  `assets/models/BANNON_rigged.glb` + set as default. Re-rig the other unskinned statues (MAIME/CODY_gear/
+  ONYX*) the same way. `tools/unirig/rig.sh` (self-host) + `rig_via_space.py` (hosted) both end with the rename.
