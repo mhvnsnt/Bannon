@@ -432,3 +432,8 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 - **Multi-body Physics Replication**: Built `BannonMultiBodyReplication.cpp/h`. Engineered a deviation tolerance calculator to monitor chaotic sandbox pile-ups. Forces authoritative client-snapping when local physics simulation diverges too far from the server's center-of-mass vector.
 - **Client-Side Strike Prediction**: Built `BannonClientPrediction.cpp/h`. Masked high latency environments by simulating hit reactions and audio cues locally before server confirmation if the player's ping exceeds the 50ms threshold.
 - **Ragdoll Network Compression**: Built `BannonNetSyncState.cpp/h`. Optimized wire bandwidth by culling 100+ bone transforms down to just the 6 critical IK drivers (Pelvis, Head, Hands, Feet) during active ragdoll broadcasts.
+
+### SHIPPED (PHASE 31 - ADVANCED UI DIAGNOSTICS & DYNAMIC CAMERA)
+- **Physics Debug Overlays**: Built `BannonPhysicsDiagnostics.cpp/h`. Implemented metric extractors that calculate and expose raw kinetic energy and total angular torque to the HUD for real-time visualization of active ragdoll constraint limits.
+- **Network Health Monitors**: Built `BannonNetworkDiagnostics.cpp/h`. Engineered a status matrix that evaluates peer-to-peer ping, packet loss, and GGPO rollback frame counts, outputting color-coded synchronization states (e.g., 'CRITICAL DESYNC') to the debug UI.
+- **Dynamic Framing Engine**: Built `BannonDynamicCamera.cpp/h`. Created procedural camera logic that calculates the center-of-mass across multiple physics targets, dynamically adjusting the FOV and pullback distance to perfectly frame sprawling multi-body brawls and high-altitude dives.
