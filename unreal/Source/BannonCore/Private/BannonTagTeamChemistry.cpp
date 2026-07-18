@@ -1,17 +1,20 @@
 #include "BannonTagTeamChemistry.h"
 
-void UBannonTagTeamChemistry::ProcessHotTag(float IncomingPartnerDrive, float& OutMomentumSpike)
+void UBannonTagTeamChemistry::UpdateTeamChemistry(int32 MatchesWrestledTogether, bool bWonMatch, float& InOutChemistryStat, bool& bUnlocksTandemFinishers)
 {
-    // The Hot Tag applies a massive localized momentum spike, ignoring baseline fatigue temporarily
-    OutMomentumSpike = IncomingPartnerDrive * 2.0f;
-    // Bypasses poise degradation for the next 15 seconds
-}
-
-void UBannonTagTeamChemistry::EvaluateMiscommunication(float CurrentCohesion)
-{
-    // If Cohesion is low (e.g. newly formed team or rival faction members forced to team)
-    if (CurrentCohesion < 0.4f)
+    // Tag Team Chemistry Engine: Co-op mechanics where frequent partners unlock tandem procedural moves.
+    
+    // Winning builds chemistry faster than losing
+    float ChemistryGain = bWonMatch ? 5.0f : 1.0f;
+    InOutChemistryStat = FMath::Clamp(InOutChemistryStat + ChemistryGain, 0.0f, 100.0f);
+    
+    // If they have wrestled at least 10 matches together AND have a chemistry > 75%, they unlock sync tandem maneuvers.
+    if (MatchesWrestledTogether >= 10 && InOutChemistryStat > 75.0f)
     {
-        // High probability of double-team moves failing, or friendly-fire strikes occurring
+        bUnlocksTandemFinishers = true;
+    }
+    else
+    {
+        bUnlocksTandemFinishers = false;
     }
 }
