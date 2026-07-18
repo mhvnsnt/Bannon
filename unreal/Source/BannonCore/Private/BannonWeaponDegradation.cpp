@@ -1,18 +1,19 @@
 #include "BannonWeaponDegradation.h"
 
-void UBannonWeaponDegradation::ProcessWeaponImpact(float ImpactForce, bool& bWeaponDestroyed)
+void UBannonWeaponDegradation::ProcessWeaponImpact(float ImpactForce, float CurrentWeaponHealth, float& OutNewWeaponHealth, bool& bIsShattered)
 {
-    // Weapons bend/break dynamically. A steel chair might withstand 3 impacts, a wooden table 1.
-    StructuralIntegrity -= (ImpactForce * 0.005f);
-    
-    if (StructuralIntegrity <= 0.0f)
+    // Tracks structural damage for props like chairs and tables.
+    // Massive impacts degrade health faster until the object triggers a Chaos physics shatter event.
+    float DamageTaken = ImpactForce * 0.05f; 
+    OutNewWeaponHealth = CurrentWeaponHealth - DamageTaken;
+
+    if (OutNewWeaponHealth <= 0.0f)
     {
-        bWeaponDestroyed = true;
-        // Trigger Chaos destruction logic to spawn fractured mesh pieces
+        bIsShattered = true; // Trigger Chaos fracture
+        OutNewWeaponHealth = 0.0f;
     }
     else
     {
-        bWeaponDestroyed = false;
-        // Trigger morph target to bend the weapon visually (e.g. dented chair)
+        bIsShattered = false; // Prop bends/dents but survives
     }
 }
