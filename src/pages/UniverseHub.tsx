@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Play, Pause, FastForward, SkipBack, Volume2, Upload, Plus } from 'lucide-react';
 
+import BannonStoryStaging from '../components/BannonStoryStaging';
+
 const M_HEAVENSENT_TRACKS = [
     { id: '1', title: 'Bannon Theme (Main Event)', duration: '3:45', type: 'menu' },
     { id: '2', title: 'Walk Into The Fire', duration: '4:12', type: 'entrance' },
@@ -26,7 +28,7 @@ const M_HEAVENSENT_TRACKS = [
 ];
 
 export default function UniverseHub() {
-    const [activeTab, setActiveTab] = useState<'promotions' | 'match_types' | 'jukebox' | 'booking' | 'politics' | 'medical'>('promotions');
+    const [activeTab, setActiveTab] = useState<'promotions' | 'match_types' | 'jukebox' | 'booking' | 'politics' | 'medical' | 'story'>('promotions');
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTrack, setCurrentTrack] = useState(M_HEAVENSENT_TRACKS[0]);
 
@@ -75,6 +77,12 @@ export default function UniverseHub() {
                     className={`px-4 py-2 text-sm font-bold tracking-wider uppercase whitespace-nowrap transition-colors ${activeTab === 'jukebox' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
                 >
                     Jukebox (M. Heaven$ent)
+                </button>
+                <button 
+                    onClick={() => setActiveTab('story')}
+                    className={`px-4 py-2 text-sm font-bold tracking-wider uppercase whitespace-nowrap transition-colors ${activeTab === 'story' ? 'text-indigo-400 border-b-2 border-indigo-500' : 'text-neutral-500 hover:text-neutral-300'}`}
+                >
+                    Story Engine
                 </button>
             </div>
 
@@ -280,6 +288,10 @@ export default function UniverseHub() {
                             </div>
                         </div>
                     </div>
+                )}
+                
+                {activeTab === 'story' && (
+                    <BannonStoryStaging />
                 )}
             </div>
         </div>
