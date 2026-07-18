@@ -11,5 +11,5 @@ class BANNONCORE_API UBannonFatiguePosture : public UObject
 
 public:
     UFUNCTION(BlueprintCallable, Category="Bannon|Animation")
-    void CalculateSpineDeformation(float CurrentStamina, float MaxStamina, UPARAM(ref) float& SpineSlumpPitch);
+    void CalculatePostureDeformation(float CurrentStamina, float MaxStamina, UPARAM(ref) float& OutSpineSlumpAlpha, UPARAM(ref) float& OutBreathingIntensity);
 };
