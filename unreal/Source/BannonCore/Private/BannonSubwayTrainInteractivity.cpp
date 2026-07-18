@@ -1,5 +1,8 @@
 #include "BannonSubwayTrainInteractivity.h"
-#include "GameFramework/Actor.h"
+#include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Animation/AnimInstance.h"
 
 UBannonSubwayTrainInteractivity::UBannonSubwayTrainInteractivity()
 {
@@ -10,6 +13,24 @@ void UBannonSubwayTrainInteractivity::ApplyInertialPhysicsToFighters(TArray<AAct
 {
     for (AActor* Fighter : Occupants)
     {
-        UE_LOG(LogTemp, Warning, TEXT("Bannon Sandbox: Applying subway inertial physics vector %s to fighter."), *TrainVelocity.ToString());
+        ACharacter* Char = Cast<ACharacter>(Fighter);
+        if (Char && Char->GetCharacterMovement())
+        {
+            // Transfer inertial physics vector
+            Char->GetCharacterMovement()->AddImpulse(TrainVelocity * Char->GetCharacterMovement()->Mass, true);
+            
+            // Deep AnimGraph Binding: Inertial stagger blending
+            UAnimInstance* AnimInst = Char->GetMesh()->GetAnimInstance();
+            if (AnimInst)
+            {
+                FVectorProperty* VectorProp = FindFProperty<FVectorProperty>(AnimInst->GetClass(), FName("InertialForceVector"));
+                if (VectorProp)
+                {
+                    VectorProp->SetPropertyValue_InContainer(AnimInst, TrainVelocity);
+                }
+            }
+            
+            UE_LOG(LogTemp, Warning, TEXT("Bannon Sandbox: Applied subway inertial physics vector %s to fighter %s."), *TrainVelocity.ToString(), *Fighter->GetName());
+        }
     }
 }
