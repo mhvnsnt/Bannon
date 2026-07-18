@@ -12,7 +12,6 @@ ABannonNeuralNetBrawlerAI::ABannonNeuralNetBrawlerAI()
 void ABannonNeuralNetBrawlerAI::BeginPlay()
 {
     Super::BeginPlay();
-    // Bind asynchronous decision loop directly to Chaos physics step (Fixed Tick approximation)
     GetWorldTimerManager().SetTimer(NeuralTickHandle, this, &ABannonNeuralNetBrawlerAI::TickNeuralInference, 1.0f / 60.0f, true);
 }
 
@@ -31,11 +30,6 @@ void ABannonNeuralNetBrawlerAI::EvaluateCombatEnvironment(FObservationFrame& Out
         OutFrame.TargetTrajectory = TargetCharacter->GetVelocity();
         OutFrame.TargetDistance = FVector::Dist(ControlledPawn->GetActorLocation(), TargetCharacter->GetActorLocation());
         OutFrame.bIsConstraintActive = TargetCharacter->GetMesh()->IsSimulatingPhysics();
-        
-        // Phase 6 Ontological Alignment parameter ingests
-        float AuraResonance = 0.84f; 
-        int32 EgoDissolution = 4;
-        float GreedMultiplier = 1.2f;
     }
 }
 
@@ -43,16 +37,9 @@ float ABannonNeuralNetBrawlerAI::CalculateRewardWeight(float PoiseDamage, bool b
 {
     const float DMG_SCALE = 8.0f;
     float Reward = (PoiseDamage * DMG_SCALE);
-    
-    if (bSelfCrumple)
-    {
-        Reward -= 1000.0f; 
-    }
-    
-    // Procedurally skew AI's risk-taking behavior via Ontological Greed
-    float GreedMultiplier = 1.2f; 
+    if (bSelfCrumple) Reward -= 1000.0f;
+    float GreedMultiplier = 1.2f;
     Reward *= GreedMultiplier;
-    
     return Reward;
 }
 
@@ -67,22 +54,35 @@ void ABannonNeuralNetBrawlerAI::TickNeuralInference()
     }
     MemoryTensorBuffer.Add(CurrentFrame);
     
-    // Neural inference logic parsing tensor to anticipate physics momentum
-    FVector OptimalInterceptVector = CurrentFrame.TargetTrajectory * -1.5f;
-    FString SelectedAction = TEXT("powerbomb"); 
+    // Phase 8: Aggression / Cowardice Matrix
+    float SelfPoise = 25.0f; // Sourced from independent Poise Engine state
+    float TargetPoise = 35.0f; // Sourced from independent Poise Engine state
     
-    ExecuteCombatAction(OptimalInterceptVector, SelectedAction);
+    FVector OptimalVector = FVector::ZeroVector;
+    FString SelectedAction = TEXT("idle");
+
+    if (SelfPoise < 30.0f)
+    {
+        OptimalVector = CurrentFrame.TargetTrajectory * -2.0f;
+        SelectedAction = TEXT("evade");
+        UE_LOG(LogTemp, Warning, TEXT("Bannon AI: Self poise critical. Weighting Cowardice matrix. Prioritizing spatial repositioning."));
+    }
+    else if (TargetPoise < 40.0f)
+    {
+        OptimalVector = CurrentFrame.TargetTrajectory * 1.5f;
+        SelectedAction = TEXT("powerbomb"); 
+        UE_LOG(LogTemp, Warning, TEXT("Bannon AI: Target poise critical. Weighting Aggression matrix. Prioritizing Phase 4 heavy grapple execution."));
+    }
+    
+    ExecuteCombatAction(OptimalVector, SelectedAction);
 }
 
 void ABannonNeuralNetBrawlerAI::ExecuteCombatAction(FVector ActionImpulse, FString ActionType)
 {
     ACharacter* ControlledCharacter = Cast<ACharacter>(GetPawn());
-    if (ControlledCharacter)
+    if (ControlledCharacter && ControlledCharacter->GetCharacterMovement())
     {
-        if (ControlledCharacter->GetCharacterMovement())
-        {
-            ControlledCharacter->GetCharacterMovement()->AddImpulse(ActionImpulse, true);
-        }
+        ControlledCharacter->GetCharacterMovement()->AddImpulse(ActionImpulse, true);
         
         UBannonMDickiePhysicsIntegration* PhysicsIntegration = ControlledCharacter->FindComponentByClass<UBannonMDickiePhysicsIntegration>();
         if (PhysicsIntegration)
