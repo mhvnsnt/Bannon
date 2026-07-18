@@ -1,44 +1,41 @@
 #include "BannonCrowdHeatMemory.h"
 
-void UBannonCrowdHeatMemory::RegisterBetrayalEvent(const FString& WrestlerID, const FString& VictimID, TArray<FCrowdMemoryEvent>& EventHistory)
+void UBannonCrowdHeatMemory::RegisterBetrayalOrHeroic(const FString& WrestlerID, const FString& TargetID, bool bIsBetrayal, TMap<FString, float>& GlobalHeatMatrix)
 {
-    // MDickie-style persistent universe memory. Betraying a tag partner generates massive heat.
-    FCrowdMemoryEvent NewEvent;
-    NewEvent.EventDescription = FString::Printf(TEXT("Betrayed %s with a steel chair"), *VictimID);
-    NewEvent.HeatImpact = -85.0f; // Massive heel heat
-    NewEvent.WeeksAgo = 0; // Just happened
+    // Universe mode memory for the audience, tracking heel/face heat globally across events.
+    float CurrentHeat = GlobalHeatMatrix.Contains(WrestlerID) ? GlobalHeatMatrix[WrestlerID] : 0.0f;
 
-    EventHistory.Add(NewEvent);
-}
-
-void UBannonCrowdHeatMemory::CalculateCurrentAudienceAlignment(TArray<FCrowdMemoryEvent>& EventHistory, float& OutCurrentHeatMatrix, FString& OutCrowdReactionType)
-{
-    // Aggregates all historical events for this wrestler, applying an exponential decay algorithm.
-    // The crowd eventually forgives old betrayals (decaying memory), but recent acts heavily influence their boos/cheers.
-    float TotalHeat = 0.0f;
-
-    for (FCrowdMemoryEvent& Event : EventHistory)
+    if (bIsBetrayal)
     {
-        // Decay formula: Heat loses 10% of its impact each week. (0.9^Weeks)
-        float DecayedHeat = Event.HeatImpact * FMath::Pow(0.9f, (float)Event.WeeksAgo);
-        TotalHeat += DecayedHeat;
-        
-        // Age the event for the next evaluation
-        Event.WeeksAgo++;
-    }
-
-    OutCurrentHeatMatrix = FMath::Clamp(TotalHeat, -100.0f, 100.0f);
-
-    if (OutCurrentHeatMatrix <= -50.0f)
-    {
-        OutCrowdReactionType = TEXT("NuclearBoos");
-    }
-    else if (OutCurrentHeatMatrix >= 50.0f)
-    {
-        OutCrowdReactionType = TEXT("ThunderousCheers");
+        // Betraying a tag partner or attacking someone from behind generates massive Heel heat (Negative)
+        CurrentHeat -= 40.0f;
     }
     else
     {
-        OutCrowdReactionType = TEXT("MixedReaction"); // Apathetic or divided crowd
+        // Saving a rival from a beatdown generates massive Face heat (Positive)
+        CurrentHeat += 40.0f;
+    }
+
+    // Clamp between -100 (Nuclear Heat) and +100 (White Hot Babyface)
+    GlobalHeatMatrix.Add(WrestlerID, FMath::Clamp(CurrentHeat, -100.0f, 100.0f));
+}
+
+void UBannonCrowdHeatMemory::CalculateEntranceReaction(const FString& WrestlerID, const TMap<FString, float>& GlobalHeatMatrix, float& OutCrowdVolume, FString& OutReactionType)
+{
+    float Heat = GlobalHeatMatrix.Contains(WrestlerID) ? GlobalHeatMatrix[WrestlerID] : 0.0f;
+    OutCrowdVolume = FMath::Abs(Heat) / 100.0f; // More absolute heat = louder crowd
+
+    if (Heat < -30.0f)
+    {
+        OutReactionType = TEXT("Booing");
+    }
+    else if (Heat > 30.0f)
+    {
+        OutReactionType = TEXT("Cheering");
+    }
+    else
+    {
+        OutReactionType = TEXT("Apathetic");
+        OutCrowdVolume = 0.2f; // Baseline murmur
     }
 }
