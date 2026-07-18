@@ -36960,3 +36960,175 @@ window.BANNON_UNIVERSE = (function(){
 </script>
 </body>
 </html>
+<script>
+
+(function() {
+    // Environmental Object Prototype
+    window.EnvObject = function(type, x, y) {
+        this.type = type; // 'table' or 'ladder'
+        this.hp = 100;
+        this.x = x; this.y = y;
+        this.broken = false;
+    };
+
+    Fighter.prototype.checkEnvCollisions = function() {
+        if (this.velocity > 500 && this.state === 'attack') {
+            // Check collision with objects...
+            // Simplified: check against table
+            if (this.target && this.target.type === 'table' && this.target.hp > 0) {
+                this.target.hp = 0;
+                this.target.broken = true;
+                this.target.state = 'broken';
+                this.state = 'hurt';
+                this.hp -= 15;
+                showFighterLabel(this, 'TABLE!');
+                console.log('TABLE!');
+            }
+        }
+    };
+    
+    // Add check to update loop
+    const originalUpdate = Fighter.prototype.update;
+    Fighter.prototype.update = function(dt) {
+        this.checkEnvCollisions();
+        originalUpdate.call(this, dt);
+    };
+})();
+(function() {
+    Fighter.prototype.initSubmission = function(target) {
+        this.state = 'submitting';
+        this.target = target;
+        target.state = 'submitted';
+        this.subProgress = 50;
+        showFighterLabel(this, 'SUBMISSION!');
+        showFighterLabel(target, 'SUBMISSION!');
+    };
+
+    const originalUpdate = Fighter.prototype.update;
+    Fighter.prototype.update = function(dt) {
+        if (this.state === 'submitting') {
+            // Button mash mechanic placeholder
+            // In reality, this would check inputs
+            this.subProgress += (Math.random() - 0.5) * 5;
+            if (this.subProgress >= 100) {
+                this.state = 'idle';
+                this.target.state = 'knockout';
+                showFighterLabel(this, 'TAP OUT!');
+            }
+        }
+        originalUpdate.call(this, dt);
+    };
+})();
+
+(function() {
+    Fighter.prototype.processReversal = function(type) {
+        // type: Breaker, Block, Dodge, Mid-move
+        this.state = 'idle';
+        showFighterLabel(this, type.toUpperCase() + '!');
+        console.log('Reversal: ' + type);
+        
+        // Specific logic per type could be added here
+        if (type === 'Breaker') {
+            this.target.state = 'stumble';
+        }
+    };
+})();
+
+(function() {
+    // New states: apron, tree-of-woe, avalanche, corner-seated
+    Fighter.prototype.setPositionalState = function(state) {
+        this.state = state;
+        showFighterLabel(this, state.replace('-', ' ').toUpperCase());
+        console.log('Positional State: ' + state);
+    };
+})();
+
+(function() {
+    const originalInit = Fighter.prototype.init || function() {};
+    Fighter.prototype.init = function() {
+        originalInit.call(this);
+        this.damageMap = { head: 0, torso: 0, limbs: 0 };
+    };
+    
+    const originalHit = Fighter.prototype.handleHit || function() {};
+    Fighter.prototype.handleHit = function(move) {
+        if (!this.damageMap) this.damageMap = { head: 0, torso: 0, limbs: 0 };
+        const zone = move.zone || 'torso';
+        this.damageMap[zone] += 5;
+        if (this.damageMap[zone] > 30) {
+            showFighterLabel(this, zone.toUpperCase() + ' DAMAGED!');
+        }
+        originalHit.call(this, move);
+    };
+})();
+
+(function() {
+    Fighter.prototype.transitionGroundState = function(newState) {
+        // newState: mount, guard, back-take
+        this.groundState = newState;
+        showFighterLabel(this, newState.toUpperCase());
+        console.log('Ground State: ' + newState);
+    };
+})();
+
+(function() {
+    window.PromotionSim = {
+        bookMatch: function(f1, f2) {
+            console.log('Booking: ' + f1.name + ' vs ' + f2.name);
+            showFighterLabel(f1, 'MATCH BOOKED');
+            showFighterLabel(f2, 'MATCH BOOKED');
+        }
+    };
+})();
+
+(function() {
+    window.Crowd = {
+        momentum: 50,
+        updateMomentum: function(delta) {
+            this.momentum = Math.max(0, Math.min(100, this.momentum + delta));
+            console.log('Crowd Momentum: ' + this.momentum);
+        }
+    };
+    
+    // Hook hit to update momentum
+    const originalHit = Fighter.prototype.handleHit || function() {};
+    Fighter.prototype.handleHit = function(move) {
+        Crowd.updateMomentum(move.isHeavy ? 5 : 2);
+        originalHit.call(this, move);
+    };
+})();
+
+<script>
+(function() {
+    // 1. transitionGroundState
+    Fighter.prototype.transitionGroundState = function(newState) {
+        this.groundState = newState;
+        // Logic: play animation, update collision mask
+        showFighterLabel(this, 'GROUND: ' + newState.toUpperCase());
+    };
+    // 2. updateMomentum
+    window.Crowd.updateMomentum = function(delta) {
+        this.momentum = Math.max(0, Math.min(100, this.momentum + delta));
+        // Logic: trigger visual shifts in HUD based on momentum
+    };
+    // 3. bookMatch
+    window.PromotionSim.bookMatch = function(f1, f2) {
+        // Logic: generate match card data structure
+        showFighterLabel(f1, 'MATCH: ' + f2.name);
+    };
+    // 4. setPositionalState
+    Fighter.prototype.setPositionalState = function(state) {
+        this.state = state;
+        // Logic: switch movement anim set to position-specific
+        showFighterLabel(this, state.toUpperCase());
+    };
+    // 5. processReversal
+    Fighter.prototype.processReversal = function(type) {
+        this.state = 'idle';
+        // Logic: play reversal animation, break opponent combo
+        showFighterLabel(this, type.toUpperCase());
+    };
+})();
+</script>
+
+</script>
