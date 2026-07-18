@@ -6719,11 +6719,26 @@ Fighter.prototype.applyMesh = function(){
         d.rotation.set(Math.sin(a)*lean, 0, -Math.cos(a)*lean);
         d.scale.set(_ms*0.85, _ms*0.62, _ms*0.85); }
     } else {
+      // HANGING LOCS (Bannon): a Cylinder's default axis is +Y (vertical). The old code left
+      // rotation=(0,0,0), so every dread stood as a VERTICAL cylinder clustered at the skull — a
+      // picket-fence of spikes shooting off the head (the "deformed models" the owner saw). FIX:
+      // orient each loc to DRAPE down-and-outward from its scalp anchor (align +Y to the hang dir),
+      // so they read as hanging dreadlocks, not spikes. Anchor the TOP at the scalp; extend down.
+      const _yUp=(window.__dreadUp||(window.__dreadUp=new THREE.Vector3(0,1,0)));
+      const _q=(window.__dreadQ||(window.__dreadQ=new THREE.Quaternion()));
+      const _dir=(window.__dreadD||(window.__dreadD=new THREE.Vector3()));
       for(let i=0;i<s.dreads.length;i++){ const d=s.dreads[i], n=s.dreads.length;
-        const a=(50 + i*(260/(n-1)))*Math.PI/180;                       // arc that skips the ±50° face cone (+x forward)
-        const ax=Math.cos(a)*rr, az=Math.sin(a)*rr, len=d.userData.dreadLen||0.3;
-        d.position.set(h.x + ax, h.y + 0.055*_ms - len*0.5, h.z + az);  // a=0 is +x(face); 50°..310° arc = beside the face, wrapping the BACK
-        d.rotation.set(0,0,0); d.scale.setScalar(_ms); } } }
+        const a=(115 + i*(130/(Math.max(2,n)-1)))*Math.PI/180;          // BACK arc only (115°..245°) — behind the head, never over the face
+        const ax=Math.cos(a)*rr, az=Math.sin(a)*rr, len=(d.userData.dreadLen||0.3);
+        // hang straight DOWN with a slight uniform BACKWARD lean (-x is behind; the fighter faces +x).
+        // the per-strand scalp anchor (ax,az) gives the side-to-side spread, so the locs drape parallel
+        // down the back/sides instead of fanning out into spikes.
+        _dir.set(-0.16, -1.0, 0).normalize();
+        _q.setFromUnitVectors(_yUp, _dir);                              // point the loc's +Y along the hang direction
+        d.quaternion.copy(_q);
+        const topY=h.y + 0.02*_ms;                                      // anchor the TOP at the back of the scalp
+        d.position.set(h.x + ax + _dir.x*len*0.5*_ms, topY + _dir.y*len*0.5*_ms, h.z + az + _dir.z*len*0.5*_ms);
+        d.scale.setScalar(_ms); } } }
   // NECKTIE: hangs from the collar down the chest front, riding the torso (chest -> pelvis line)
   if (s.tie && s.tie.visible){
     const tx=(c.x+p.x)*0.5 + 0.155, ty=c.y*0.62 + p.y*0.38, tz=(c.z+p.z)*0.5;
