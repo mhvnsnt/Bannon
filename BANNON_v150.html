@@ -18969,6 +18969,47 @@ init();
   window.__LAST_COMMENTARY_DATA = null;
   let lastCommentaryTime = 0;
 
+  // OFFLINE COMMENTARY DB — used when the /api/commentary server isn't reachable (the standalone APK,
+  // or any offline play). Mixes the existing color with MDickie-flavored calls + more move types so the
+  // two-voice booth stays fully voiced without a server. This is the "mix MDickie commentary into what
+  // we already have" pool — extend these arrays to add more.
+  window.__COMMENTARY_OFFLINE_DB = window.__COMMENTARY_OFFLINE_DB || {
+    voiceAIntro: "Welcome to the biggest night in the Bannon universe — we are LIVE and anything can happen.",
+    voiceBIntro: "And you KNOW I love chaos. Ring the bell, let these two settle it!",
+    commentaryDb: {
+      VoiceA: { idleLore: [
+        "These two have history — you can feel it in every lock-up.",
+        "Styles make fights, and this is a clash of everything they believe in.",
+        "The story writes itself out here: pride, pain, and a title on the line." ] },
+      VoiceB: {
+        blood: [
+          "HE IS BUSTED WIDE OPEN! The crimson mask is on and this crowd is UNGLUED!",
+          "Oh he's cut — legitimately opened up, and it changes everything!",
+          "The blood is POURING now. Somebody get a towel — actually, don't, let 'em fight!" ],
+        heavyMoves: {
+          powerbomb: [ "POWERBOMB! Folded in HALF and driven through the mat!", "He LAUNCHED him — the ring shook on that one!" ],
+          suplex:    [ "Over the top and PLANTED! Textbook and brutal.", "Deadlift and DUMP — pure power right there!" ],
+          ddt:       [ "DDT! Spiked him straight down on the crown!", "Planted skull-first — lights flickered on that one!" ],
+          piledriver:[ "PILEDRIVER! Straight down on the point of the skull — that's a dangerous one!", "He drove him into the canvas headfirst!" ],
+          chokeslam: [ "CHOKESLAM! Grabbed him by the throat and threw him to the earth!", "Gooseneck and DOWN — all the way through the mat!" ],
+          cutter:    [ "OUT OF NOWHERE! Snatched him out of the air into the cutter!", "No setup, no warning — just SNAP and it's done!" ],
+          stunner:   [ "STUNNER! Caught the jaw flush — he crumpled instantly!", "Snapped it on and the legs turned to jelly!" ] },
+        knockdown: [
+          "DOWN HARD! I'm not sure he knows what county he's in!",
+          "Off his feet and the ref starts the count — is this the end?!",
+          "TIMBER! That thunderous shot dropped him where he stood!" ],
+        strikes: [
+          "CRACK! Right on the button — felt that one up here in the booth!",
+          "Flush! Perfect timing, perfect placement — that's a fighter!",
+          "He drilled him! Precision striking, and the crowd erupts!" ],
+        nearFall: [ "KICKOUT! I can't BELIEVE he got the shoulder up!", "A heartbeat from three — how?!" ],
+        reversal: [ "REVERSED! Scouted it perfectly and turned the tables!", "Countered out of nowhere — what a mind for this!" ],
+        finisher: [ "This could be IT — he's setting up for the end!", "Lights out if he connects with this one!" ],
+        taunt:    [ "Playing to the crowd now — but is that wise?", "All the swagger in the world on display." ],
+        victory:  [ "IT'S OVER! What an absolute WAR!", "And your winner — a statement made in blood and sweat!" ] }
+    }
+  };
+
   function initCommentarySuite() {
     if (typeof fighters === 'undefined' || !fighters || fighters.length < 2) return;
     const fA = fighters[0].opts.name || 'BANNON';
@@ -18998,6 +19039,12 @@ init();
     })
     .catch(e => {
       console.warn('Commentary API lookup error. Operating in offline cache mode.', e);
+      // OFFLINE (e.g. the standalone APK): load the rich offline DB so the booth stays fully voiced,
+      // and play the intro. This is where the MDickie-mixed lines come from without a server.
+      if(!window.__LAST_COMMENTARY_DATA) window.__LAST_COMMENTARY_DATA = window.__COMMENTARY_OFFLINE_DB;
+      try{ const d=window.__LAST_COMMENTARY_DATA;
+        if(d && d.voiceAIntro){ setTimeout(()=>{ speakDual('A', d.voiceAIntro); setTimeout(()=>{ if(d.voiceBIntro) speakDual('B', d.voiceBIntro); }, 4600); }, 1200); }
+      }catch(_){}
     });
   }
 
@@ -19081,6 +19128,18 @@ init();
       speakDual('B', sLines[Math.floor(Math.random() * sLines.length)]);
       lastCommentaryTime = t;
       return;
+    }
+
+    // 2b. More signature move families (MDickie-mixed pool): DDT / piledriver / chokeslam / cutter / stunner
+    {
+      const hm = (db && db.VoiceB.heavyMoves) || (window.__COMMENTARY_OFFLINE_DB.commentaryDb.VoiceB.heavyMoves);
+      let key=null;
+      if (mName.includes('stunner')) key='stunner';
+      else if (mName.includes('cutter')||mName.includes('rko')||mName.includes('bottom line')) key='cutter';
+      else if (mName.includes('chokeslam')||mName.includes('gooseneck')||mName.includes('choke')) key='chokeslam';
+      else if (mName.includes('piledriver')||mName.includes('headstone')||mName.includes('foundation')||mName.includes('tombstone')) key='piledriver';
+      else if (mName.includes('ddt')||mName.includes('spike')||mName.includes('driver')||mName.includes('cranium')) key='ddt';
+      if (key && hm[key]) { const L=hm[key]; speakDual('B', L[Math.floor(Math.random()*L.length)]); lastCommentaryTime=t; return; }
     }
 
     // 3. Falling/Knockdown state commentary
