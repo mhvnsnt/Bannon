@@ -13637,6 +13637,71 @@ try{
   // TEXTBOOK AARON RUBEN (Book canon) — grizzled by-the-numbers veteran, comedy-technician: every hold
   // is chapter-and-verse, every spot telegraphed and somehow still landed. The wily old pro.
   _addChar('AARON_RUBEN',    { label:'Textbook',                 col:0xb02a2a, accent:0xf0e8d8, skin:0xd9a066, faction:'Free Agent', canon:true, bio:'A thirty-year man who wrestles straight out of the manual — chain wrestling by the numbers, comedy timing sharpened by decades. Underestimate the fundamentals and he schools you.', archetype:'technician' }, 'SINGLET', 'SHORT', {musc:0.5,fat:0.34});
+  // ============================================================================================
+  // v160 BOOK CAST — the characters + stables the owner flagged as missing from the game roster
+  // (they existed in the books / Google-AI-Studio dashboard but were never in MOVESET_DB, so they
+  // never showed in ROSTER_ALL). Each gets a faction + stable + archetype (seeds stats/style/moves),
+  // proprietary label/bio (no trademarks), and a proprietary finisher below. Models stay procedural
+  // until proper skinned GLBs exist — identity/roster first.
+  // ---- The Administration (Kennedy corporate power) ----
+  _addChar('RONALD_SLUMP',    { label:'The Billionaire President', col:0x1a2b4a, accent:0xd4af37, skin:0xe8c9a8, faction:'Corporate Structure', stable:'The Administration', canon:true, bio:'A gilded blowhard who bought his way to the top of the card and rules by decree — all bluster, all leverage.', archetype:'brawler' }, 'JACKET', 'CAESAR', {musc:0.34,fat:0.5});
+  _addChar('RONALD_SLUMP_JR', { label:'The Wild Card',             col:0x24344f, accent:0xe0c060, skin:0xe6c49c, faction:'Corporate Structure', stable:'The Administration', canon:true, bio:'The heir with something to prove — reckless, entitled, and dangerous precisely because he has nothing to lose.', archetype:'brawler' }, 'JACKET', 'SHORT', {musc:0.52,fat:0.26});
+  _addChar('MELISSA_KENNEDY', { label:'The Heiress Authority',     col:0x2a2038, accent:0xc0a0d0, skin:0xe2b892, faction:'Corporate Structure', stable:'The Degenerates', canon:true, bio:'Boardroom power in ring gear — she books the chaos and sometimes joins it.', archetype:'technician' }, 'LONG_TIGHTS', 'PONYTAIL', {musc:0.42,fat:0.2,fem:1,hips:1.02,glutes:1.05,waist:0.86,bust:1.0});
+  // ---- Individuals ----
+  _addChar('JUDAS_MESSIAH',   { label:'The Savior',                col:0x3a0d0d, accent:0xf0d060, skin:0xe0b088, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'A messianic showman-technician who preaches his own gospel and backs it up with a thousand holds — the self-anointed savior of the business.', archetype:'technician' }, 'TIGHTS', 'LONG', {musc:0.62,fat:0.14});
+  _addChar('THE_SAINT',       { label:'The Straight-Edge Saint',   col:0x101418, accent:0xf0f0f0, skin:0xd9a066, faction:'Independent Variables', stable:'The Straight Shooters', canon:true, bio:'Clean-living zealot with a cult of personality — a submission technician who wants you to be BETTER, by force.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.6,fat:0.12});
+  _addChar('VAIN_ABEL',       { label:'The Vain Monster',          col:0x1a1a1a, accent:0x8b0000, skin:0xc08a54, faction:'Corporate Structure', canon:true, bio:"Cain Elias's estranged brother — a masked, self-obsessed monster who fights for the mirror as much as the win.", archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.92,fat:0.28});
+  _addChar('THE_BAD_GAL',     { label:'The Bad Gal',               col:0x2a0d24, accent:0xff2288, skin:0xd9a066, faction:'Agents of Chaos', canon:true, bio:'Glamour and menace in equal measure — a diva who hits like a brawler and revels in being the villain.', archetype:'brawler' }, 'SINGLET_2TONE', 'PONYTAIL', {musc:0.5,fat:0.16,fem:1,hips:1.06,glutes:1.12,waist:0.84,bust:1.15});
+  _addChar('THE_MATADOR',     { label:'The Matador',               col:0x8a0d2a, accent:0xffd700, skin:0xc08a54, faction:'Independent Variables', canon:true, bio:'Grace, cape-work and a killer counter — he lets the bull charge, then buries the sword.', archetype:'highFlyer' }, 'TRUNKS', 'SHORT', {musc:0.6,fat:0.12});
+  _addChar('THE_PHOENIX',     { label:'The Phoenix',               col:0xcc4400, accent:0xffcc00, skin:0xd9a066, faction:'Independent Variables', canon:true, bio:'Burns out spectacularly and rises from every beating — a high-flyer who is most dangerous when finished.', archetype:'highFlyer' }, 'TIGHTS', 'LONG', {musc:0.54,fat:0.12});
+  _addChar('SLICK_WILLY',     { label:'"Slick" Willy',             col:0x14243a, accent:0xc0c0c0, skin:0xe0b088, faction:'Free Agent', canon:true, bio:'A silver-tongued ring general — every escape looks like luck until you realize he planned it three moves ago.', archetype:'technician' }, 'LONG_TIGHTS', 'FADE', {musc:0.56,fat:0.18});
+  _addChar('AIR_JORDAN',      { label:'"Air" Jordan · Shackle III',col:0x1a1a2a, accent:0xcc0033, skin:0x6a4326, faction:'Independent Variables', stable:'The Shackles', canon:true, bio:'Third of the Shackle line — hang-time for days, a walking highlight reel who plays above the rim.', archetype:'highFlyer' }, 'TRUNKS', 'FADE', {musc:0.58,fat:0.1});
+  _addChar('TANK_SHACKLE',    { label:'Tank · Shackle IV',         col:0x2a2a1a, accent:0x88aa44, skin:0x6a4326, faction:'Independent Variables', stable:'The Shackles', canon:true, bio:'The fourth Shackle is a rolling fortress — no finesse, all forward, and impossible to move.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.94,fat:0.32});
+  _addChar('KID_GLIDE',       { label:'Kid Glide',                 col:0x0d2a3a, accent:0x33ccff, skin:0xd9a066, faction:'Free Agent', canon:true, bio:'Weightless — a young flyer who seems to hang in the air a beat longer than physics should allow.', archetype:'highFlyer' }, 'SINGLET', 'SHORT', {musc:0.5,fat:0.1});
+  _addChar('IRON_TUSK',       { label:'Iron Tusk',                 col:0x2a2418, accent:0xb0b0b8, skin:0x8a6a4a, faction:'Agents of Chaos', canon:true, bio:'A goring, trampling wall of a man — once he lowers the head, the match is a demolition.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.96,fat:0.36});
+  _addChar('HARDCORE_HARRY',  { label:'"Hardcore" Harry',          col:0x2a1a1a, accent:0xcc3300, skin:0xd9a066, faction:'Independent Variables', canon:true, bio:'A scarred deathmatch lifer who treats tables, tacks and steel as love languages — pain is the point.', archetype:'brawler' }, 'CARGO_PANTS', 'LONG', {musc:0.66,fat:0.26});
+  _addChar('THE_VELOCITY',    { label:'The Velocity',              col:0x0d1a2a, accent:0x00e0d0, skin:0xe0b088, faction:'Free Agent', canon:true, bio:'Pure speed as a philosophy — never stops moving, strikes in bursts, gone before you counter.', archetype:'highFlyer' }, 'SINGLET', 'SHORT', {musc:0.5,fat:0.1});
+  _addChar('THE_CUBIST',      { label:'The Cubist',                col:0x1a1a2a, accent:0xe0e000, skin:0xc08a54, faction:'Agents of Chaos', canon:true, bio:'Deconstructs the human body into angles nobody expects — an abstract, unsettling technician.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.56,fat:0.14});
+  _addChar('GENERAL_VANCE',   { label:'General Vance',             col:0x1a2a1a, accent:0xd4af37, skin:0x7a4a2e, faction:'The Alliance', canon:true, bio:'A battlefield commander in boots — rallies the locker room and leads every charge from the front.', archetype:'powerhouse' }, 'JACKET', 'BUZZ', {musc:0.82,fat:0.24});
+  _addChar('PRETTY_FLACKO',   { label:'Pretty Flacko',             col:0x2a0d2a, accent:0xff66cc, skin:0x6a4326, faction:'Independent Variables', canon:true, bio:'Fashion-forward flash with real snap behind the flex — style AND fight, and he knows it.', archetype:'striker' }, 'TIGHTS', 'FADE', {musc:0.58,fat:0.12});
+  _addChar('CLUB_GOD',        { label:'Club God',                  col:0x14001a, accent:0xaa33ff, skin:0x7a4a2e, faction:'Agents of Chaos', canon:true, bio:'Owns the night — struts to his own rhythm and turns every match into his party.', archetype:'striker' }, 'LONG_TIGHTS', 'FADE', {musc:0.6,fat:0.14});
+  // ---- Tag teams ----
+  _addChar('SLIME',           { label:'Slime',                     col:0x0d2a0d, accent:0x66ff33, skin:0x6a5a2e, faction:'Agents of Chaos', stable:'Slime & Prince', canon:true, bio:'The grimy half of Slime & Prince — does the dirty work while his partner shines.', archetype:'brawler' }, 'CARGO_PANTS', 'LONG', {musc:0.62,fat:0.2});
+  _addChar('PRINCE',          { label:'Prince',                    col:0x1a0d2a, accent:0xffd700, skin:0x6a4326, faction:'Agents of Chaos', stable:'Slime & Prince', canon:true, bio:'The flashy half — royalty attitude, high-flying finish, all the glory.', archetype:'highFlyer' }, 'TIGHTS', 'FADE', {musc:0.54,fat:0.12});
+  _addChar('SPIKE',           { label:'Spike · Bash Brother',      col:0x2a1a0d, accent:0xcc4422, skin:0xd9a066, faction:'Independent Variables', stable:'The Bash Brothers', canon:true, bio:'The heavier Bash Brother — swings first, asks nothing.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.9,fat:0.3});
+  _addChar('HAMMER',          { label:'Hammer · Bash Brother',     col:0x2a2214, accent:0xd0a020, skin:0xd9a066, faction:'Independent Variables', stable:'The Bash Brothers', canon:true, bio:'The relentless Bash Brother — pure percussion, no off switch.', archetype:'brawler' }, 'TRUNKS', 'BUZZ', {musc:0.86,fat:0.28});
+  _addChar('DICE',            { label:'Dice · High Roller',        col:0x14243a, accent:0xd4af37, skin:0xe0b088, faction:'Corporate Structure', stable:'The High Rollers', canon:true, bio:'Gambles on every exchange — cocky, showy, and usually cashing in.', archetype:'striker' }, 'TIGHTS', 'FADE', {musc:0.58,fat:0.16});
+  _addChar('CHIP',            { label:'Chip · High Roller',        col:0x1a2a2a, accent:0xe0c060, skin:0xd9a066, faction:'Corporate Structure', stable:'The High Rollers', canon:true, bio:'The steady hand of the High Rollers — counts cards while his partner counts chickens.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.56,fat:0.16});
+  _addChar('LUCHADOR_RELAMPAGO',{ label:'Relámpago · Luchador Twin',col:0x1a0d3a, accent:0x33ccff, skin:0x8a5a3a, faction:'Independent Variables', stable:'The Luchador Twins', canon:true, bio:'Lightning of the twin duo — blinding tope speed and tandem aerial chaos.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'SHORT', {musc:0.5,fat:0.1});
+  _addChar('LUCHADOR_TRUENO', { label:'Trueno · Luchador Twin',    col:0x3a0d1a, accent:0xffcc00, skin:0x8a5a3a, faction:'Independent Variables', stable:'The Luchador Twins', canon:true, bio:'Thunder of the twin duo — the heavier, harder-landing mirror of his brother.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'SHORT', {musc:0.56,fat:0.12});
+  _addChar('AUDITOR_PRIME',   { label:'Auditor Prime',             col:0x14181c, accent:0x9fb4cc, skin:0xe2b892, faction:'Corporate Structure', stable:'The Corporate Auditors', canon:true, bio:'Every hold is a line item — the lead Auditor collects on debts in the ring.', archetype:'technician' }, 'JACKET', 'CAESAR', {musc:0.54,fat:0.2});
+  _addChar('AUDITOR_SECOND',  { label:'Auditor Second',            col:0x181c20, accent:0xaab8cc, skin:0xd9a066, faction:'Corporate Structure', stable:'The Corporate Auditors', canon:true, bio:'The junior Auditor — enforces the fine print with cold precision.', archetype:'technician' }, 'JACKET', 'SHORT', {musc:0.52,fat:0.2});
+  // ---- The Coven of Gnarly ----
+  _addChar('GRAVE',           { label:'Grave · Coven of Gnarly',   col:0x0a0a0a, accent:0x556677, skin:0x9a8a7a, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'The Coven’s dead weight — a silent, grave-cold powerhouse who buries opponents literally and figuratively.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'LONG', {musc:0.9,fat:0.3});
+  _addChar('JETT_GNARLY',     { label:'Jett Gnarly · Coven Leader',col:0x1a0a1a, accent:0xaa22cc, skin:0x7a4a2e, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'Head of the Coven — a charismatic dark preacher who turns menace into a movement.', archetype:'brawler' }, 'CARGO_PANTS', 'LONG', {musc:0.68,fat:0.18});
+  _addChar('MOKK_GNARLY',     { label:'Mokk Gnarly · Coven',       col:0x0a1a0a, accent:0x338833, skin:0x8a6a4a, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'The Coven’s battering ram — feral strength wrapped in ritual.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.92,fat:0.32});
+  _addChar('RAZOR_GNARLY',    { label:'Razor · Coven',             col:0x1a1a1a, accent:0xcc2222, skin:0xd9a066, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'Edges and cuts — the Coven’s striker, all blades and bad intentions.', archetype:'striker' }, 'LONG_TIGHTS', 'SHORT', {musc:0.62,fat:0.14});
+  _addChar('CRUX',            { label:'Crux · Coven',              col:0x1a0d1a, accent:0x8844aa, skin:0xc08a54, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'The Coven’s technician — ties opponents into crosses they can’t escape.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.58,fat:0.14});
+  _addChar('LUNA_GNARLY',     { label:'Luna · Coven',              col:0x1a1a2a, accent:0xccccff, skin:0xd9a066, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'Moon-pale and airborne — the Coven’s flyer, hauntingly graceful and lethal off the top.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'LONG', {musc:0.48,fat:0.14,fem:1,hips:1.02,glutes:1.06,waist:0.85,bust:0.9});
+  // ---- The Degenerates (Triple X + Hall Nighter already in roster) ----
+  _addChar('THE_DOGG',        { label:'The Dogg · Degenerate',     col:0x14251a, accent:0xd4d400, skin:0xe0b088, faction:'Corporate Structure', stable:'The Degenerates', canon:true, bio:'The crude comedic muscle of the crew — struts, taunts, and lariats you inside out.', archetype:'brawler' }, 'TIGHTS', 'BUZZ', {musc:0.68,fat:0.2});
+  _addChar('ASS_MAN_BILLY',   { label:'Ass-Man Billy · Degenerate',col:0x1a1a14, accent:0xc0c0c0, skin:0xd9a066, faction:'Corporate Structure', stable:'The Degenerates', canon:true, bio:'A gunslinging good-ol’-boy troublemaker — all attitude, cheap shots optional.', archetype:'brawler' }, 'CARGO_PANTS', 'LONG', {musc:0.64,fat:0.22});
+  _addChar('X_KID',           { label:'X-Kid · Degenerate',        col:0x0d1a2a, accent:0x33ccff, skin:0x8a5a3a, faction:'Corporate Structure', stable:'The Degenerates', canon:true, bio:'The high-flying heart of the crew — a springboard machine with a chip on his shoulder.', archetype:'highFlyer' }, 'LONG_TIGHTS', 'PONYTAIL', {musc:0.54,fat:0.1});
+  // ---- The NWC (Judas Messiah already added above) ----
+  _addChar('THE_VANDAL',      { label:'The Vandal · NWC Boss',     col:0x0a0a0a, accent:0xe0e0e0, skin:0xe0b088, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'The outlaw kingpin who spray-paints his takeover on everything — the invading faction’s hollywood heel-in-chief.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.82,fat:0.3});
+  _addChar('VATO',            { label:'Vato · NWC',                col:0x1a1a1a, accent:0x999999, skin:0x7a4a2e, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'The NWC’s brash enforcer — loud, mean, and always looking for the numbers game.', archetype:'brawler' }, 'TIGHTS', 'SHORT', {musc:0.72,fat:0.2});
+  _addChar('BIG_CASH',        { label:'Big Cash · NWC',            col:0x14140a, accent:0xd4af37, skin:0x6a4326, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'Big money, bigger frame — the faction’s payday powerhouse.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.9,fat:0.34});
+  _addChar('AARON_REINER',    { label:'Aaron Reiner · NWC',        col:0x14181c, accent:0xaab8cc, skin:0xe2b892, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'The cerebral one — brought technical credibility to the outlaw crew.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.6,fat:0.16});
+  _addChar('TOXIN',           { label:'Toxin · NWC',               col:0x0d1a0d, accent:0x66ff00, skin:0x8a6a4a, faction:'Independent Variables', stable:'The NWC', canon:true, bio:'Poison in human form — a striker who wears you down with venomous precision.', archetype:'striker' }, 'LONG_TIGHTS', 'SHORT', {musc:0.6,fat:0.14});
+  // ---- The Dynasty & The Masterpiece ----
+  _addChar('KRAY_Z',          { label:'Kray-Z · Dynasty',          col:0x1a0d2a, accent:0xaa33ff, skin:0x6a4326, faction:'Corporate Structure', stable:'The Dynasty', canon:true, bio:'Unpredictable royalty — the Dynasty’s live wire who fights like the rules don’t apply.', archetype:'brawler' }, 'TIGHTS', 'FADE', {musc:0.66,fat:0.16});
+  _addChar('KRUSHA_P',        { label:'Krusha P · Dynasty',        col:0x2a1a0d, accent:0xd0a020, skin:0x6a4326, faction:'Corporate Structure', stable:'The Dynasty', canon:true, bio:'The Dynasty’s demolition arm — crushes first, poses second.', archetype:'powerhouse' }, 'LONG_TIGHTS', 'BALD', {musc:0.92,fat:0.3});
+  _addChar('THE_REPETITION',  { label:'The Repetition · Masterpiece',col:0x14181c, accent:0xc0c0c8, skin:0xe0b088, faction:'Corporate Structure', stable:'The Masterpiece', canon:true, bio:'Does the same devastating sequence until it works — inevitability as a finisher.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.6,fat:0.16});
+  _addChar('THE_THINKER',     { label:'The Thinker · Masterpiece', col:0x181c20, accent:0xe0c060, skin:0xd9a066, faction:'Corporate Structure', stable:'The Masterpiece', canon:true, bio:'Chess to everyone else’s checkers — sets traps five moves deep.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.58,fat:0.16});
+  // ---- The Straight Shooters & Hollywood (The Saint already added above) ----
+  _addChar('LOCOMOTIVE',      { label:'Locomotive · Straight Shooter',col:0x2a1a0d, accent:0xcc4422, skin:0x8a6a4a, faction:'Independent Variables', stable:'The Straight Shooters', canon:true, bio:'A runaway freight train of a shooter — once he builds a head of steam nothing stays standing.', archetype:'powerhouse' }, 'SINGLET', 'BUZZ', {musc:0.88,fat:0.28});
+  _addChar('JOHN_FORD',       { label:'John Ford · Hollywood',     col:0x14243a, accent:0xd4af37, skin:0xe0b088, faction:'Corporate Structure', stable:'Hollywood', canon:true, bio:'A leading-man technician who wrestles for the cameras — every match a screen test he intends to win.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.6,fat:0.16});
+  _addChar('THE_BOULDER',     { label:'The Boulder · Hollywood',   col:0x2a2418, accent:0xc0b060, skin:0x7a4a2e, faction:'Independent Variables', stable:'Hollywood', canon:true, bio:'A charismatic mountain of muscle with a catchphrase for every occasion — the people’s powerhouse.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.94,fat:0.24});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13670,6 +13735,78 @@ try{
     MASTER_SENSEI:   { name:'THE FINAL LESSON',          kind:'strike' },
     WRECK_PATTERSON: { name:'THE WRECKING BALL',         kind:'strike' },
     AARON_RUBEN:     { name:'BY THE BOOK',               kind:'grapple', pos:'BACK_SUPLEX', deliver:'toss'  }
+  });
+  // v160 BOOK CAST finishers (proprietary names, routed through the real physics like the rest):
+  window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
+    RONALD_SLUMP:     { name:'THE HOSTILE TAKEOVER',      kind:'grapple', pos:'SPINEBUSTER',  deliver:'slam'  },
+    RONALD_SLUMP_JR:  { name:'THE INHERITANCE',           kind:'strike' },
+    MELISSA_KENNEDY:  { name:'THE PINK SLIP',             kind:'grapple', pos:'DDT',          deliver:'spike' },
+    JUDAS_MESSIAH:    { name:'THE LAST RITES',            kind:'grapple', pos:'BACK_SUPLEX',  deliver:'bridge'},
+    THE_SAINT:        { name:'THE VICE OF VIRTUE',        kind:'grapple', pos:'BRAINBUSTER',  deliver:'spike' },
+    VAIN_ABEL:        { name:'THE RECKONING',             kind:'grapple', pos:'CHOKESLAM',    deliver:'choke' },
+    THE_BAD_GAL:      { name:'THE FEMME FATALE',          kind:'grapple', pos:'DDT',          deliver:'spike' },
+    THE_MATADOR:      { name:'THE FINAL PASS',            kind:'strike' },
+    THE_PHOENIX:      { name:'THE REBIRTH',               kind:'strike' },
+    SLICK_WILLY:      { name:'THE CON JOB',               kind:'grapple', pos:'REVERSE_DDT',  deliver:'spike' },
+    AIR_JORDAN:       { name:'THE HANG TIME',             kind:'strike' },
+    TANK_SHACKLE:     { name:'THE ARMORED DROP',          kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    KID_GLIDE:        { name:'THE GLIDE PATH',            kind:'strike' },
+    IRON_TUSK:        { name:'THE IMPALEMENT',            kind:'grapple', pos:'SPINEBUSTER',  deliver:'slam'  },
+    HARDCORE_HARRY:   { name:'THE LAST RESORT',           kind:'grapple', pos:'DDT',          deliver:'spike' },
+    THE_VELOCITY:     { name:'TERMINAL VELOCITY',         kind:'strike' },
+    THE_CUBIST:       { name:'THE DECONSTRUCTION',        kind:'grapple', pos:'BUTTERFLY_DDT',deliver:'spike' },
+    GENERAL_VANCE:    { name:'THE FIELD PROMOTION',       kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    PRETTY_FLACKO:    { name:'THE FLEX FINISH',           kind:'strike' },
+    CLUB_GOD:         { name:'LAST CALL',                 kind:'strike' },
+    SLIME:            { name:'THE RESIDUE',               kind:'grapple', pos:'SIDE_SLAM',    deliver:'slam'  },
+    PRINCE:           { name:'THE CORONATION',            kind:'strike' },
+    SPIKE:            { name:'THE SPIKE DROP',            kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    HAMMER:           { name:'THE NAIL',                  kind:'strike' },
+    DICE:             { name:'SNAKE EYES',                kind:'grapple', pos:'DDT',          deliver:'spike' },
+    CHIP:             { name:'THE CASH OUT',              kind:'grapple', pos:'BACKBREAKER',  deliver:'drop'  },
+    LUCHADOR_RELAMPAGO:{ name:'EL RELÁMPAGO',             kind:'strike' },
+    LUCHADOR_TRUENO:  { name:'EL TRUENO',                 kind:'strike' },
+    AUDITOR_PRIME:    { name:'THE FINAL AUDIT',           kind:'grapple', pos:'BRAINBUSTER',  deliver:'spike' },
+    AUDITOR_SECOND:   { name:'THE WRITE-OFF',             kind:'grapple', pos:'BACKBREAKER',  deliver:'drop'  },
+    GRAVE:            { name:'THE BURIAL',                kind:'grapple', pos:'CHOKESLAM',    deliver:'choke' },
+    JETT_GNARLY:      { name:'THE GNARLY GOSPEL',         kind:'grapple', pos:'DDT',          deliver:'spike' },
+    MOKK_GNARLY:      { name:'THE MAULING',               kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    RAZOR_GNARLY:     { name:'THE LACERATION',            kind:'strike' },
+    CRUX:             { name:'THE CROSS TO BEAR',         kind:'grapple', pos:'DDT',          deliver:'spike' },
+    LUNA_GNARLY:      { name:'THE ECLIPSE',               kind:'strike' },
+    THE_DOGG:         { name:'THE PEDIGREE MUTT',         kind:'grapple', pos:'DDT',          deliver:'spike' },
+    ASS_MAN_BILLY:    { name:'THE LAST CALL SALOON',      kind:'strike' },
+    X_KID:            { name:'THE X-FACTOR',              kind:'strike' },
+    THE_VANDAL:       { name:'THE DEFACEMENT',            kind:'grapple', pos:'SPINEBUSTER',  deliver:'slam'  },
+    VATO:             { name:'THE SHAKEDOWN',             kind:'strike' },
+    BIG_CASH:         { name:'THE BANKROLL BOMB',         kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    AARON_REINER:     { name:'THE FINE PRINT',            kind:'grapple', pos:'BRAINBUSTER',  deliver:'spike' },
+    TOXIN:            { name:'THE OVERDOSE',              kind:'strike' },
+    KRAY_Z:           { name:'THE MANIC EPISODE',         kind:'strike' },
+    KRUSHA_P:         { name:'THE DEMOLITION',            kind:'grapple', pos:'POWERBOMB',    deliver:'slam'  },
+    THE_REPETITION:   { name:'THE ENCORE',               kind:'grapple', pos:'VERTICAL_SUPLEX',deliver:'drop' },
+    THE_THINKER:      { name:'CHECKMATE',                 kind:'grapple', pos:'REVERSE_DDT',  deliver:'spike' },
+    LOCOMOTIVE:       { name:'THE DERAILMENT',            kind:'grapple', pos:'SPINEBUSTER',  deliver:'slam'  },
+    JOHN_FORD:        { name:'THE FINAL CUT',             kind:'grapple', pos:'DDT',          deliver:'spike' },
+    THE_BOULDER:      { name:'THE ROCK BOTTOM LINE',      kind:'grapple', pos:'SIDE_SLAM',    deliver:'slam'  }
+  });
+  // v160 STABLES / factions the book cast belongs to (feeds Universe booking + faction warfare;
+  // members are roster keys registered above). Data-only; the Universe engine reads it for feuds/teams.
+  window.CHAR_STABLES = Object.assign(window.CHAR_STABLES||{}, {
+    THE_ADMINISTRATION: { name:'The Administration', faction:'Corporate Structure', leader:'RONALD_SLUMP', members:['RONALD_SLUMP','RONALD_SLUMP_JR','EDWIN_KENNEDY','MELISSA_KENNEDY'] },
+    THE_DEGENERATES:    { name:'The Degenerates', faction:'Corporate Structure', leader:'TRIPLE_XXX', members:['TRIPLE_XXX','HALL_NIGHTER','THE_DOGG','ASS_MAN_BILLY','X_KID','MELISSA_KENNEDY'] },
+    THE_NWC:            { name:'The NWC', faction:'Independent Variables', leader:'THE_VANDAL', members:['THE_VANDAL','VATO','BIG_CASH','AARON_REINER','TOXIN','JUDAS_MESSIAH'] },
+    THE_DYNASTY:        { name:'The Dynasty', faction:'Corporate Structure', leader:'KRAY_Z', members:['KRAY_Z','KRUSHA_P'] },
+    THE_MASTERPIECE:    { name:'The Masterpiece', faction:'Corporate Structure', leader:'THE_THINKER', members:['THE_REPETITION','THE_THINKER'] },
+    THE_STRAIGHT_SHOOTERS:{ name:'The Straight Shooters', faction:'Independent Variables', leader:'THE_SAINT', members:['THE_SAINT','LOCOMOTIVE'] },
+    HOLLYWOOD:          { name:'Hollywood', faction:'Corporate Structure', leader:'JOHN_FORD', members:['JOHN_FORD','THE_BOULDER'] },
+    THE_COVEN_OF_GNARLY:{ name:'The Coven of Gnarly', faction:'Agents of Chaos', leader:'JETT_GNARLY', members:['GRAVE','JETT_GNARLY','MOKK_GNARLY','RAZOR_GNARLY','CRUX','LUNA_GNARLY'] },
+    SLIME_AND_PRINCE:   { name:'Slime & Prince', faction:'Agents of Chaos', leader:'PRINCE', members:['SLIME','PRINCE'] },
+    THE_BASH_BROTHERS:  { name:'The Bash Brothers', faction:'Independent Variables', leader:'SPIKE', members:['SPIKE','HAMMER'] },
+    THE_HIGH_ROLLERS:   { name:'The High Rollers', faction:'Corporate Structure', leader:'DICE', members:['DICE','CHIP'] },
+    THE_LUCHADOR_TWINS: { name:'The Luchador Twins', faction:'Independent Variables', leader:'LUCHADOR_RELAMPAGO', members:['LUCHADOR_RELAMPAGO','LUCHADOR_TRUENO'] },
+    THE_CORPORATE_AUDITORS:{ name:'The Corporate Auditors', faction:'Corporate Structure', leader:'AUDITOR_PRIME', members:['AUDITOR_PRIME','AUDITOR_SECOND'] },
+    THE_SHACKLES:       { name:'The Shackles', faction:'Independent Variables', leader:'AIR_JORDAN', members:['AIR_JORDAN','TANK_SHACKLE'] }
   });
   // finisher/signature specs from the dossiers — data for the moveset-library pass (task #21):
   window.CHAR_FINISHERS = Object.assign(window.CHAR_FINISHERS||{}, {
@@ -25465,18 +25602,21 @@ if (typeof Fighter!=='undefined' && Fighter.prototype.poseGuard && !Fighter.prot
 } catch(e){}
 
 // ── 10. VERSION DISPLAY UPDATE ───────────────────────────────────────────────
+const BANNON_VERSION = (window.BANNON_VERSION = 'v160');   // single source of truth — bump here each pass
 function bumpVersion(){
   try {
+    const V = BANNON_VERSION;
     // ver-badge in top-right HUD
     const vb = document.getElementById('ver-badge');
-    if (vb) vb.textContent = 'BANNON v127';
+    if (vb) vb.textContent = 'BANNON '+V;
     // title tag
     const t = document.querySelector('title');
-    if (t && /BANNON/.test(t.textContent)) t.textContent = t.textContent.replace(/v\d+/, 'v127');
-    // menu footer badge (Share Tech Mono 9px div)
+    if (t && /BANNON/.test(t.textContent)) t.textContent = t.textContent.replace(/v\d+/, V);
+    // menu footer badge (Share Tech Mono 9px div) — catch any stale vNNN badge, not just v7x
     document.querySelectorAll('div,span').forEach(el => {
-      if (/^v7[5-9]/.test((el.textContent||'').trim()) || /BANNON v7[5-9]/.test(el.textContent||''))
-        el.textContent = el.textContent.replace(/v\d+/, 'v127');
+      const tx = (el.textContent||'').trim();
+      if (/^v\d{2,3}$/.test(tx) || /^BANNON v\d{2,3}$/.test(tx))
+        el.textContent = el.textContent.replace(/v\d+/, V);
     });
   } catch(e){}
 }
@@ -25486,7 +25626,7 @@ bumpVersion();
 [400, 1400, 3500, 7000].forEach(ms => setTimeout(() => { try { fixAllPanels(); bumpVersion(); } catch(e){} }, ms));
 
 console.log(
-  '%c⚡ BANNON v127 — Universal touch · Euphoria (head snap · neck whip · leg buckle · dead-weight · floor resonance) · Wobble v2 (4-step + jitter kill) · poseAttack shoulder-roll · directional flinch · breath S-curve',
+  '%c⚡ BANNON v160 — impact-taunts (ginga/spinaroony) · freeze+deform fixes · foot-plant · APK · jukebox · universe · full move library · Euphoria physics',
   'color:#ffd700;font-weight:bold;background:#0d0500;padding:4px 10px'
 );
 
@@ -28839,11 +28979,13 @@ if (_origCouple && !_origCouple._v98){
 })();
 
 // ── Version badge ─────────────────────────────────────────────────────────────
+// (defers to the single BANNON_VERSION source of truth defined earlier — no stale hardcode)
 try{
+  const _V = (window.BANNON_VERSION||'v160');
   const vb = document.getElementById('ver-badge');
-  if (vb) vb.textContent = 'BANNON v103';
+  if (vb) vb.textContent = 'BANNON '+_V;
   const ttl = document.querySelector('title');
-  if (ttl) ttl.textContent = 'BANNON — FIGHTER v103';
+  if (ttl) ttl.textContent = 'BANNON — FIGHTER '+_V;
 }catch(e){}
 
 console.log('[BANNON v98] Floor physics zone-aware · Blood/stain decal Y fixed · Rope contact 0.42→0.10 · Apron combat · Throw-over extended · Tangle · Shadow zone-tracked');

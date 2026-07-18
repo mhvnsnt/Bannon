@@ -579,4 +579,23 @@ BINDING session memory so these don't get re-derived:
 - **GOOGLE AI STUDIO src/** — AI Studio mirrors a 35-file React companion app under `src/` to main (creation
   suite/AI chat/GitHub-sync dashboards). It only ADDS to src/; it has never deleted game files, canon, or
   assets/moves. When it says it "removed the daemons," that's cleanup of its own sync scripts, not our code.
+  It also does NOT add characters to the playable game — its Dashboard.tsx had only a 7-char demo list.
   Merged-branch protocol: this branch is fully contained in main — fast-forward onto origin/main and keep going.
+- **v160 BOOK CAST (50 chars + 14 stables added to the GAME roster)** — the owner's missing-character list
+  (Judas Messiah/The Saint/Vain Abel/The Bad Gal/Slime&Prince/Matador/Phoenix/Slick Willy/Bash Bros/High
+  Rollers/Air Jordan+Tank Shackle/Kid Glide/Iron Tusk/Hardcore Harry/Luchador Twins/Corporate Auditors/
+  Repetition/Thinker/Velocity/Cubist/General Vance/Pretty Flacko/Club God/Coven of Gnarly ×6/Degenerates/
+  NWC/Dynasty/Masterpiece/Straight Shooters/Hollywood/Ronald Slump+Jr) wired via `_addChar` (CHAR_META +
+  MOVESET_DB + ROSTER_SPEC from archetype) with faction+stable+proprietary bio, proprietary FINISHER_MOVES,
+  and a new `window.CHAR_STABLES` registry (14 stables, members = roster keys). Verified: all 50 in
+  MOVESET_DB/CHAR_META/FINISHER_MOVES, ROSTER_ALL()=116, 0 pageerrors. Models stay procedural until real
+  skinned GLBs exist — identity/roster first (owner makes canon models per the ownership directive).
+- **MODEL PIPELINE — HONEST STATE (owner override 2026-07-18): STOP hand-writing skinning/rig code.**
+  `tools/rigready/skin.cjs` (my geodesic auto-rigger) produces BROKEN fighters — stretched smears, invisible/
+  torn limbs, unrendered holes; the harness's bloom + 2.3fps made me misjudge them as "coherent" (I was wrong;
+  owner was right). ALSO: several banked `.glb` are UNSKINNED 15-part statues (BANNON.glb/MAIME.glb/CODY_gear.glb/
+  ONYX*.glb — skins:0) that only rigid-chunk-rig in `_bindFighterGltf` (the "skeletal inversion" contortion).
+  DIRECTION: pull a REAL open-source auto-rig/skinning solution (UniRig / AccuRIG / Anything-World / Pinocchio /
+  Mixamo-style) instead of our skinner. Do NOT auto-skin canon/book models (owner's per ownership directive).
+  Probe tool that works: raw-GLB bbox + skin/joint count via GLTFLoader headless (all 61 GLBs load, upright,
+  centered; the broken-ness is skinning weights + unskinned sources, not orientation/scale).
