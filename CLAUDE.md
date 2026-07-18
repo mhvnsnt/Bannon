@@ -563,3 +563,20 @@ BINDING session memory so these don't get re-derived:
   Finxsse as an attire (not a separate char). Creation-suite subsystems moved to a MAIN-menu 3×3 hub (out
   of the pause menu). PWA manifest + icons (installable). Lyra: owner pushes it to a private mhvnsnt/lyra
   (docs/LYRA_ACCESS.md), then add_repo + integrate (docs/LYRA_BASE.md).
+- **IMPACT-TAUNTS (WWE-2K style, LIVE)** — capoeira (Ginga/Esquiva/Capoeira), breakdance SPINAROONY family
+  (Breakdance Footwork/Freezes), and showman taunts (RapidChestBeating/ButtSlap/ViolenceParty) are BOTH a
+  taunt AND a real strike. Contract in `assets/moves/fbx_move_map.json` (`dualPurpose:true`+`altKind`+
+  `altEngine`; `_dualPurpose` header note) — 15 dual-purpose clips. `BANNON_MOVE_LIBRARY.tauntOrStrike(clip,
+  oppInRange)` picks the mode; `impactTaunts()`/`isImpactTaunt()` added. `window.performTaunt(dir)`
+  (up=crowd/down=disrespect/left=ginga/right=spinaroony) routes strike-mode through the SAME startAttack→
+  registerHit physics (no canned anim). Wired to the touch TAUNT CLUSTER (4 dirs) + keyboard `t`+direction.
+  Verified: in range GINGA→phase 0.52, hitConnected, −155hp; out of range→+8.8 momentum, 0 dmg.
+  GOTCHA (harness): a prior KO ends the match → gameState leaves 'fight' → the loop stops stepping poseAttack
+  → next trial's attackPhase frozen at 0. Reset opp.hp=maxHp + gameState='fight' (or run the trial first).
+  Also strikes run in SLOW MOTION at the harness ~2.3fps (dt pegged 0.05) — wait multiple seconds, don't
+  misread as "attack never fires". Also the internal hit call is the LEXICAL `registerHit` (line ~9889), NOT
+  `window.registerHit` — wrapping window.* to spy on hits is a no-op; measure opp.hp/hitConnected instead.
+- **GOOGLE AI STUDIO src/** — AI Studio mirrors a 35-file React companion app under `src/` to main (creation
+  suite/AI chat/GitHub-sync dashboards). It only ADDS to src/; it has never deleted game files, canon, or
+  assets/moves. When it says it "removed the daemons," that's cleanup of its own sync scripts, not our code.
+  Merged-branch protocol: this branch is fully contained in main — fast-forward onto origin/main and keep going.

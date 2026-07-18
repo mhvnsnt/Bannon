@@ -12001,6 +12001,54 @@ function aiEquippedOrPool(f, pool, opp){
   return pool[Math.floor(Math.random()*pool.length)];
 }
 
+// ============================================================================
+// IMPACT-TAUNTS (WWE-2K style) — capoeira Ginga / breakdance spinaroony / showman taunts that double
+// as a TAUNT (crowd pop + momentum) OR a real STRIKE when an opponent is in range. dir = up/down/
+// left/right (taunt cluster button, or 't' + directional hold). The dual-purpose contract lives in
+// assets/moves/fbx_move_map.json (dualPurpose/altKind/altEngine); BANNON_MOVE_LIBRARY.tauntOrStrike()
+// picks the mode from range, then strike-mode routes through the SAME startAttack/registerHit physics
+// as any other strike — no canned animation, our knockback/poise laws apply.
+// ============================================================================
+const TAUNT_CLUSTER = {
+  up:    { clip:'RapidChestBeating',   name:'CALL TO THE CROWD', crowd:true  },
+  down:  { clip:'Tau_ButtSlap',        name:'DISRESPECT',        crowd:false },
+  left:  { clip:'Ginga Forward',       name:'GINGA',             crowd:false },
+  right: { clip:'Breakdance Freezes',  name:'SPINAROONY',        crowd:true  }
+};
+window.performTaunt = function(dir){
+  const p = fighters[0];
+  if (!p || p.ragdoll || (p.isDown&&p.isDown()) || p.state==='down' || p.state==='grabbed' || p.grappling) return;
+  const T = TAUNT_CLUSTER[dir] || TAUNT_CLUSTER.up;
+  const opp = p.opponent ? p.opponent() : (fighters[1]||null);
+  const dist = opp ? Math.hypot(opp.x-p.x,(opp.z||0)-(p.z||0)) : 99;
+  const oppInRange = !!(opp && !opp.ragdoll && !(opp.isDown&&opp.isDown()) && dist < 1.9);
+  const ML = window.BANNON_MOVE_LIBRARY;
+  const res = ML && ML.tauntOrStrike ? ML.tauntOrStrike(T.clip, oppInRange)
+            : { mode:(oppInRange?'strike':'taunt'), engine:'STRIKE_KICK' };
+  if (res.mode==='strike'){
+    // real strike through the player's own moveset — full physics (registerHit knockback + poise)
+    const _pKey=((p.specName||(p.opts&&p.opts.name)||'BANNON')+'').toUpperCase();
+    const set = (typeof getMoves==='function' && (getMoves(_pKey)||getMoves('BANNON'))) || [];
+    const punch = res.engine==='STRIKE_PUNCH';
+    let base = punch ? (set.find(m=>m.cat==='STRIKE'&&m.height!=='LOW')||set.find(m=>m.cat==='STRIKE'))
+                     : (set.find(m=>m.cat==='KICK')||set.find(m=>m.limb&&m.limb.includes&&m.limb.includes('KICK'))||set.find(m=>m.cat==='STRIKE'));
+    base = base || set[0] || {cat:'STRIKE',limb:'RIGHT KICK',power:44};
+    const m = Object.assign({}, base, { name:T.name, cat:base.cat||'STRIKE',
+      traj: punch?'HOOKING':'SPINNING', height: dir==='down'?'LOW':'HIGH',
+      power: Math.round((base.power||44)*1.05), speed:88, follow:'RESET STANCE', _impactTaunt:true });
+    p.momentum = clamp((p.momentum||0)+5,0,100);   // impact-taunts still build a little momentum
+    try{ announce(T.name+'  [IMPACT-TAUNT]', fname(p)); }catch(e){}
+    p.startAttack(m);
+  } else {
+    // pure taunt — crowd pop + momentum + a little composure back
+    p.momentum = clamp((p.momentum||0)+(T.crowd?9:7), 0, 100);
+    p.poise = clamp((p.poise||100)+6, 0, 100);
+    p._tauntT = 0.8;
+    try{ announce(T.name, fname(p)); }catch(e){}
+    try{ if(window.crowdReaction) window.crowdReaction(T.crowd?0.7:0.4); }catch(e){}
+  }
+};
+
 function playerAttack(kind){
   const p = fighters[0];
   if (!p || p.ragdoll || p.state==='down') return;
@@ -14485,6 +14533,16 @@ function setupInput(){
     else if (k===' '){ e.preventDefault(); playerAttack('special'); }
     else if (k==='u') playerAttack('uppercut');
     else if (k==='g') playerAttack('grab');
+    else if (k==='t'){
+      // TAUNT / IMPACT-TAUNT — direction from the held stick (up=crowd, down=disrespect, left=ginga,
+      // right=spinaroony). In range these land as real strikes; out of range they're crowd taunts.
+      let td='up';
+      if (keys['s']||keys['arrowdown']) td='down';
+      else if (keys['a']||keys['arrowleft']) td='left';
+      else if (keys['d']||keys['arrowright']) td='right';
+      else if (keys['w']||keys['arrowup']) td='up';
+      window.performTaunt && window.performTaunt(td);
+    }
     else if (k==='f'){ heldBtns['block']=true; }
     else if (k==='tab'){
       e.preventDefault();
@@ -14753,6 +14811,21 @@ function setupInput(){
         }
       }catch(e){}
     }, 80);
+  })();
+
+  // TAUNT CLUSTER (touch) — 4 directional impact-taunts: up=crowd, down=disrespect, left=ginga,
+  // right=spinaroony. In range they land as real strikes (our physics); out of range = crowd taunt.
+  (function(){
+    const cluster = document.getElementById('tauntCluster');
+    if(!cluster) return;
+    cluster.querySelectorAll('.taunt-btn').forEach(btn=>{
+      const dir = btn.getAttribute('data-dir') || 'up';
+      const fire = (e)=>{ e.preventDefault(); markTouch();
+        window.performTaunt && window.performTaunt(dir);
+        btn.classList.add('armed'); setTimeout(()=>btn.classList.remove('armed'), 280); };
+      btn.addEventListener('touchstart', fire, {passive:false});
+      btn.addEventListener('mousedown', fire);
+    });
   })();
 
   // RUN pill button — hold to sprint (forces runCharge=1 while held; releasing decays naturally)
@@ -36784,8 +36857,18 @@ window.BANNON_MOVE_LIBRARY = (function(){
   function clipsForCategory(cat){ return fbxClips().filter(c=>c.cat===cat); }
   // best animation clip for an engine grapple/dive/wakeup key (STUDIO.clips name = the clip basename)
   function clipFor(engineKey){ const c=fbxClips().find(x=>x.engine===engineKey); return c?c.clip:null; }
+  // ---- WWE-2K IMPACT-TAUNTS (dualPurpose clips: capoeira Ginga/Esquiva, breakdance spinaroony, showman) ----
+  // clips that are BOTH a taunt and a real strike depending on range at trigger.
+  function impactTaunts(){ return fbxClips().filter(c=>c.dualPurpose); }
+  function isImpactTaunt(clip){ const n=(clip&&clip.clip)||clip; const c=fbxClips().find(x=>x.clip===n); return !!(c&&c.dualPurpose); }
+  // resolve a dual-purpose clip by context: opp in strike range -> STRIKE (our physics registerHit path),
+  // else -> TAUNT (crowd/momentum, no contact). Returns {clip, mode, kind, engine}.
+  function tauntOrStrike(clip, oppInRange){ const n=(clip&&clip.clip)||clip; const c=fbxClips().find(x=>x.clip===n)||{clip:n};
+    if(c.dualPurpose && oppInRange) return { clip:c.clip, mode:'strike', kind:(c.altKind||'strike'), engine:(c.altEngine||'STRIKE_KICK') };
+    return { clip:c.clip, mode:'taunt', kind:'taunt', engine:(c.engine||'TAUNT') }; }
   load();
   return { load, all, forStyle, forPosition, resolve, fbxClips, positions, clipsForPosition, clipsForCategory, clipFor,
+           impactTaunts, isImpactTaunt, tauntOrStrike,
            get lib(){ return LIB; }, get fbx(){ return FBX; } };
 })();
 </script>
