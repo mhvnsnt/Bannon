@@ -36740,6 +36740,29 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 </script>
 
 <!-- ============================================================================================
+     BANNON MOVE LIBRARY — the 2K-level move catalog (assets/moves/bannon_move_library.json), organized
+     by POSITION + STYLE (from the MDickie position taxonomy + WWE-2K depth). Every move maps to a real
+     GRAPPLE_POSITIONS / DIVE_TYPES key so it routes through resolveGrapPos into OUR physics. The moveset
+     editor + AI draw from this to give each character a legible, style-matched arsenal. Data-only loader.
+     ============================================================================================ -->
+<script>
+window.BANNON_MOVE_LIBRARY = (function(){
+  let LIB=null;
+  async function load(){ if(LIB) return LIB; try{ const r=await fetch('assets/moves/bannon_move_library.json'); LIB=await r.json(); }catch(e){ LIB={grapples:[],dives:[],submissions:[],strikes:[],ground:[]}; } return LIB; }
+  function all(){ if(!LIB) return []; return [].concat(LIB.grapples||[],LIB.dives||[],LIB.submissions||[],LIB.strikes||[],LIB.ground||[]); }
+  // moves available to a fighting style (technical/powerhouse/highFlyer/brawler/striker/lucha/mma/hardcore/oldSchool/showman)
+  function forStyle(style){ return all().filter(m=>!m.style || m.style.indexOf(style)>=0); }
+  // moves available from a POSITION (STANDING_FRONT/REAR, GROUNDED_*, CORNER, TOP_ROPE, ...)
+  function forPosition(pos){ return all().filter(m=>m.from===pos || (m.pos===pos)); }
+  // resolve a library move to the engine grapple/dive it drives (through the real physics).
+  function resolve(m){ if(!m) return null; if(m.dive) return {kind:'dive', dive:m.dive, from:m.from}; if(m.sub) return {kind:'sub', hold:m.sub, limb:m.limb}; if(m.kind==='strike') return {kind:'strike', from:m.from, power:m.power};
+    return {kind:'grapple', pos:m.pos||'STANDARD', mode:m.mode||'front', deliver:m.deliver||'slam', power:m.power||60}; }
+  load();
+  return { load, all, forStyle, forPosition, resolve, get lib(){ return LIB; } };
+})();
+</script>
+
+<!-- ============================================================================================
      BANNON JUKEBOX — the soundtrack/music system: menu music, match music, per-character ENTRANCE
      and VICTORY themes, all reassignable, plus an IndexedDB "add more" path so the owner can drop in
      unlimited tracks in-game (phone-friendly, no repo bloat). 16 owner tracks banked in assets/audio/.
