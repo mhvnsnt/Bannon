@@ -17,6 +17,12 @@ struct FObservationFrame
     
     UPROPERTY()
     bool bIsConstraintActive;
+
+    UPROPERTY()
+    float DistanceToRopes;
+
+    UPROPERTY()
+    FVector RopeAlignmentVector;
 };
 
 UCLASS()
