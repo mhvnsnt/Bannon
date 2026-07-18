@@ -19,66 +19,64 @@ void UBannonMDickiePhysicsIntegration::BindMDickieMoveToChaos(FString MDickieMov
         
         if (PhysicsComp && PhysicsComp->IsSimulatingPhysics())
         {
-            FVector PhysicsImpulse = FVector::ZeroVector;
+            FVector LiftVector = FVector::ZeroVector;
+            FVector ApexTransition = FVector::ZeroVector;
+            FVector DownwardSlam = FVector::ZeroVector;
             FVector TorqueImpulse = FVector::ZeroVector;
             
-            // --- Phase 4: Procedural Grappling Logic ---
+            float TargetMass = PhysicsComp->GetMass();
+            const float MAX_BODY_VEL = 3.8f;
+            const float DMG_SCALE = 8.0f;
+            
             if (MDickieMoveName == TEXT("suplex"))
             {
-                // Multi-stage FVector approximations for Suplex
-                FVector LiftVector = FVector(0.f, 0.f, 1800.f);
-                FVector ApexTransition = FVector(-500.f, 0.f, 0.f);
-                FVector DownwardSlam = FVector(0.f, 0.f, -2500.f);
-                
-                PhysicsImpulse = LiftVector + ApexTransition + DownwardSlam;
-                TorqueImpulse = FVector(0.f, -400.f, 0.f); 
+                LiftVector = FVector(0.f, 0.f, 1800.f) * TargetMass;
+                ApexTransition = FVector(-500.f, 0.f, 0.f) * TargetMass;
+                DownwardSlam = FVector(0.f, 0.f, -2500.f) * TargetMass;
+                TorqueImpulse = FVector(0.f, -400.f, 0.f) * TargetMass; 
             }
             else if (MDickieMoveName == TEXT("powerbomb"))
             {
-                // Multi-stage FVector approximations for Powerbomb
-                FVector LiftVector = FVector(0.f, 0.f, 2200.f);
-                FVector ApexTransition = FVector(200.f, 0.f, 100.f);
-                FVector DownwardSlam = FVector(0.f, 0.f, -3500.f);
-                
-                PhysicsImpulse = LiftVector + ApexTransition + DownwardSlam;
-                TorqueImpulse = FVector(0.f, 300.f, 0.f); 
+                LiftVector = FVector(0.f, 0.f, 2200.f) * TargetMass;
+                ApexTransition = FVector(200.f, 0.f, 100.f) * TargetMass;
+                DownwardSlam = FVector(0.f, 0.f, -3500.f) * TargetMass;
+                TorqueImpulse = FVector(0.f, 300.f, 0.f) * TargetMass; 
             }
-            else if (MDickieMoveName == TEXT("force out of ring"))
+            else if (MDickieMoveName == TEXT("piledriver"))
             {
-                PhysicsImpulse = FVector(1000.f, 0.f, 500.f);
-                TorqueImpulse = FVector(0.f, 200.f, 0.f);
-            }
-            else if (MDickieMoveName == TEXT("irish whip"))
-            {
-                PhysicsImpulse = FVector(1500.f, 0.f, 0.f);
-            }
-            else if (MDickieMoveName == TEXT("grappling"))
-            {
-                PhysicsImpulse = FVector(0.f, 0.f, -100.f);
+                LiftVector = FVector(0.f, 0.f, 1500.f) * TargetMass;
+                ApexTransition = FVector(0.f, 0.f, -50.f) * TargetMass;
+                DownwardSlam = FVector(0.f, 0.f, -4000.f) * TargetMass;
+                TorqueImpulse = FVector(0.f, -100.f, 0.f) * TargetMass; 
             }
             
-            PhysicsComp->AddImpulse(PhysicsImpulse, NAME_None, true);
+            FVector TotalImpulse = LiftVector + ApexTransition + DownwardSlam;
+            
+            // Strict Constant Enforcement
+            FVector VelocityVector = TotalImpulse / TargetMass;
+            if (VelocityVector.Size() > (MAX_BODY_VEL * 100.0f))
+            {
+                VelocityVector = VelocityVector.GetSafeNormal() * (MAX_BODY_VEL * 100.0f);
+                TotalImpulse = VelocityVector * TargetMass;
+            }
+            
+            PhysicsComp->AddImpulse(TotalImpulse, NAME_None, true);
             PhysicsComp->AddTorqueInRadians(TorqueImpulse, NAME_None, true);
             
-            // Bind momentum transfer directly to Chaos engine's active ragdoll state
             if (TargetCharacter && TargetCharacter->GetMesh())
             {
                 TargetCharacter->GetMesh()->SetSimulatePhysics(true);
                 TargetCharacter->GetMesh()->WakeAllRigidBodies();
                 
-                // Register physical slam impact and translate to crumple/poise damage calculations
-                float SlamForceMagnitude = PhysicsImpulse.Size();
-                if (SlamForceMagnitude > 2000.f)
+                // Poise Engine Trigger (Independent of 10000 MAX_HP)
+                float ImpactVelocity = VelocityVector.Size() / 100.0f;
+                float PoiseDamage = ImpactVelocity * TargetMass * DMG_SCALE;
+                
+                if (PoiseDamage > 0.0f)
                 {
-                    UE_LOG(LogTemp, Error, TEXT("Bannon Physics: Catastrophic Slam Detected (Force: %f). Applying Poise Damage and Crumple State."), SlamForceMagnitude);
+                    UE_LOG(LogTemp, Warning, TEXT("Bannon Physics: Slam impact triggers independent Poise Engine. Damage: %f. Routing to Crumple State."), PoiseDamage);
                 }
             }
-            
-            UE_LOG(LogTemp, Warning, TEXT("Bannon MDickie Integration: Bound move %s to Chaos physics outputs with FVector(%f, %f, %f)."), *MDickieMoveName, PhysicsImpulse.X, PhysicsImpulse.Y, PhysicsImpulse.Z);
         }
-    }
-    else
-    {
-        UE_LOG(LogTemp, Error, TEXT("Bannon MDickie Integration: Move %s not found in move catalog."), *MDickieMoveName);
     }
 }
