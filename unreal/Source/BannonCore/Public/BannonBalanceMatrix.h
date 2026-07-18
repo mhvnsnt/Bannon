@@ -22,4 +22,22 @@ public:
 	// Blends from pure ragdoll back to animation state based on balance evaluation
 	UFUNCTION(BlueprintCallable, Category="Bannon|Physics")
 	void BlendToAnimation();
+
+	UFUNCTION(BlueprintCallable, Category="Bannon|Physics")
+	void UpdateBalanceBlending(float DeltaTime);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Physics")
+	float RecoveryStaminaFactor;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Physics")
+	float StabilityTargetSpeed;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Physics")
+	float CurrentBlendAlpha;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Physics")
+	float RecoveryBlendRate;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Physics")
+	bool bIsRecovering;
 };
