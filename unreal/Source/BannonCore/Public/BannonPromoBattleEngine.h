@@ -1,24 +1,15 @@
-// Copyright BANNON.
-
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
+#include "UObject/NoExportTypes.h"
 #include "BannonPromoBattleEngine.generated.h"
 
-UCLASS(ClassGroup=(Bannon), meta=(BlueprintSpawnableComponent))
-class BANNONCORE_API UBannonPromoBattleEngine : public UActorComponent
+UCLASS()
+class BANNONCORE_API UBannonPromoBattleEngine : public UObject
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	UBannonPromoBattleEngine();
-
-	// Real-time LLM-generated promo battles where keywords trigger momentum buffs
-	UFUNCTION(BlueprintCallable, Category="Bannon|Career")
-	void ProcessPromoKeywords(const TArray<FString>& DialogueKeywords, class ACharacter* Speaker);
-
-	// Backstage Politics Matrix (rivalry graphs shifting from sandbox actions)
-	UFUNCTION(BlueprintCallable, Category="Bannon|Career")
-	void ShiftRivalryGraph(class ACharacter* Attacker, class ACharacter* Victim);
+    UFUNCTION(BlueprintCallable, Category="Bannon|Systems")
+    void EvaluatePromoKeywords(const FString& Dialogue, float PerformerCharisma, UPARAM(ref) float& OutMomentumBuff, UPARAM(ref) float& OutCrowdHeatShift);
 };
