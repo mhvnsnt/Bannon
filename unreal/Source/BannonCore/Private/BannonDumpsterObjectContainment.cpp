@@ -5,7 +5,7 @@ UBannonDumpsterObjectContainment::UBannonDumpsterObjectContainment()
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UBannonDumpsterObjectContainment::BeginPlay()
+void UBannonDumpsterObjectContainment::CalculateContainmentPhysics(AActor* Dumpster, AActor* ThrownFighter)
 {
-    Super::BeginPlay();
+    UE_LOG(LogTemp, Warning, TEXT("Bannon Sandbox: Confining fighter to dumpster physics grid space."));
 }
