@@ -13824,6 +13824,9 @@ try{
 }catch(_){}
 
 function startFight(){
+
+  console.log('[BANNON AI ORCHESTRATOR] Initializing autonomous loop integration...');
+
   if (typeof clearActiveFightState==='function') clearActiveFightState();
   // (re)build fighters
   for (const f of fighters){ scene.remove(f.root); scene.remove(f.shadow); if(f.model){ try{scene.remove(f.model);}catch(e){} f.model=null; } }
