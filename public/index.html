@@ -15916,8 +15916,8 @@ function setupInput(){
   _wire('btnHubModels',    typeof openModelLab==='function'?openModelLab:null);   // fighter model import/select
   _wire('btnHubTune',      typeof openTuneLab==='function'?openTuneLab:null);     // CREATIVE CONTROL
   _wire('btnHubArena',     ()=>{ arenaIdx=(arenaIdx+1)%ARENAS.length; const an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; buildArena(); saveMatchState(); });
-  _wire('btnHubArenaEd',   ()=>{ try{ (window.toast||alert)('Arena Creator — coming with the arena editor (barricades/ramp/trons/Titantron).'); }catch(e){} });
-  _wire('btnHubEntrance',  ()=>{ try{ (window.toast||alert)('Entrance Creator — coming with the entrance timeline (pyro/tron/music).'); }catch(e){} });
+  _wire('btnHubArenaEd',   ()=>{ try{ const names=Object.keys(window.ARENA_PRESETS||{BANNON:1}); const cur=names.indexOf(window.ARENA_PRESET); const nx=names[(cur+1)%names.length]; if(window.setArenaPreset) window.setArenaPreset(nx); (window.toast||function(m){})('Arena: '+nx); const an=document.getElementById('arenaName'); if(an)an.textContent='ARENA: '+nx; }catch(e){} });
+  _wire('btnHubEntrance',  ()=>{ try{ if(window.BANNON_ENTRANCE_EDITOR) window.BANNON_ENTRANCE_EDITOR.open((window.MATCH_SETUP&&window.MATCH_SETUP.p1Name)||'BANNON'); }catch(e){} });
   // JUKEBOX controls (main menu music bar)
   _wire('btnMusicToggle',  ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); const v=J.getVolume(); if(v>0){ J._mv=v; J.setVolume(0); const b=document.getElementById('btnMusicToggle'); if(b)b.textContent='♪ MUTED'; } else { J.setVolume(J._mv||0.55); J.menu(); const b=document.getElementById('btnMusicToggle'); if(b)b.textContent='♪ MUSIC'; } });
   _wire('btnMusicNext',    ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); J.menu(); });
@@ -38267,6 +38267,7 @@ window.BANNON_TRON = (function(){
 window.BANNON_ENTRANCE = (function(){
   function play(fighter){ try{
     const nm=(fighter&&fighter.opts&&fighter.opts.name)||'BANNON';
+    if(runTimeline(nm)) return;   // use the character's saved entrance timeline if they have one
     if(window.BANNON_TRON) window.BANNON_TRON.entrance(nm);
     if(window.BANNON_FX){ window.BANNON_FX.stagePyro(); setTimeout(()=>window.BANNON_FX.stagePyro(),700); }
   }catch(e){} }
@@ -38276,7 +38277,56 @@ window.BANNON_ENTRANCE = (function(){
     if(window.BANNON_FX){ const HZ=(typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2);
       window.BANNON_FX.pyroBurst(-2,HZ,0xffdd33,90); window.BANNON_FX.pyroBurst(2,HZ,0xffdd33,90); window.BANNON_FX.stagePyro(); }
   }catch(e){} }
-  return { play, victory };
+  return { play, victory, runTimeline };
+  // run a saved entrance timeline (cues fire at their times)
+  function runTimeline(name){ const tl=window.BANNON_ENTRANCE_EDITOR&&window.BANNON_ENTRANCE_EDITOR.get(name); if(!tl||!tl.length) return false;
+    if(window.BANNON_TRON) window.BANNON_TRON.entrance(name);
+    tl.forEach(c=>{ setTimeout(()=>{ try{ const HZ=(typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2); const acc=(window.ARENA_PRESETS[window.ARENA_PRESET]||{}).accent||0xffaa22;
+      if(c.type==='PYRO') window.BANNON_FX.stagePyro();
+      else if(c.type==='PYRO_RING'){ window.BANNON_FX.pyroBurst(-2,HZ,acc,80); window.BANNON_FX.pyroBurst(2,HZ,acc,80); }
+      else if(c.type==='SMOKE') window.BANNON_FX.smokePuff(0,-(HZ+6));
+      else if(c.type==='TRON') window.BANNON_TRON.entrance(name);
+    }catch(e){} }, (c.t||0)*1000); });
+    return true; }
+})();
+
+// ENTRANCE TIMELINE EDITOR (real, not a stub) — arrange pyro/smoke/tron/light cues on a timeline,
+// save per character, PLAY to preview. BANNON_ENTRANCE.play() uses a saved timeline if present.
+window.BANNON_ENTRANCE_EDITOR = (function(){
+  const KEY='BANNON_ENTRANCE_TL';
+  function all(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } }
+  function get(name){ return all()[String(name||'').toUpperCase()]||[]; }
+  function put(name,tl){ const a=all(); a[String(name||'').toUpperCase()]=tl; try{ localStorage.setItem(KEY,JSON.stringify(a)); }catch(e){} }
+  const TYPES=['PYRO','PYRO_RING','SMOKE','TRON'];
+  let panel=null, curName='BANNON', tl=[];
+  function build(){ if(panel) return; panel=document.createElement('div');
+    panel.style.cssText='position:fixed;inset:6% 8%;z-index:100000;background:#0a0c12f5;border:1px solid #ff7a1a;border-radius:12px;padding:16px;color:#ffd9a8;font:13px ui-monospace,monospace;overflow:auto;display:none;box-shadow:0 10px 40px #000c;';
+    document.body.appendChild(panel); }
+  function render(){ build(); panel.innerHTML='';
+    const h=document.createElement('div'); h.style.cssText='display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;';
+    h.innerHTML='<b style="color:#ff7a1a;font-size:16px;letter-spacing:2px;">ENTRANCE / VICTORY CREATOR</b>'; const x=document.createElement('button'); x.textContent='✕'; x.style.cssText='background:none;border:none;color:#ffd9a8;font-size:20px;cursor:pointer'; x.onclick=close; h.appendChild(x); panel.appendChild(h);
+    const nm=document.createElement('input'); nm.value=curName; nm.placeholder='CHARACTER'; nm.style.cssText='width:100%;background:#14100c;border:1px solid #ff7a1a;color:#ffe0b0;padding:8px;border-radius:6px;margin-bottom:8px;text-transform:uppercase;';
+    nm.oninput=()=>{ curName=nm.value.toUpperCase(); tl=get(curName).slice(); list(); }; panel.appendChild(nm);
+    const bar=document.createElement('div'); bar.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;';
+    TYPES.forEach(ty=>{ const b=document.createElement('button'); b.textContent='+ '+ty; b.style.cssText='background:#1a2a12;border:1px solid #7CFC00;color:#7CFC00;padding:6px 9px;border-radius:6px;cursor:pointer;font:bold 11px ui-monospace;'; b.onclick=()=>{ tl.push({t:+(tl.length*0.8).toFixed(1),type:ty}); list(); }; bar.appendChild(b); });
+    panel.appendChild(bar);
+    const listWrap=document.createElement('div'); listWrap.id='_tlList'; panel.appendChild(listWrap);
+    const foot=document.createElement('div'); foot.style.cssText='display:flex;gap:8px;margin-top:12px;';
+    const mk=(t,c,fn)=>{ const b=document.createElement('button'); b.textContent=t; b.style.cssText='flex:1;background:'+c+';border:none;color:#08110a;font:bold 13px ui-monospace;padding:10px;border-radius:7px;cursor:pointer;'; b.onclick=fn; return b; };
+    foot.appendChild(mk('▶ PLAY','#ffd23f',()=>{ put(curName,tl); if(window.BANNON_ENTRANCE&&window.BANNON_ENTRANCE.runTimeline) window.BANNON_ENTRANCE.runTimeline(curName); }));
+    foot.appendChild(mk('💾 SAVE','#7CFC00',()=>{ put(curName,tl); h.querySelector('b').textContent='SAVED · '+curName; }));
+    panel.appendChild(foot); list(); panel.style.display='block';
+    function list(){ const L=panel.querySelector('#_tlList'); if(!L)return; L.innerHTML=''; tl.sort((a,b)=>a.t-b.t);
+      if(!tl.length){ L.innerHTML='<div style="opacity:.6;padding:8px;">No cues yet — add pyro/smoke/tron cues above, set their time, then SAVE/PLAY.</div>'; return; }
+      tl.forEach((c,i)=>{ const row=document.createElement('div'); row.style.cssText='display:flex;gap:8px;align-items:center;margin:4px 0;background:#140f0a;padding:6px;border-radius:6px;';
+        const ti=document.createElement('input'); ti.type='number'; ti.step='0.1'; ti.value=c.t; ti.style.cssText='width:60px;background:#0a0806;border:1px solid #ff7a1a;color:#ffe0b0;padding:4px;border-radius:4px;'; ti.oninput=()=>{ c.t=+ti.value; };
+        const lb=document.createElement('span'); lb.textContent=c.type; lb.style.cssText='flex:1;color:#ffd23f;letter-spacing:1px;';
+        const del=document.createElement('button'); del.textContent='✕'; del.style.cssText='background:none;border:none;color:#ff6a6a;cursor:pointer;font-size:16px;'; del.onclick=()=>{ tl.splice(i,1); list(); };
+        row.appendChild(document.createTextNode('t=')); row.appendChild(ti); row.appendChild(lb); row.appendChild(del); L.appendChild(row); }); }
+  }
+  function open(name){ curName=(name||curName||'BANNON').toUpperCase(); tl=get(curName).slice(); render(); }
+  function close(){ if(panel) panel.style.display='none'; }
+  return { open, close, get, put, all };
 })();
 </script>
 <script>
