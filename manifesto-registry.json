@@ -697,6 +697,47 @@
         "ik",
         "panic"
       ]
+    },
+    {
+      "id": "dynamic_injury_rehabilitation",
+      "name": "Dynamic Injury Rehabilitation",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Monitors this._limbDamage inside move2D calculations. If legs are dislocated, move speed is crippled and running is disabled. If arms are dislocated, run momentum cap is severely restricted. Persists across rounds until God-Within healing occurs.",
+      "keywords": [
+        "injury",
+        "rehab",
+        "speed",
+        "limbDamage",
+        "physics"
+      ]
+    },
+    {
+      "id": "faction_stable_logic",
+      "name": "Faction & Stable Logic",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Overhauls Fighter.prototype.opponent to utilize dynamic multi-threat prioritization. Fighters evaluate the physical proximity of all opposing faction members (Team A = evens, Team B = odds) and dynamically target the highest active threat.",
+      "keywords": [
+        "faction",
+        "stable",
+        "multi-man",
+        "threat",
+        "targeting"
+      ]
+    },
+    {
+      "id": "tag_team_chemistry_spawner",
+      "name": "Tag Team Chemistry Engine",
+      "type": "System Expansion",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Introduces mid-match dynamic tag-partner spawning (hotkey T). Seamlessly injects new AI-controlled Fighter instances into the physics loop, triggering 4-man tag team logic without reloading the engine state.",
+      "keywords": [
+        "tag-team",
+        "spawner",
+        "chemistry",
+        "multi-man"
+      ]
     }
   ]
 }
