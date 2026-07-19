@@ -597,6 +597,21 @@
         "roll",
         "ground"
       ]
+    },
+    {
+      "id": "stamina_drained_ragdoll",
+      "name": "Stamina-Drained Ragdoll Collapse",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Intercepts Fighter.prototype.poseGrabbed. Monitors the victim's stamina pool during a hold. If stamina reaches zero, the victim bypasses standard submission rules, triggers a forced ragdoll override (TKO), and ceases all procedural struggle IK. The sudden shift to dead weight applies an opposing wobble vector to the attacker, forcing them to stumble under the collapsed load.",
+      "keywords": [
+        "physics",
+        "ragdoll",
+        "stamina",
+        "tko",
+        "submission",
+        "dead weight"
+      ]
     }
   ]
 }
