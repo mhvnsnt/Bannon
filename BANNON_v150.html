@@ -7563,6 +7563,74 @@ window.resolveGrapPos = function(move){
   return 'STANDARD';
 };
 
+// CARRY vs INSTANT moves (owner design note): some grapples have a LIFT/HOLD point — you hoist the
+// opponent and can stall (powerbomb, DDT, fireman's carry, piledriver, suplex family, chokeslam,
+// gorilla press). Others POP OFF IMMEDIATELY with no carry/setup — a snap from standing/contact
+// (stunner, cutter, RKO, neckbreaker, bulldog, facebuster/x-factor, russian legsweep, snapmare).
+// isInstantMove() drives the grapple flow: instant = no stage-2 hold, snap straight to a fast 'spike'
+// delivery; carry = the existing lift -> hold -> deliver. Honors an explicit move.carry flag first,
+// then classifies by move name/position.
+window.isInstantMove = function(move){
+  if(!move) return false;
+  if(move.carry===false) return true;
+  if(move.carry===true)  return false;
+  const s=(((move.name||'')+' '+(move.mdickie||'')+' '+(move.pos||'')+' '+(move.grapplePos||''))+'').toUpperCase();
+  return /STUNNER|CUTTER|\bRKO\b|NECKBREAK|BULLDOG|FACEBUSTER|X.?FACTOR|LEG.?SWEEP|SNAPMARE|REVERSE.?DDT|TOE.?HOLD|\bSTUN\b/.test(s);
+};
+window.moveCarry = function(move){ return !window.isInstantMove(move); };
+// run an equipped/named grapple move through the RIGHT flow (real physics either way). instant moves
+// skip the lift/hold and snap; carry moves lift then deliver. Returns true if it launched.
+// WWE-2K POSITION-AWARE finisher/signature activation. Three cases, based on what you ALREADY have:
+//   (a) already holding them in the move's OWN position (fireman's + a fireman's-carry finisher) -> DELIVER now.
+//   (b) already in a DIFFERENT carry (fireman's + a powerbomb-family finisher) -> REPOSITION to the
+//       required hoist, then deliver.
+//   (c) not grappling (or instant/no-carry move) -> grab -> hoist -> deliver, or snap for instant moves.
+window.execGrappleMove = function(attacker, move, deliverFallback){
+  if(!attacker || !move) return false;
+  const posKey = window.resolveGrapPos ? window.resolveGrapPos(move) : 'STANDARD';
+  const GP = (typeof GRAPPLE_POSITIONS!=='undefined' && GRAPPLE_POSITIONS[posKey]) ? GRAPPLE_POSITIONS[posKey] : null;
+  const instant = window.isInstantMove(move);
+  const deliver = move.deliver || (GP && GP.delivery) || deliverFallback || 'slam';
+  const alreadyGrappling = !!(attacker.grappling && attacker.grabTarget);
+  const curPos = attacker.grapplePos;
+  attacker.grappleMode = (GP && GP.rear) ? 'rear' : (move.mode||'front');
+  attacker.craneTwist = 0;
+  attacker._aiGrapChosen = true;
+
+  // (a) ALREADY IN THE RIGHT POSITION — deliver straight away (instant snaps; carry drops from the hoist).
+  if (alreadyGrappling && curPos === posKey && attacker.grappleStage >= 2){
+    attacker.grapplePos = posKey; attacker.grappleStage = 3; attacker.stateTime = 0; attacker._liftMinT = 0;
+    setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=3) attacker.grappleDeliver(instant?'spike':deliver, 0); }catch(_){}}, instant?120:220);
+    return true;
+  }
+
+  attacker.grapplePos = posKey;
+
+  // (b) ALREADY IN A DIFFERENT CARRY — reposition into the required hoist, then deliver (fireman's -> powerbomb).
+  if (alreadyGrappling && !instant){
+    attacker.craneLift = (GP && GP.lift0) || 0.5; attacker.grappleStage = 2; attacker.stateTime = 0;
+    const rd = 0.42;                                   // quick transition — already have them up, just re-set the hold
+    attacker._liftMinT = rd;
+    setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=2){ attacker.grappleStage=3; attacker.stateTime=0;
+      setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage===3) attacker.grappleDeliver(deliver, 0); }catch(_){}}, 520); } }catch(_){}}, rd*1000+150);
+    return true;
+  }
+
+  // (c) FROM SCRATCH (not grappling, or an instant no-carry move).
+  if (instant){
+    // NO CARRY: skip the hoist entirely — snap straight to a fast downward delivery.
+    attacker.craneLift = 0; attacker.grappleStage = 3; attacker.stateTime = 0; attacker._liftMinT = 0;
+    setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=3) attacker.grappleDeliver('spike', 0); }catch(_){}}, 130);
+  } else {
+    // CARRY: lift to the position's hold, let it read, then deliver.
+    attacker.craneLift = (GP && GP.lift0) || 0.5; attacker.grappleStage = 2; attacker.stateTime = 0;
+    const ld = (GP && GP.liftDur!=null) ? GP.liftDur : 0.7; attacker._liftMinT = ld;
+    setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=2){ attacker.grappleStage=3; attacker.stateTime=0;
+      setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage===3) attacker.grappleDeliver(deliver, 0); }catch(_){}}, 700); } }catch(_){}}, ld*1000+250);
+  }
+  return true;
+};
+
 // getup keyframe poses (LOCAL, forward = +x toward opponent)
 // AUTO-FILL the v7 27-joint skeleton from a legacy 15-joint pose.
 // Derives spineLow/spineMid (interpolated pelvis->chest), clavL/R + scapL/R
@@ -12309,20 +12377,18 @@ function playerAttack(kind){
   // SIGNATURE (named from CHAR_FINISHERS.sig where authored) — it spends 50 momentum, hits hard,
   // and BANKS a stored finisher (max 3). The banked finisher can be spent any time with MOD+special
   // even below full momentum. Signature meter effectively fills 50% faster (gain boost below 50).
-  if (kind==='jab' && powerMod && (p.momentum||0)>=50 && !p.grappling){
+  if (kind==='jab' && powerMod && (p.momentum||0)>=50 && (!p.grappling || p.grappleStage>=1)){
     p.momentum-=50; p._finBank=Math.min(3,(p._finBank||0)+1);
     // EQUIPPED SIGNATURE: fire the move the player tagged SIGNATURE in the editor (cycling the slots).
     // A grapple-type signature runs the grab->signature path; a strike-type fires as a loaded named
-    // shot. Falls back to CHAR_FINISHERS.sig when nothing is equipped.
+    // shot. Falls back to CHAR_FINISHERS.sig when nothing is equipped. WWE-2K: if you already have a
+    // hold, execGrappleMove delivers from it / repositions — no need to release and re-grab.
     const eqSig=pickEquipped(p,'SIGNATURE',(opp && !opp.isDown()));
-    if (eqSig && (eqSig.cat==='GRAPPLE'||eqSig.cat==='THROW') && opp && !opp.isDown() && p.startGrab()){
+    if (eqSig && (eqSig.cat==='GRAPPLE'||eqSig.cat==='THROW') && opp && !opp.isDown() && (p.grappling || p.startGrab())){
       announce(eqSig.name+'  [FINISHER BANKED]', fname(p));
-      // ANY MOVE FROM ANY POSITION: run the equipped signature through ITS OWN grapple position.
-      const _sp=window.resolveGrapPos?window.resolveGrapPos(eqSig):null;
-      if(_sp){ p.grapplePos=_sp; p.grappleMode=(GRAPPLE_POSITIONS[_sp]&&GRAPPLE_POSITIONS[_sp].rear)?'rear':'front'; p.craneLift=(GRAPPLE_POSITIONS[_sp]||{}).lift0||0; p.craneTwist=0; p._aiGrapChosen=true; }
-      p.grappleStage=2; p.stateTime=0; p._liftMinT=0.5;
-      setTimeout(()=>{ try{ if(p.grappling&&p.grappleStage>=2){ p.grappleStage=3; p.stateTime=0;
-        setTimeout(()=>{ try{ if(p.grappling&&p.grappleStage===3) p.grappleDeliver('signature',0); }catch(_){}}, 600); } }catch(_){}}, 650);
+      // ANY MOVE FROM ANY POSITION + CARRY/INSTANT: execGrappleMove runs the lift-hold flow for carry
+      // moves and snaps instantly (no hoist) for cutters/stunners/etc.
+      window.execGrappleMove(p, eqSig, 'signature');
       return;
     }
     const _sk=((p.specName||(p.opts&&p.opts.name)||'')+'').toUpperCase().replace(/[^A-Z0-9]+/g,'_');
@@ -12347,19 +12413,15 @@ function playerAttack(kind){
     const eqFin=pickEquipped(p,'FINISHER',(opp && !opp.isDown()));
     const useGrapple = (eqFin && (eqFin.cat==='GRAPPLE'||eqFin.cat==='THROW')) || (!eqFin && FF && FF.kind==='grapple');
     if (useGrapple && opp && !opp.isDown()){
-      if (p.startGrab()){
+      // WWE-2K: if you already have a hold, fire from it (execGrappleMove delivers/repositions);
+      // otherwise grab first.
+      if (p.grappling || p.startGrab()){
         const finName=eqFin?eqFin.name:FF.name;
-        // ANY MOVE FROM ANY POSITION: an equipped grapple finisher runs through ITS OWN position
-        // (German->rear waistlock, Powerbomb->headscissors, etc.); default finisher keeps FF.pos.
-        const posKey=(eqFin&&window.resolveGrapPos)?window.resolveGrapPos(eqFin):((FF&&FF.pos)||null);
         announce(finName, fname(p));
-        if (posKey){ p.grapplePos=posKey; p.grappleMode=(GRAPPLE_POSITIONS[posKey]&&GRAPPLE_POSITIONS[posKey].rear)?'rear':'front'; p.craneLift=(GRAPPLE_POSITIONS[posKey]||{}).lift0||0; p.craneTwist=0; }
-        p._aiGrapChosen=true; p.grappleStage=2; p.stateTime=0;
-        const _ld=((GRAPPLE_POSITIONS[posKey]||{}).liftDur||0.7); p._liftMinT=_ld;
-        setTimeout(()=>{ try{ if (p.grappling && p.grappleStage>=2){
-          p.grappleStage=3; p.stateTime=0;
-          setTimeout(()=>{ try{ if (p.grappling && p.grappleStage===3) p.grappleDeliver((FF&&FF.deliver)||'signature', 0); }catch(_){}}, 700);
-        } }catch(_){}}, _ld*1000+250);
+        // ANY MOVE FROM ANY POSITION + CARRY/INSTANT: execGrappleMove picks the lift-hold flow for
+        // carry finishers (powerbomb/suplex/chokeslam) and the instant snap for cutter/stunner/RKO-class.
+        const finMove = eqFin || { name:finName, pos:(FF&&FF.pos), deliver:(FF&&FF.deliver), carry:(FF&&FF.carry) };
+        window.execGrappleMove(p, finMove, (FF&&FF.deliver)||'signature');
         return;
       }
     }
@@ -14240,7 +14302,10 @@ function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MO
 // a banked skinned GLB (16-bone, geodesic + anatomical clamps). A user pick in the model menu still
 // overrides (localStorage CHAR_MODEL wins). Add a row when a new canon model banks.
 const CHAR_MODEL_DEFAULTS = {
-  BANNON:{url:'assets/models/BANNON.glb',name:'BANNON (canon)'},
+  // BANNON: no default GLB — every BANNON GLB currently breaks through the ENGINE RETARGET (chunk-rig
+  // contorts; UniRig-rigged measured with reversed arms/guard + foot mesh not deforming). Until the
+  // retarget/orientation is fixed and MEASURED-correct against the physics rig, no GLB default is set.
+  // BANNON:{url:'assets/models/BANNON_rigged.glb',name:'BANNON (canon)'},   // re-enable when retarget verified
   MAIME:{url:'assets/models/MAIME.glb',name:'MAIME (canon)'},
   ONYX:{url:'assets/models/ONYX_skinned.glb',name:'ONYX'},
   CODY_CALLAHAN:{url:'assets/models/CODY_gear_skinned.glb',name:'CODY · Gear'},
@@ -18937,6 +19002,47 @@ init();
   window.__LAST_COMMENTARY_DATA = null;
   let lastCommentaryTime = 0;
 
+  // OFFLINE COMMENTARY DB — used when the /api/commentary server isn't reachable (the standalone APK,
+  // or any offline play). Mixes the existing color with MDickie-flavored calls + more move types so the
+  // two-voice booth stays fully voiced without a server. This is the "mix MDickie commentary into what
+  // we already have" pool — extend these arrays to add more.
+  window.__COMMENTARY_OFFLINE_DB = window.__COMMENTARY_OFFLINE_DB || {
+    voiceAIntro: "Welcome to the biggest night in the Bannon universe — we are LIVE and anything can happen.",
+    voiceBIntro: "And you KNOW I love chaos. Ring the bell, let these two settle it!",
+    commentaryDb: {
+      VoiceA: { idleLore: [
+        "These two have history — you can feel it in every lock-up.",
+        "Styles make fights, and this is a clash of everything they believe in.",
+        "The story writes itself out here: pride, pain, and a title on the line." ] },
+      VoiceB: {
+        blood: [
+          "HE IS BUSTED WIDE OPEN! The crimson mask is on and this crowd is UNGLUED!",
+          "Oh he's cut — legitimately opened up, and it changes everything!",
+          "The blood is POURING now. Somebody get a towel — actually, don't, let 'em fight!" ],
+        heavyMoves: {
+          powerbomb: [ "POWERBOMB! Folded in HALF and driven through the mat!", "He LAUNCHED him — the ring shook on that one!" ],
+          suplex:    [ "Over the top and PLANTED! Textbook and brutal.", "Deadlift and DUMP — pure power right there!" ],
+          ddt:       [ "DDT! Spiked him straight down on the crown!", "Planted skull-first — lights flickered on that one!" ],
+          piledriver:[ "PILEDRIVER! Straight down on the point of the skull — that's a dangerous one!", "He drove him into the canvas headfirst!" ],
+          chokeslam: [ "CHOKESLAM! Grabbed him by the throat and threw him to the earth!", "Gooseneck and DOWN — all the way through the mat!" ],
+          cutter:    [ "OUT OF NOWHERE! Snatched him out of the air into the cutter!", "No setup, no warning — just SNAP and it's done!" ],
+          stunner:   [ "STUNNER! Caught the jaw flush — he crumpled instantly!", "Snapped it on and the legs turned to jelly!" ] },
+        knockdown: [
+          "DOWN HARD! I'm not sure he knows what county he's in!",
+          "Off his feet and the ref starts the count — is this the end?!",
+          "TIMBER! That thunderous shot dropped him where he stood!" ],
+        strikes: [
+          "CRACK! Right on the button — felt that one up here in the booth!",
+          "Flush! Perfect timing, perfect placement — that's a fighter!",
+          "He drilled him! Precision striking, and the crowd erupts!" ],
+        nearFall: [ "KICKOUT! I can't BELIEVE he got the shoulder up!", "A heartbeat from three — how?!" ],
+        reversal: [ "REVERSED! Scouted it perfectly and turned the tables!", "Countered out of nowhere — what a mind for this!" ],
+        finisher: [ "This could be IT — he's setting up for the end!", "Lights out if he connects with this one!" ],
+        taunt:    [ "Playing to the crowd now — but is that wise?", "All the swagger in the world on display." ],
+        victory:  [ "IT'S OVER! What an absolute WAR!", "And your winner — a statement made in blood and sweat!" ] }
+    }
+  };
+
   function initCommentarySuite() {
     if (typeof fighters === 'undefined' || !fighters || fighters.length < 2) return;
     const fA = fighters[0].opts.name || 'BANNON';
@@ -18966,6 +19072,12 @@ init();
     })
     .catch(e => {
       console.warn('Commentary API lookup error. Operating in offline cache mode.', e);
+      // OFFLINE (e.g. the standalone APK): load the rich offline DB so the booth stays fully voiced,
+      // and play the intro. This is where the MDickie-mixed lines come from without a server.
+      if(!window.__LAST_COMMENTARY_DATA) window.__LAST_COMMENTARY_DATA = window.__COMMENTARY_OFFLINE_DB;
+      try{ const d=window.__LAST_COMMENTARY_DATA;
+        if(d && d.voiceAIntro){ setTimeout(()=>{ speakDual('A', d.voiceAIntro); setTimeout(()=>{ if(d.voiceBIntro) speakDual('B', d.voiceBIntro); }, 4600); }, 1200); }
+      }catch(_){}
     });
   }
 
@@ -19049,6 +19161,18 @@ init();
       speakDual('B', sLines[Math.floor(Math.random() * sLines.length)]);
       lastCommentaryTime = t;
       return;
+    }
+
+    // 2b. More signature move families (MDickie-mixed pool): DDT / piledriver / chokeslam / cutter / stunner
+    {
+      const hm = (db && db.VoiceB.heavyMoves) || (window.__COMMENTARY_OFFLINE_DB.commentaryDb.VoiceB.heavyMoves);
+      let key=null;
+      if (mName.includes('stunner')) key='stunner';
+      else if (mName.includes('cutter')||mName.includes('rko')||mName.includes('bottom line')) key='cutter';
+      else if (mName.includes('chokeslam')||mName.includes('gooseneck')||mName.includes('choke')) key='chokeslam';
+      else if (mName.includes('piledriver')||mName.includes('headstone')||mName.includes('foundation')||mName.includes('tombstone')) key='piledriver';
+      else if (mName.includes('ddt')||mName.includes('spike')||mName.includes('driver')||mName.includes('cranium')) key='ddt';
+      if (key && hm[key]) { const L=hm[key]; speakDual('B', L[Math.floor(Math.random()*L.length)]); lastCommentaryTime=t; return; }
     }
 
     // 3. Falling/Knockdown state commentary
@@ -37469,6 +37593,129 @@ window.BANNON_STORY = (function(){
       window.declareWinner.__storyWrapped=true;
     }
   }catch(e){}
+})();
+</script>
+<!-- ============================================================================================
+     BANNON CAREER — the MDickie Wrestling Empire career-sim pillars, proprietary + wired onto the
+     BANNON_UNIVERSE state: AGING + physical decline, deep INJURIES (cause/severity/bodypart/recovery/
+     effect), RETIREMENT + HALL OF FAME, locker-room MORALE, and SHOW ECONOMICS (attendance/gate/
+     ratings). Plus a match COMMENTARY generator. Operates on BANNON_UNIVERSE.get() (no parallel state)
+     and hooks advanceWeek so a simmed universe ages/heals/retires on its own. All proprietary.
+     ============================================================================================ -->
+<script>
+window.BANNON_CAREER = (function(){
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  function U(){ return (window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get)?window.BANNON_UNIVERSE.get():null; }
+  function hash(s){ s=String(s); let h=0; for(let i=0;i<s.length;i++)h=((h<<5)-h+s.charCodeAt(i))|0; return h; }
+  function label(k){ return String(k).replace(/_/g,' '); }
+
+  // ---- AGING + physical decline (MDickie: fighters have a prime, then fade) ----
+  function seed(u){ u=u||U(); if(!u) return null;
+    Object.values(u.fighters).forEach(f=>{ if(f.age==null){
+      const h=Math.abs(hash(f.name));
+      f.age = 22 + (h%18);                       // debut age 22-39
+      f.peak = 28 + (h%6);                       // peak 28-33
+      f.durability = 55 + (h%40);               // injury resistance 55-94
+      f.physical = 100;                          // physical condition 0-100 (declines with age/injuries)
+      f.morale = 60 + (h%30);                    // 0-100
+      f.injuries = f.injuries || [];             // [{part,severity,weeksLeft,cause}]
+      f.matches = f.matches||((f.wins||0)+(f.losses||0));
+      f.retired = false;
+    }});
+    return u; }
+  // physical condition as a function of age relative to peak (bell decline after peak)
+  function condition(f){ if(f.physical!=null) return Math.round(f.physical); const past=Math.max(0,(f.age||28)-(f.peak||30)); return clamp(100-past*3.2,25,100); }
+  function ageWeek(u){ u=u||U(); if(!u) return; seed(u);
+    Object.values(u.fighters).forEach(f=>{ if(f.retired) return;
+      if((u.week%12)===0) f.age=(f.age||28)+1;                 // ~a year every 12 weeks
+      const past=Math.max(0,(f.age||28)-(f.peak||30));
+      const inj=(f.injuries||[]).reduce((s,i)=>s+i.severity,0);
+      f.physical=clamp(100 - past*2.4 - inj*4 + (f.physical!=null?0:0), 20, 100);
+      // heal injuries
+      f.injuries=(f.injuries||[]).filter(i=>{ i.weeksLeft-=1; return i.weeksLeft>0; });
+      if((f.injuries||[]).length===0) f.injuredWeeks=Math.max(0,(f.injuredWeeks||0)-1);
+    });
+    return u; }
+
+  // ---- INJURIES (cause/severity/part/recovery/effect) ----
+  const PARTS=['neck','shoulder','ribs','knee','ankle','back','head (concussion)','arm','hand'];
+  function injure(name, opts){ const u=U(); if(!u||!u.fighters[name]) return null; seed(u); const f=u.fighters[name]; opts=opts||{};
+    const sev = opts.severity!=null?opts.severity : (1+Math.floor(Math.random()*3));   // 1 minor .. 3 major
+    const weeks = sev*sev*2;                                                            // 2/8/18 weeks
+    const part = opts.part||PARTS[Math.abs(hash(name+u.week+PARTS.length))%PARTS.length];
+    const rec={ part, severity:sev, weeksLeft:weeks, cause:opts.cause||'match damage' };
+    (f.injuries=f.injuries||[]).push(rec); f.injuredWeeks=Math.max(f.injuredWeeks||0, weeks);
+    f.physical=clamp((f.physical!=null?f.physical:100)-sev*6,15,100); f.morale=clamp((f.morale||60)-sev*4,0,100);
+    try{ if(window.BANNON_UNIVERSE&&u.news) u.news.unshift(`W${u.week}: ${label(name)} suffered a ${part} injury (${['','minor','moderate','major'][sev]}) — out ~${weeks}w.`); }catch(e){}
+    try{ if(window.BANNON_STORY) window.BANNON_STORY.addEvent(`${label(name)} injured (${part}).`,'injury'); }catch(e){}
+    try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(u); }catch(e){}  // get() re-parses; persist the mutation
+    return rec; }
+  function isHurt(name){ const u=U(); const f=u&&u.fighters[name]; return !!(f&&((f.injuredWeeks||0)>0||(f.injuries||[]).length>0)); }
+
+  // ---- MORALE (from booking, wins, relationships) ----
+  function morale(name){ const u=U(); const f=u&&u.fighters[name]; return f?clamp(f.morale!=null?f.morale:60,0,100):60; }
+  function adjustMorale(name,d){ const u=U(); const f=u&&u.fighters[name]; if(!f) return; f.morale=clamp((f.morale!=null?f.morale:60)+d,0,100);
+    try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(u); }catch(e){} return f.morale; }
+  function moraleWeek(u){ u=u||U(); if(!u) return; seed(u);
+    Object.values(u.fighters).forEach(f=>{ if(f.retired) return;
+      const rec=(f.wins||0)-(f.losses||0); let d=clamp(rec*0.4,-4,4);
+      if(f.title) d+=2; if((f.injuries||[]).length) d-=2; if((f.contractWeeks||99)<8) d-=2;
+      f.morale=clamp((f.morale!=null?f.morale:60)+d,0,100);
+    }); }
+
+  // ---- RETIREMENT + HALL OF FAME ----
+  function checkRetire(u){ u=u||U(); if(!u) return []; seed(u); u.hallOfFame=u.hallOfFame||[]; const out=[];
+    Object.values(u.fighters).forEach(f=>{ if(f.retired) return;
+      const old=(f.age||28)>=(38+ (Math.abs(hash(f.name))%8));    // 38-45 retire age
+      const broken=condition(f)<32 && (f.injuries||[]).length>=2;
+      const demoralized=morale(f.name)<12;
+      if(old||broken||demoralized){ f.retired=true; f.title=null;
+        const legend=(f.wins||0)>=(f.losses||0) && ((f.wins||0)+(f.losses||0))>20;
+        u.hallOfFame.push({ name:f.name, age:f.age, wins:f.wins||0, losses:f.losses||0, legend, reason: old?'age':(broken?'injuries':'lost the fire') });
+        out.push(f.name);
+        try{ u.news.unshift(`W${u.week}: ${label(f.name)} RETIRED (${old?'age':broken?'injuries':'morale'})${legend?' — a future Hall of Famer.':'.'}`); }catch(e){}
+        try{ if(window.BANNON_STORY) window.BANNON_STORY.addEvent(`${label(f.name)} retired.`,'retire'); }catch(e){}
+      }
+    }); return out; }
+  function hallOfFame(){ const u=U(); return (u&&u.hallOfFame)||[]; }
+
+  // ---- SHOW ECONOMICS (attendance / gate / rating) ----
+  const VENUES=[ {name:'The Armory',cap:2500}, {name:'Civic Center',cap:8000}, {name:'The Dome',cap:42000},
+    {name:'Backlot Yard',cap:600}, {name:'Grand Arena',cap:18000}, {name:'Underground Club',cap:400} ];
+  function showEconomics(u, card){ u=u||U(); if(!u) return null; seed(u);
+    const venue=VENUES[Math.abs(hash('wk'+u.week))%VENUES.length];
+    const stars=(card||u.card||[]).reduce((s,m)=>{ const a=u.fighters[m.a||m.p1], b=u.fighters[m.b||m.p2];
+      const r=(a?(window.BANNON_UNIVERSE.rating(a)):50)+(b?(window.BANNON_UNIVERSE.rating(b)):50); return s+r; },0);
+    const feudHeat=(window.BANNON_STORY&&window.BANNON_STORY.state)?Object.keys(window.BANNON_STORY.state().turnHeat||{}).length:0;
+    const draw=clamp(0.35 + stars/1200 + feudHeat*0.02, 0.2, 1.0);
+    const attendance=Math.round(venue.cap*draw);
+    const ticket=25+Math.round(draw*70);
+    const gate=attendance*ticket;
+    const rating=clamp(4 + stars/60 + feudHeat*0.1, 3, 10);   // TV rating 3-10
+    return { venue:venue.name, capacity:venue.cap, attendance, ticket, gate, rating:+rating.toFixed(1), soldOut:attendance>=venue.cap*0.97 }; }
+
+  // ---- MATCH COMMENTARY (proprietary play-by-play) ----
+  const CALLS={
+    bigMove:['What a collision!','He got ALL of that!','Bodies flying in there!','The ring shook on that one!','You could hear that in the cheap seats!'],
+    nearFall:['Kickout! I can’t believe it!','So close to three!','How did they get the shoulder up?!','A heartbeat from over!'],
+    reversal:['Countered out of nowhere!','Scouted it perfectly!','Turned it right around!'],
+    finisher:['This could be it!','They’re setting up for the end!','Lights out if they hit this!'],
+    taunt:['Playing to the crowd now.','All showmanship — but is it wise?','Soaking it in.'],
+    injury:['That looked bad — hope they’re alright.','They’re favoring that limb.','The trainer is watching closely.'],
+    victory:['It’s over! What a war!','And the winner — statement made!','They stand tall tonight!'] };
+  function commentary(kind){ const pool=CALLS[kind]||CALLS.bigMove; return pool[Math.floor(Math.random()*pool.length)]; }
+  // optional live hook: speak a line to the announce/toast layer
+  function callLive(kind, who){ const line=commentary(kind); try{ if(typeof announce==='function') announce(line, who||'COMMENTARY'); }catch(e){} return line; }
+
+  // ---- weekly tick hook onto BANNON_UNIVERSE.advanceWeek ----
+  function tickWeek(u){ u=u||U(); if(!u) return; seed(u); ageWeek(u); moraleWeek(u); checkRetire(u);
+    try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(u); }catch(e){} return u; }
+  (function(){ try{ const UNI=window.BANNON_UNIVERSE; if(UNI && UNI.advanceWeek && !UNI.advanceWeek.__careerWrapped){
+    const _aw=UNI.advanceWeek; UNI.advanceWeek=function(){ const r=_aw.apply(this,arguments); try{ tickWeek(); }catch(e){} return r; }; UNI.advanceWeek.__careerWrapped=true; }
+  }catch(e){} })();
+
+  return { seed, condition, ageWeek, injure, isHurt, morale, adjustMorale, moraleWeek,
+    checkRetire, hallOfFame, showEconomics, commentary, callLive, tickWeek, VENUES };
 })();
 </script>
 <script>

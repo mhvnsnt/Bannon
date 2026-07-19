@@ -42,6 +42,17 @@ node tools/decimate/decimate.mjs OUT_rigged.glb assets/models/<KEY>.glb   # keep
 upload a GLB, download the rigged result. Availability is flaky (community space; may sleep/error).
 `tools/unirig/rig_via_space.py` calls it through `gradio_client` and introspects the endpoint.
 
+## PROVEN (2026-07-18): UniRig space → rename → clean bind
+The hosted space **`jasongzy/UniRig`** (`/process_pipeline(input, 'glb')`) rigged the unskinned
+BANNON.glb into a real 28-joint skinned mesh (~25 min on the free ZeroGPU queue; texture preserved).
+UniRig names bones `bone_0..N`, so **`tools/unirig/rename_bones.cjs`** renames them to Mixamo names by
+skeleton topology (root=Hips; spine→3-way branch at chest→Neck/Head + two arms by Z-sign; two legs off
+Hips). Result binds through the engine's real skinned path (autoRig:false, 12 bones mapped, all 4 limbs
++ spine + head driven) and renders CLEAN in-harness — banked as `assets/models/BANNON_rigged.glb` and
+set as BANNON's default. `rig_via_space.py` handles it (`gradio_client`); `rig.sh` step 4 runs the rename.
+Batch the rest of the unskinned statues (MAIME/CODY_gear/ONYX*) the same way (the free space is serial +
+slow, ~25 min each; a paid/self-host GPU is faster).
+
 ## Rules
 - **Do NOT auto-rig canon/book models** the owner is authoring (Bannon/Maime/Solaris + Onyx stable +
   the canon roster) — owner supplies those per the MODEL OWNERSHIP DIRECTIVE. UniRig is for agent-made

@@ -595,6 +595,28 @@ BINDING session memory so these don't get re-derived:
   and a new `window.CHAR_STABLES` registry (14 stables, members = roster keys). Verified: all 50 in
   MOVESET_DB/CHAR_META/FINISHER_MOVES, ROSTER_ALL()=116, 0 pageerrors. Models stay procedural until real
   skinned GLBs exist — identity/roster first (owner makes canon models per the ownership directive).
+- **v160 SURROUNDING GAME + COMBAT (this pass, all harness-verified):**
+  - **CARRY vs INSTANT grapples** (`window.isInstantMove`/`moveCarry`/`execGrappleMove`, near resolveGrapPos):
+    carry moves (powerbomb/DDT/fireman's/piledriver/suplex/chokeslam/gorilla press) lift+hold then deliver;
+    INSTANT moves (stunner/cutter/RKO/neckbreaker/bulldog/x-factor/legsweep/snapmare) skip the hoist —
+    craneLift 0, grappleStage 3, _liftMinT 0, snap to a fast 'spike'. Honors an explicit `move.carry` flag
+    first, else name/pos pattern. Finisher + signature grapple paths route through execGrappleMove (no
+    lockup — straight to hoist/delivery, WWE-2K style). `resolveGrapPos` now honors `move.pos` first.
+  - **MDickie MOVES in full** (`assets/moves/mdickie_moves.json`, gen `tools/bbparse/gen_mdickie_moves.cjs`):
+    75-move vocabulary from the .bb catalog → proprietary names → our physics via resolveGrapPos (9 authored
+    GRAPPLE_POSITIONS: STANDARD/POWERBOMB/CROSS_POWERBOMB/VERTICAL_SUPLEX/DDT/BUTTERFLY_DDT/CHOKESLAM/
+    BACK_SUPLEX/FIREMANS_CARRY; others fuzzy→STANDARD). Folded into BANNON_MOVE_LIBRARY pools.
+  - **`window.BANNON_STORY`** — entrances/victories (hooked into startFight/declareWinner), 7 backstage areas +
+    meetings, branching dialogue (respect/insult/recruit/challenge/betray → ChangeRelationship/FormTeam/
+    PushTurn/feud), relationships/alignment/turn-heat (seeded from stable/faction/rivalry), weekly events/news.
+  - **`window.BANNON_CAREER`** — aging + physical decline, deep injuries (part/severity/recovery/effect,
+    persist via save), morale, retirement + hall of fame, show economics (venue/attendance/gate/rating),
+    match commentary; hooks BANNON_UNIVERSE.advanceWeek. GOTCHA: BANNON_UNIVERSE.get() re-parses localStorage
+    each call — mutating helpers MUST call BANNON_UNIVERSE.save(u) or the change is lost.
+  - **APK install fix**: `android/app/bannon-release.keystore` (stable committed sideload key; debug+release
+    sign identically → installs over old builds), versionCode auto-increments (BANNON_VERSION_CODE=commit
+    count), and android.yml now bundles assets/moves/*.json + assets/audio/* (were MISSING → 404'd in the app).
+    TRANSITION: uninstall the old app ONCE (it was signed with a throwaway key), then updates install cleanly.
 - **MODEL PIPELINE — HONEST STATE (owner override 2026-07-18): STOP hand-writing skinning/rig code.**
   `tools/rigready/skin.cjs` (my geodesic auto-rigger) produces BROKEN fighters — stretched smears, invisible/
   torn limbs, unrendered holes; the harness's bloom + 2.3fps made me misjudge them as "coherent" (I was wrong;
@@ -604,3 +626,10 @@ BINDING session memory so these don't get re-derived:
   Mixamo-style) instead of our skinner. Do NOT auto-skin canon/book models (owner's per ownership directive).
   Probe tool that works: raw-GLB bbox + skin/joint count via GLTFLoader headless (all 61 GLBs load, upright,
   centered; the broken-ness is skinning weights + unskinned sources, not orientation/scale).
+  **SOLVED 2026-07-18 — the working model-fix pipeline (use this, NOT skin.cjs):** hosted `jasongzy/UniRig`
+  space (`/process_pipeline(input,'glb')` via gradio_client, HF_TOKEN in .claude/settings.local.json env) rigs
+  an unskinned GLB into a real 28-joint SKINNED mesh (~25 min on the free ZeroGPU queue, texture kept) →
+  `tools/unirig/rename_bones.cjs` renames bone_N → Mixamo names by skeleton topology → binds through the
+  engine's REAL skinned path (autoRig:false, all 4 limbs+spine+head). BANNON done + verified CLEAN + banked
+  `assets/models/BANNON_rigged.glb` + set as default. Re-rig the other unskinned statues (MAIME/CODY_gear/
+  ONYX*) the same way. `tools/unirig/rig.sh` (self-host) + `rig_via_space.py` (hosted) both end with the rename.
