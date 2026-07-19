@@ -380,6 +380,21 @@
         "CD",
         "github"
       ]
+    },
+    {
+      "id": "procedural_ik_strike",
+      "name": "Procedural IK Strike Generation",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Overrides missing or LFS-corrupted STRIKE animation tracks by calculating an Inverse Kinematics (IK) vector from the attacker's hand to the opponent's chest/jaw. Bends the skeleton procedurally in real-time to guarantee hit registration even without baked keyframes.",
+      "keywords": [
+        "IK",
+        "strike",
+        "procedural",
+        "animation",
+        "fallback",
+        "physics"
+      ]
     }
   ]
 }
