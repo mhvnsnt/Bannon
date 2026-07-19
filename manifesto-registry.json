@@ -489,6 +489,22 @@
         "ik",
         "directional"
       ]
+    },
+    {
+      "id": "glancing_blow_physics",
+      "name": "Glancing Blow Deflection Calculations",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Calculates the angle of incidence during applyDamage using a dot product between the attacker's forward vector and the relative position vector. If a strike lands more than ~30 degrees off center (dot product between 0.1 and 0.85), it registers as a 'glancing blow'. The engine halves raw HP damage (0.4x multiplier) and instead generates a tangential torque vector, converting the residual kinetic energy into rotational spin (opp.facing) and a lateral physics wobble (opp.kickWobble).",
+      "keywords": [
+        "physics",
+        "glancing",
+        "damage",
+        "deflection",
+        "torque",
+        "wobble",
+        "incidence"
+      ]
     }
   ]
 }
