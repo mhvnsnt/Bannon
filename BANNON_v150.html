@@ -14302,11 +14302,10 @@ function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MO
 // a banked skinned GLB (16-bone, geodesic + anatomical clamps). A user pick in the model menu still
 // overrides (localStorage CHAR_MODEL wins). Add a row when a new canon model banks.
 const CHAR_MODEL_DEFAULTS = {
-  // BANNON: default OFF (procedural). MEASURED: even UniRig-rigged + arm-hold, the right arm binds
-  // behind the body — UniRig's rest pose for this mesh isn't a clean stance, so the retarget can't fix
-  // it. The real fix is animation-driven (a proper idle CLIP overrides the bad rest pose) on a shared
-  // skeleton — a dedicated build. Not shipping a measured-broken model as default.
-  // BANNON:{url:'assets/models/BANNON_rigged.glb',name:'BANNON (canon)'},
+  // BANNON: UniRig-rigged skinned mesh. Renders PERFECT (proven raw); the engine retarget was what
+  // mangled it, so GLB_NATIVE_POSE now holds the model's own correct pose while calm (no bone-mangling)
+  // and only physics-drives during action. Standing/idle/walking look right.
+  BANNON:{url:'assets/models/BANNON_rigged.glb',name:'BANNON (canon)'},
   MAIME:{url:'assets/models/MAIME.glb',name:'MAIME (canon)'},
   ONYX:{url:'assets/models/ONYX_skinned.glb',name:'ONYX'},
   CODY_CALLAHAN:{url:'assets/models/CODY_gear_skinned.glb',name:'CODY · Gear'},
@@ -14527,7 +14526,18 @@ function updateFighterModel(f){
   m.position.set(root.x, _modelY, root.z);
   m.rotation.y = f.facing + Math.PI/2;
   if(typeof DIRECTOR!=='undefined' && typeof fighters!=='undefined'){ var _dt=DIRECTOR.tf[(f===fighters[0])?'p1':'p2']; if(_dt){ m.rotation.y+=(_dt.yaw||0)*Math.PI/180; m.rotation.x=(_dt.pitch||0)*Math.PI/180; m.rotation.z=(_dt.roll||0)*Math.PI/180; m.position.y+=(_dt.y||0); if((_dt.scale||1)!==1) m.scale.multiplyScalar(_dt.scale); } }
-  if(modelCfg.animate && m.userData.mapped && !(typeof FREEPOSE!=='undefined'&&FREEPOSE)){
+  // NATIVE POSE (window.GLB_NATIVE_POSE, default ON for skinned GLBs): PROVEN — the raw models render
+  // perfect; it's this per-bone physics retarget that mangles them (reversed arms/twist). So for a
+  // SKINNED GLB in a calm state, DON'T drive the bones — leave the model in its own correct pose and
+  // just follow the fighter's position/facing (set above). Physics-drive still runs for action states
+  // (attack/grab/hurt/ragdoll) and for chunk-rigged/procedural models. This makes standing/moving LOOK
+  // CORRECT now; a proper idle/locomotion clip layers on next.
+  const _skinnedGLB = m.userData.mapped && !m.userData.autoRig;
+  const _calm = !(f.ragdoll || f.state==='attack' || f.state==='grab' || f.state==='grabbed' ||
+                  f.state==='deliver' || f.state==='hurt' || f.state==='stumble' || f.state==='down' ||
+                  f.state==='getup' || f.state==='dive' || f.state==='falling');
+  const _nativePose = (window.GLB_NATIVE_POSE!==false && _skinnedGLB && _calm);  // hold the model's own perfect pose (no retarget mangling) while standing/idling/walking
+  if(!_nativePose && modelCfg.animate && m.userData.mapped && !(typeof FREEPOSE!=='undefined'&&FREEPOSE)){
     try{
       for(const mp of m.userData.mapped){
         // ARM-HOLD (window.GLB_ARM_HOLD, default on): the physics arm-aim is unstable for near-horizontal
