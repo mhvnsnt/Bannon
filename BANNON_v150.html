@@ -13792,6 +13792,18 @@ try{
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
     CODY_CALLAHAN: { name:'Cody "Corduroy Kid" Callahan', role:'Toxic Pawn / Distraction', faction:'Corporate Structure', canon:true, effect:{momentumTrickle:0.4, interfere:true} }
   });
+  // MATCH OFFICIALS (owner: "the refs and announcers") — canon commentary/announce/ref personnel so
+  // they carry identities and can be given models (they resolve through the MDickie/procedural attire
+  // layers like everyone else — SUIT for announcers, a striped REFEREE base for refs). Books (Book 5/6):
+  // play-by-play is Commentator Marks; color rotates through Cody Callahan / Grixf / Edwin Kennedy.
+  window.CHAR_OFFICIALS = Object.assign(window.CHAR_OFFICIALS||{}, {
+    COMMENTATOR_MARKS: { name:'Commentator Marks', role:'Play-by-Play', canon:true, look:'SUIT', bio:'The voice of the audience — calls the action, gives the wrestling context, and sells the danger.' },
+    RING_ANNOUNCER:    { name:'The Ring Announcer', role:'Ring Announcer', canon:true, look:'SUIT', bio:'Formal in-ring introductions and official decisions ("The winner, by referee stoppage...").' },
+    COLOR_CODY:        { name:'Cody "Corduroy Kid" Callahan', role:'Color / Manic GM', canon:true, ref:'CODY_CALLAHAN' },
+    COLOR_GRIXF:       { name:'Grixf', role:'Color (guest)', canon:true, ref:'GRIXF' },
+    COLOR_KENNEDY:     { name:'Edwin J. Kennedy', role:'Color (JPCW CEO, guest)', canon:true, ref:'EDWIN_KENNEDY' },
+    REFEREE:           { name:'The Referee', role:'Official', canon:true, look:'REFEREE', bio:'Enforces the count and the rules; the physical BANNON_REF entity (LoS-gated counts, ref bumps).' }
+  });
   // canon finishers for the new cast (through the real grapple physics; subs route as spikes until the sub-hold finisher path lands):
   window.FINISHER_MOVES = Object.assign(window.FINISHER_MOVES||{}, {
     ATLAS_VANCE:     { name:'THE ANCHOR COUNTER',        kind:'strike' },
@@ -14380,7 +14392,7 @@ function charModelFor(ck){ if(!ck) return null; if(CHAR_MODEL[ck]&&CHAR_MODEL[ck
 // then, picking it degrades gracefully to the procedural body (no broken load). Mapping is by the
 // character's archetype + gender, with named overrides for the real-wrestler-inspired canon roster.
 window.MDICKIE_BASE_DIR = window.MDICKIE_BASE_DIR || 'assets/models/mdickie_bases/';
-window.MDICKIE_BASES = window.MDICKIE_BASES || ['MONSTER','POWERHOUSE','TECHNICIAN','BRAWLER','CRUISER','LUCHADOR','SUIT','FEMALE','FEMALE_ATHLETIC'];
+window.MDICKIE_BASES = window.MDICKIE_BASES || ['MONSTER','POWERHOUSE','TECHNICIAN','BRAWLER','CRUISER','LUCHADOR','SUIT','FEMALE','FEMALE_ATHLETIC','REFEREE'];
 // named overrides: character key -> base (real-wrestler inspiration or a specific silhouette)
 window.MDICKIE_MAP = Object.assign({
   VAIN_ABEL:'MONSTER', IRON_TUSK:'MONSTER', GRAVE:'MONSTER', MOKK_GNARLY:'MONSTER', KRUSHA_P:'MONSTER',
@@ -14390,7 +14402,8 @@ window.MDICKIE_MAP = Object.assign({
   KID_GLIDE:'CRUISER', AIR_JORDAN:'CRUISER', THE_VELOCITY:'CRUISER', LUNA_GNARLY:'FEMALE_ATHLETIC',
   LUCHADOR_RELAMPAGO:'LUCHADOR', LUCHADOR_TRUENO:'LUCHADOR', REY_FUEGO:'LUCHADOR',
   TRIPLE_XXX:'POWERHOUSE', THE_BAD_GAL:'FEMALE', MELISSA_KENNEDY:'FEMALE', LADY_RHIANNON:'FEMALE',
-  ASTRID:'FEMALE_ATHLETIC', QUEEN_TYNESHIA:'FEMALE', TIGHTROPE:'FEMALE_ATHLETIC'
+  ASTRID:'FEMALE_ATHLETIC', QUEEN_TYNESHIA:'FEMALE', TIGHTROPE:'FEMALE_ATHLETIC',
+  COMMENTATOR_MARKS:'SUIT', RING_ANNOUNCER:'SUIT', REFEREE:'REFEREE'
 }, window.MDICKIE_MAP||{});
 function mdickieBaseFor(charName){
   var k=String(charName||'').toUpperCase().replace(/[^A-Z0-9]/g,'_');
