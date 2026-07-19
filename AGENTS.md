@@ -682,3 +682,12 @@ Before any git push or GitHub API PUT, you MUST run wc -l index.html to verify t
 ### SHIPPED (PHASE - ANTI-CLOBBERING & RESTORATION)
 - **Appended Anti-Clobbering Law to AGENTS.md**: Injected the strict new CRITICAL ARCHITECTURE LAW: NO CLOBBERING / NO FILE REPLACEMENTS directly to the bottom of the AGENTS.md file. The agent will now check the file size and line counts (>39000) before executing any pushes.
 - **Full Architecture Restored**: Restored index.html, public/index.html, and BANNON_v150.html locally and on the GitHub remote to the full 40,337 lines. The file includes everything Claude built (Portraits, Promotions, Visual Universe, God Within roam) plus the GLB facing fixes, orphan model clones fix, and the subsequent patches for Items, News, and Entrances added immediately before the reset.
+
+
+### SHIPPED (PHASE 6 & NEXT GEN SYSTEMS)
+- **BANNON_ENVIRONMENTS (Free Roam Hub Maps)**: Implemented modular environment spawning via `window.BANNON_ENVIRONMENTS`. The system dynamically monkeypatches `buildArena` and `_zoneClamp` to swap the standard wrestling ring for a massive open free-roaming plane when the environment switches to `BACKSTAGE`, `PARKING`, `CITY`, or `GYM`. Includes environmental prop spawning logic.
+- **BANNON_RPG (God Within Progression)**: Engineered `window.BANNON_RPG` to handle the Ontological Tree of Life (Skill Trees like 'Path of the Striker', 'Daemon Core') and the Daemon Quest Chain logic. Hooks into local state to save XP and process objectives.
+- **BANNON_FULL_PROPS (MDickie Arsenal)**: Procedurally models the complete set of MDickie Wrestling MPire interactive physical objects (mic, water bottle, guitar, skateboard, fire extinguisher, monitor, bell, briefcase, trash can, dumbbell, kendo stick) directly in Three.js without requiring external GLBs, falling back intelligently.
+- **BANNON_TRAINING_MINIGAMES**: Integrated interactive MDickie-style training routines (Sparring, Weightlifting, Cardio Sprints, Heavy Bag) that spawn physical props (e.g. dumbbell, heavy bag) and track performance reps before granting RPG XP.
+- **BANNON_SETTINGS_MENU**: Added a comprehensive settings API to track audio volume, blood toggles, camera shake, hardcore limits, and graphics quality.
+- **UniRig Pipeline Asset Mapping**: Expanded `CHAR_MODEL_DEFAULTS` to map the remaining roster (GHOST, PHANTOM, DEMON_X, LUNA_VEGA, SAMI_Z, JAXON_RYKER, BIG_BULL, COSMIC_DUST) automatically to the UniRig pipeline `assets/models/` path, so they animate instantly upon placement.
