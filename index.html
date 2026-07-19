@@ -14943,6 +14943,7 @@ function _rigSense(side, name, bones, mapped, container, s){
 }
 function loadFighterModel(side, url, name){
   const f=fighterFor(side); if(!f){ setModelStatus(side,'Start a fight first.'); return; }
+  const reqId = (f._modelReqId = (f._modelReqId||0) + 1);
   if(typeof THREE==='undefined' || !THREE.GLTFLoader){ setModelStatus(side,'⚠ 3D loader unavailable here.'); return; }
   url=(url||'').trim(); if(!url){ setModelStatus(side,'Paste a .glb URL first.'); return; }
   removeFighterModel(side);
@@ -40187,5 +40188,150 @@ window.BANNON_PORTRAITS = (function(){
   return { get, cache };
 })();
 </script>
-</body>
-</html>
+
+<!-- ============================================================================================
+     BANNON_ITEMS, BANNON_NEWS & BANNON_ENTRANCES — MDickie legacy ports for physical objects,
+     dirt-sheet generation, and live beat entrances.
+     ============================================================================================ -->
+<script>
+window.BANNON_ITEMS = (function(){
+  const WEAPONS = [
+    { type: 'chair', damage: 15, mass: 10, reach: 1.5, durability: 3 },
+    { type: 'table', damage: 25, mass: 20, reach: 2.0, durability: 1 },
+    { type: 'bat', damage: 12, mass: 5, reach: 1.2, durability: 5 },
+    { type: 'ladder', damage: 20, mass: 25, reach: 2.5, durability: 4 },
+    { type: 'monitor', damage: 18, mass: 15, reach: 1.0, durability: 1 }
+  ];
+
+  function spawnWeapon(type, x, z) {
+    const template = WEAPONS.find(w => w.type === type);
+    if(!template) return null;
+    return { ...template, x: x, z: z, y: 0, id: Date.now() + Math.random(), state: 'idle' };
+  }
+  
+  function pickupWeapon(fighter, weapon) {
+    if(!fighter || !weapon || weapon.state !== 'idle') return false;
+    const d = Math.hypot(fighter.x - weapon.x, fighter.z - weapon.z);
+    if(d < 50) {
+      weapon.state = 'held';
+      fighter.heldWeapon = weapon;
+      return true;
+    }
+    return false;
+  }
+  
+  function swingWeapon(attacker, defender) {
+    if(!attacker.heldWeapon) return;
+    const w = attacker.heldWeapon;
+    // Calculate arc based on weapon reach
+    const dist = Math.hypot(attacker.x - defender.x, attacker.z - defender.z);
+    if(dist < (40 * w.reach)) {
+      defender.hp = Math.max(0, (defender.hp||100) - w.damage);
+      w.durability--;
+      if(w.durability <= 0) {
+        attacker.heldWeapon = null; // Weapon breaks
+        if(window.addEvent) window.addEvent(`The ${w.type} shattered on impact!`, 'items');
+      }
+      return true;
+    }
+    return false;
+  }
+  
+  function dropWeapon(fighter) {
+    if(!fighter.heldWeapon) return;
+    const w = fighter.heldWeapon;
+    w.state = 'idle';
+    w.x = fighter.x;
+    w.z = fighter.z;
+    fighter.heldWeapon = null;
+  }
+
+  return {
+    WEAPONS,
+    spawnWeapon,
+    pickupWeapon,
+    swingWeapon,
+    dropWeapon
+  };
+})();
+
+window.BANNON_NEWS = (function(){
+  const NEWS_TEMPLATES = [
+    { type: 'injury', text: "[FIGHTER] is reportedly taking time off to heal nagging injuries." },
+    { type: 'heat', text: "Backstage heat continues to build around [FIGHTER] after recent comments." },
+    { type: 'contract', text: "Rumors indicate [FIGHTER] is in contract negotiations with management." },
+    { type: 'push', text: "Management is extremely high on [FIGHTER], expect a major push soon." },
+    { type: 'debut', text: "A mysterious new talent has been spotted at the training facility." }
+  ];
+
+  function generateHeadline(fighterName) {
+    let tpl = NEWS_TEMPLATES[Math.floor(Math.random() * NEWS_TEMPLATES.length)];
+    let headline = tpl.text.replace("[FIGHTER]", fighterName || "A top star");
+    return headline;
+  }
+  
+  function generateWeeklyNews(universe) {
+    if(!universe || !universe.fighters) return [];
+    const roster = Object.keys(universe.fighters);
+    if(!roster.length) return [];
+    
+    const count = Math.floor(Math.random() * 3) + 1;
+    const headlines = [];
+    for(let i=0; i<count; i++) {
+        const target = roster[Math.floor(Math.random() * roster.length)];
+        headlines.push(generateHeadline(target));
+    }
+    return headlines;
+  }
+
+  return {
+    generateHeadline,
+    generateWeeklyNews
+  };
+})();
+
+window.BANNON_ENTRANCES = (function(){
+  function startEntrance(fighter) {
+    if(!fighter) return;
+    fighter.state = 'entrance_stage';
+    fighter.z = -500; // Deep in the aisle
+    fighter.x = 0;
+    if(window.addEvent) window.addEvent(`${fighter.name} steps through the curtain!`, 'entrance');
+  }
+  
+  function updateEntrance(fighter) {
+    if(fighter.state === 'entrance_stage') {
+        fighter.z += 2; // Walk down the ramp
+        if(fighter.z >= -100) {
+           fighter.state = 'entrance_apron';
+        }
+    } else if (fighter.state === 'entrance_apron') {
+        fighter.z += 1;
+        fighter.y = 30; // Step onto apron
+        if(fighter.z >= -40) {
+           fighter.state = 'entrance_ring';
+        }
+    } else if (fighter.state === 'entrance_ring') {
+        fighter.z += 1;
+        fighter.y = 0; // Step into ring
+        if(fighter.z >= 0) {
+           fighter.state = 'idle';
+           if(window.addEvent) window.addEvent(`${fighter.name} is ready for action!`, 'entrance');
+        }
+    }
+  }
+  
+  function triggerPyro(fighter) {
+    if(fighter.state !== 'entrance_stage') return;
+    if(window.addEvent) window.addEvent(`BOOM! Pyro goes off for ${fighter.name}!`, 'pyro');
+  }
+
+  return {
+    startEntrance,
+    updateEntrance,
+    triggerPyro
+  };
+})();
+</script>
+</body></html>
+
