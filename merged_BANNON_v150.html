@@ -8343,7 +8343,20 @@ Fighter.prototype.canWakeAttack = function(){ return this.state==='getup' && thi
 Fighter.prototype.startGrab = function(){
   if (this.state==='attack'||this.ragdoll||this.state==='getup'||this.state==='grabbed'||this.grappling||this.state==='deliver') return false;
   const opp = this.opponent();
-  if (!opp || opp.isDown() || opp.invuln>0 || opp.state==='grabbed') return false;
+  
+  // BANNON MULTI-MAN SUBMISSION STACKING (PHASE 5 #35)
+  // Bypass 'grabbed' restriction if the new attacker is attempting a submission.
+  if (!opp || opp.invuln>0) return false;
+  if (opp.isDown() && !this.attackData) return false; // assuming attackData dictates move
+  if (opp.state === 'grabbed') {
+      if (this.attackData && (this.attackData.cat === 'SUB' || this._isMounting)) {
+          this._isStacking = true;
+          // Let it pass
+      } else {
+          return false;
+      }
+  }
+
   const _dist = Math.hypot(opp.x - this.x, opp.z - this.z);
   // PROXIMITY SPRAWL BUFFER (Prompt 5)
   // secondary radius 2.2; fast approach (>0.1 magnitude momentum/velocity)
