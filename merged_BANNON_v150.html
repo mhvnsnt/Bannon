@@ -3449,6 +3449,32 @@ Fighter.prototype.solveForearmTwist = function(){
 
 // ---- ACTIVE-RAGDOLL WOBBLE: under-damped spring offset per joint, kicked on impact ----
 Fighter.prototype.updateWobble = function(dt){
+  // BANNON CORNER TRAPPED STATE MACHINE (PHASE 4 #28)
+  // If the fighter is hit/staggered while pinned in the corner, they bounce off the corner pads rather than sliding backward.
+  if (this._inCorner) {
+    if (this._wobbleActive || this.state === 'stumble' || this.state === 'stun') {
+       // Freeze backward slide
+       this.vx = 0; 
+       this.vz = 0;
+       
+       // Force visual pad-bounce
+       if (this.J && this.J.chest) {
+          // Push chest slightly back into the pad, then spring forward
+          const padDepth = Math.sin(Date.now() * 0.01) * 0.2;
+          this.J.chest.tgt.x += Math.sign(this.x) * padDepth;
+          this.J.chest.tgt.z += Math.sign(this.z) * padDepth;
+          this.J.head.tgt.y -= 0.1; // chin tucks on impact
+       }
+       
+       // Set trapped state
+       this._cornerTrapped = true;
+       // Play rope impact audio/visual if available
+       if (window.ropeHit && Math.random() < 0.1) window.ropeHit(this.x, this.z, 0.8);
+    }
+  } else {
+    this._cornerTrapped = false;
+  }
+
   const stiff = TUNE.wobbleStiff;     // under-damped -> visible give + recovery (less robotic)
   const steps = 2, h = dt/steps;     // sub-step for stability
   for (const j of JOINTS){
