@@ -678,3 +678,7 @@ You are an execution engine. Output no conversational pleasantries, no plans, an
 The Bannon Engine is a ~40,000 line single-file architecture (index.html). You are STRICTLY FORBIDDEN from overwriting the file, writing a "condensed" version, or creating a new file from scratch.
 You must ONLY use surgical insertion (e.g., regex replace(), sed, or appending before </body>) to add new features.
 Before any git push or GitHub API PUT, you MUST run wc -l index.html to verify the line count is >39,000. If the line count is low, you have clobbered the file and must instantly abort the push and restore from remote.
+
+### SHIPPED (PHASE - ANTI-CLOBBERING & RESTORATION)
+- **Appended Anti-Clobbering Law to AGENTS.md**: Injected the strict new CRITICAL ARCHITECTURE LAW: NO CLOBBERING / NO FILE REPLACEMENTS directly to the bottom of the AGENTS.md file. The agent will now check the file size and line counts (>39000) before executing any pushes.
+- **Full Architecture Restored**: Restored index.html, public/index.html, and BANNON_v150.html locally and on the GitHub remote to the full 40,337 lines. The file includes everything Claude built (Portraits, Promotions, Visual Universe, God Within roam) plus the GLB facing fixes, orphan model clones fix, and the subsequent patches for Items, News, and Entrances added immediately before the reset.
