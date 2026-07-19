@@ -25,18 +25,18 @@ const INITIAL_TRACKS: Track[] = [
     { id: '10', title: 'DX', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m dx 3.mp3' },
     { id: '11', title: 'Stars', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m stars.mp3' },
     { id: '12', title: 'Sickness', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m sicikness.mp3' },
-    { id: '13', title: 'Picadero', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Picadero' },
-    { id: '14', title: 'Narco', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Narco' },
+    { id: '13', title: 'Picadero', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/Mars FMMG - Picadero' },
+    { id: '14', title: 'Narco', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/Mars FMMG - Narco' },
     { id: '15', title: 'Castle Nosferatu (Sega-style FM Synth Remix)', duration: '3:00', type: 'menu', artist: 'Bannon OST', audioUrl: '/assets/audio/04 - Castle Nosferatu (Sega-style FM Synth Remix).aac' },
     { id: '16', title: 'Slo Burn', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m slo burn_1.mp3' },
     { id: '17', title: 'Cult', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m cult_3mp3.mp3' },
     { id: '18', title: 'Champion', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', featuredArtist: 'GMG', audioUrl: '/assets/audio/m gmg champion 7.mp3' },
     { id: '19', title: 'Hell Nah', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', featuredArtist: 'Finxsse', audioUrl: '/assets/audio/hell nah m finxsse.mp3' },
-    { id: '20', title: 'Bannon Theme', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Bannon Theme' },
+    { id: '20', title: 'Bannon Theme', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/Mars FMMG - Bannon Theme' },
     { id: '21', title: 'Final Master Switch', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/final_master_switch.mp3' },
-    { id: '22', title: 'Japanese Denim', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Japanese Denim' },
-    { id: '23', title: 'Zumbando', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Zumbando.m4a' },
-    { id: '24', title: 'Dio', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Dio' }
+    { id: '22', title: 'Japanese Denim', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/Mars FMMG - Japanese Denim' },
+    { id: '23', title: 'Zumbando', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/Mars FMMG - Zumbando.m4a' },
+    { id: '24', title: 'Dio', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/Mars FMMG - Dio' }
 ];
 
 export default function JukeboxManager() {
