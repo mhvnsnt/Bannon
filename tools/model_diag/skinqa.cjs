@@ -79,7 +79,11 @@ const { spawn } = require('child_process');
       return { joints:bones.length, verts:N, p50:+p(0.5).toFixed(4), p95:+p(0.95).toFixed(4), max:+maxR.toFixed(4),
                bboxRatioWH:+(posedW/Math.max(0.01,posedH)).toFixed(2), keyBones:{lArm:!!lArm,rArm:!!rArm,spine:!!spine,lLeg:!!lLeg}, handMoved };
     }, mf);
-    const verdict = r.p95!=null ? (r.p95<0.06 ? 'PASS' : (r.p95<0.12?'WEAK':'FAIL')) : 'ERR';
+    // A rig must have ALL FOUR LIMBS mapped, else the smear metric is meaningless (unmapped limbs
+    // aren't posed, so they read as "no smear" — the trap that made the degenerate UniRig outputs
+    // look like PASS). Missing a key limb bone => FAIL regardless of residual.
+    const kb = r.keyBones||{}; const limbsOk = kb.lArm && kb.rArm && kb.spine && kb.lLeg;
+    const verdict = r.p95==null ? 'ERR' : (!limbsOk ? 'FAIL(no-limbs)' : (r.p95<0.06 ? 'PASS' : (r.p95<0.12?'WEAK':'FAIL')));
     console.log(verdict.padEnd(5), mf.padEnd(30), JSON.stringify(r));
   }
   console.log('pageerrors', perr.length, perr.slice(0,2).join('|'));
