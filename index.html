@@ -14769,7 +14769,19 @@ const CHAR_MODEL_DEFAULTS = {
   KOBRA:{url:'assets/models/KOBRA.glb',name:'KOBRA'},
   MASTER_SENSEI:{url:'assets/models/MASTER_SENSEI.glb',name:'MASTER SENSEI'},
   WRECK_PATTERSON:{url:'assets/models/WRECK_PATTERSON.glb',name:'WRECK PATTERSON'},
-  AARON_RUBEN:{url:'assets/models/AARON_RUBEN.glb',name:'AARON RUBEN'}
+  AARON_RUBEN:{url:'assets/models/AARON_RUBEN.glb',name:'AARON RUBEN'},
+
+  // v160 UNIRIG PIPELINE PASS — All remaining models mapped for the UniRig pipeline
+  GHOST:{url:'assets/models/GHOST.glb',name:'GHOST'},
+  PHANTOM:{url:'assets/models/PHANTOM.glb',name:'PHANTOM'},
+  DEMON_X:{url:'assets/models/DEMON_X.glb',name:'DEMON X'},
+  LUNA_VEGA:{url:'assets/models/LUNA_VEGA.glb',name:'LUNA VEGA'},
+  SAMI_Z:{url:'assets/models/SAMI_Z.glb',name:'SAMI Z'},
+  JAXON_RYKER:{url:'assets/models/JAXON_RYKER.glb',name:'JAXON RYKER'},
+  BIG_BULL:{url:'assets/models/BIG_BULL.glb',name:'BIG BULL'},
+  COSMIC_DUST:{url:'assets/models/COSMIC_DUST.glb',name:'COSMIC DUST'},
+  // End of UniRig pipeline additions
+
 };
 let CHAR_MODEL = (function(){ try{ var r=localStorage.getItem('bannonCharModels'); if(r) return JSON.parse(r); }catch(e){} return {}; })();
 function charModelKey(f){ var n=(typeof fname==='function'?fname(f):(f&&f.opts&&f.opts.name))||''; return String(n).toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
@@ -40333,5 +40345,299 @@ window.BANNON_ENTRANCES = (function(){
   };
 })();
 </script>
+
+<!-- ============================================================================================
+     BANNON_ENVIRONMENTS, BANNON_RPG, BANNON_ITEMS_PROPS — Full God Within RPG world, open hub 
+     map, MDickie environments, Daemon Quest chain, and physical prop spawning.
+     ============================================================================================ -->
+<script>
+// --- BANNON_ENVIRONMENTS: MDickie-style distinct physical environments ---
+window.BANNON_ENVIRONMENTS = (function(){
+  const ENVS = [
+    { id:'ARENA', name:'Main Arena' },
+    { id:'BACKSTAGE', name:'Backstage Hallways', color: 0x2a2a2e, wall: 0x44444a },
+    { id:'PARKING', name:'Parking Lot', color: 0x111111, wall: 0x222222 },
+    { id:'CITY', name:'City Streets', color: 0x1a1a1a, wall: 0x333333 },
+    { id:'GYM', name:'Training Gym', color: 0x332b22, wall: 0x554433 }
+  ];
+  window.CURRENT_ENV = 'ARENA';
+
+  function buildCurrent() {
+    if (typeof arenaGroup !== 'undefined' && arenaGroup) scene.remove(arenaGroup);
+    window.arenaGroup = new THREE.Group();
+    scene.add(arenaGroup);
+    
+    const env = ENVS.find(e => e.id === window.CURRENT_ENV);
+    if (!env || env.id === 'ARENA') return; // Fallback handled by monkeypatch
+    
+    scene.background = new THREE.Color(env.wall || 0x000000);
+    scene.fog.color.setHex(env.wall || 0x000000);
+    
+    // Massive open floor for free roaming
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(100, 100),
+      new THREE.MeshStandardMaterial({ color: env.color||0x222222, roughness: 0.9, metalness: 0.1 })
+    );
+    floor.rotation.x = -Math.PI/2; 
+    floor.position.y = 0; // Mat level is 0 for free roam
+    floor.receiveShadow = true;
+    arenaGroup.add(floor);
+    
+    // Spawn environmental props based on zone
+    if (env.id === 'BACKSTAGE') {
+      spawnBlock(5, 5, 2, 2, 0x555555); // Vending machine
+      spawnBlock(-5, 8, 4, 1, 0x333333); // Lockers
+    } else if (env.id === 'PARKING') {
+      spawnBlock(8, 0, 5, 2, 0x1111aa); // Car
+      spawnBlock(-8, 5, 5, 2, 0xaa1111); // Car
+    }
+  }
+  
+  function spawnBlock(x, z, w, d, color) {
+    const mesh = new THREE.Mesh(
+      new THREE.BoxGeometry(w, 3, d),
+      new THREE.MeshStandardMaterial({ color: color })
+    );
+    mesh.position.set(x, 1.5, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    arenaGroup.add(mesh);
+  }
+
+  return { ENVS, buildCurrent };
+})();
+
+// Monkeypatch buildArena for environments
+if (typeof buildArena === 'function') {
+  const _origBuildArena = buildArena;
+  window.buildArena = function() {
+    if (window.CURRENT_ENV && window.CURRENT_ENV !== 'ARENA') {
+      window.BANNON_ENVIRONMENTS.buildCurrent();
+    } else {
+      _origBuildArena();
+    }
+  };
+}
+
+// Monkeypatch _zoneClamp for free roam
+if (typeof Fighter !== 'undefined' && Fighter.prototype._zoneClamp) {
+  const _origZoneClamp = Fighter.prototype._zoneClamp;
+  Fighter.prototype._zoneClamp = function() {
+    if (window.CURRENT_ENV && window.CURRENT_ENV !== 'ARENA') {
+      this.x = Math.max(-45, Math.min(45, this.x));
+      this.z = Math.max(-45, Math.min(45, this.z));
+    } else {
+      _origZoneClamp.call(this);
+    }
+  };
+}
+
+// --- BANNON_RPG: God Within Skill Trees & Daemon Quest Chain ---
+window.BANNON_RPG = (function(){
+  const SKILL_TREE = {
+    'striker': { name: 'Path of the Striker', desc: 'Increases hit-stop and strike damage by 20%.' },
+    'grappler': { name: 'Path of the Grappler', desc: 'Increases lifting strength and submission torque.' },
+    'highflyer': { name: 'Path of the Aerialist', desc: 'Increases dive velocity and reduces fall damage.' },
+    'daemon': { name: 'Daemon Core', desc: 'The shadow path. Regain stamina by drawing blood.' }
+  };
+  
+  const QUEST_CHAIN = [
+    { id: 1, title: 'The Awakening', objective: 'Win a match using a weapon.', completed: false },
+    { id: 2, title: 'Blood Ritual', objective: 'Bust an opponent wide open.', completed: false },
+    { id: 3, title: 'The Offering', objective: 'Defeat a Hall of Famer.', completed: false },
+    { id: 4, title: 'God Within', objective: 'Win the World Championship in God Within mode.', completed: false }
+  ];
+
+  function getPlayerRPG(name) {
+    let u = window.UNI ? window.UNI().get() : null;
+    if (!u) return null;
+    if (!u.rpg) u.rpg = {};
+    if (!u.rpg[name]) u.rpg[name] = { xp: 0, level: 1, skills: [], questProgress: 1 };
+    return u.rpg[name];
+  }
+
+  function grantXP(name, amount) {
+    let p = getPlayerRPG(name);
+    if (!p) return;
+    p.xp += amount;
+    if (p.xp >= p.level * 1000) {
+      p.level++;
+      p.xp = 0;
+      if (window.addEvent) window.addEvent(`${name} has leveled up to Level ${p.level}!`, 'rpg');
+    }
+    if (window.UNI) window.UNI().save(window.UNI().get());
+  }
+  
+  function checkQuestObjective(name, eventType) {
+    let p = getPlayerRPG(name);
+    if (!p) return;
+    let currentQuest = QUEST_CHAIN.find(q => q.id === p.questProgress);
+    if (!currentQuest) return; // All quests done
+    
+    // Mock logic for quest checking
+    let completed = false;
+    if (currentQuest.id === 1 && eventType === 'weapon_win') completed = true;
+    if (currentQuest.id === 2 && eventType === 'blood_drawn') completed = true;
+    if (currentQuest.id === 3 && eventType === 'legend_defeated') completed = true;
+    if (currentQuest.id === 4 && eventType === 'world_title_win') completed = true;
+    
+    if (completed) {
+      if (window.addEvent) window.addEvent(`DAEMON QUEST COMPLETED: ${currentQuest.title}`, 'rpg');
+      p.questProgress++;
+      if (window.UNI) window.UNI().save(window.UNI().get());
+    }
+  }
+
+  return { SKILL_TREE, QUEST_CHAIN, getPlayerRPG, grantXP, checkQuestObjective };
+})();
+
+// Expand God Within Roam Menu to allow changing environments
+if (window.BANNON_GODWITHIN) {
+  const _origStart = window.BANNON_GODWITHIN.start;
+  window.BANNON_GODWITHIN.start = function() {
+    window.CURRENT_ENV = 'BACKSTAGE';
+    if(typeof buildArena === 'function') buildArena();
+    if (_origStart) _origStart();
+    if(window.addEvent) window.addEvent("Entered the Backstage Hub. Roam freely.", 'godwithin');
+  };
+}
+</script>
+
+<!-- ============================================================================================
+     BANNON_FULL_PROPS — MDickie's full item/prop set as physical objects, procedurally modeled.
+     ============================================================================================ -->
+<script>
+window.BANNON_FULL_PROPS = (function(){
+  const catalog = [
+    { type: 'mic', color: 0x222222, shape: 'cylinder', size: [0.05, 0.2, 0.05], mass: 0.5 },
+    { type: 'water_bottle', color: 0x88ccff, shape: 'cylinder', size: [0.06, 0.25, 0.06], mass: 0.3 },
+    { type: 'guitar', color: 0xddaa55, shape: 'box', size: [0.4, 0.1, 1.0], mass: 2.0 },
+    { type: 'skateboard', color: 0xff4444, shape: 'box', size: [0.2, 0.05, 0.8], mass: 1.5 },
+    { type: 'fire_extinguisher', color: 0xff1111, shape: 'cylinder', size: [0.15, 0.5, 0.15], mass: 5.0 },
+    { type: 'monitor', color: 0x111111, shape: 'box', size: [0.5, 0.4, 0.4], mass: 10.0 },
+    { type: 'bell', color: 0xffdd44, shape: 'cylinder', size: [0.2, 0.15, 0.2], mass: 4.0 },
+    { type: 'briefcase', color: 0x333333, shape: 'box', size: [0.4, 0.3, 0.1], mass: 3.0 },
+    { type: 'trash_can', color: 0x999999, shape: 'cylinder', size: [0.3, 0.6, 0.3], mass: 2.5 },
+    { type: 'dumbbell', color: 0x111111, shape: 'cylinder', size: [0.1, 0.3, 0.1], mass: 15.0 },
+    { type: 'kendo_stick', color: 0xddcc99, shape: 'cylinder', size: [0.03, 1.0, 0.03], mass: 0.8 }
+  ];
+
+  function spawnProp(type, x, z) {
+    if (typeof THREE === 'undefined') return null;
+    const t = catalog.find(c => c.type === type) || catalog[0];
+    let geo;
+    if (t.shape === 'box') geo = new THREE.BoxGeometry(t.size[0], t.size[1], t.size[2]);
+    else geo = new THREE.CylinderGeometry(t.size[0], t.size[2], t.size[1]);
+    
+    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: t.color }));
+    mesh.position.set(x, 1, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    if (typeof arenaGroup !== 'undefined' && arenaGroup) arenaGroup.add(mesh);
+    return mesh;
+  }
+
+  function spawnRandomProps(count) {
+    for(let i=0; i<count; i++) {
+      let t = catalog[Math.floor(Math.random() * catalog.length)].type;
+      spawnProp(t, (Math.random()-0.5)*15, (Math.random()-0.5)*15);
+    }
+  }
+
+  return { catalog, spawnProp, spawnRandomProps };
+})();
+</script>
+
+<!-- ============================================================================================
+     BANNON_TRAINING_MINIGAMES & BANNON_SETTINGS_MENU
+     Training mode depth (MDickie's minigames) and Settings submenu.
+     ============================================================================================ -->
+<script>
+window.BANNON_TRAINING_MINIGAMES = (function(){
+  const MINIGAMES = [
+    { id: 'sparring', name: 'Sparring', desc: 'Fight a partner to build Technique.' },
+    { id: 'weightlifting', name: 'Weightlifting', desc: 'Spam the action button to lift and build Strength.' },
+    { id: 'cardio', name: 'Cardio Sprints', desc: 'Run ropes back and forth to build Stamina.' },
+    { id: 'heavybag', name: 'Heavy Bag', desc: 'Strike the bag to build Striking power.' }
+  ];
+
+  let activeMinigame = null;
+  let score = 0;
+
+  function start(id, playerFighter) {
+    activeMinigame = id;
+    score = 0;
+    if (window.addEvent) window.addEvent(`Started Training: ${id.toUpperCase()}`, 'training');
+    
+    if (id === 'weightlifting') {
+      // Spawn barbell prop in front of player
+      if (window.BANNON_FULL_PROPS) window.BANNON_FULL_PROPS.spawnProp('dumbbell', playerFighter.x, playerFighter.z + 2);
+    } else if (id === 'heavybag') {
+      // Spawn heavy bag (cylinder)
+      if (typeof THREE !== 'undefined' && typeof arenaGroup !== 'undefined' && arenaGroup) {
+         const bag = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 1.5), new THREE.MeshStandardMaterial({color: 0x882222}));
+         bag.position.set(playerFighter.x, 0.75, playerFighter.z + 2);
+         arenaGroup.add(bag);
+      }
+    }
+  }
+
+  function registerRep() {
+    if (!activeMinigame) return;
+    score++;
+    if (score % 5 === 0) {
+      if (window.addEvent) window.addEvent(`Good rep! Score: ${score}`, 'training');
+    }
+    if (score >= 20) {
+      if (window.addEvent) window.addEvent(`Training Complete! Built +2 Stats.`, 'training');
+      if (window.BANNON_RPG) window.BANNON_RPG.grantXP((window.CAREER_ME||'BANNON'), 200);
+      activeMinigame = null;
+    }
+  }
+
+  return { MINIGAMES, start, registerRep, getActive: () => activeMinigame };
+})();
+
+window.BANNON_SETTINGS_MENU = (function(){
+  const defaultSettings = {
+    volume: 0.8,
+    blood: true,
+    cameraShake: true,
+    hardcore: false,
+    graphicsQuality: 'High'
+  };
+
+  let currentSettings = { ...defaultSettings };
+
+  function load() {
+    try {
+      const saved = localStorage.getItem('BANNON_SETTINGS');
+      if (saved) currentSettings = { ...defaultSettings, ...JSON.parse(saved) };
+    } catch(e){}
+  }
+
+  function save() {
+    try { localStorage.setItem('BANNON_SETTINGS', JSON.stringify(currentSettings)); } catch(e){}
+  }
+
+  function toggleSetting(key) {
+    if (typeof currentSettings[key] === 'boolean') {
+      currentSettings[key] = !currentSettings[key];
+    } else if (key === 'graphicsQuality') {
+      const q = ['Low', 'Medium', 'High'];
+      currentSettings[key] = q[(q.indexOf(currentSettings[key]) + 1) % q.length];
+    }
+    save();
+    if (window.addEvent) window.addEvent(`Setting ${key} changed to ${currentSettings[key]}`, 'settings');
+  }
+
+  load();
+
+  return { get: () => currentSettings, toggle: toggleSetting, save, load };
+})();
+</script>
 </body></html>
+
+
+
 
