@@ -769,6 +769,14 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 #freecamBtn{ position:fixed; top:calc(var(--safe-top) + 92px); left:10px; z-index:140; width:46px; height:46px; border-radius:12px; background:rgba(0,0,0,0.55); border:1.5px solid rgba(255,215,0,0.55); color:#FFD700; font-size:21px; display:none; align-items:center; justify-content:center; cursor:pointer; -webkit-tap-highlight-color:transparent; }
 #freecamBtn.on{ background:rgba(255,69,0,0.4); border-color:#FF4500; box-shadow:0 0 14px rgba(255,69,0,0.5); }
 #freecamHint{ position:fixed; top:calc(var(--safe-top) + 98px); left:64px; z-index:140; display:none; font-size:10px; letter-spacing:0.5px; color:#FFD700; background:rgba(0,0,0,0.55); padding:7px 11px; border:1px solid rgba(255,215,0,0.4); border-radius:14px; max-width:60vw; line-height:1.45; pointer-events:none; }
+/* Owner: MOVES / ANIMS / MOCAP-camera / ⚙ tuning are creation/dev tools — they must NOT float on the
+   match HUD. Hidden whenever a match is loaded (body.match-live); reachable from the PAUSE menu instead. */
+body.match-live #moveLibToggle,
+body.match-live #fbxImpToggle,
+body.match-live #bphysPanel,
+body.match-live #freecamBtn,
+body.match-live #mcStudioBtn,
+body.match-live #movesBtn { display:none !important; }
 </style>
 <button id="freecamBtn" title="Free camera (orbit/zoom/pan the model)" style="display: none;">🎥</button>
 <div id="freecamHint" style="display: none;">FREE CAM · 1 finger orbit · pinch zoom · 2-finger drag pan</div>
@@ -887,6 +895,15 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
       <button class="menu-btn" id="btnRematch">REMATCH <span class="arrow">▶</span></button>
       <button class="menu-btn" id="btnPauseCam">CAMERA: BROADCAST <span class="arrow">▶</span></button>
       <button class="menu-btn" id="btnToMain">MAIN MENU <span class="arrow">▶</span></button>
+    </div>
+    <!-- Creation / dev tools — relocated off the match HUD into PAUSE (WWE/MDickie placement) -->
+    <div class="pause-title" style="font-size:16px;margin-top:14px;opacity:0.8;">TOOLS</div>
+    <div class="menu-btn-grid">
+      <button class="menu-btn" id="btnPauseMoves">MOVE LIBRARY <span class="arrow">▶</span></button>
+      <button class="menu-btn" id="btnPauseAnims">ANIMATIONS <span class="arrow">▶</span></button>
+      <button class="menu-btn" id="btnPauseTune">MOVE CREATOR / TUNING <span class="arrow">▶</span></button>
+      <button class="menu-btn" id="btnPauseMocap">MOCAP STUDIO <span class="arrow">▶</span></button>
+      <button class="menu-btn" id="btnPauseFreecam">FREE CAM <span class="arrow">▶</span></button>
     </div>
   </div>
 </div>
@@ -14126,6 +14143,7 @@ function startFight(){
   updateRoundPips();
   document.getElementById('p1-name').textContent = o1.name.replace(/_/g,' ');
   var _p1s=document.getElementById('p1-style'); if(_p1s) _p1s.textContent = (window.CHAR_META[o1.name] && window.CHAR_META[o1.name].label) || o1.style;
+  try{ document.body.classList.add('match-live'); }catch(e){}   // hide floating creation/dev buttons during a match (reachable via PAUSE)
   document.getElementById('p2-name').textContent = o2.name.replace(/_/g,' ');
   document.getElementById('p2-style').textContent = (window.CHAR_META[o2.name] && window.CHAR_META[o2.name].label) || o2.style;
   gameState='fight';
@@ -14141,10 +14159,12 @@ function startFight(){
 const OVERLAYS = ['mainMenu','pauseMenu','winnerMenu','creator','modelLab','tuneLab','studio','director','animBrowser'];
 const PREVIEW_OVERLAYS = ['creator','modelLab','tuneLab','studio','director','animBrowser'];
 function hideAll(){ OVERLAYS.forEach(id=>{ var el=document.getElementById(id); if(el){ el.classList.add('hidden'); el.classList.remove('preview-dock'); } }); if(typeof freecamExit==='function')freecamExit(); var _fb=document.getElementById('freecamBtn'); if(_fb)_fb.style.display='none'; }
-function show(id){ hideAll(); var el=document.getElementById(id); if(!el) return; el.classList.remove('hidden'); if(PREVIEW_OVERLAYS.indexOf(id)>=0 && typeof fighters!=='undefined' && fighters && fighters.length) el.classList.add('preview-dock'); var _fb=document.getElementById('freecamBtn'); if(_fb)_fb.style.display=(PREVIEW_OVERLAYS.indexOf(id)>=0 && fighters && fighters.length)?'flex':'none'; }
+function show(id){ hideAll(); var el=document.getElementById(id); if(!el) return; el.classList.remove('hidden'); if(PREVIEW_OVERLAYS.indexOf(id)>=0 && typeof fighters!=='undefined' && fighters && fighters.length) el.classList.add('preview-dock'); var _fb=document.getElementById('freecamBtn'); if(_fb)_fb.style.display=(PREVIEW_OVERLAYS.indexOf(id)>=0 && fighters && fighters.length)?'flex':'none';
+  try{ if(id==='mainMenu') document.body.classList.remove('match-live'); }catch(e){}   // leaving a match -> creation/dev tools reachable on the menu again
+}
 
 function pauseGame(){ if(gameState==='fight'){ gameState='pause'; show('pauseMenu'); } }
-function resumeGame(){ if(gameState==='pause'){ gameState='fight'; hideAll(); } }
+function resumeGame(){ if(gameState==='pause'){ gameState='fight'; try{ document.body.classList.add('match-live'); }catch(e){} hideAll(); } }
 
 // ---- CREATION-SUITE PREVIEW: pause combat, focus + clean-pose the edited fighter, persist every edit live ----
 function enterCreatePreview(idx){
@@ -15829,6 +15849,16 @@ function setupInput(){
       },(err)=>setModelStatus(modelSel,'Could not parse '+file.name)); }catch(err){ setModelStatus(modelSel,'Load error'); } };
     rd.readAsArrayBuffer(file); });
   document.getElementById('btnToMain').addEventListener('click', ()=>{ gameState='menu'; if(roundTimerInterval)clearInterval(roundTimerInterval); if(typeof clearActiveFightState==='function') clearActiveFightState(); show('mainMenu'); });
+  // PAUSE > TOOLS — open the creation/dev panels that used to float on the match HUD. Reveal them
+  // (drop match-live) then trigger the existing toggle so the real panel opens on top of the pause menu.
+  (function(){ const _pt=(fn)=>{ try{ document.body.classList.remove('match-live'); }catch(e){} try{ fn(); }catch(e){} };
+    const _b=(id,fn)=>{ const el=document.getElementById(id); if(el) el.addEventListener('click', ()=>_pt(fn)); };
+    _b('btnPauseMoves', ()=>document.getElementById('moveLibToggle') && document.getElementById('moveLibToggle').click());
+    _b('btnPauseAnims', ()=>document.getElementById('fbxImpToggle') && document.getElementById('fbxImpToggle').click());
+    _b('btnPauseTune',  ()=>{ const bp=document.getElementById('bphysPanel'); const t=bp&&bp.querySelector('button'); if(t) t.click(); });
+    _b('btnPauseMocap', ()=>document.getElementById('mcStudioBtn') && document.getElementById('mcStudioBtn').click());
+    _b('btnPauseFreecam', ()=>{ if(window.freecamToggle) window.freecamToggle(); });
+  })();
   document.getElementById('btnRematch2').addEventListener('click', startFight);
   document.getElementById('btnMainFromWin').addEventListener('click', ()=>{ gameState='menu'; if(typeof clearActiveFightState==='function') clearActiveFightState(); show('mainMenu'); });
 
@@ -17452,7 +17482,7 @@ init();
     if(rec)setTimeout(tick,33);}  // 30fps
 
   function buildUI(){if(document.getElementById('mcPanel'))return;
-    const b=document.createElement('button');b.textContent='\ud83c\udfa5';b.title='MOCAP STUDIO v4 2K ANATOMY';
+    const b=document.createElement('button');b.textContent='\ud83c\udfa5';b.title='MOCAP STUDIO v4 2K ANATOMY';b.id='mcStudioBtn';
     b.style.cssText='position:fixed;left:0;top:300px;z-index:9000;background:#1a1228;color:#e9d5ff;border:1px solid #a855f7;border-radius:0 8px 8px 0;padding:10px 8px;font-size:16px;';
     b.onclick=()=>{p.style.display=(p.style.display==='none'?'block':'none');if(p.style.display==='block')loadTF(async()=>{try{
       status('starting UFC pose engine\u2026');
