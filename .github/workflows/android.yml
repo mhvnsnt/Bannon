@@ -30,11 +30,11 @@ jobs:
           cp manifest.json    $A/manifest.json || true
           cp assets/icons/icon-192.png assets/icons/icon-512.png assets/icons/apple-touch-icon.png $A/assets/icons/ || true
           # move library / MDickie moves / fbx map — the game fetch()es these at runtime; without them
-          # the moveset + story data silently 404 inside the APK.
+          # the moveset + story data silently 404 inside the APK. (Small JSON — fine to bundle.)
           cp assets/moves/*.json $A/assets/moves/ 2>/dev/null || true
-          # jukebox audio (owner tracks) so menu/entrance/victory music works offline in the app.
-          cp assets/audio/* $A/assets/audio/ 2>/dev/null || true
-          echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files, audio $(ls $A/assets/audio | wc -l) files"
+          # jukebox audio is NOT bundled — it STREAMS from the repo CDN (same as the fighter models), so
+          # the APK stays lean (~5MB instead of ~40MB). The jukebox resolves file:// (APK) to the CDN.
+          echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files, audio streamed from CDN"
 
       - uses: actions/setup-java@v4
         with:

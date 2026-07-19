@@ -37702,7 +37702,13 @@ window.BANNON_MOVE_LIBRARY = (function(){
 window.BANNON_JUKEBOX = (function(){
   const LS='bannon_jukebox_v1', DB='bannonAudioDB', STORE='tracks';
   // banked default soundtrack (owner's own music). cat: menu|match|entrance|victory|any. Reassignable.
+  // Tracks are referenced by their RELATIVE path; they STREAM from the repo CDN (same as the fighter
+  // models) so the APK stays lean — no audio bundled. In the packaged app (file://) we go straight to
+  // the CDN; on the web we use the local copy; an error-fallback covers either case.
   const A='assets/audio/';
+  const CDN=(window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/');
+  function resolveAudioUrl(rel){ if(!rel || /^(https?:|blob:|data:|idb:)/.test(rel)) return rel;
+    return (location.protocol==='file:' || window.BANNON_AUDIO_CDN) ? CDN+rel : rel; }
   const DEFAULT_TRACKS=[
     {id:'bannon_theme', name:"BANNON Theme (a cappella + rain)", url:A+'bannon_theme.m4a', cat:['entrance','menu'], artist:'M'},
     {id:'opps_fallin',  name:"Opps Fallin (ft Jackboy/Finxsse)", url:A+'opps_fallin.ogg', cat:['entrance','match'], artist:'M'},
@@ -37747,16 +37753,26 @@ window.BANNON_JUKEBOX = (function(){
     inp.onchange=async()=>{ for(const f of inp.files){ await addTrack(f, cat||['menu','match'], f.name.replace(/\.[^.]+$/,'')); } try{ (window.toast||function(){})('Added '+inp.files.length+' track(s) to the jukebox.'); }catch(e){} };
     inp.click(); }
   async function idbBlobUrl(id){ if(urlCache[id]) return urlCache[id]; const db=await idb(); const rec=await new Promise((res)=>{ const tx=db.transaction(STORE,'readonly'); tx.objectStore(STORE).get(id).onsuccess=e=>res(e.target.result); }); if(!rec||!rec.blob) return null; return urlCache[id]=URL.createObjectURL(rec.blob); }
-  async function srcFor(t){ if(!t) return null; if(t.idb) return await idbBlobUrl(t.id); return t.url; }
+  async function srcFor(t){ if(!t) return null; if(t.idb) return await idbBlobUrl(t.id); return resolveAudioUrl(t.url); }
 
   // ---- playback ----
   const bgAudio=new Audio(); bgAudio.loop=true; bgAudio.preload='auto';
   const oneShot=new Audio(); oneShot.preload='auto';
+  // CDN error-fallback: if a local/relative track fails to load (e.g. web host without the file, or a
+  // stale cache), retry once against the repo CDN before giving up — mirrors the fighter-model fallback.
+  function _cdnFallback(aud){ aud.addEventListener('error', ()=>{ try{
+    const rel=aud.dataset.rel; if(rel && aud.dataset.cdnTried!=='1' && !/^https?:/.test(rel)){
+      aud.dataset.cdnTried='1'; aud.src=CDN+rel; aud.load(); if(aud.dataset.wantPlay==='1') aud.play().catch(()=>{}); } }catch(e){} }); }
+  _cdnFallback(bgAudio); _cdnFallback(oneShot);
   let vol=(function(){ try{ return +localStorage.getItem('bannon_music_vol')||0.55; }catch(e){ return 0.55; } })();
   bgAudio.volume=vol; oneShot.volume=Math.min(1,vol+0.1);
   function setVolume(v){ vol=Math.max(0,Math.min(1,v)); bgAudio.volume=vol; oneShot.volume=Math.min(1,vol+0.1); try{ localStorage.setItem('bannon_music_vol',String(vol)); }catch(e){} }
   let curBg=null, unlocked=false;
-  async function playBg(t){ if(!t){ bgAudio.pause(); curBg=null; return; } const s=await srcFor(t); if(!s) return; curBg=t.id; bgAudio.src=s; if(unlocked){ bgAudio.play().catch(()=>{}); } }
+  // set an audio element's src + remember the RELATIVE path (for the CDN error-fallback) + play intent
+  function _apply(aud, t, s, play){ aud.dataset.cdnTried='';
+    if(t && !t.idb && t.url && !/^(https?:|blob:|data:)/.test(t.url)) aud.dataset.rel=t.url; else aud.removeAttribute('data-rel');
+    aud.dataset.wantPlay=play?'1':''; aud.src=s; if(play) aud.play().catch(()=>{}); }
+  async function playBg(t){ if(!t){ bgAudio.pause(); curBg=null; return; } const s=await srcFor(t); if(!s) return; curBg=t.id; _apply(bgAudio, t, s, unlocked); }
   function shuffle(a){ return a.slice().sort(()=>Math.random()-0.5); }
   // menu: assigned menu track (or shuffle the menu pool)
   async function menu(){ const t=cfg.menu?trackById(cfg.menu):shuffle(pool('menu'))[0]; bgAudio.loop=true; await playBg(t); }
@@ -37764,8 +37780,8 @@ window.BANNON_JUKEBOX = (function(){
   async function match(){ const t=cfg.match?trackById(cfg.match):shuffle(pool('match'))[0]; bgAudio.loop=true; await playBg(t); }
   async function stop(){ bgAudio.pause(); curBg=null; }
   // entrance/victory: one-shots (don't loop), by character where assigned else pool
-  async function entrance(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey])|| (shuffle(pool('entrance'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ oneShot.src=s; if(unlocked) oneShot.play().catch(()=>{}); } return id; }
-  async function victory(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey]&&trackById(cfg.entrance[charKey])&&(pool('victory').some(x=>x.id===cfg.entrance[charKey]))?cfg.entrance[charKey]:cfg.victory)||(shuffle(pool('victory'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ bgAudio.pause(); oneShot.src=s; if(unlocked) oneShot.play().catch(()=>{}); } return id; }
+  async function entrance(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey])|| (shuffle(pool('entrance'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ _apply(oneShot, t, s, unlocked); } return id; }
+  async function victory(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey]&&trackById(cfg.entrance[charKey])&&(pool('victory').some(x=>x.id===cfg.entrance[charKey]))?cfg.entrance[charKey]:cfg.victory)||(shuffle(pool('victory'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ bgAudio.pause(); _apply(oneShot, t, s, unlocked); } return id; }
 
   // assignment API (persisted)
   function assignMenu(id){ cfg.menu=id; saveCfg(); }
