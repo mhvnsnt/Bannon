@@ -5098,7 +5098,13 @@ window.coupleRopes = function(f, dt){ try{
   // graduated buffer: soft pushback STARTS at 0.42 from the rope line and ramps in smoothly as you
   // get closer, full elastic resistance only at the rope itself. This is the "wide radius of sensed
   // pushback" feel — the ropes have actual presence and width, not a thin trigger threshold.
-  const inset=0.42, k=window.ROPE_CATCH, reb=window.ROPE_REB;
+  // HAMMER-THROW IRISH WHIP (WWE-2K26): holding the whip/RUN input puts extra body momentum into the
+  // whip — the harder you're sprinting when you hit the ropes, the harder you're shot back out. reb
+  // scales up to HAMMER_THROW_MULT with held runCharge. Also honored when an opponent was whipped with
+  // held input (f._hammerWhip set at the whip). Toggle window.HAMMER_THROW.
+  const inset=0.42, k=window.ROPE_CATCH;
+  const _hmMul=(window.HAMMER_THROW!==false) ? (1 + ((window.HAMMER_THROW_MULT||1.7)-1) * Math.max((f.runCharge||0), (f._hammerWhip?1:0))) : 1;
+  const reb=window.ROPE_REB * _hmMul;
   let ox=0, oz=0;
   if (f.x >  RX-inset) ox = f.x-(RX-inset); else if (f.x < -(RX-inset)) ox = f.x+(RX-inset);
   if (f.z >  RZ-inset) oz = f.z-(RZ-inset); else if (f.z < -(RZ-inset)) oz = f.z+(RZ-inset);
@@ -36587,6 +36593,43 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     }
   }catch(e){} }, 120);
   console.log('%c[PHASE C] destructible barricades armed', 'color:#ffaa22;font-weight:bold');
+})();
+</script>
+<script>
+// ===== PHASE C — PROP INTERACTION FRAMEWORK (window.BANNON_PROPS): the foundation for the full WWE/
+// MDickie weapon-environment catalog. Interactive props (chair/ladder/table/steel steps) carry a STATE
+// (chair open/closed, ladder upright/leaned/closed, table standing/leaned/stacked/onFire) and resolve
+// context interactions — climb, stand, vault/step-up, dive-off — through the REAL aerial (startDive/
+// startClimb) + env-contact physics. Per-prop grapple/attack contexts hang off this (catalog builds on it). =====
+window.BANNON_PROPS = (function(){
+  const props=[];   // {type, x, z, state, obj}
+  function register(type, x, z, opts){ const p=Object.assign({ type, x, z, state:(opts&&opts.state)|| (type==='chair'?'closed':type==='ladder'?'upright':type==='table'?'standing':'set'), obj:(opts&&opts.obj)||null, onFire:false }, opts||{}); props.push(p); return p; }
+  function clear(){ props.length=0; }
+  function setState(p, s){ if(p){ p.state=s; if(s==='onFire') p.onFire=true; } return p; }
+  function nearest(f, maxD){ maxD=maxD||1.4; let best=null,bd=maxD; for(const p of props){ const d=Math.hypot(p.x-f.x,p.z-f.z); if(d<bd){ bd=d; best=p; } } return best; }
+  // heights each prop launches/stands you at (metres) — feeds the dive launch
+  const STAND_H = { chair:0.55, steps:0.9, ladder:2.4, ladder_leaned:1.4, table:1.0, table_stacked:1.9 };
+  function standHeight(p){ if(p.type==='ladder'&&p.state==='leaned') return STAND_H.ladder_leaned; if(p.type==='table'&&p.state==='stacked') return STAND_H.table_stacked; return STAND_H[p.type]||1.0; }
+  // CLIMB / STAND ON a prop (ladder/table/steps): puts the fighter atop it, ready to dive or drop a move
+  function climb(f, p){ p=p||nearest(f); if(!f||!p) return false; if(f.ragdoll||f.grappling) return false;
+    f.x=p.x; f.z=p.z; f.airLift=standHeight(p); f._onProp=p; f.state='climb'; f.stateTime=0; f.climbT=0;
+    try{ if(typeof announce==='function') announce((p.state==='leaned'?'LEANED ':'')+p.type.toUpperCase()+' CLIMB', (typeof fname==='function'?fname(f):'')); }catch(e){}
+    return true; }
+  // VAULT / STEP-UP off a chair or steps, then dive (Jeff-Hardy chair vault / step-up springboard)
+  function vault(f, p, diveType){ p=p||nearest(f); if(!f||!p) return false;
+    f.airLift=standHeight(p); f._sbFrom=(p.type==='chair')?'mid':'ring';
+    try{ if(f.startDive) f.startDive(diveType||'CROSSBODY', false); }catch(e){ return false; }
+    try{ if(typeof announce==='function') announce(p.type.toUpperCase()+' VAULT', (typeof fname==='function'?fname(f):'')); }catch(e){}
+    return true; }
+  // DIVE OFF whatever prop you're standing on
+  function diveOff(f, diveType){ if(!f||!f._onProp) return false; f.airLift=standHeight(f._onProp);
+    try{ if(f.startDive) f.startDive(diveType||'DIVING_HEADBUTT', false); f._onProp=null; return true; }catch(e){ return false; } }
+  // CONTEXT interaction resolver (what the interact button does near a prop)
+  function interact(f, diveType){ const p=nearest(f); if(!p) return false;
+    if(p.type==='ladder'||p.type==='table'||p.type==='steps') return climb(f,p);
+    if(p.type==='chair') return vault(f,p,diveType);
+    return false; }
+  return { props, register, clear, setState, nearest, climb, vault, diveOff, interact, standHeight };
 })();
 </script>
 
