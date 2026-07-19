@@ -12,7 +12,14 @@
       "file": "/src/types/index.ts",
       "cpp_header": "Source/Bannon/Public/Creation/ECreationCategory.h",
       "description": "Defines 12 structural categories for the superstar and arena creation suites (Superstar_Body, Face, Hair, Torso, Masks, Clothing, Accessories, Moveset_Library, Arena_Barricade, Arena_Ramp, Arena_Tron, Entrance_Sequence).",
-      "keywords": ["category", "superstar", "creation", "apparel", "clothing", "accessory"]
+      "keywords": [
+        "category",
+        "superstar",
+        "creation",
+        "apparel",
+        "clothing",
+        "accessory"
+      ]
     },
     {
       "id": "unlock_state",
@@ -22,7 +29,12 @@
       "file": "/src/types/index.ts",
       "cpp_header": "Source/Bannon/Public/Creation/EUnlockState.h",
       "description": "Enumerates item progression states (Locked, Unlocked, DLC).",
-      "keywords": ["unlock", "locked", "dlc", "progression"]
+      "keywords": [
+        "unlock",
+        "locked",
+        "dlc",
+        "progression"
+      ]
     },
     {
       "id": "creation_item_row",
@@ -32,7 +44,14 @@
       "file": "/src/types/index.ts",
       "cpp_header": "Source/Bannon/Public/Creation/FCreationItemRow.h",
       "description": "Represents a single catalog item row for the character builder DataTable. Contains ItemID, Category, Subcategory, DisplayName, ThumbnailIcon soft pointer, AssetRef soft pointer, UnlockState, SlotIndex, and layering permission flag.",
-      "keywords": ["row", "datatable", "item", "mesh", "part", "accessory"]
+      "keywords": [
+        "row",
+        "datatable",
+        "item",
+        "mesh",
+        "part",
+        "accessory"
+      ]
     },
     {
       "id": "creation_part_asset",
@@ -41,7 +60,14 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Creation/UCreationPartAsset.h",
       "description": "Primary Data Asset for granular customization elements including skeletal meshes, material variant instances, layering limit overrides, and slot tag filters.",
-      "keywords": ["part", "dataasset", "mesh", "material", "layering", "slot"]
+      "keywords": [
+        "part",
+        "dataasset",
+        "mesh",
+        "material",
+        "layering",
+        "slot"
+      ]
     },
     {
       "id": "moveset_library_asset",
@@ -50,7 +76,16 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Creation/UMovesetLibraryAsset.h",
       "description": "Moveset entry defining MoveID, PositionGroup (Standing, Running, Corner, Ground, etc.), MoveClass (Strike, Grapple, Finisher, etc.), AnimMontage reference, and stamina requirements. Moves are state-gated by RequiredOpponentState, RequiredFacing, RequiredLocation, and DirectionalVariant.",
-      "keywords": ["move", "library", "moveset", "animation", "montage", "strike", "grapple", "finisher"]
+      "keywords": [
+        "move",
+        "library",
+        "moveset",
+        "animation",
+        "montage",
+        "strike",
+        "grapple",
+        "finisher"
+      ]
     },
     {
       "id": "equipped_item",
@@ -60,7 +95,13 @@
       "file": "/src/types/index.ts",
       "cpp_header": "Source/Bannon/Public/Save/FEquippedItem.h",
       "description": "Data representation of an active apparel or accessory layer on a superstar, containing ItemID, LayerOrder, ColorOverride (FLinearColor), and material Opacity.",
-      "keywords": ["equip", "apparel", "layer", "color", "opacity"]
+      "keywords": [
+        "equip",
+        "apparel",
+        "layer",
+        "color",
+        "opacity"
+      ]
     },
     {
       "id": "creation_save_profile",
@@ -70,7 +111,14 @@
       "file": "/src/types/index.ts",
       "cpp_header": "Source/Bannon/Public/Save/FCreationSaveProfile.h",
       "description": "Full character design state save payload: ProfileID, Map of SliderValues (Head_Size, etc.), Array of EquippedItems, Map of MovesetSlots, and PoseID.",
-      "keywords": ["profile", "save", "load", "slot", "sliders", "character"]
+      "keywords": [
+        "profile",
+        "save",
+        "load",
+        "slot",
+        "sliders",
+        "character"
+      ]
     },
     {
       "id": "active_ragdolls",
@@ -79,7 +127,14 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Physics/BannonRagdollComponent.h",
       "description": "Blends kinematic keyframe animation data with skeletal ragdoll simulation constraints. Manages non-canned high-impact move reactions, localized torque, environmental impact scaling, and fall momentum modifications.",
-      "keywords": ["ragdoll", "physics", "collision", "impact", "fall", "gravity"]
+      "keywords": [
+        "ragdoll",
+        "physics",
+        "collision",
+        "impact",
+        "fall",
+        "gravity"
+      ]
     },
     {
       "id": "interceptive_collisions",
@@ -88,7 +143,14 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Combat/BannonCombatEngine.h",
       "description": "Calculates real-time combat vectors when striking characters who are in mid-air or diving. Computes falling velocity vectors and applies reactive torque on bone targets.",
-      "keywords": ["air", "mid-air", "strike", "intercept", "dive", "jump"]
+      "keywords": [
+        "air",
+        "mid-air",
+        "strike",
+        "intercept",
+        "dive",
+        "jump"
+      ]
     },
     {
       "id": "goro_rig_bindings",
@@ -97,7 +159,15 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Animation/BannonAnimInstance.h",
       "description": "Unreal Engine AnimInstance bone-scaling transformations mapping client-driven React slider states directly to bone scale parameters: Head_Size, Neck_Width, Shoulder_Width, Chest_Scale, Waist_Scale, Arm_Thickness, Leg_Thickness.",
-      "keywords": ["bone", "scaling", "goro", "rig", "sliders", "skeletal", "anthropometry"]
+      "keywords": [
+        "bone",
+        "scaling",
+        "goro",
+        "rig",
+        "sliders",
+        "skeletal",
+        "anthropometry"
+      ]
     },
     {
       "id": "bannon_ai_dna",
@@ -106,7 +176,15 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/AI/BannonAIPersonality.h",
       "description": "7-axis weight behavior system (aggression, defense, range, grapple, risk, patience, showmanship) derived programmatically from OTTR_DNA natural language prose. Sub-system maps 1-to-1 to Unreal Engine SubTraits as Gameplay Tags (e.g., aggression:0.85).",
-      "keywords": ["ai", "dna", "aggression", "behavior", "weights", "archetype", "subtraits"]
+      "keywords": [
+        "ai",
+        "dna",
+        "aggression",
+        "behavior",
+        "weights",
+        "archetype",
+        "subtraits"
+      ]
     },
     {
       "id": "damage_injury_persistence",
@@ -115,7 +193,14 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Locomotion/BannonLocomotionComponent.h",
       "description": "Tracks cumulative skeletal limb damage and triggers unique gaits, sways, cadences, and limps (e.g., altering locomotion due to leg damage) dynamically throughout matches.",
-      "keywords": ["injury", "damage", "persistence", "gait", "limp", "locomotion"]
+      "keywords": [
+        "injury",
+        "damage",
+        "persistence",
+        "gait",
+        "limp",
+        "locomotion"
+      ]
     },
     {
       "id": "stun_meter",
@@ -124,7 +209,13 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Combat/BannonStunManager.h",
       "description": "Tracks daze/stun threshold. Filled from consecutive light attacks, disabling defensive actions and reversal windows upon reaching capacity.",
-      "keywords": ["stun", "daze", "reversal", "breaker", "window"]
+      "keywords": [
+        "stun",
+        "daze",
+        "reversal",
+        "breaker",
+        "window"
+      ]
     },
     {
       "id": "reversal_types",
@@ -133,7 +224,13 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Combat/BannonReversalSystem.h",
       "description": "Implements five distinct defensive layers: Tap-reversal, Breakers, Block/Guard, Dodge, and mid-move reversal counters.",
-      "keywords": ["reversal", "breaker", "block", "dodge", "counter"]
+      "keywords": [
+        "reversal",
+        "breaker",
+        "block",
+        "dodge",
+        "counter"
+      ]
     },
     {
       "id": "chain_wrestling",
@@ -142,7 +239,12 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Combat/BannonChainWrestling.h",
       "description": "Technical lock-up mini-game exchanging standard positions and advantages via joystick or key sequences at match start.",
-      "keywords": ["lock-up", "chain", "wrestling", "technical"]
+      "keywords": [
+        "lock-up",
+        "chain",
+        "wrestling",
+        "technical"
+      ]
     },
     {
       "id": "drag_carry_system",
@@ -151,7 +253,13 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Physics/BannonDragCarryComponent.h",
       "description": "Handles grab-and-drag (ground) and standing grab-and-carry positions. Connects physics pivots to drag opponents to ropes, turnbuckles, barriers, and tables.",
-      "keywords": ["drag", "carry", "grab", "throw", "table"]
+      "keywords": [
+        "drag",
+        "carry",
+        "grab",
+        "throw",
+        "table"
+      ]
     },
     {
       "id": "drive_mechanic",
@@ -160,7 +268,13 @@
       "file": "/server/telegram.ts",
       "cpp_header": "Source/Bannon/Public/Physics/BannonDriveComponent.h",
       "description": "Allows players to push or drive an opponent mid-sequence into weapons, ringside posts, guardrails, and tables.",
-      "keywords": ["drive", "push", "weapon", "barricade", "environmental"]
+      "keywords": [
+        "drive",
+        "push",
+        "weapon",
+        "barricade",
+        "environmental"
+      ]
     },
     {
       "id": "mem0_memory",
@@ -251,6 +365,379 @@
       "name": "Backstage/Arena Transitions",
       "type": "Planned Feature",
       "description": "Seamless transition system between combat zones (Arena/Backstage/Crowd)."
+    },
+    {
+      "id": "bannon_orchestrator",
+      "name": "Bannon Deep Orchestrator",
+      "type": "Python CI/CD Pipeline",
+      "owner": "Autonomous Bannon Agent",
+      "description": "A recursive Python orchestration layer that enforces AAA architectural limits, parses this registry to prevent duplicates, and bridges local files to GitHub bypassing standard git constraints via raw REST calls.",
+      "keywords": [
+        "orchestrator",
+        "automation",
+        "agent",
+        "pipeline",
+        "CD",
+        "github"
+      ]
+    },
+    {
+      "id": "procedural_ik_strike",
+      "name": "Procedural IK Strike Generation",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Overrides missing or LFS-corrupted STRIKE animation tracks by calculating an Inverse Kinematics (IK) vector from the attacker's hand to the opponent's chest/jaw. Bends the skeleton procedurally in real-time to guarantee hit registration even without baked keyframes.",
+      "keywords": [
+        "IK",
+        "strike",
+        "procedural",
+        "animation",
+        "fallback",
+        "physics"
+      ]
+    },
+    {
+      "id": "procedural_ik_grapple",
+      "name": "Procedural IK Collar-and-Elbow Tie-up",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Calculates dynamic hand IK targeting between opponent shoulders when initiating a grapple to simulate a collar-and-elbow tie-up even when baked mo-cap tracks are absent.",
+      "keywords": [
+        "IK",
+        "grapple",
+        "procedural",
+        "animation",
+        "fallback",
+        "physics",
+        "tie-up"
+      ]
+    },
+    {
+      "id": "physics_irish_whip",
+      "name": "Physics-Driven Irish Whip Engine",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Calculates a heavy directional physics impulse (whipForce = 12.0) based on the attacker's rotation (facing angle) to launch the opponent into the ropes, completely replacing predefined animation paths with strict momentum-based velocity vectors.",
+      "keywords": [
+        "IK",
+        "irish whip",
+        "procedural",
+        "momentum",
+        "velocity",
+        "physics",
+        "throw"
+      ]
+    },
+    {
+      "id": "physics_weight_detection",
+      "name": "Weight Detection & Lift Strain Physics",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Calculates the mathematical mass ratio between the attacker and the defender during a grapple lift (grappleStage 1 -> 2). If the opponent's mass exceeds the attacker's lifting capacity (modulated dynamically by real-time stamina), the lift fails procedurally, causing the attacker to recoil into a stumble state and dropping the opponent.",
+      "keywords": [
+        "physics",
+        "mass",
+        "stamina",
+        "lift",
+        "grapple",
+        "weight_detection",
+        "procedural_failure"
+      ]
+    },
+    {
+      "id": "midair_grapple_intercept",
+      "name": "Mid-Air Grapple Interception",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Scans the immediate collision volume in Fighter.update. If the opponent is in an airborne state (dive/jumping/high negative Y velocity) and enters the 1.4m catch radius while the defender is ready (idle/walk/grab), the engine procedurally hijacks the opponent's momentum vector into a physics-based powerslam, neutralizing the aerial attack in mid-air.",
+      "keywords": [
+        "physics",
+        "interception",
+        "mid-air",
+        "dive",
+        "catch",
+        "powerslam",
+        "momentum"
+      ]
+    },
+    {
+      "id": "counter_reversal_physics",
+      "name": "Counter-Reversal Physics Blending",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Replaces canned escape animations with a physics-based torque calculation. When a grapple escape roll is successful (_tryEscape), the engine applies a rotational impulse (tangential torque vector) to the attacker, throwing them backward with a wobble state, while the defender ducks and spins 135 degrees. Arms are thrown wide procedurally via centrifugal logic.",
+      "keywords": [
+        "physics",
+        "reversal",
+        "counter",
+        "torque",
+        "impulse",
+        "escape"
+      ]
+    },
+    {
+      "id": "targeted_limb_striking",
+      "name": "Targeted Limb Striking System",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Calculates a trajectory vector to the nearest weak point based on analog stick (or WASD/Arrows) direction at the moment of strike initiation. Pushing UP routes the procedural IK strike to the head, DOWN to the legs, and LEFT/RIGHT to the corresponding arms. Modifies playerAttack to lock _strikeTargetNode, which the Procedural IK Strike Fallback now consumes instead of defaulting to the chest.",
+      "keywords": [
+        "physics",
+        "strike",
+        "limb",
+        "targeting",
+        "ik",
+        "directional"
+      ]
+    },
+    {
+      "id": "glancing_blow_physics",
+      "name": "Glancing Blow Deflection Calculations",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Calculates the angle of incidence during applyDamage using a dot product between the attacker's forward vector and the relative position vector. If a strike lands more than ~30 degrees off center (dot product between 0.1 and 0.85), it registers as a 'glancing blow'. The engine halves raw HP damage (0.4x multiplier) and instead generates a tangential torque vector, converting the residual kinetic energy into rotational spin (opp.facing) and a lateral physics wobble (opp.kickWobble).",
+      "keywords": [
+        "physics",
+        "glancing",
+        "damage",
+        "deflection",
+        "torque",
+        "wobble",
+        "incidence"
+      ]
+    },
+    {
+      "id": "corner_trapped_state",
+      "name": "Corner Trapped State Machine",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Intercepts Fighter.prototype.updateWobble. If the defender is in the corner (_inCorner === true) and suffers a hit/stagger, the engine overrides the standard backward-sliding kinetic push (setting vx/vz to 0) and instead triggers a procedural chest-bounce against the turnbuckle splines using a high-frequency sine oscillator. This creates the 'trapped' aesthetic where the ropes absorb the impact energy.",
+      "keywords": [
+        "physics",
+        "corner",
+        "turnbuckle",
+        "trapped",
+        "stagger",
+        "bounce"
+      ]
+    },
+    {
+      "id": "rope_bounce_momentum",
+      "name": "Rope Bounce Momentum Multiplier",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "When a fighter hits the ring boundary with sufficient velocity (Math.abs(vx) > 0.6) and is not in the corner, they rebound off the ropes. The engine reverses their velocity vector (vx = -vx * 0.62) and now injects a temporary `powerMultiplier = 1.35`. This multiplier is consumed by applyDamage on their next successful strike, rewarding Irish Whips and rope-running with a 35% damage bonus.",
+      "keywords": [
+        "physics",
+        "ropes",
+        "rebound",
+        "momentum",
+        "multiplier",
+        "damage",
+        "irish_whip"
+      ]
+    },
+    {
+      "id": "ground_and_pound_mount",
+      "name": "Ground-and-Pound Mounting IK",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Intercepts Fighter.prototype.poseGrab. If the grapple target is downed (opp.isDown()), the engine bypasses standard lockup rules and injects procedural IK mapping to mount the opponent. The attacker's pelvis dynamically locks to the victim's chest pos.y + 0.6, while the knees wrap laterally and the chest hinges forward to facilitate downward striking rather than a lifting sequence.",
+      "keywords": [
+        "physics",
+        "mount",
+        "ground",
+        "ik",
+        "mma",
+        "pound",
+        "pelvis"
+      ]
+    },
+    {
+      "id": "torque_joint_locks",
+      "name": "Torque-Based Joint Locks",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Modifies the clampJointBend engine to support submission torque overloads. Instead of submissions playing as static health-drain animations, they apply active pressure arrays to window._jointTorqueOverloads. The physics engine reads this pressure and forces joint hyperextension beyond the standard anatomical min/max limits, simulating real physical leverage on the skeletal rig until the limb gives way.",
+      "keywords": [
+        "physics",
+        "submissions",
+        "torque",
+        "joints",
+        "hyperextension",
+        "limits"
+      ]
+    },
+    {
+      "id": "procedural_rope_break",
+      "name": "Procedural Rope Break Reaches",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Intercepts Fighter.prototype.poseGrabbed during submission/grapple states. Calculates the absolute distance to the nearest ring boundary (ropes). If the defender is within 1.35m of the ropes, the routine overrides the standard sine-wave panic arm-flail. Instead, it injects an active FBIK target coordinate, causing the defender's free arm to desperately stretch and crawl linearly toward the nearest rope spline to force a break.",
+      "keywords": [
+        "physics",
+        "ik",
+        "ropes",
+        "submission",
+        "escape",
+        "reach"
+      ]
+    },
+    {
+      "id": "submission_reversal_physics",
+      "name": "Submission Reversal Transitions",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Intercepts _tryEscape inside poseGrabbed. If the defender successfully escapes a ground-based submission (flagged by _isMounting or attackData.cat === 'SUB'), the engine bypasses the standing physics reversal. Instead, it generates a massive lateral/rotational velocity impulse (vx, vz) that physically rolls both bodies across the canvas, simulating a tumbling struggle out of a hold.",
+      "keywords": [
+        "physics",
+        "reversal",
+        "submission",
+        "escape",
+        "roll",
+        "ground"
+      ]
+    },
+    {
+      "id": "stamina_drained_ragdoll",
+      "name": "Stamina-Drained Ragdoll Collapse",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Intercepts Fighter.prototype.poseGrabbed. Monitors the victim's stamina pool during a hold. If stamina reaches zero, the victim bypasses standard submission rules, triggers a forced ragdoll override (TKO), and ceases all procedural struggle IK. The sudden shift to dead weight applies an opposing wobble vector to the attacker, forcing them to stumble under the collapsed load.",
+      "keywords": [
+        "physics",
+        "ragdoll",
+        "stamina",
+        "tko",
+        "submission",
+        "dead weight"
+      ]
+    },
+    {
+      "id": "multi_man_submission_stacking",
+      "name": "Multi-Man Submission Stacking",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Overrides the standard tryGrab gate preventing players from grabbing an already-grabbed opponent. If the new attacker is attempting a submission (attackData.cat === 'SUB' or _isMounting), the engine allows the hold, setting _isStacking = true, enabling 3+ bodies to become entangled in simultaneous physics-based constraints.",
+      "keywords": [
+        "physics",
+        "grapple",
+        "submission",
+        "stacking",
+        "multiplayer",
+        "entanglement"
+      ]
+    },
+    {
+      "id": "chokehold_oxygen_depletion",
+      "name": "Chokehold Oxygen Depletion Logic",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Introduces a separate this.oxygen property that drains rapidly during CHOKE submissions in poseGrabbed. If oxygen hits 0, it triggers a forced ragdoll TKO state, completely distinct from standard stamina/health depletion.",
+      "keywords": [
+        "physics",
+        "chokehold",
+        "oxygen",
+        "tko",
+        "submission"
+      ]
+    },
+    {
+      "id": "joint_dislocation_events",
+      "name": "Joint Dislocation Events",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Expands the clampJointBend torque override. If the submission pressure applied via window._jointTorqueOverloads exceeds 0.85, the joint physically dislocates, applying a permanent injury flag (this._limbDamage) and spawning a visual blood/sweat particle burst.",
+      "keywords": [
+        "physics",
+        "dislocation",
+        "injury",
+        "limb",
+        "torque"
+      ]
+    },
+    {
+      "id": "submission_leverage_scaling",
+      "name": "Submission Leverage Scaling",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Multiplies submission torque displacement based on the relative size or weight ratio of the attacker versus the defender, dynamically calculating mechanical leverage into the joint limit engine.",
+      "keywords": [
+        "physics",
+        "leverage",
+        "submission",
+        "torque",
+        "scaling"
+      ]
+    },
+    {
+      "id": "biting_illegal_tactics",
+      "name": "Biting & Illegal Tactics",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "A close-proximity intercept in startAttack for moves with cat === 'DIRTY'. Bypasses standard tryGrab hitboxes and instantly locks both fighters into a stage 4 grapple/submission hold (illegal hold flag enabled), simulating quick, dirty street-fight tactics.",
+      "keywords": [
+        "physics",
+        "illegal",
+        "biting",
+        "dirty",
+        "grapple"
+      ]
+    },
+    {
+      "id": "desperation_tap_out",
+      "name": "Desperation Tap-Out Physics",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Monitors submission panic levels in poseGrabbed. If panic > 0.95 and stamina is critically low (< 15), the defender aborts rope-break and arm-flailing IK, overriding the hand targets to rapidly slap the mat (y=0) at high frequency, simulating a physical tap-out.",
+      "keywords": [
+        "physics",
+        "tap-out",
+        "submission",
+        "ik",
+        "panic"
+      ]
+    },
+    {
+      "id": "dynamic_injury_rehabilitation",
+      "name": "Dynamic Injury Rehabilitation",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Monitors this._limbDamage inside move2D calculations. If legs are dislocated, move speed is crippled and running is disabled. If arms are dislocated, run momentum cap is severely restricted. Persists across rounds until God-Within healing occurs.",
+      "keywords": [
+        "injury",
+        "rehab",
+        "speed",
+        "limbDamage",
+        "physics"
+      ]
+    },
+    {
+      "id": "faction_stable_logic",
+      "name": "Faction & Stable Logic",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Overhauls Fighter.prototype.opponent to utilize dynamic multi-threat prioritization. Fighters evaluate the physical proximity of all opposing faction members (Team A = evens, Team B = odds) and dynamically target the highest active threat.",
+      "keywords": [
+        "faction",
+        "stable",
+        "multi-man",
+        "threat",
+        "targeting"
+      ]
+    },
+    {
+      "id": "tag_team_chemistry_spawner",
+      "name": "Tag Team Chemistry Engine",
+      "type": "System Expansion",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Introduces mid-match dynamic tag-partner spawning (hotkey T). Seamlessly injects new AI-controlled Fighter instances into the physics loop, triggering 4-man tag team logic without reloading the engine state.",
+      "keywords": [
+        "tag-team",
+        "spawner",
+        "chemistry",
+        "multi-man"
+      ]
     }
   ]
 }

@@ -633,8 +633,39 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 - **Wrestling Mpire Dashboard Visualizer**: Engineered an interactive `<MpireLegacyConsole />` React component inside `Dashboard.tsx` displaying character mappings, dynamic launch force multiplier adjustment, and simulated Blitz3D binary chunk decoding.
 
 
+### SHIPPED (PHASE 76 - ADRENALINE RUSH & FINISHER STATE)
+- **MDickie Adrenaline Engine (Phase 76)**: Intercepted `Fighter.prototype.update` to manage the classic 100% Momentum state. When momentum peaks, triggers a 10-second Adrenaline Rush. Multiplies root motion speed and physical strike power by 1.5x while overriding the mesh's emissive properties to a glowing red `0x550000`.
+- **Finisher Poise Lock**: Hooked `poseAttack` during the Adrenaline state to inject an unbreakable `this.poise = 100` lock and forcefully clamp `attackData.power` to 85+, ensuring finishers hit catastrophically without being interrupted by standard collision checks.
+
+
+### SHIPPED (PHASE 75 - WEAPON SWINGING ARCS & CHAOS COLLISION HULLS)
+- **MDickie Weapon Swinging Arcs (Phase 75)**: Hooked `Fighter.prototype.poseAttack` to intercept weapon strikes (SMASH and SWING trajectories). Calculated localized IK targets (`verticalArc` and `horizontalArc`) mimicking the classic MDickie over-the-head chair smash and horizontal baseball bat swings.
+- **Chaos-Driven Collision Hulls**: Built native transform updates for `this.heldWeapon`. Bound the weapon mesh position directly to the IK hand target (`haL` or `haR`) each tick, and invoked `updateChaosCollision` to emit continuous spatial physics traces (sphere casts/raycasts) through the swing arc, permanently bypassing static hitbox detection for foreign objects.
+
+
+### SHIPPED (PHASE 68 - 74: ADVANCED MDICKIE MECHANICS, PROCEDURAL ANATOMY, & TKO)
+- **MDickie Stat Integration (Phase 68)**: Parsed the classic 1-99 scaling array (Pop, Att, Str, Agi, Tou) and bound them directly to the Physics engine (`Fighter.prototype.constructor` intercept). Strength scales power/mass impacts, Agility drives root motion multipliers, and Toughness defines cellular HP density.
+- **Audience Hostility Engine (Phase 69)**: Bound crowd logic to MDickie Popularity stats. When fighters exit the ring (Zone: FLOOR), crowds will procedurally throw physics debris (damaging/stumbling) at Heels (Pop < 60) and pass momentum-buffing items to Faces (Pop > 80).
+- **Procedural Bruising (Phase 70)**: Traverses the `Fighter.mesh` array at runtime. Darkens the diffuse base material with a simulated Hex bruise color (`0x331122`) mapped inversely against `hp/maxHp`. Continuous visual wear over the match.
+- **Weather & Grip Physics (Phase 71)**: Built `BannonWeatherImpact` stub into `move2D`. In wet conditions (rain), ring friction drops by 40%, generating a random slip/stumble vector during high-speed root motion.
+- **Stat-Based Mesh Scaling (Phase 72)**: Intercepted `applyFighterSpec` to procedurally warp anatomy based on MDickie legacy stats. Modifies X/Z scales on the `upperArm` and `chest` meshes using a ratio clamped against the `str/50` output (Procedural Bicep tearing).
+- **Procedural Attire Damage (Phase 73)**: Hooked `Fighter.prototype.takeHit`. Strikes dealing over 20 damage perform a 30% dice roll to physically knock off attire sub-meshes (masks, glasses, hats). High-attitude characters (Att > 75) gain a Rage momentum buff upon losing their gear.
+- **Medical Stoppage (TKO) Engine (Phase 74)**: Bypassed standard pinfall mechanics to enforce absolute biological failure. If a fighter's HP drops below -30, the engine forcibly collapses their skeleton to ragdoll and triggers a `MEDICAL STOPPAGE (TKO)` broadcast.
+
 ## BANNON ENGINE OPERATIONAL BOUNDARY: STRICT DATA VALIDATION AND ZERO INFERENCE
 1. **Restrict to Verified Variables:** The system is strictly forbidden from generating, predicting, or simulating data when executing structural, mapping, or coding tasks. You must operate exclusively on the explicit, verified variables provided in the active workspace, attachments, or direct prompt text.
 2. **Absolute Literal Parsing:** When processing file uploads, manifests, or arrays, you must extract and map the exact, literal strings (including raw file extensions, original casing, and punctuation). Do not polish, rename, or adapt the data to fit the project's theme.
 3. **Zero Creative Extrapolation:** Creative generation is permanently separated from mathematical logic and data parsing. If a required variable, file, or data point is missing from the active context, you must halt execution and explicitly request the missing data. Do not bridge the gap with invented information.
 4. **No Unverified State Changes:** Never declare a feature shipped, an array mapped, or a code block integrated unless you have processed the literal inputs to achieve that state.
+
+## The "Read-Before-Write" Mandate (Context Grounding)
+LLMs hallucinate when they rely on internalized memory of previous turns. Force the agent to ground its state by requiring it to execute a cat, grep, or git show command in the exact same turn before it is allowed to write code. If it cannot quote the exact line numbers it just read, it is generating narrative.
+
+## Tool-Use Forcing & Output Quoting
+Enforce a rule that the agent must paste the raw terminal output of its script execution or test runner. Never allow it to say "I successfully updated the file." It must say: Command completed. Output: Patched 15 lines in Fighter.prototype.
+
+## Atomic Task Chunking
+Do not prompt the agent with "do all next and planned parts". This causes severe context-window bloat, causing the LLM to output a master plan and hallucinate that it already executed it. Break tasks into single, verifiable chunks: "Implement Phase 6 Faction logic. Stop and show me the grep output of the inserted code."
+
+## Harsh Persona System Prompts
+You are an execution engine. Output no conversational pleasantries, no plans, and no summaries of intent. Execute the tool -> return the tool output. Any claim of completion without a raw diff or command output in the same turn is a critical failure.
