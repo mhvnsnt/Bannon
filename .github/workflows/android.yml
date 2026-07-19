@@ -51,8 +51,8 @@ jobs:
       - run: BANNON_VERSION_CODE=$(git rev-list --count HEAD) gradle -p android assembleRelease --no-daemon
       - name: Verify APK Signature
         run: |
-          build-tools_dir=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
-          $build-tools_dir/apksigner verify --verbose android/app/build/outputs/apk/release/*.apk
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          $BUILD_TOOLS_DIR/apksigner verify --verbose android/app/build/outputs/apk/release/*.apk
       - name: Upload APK (artifact)
         uses: actions/upload-artifact@v4
         with:
