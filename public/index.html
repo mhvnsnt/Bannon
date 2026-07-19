@@ -11745,8 +11745,10 @@ function buildArenaStage(group, accentCol, cold){
   // runs PARALLEL to the ramp and curves toward the crowd, leaving the ramp opening clear (owner spec) ---
   const barMat=new THREE.MeshStandardMaterial({ color:P.barricade||0x1a1a22, roughness:0.7, metalness:0.3, emissive:acc, emissiveIntensity:0.08 });
   const bx = HZ + 5.0, seg=1.4, barH=0.7, rampHalf=1.9;   // bx pushed out toward the crowd
-  const addBar=(x,z,dir,len)=>{ len=len||seg; const b=new THREE.Mesh(new THREE.BoxGeometry(0.12,barH,len), barMat); b.position.set(x,barH/2-0.3,z); b.rotation.y=dir; b.castShadow=true; group.add(b);
-    const cap=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.05,len), ledMat); cap.position.set(x,barH-0.28,z); cap.rotation.y=dir; group.add(cap); };
+  window.__barricades = [];   // registered for the destructible-barricade impact system
+  const addBar=(x,z,dir,len)=>{ len=len||seg; const b=new THREE.Mesh(new THREE.BoxGeometry(0.12,barH,len), barMat.clone()); b.position.set(x,barH/2-0.3,z); b.rotation.y=dir; b.castShadow=true; group.add(b);
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.05,len), ledMat.clone()); cap.position.set(x,barH-0.28,z); cap.rotation.y=dir; group.add(cap);
+    window.__barricades.push({ b, cap, x, z, dir, broken:false }); };
   // front (hard-cam +Z) + two sides — full runs facing the crowd
   for(let x=-bx; x<=bx; x+=seg){ addBar(x, bx, Math.PI/2); }               // front
   for(let z=-bx; z<=bx; z+=seg){ addBar(bx, z, 0); addBar(-bx, z, 0); }    // sides
@@ -36518,6 +36520,39 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   try{ if(window.MANIFESTO&&window.MANIFESTO.register) window.MANIFESTO.register({ key:'combat.envContact', kind:'gameplay',
     summary:'ring posts are live impact surfaces: velocity-scaled post impacts (damage/stagger/knockdown via the same physics selling as strikes) — Urban Reign/Def Jam environmental energy, sim-resolved', call:'ENV CONTACT interval' }); }catch(_){}
   console.log('%c[v153 ENV CONTACT] ring posts are live impact surfaces', 'color:#00ff88;font-weight:bold');
+})();
+</script>
+<script>
+// ===== PHASE C — DESTRUCTIBLE BARRICADES: fling a fighter into a barricade at speed and it SHATTERS
+// (debris + smoke + velocity-scaled damage), opening a gap to the crowd — WWE/MDickie/Def Jam env
+// brawling. Same velocity-sampled impact model as the ring posts; no scripted anim. =====
+(function(){
+  if(window.__barricadeContact) return; window.__barricadeContact=true;
+  function shatter(bar, f, sev){ bar.broken=true;
+    try{ bar.b.visible=false; bar.cap.visible=false; }catch(e){}
+    // debris: a few tumbling fragments that fall + fade (reuses BANNON_FX smoke + a couple boxes)
+    try{ if(window.BANNON_FX){ const acc=(window.ARENA_PRESETS&&window.ARENA_PRESETS[window.ARENA_PRESET]||{}).accent||0xffaa22; window.BANNON_FX.pyroBurst(bar.x,bar.z,acc,26); window.BANNON_FX.smokePuff(bar.x,bar.z); } }catch(e){}
+    try{ if(typeof scene!=='undefined'){ for(let i=0;i<4;i++){ const d=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.18,0.5), bar.b.material); d.position.set(bar.x+(Math.random()-0.5)*0.8,0.2,bar.z+(Math.random()-0.5)*0.8); d.rotation.set(Math.random(),Math.random(),Math.random()); scene.add(d);
+      (function(m){ let life=1; const iv=setInterval(()=>{ life-=0.05; m.position.y=Math.max(-0.3,m.position.y-0.04); m.rotation.z+=0.1; if(life<=0){ try{scene.remove(m);}catch(_){} clearInterval(iv);} },40); })(d); } } }catch(e){}
+    try{ if(typeof applyDamage==='function') applyDamage(f, (25+70*sev)*(window.DMG_SCALE||1), f.opponent&&f.opponent(), {power:35+55*sev,height:'MID',traj:'STRAIGHT',limb:'BARRICADE',name:'BARRICADE'}, sev>0.7); }catch(e){}
+    try{ if(sev>0.5 && f.triggerKnockdown) f.triggerKnockdown(0,0.9+sev*0.6); }catch(e){}
+    try{ if(typeof camShake!=='undefined') camShake=Math.max(camShake,0.4+0.4*sev); if(typeof triggerHitStop==='function') triggerHitStop(0.06+0.06*sev); }catch(e){}
+    try{ if(typeof announce==='function') announce('THROUGH THE BARRICADE!', (typeof fname==='function'?fname(f):'')+' CRASHES INTO THE CROWD'); }catch(e){}
+  }
+  window.__shatterBarricade = shatter;   // debug/verify hook
+  setInterval(()=>{ try{
+    if(typeof gameState==='undefined'||gameState!=='fight'||!window.__barricades||!window.__barricades.length||typeof fighters==='undefined'||!fighters) return;
+    for(const f of fighters){ if(!f||f.isDown&&f.isDown()||(f.airLift||0)>0.1||f.state==='grabbed'||f.grappling) continue;
+      const vx=(f.x-(f.__bpx!=null?f.__bpx:f.x))/0.12, vz=(f.z-(f.__bpz!=null?f.__bpz:f.z))/0.12; f.__bpx=f.x; f.__bpz=f.z;
+      const spd=Math.hypot(vx,vz); f.__barCd=Math.max(0,(f.__barCd||0)-0.12);
+      if(spd<1.7||f.__barCd>0) continue;
+      for(const bar of window.__barricades){ if(bar.broken) continue;
+        const dx=bar.x-f.x, dz=bar.z-f.z, d=Math.hypot(dx,dz); if(d>0.85) continue;
+        const toward=(vx*dx+vz*dz)/(d*Math.max(0.1,spd)); if(toward<0.4) continue;
+        f.__barCd=1.4; shatter(bar, f, Math.min(1,spd/4.2)); break; }
+    }
+  }catch(e){} }, 120);
+  console.log('%c[PHASE C] destructible barricades armed', 'color:#ffaa22;font-weight:bold');
 })();
 </script>
 
