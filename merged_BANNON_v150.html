@@ -2637,6 +2637,26 @@ Fighter.prototype.pollApronTransition = function(){};
   const _origAttack = Fighter.prototype.poseAttack;
   Fighter.prototype.poseAttack = function(dt) {
 
+  // BANNON PROCEDURAL IK GRAPPLE FALLBACK (COLLAR AND ELBOW)
+  // If no mo-cap, dynamically force both fighters' arms to reach for each other's shoulders
+  if (this.state === 'grab' && this.grappleStage === 0) {
+    const opp = opponents[0];
+    if (opp && opp.J && opp.J.shoulderL && opp.J.shoulderR && this.J && this.J.haL && this.J.haR) {
+      const gProgress = Math.min(1.0, this.grabTimer / 0.3); // snap over 300ms
+      
+      // Left hand to opponent's right shoulder
+      const fwdL = new THREE.Vector3().copy(opp.J.shoulderR.pos).sub(this.J.haL.pos);
+      this.J.haL.pos.add(fwdL.multiplyScalar(gProgress * 0.8));
+      
+      // Right hand to opponent's left shoulder (collar tie)
+      const fwdR = new THREE.Vector3().copy(opp.J.shoulderL.pos).sub(this.J.haR.pos);
+      // Raise it up slightly for the collar tie look
+      fwdR.y += 0.1;
+      this.J.haR.pos.add(fwdR.multiplyScalar(gProgress * 0.8));
+    }
+  }
+
+
   // BANNON PROCEDURAL IK STRIKE FALLBACK
   // If we don't have mo-cap, procedurally drive the fist toward the opponent
   if (this.state === 'attack' && this.attackPhase > 0.1 && this.attackPhase < 0.6) {
