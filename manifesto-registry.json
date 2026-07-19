@@ -612,6 +612,21 @@
         "submission",
         "dead weight"
       ]
+    },
+    {
+      "id": "multi_man_submission_stacking",
+      "name": "Multi-Man Submission Stacking",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Overrides the standard tryGrab gate preventing players from grabbing an already-grabbed opponent. If the new attacker is attempting a submission (attackData.cat === 'SUB' or _isMounting), the engine allows the hold, setting _isStacking = true, enabling 3+ bodies to become entangled in simultaneous physics-based constraints.",
+      "keywords": [
+        "physics",
+        "grapple",
+        "submission",
+        "stacking",
+        "multiplayer",
+        "entanglement"
+      ]
     }
   ]
 }
