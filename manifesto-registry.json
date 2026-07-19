@@ -582,6 +582,21 @@
         "escape",
         "reach"
       ]
+    },
+    {
+      "id": "submission_reversal_physics",
+      "name": "Submission Reversal Transitions",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Intercepts _tryEscape inside poseGrabbed. If the defender successfully escapes a ground-based submission (flagged by _isMounting or attackData.cat === 'SUB'), the engine bypasses the standing physics reversal. Instead, it generates a massive lateral/rotational velocity impulse (vx, vz) that physically rolls both bodies across the canvas, simulating a tumbling struggle out of a hold.",
+      "keywords": [
+        "physics",
+        "reversal",
+        "submission",
+        "escape",
+        "roll",
+        "ground"
+      ]
     }
   ]
 }
