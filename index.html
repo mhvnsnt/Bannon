@@ -15070,8 +15070,13 @@ function applyModelChoice(side, url, name){
   setModelStatus(side,'⏳ Tapped "'+(name||'model')+'" — downloading…');
   loadFighterModel(side, url, name);
 }
-function _bindFighterGltf(side, url, name, gltf){
+function _bindFighterGltf(side, url, name, gltf, reqFighter, reqId){
   const f=fighterFor(side); if(!f) return;
+  if(reqFighter !== undefined && (f !== reqFighter || f._modelReqId !== reqId)) {
+    if (typeof disposeObject3D === 'function') disposeObject3D(gltf.scene);
+    return;
+  }
+  if (f.model && typeof removeFighterModel === 'function') removeFighterModel(side);
   try{
     const obj=gltf.scene; const bones={};
     obj.traverse(o=>{ if(o.isBone){ var _k=(o.name||'bone').toLowerCase(), _u=_k, _i=2; while(bones[_u]){ _u=_k+'~'+_i; _i++; } bones[_u]=o; o.userData.boneKey=_u; } if(o.isMesh){o.castShadow=true;o.frustumCulled=false;} });
@@ -15176,6 +15181,7 @@ function _rigSense(side, name, bones, mapped, container, s){
 }
 function loadFighterModel(side, url, name){
   const f=fighterFor(side); if(!f){ setModelStatus(side,'Start a fight first.'); return; }
+  const reqId = (f._modelReqId = (f._modelReqId||0) + 1);
   if(typeof THREE==='undefined' || !THREE.GLTFLoader){ setModelStatus(side,'⚠ 3D loader unavailable here.'); return; }
   url=(url||'').trim(); if(!url){ setModelStatus(side,'Paste a .glb URL first.'); return; }
   removeFighterModel(side);
@@ -15184,7 +15190,7 @@ function loadFighterModel(side, url, name){
   if(url.indexOf('idb:')===0){ const nm=url.slice(4);
     if(typeof BLIB==='undefined'){ setModelStatus(side,'⚠ Library unavailable here.'); return; }
     BLIB.get(nm).then(buf=>{ if(!buf){ setModelStatus(side,'⚠ "'+nm+'" is not in the saved library (storage cleared?). Re-import it.'); return; }
-      try{ loader.parse(buf,'',(gltf)=>_bindFighterGltf(side,url,nm,gltf),(err)=>{ setModelStatus(side,'⚠ Parse error on "'+nm+'".'); removeFighterModel(side); }); }
+      try{ loader.parse(buf,'',(gltf)=>_bindFighterGltf(side,url,nm,gltf,f,reqId),(err)=>{ setModelStatus(side,'⚠ Parse error on "'+nm+'".'); removeFighterModel(side); }); }
       catch(e){ setModelStatus(side,'⚠ Decode error on "'+nm+'".'); removeFighterModel(side); } })
     .catch(e=>{ setModelStatus(side,'⚠ Could not read the saved library.'); }); return; }
   // EMBEDDED model (baked into the file as base64) — parsed with no network, can't be blocked
@@ -15192,11 +15198,11 @@ function loadFighterModel(side, url, name){
     const key=url.slice(9);
     const b64=(typeof FIGHTER_GLB_B64!=='undefined') && FIGHTER_GLB_B64[key];
     if(!b64){ setModelStatus(side,'⚠ Embedded model "'+key+'" not found.'); return; }
-    try{ const buf=b64ToArrayBuffer(b64); loader.parse(buf, '', (gltf)=>_bindFighterGltf(side,url,name,gltf), (err)=>{ setModelStatus(side,'⚠ Parse error on "'+(name||key)+'".'); removeFighterModel(side); }); }
+    try{ const buf=b64ToArrayBuffer(b64); loader.parse(buf, '', (gltf)=>_bindFighterGltf(side,url,name,gltf,f,reqId), (err)=>{ setModelStatus(side,'⚠ Parse error on "'+(name||key)+'".'); removeFighterModel(side); }); }
     catch(e){ setModelStatus(side,'⚠ Decode error on "'+(name||key)+'".'); removeFighterModel(side); }
     return;
   }
-  loader.load(url, (gltf)=>_bindFighterGltf(side,url,name,gltf),
+  loader.load(url, (gltf)=>_bindFighterGltf(side,url,name,gltf,f,reqId),
     undefined,
     (err)=>{
       // CDN FALLBACK: a downloaded single-file HTML has no assets/ folder next to it — retry
@@ -15204,7 +15210,7 @@ function loadFighterModel(side, url, name){
       var _cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
       if(!/^(https?:|idb:|embedded:|blob:|data:)/.test(url) && !url.startsWith(_cdn)){
         setModelStatus(side,'… local copy missing — streaming "'+(name||'model')+'" from the repo');
-        loader.load(_cdn+url, (gltf)=>_bindFighterGltf(side,url,name,gltf), undefined,
+        loader.load(_cdn+url, (gltf)=>_bindFighterGltf(side,url,name,gltf,f,reqId), undefined,
           (e2)=>{ setModelStatus(side,'⚠ "'+(name||'model')+'" unavailable (no local file, CDN unreachable). Built-in body kept.'); removeFighterModel(side); });
         return;
       }
@@ -15248,7 +15254,7 @@ function updateFighterModel(f){
   var _modelY = (m.userData.yBase||0)+TUNE.modelYOffset;
   if(f.ragdoll || f.state==='grabbed' || f.state==='down' || f.state==='getup' || f.state==='falling'){ _modelY += (root.y - (RING.floorY + 0.9)); }   // follow the rig: carry height, down to the mat, and RISE off the mat through getup
   m.position.set(root.x, _modelY, root.z);
-  m.rotation.y = f.facing + Math.PI/2;
+  m.rotation.y = f.facing + Math.PI;
   if(typeof DIRECTOR!=='undefined' && typeof fighters!=='undefined'){ var _dt=DIRECTOR.tf[(f===fighters[0])?'p1':'p2']; if(_dt){ m.rotation.y+=(_dt.yaw||0)*Math.PI/180; m.rotation.x=(_dt.pitch||0)*Math.PI/180; m.rotation.z=(_dt.roll||0)*Math.PI/180; m.position.y+=(_dt.y||0); if((_dt.scale||1)!==1) m.scale.multiplyScalar(_dt.scale); } }
   if(modelCfg.animate && m.userData.mapped && !(typeof FREEPOSE!=='undefined'&&FREEPOSE)){
     try{
