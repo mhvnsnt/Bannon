@@ -945,9 +945,12 @@ body.match-live #movesBtn { display:none !important; }
     <div class="play-grid">
       <button class="play-mode" id="pmExhibition"><span class="pm-ico">🤼</span><span class="pm-t">EXHIBITION</span><span class="pm-d">Quick single match — pick fighters &amp; go</span></button>
       <button class="play-mode" id="pmCareer"><span class="pm-ico">📈</span><span class="pm-t">CAREER</span><span class="pm-d">Rise as one wrestler — matches, injuries, titles, aging</span></button>
-      <button class="play-mode" id="pmUniverse"><span class="pm-ico">🌍</span><span class="pm-t">UNIVERSE / BOOKING</span><span class="pm-d">Run the promotion week to week — book, sim, standings</span></button>
+      <button class="play-mode" id="pmUniverse"><span class="pm-ico">🌍</span><span class="pm-t">PROMOTER</span><span class="pm-d">Book &amp; run a promotion week to week — the booking career</span></button>
       <button class="play-mode" id="pmGodWithin"><span class="pm-ico">👁️</span><span class="pm-t">GOD WITHIN</span><span class="pm-d">Roam the world, confront the daemon — the story RPG</span></button>
       <button class="play-mode" id="pmTraining"><span class="pm-ico">🏋️</span><span class="pm-t">TRAINING</span><span class="pm-d">Build your stats between shows</span></button>
+      <button class="play-mode" id="pmPromotionsView"><span class="pm-ico">🏟️</span><span class="pm-t">PROMOTIONS</span><span class="pm-d">All 15 promotions — prestige, style, rosters</span></button>
+      <button class="play-mode" id="pmRoster"><span class="pm-ico">📋</span><span class="pm-t">ROSTER</span><span class="pm-d">Every wrestler across the promotions</span></button>
+      <button class="play-mode" id="pmHof"><span class="pm-ico">🏛️</span><span class="pm-t">HALL OF FAME</span><span class="pm-d">The immortals — legends of the BANNON universe</span></button>
     </div>
     <button class="menu-btn" id="pmBack" style="margin-top:14px;">◀ BACK</button>
   </div>
@@ -968,6 +971,9 @@ body.match-live #movesBtn { display:none !important; }
       <button class="uni-tab" data-tab="career">MY CAREER</button>
       <button class="uni-tab" data-tab="backstage">BACKSTAGE</button>
       <button class="uni-tab" data-tab="contracts">CONTRACTS</button>
+      <button class="uni-tab" data-tab="promotions">PROMOTIONS</button>
+      <button class="uni-tab" data-tab="roster">ROSTER</button>
+      <button class="uni-tab" data-tab="hof">HALL OF FAME</button>
       <button class="uni-tab" data-tab="training">TRAINING</button>
       <button class="uni-tab" data-tab="court">COURT</button>
       <button class="uni-tab" data-tab="cup">TOURNAMENT</button>
@@ -16109,6 +16115,10 @@ function setupInput(){
     _w('pmUniverse', ()=>{ if(pm)pm.classList.add('hidden'); if(window.openUniverse) window.openUniverse(); });
     _w('pmCareer', ()=>{ if(pm)pm.classList.add('hidden'); try{ window.CAREER_ME=window.CAREER_ME||'BANNON'; }catch(e){} if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="career"]').click(); }catch(e){} } });
     _w('pmTraining', ()=>{ if(pm)pm.classList.add('hidden'); if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="training"]').click(); }catch(e){} } });
+    const _uniTab=(t)=>{ if(pm)pm.classList.add('hidden'); if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="'+t+'"]').click(); }catch(e){} } };
+    _w('pmPromotionsView', ()=>_uniTab('promotions'));
+    _w('pmRoster', ()=>_uniTab('roster'));
+    _w('pmHof', ()=>_uniTab('hof'));
     _w('pmGodWithin', ()=>{ if(pm)pm.classList.add('hidden'); if(window.BANNON_GODWITHIN && window.BANNON_GODWITHIN.start) window.BANNON_GODWITHIN.start(); else (window.toast||alert)('God Within roam mode loading…'); });
   })();
   // MAIN-MENU CREATION HUB (3×3): each tile opens its subsystem overlay. All null-guarded so a layout
@@ -38055,7 +38065,8 @@ window.BANNON_STATS = (function(){
 })();
 window.BANNON_UNIVERSE = (function(){
   const KEY = 'bannon_universe_v1';
-  const PROMOS = ['AWE','JPCW','NWC'];   // canon companies: AWE (Kennedy) + JPCW (Combs global) + NWC (Book 6)
+  // full proprietary promotion spread (BANNON_PROMOTIONS) — MDickie-equivalents + book promotions.
+  const PROMOS = (function(){ try{ if(window.BANNON_PROMOTIONS && window.BANNON_PROMOTIONS.keys) return window.BANNON_PROMOTIONS.keys(); }catch(e){} return ['AWE','JPCW','NWC']; })();
   function roster(){ try{ return (window.ROSTER_ALL ? window.ROSTER_ALL() : []); }catch(e){ return []; } }
   function load(){ try{ const s=localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){} return null; }
   function save(u){ try{ localStorage.setItem(KEY, JSON.stringify(u)); }catch(e){} return u; }
@@ -38063,7 +38074,8 @@ window.BANNON_UNIVERSE = (function(){
   function rating(f){ const s=(f&&f.stats)||{}; return (s.power||100)*0.9 + (s.speed||100)*0.7 + (s.chin||90)*0.5 + (s.hp||9000)/120 + ((f&&f.momentum)||0)*2; }
   // which promotion a fighter belongs to (faction/bio-derived, canon lore): NWC faction -> NWC; a JPCW
   // strong-style mention -> JPCW; Corporate/Alliance -> AWE (Kennedy's promotion + its faces); else hash-split.
-  function promoOf(f){ const fac=(f&&f.faction)||'', bio=(f&&f.bio)||'';
+  function promoOf(f){ try{ if(window.BANNON_PROMOTIONS && window.BANNON_PROMOTIONS.assign) return window.BANNON_PROMOTIONS.assign(f); }catch(e){}
+    const fac=(f&&f.faction)||'', bio=(f&&f.bio)||'';
     if(/NWC/i.test(fac)) return 'NWC';
     if(/JPCW/i.test(bio)) return 'JPCW';
     if(/Corporate|Alliance/i.test(fac)) return 'AWE';
@@ -39555,6 +39567,41 @@ window.BANNON_LEGACY = (function(){
           if(cases.length){ h+='<div class="uni-h">RECENT CASES</div>'+cases.map(n=>`<div class="uni-row"><span>• ${esc(n)}</span><span></span></div>`).join(''); }
         } else h+='<div>Court module not loaded.</div>';
       }
+      else if(tab==='promotions'){
+        h+='<div class="uni-h">PROMOTIONS</div>';
+        const PR=window.BANNON_PROMOTIONS; const U2=UNI(),u2=U2&&U2.get&&U2.get();
+        if(PR){ PR.list().sort((a,b)=>b.prestige-a.prestige).forEach(p=>{
+          const roster=u2?Object.values(u2.fighters).filter(f=>f.promo===p.key).length:0;
+          h+=`<div class="mcard"><span class="por" style="width:40px;height:40px;background:${p.color};font-size:12px">${esc(p.short)}</span>`+
+             `<div class="mc-mid" style="text-align:left"><div style="font-family:'Bebas Neue';letter-spacing:2px;font-size:16px;color:var(--gold)">${esc(p.name)}</div>`+
+             `<div style="font:10px monospace;color:#c9b98a">${esc(p.style)} · ${esc(p.region)} · ${roster} on roster</div>`+
+             `<div style="font:9px monospace;color:#9a9;margin-top:2px">${esc(p.desc)}</div></div>`+
+             `<div style="font-family:'Bebas Neue';font-size:20px;color:#7CFC00">${p.prestige}</div></div>`; });
+        } else h+='<div>Promotions module not loaded.</div>';
+      }
+      else if(tab==='roster'){
+        h+='<div class="uni-h">ROSTER</div>';
+        const U2=UNI(),u2=U2&&U2.get&&U2.get(); const fs=u2?Object.values(u2.fighters):[];
+        h+=`<div style="font:10px monospace;color:#c9b98a;margin-bottom:6px">${fs.length} wrestlers across ${(window.BANNON_PROMOTIONS?window.BANNON_PROMOTIONS.keys().length:3)} promotions</div>`;
+        fs.slice(0,40).sort((a,b)=>(b.wins-b.losses)-(a.wins-a.losses)).forEach(f=>{ const pr=window.BANNON_PROMOTIONS?window.BANNON_PROMOTIONS.get(f.promo):null;
+          h+=`<div class="uni-row" style="align-items:center;padding:4px 0"><span style="display:flex;align-items:center;gap:8px">`+
+             pfChip(f.name).replace('class="pf"','class="pf" style="width:auto;flex-direction:row"')+
+             `</span><span style="font:10px monospace"><span style="color:${pr?pr.color:'#888'}">${esc(pr?pr.short:(f.promo||''))}</span> · ${f.wins||0}-${f.losses||0}${f.title?' 🏆':''}</span></div>`; });
+      }
+      else if(tab==='hof'){
+        h+='<div class="uni-h">🏛️ HALL OF FAME</div>';
+        h+='<div style="font:10px monospace;color:#c9b98a;margin-bottom:6px">The immortals — legends inducted for title reigns, wins, and legacy.</div>';
+        const U2=UNI(),u2=U2&&U2.get&&U2.get(); const fs=u2?Object.values(u2.fighters):[];
+        // induction score: wins + title + longevity; top few are "inducted"
+        const ranked=fs.map(f=>({f,score:(f.wins||0)*3+(f.title?40:0)+((f.wins||0)-(f.losses||0))})).sort((a,b)=>b.score-a.score);
+        const inducted=ranked.filter(x=>x.score>=30).slice(0,12);
+        if(!inducted.length) h+='<div style="opacity:.7">No inductees yet — build legends by winning across seasons (ADVANCE WEEK / play matches).</div>';
+        inducted.forEach((x,i)=>{ const f=x.f;
+          h+=`<div class="mcard title-match">${pfChip(f.name)}<div class="mc-mid" style="text-align:left">`+
+             `<div style="font-family:'Bebas Neue';letter-spacing:2px;font-size:16px;color:var(--gold)">${esc(String(f.name).replace(/_/g,' '))}</div>`+
+             `<div style="font:9px monospace;color:#c9b98a">${f.wins||0}-${f.losses||0}${f.title?' · reigning champion':''} · legacy ${x.score}</div></div>`+
+             `<div style="font-size:20px">${i===0?'👑':'⭐'}</div></div>`; });
+      }
       else if(tab==='cup'){
         h+='<div class="uni-h">TOURNAMENT</div>';
         const md=MD();
@@ -40016,6 +40063,57 @@ window.BANNON_GODWITHIN = (function(){
       b.appendChild(btn); }); }
   try{ wireBtns(); }catch(e){}
   return { start, stop, talk, challenge, isActive:()=>active };
+})();
+</script>
+
+<!-- ============================================================================================
+     BANNON PROMOTIONS — proprietary versions of the full MDickie promotion spread (All American →
+     AWE, Super Lucha Libre → Lucha Eternal, Rising Sun Puroresu → Rising Sun Circuit, Weekend Warriors
+     → Sandlot Syndicate, Maple Leaf → Maple Chain, Strong Style → Iron Dojo, Wrestling School → The
+     Proving Ground, Federation Online → NetFed, + UFC/WCW analogs) PLUS the book promotions (Stick-Up
+     Cult, Hollywood Booking Co., Shinobi 99). Original names/branding — owner supplies logos. =====
+     ============================================================================================ -->
+<script>
+window.BANNON_PROMOTIONS = (function(){
+  // key -> { name, short, style, region, color, prestige(0-100), desc, source }
+  const P = {
+    AWE:      { name:'Apex Wrestling Entertainment', short:'AWE', style:'sports-entertainment', region:'USA',    color:'#c0392b', prestige:94, desc:"Kennedy's flagship — the WWE-scale spectacle of our world.", source:'All American Wrestling / canon' },
+    JPCW:     { name:'Global Combat Wrestling',       short:'JPCW',style:'strong-style',         region:'Global', color:'#2c3e78', prestige:88, desc:"Combs's worldwide network — stiff, sim, international.", source:'Federation Online + puroresu / canon' },
+    NWC:      { name:'New World Combat',              short:'NWC', style:'hardcore',             region:'USA',    color:'#7a3ad0', prestige:80, desc:'Book 6 upstart — anything-goes, revolution energy.', source:'canon Book 6' },
+    LUCHA:    { name:'Lucha Eternal',                 short:'LE',  style:'lucha-libre',          region:'Mexico', color:'#e67e22', prestige:86, desc:'High-flying masked lucha — honor, masks, mystique.', source:'Super Lucha Libre' },
+    RISING:   { name:'Rising Sun Circuit',            short:'RSC', style:'puroresu',             region:'Japan',  color:'#c0392b', prestige:83, desc:'Pure puroresu — respect, king’s road, hard hits.', source:'Rising Sun Puroresu' },
+    MAPLE:    { name:'Maple Chain Grappling',         short:'MCG', style:'technical',            region:'Canada', color:'#16a085', prestige:84, desc:'Chain-wrestling technicians — mat purists.', source:'Maple Leaf Grappling' },
+    IRONDOJO: { name:'Iron Dojo',                     short:'IDJ', style:'strong-style',         region:'Japan',  color:'#34495e', prestige:84, desc:'Strong-style dojo — stiff exchanges, fighting spirit.', source:'Strong Style Wrestling' },
+    SANDLOT:  { name:'Sandlot Syndicate',             short:'SLS', style:'backyard-hardcore',    region:'USA',    color:'#8e6a2f', prestige:70, desc:'Backyard/garage hardcore — weekend warriors, weapons, chaos.', source:'Weekend Warriors / backyard' },
+    OCTAGON:  { name:'Octagon League',                short:'OCT', style:'mma-shoot',            region:'USA',    color:'#111318', prestige:90, desc:'Shoot-fighting cage league — our UFC analog.', source:'UFC / shoot' },
+    LEGACY:   { name:'Legacy Territories',            short:'LGT', style:'old-school',           region:'USA',    color:'#b8912f', prestige:78, desc:'Old-school territory rasslin’ — our WCW/NWA analog.', source:'WCW / old school' },
+    NETFED:   { name:'NetFed',                        short:'NF',  style:'indie-online',         region:'Online', color:'#2980b9', prestige:75, desc:'Streaming indie federation — viral, scrappy, online-first.', source:'Federation Online' },
+    PROVING:  { name:'The Proving Ground',            short:'TPG', style:'developmental',        region:'USA',    color:'#7f8c8d', prestige:60, desc:'Wrestling school / developmental — where careers begin.', source:'Wrestling School' },
+    // ---- BOOK promotions ----
+    STICKUP:  { name:'The Stick-Up Cult',            short:'SUC', style:'cult-hardcore',        region:'Underground', color:'#1e1e1e', prestige:72, desc:'Jackboy’s cult collective — fear, loyalty, robbery-as-gimmick (books).', source:'books: Stick-Up' },
+    HOLLYWOOD:{ name:'Hollywood Booking Co.',         short:'HBC', style:'entertainment',        region:'Hollywood', color:'#d4af37', prestige:82, desc:'Showbiz booking — scripts, celebrities, worked drama (books).', source:'books: Hollywood' },
+    SHINOBI:  { name:'Shinobi 99',                    short:'S99', style:'trap-shinobi',         region:'Neo-Tokyo', color:'#39ff14', prestige:85, desc:'Trap Shinobi Super Level 99 — cyber-ninja super promotion (books).', source:'books: Trap Shinobi' }
+  };
+  const KEYS = Object.keys(P);
+  function get(k){ return P[String(k||'').toUpperCase()]||null; }
+  function list(){ return KEYS.map(k=>Object.assign({key:k}, P[k])); }
+  function keys(){ return KEYS.slice(); }
+  // assign a fighter to a promotion from faction/style/bio (proprietary spread, deterministic hash fallback)
+  function assign(f){ const fac=((f&&f.faction)||'').toLowerCase(), bio=((f&&f.bio)||'').toLowerCase(), st=((f&&(f.style||f.archetype))||'').toLowerCase();
+    if(/stick.?up|jackboy|cult/.test(bio+fac)) return 'STICKUP';
+    if(/shinobi|trap|ninja/.test(bio+fac)) return 'SHINOBI';
+    if(/hollywood/.test(bio+fac)) return 'HOLLYWOOD';
+    if(/lucha|toro|fuego|mexic/.test(bio+st)) return 'LUCHA';
+    if(/puro|japan|iida|arashi|saito|tanaka|tatsu/.test(bio)) return 'RISING';
+    if(/nwc|new world/.test(bio+fac)) return 'NWC';
+    if(/jpcw|combs|global|strong/.test(bio+fac)) return 'JPCW';
+    if(/mma|shoot|octagon/.test(bio+st)) return 'OCTAGON';
+    if(/alliance|corporate|kennedy|awe/.test(bio+fac)) return 'AWE';
+    // hash-split the rest across the mid-card promotions so the world feels populated
+    const pool=['AWE','JPCW','NWC','LUCHA','RISING','MAPLE','IRONDOJO','SANDLOT','LEGACY','NETFED','PROVING'];
+    let h=0; const nm=((f&&(f.name))||'X'); for(let i=0;i<nm.length;i++) h=(h*31+nm.charCodeAt(i))>>>0;
+    return pool[h%pool.length]; }
+  return { P, get, list, keys, assign };
 })();
 </script>
 </body>
