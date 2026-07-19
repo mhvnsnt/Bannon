@@ -2664,7 +2664,7 @@ Fighter.prototype.pollApronTransition = function(){};
     if (opp && opp.J && opp.J.chest && this.J && this.J.haR) {
       // Calculate a procedural forward thrust
       const reachProgress = Math.sin((this.attackPhase - 0.1) * Math.PI / 0.5); // arc from 0 to 1 back to 0
-      const targetPos = new THREE.Vector3().copy(opp.J.chest.pos);
+      const targetPos = new THREE.Vector3().copy(this._strikeTargetNode ? this._strikeTargetNode.pos : opp.J.chest.pos);
       targetPos.y += 0.2; // Aim for jaw/upper chest
       
       // We don't want to completely snap to the opponent if they are far, just reach outwards.
@@ -10085,6 +10085,46 @@ function registerHit(attacker, move){
 }
 
 function applyDamage(opp, dmg, attacker, move, forceDown){
+  // BANNON GLANCING BLOW CALCULATIONS (PHASE 4 #27)
+  // Calculate angle of incidence. If off-center, apply rotational torque instead of full HP drain.
+  if (attacker && !forceDown && move && !move.cat.includes('GROUND') && !move.cat.includes('GRAPPLE')) {
+     const dx = opp.x - attacker.x;
+     const dz = opp.z - attacker.z;
+     const dist = Math.sqrt(dx*dx + dz*dz) || 1;
+     
+     // Attacker's forward vector
+     const fx = -Math.sin(attacker.facing);
+     const fz = -Math.cos(attacker.facing);
+     
+     // Dot product (cosine of angle)
+     const dot = (dx/dist)*fx + (dz/dist)*fz;
+     
+     // If dot < 0.85 (more than ~30 degrees off center), it's a glancing blow
+     if (dot > 0.1 && dot < 0.85) {
+        // Glancing!
+        console.log("[BANNON] GLANCING BLOW! Angle of incidence:", Math.acos(dot)*180/Math.PI);
+        
+        // Halve the raw HP damage
+        dmg *= 0.4;
+        
+        // Calculate tangent vector for spin/torque
+        // Determine side (left or right off-center)
+        const cross = fx*(dz/dist) - fz*(dx/dist); 
+        const spinDir = cross > 0 ? 1 : -1;
+        
+        // Apply torque / spin to opponent
+        opp.facing += spinDir * Math.PI * 0.4 * (1.0 - dot); // turn them up to 72 degrees
+        
+        // Apply small wobble
+        if (opp.kickWobble) {
+           opp.kickWobble('side', spinDir, 0, 0, 0.6);
+        }
+        
+        // Small puff instead of full blood/sweat
+        if (window.spawnDust) window.spawnDust(opp.x, opp.z, 0.4);
+     }
+  }
+
   if (opp.invuln > 0 && !opp.isDown() && !forceDown) return;
   if (attacker && attacker.powerMultiplier) dmg *= attacker.powerMultiplier;
   dmg = Math.round(dmg / (window.FIGHT_LEN!=null?window.FIGHT_LEN:1.45));   // FIGHT LENGTH: sim fights breathe (live slider)
