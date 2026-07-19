@@ -427,6 +427,22 @@
         "physics",
         "throw"
       ]
+    },
+    {
+      "id": "physics_weight_detection",
+      "name": "Weight Detection & Lift Strain Physics",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Calculates the mathematical mass ratio between the attacker and the defender during a grapple lift (grappleStage 1 -> 2). If the opponent's mass exceeds the attacker's lifting capacity (modulated dynamically by real-time stamina), the lift fails procedurally, causing the attacker to recoil into a stumble state and dropping the opponent.",
+      "keywords": [
+        "physics",
+        "mass",
+        "stamina",
+        "lift",
+        "grapple",
+        "weight_detection",
+        "procedural_failure"
+      ]
     }
   ]
 }
