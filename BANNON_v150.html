@@ -774,9 +774,11 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 body.match-live #moveLibToggle,
 body.match-live #fbxImpToggle,
 body.match-live #bphysPanel,
-body.match-live #freecamBtn,
 body.match-live #mcStudioBtn,
 body.match-live #movesBtn { display:none !important; }
+/* NOTE: #freecamBtn is intentionally NOT hidden here — it must stay reachable in move creator / CAW /
+   arena / entrance / victory / director / studio (owner). It's already hidden during a live fight by
+   show()/hideAll (only shown for PREVIEW_OVERLAYS), and available mid-match via PAUSE > FREE CAM. */
 </style>
 <button id="freecamBtn" title="Free camera (orbit/zoom/pan the model)" style="display: none;">🎥</button>
 <div id="freecamHint" style="display: none;">FREE CAM · 1 finger orbit · pinch zoom · 2-finger drag pan</div>
@@ -13900,8 +13902,11 @@ try{
     // The two commentators coded in-game at base (the live dual-voice desk). VoiceA is the professional
     // play-by-play analyst — the SAME seat/role as Commentator Marks (they can be the same booth voice);
     // VoiceB is the chaos-loving color man. Both registered so they carry identities + can get models.
-    COMMENTARY_VOICE_A: { name:'Voice A · Lead Analyst', role:'Play-by-Play (matches Commentator Marks)', canon:true, look:'SUIT', voiceId:'A', bio:'The pro at the desk — "we are LIVE and anything can happen." Calm, credible play-by-play.' },
-    COMMENTARY_VOICE_B: { name:'Voice B · Color', role:'Color Commentary', canon:true, look:'SUIT', voiceId:'B', bio:'"You KNOW I love chaos — ring the bell." The unhinged color voice that roots for the mayhem.' },
+    // Owner call: Marks = Commentator A (play-by-play; personality matches), Cody "Corduroy Kid"
+    // Callahan = Commentator B (color; his book voice — toxic enabler / financial broker who shouts
+    // contracts, stats, and money at the crowd). Voice A/B are the engine's two live commentary slots.
+    COMMENTARY_VOICE_A: { name:'Commentator Marks', role:'Play-by-Play (Commentator A)', canon:true, look:'SUIT', voiceId:'A', ref:'COMMENTATOR_MARKS', bio:'The voice of the audience — calm, credible play-by-play; calls the action and sells the danger.' },
+    COMMENTARY_VOICE_B: { name:'Cody "Corduroy Kid" Callahan', role:'Color (Commentator B)', canon:true, look:'SUIT', voiceId:'B', ref:'CODY_CALLAHAN', bio:'Toxic enabler / financial broker on color — spins every spot into dollars, contracts, and stats; loves the chaos when it profits his guy.' },
     RING_ANNOUNCER:    { name:'The Ring Announcer', role:'Ring Announcer', canon:true, look:'SUIT', bio:'Formal in-ring introductions and official decisions ("The winner, by referee stoppage...").' },
     COLOR_CODY:        { name:'Cody "Corduroy Kid" Callahan', role:'Color / Manic GM', canon:true, ref:'CODY_CALLAHAN' },
     COLOR_GRIXF:       { name:'Grixf', role:'Color (guest)', canon:true, ref:'GRIXF' },
@@ -14157,7 +14162,7 @@ function startFight(){
 // MENU MANAGEMENT
 // ============================================================================
 const OVERLAYS = ['mainMenu','pauseMenu','winnerMenu','creator','modelLab','tuneLab','studio','director','animBrowser'];
-const PREVIEW_OVERLAYS = ['creator','modelLab','tuneLab','studio','director','animBrowser'];
+const PREVIEW_OVERLAYS = ['creator','modelLab','tuneLab','studio','director','animBrowser','winnerMenu'];
 function hideAll(){ OVERLAYS.forEach(id=>{ var el=document.getElementById(id); if(el){ el.classList.add('hidden'); el.classList.remove('preview-dock'); } }); if(typeof freecamExit==='function')freecamExit(); var _fb=document.getElementById('freecamBtn'); if(_fb)_fb.style.display='none'; }
 function show(id){ hideAll(); var el=document.getElementById(id); if(!el) return; el.classList.remove('hidden'); if(PREVIEW_OVERLAYS.indexOf(id)>=0 && typeof fighters!=='undefined' && fighters && fighters.length) el.classList.add('preview-dock'); var _fb=document.getElementById('freecamBtn'); if(_fb)_fb.style.display=(PREVIEW_OVERLAYS.indexOf(id)>=0 && fighters && fighters.length)?'flex':'none';
   try{ if(id==='mainMenu') document.body.classList.remove('match-live'); }catch(e){}   // leaving a match -> creation/dev tools reachable on the menu again
@@ -14437,9 +14442,22 @@ const BONE_MAP_OVERRIDES = {
 function fighterFor(side){ return (side==='p1')?fighters[0]:fighters[1]; }
 function setModelStatus(side,t){ modelStatusText[side]=t; if(side===modelSel){ const el=document.getElementById('modelStatus'); if(el) el.textContent=t; } refreshModelUI(); }
 function setProcVisible(f,vis){ for(const k in f.seg){ if(k==='aura')continue; if(f.seg[k]) f.seg[k].visible=vis; } }
+// Fully free a model's GPU memory (geometry + materials + textures + skeleton). Without this, every
+// character/attire switch orphaned a 5-10MB GLB's buffers/textures -> GPU memory piled up -> the hard
+// freeze + stray leftover meshes the owner saw on repeated select changes.
+function disposeObject3D(obj){
+  if(!obj || !obj.traverse) return;
+  obj.traverse(function(o){
+    try{ if(o.geometry && o.geometry.dispose) o.geometry.dispose(); }catch(e){}
+    try{ if(o.material){ var mats=Array.isArray(o.material)?o.material:[o.material];
+      mats.forEach(function(m){ if(!m)return; for(var k in m){ var v=m[k]; if(v&&v.isTexture&&v.dispose){ try{v.dispose();}catch(e){} } } if(m.dispose)m.dispose(); }); } }catch(e){}
+    try{ if(o.skeleton && o.skeleton.dispose) o.skeleton.dispose(); }catch(e){}
+  });
+}
+window.disposeObject3D = disposeObject3D;
 function removeFighterModel(side){
   const f=fighterFor(side); if(!f) return;
-  if(f.model){ try{scene.remove(f.model);}catch(e){} f.model=null; }
+  if(f.model){ try{scene.remove(f.model);}catch(e){} try{ disposeObject3D(f.model); }catch(e){} f.model=null; }
   f.modelUrl=null; if(f.seg) setProcVisible(f,true);
 }
 function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MODEL&&CHOSEN_MODEL[sd]; var f=fighterFor(sd); if(f && !f.model && ch && ch.url){ try{ loadFighterModel(sd, ch.url, ch.name); }catch(e){} } }); }
@@ -19242,17 +19260,19 @@ init();
   // we already have" pool — extend these arrays to add more.
   window.__COMMENTARY_OFFLINE_DB = window.__COMMENTARY_OFFLINE_DB || {
     voiceAIntro: "Welcome to the biggest night in the Bannon universe — we are LIVE and anything can happen.",
-    voiceBIntro: "And you KNOW I love chaos. Ring the bell, let these two settle it!",
+    voiceBIntro: "Corduroy Kid on color, and let me tell you — the merch numbers on a night like this? Astronomical. Ring the bell, let's make some MONEY!",
     commentaryDb: {
       VoiceA: { idleLore: [
         "These two have history — you can feel it in every lock-up.",
         "Styles make fights, and this is a clash of everything they believe in.",
         "The story writes itself out here: pride, pain, and a title on the line." ] },
       VoiceB: {
+        // Cody "Corduroy Kid" Callahan — toxic enabler / financial broker: everything is contracts,
+        // stats, merch, and "my guy." His book voice layered onto the color slot.
         blood: [
           "HE IS BUSTED WIDE OPEN! The crimson mask is on and this crowd is UNGLUED!",
-          "Oh he's cut — legitimately opened up, and it changes everything!",
-          "The blood is POURING now. Somebody get a towel — actually, don't, let 'em fight!" ],
+          "That's a liability! Somebody get legal on the phone — actually, no, that blood SELLS pay-per-views!",
+          "Cut open and the merch just doubled in value — that's what I call a return on investment!" ],
         heavyMoves: {
           powerbomb: [ "POWERBOMB! Folded in HALF and driven through the mat!", "He LAUNCHED him — the ring shook on that one!" ],
           suplex:    [ "Over the top and PLANTED! Textbook and brutal.", "Deadlift and DUMP — pure power right there!" ],
@@ -19264,14 +19284,14 @@ init();
         knockdown: [
           "DOWN HARD! I'm not sure he knows what county he's in!",
           "Off his feet and the ref starts the count — is this the end?!",
-          "TIMBER! That thunderous shot dropped him where he stood!" ],
+          "That's a depreciating asset right there, folks — get up, you're under CONTRACT!" ],
         strikes: [
           "CRACK! Right on the button — felt that one up here in the booth!",
           "Flush! Perfect timing, perfect placement — that's a fighter!",
-          "He drilled him! Precision striking, and the crowd erupts!" ],
-        nearFall: [ "KICKOUT! I can't BELIEVE he got the shoulder up!", "A heartbeat from three — how?!" ],
+          "THAT'S the guy I brokered the deal for — every stat sheet says he lands that shot!" ],
+        nearFall: [ "KICKOUT! I can't BELIEVE he got the shoulder up!", "A heartbeat from three — how?!", "Kick out! Do you know what a title change does to the licensing splits?!" ],
         reversal: [ "REVERSED! Scouted it perfectly and turned the tables!", "Countered out of nowhere — what a mind for this!" ],
-        finisher: [ "This could be IT — he's setting up for the end!", "Lights out if he connects with this one!" ],
+        finisher: [ "This could be IT — he's setting up for the end!", "Lights out if he connects with this one!", "Cash it IN! That's the finish that pays the bonuses!" ],
         taunt:    [ "Playing to the crowd now — but is that wise?", "All the swagger in the world on display." ],
         victory:  [ "IT'S OVER! What an absolute WAR!", "And your winner — a statement made in blood and sweat!" ] }
     }
