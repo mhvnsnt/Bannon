@@ -353,20 +353,20 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 .top-btn {
   width:42px; height:42px;
   border-radius:8px;
-  background:rgba(0,0,0,0.82);
-  border:1.5px solid var(--gold);
-  color:var(--gold);
+  background:rgba(0,0,0,0.65);
+  border:1.5px solid rgba(255,255,255,0.6);
+  color:#ffffff;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   font-size:14px;
   cursor:pointer;
-  box-shadow:0 0 12px rgba(255,215,0,0.35), inset 0 1px 0 rgba(255,215,0,0.15);
-  font-family:'Bebas Neue'; letter-spacing:1px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.5);
+  font-family:'Bebas Neue', sans-serif; letter-spacing:1px;
   transition:all 0.12s;
 }
-.top-btn .btn-sub { font-size:7px; letter-spacing:1px; opacity:0.65; margin-top:1px; color:var(--gold); }
-.top-btn:active { transform:scale(0.88); background:rgba(255,69,0,0.4); border-color:var(--fire); color:var(--fire); }
-.top-btn:hover { box-shadow:0 0 18px rgba(255,215,0,0.55); }
+.top-btn .btn-sub { font-size:7px; letter-spacing:1px; opacity:0.65; margin-top:1px; color:#ffffff; }
+.top-btn:active { transform:scale(0.88); background:rgba(255,255,255,0.25); border-color:#ffffff; color:#ffffff; }
+.top-btn:hover { border-color:#ffffff; }
 #kb-hints {
   position:absolute;
   bottom:calc(12px + var(--safe-bot));
@@ -392,11 +392,11 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
   left:20px;
   width:128px; height:128px;
   border-radius:50%;
-  background:radial-gradient(rgba(255,255,255,0.04), rgba(0,0,0,0.45));
-  border:2px solid rgba(255,69,0,0.55);
+  background:rgba(0,0,0,0.55);
+  border:1.5px solid rgba(255,255,255,0.4);
   pointer-events:auto;
   display:none;
-  box-shadow:0 0 22px rgba(255,69,0,0.28), inset 0 0 28px rgba(0,0,0,0.65);
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
   touch-action:none;
 }
 #joystickKnob {
@@ -404,8 +404,8 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
   width:52px; height:52px;
   left:38px; top:38px;
   border-radius:50%;
-  background:radial-gradient(var(--fire), var(--blood));
-  box-shadow:0 0 18px var(--fire), inset 0 -4px 8px rgba(0,0,0,0.55);
+  background:rgba(255,255,255,0.95);
+  box-shadow:0 2px 8px rgba(0,0,0,0.4);
 }
 /* ===== ACTION GRID — 3×2 WWE 2K26 face button layout, clear of pause/moves ===== */
 .action-grid {
@@ -413,89 +413,108 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
   bottom:calc(90px + var(--safe-bot));
   right:16px;
   display:none;
-  grid-template-columns:repeat(3, 66px);
+  grid-template-columns:repeat(3, 60px);
   grid-gap:8px;
   pointer-events:auto;
 }
 .act-btn {
-  width:66px; height:66px;
+  width:60px; height:60px;
   border-radius:50%;
-  background:radial-gradient(rgba(18,18,18,0.92), rgba(0,0,0,0.97));
-  border:2.5px solid;
+  background:rgba(0, 0, 0, 0.65);
+  border:1.5px solid rgba(255, 255, 255, 0.7);
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
-  font-family:'Bebas Neue'; font-size:13px;
-  letter-spacing:1.5px;
+  font-family:'Bebas Neue', sans-serif; font-size:20px;
   color:var(--white);
-  box-shadow:0 4px 14px rgba(0,0,0,0.75);
+  box-shadow:0 4px 10px rgba(0,0,0,0.5);
   cursor:pointer; user-select:none;
   touch-action:manipulation;
-  transition:transform 0.06s, filter 0.06s;
+  transition:transform 0.06s, background-color 0.06s, border-color 0.06s;
 }
-.act-btn:active { transform:scale(0.83); filter:brightness(1.6); }
-.act-btn .lbl-sub { font-size:8px; letter-spacing:0.5px; opacity:0.65; margin-top:1px; }
-/* WWE 2K26 colour coding */
-.act-jab    { border-color:#00a8e8; color:#5bcfff; box-shadow:0 0 14px rgba(0,168,232,0.5); }   /* X/square  – light */
-.act-cross  { border-color:#00cc66; color:#44ee99; box-shadow:0 0 14px rgba(0,204,102,0.5); }   /* A/cross   – heavy */
-.act-kick   { border-color:#ff2244; color:#ff6680; box-shadow:0 0 14px rgba(255,34,68,0.45); }  /* B/circle  – grab */
-.act-special{ border-color:var(--gold); color:var(--gold); box-shadow:0 0 16px rgba(255,215,0,0.55); }  /* Y/triangle – special/finisher */
-.act-block  { border-color:#aaccff; color:#cce4ff; box-shadow:0 0 12px rgba(170,204,255,0.4); } /* dodge/reversal */
-.act-grab   { border-color:#aa55ff; color:#cc88ff; box-shadow:0 0 14px rgba(170,85,255,0.45); } /* grapple */
-/* ===== PILL BUTTONS — ZONE / RUN / FINISHER — stacked above joystick ===== */
+.act-btn:active { transform:scale(0.88); background:rgba(255,255,255,0.25); border-color:#ffffff; }
+/* Clean monochrome/grey styling to remove neon glows */
+.act-jab, .act-cross, .act-kick, .act-special, .act-block, .act-grab {
+  border-color: rgba(255,255,255,0.6);
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+/* Special finisher color pop but no extreme glow */
+.act-special { border-color: var(--gold); color: var(--gold); }
+
+/* ===== PILL BUTTONS (Re-architected as Circles) — LB / RB / R / M ===== */
 #pillBtns {
   position:absolute;
-  bottom:calc(230px + var(--safe-bot));
-  left:8px;
+  inset:0;
+  pointer-events:none;
   display:none;
-  flex-direction:column;
-  gap:7px;
-  pointer-events:auto;
   z-index:25;
 }
-.touch #pillBtns { display:flex; }
+.touch #pillBtns { display:block; }
 .pill-btn {
-  width:116px; height:40px;
-  border-radius:20px;
-  font-family:'Bebas Neue'; font-size:14px;
-  letter-spacing:2px;
+  pointer-events:auto;
+  position:absolute;
+  width:46px; height:46px;
+  border-radius:50%;
+  font-family:'Bebas Neue', sans-serif; font-size:18px;
+  letter-spacing:0px;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   cursor:pointer; user-select:none;
-  border:2px solid;
-  transition:transform 0.07s;
+  background:rgba(0, 0, 0, 0.65);
+  border:1.5px solid rgba(255, 255, 255, 0.7);
+  color:#ffffff;
+  box-shadow:0 4px 10px rgba(0,0,0,0.5);
+  transition:transform 0.06s, background-color 0.06s, border-color 0.06s;
   touch-action:manipulation;
 }
-.pill-btn:active { transform:scale(0.90); filter:brightness(1.65); }
-.pill-sub { font-family:'Share Tech Mono'; font-size:7px; letter-spacing:0px; opacity:0.65; margin-top:1px; }
-/* ZONE — WWE 2K26 LB equivalent: context ring exit/floor/whip/climb/submission/pin */
-.pill-zone {
-  background:rgba(0,90,70,0.88);
-  border-color:#22ffcc;
-  color:#aaffee;
-  box-shadow:0 0 16px rgba(0,255,200,0.45);
-}
-.pill-zone.held {
-  background:rgba(0,140,110,0.96);
-  border-color:#66ffdd;
-  box-shadow:0 0 24px #00ffcc;
-}
-.pill-zone.armed {
-  background:rgba(0,200,150,0.96);
-  border-color:#aaffee;
-  box-shadow:0 0 28px #00ffcc, 0 0 6px #fff inset;
-  animation:zonePulse 0.9s ease-in-out infinite;
-}
+.pill-btn:active { transform:scale(0.88); background:rgba(255,255,255,0.25); border-color:#ffffff; }
+.pill-btn.held { background:rgba(255,255,255,0.25); border-color:#ffffff; }
+.pill-btn.armed { background:rgba(255,255,255,0.35); border-color:#ffffff; animation:zonePulse 0.9s ease-in-out infinite; }
 @keyframes zonePulse { 0%,100%{opacity:1;} 50%{opacity:0.58;} }
+
+/* Stack RUN and MOD on the far-left edge above the joystick */
+#btnRun {
+  left: 16px;
+  bottom: calc(215px + var(--safe-bot));
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 14px !important;
+}
+#btnMod {
+  left: 16px;
+  bottom: calc(170px + var(--safe-bot));
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 14px !important;
+}
+/* Move TAG button (LB) to the upper left next to the Taunt D-Pad */
+#btnTag {
+  left: 104px;
+  top: calc(119px + var(--safe-top));
+  background: rgba(16, 128, 48, 0.75) !important;
+  border: 1.5px solid #4ade80 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(74,222,128,0.4) !important;
+}
+/* Move ZONE button (RB) to the right side above the attack diamond */
+#btnZone {
+  right: 16px;
+  bottom: calc(220px + var(--safe-bot));
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 14px !important;
+}
+
 /* ZONE CONTEXT DISPLAY — shows what ZONE will do right now */
 #zoneLabel {
   position:absolute;
-  bottom:calc(280px + var(--safe-bot));
-  left:8px;
+  bottom:calc(296px + var(--safe-bot));
+  right:16px;
   font-family:'Share Tech Mono';
   font-size:9px;
   letter-spacing:1.5px;
-  color:#22ffcc;
-  background:rgba(0,0,0,0.6);
+  color:#ffffff;
+  background:rgba(0,0,0,0.65);
   padding:3px 9px;
   border-radius:10px;
   pointer-events:none;
@@ -505,22 +524,6 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
   display:none;
 }
 .touch #zoneLabel { display:block; }
-/* RUN — hold + direction for rope run, irish whip, rebound */
-.pill-run {
-  background:rgba(80,0,120,0.88);
-  border-color:#cc66ff;
-  color:#e0aaff;
-  box-shadow:0 0 14px rgba(180,0,255,0.45);
-}
-.pill-run.held { background:rgba(130,0,200,0.96); border-color:#ee88ff; box-shadow:0 0 24px #cc00ff; }
-/* MOD — power strikes / alternate grapple position / signature mode */
-.pill-mod {
-  background:rgba(140,80,0,0.88);
-  border-color:#ffcc00;
-  color:#ffe88a;
-  box-shadow:0 0 14px rgba(255,200,0,0.45);
-}
-.pill-mod.held { background:rgba(200,130,0,0.96); border-color:#ffee44; box-shadow:0 0 24px #ffcc00; }
 /* ===== SUBMISSION/PIN MINIGAME METER (WWE 2K26 style) ===== */
 #subMeter {
   position:absolute;
@@ -713,17 +716,24 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 #btnDoneCreator { background:linear-gradient(135deg, #16a34a, #15803d); border:2px solid #4ade80; color:#fff; }
 #btnDoneCreator:hover { background:#16a34a; box-shadow:0 0 15px rgba(74,222,128,0.6); }
 .pause-title { font-family:'Cinzel'; font-weight:800; font-size:clamp(40px, 8vw, 72px); color:var(--gold); text-shadow:0 0 28px var(--fire); letter-spacing:8px; margin-bottom:18px; }
-@media (max-width:480px) { .health-wrap { width:40%; } #kb-hints { display:none; } }
+@media (max-width: 768px) {
+  .health-wrap { width: 30% !important; }
+  .timer { font-size: 26px !important; }
+  .round-num { font-size: 9px !important; letter-spacing: 2px !important; }
+  .fighter-name { font-size: 14px !important; }
+  .fighter-style { display: none !important; }
+  #kb-hints { display: none !important; }
+}
 .touch #kb-hints { display:none; }
 
 #tauntCluster {
-  position: absolute; left: 24px; top: 80px; width: 64px; height: 64px;
-  opacity: 0.5; z-index: 80; pointer-events: none; transition: opacity 0.2s;
+  position: absolute; left: 24px; top: calc(110px + var(--safe-top)); width: 64px; height: 64px;
+  opacity: 0.75; z-index: 80; pointer-events: none; transition: opacity 0.2s;
 }
 .touch #tauntCluster { display:block; pointer-events: auto; }
-#tauntCluster:active { opacity: 0.9; }
+#tauntCluster:active { opacity: 0.95; }
 .taunt-btn {
-  position: absolute; width: 24px; height: 24px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 4px;
+  position: absolute; width: 24px; height: 24px; background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.45); border-radius: 4px;
 }
 .taunt-up { top: 0; left: 20px; }
 .taunt-left { top: 20px; left: 0; }
@@ -808,15 +818,15 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
   <div id="craneStick"><div id="craneKnob"></div><div id="craneLabel">FORWARD</div></div>
   <!-- WWE 2K26 CONTROL SCHEME: 3-column face buttons -->
   <div class="action-grid">
-    <button class="act-btn act-block" data-btn="block">◇<span class="lbl-sub">DODGE/REV</span></button>
-    <button class="act-btn act-jab" data-btn="jab">□<span class="lbl-sub">LIGHT ATK</span></button>
-    <button class="act-btn act-cross" data-btn="cross">✕<span class="lbl-sub">HEAVY ATK</span></button>
-    <button class="act-btn act-special" data-btn="special">★<span class="lbl-sub">FINISHER</span></button>
-    <button class="act-btn act-kick" data-btn="kick">△<span class="lbl-sub">STRIKE+</span></button>
-    <button class="act-btn act-grab" data-btn="grab">○<span class="lbl-sub">GRAB</span></button>
+    <button class="act-btn act-block" data-btn="block">D</button>
+    <button class="act-btn act-jab" data-btn="jab">L</button>
+    <button class="act-btn act-cross" data-btn="cross">H</button>
+    <button class="act-btn act-special" data-btn="special">S</button>
+    <button class="act-btn act-kick" data-btn="kick">K</button>
+    <button class="act-btn act-grab" data-btn="grab">G</button>
   </div>
-  <!-- ZONE + RUN + MOD pill buttons — stacked above the joystick (ZONE = LB equivalent) -->
-    <div id="tauntCluster">
+  <!-- ZONE + RUN + MOD + TAG buttons (Re-architected as Circles) -->
+  <div id="tauntCluster">
     <div class="taunt-btn taunt-up" data-dir="up"></div>
     <div class="taunt-btn taunt-left" data-dir="left"></div>
     <div class="taunt-btn taunt-right" data-dir="right"></div>
@@ -824,9 +834,10 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
     <div class="taunt-center">T</div>
   </div>
   <div id="pillBtns">
-    <button id="btnZone" class="pill-btn pill-zone">ZONE<span class="pill-sub">LB · exit/pin/whip/climb</span></button>
-    <button id="btnRun" class="pill-btn pill-run">RUN<span class="pill-sub">hold + dir → ropes</span></button>
-    <button id="btnMod" class="pill-btn pill-mod">MOD<span class="pill-sub">RT · power / reposition</span></button>
+    <button id="btnTag" class="pill-btn">LB</button>
+    <button id="btnRun" class="pill-btn">R</button>
+    <button id="btnMod" class="pill-btn">M</button>
+    <button id="btnZone" class="pill-btn">RB</button>
   </div>
   <!-- Zone context label -->
   <div id="zoneLabel" style="opacity: 0;">ZONE: RING</div>
@@ -15712,6 +15723,115 @@ function setupInput(){
     btn.addEventListener('mouseleave', up);
   })();
 
+  // TAG pill button — Left Bumper equivalent (fully functional WWE 2K control scheme: Tag, Interaction, Weapon Drop/Pickup, etc.)
+  (function(){
+    const btn = document.getElementById('btnTag');
+    if(!btn) return;
+    const fire = (e)=>{
+      e.preventDefault(); markTouch();
+      const p = fighters[0];
+      if (!p || p.ragdoll || p.state === 'down') return;
+      btn.classList.add('held');
+      setTimeout(()=>btn.classList.remove('held'), 150);
+      
+      // Initialize holdingWeapon if not present
+      if (p.holdingWeapon === undefined) p.holdingWeapon = false;
+      
+      // Determine context dynamically
+      let logMsg = "";
+      let logStatus = "info";
+      
+      if (p.holdingWeapon) {
+        // Weapon Drop
+        p.holdingWeapon = false;
+        logMsg = "LB [WEAPON DROP]: Dropped the steel chair onto the canvas!";
+        logStatus = "warn";
+        if (typeof p.playAnimClip === 'function') {
+          p.playAnimClip('STRIKE'); // swing/drop gesture
+        }
+      } else {
+        // Context 1: Grabbed / Grappling state -> Interaction / Tag transition
+        if (p.state === 'grab' || p.state === 'grapple') {
+          logMsg = "LB [INTERACTION]: Driving opponent toward corner turnbuckle for environmental collision!";
+          logStatus = "success";
+          p.momentum = Math.min(100, p.momentum + 6);
+        }
+        // Context 2: Near ropes / Outside -> Weapon Pickup or Ring Entry/Exit Interaction
+        else if (p.state === 'apron' || p.state === 'ropeclimb' || (p.pos && Math.sqrt(p.pos.x*p.pos.x + p.pos.z*p.pos.z) > 4.5)) {
+          // Slide in / out or climb
+          if (p.state === 'apron') {
+            logMsg = "LB [INTERACTION]: Climbing back into the ring under the bottom rope!";
+            if (typeof p.playAnimClip === 'function') p.playAnimClip('STRIKE');
+          } else {
+            p.holdingWeapon = true;
+            logMsg = "LB [WEAPON PICKUP]: Reached under the apron and pulled out a heavy Steel Chair!";
+            logStatus = "success";
+            if (typeof p.playAnimClip === 'function') p.playAnimClip('TAUNT');
+          }
+        }
+        // Context 3: Default tag / partner / request weapon
+        else {
+          // Check random contextual simulation
+          const rand = Math.random();
+          if (rand < 0.35) {
+            logMsg = "LB [TAG]: High-fived partner for a hot tag! Entering as legal man.";
+            logStatus = "success";
+            p.momentum = Math.min(100, p.momentum + 8);
+            if (typeof p.playAnimClip === 'function') p.playAnimClip('TAUNT');
+          } else if (rand < 0.70) {
+            p.holdingWeapon = true;
+            logMsg = "LB [WEAPON PICKUP]: Fan hands a Kendo Stick over the steel barricade! Armed.";
+            logStatus = "success";
+            p.momentum = Math.min(100, p.momentum + 4);
+            if (typeof p.playAnimClip === 'function') p.playAnimClip('TAUNT');
+          } else {
+            logMsg = "LB [INTERACTION]: Interacting with ring ropes. Prepared to springboard!";
+            p.momentum = Math.min(100, p.momentum + 3);
+            if (typeof p.playAnimClip === 'function') p.playAnimClip('STRIKE');
+          }
+        }
+      }
+      
+      if (typeof addLog === 'function') {
+        addLog(logMsg, logStatus);
+      } else {
+        console.log(logMsg);
+      }
+    };
+    btn.addEventListener('touchstart', fire, {passive:false});
+    btn.addEventListener('mousedown', fire);
+  })();
+
+  // Taunt D-Pad — maps to playAnimClip('TAUNT') with direction info
+  (function(){
+    document.querySelectorAll('#tauntCluster .taunt-btn').forEach(btn => {
+      const dir = btn.dataset.dir;
+      const fire = (e)=>{
+        e.preventDefault(); markTouch();
+        const p = fighters[0];
+        if (!p || p.ragdoll || p.state === 'down') return;
+        btn.classList.add('active');
+        setTimeout(() => btn.classList.remove('active'), 150);
+        
+        // Call playAnimClip to trigger taunt animation category
+        if (typeof p.playAnimClip === 'function') {
+          p.playAnimClip('TAUNT');
+        }
+        
+        if (typeof addLog === 'function') {
+          addLog(`TAUNT [${dir.toUpperCase()}]: Showing off to build momentum!`, "info");
+        } else {
+          console.log(`TAUNT [${dir.toUpperCase()}]: Showing off to build momentum!`);
+        }
+        
+        // Give a boost to momentum!
+        p.momentum = Math.min(100, p.momentum + 5);
+      };
+      btn.addEventListener('touchstart', fire, {passive:false});
+      btn.addEventListener('mousedown', fire);
+    });
+  })();
+
   // MOD pill button — hold = power modifier (loaded strikes, alternate grapple positions, repositioning).
   // IMPORTANT: MOD is NOT the block button — it must NOT trigger guard/defensive pose.
   // It injects into heldBtns['mod'] which is read only by playerAttack's powerMod check,
@@ -20850,20 +20970,7 @@ init();
 
 <style>
 #surgeon-toggle {
-  position:fixed;
-  bottom:calc(60px + env(safe-area-inset-bottom,0));
-  right:16px;
-  width:48px; height:48px;
-  border-radius:50%;
-  background:linear-gradient(135deg,#ff4500,#8b0000);
-  border:2px solid #ffd700;
-  color:#ffd700;
-  font-size:20px;
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer;
-  z-index:9999;
-  box-shadow:0 0 20px rgba(255,69,0,0.6);
-  transition:transform 0.15s;
+  display: none !important;
 }
 #surgeon-toggle:active { transform:scale(0.9); }
 
@@ -31512,1414 +31619,4 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 
   try{
     window.MANIFESTO && window.MANIFESTO.register({
-      key:'brick56.visceral_impact',
-      kind:'animation-physics',
-      summary:'Whiff over-reach forward pitch + stamina bleed + forward stumble. Wound clutch persists 0.6-1.8s in idle/walk after hurt exit. Hit-step: foot closer to impact skids, far foot braces — produces shuffle-stumble not forced walk. Throw arm-flail: signature/drop=forward arm momentum; suplex=overhead arc; toss=lateral spread. Landing-angle variation per delivery type. Ground writhe 0.55-1.10s after landing: pelvis roll, leg kick, arm clutch, scaled to impact magnitude. Stagger-step randomized per fighter so no two stumbles share the same arm-windmill timing.',
-      call:'poseAttack, poseGuard, poseHurt, grappleDeliver, crumpleToRagdoll, updateRagdoll, poseStumble'
-    });
-  }catch(e){}
-
-  console.log('%c[BANNON · BRICK 56] VISCERAL IMPACT — whiff over-reach · wound clutch · hit-step · arm flail · ground writhe · stagger seed','color:#ff7a1a;font-weight:bold;background:#000;padding:3px 8px');
-})();
-</script>
-// ============================================================================
-// BRICK 117: ADVANCED KINEMATICS, JOINT LOCKS & DEEP COMBAT 
-// ============================================================================
-(function() {
-  if (typeof Fighter === 'undefined') return;
-
-  // --- Capoeira & Archetypal Stance Offsets ---
-  const _origGuard = Fighter.prototype.poseGuard;
-  if (_origGuard) {
-    Fighter.prototype.poseGuard = function(dt, walking) {
-      _origGuard.apply(this, arguments);
-      if (!this.J) return;
-
-      const style = this.style ? this.style.toUpperCase() : 'ORTHODOX';
-      const isCapoeira = style === 'CAPOEIRA';
-
-      // Stance offsets
-      let sx = 0, sy = 0, sz = 0;
-      if (style === 'SOUTHPAW') { sx = -0.15; sz = -0.1; }
-      else if (style === 'BRAWLER') { sy = -0.15; sx = 0.1; }
-      else if (style === 'MUAY_THAI') { sy = 0.15; sz = 0.05; }
-      else if (style === 'LUCHA') { sy = -0.1; sx = 0.1; }
-      else if (style === 'TECHNICIAN') { sy = -0.1; sx = -0.1; }
-
-      if (!isCapoeira && (sx||sy||sz)) {
-        if (this.J.haL) { this.J.haL.tgt.x += sx; this.J.haL.tgt.y += sy; this.J.haL.tgt.z += sz; }
-        if (this.J.haR) { this.J.haR.tgt.x -= sx; this.J.haR.tgt.y -= sy; this.J.haR.tgt.z -= sz; }
-      }
-
-      // Capoeira Constant Locomotion (Ginga)
-      if (isCapoeira) {
-        const p = this.walkPhase || 0;
-        if (Math.abs(this.wantMove||0) < 0.1) this.walkPhase = (this.walkPhase || 0) + dt * 2.0;
-
-        const hipS = Math.sin(p) * 0.28; 
-        const hipD = 0.15 + Math.abs(Math.cos(p * 2)) * 0.15; 
-        
-        if (this.J.pelvis) { this.J.pelvis.tgt.x += hipS * 0.3; this.J.pelvis.tgt.y -= hipD; this.J.pelvis.tgt.z += hipS * 1.2; }
-        if (this.J.haL)    { this.J.haL.tgt.set(0.4, 0.7, 0.3); } 
-        if (this.J.haR)    { this.J.haR.tgt.set(0.4, 0.7, -0.3); } 
-        if (this.J.head)   { this.J.head.tgt.x += 0.1; this.J.head.tgt.z -= hipS * 0.4; }
-      }
-    };
-  }
-
-  // --- Capoeira Inverted Kinematics (Attacks) ---
-  const _origAttack = Fighter.prototype.poseAttack;
-  if (_origAttack) {
-    Fighter.prototype.poseAttack = function(dt) {
-      _origAttack.apply(this, arguments);
-      if (!this.J || !this.attackData) return;
-      const m = this.attackData;
-      if (this.style === 'CAPOEIRA' && m.limb && m.limb.includes('KICK')) {
-        const p = Math.max(0.001, Math.min(this.attackPhase || 0, 1.0));
-        const sweepAngle = p * Math.PI * 2; 
-        const isLeft = m.limb.includes('LEFT');
-        const kf = isLeft ? 'ftL' : 'ftR';
-        const plantHand = isLeft ? 'haR' : 'haL';
-        const r = this.reachScale || 1.0;
-        
-        if (p < 0.8 && this.J[kf]) {
-          this.J[kf].tgt.x += Math.cos(sweepAngle) * 0.8 * r;
-          this.J[kf].tgt.z += Math.sin(sweepAngle) * 0.8 * r;
-          this.J[kf].tgt.y += 0.8; 
-        }
-        if (this.J.pelvis) this.J.pelvis.tgt.y -= 0.3; 
-        if (this.J.chest)  this.J.chest.tgt.y -= 0.4; 
-        if (this.J[plantHand]) this.J[plantHand].tgt.set(0.1, 0.05, 0.3); 
-      }
-    };
-  }
-
-  // --- Mass Delta Resistance in Lifts ---
-  const _origDeliver = Fighter.prototype.poseDeliver;
-  if (_origDeliver) {
-    Fighter.prototype.poseDeliver = function(dt) {
-      _origDeliver.apply(this, arguments);
-      const opp = (typeof fighters !== 'undefined') ? fighters[1 - this.idx] : null;
-      if (!opp) return;
-
-      // Submission Hyperextension Logics
-      if (this.grapplePos && this.grapplePos.includes('SUBMISSION')) {
-        const isArm = this.grapplePos.includes('ARMBAR');
-        const tgt = isArm ? 'elR' : 'knR';
-        if (opp.J && opp.J[tgt]) {
-          opp.J[tgt].tgt.y = 1.3 + ((this.stateTime || 0) * 0.2); 
-          if (opp.stamina > 0) opp.stamina -= dt * 15;
-        }
-      }
-
-      // Lift Resistance based on mass ratio
-      if (this._gPhase !== undefined && this._gPhase > 0.1 && this._gPhase < 0.9) {
-        const n1 = this.opts && this.opts.name ? this.opts.name.toUpperCase() : 'BANNON';
-        const n2 = opp.opts && opp.opts.name ? opp.opts.name.toUpperCase() : 'BANNON';
-        const wMe = ROSTER_SPEC[n1] ? ROSTER_SPEC[n1].weight : 90;
-        const wOpp = ROSTER_SPEC[n2] ? ROSTER_SPEC[n2].weight : 90;
-        
-        if (wMe < wOpp - 10 && opp.root) {
-           const penalty = (wOpp - wMe) / 100.0;
-           opp.root.position.y -= penalty * Math.abs(Math.sin((this.stateTime||0)*15)); // struggle
-        }
-      }
-    };
-  }
-
-  // --- Deepen Combat (Hitstop & CA) ---
-  window._hitstopTicks = 0; 
-  const _origAD = window.applyDamage;
-  if (_origAD) {
-    window.applyDamage = function(defender, dmg, attacker, move, isGround) {
-      const res = _origAD(defender, dmg, attacker, move, isGround);
-      if (dmg >= 8) {
-         window._hitstopTicks = Math.min(12, Math.floor(dmg / 3)); 
-         const canvas = document.querySelector('canvas');
-         if (canvas) {
-            canvas.style.transition = 'none';
-            const dx = (Math.random() - 0.5) * dmg * 0.4;
-            const dy = (Math.random() - 0.5) * dmg * 0.4;
-            canvas.style.transform = `translate(${dx}px, ${dy}px)`;
-            canvas.style.filter = `drop-shadow(${dmg*0.5}px 0 0 rgba(255,20,0,0.6)) drop-shadow(-${dmg*0.5}px 0 0 rgba(0,255,255,0.6)) saturate(1.5)`;
-            
-            setTimeout(() => {
-               canvas.style.transition = 'transform 0.1s ease-out, filter 0.1s ease-out';
-               canvas.style.transform = 'translate(0px, 0px)';
-               canvas.style.filter = 'none';
-            }, window._hitstopTicks * 16 + 30);
-         }
-         
-         // Spine/Hip Recoil boost
-         if (defender.J) {
-            if (defender.J.chest)   defender.J.chest.tgt.x -= dmg * 0.02;
-            if (defender.J.spineMid) defender.J.spineMid.tgt.x -= dmg * 0.01;
-            if (defender.J.head)    defender.J.head.tgt.x -= dmg * 0.025;
-            if (defender.J.pelvis)  defender.J.pelvis.tgt.x += dmg * 0.01; // opposing torque
-         }
-      }
-      return res;
-    };
-  }
-
-  // Intercept the main update loop to apply hitstop frame freezing
-  const _origUpdate = Fighter.prototype.update;
-  if (_origUpdate) {
-     Fighter.prototype.update = function(dt) {
-        if (window._hitstopTicks > 0) {
-           if (this.idx === 0) window._hitstopTicks--;
-           // Apply visual jitter during freeze
-           if (this.root && this.state !== 'down' && !this.ragdoll) {
-              this.root.position.x += (Math.random() - 0.5) * 0.02;
-           }
-           return;
-        }
-        _origUpdate.apply(this, arguments);
-     };
-  }
-
-  // --- Lock Joints (Ragdoll Angle Enforcement) ---
-  const _origUpdateRagdoll = Fighter.prototype.updateRagdoll;
-  if (_origUpdateRagdoll) {
-    Fighter.prototype.updateRagdoll = function(dt) {
-      _origUpdateRagdoll.apply(this, arguments);
-      if (!this.V) return;
-
-      // Project vectors to enforce hinge limits
-      const enforceHinge = (P1, P2, P3, isKnee, isRight) => {
-        if (!P1 || !P2 || !P3) return;
-        const v1x = P1.pos.x - P2.pos.x, v1y = P1.pos.y - P2.pos.y, v1z = P1.pos.z - P2.pos.z;
-        const v2x = P3.pos.x - P2.pos.x, v2y = P3.pos.y - P2.pos.y, v2z = P3.pos.z - P2.pos.z;
-        
-        // Dot product to test angle
-        const len1 = Math.sqrt(v1x*v1x + v1y*v1y + v1z*v1z);
-        const len2 = Math.sqrt(v2x*v2x + v2y*v2y + v2z*v2z);
-        if (len1===0 || len2===0) return;
-        
-        const dot = (v1x*v2x + v1y*v2y + v1z*v2z) / (len1 * len2);
-        
-        // The cross product determines the bend direction (forward vs backward)
-        const crx = v1y*v2z - v1z*v2y;
-        const crz = v1x*v2y - v1y*v2x;
-        
-        // Very basic correction: If knee bends forward over a threshold, push the knee back along its local Z
-        if (isKnee) {
-             // In default pose, +Z is forward. If joint buckles forward, push it back.
-             if (crx > 0 && dot > 0.1) {
-                 P2.pos.z -= 0.05 * (dot);
-                 if (P2.old) P2.old.z = P2.pos.z;
-             }
-        } else {
-             // Elbows bending backwards
-             if (crx < 0 && dot > 0.1) {
-                 P2.pos.z += 0.05 * (dot);
-                 if (P2.old) P2.old.z = P2.pos.z;
-             }
-        }
-      };
-
-      enforceHinge(this.V['hipL'], this.V['knL'], this.V['ftL'], true, false);
-      enforceHinge(this.V['hipR'], this.V['knR'], this.V['ftR'], true, true);
-      enforceHinge(this.V['shL'], this.V['elL'], this.V['haL'], false, false);
-      enforceHinge(this.V['shR'], this.V['elR'], this.V['haR'], false, true);
-    };
-  }
-
-  try {
-    if (window.MANIFESTO) window.MANIFESTO.register({
-      key: 'combat.joints_archetypes',
-      kind: 'physics+gameplay',
-      summary: 'Brick 117: Deepen combat (CA burst + spine torque + hitstop), Roster Archetypes (Capoeira Ginga & attacks, Southpaw/Brawler guard offsets), Submissions hyperextension lock, Mass Delta Hoist, and Verlet Joint Angle Locks.',
-      call: 'ROSTER_SPEC augmentation + capoeira poseAttack + applyDamage hitstop/CA + enforceHinge'
-    });
-  } catch(e) {}
-  console.log('%c[BANNON v117] JOINT LOCKS · DEEP COMBAT RECOIL · ROSTER ARCHETYPES · CAPOEIRA GINGA · HOIST MASS DELTA — injected', 'color:#00ffff;font-weight:bold');
-})();
-
-/* BANNON SYSTEM BRICK — PER-FRAME BONE LENGTH ENFORCEMENT */
-(function() {
-  if (typeof Fighter === 'undefined' || typeof BONES === 'undefined' || typeof REST === 'undefined') return;
-
-  const getRestDist = (b1, b2) => {
-      const r1 = REST[b1], r2 = REST[b2];
-      if (!r1 || !r2) return null;
-      const x1 = r1.x !== undefined ? r1.x : r1[0];
-      const y1 = r1.y !== undefined ? r1.y : r1[1];
-      const z1 = r1.z !== undefined ? r1.z : r1[2];
-      const x2 = r2.x !== undefined ? r2.x : r2[0];
-      const y2 = r2.y !== undefined ? r2.y : r2[1];
-      const z2 = r2.z !== undefined ? r2.z : r2[2];
-      return Math.sqrt((x1-x2)**2 + (y1-y2)**2 + (z1-z2)**2);
-  };
-
-  const enforceLengths = (jointsArray) => {
-      if (!jointsArray) return;
-      for (let iter = 0; iter < 3; iter++) { // 3 iterations for rigid solve
-          for (let i = 0; i < BONES.length; i++) {
-              const bn1 = BONES[i][0];
-              const bn2 = BONES[i][1];
-              const j1 = jointsArray[bn1];
-              const j2 = jointsArray[bn2];
-              if (!j1 || !j2 || !j1.pos || !j2.pos) continue;
-
-              const restDist = getRestDist(bn1, bn2);
-              if (!restDist || restDist < 0.0001) continue;
-
-              const dx = j1.pos.x - j2.pos.x;
-              const dy = j1.pos.y - j2.pos.y;
-              const dz = j1.pos.z - j2.pos.z;
-              const curDist = Math.sqrt(dx*dx + dy*dy + dz*dz) || 0.0001;
-
-              // strict length enforcement
-              const diff = (curDist - restDist) / curDist;
-              const moveDist = diff * 0.5;
-              
-              const px = dx * moveDist;
-              const py = dy * moveDist;
-              const pz = dz * moveDist;
-
-              j1.pos.x -= px;  j1.pos.y -= py;  j1.pos.z -= pz;
-              j2.pos.x += px;  j2.pos.y += py;  j2.pos.z += pz;
-          }
-      }
-  };
-
-  const _origUpdate = Fighter.prototype.update;
-  if (_origUpdate) {
-     Fighter.prototype.update = function(dt) {
-        _origUpdate.apply(this, arguments);
-        if (this.J) enforceLengths(this.J);
-        if (this.V) enforceLengths(this.V);
-     };
-  }
-
-  try {
-    if (window.MANIFESTO) window.MANIFESTO.register({
-      key: 'physics.bone_length_enforcement',
-      kind: 'physics',
-      summary: 'Brick: Per-frame bone length enforcement to correct the mesh stretching glitch during ragdoll/grappling.',
-      call: 'Fighter.prototype.update post-layer length correction'
-    });
-  } catch(e) {}
-  console.log('%c[BANNON] PER-FRAME BONE LENGTH ENFORCEMENT — injected', 'color:#ff00ff;font-weight:bold');
-})();
-
-/* BANNON SYSTEM BRICK — BULK FBX ASSET LOADER & MOVEDEX REGISTRAR (WWE 2K26 STRUCTURE) */
-(function() {
-    window.BANNON_LOAD_FBX_LIBRARY = async function() {
-        if (typeof THREE.FBXLoader === 'undefined') {
-            console.error('[BANNON FBX BATCH] FBXLoader must be loaded to batch-import assets.');
-            return;
-        }
-
-        const ASSETS = [
-            'Action Idle To Standing Idle.fbx', 'Baseball Hit.fbx', 'Body Block.fbx', 'Box Idle.fbx', 
-            'Boxing (1).fbx', 'Boxing (2).fbx', 'Boxing (3).fbx', 'Boxing.fbx', 'Brooklyn Uprock.fbx', 
-            'Brutal Assassination.fbx', 'Capoeira (1).fbx', 'Capoeira.fbx', 'Center Block.fbx', 'Cross Jumps.fbx', 
-            'Dancing.fbx', 'Death From Back Headshot.fbx', 'Defender.fbx', 'Double Leg Takedown - Victim.fbx', 
-            'Drop Kick.fbx', 'Drunk Idle Variation.fbx', 'Drunk Walk.fbx', 'Fist Fight A.fbx', 'Flair.fbx', 
-            'Goalkeeper Catch.fbx', 'Hurricane Kick.fbx', 'Idle.fbx', 'Illegal Elbow Punch (1).fbx', 
-            'Illegal Elbow Punch.fbx', 'Inverted Double Kick To Kip Up.fbx', 'Jogging.fbx', 'Jump Attack.fbx', 
-            'Jump.fbx', 'Jumping Down.fbx', 'Jumping.fbx', 'Kick To The Groin (1).fbx', 'Kick To The Groin.fbx', 
-            'Mma Kick.fbx', 'Mutant Roaring.fbx', 'Pivot.fbx', 'Playing Drums.fbx', 'Punching Bag.fbx', 
-            'Punching.fbx', 'Ready Idle.fbx', 'Running (1).fbx', 'Running Jump.fbx', 'Running.fbx', 
-            'Sad Walk.fbx', 'Singing.fbx', 'Skateboarding.fbx', 'Snake Hip Hop Dance.fbx', 'Soccer Spin.fbx', 
-            'Stable Sword Inward Slash.fbx', 'Standard Run.fbx', 'Standing Block Start.fbx', 'Standing Cover To Cover.fbx', 
-            'Standing Melee Attack Horizontal.fbx', 'Standing React Large From Left.fbx', 'Standing Taunt Battlecry.fbx', 
-            'Standing Turn Right 90.fbx', 'Standing Walk Left.fbx', 'Strut Walking.fbx', 'Swinging.fbx', 
-            'Sword And Shield Attack.fbx', 'Sword And Shield Power Up.fbx', 'Taunt.fbx', 'Terrified.fbx', 
-            'Treadmill Running.fbx', 'Two Handed Sword Death.fbx', 'Unarmed Idle Looking Ver. 2.fbx', 
-            'Walk Backward.fbx', 'Walk Crouching Backward Right.fbx', 'Walking (1).fbx', 'Walking Backward.fbx', 
-            'Walking Backwards (1).fbx', 'Walking Backwards.fbx', 'Walking.fbx', 'Zombie Dying.fbx', 'Zombie Punching.fbx'
-        ];
-
-        // WRESTLING-MOVE CLIPS banked in the repo (assets/mocap/drive/, pulled from the owner's Drive
-        // folders) — real move mocap that feeds STUDIO.clips and then every fighter's moveset.
-        const COMBAT_CLIPS = [
-            'Chokeslam.fbx','DoubleSuplex.fbx','HammerlockDDT.fbx','Tombstone.fbx','JayKick.fbx',
-            'ApronJayKick.fbx','StereoSuperkick.fbx','TagSuperkick.fbx','StrongZero.fbx',
-            'ViolenceParty.fbx','FenceM-Kick.fbx','Drop Kick (1).fbx','Kip Up.fbx','Queshada 2.fbx',
-            'Esquiva 3.fbx','Esquiva 4 (1).fbx','Ginga Forward.fbx','Fall B Loop.fbx','Taunt2.fbx',
-            'Baseball Hit.fbx','Big Body Blow.fbx','Big Rib Hit.fbx','Body Jab Cross.fbx','Body Block.fbx',
-            'Brutal Assassination.fbx','Breakdance Uprock To Ground.fbx','Breakdance Footwork To Freeze.fbx'
-        ];
-        let FILES = [...new Set([...ASSETS, ...COMBAT_CLIPS])];
-        // when the daemon serves us, ask IT for the real list (includes everything drive-sync pulled)
-        try { const lr = await fetch('/api/list-mocap-files'); if (lr.ok) { const lj = await lr.json();
-            const names = (lj.files || lj || []).map(f => (typeof f === 'string' ? f : f.name)).filter(n => /\.fbx$/i.test(n));
-            if (names.length > FILES.length) FILES = names; } } catch (_e) {}
-        console.log(`[FBX BATCH] Starting bulk import of ${FILES.length} FBX files...`);
-        const loader = new THREE.FBXLoader();
-        let loadedCount = 0;
-
-        // Ensure MOVEDEX and STUDIO clips are instantiated
-        if (typeof STUDIO === 'undefined') window.STUDIO = { clips: {} };
-        STUDIO.clips = STUDIO.clips || {};
-
-        for (const file of FILES) {
-            try {
-                // LAG FIX (the "can't even make them fight" freeze): this loop used to fetch + SYNC-parse
-                // ~78 FBX files back-to-back on the main thread, starting 1s after page load — right on
-                // top of char select / the opening bell. Now it (a) fully PAUSES while a fight is live,
-                // (b) yields a frame + breather between files so parses never stack into one long stall.
-                while ((function(){ try { return (typeof gameState !== 'undefined' ? gameState : window.gameState) === 'fight'; } catch(_) { return window.gameState === 'fight'; } })()) {
-                    await new Promise(r => setTimeout(r, 2000));
-                }
-                await new Promise(r => (window.requestAnimationFrame || setTimeout)(() => setTimeout(r, 120)));
-                // repo layout first (works on GitHub Pages / a downloaded folder), then legacy root
-                let response = await fetch('assets/mocap/drive/' + encodeURIComponent(file)).catch(() => null);
-                if (!response || !response.ok) response = await fetch('assets/mocap/' + encodeURIComponent(file)).catch(() => null);
-                if (!response || !response.ok) response = await fetch('/' + encodeURIComponent(file)).catch(() => null);
-                if (!response || !response.ok) continue;
-                const buffer = await response.arrayBuffer();
-                
-                const clipName = file.replace(/\.fbx$/i, '').toUpperCase().replace(/[^A-Z0-9]/g, '_');
-                
-                // Parse synchronously here (could be chunked if UI freezes)
-                const fbxObj = loader.parse(buffer, '');
-                if (fbxObj.animations && fbxObj.animations.length) {
-                    const clip = extractClipFromGLTF(fbxObj.animations[0], fbxObj);
-                    STUDIO.clips[clipName] = clip;
-                    loadedCount++;
-
-                    // Register in MOVEDEX dynamically based on heuristics
-                    if (window.MOVEDEX) {
-                        let cat = 'STRIKE';
-                        let subcat = 'STRIKE';
-                        if (file.toLowerCase().includes('kick')) subcat = 'KICK';
-                        else if (file.toLowerCase().includes('punch') || file.toLowerCase().includes('boxing')) subcat = 'PUNCH';
-                        else if (file.toLowerCase().includes('idle')) { cat = 'TAUNT'; subcat = 'IDLE'; }
-                        else if (file.toLowerCase().includes('taunt')) { cat = 'TAUNT'; subcat = 'TAUNT'; }
-                        else if (file.toLowerCase().includes('walk') || file.toLowerCase().includes('run')) { cat = 'TAUNT'; subcat = 'LOCOMOTION'; }
-                        else if (file.toLowerCase().includes('victim') || file.toLowerCase().includes('react')) { cat = 'REACTION'; subcat = 'HIT_REACT'; }
-
-                        const customMove = {
-                            name: clipName, cat: cat, limb: 'BODY', traj: 'STRAIGHT', 
-                            height: 'MID', power: 75, speed: 60, style: 'MOCAP', follow: 'RESET STANCE', clip: clipName
-                        };
-                        
-                        if (typeof customMoves !== 'undefined' && !customMoves.some(m => m.name === clipName)) {
-                            customMoves.push(customMove);
-                        }
-                    }
-                }
-            } catch(e) {
-                console.warn(`[FBX BATCH] Failed to parse: ${file}`, e);
-            }
-        }
-        console.log(`[FBX BATCH] Loaded ${loadedCount}/${ASSETS.length} FBX files into STUDIO clips and MOVEDEX.`);
-    };
-
-    try {
-        if (window.MANIFESTO) window.MANIFESTO.register({
-            key: 'mocap.bulk_load',
-            kind: 'forge',
-            summary: 'Batch loads root environment .fbx files directly into STUDIO.clips & MOVEDEX using WWE 2K category heuristics.',
-            call: 'window.BANNON_LOAD_FBX_LIBRARY()'
-        });
-    } catch(e) {}
-})();
-
-/* BANNON SYSTEM BRICK 89 — NODE 4: SPATIAL ENVIRONMENT / OPAQUE ARENA SUITE */
-(function() {
-    window.BANNON_LOAD_ARENA_ASSETS = async function() {
-        if (typeof THREE === 'undefined' || typeof THREE.FBXLoader === 'undefined') {
-            console.error('[NODE 4] FBXLoader must be loaded to import arena assets.');
-            return;
-        }
-        
-        const ARENA_ASSETS = [
-            'uploads_files_2434745_ringsalefbx.fbx', 
-            'uploads_files_4374447_Chair_steel.fbx'
-        ];
-        
-        console.log(`[NODE 4 - SPATIAL ENVIRONMENT] Starting bulk import of ${ARENA_ASSETS.length} Arena FBX files...`);
-        const loader = new THREE.FBXLoader();
-        
-        for (const file of ARENA_ASSETS) {
-            try {
-                const response = await fetch('/' + encodeURIComponent(file));
-                if (!response.ok) continue;
-                const buffer = await response.arrayBuffer();
-                
-                const fbx = loader.parse(buffer, '');
-                
-                // Arena Placement Node Logic
-                if (file.toLowerCase().includes('ring')) {
-                    fbx.scale.set(0.01, 0.01, 0.01);
-                    fbx.position.set(0, 0, 0);
-                    if (typeof arenaGroup !== 'undefined') arenaGroup.add(fbx);
-                    else if (typeof scene !== 'undefined') scene.add(fbx);
-                    console.log(`[NODE 4] Injected Arena Asset: ${file}`);
-                    
-                    // Implement strict frustum culling and lock static matrices for background props
-                    fbx.traverse((child) => {
-                        if (child.isMesh) {
-                            child.frustumCulled = true;
-                            // Disable auto-update for static background rendering boosts
-                            child.matrixAutoUpdate = false;
-                            child.updateMatrix();
-                        }
-                    });
-
-                    if (window.BPHYS && window.BPHYS.rebuildRing) {
-                        try { window.BPHYS.rebuildRing(); } catch (e) {}
-                    }
-                } else if (file.toLowerCase().includes('chair')) {
-                    fbx.scale.set(0.015, 0.015, 0.015);
-                    fbx.position.set(4.5, 0, 4.5); // Place just outside the ropes
-                    if (typeof scene !== 'undefined') scene.add(fbx);
-                    console.log(`[NODE 4] Injected Prop Asset: ${file}`);
-                }
-            } catch (e) {
-                console.warn(`[NODE 4] Failed to load arena asset ${file}:`, e);
-            }
-        }
-    };
-    
-    try {
-        window.MANIFESTO && window.MANIFESTO.register({
-            key: 'brick89.node4_arena_suite',
-            kind: 'spatial-environment',
-            summary: 'Node 4 Spatial Environment (Arena & Props). Dedicated loader for rings and steel chairs separation.',
-            call: 'window.BANNON_LOAD_ARENA_ASSETS()'
-        });
-    } catch(e) {}
-    console.log('%c[BANNON · BRICK 89] NODE 4 SPATIAL ENVIRONMENT ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
-})();
-
-/* BANNON SYSTEM BRICK 90 — NODE 11: CREATION SUITE / CHARACTER ASSETS */
-(function() {
-    window.BANNON_LOAD_CHARACTER_ASSETS = async function() {
-        if (typeof THREE === 'undefined' || typeof THREE.FBXLoader === 'undefined') {
-            console.error('[NODE 11] FBXLoader must be loaded to import character assets.');
-            return;
-        }
-        
-        const CHAR_ASSETS = [
-            // Extracted distinct character models (e.g. custom Titan/Cruiserweight rigs) will be arrayed here
-        ];
-        
-        console.log(`[NODE 11 - CREATION SUITE] Character Asset loader ready. Intercepting ${CHAR_ASSETS.length} files...`);
-        // We will process these distinct models via the Creation Suite isolated scene, not the arena.
-    };
-    
-    try {
-        window.MANIFESTO && window.MANIFESTO.register({
-            key: 'brick90.node11_character_suite',
-            kind: 'creation-suite',
-            summary: 'Node 11 Creation Suite. Dedicated parsing pathway for distinct fighter character models.',
-            call: 'window.BANNON_LOAD_CHARACTER_ASSETS()'
-        });
-    } catch(e) {}
-    console.log('%c[BANNON · BRICK 90] NODE 11 CREATION SUITE ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
-})();
-
-/* BANNON SYSTEM BRICK 91 — NODE 5 KINEMATIC CORE: WEAPON-GRIP IK CONSTRAINT */
-(function() {
-    if (typeof Fighter === 'undefined') return;
-
-    const _origSolve = Fighter.prototype.solveLimbIK;
-    if (_origSolve) {
-        Fighter.prototype.solveLimbIK = function() {
-            _origSolve.call(this);
-
-            // Weapon Grip IK Constraint
-            // If the fighter has a bound weapon (e.g. Steel Chair), forcibly pull the hands
-            // to the local grip coordinates of the weapon mesh.
-            if (this.weaponProp && this.J && this.J['haL'] && this.J['haR']) {
-                // Ensure the weapon respects gravity/momentum natively or follows root
-                if (this.weaponProp.matrixWorld) {
-                    const lHandTarget = new THREE.Vector3(-0.35, 0.1, 0.4).applyMatrix4(this.weaponProp.matrixWorld);
-                    const rHandTarget = new THREE.Vector3(0.35, 0.1, 0.4).applyMatrix4(this.weaponProp.matrixWorld);
-                    
-                    // Clamp hand positional data directly to the prop's spatial coordinates
-                    this.J['haL'].pos.lerp(lHandTarget, 0.85);
-                    this.J['haR'].pos.lerp(rHandTarget, 0.85);
-                }
-            }
-        };
-    }
-
-    try {
-        window.MANIFESTO && window.MANIFESTO.register({
-            key: 'brick91.weapon_grip_ik',
-            kind: 'physics-stability',
-            summary: 'Node 5: Kinematic weapon-grip constraint. Hands visually and physically lock onto the coordinates of equipped props (like Steel Chairs) carrying real mass.',
-            call: 'Fighter.prototype.solveLimbIK weapon-grip'
-        });
-    } catch(e) {}
-    console.log('%c[BANNON · BRICK 91] NODE 5 WEAPON-GRIP IK CONSTRAINT ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
-})();
-
-/* BANNON SYSTEM BRICK 92 — NODE 7 COMBAT AI: GOAL-ORIENTED ACTION PLANNING */
-(function() {
-    if (typeof Fighter === 'undefined') return;
-
-    const _origUpdateAI = Fighter.prototype.updateAI;
-    if (_origUpdateAI) {
-        Fighter.prototype.updateAI = function(dt) {
-            // GOAP Predicate Evaluation (Before Behavior Tree execution)
-            if (!this.isPlayer && this.parts && this.state !== 'attack' && this.state !== 'block') {
-                const opp = this.opponent();
-                if (opp) {
-                    // GOAL: Protect damaged left/right leg autonomously
-                    if (this.parts.legL > 65 && this.stance !== 'southpaw') {
-                        this.stance = 'southpaw';
-                    } else if (this.parts.legR > 65 && this.stance !== 'orthodox') {
-                        this.stance = 'orthodox';
-                    }
-                    
-                    // GOAL: Assess arena coordinates to avoid getting cornered
-                    const arenaHalf = typeof ARENA_HALF !== 'undefined' ? ARENA_HALF : 3.5;
-                    const arenaHalfZ = typeof ARENA_HALF_Z !== 'undefined' ? ARENA_HALF_Z : 3.5;
-                    const distToRopeX = arenaHalf - Math.abs(this.x);
-                    const distToRopeZ = arenaHalfZ - Math.abs(this.z);
-                    
-                    if (distToRopeX < 1.0 || distToRopeZ < 1.0) {
-                        // AI realizes it is cornered; increase lateral movement priority
-                        this._cornerPanic = (this._cornerPanic || 0) + dt;
-                        if (this._cornerPanic > 1.5) {
-                            this.wantMove = 1;
-                            this._lastMoveIx = opp.x > 0 ? -1 : 1; 
-                            this._lastMoveIz = opp.z > 0 ? -1 : 1;
-                        }
-                    } else {
-                        this._cornerPanic = 0;
-                    }
-                    
-                    // GOAL: Regulate cardiovascular output (Stamina Drops)
-                    if (this.stamina < 20) {
-                        this.aggressionFactor = 0.2; // Severely pull back attacks
-                    } else if (this.stamina > 80) {
-                        this.aggressionFactor = 1.2; // Unload
-                    }
-                }
-            }
-            
-            // Execute absolute fallback to unified BT or prior zone logic
-            _origUpdateAI.call(this, dt);
-        };
-    }
-
-    try {
-        window.MANIFESTO && window.MANIFESTO.register({
-            key: 'brick92.node7_goap_ai',
-            kind: 'combat-ai',
-            summary: 'Node 7 Goal-Oriented Action Planning. AI dynamically reads stamina drops, local limb damage (auto-stance switching), and spatial coordinate trapping.',
-            call: 'Fighter.prototype.updateAI goap-eval'
-        });
-    } catch(e) {}
-    console.log('%c[BANNON · BRICK 92] NODE 7 COMBAT AI (GOAP) ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
-})();
-
-/* BANNON SYSTEM BRICK — VRM ANATOMICAL POLE VECTOR PROJECTION */
-(function() {
-  if (typeof Fighter === 'undefined') return;
-
-  const _origTwoBoneIK = Fighter.prototype._twoBoneIK;
-  if (!_origTwoBoneIK) return;
-
-  Fighter.prototype._twoBoneIK = function(sh, el, ha, a, b, pole) {
-      if (!this.J || !this.J[sh] || !this.J[ha] || !this.J['spineLow'] || !this.J['chest'] || !this.J['shL'] || !this.J['shR']) {
-          _origTwoBoneIK.call(this, sh, el, ha, a, b, pole);
-          return;
-      }
-
-      // 1. Determine local body axis
-      const up = new THREE.Vector3().subVectors(this.J['chest'].pos, this.J['spineLow'].pos).normalize();
-      let right = new THREE.Vector3().subVectors(this.J['shR'].pos, this.J['shL'].pos).normalize();
-      
-      // Fallback
-      if (right.lengthSq() < 0.1 || isNaN(right.x)) {
-          const fxy = typeof this.forward === 'function' ? this.forward() : {x:0, z:-1};
-          right.set(fxy.z, 0, -fxy.x).normalize();
-      }
-      if (up.lengthSq() < 0.1 || isNaN(up.x)) {
-          up.set(0,1,0);
-      }
-
-      // 2. Anatomical forward (right hand rule correction)
-      // up x right = forward
-      const fwd = new THREE.Vector3().crossVectors(up, right);
-      if (fwd.lengthSq() < 0.001) {
-          fwd.set(0, 0, -1); // Failsafe
-      } else {
-          fwd.normalize();
-      }
-
-      // 3. Project definitive pole tracking coordinate
-      let dyPole = new THREE.Vector3();
-
-      if (sh === 'shL' || sh === 'shR') {
-          // ELBOWS: Bend backward + outward + slightly down
-          const isLeft = (sh === 'shL');
-          const out = right.clone().multiplyScalar(isLeft ? -1 : 1);
-          
-          dyPole.copy(fwd).multiplyScalar(-1.5);
-          dyPole.add(out.multiplyScalar(0.7));
-          dyPole.add(up.multiplyScalar(-0.4));
-          
-          pole = { x: dyPole.x, y: dyPole.y, z: dyPole.z };
-      } 
-      else if (sh === 'hipL' || sh === 'hipR') {
-          // KNEES: Bend purely forward
-          dyPole.copy(fwd).multiplyScalar(2.0);
-          
-          pole = { x: dyPole.x, y: dyPole.y, z: dyPole.z };
-      }
-
-      _origTwoBoneIK.call(this, sh, el, ha, a, b, pole);
-  };
-  
-  try {
-    if (window.MANIFESTO) window.MANIFESTO.register({
-      key: 'physics.vrm_pole_vector',
-      kind: 'physics',
-      summary: 'Brick: True VRM IK pole vectors dynamically locked using chest/spine cross products. Permanently fixes geometric backward arm/leg mesh inversions.',
-      call: 'Fighter.prototype._twoBoneIK pole override'
-    });
-  } catch(e) {}
-  console.log('%c[BANNON] VRM ANATOMICAL POLE VECTORS — injected', 'color:#ff00ff;font-weight:bold');
-})();
-(function installBrick57(){
-  'use strict';
-  if(window.__brick57) return;
-  window.__brick57 = true;
-
-  if(typeof Fighter === 'undefined') return;
-
-  // ── 1. DISABLE UNINTENTIONAL AUTO-ZONING ─────────────────────────────────
-  // We surgically mask the velocity and inputs for the duration of the 
-  // updateZone call so the logic always sees a stationary fighter. This kills 
-  // the automatic walk-off while preserving the v93 wrappers and ZONE button.
-  const _v93UpdateZone = Fighter.prototype.updateZone;
-  if (typeof _v93UpdateZone === 'function') {
-    Fighter.prototype.updateZone = function(dt) {
-      // Save real movement data
-      const _vx = this.vx, _vz = this.vz;
-      const _ix = this._lastMoveIx, _iz = this._lastMoveIz;
-      
-      // Mask movement to neutralize auto-zone threshold timers
-      this.vx = 0; this.vz = 0;
-      this._lastMoveIx = 0; this._lastMoveIz = 0;
-      
-      _v93UpdateZone.call(this, dt);
-      
-      // Restore real movement data
-      this.vx = _vx; this.vz = _vz;
-      this._lastMoveIx = _ix; this._lastMoveIz = _iz;
-    };
-  }
-
-  // ── 2. PREVENT FLOOR CLIPPING UNDER THE RING MAT ─────────────────────────
-  // Replaces _zoneClamp to enforce a hard exclusion zone. If a fighter is 
-  // legitimately in the 'FLOOR' zone, they are physically blocked from 
-  // walking back underneath the ring apron and clipping through the geometry.
-  Fighter.prototype._zoneClamp = function() {
-    const AH = ARENA_HALF, AHZ = (typeof ARENA_HALF_Z !== 'undefined' ? ARENA_HALF_Z : 2.2);
-
-    // Allow transition animations (climbing in/out) to move freely across bounds
-    if (this.state === 'apron' || this.state === 'ringIn' || this.state === 'ringOut') {
-      const SAFE = AH * 1.6, SAFE_Z = AHZ * 1.6;
-      this.x = clamp(this.x, -SAFE, SAFE);
-      this.z = clamp(this.z, -SAFE_Z, SAFE_Z);
-      return;
-    }
-
-    if (this.zone === 'APRON') {
-      const side = this.apronSide || 'X+';
-      if (side === 'X+') {
-        this.x = clamp(this.x, AH + 0.16, AH + 0.42);
-        this.z = clamp(this.z, -AHZ, AHZ);
-      } else if (side === 'X-') {
-        this.x = clamp(this.x, -(AH + 0.42), -(AH + 0.16));
-        this.z = clamp(this.z, -AHZ, AHZ);
-      } else if (side === 'Z+') {
-        this.z = clamp(this.z, AHZ + 0.16, AHZ + 0.42);
-        this.x = clamp(this.x, -AH, AH);
-      } else {
-        this.z = clamp(this.z, -(AHZ + 0.42), -(AHZ + 0.16));
-        this.x = clamp(this.x, -AH, AH);
-      }
-    } else if (this.zone === 'FLOOR') {
-      const AW = 0.45; // Apron width outer limit
-      const absX = Math.abs(this.x);
-      const absZ = Math.abs(this.z);
-      
-      // Hard collision: block entry to the space under the ring + apron
-      if (absX < AH + AW && absZ < AHZ + AW) {
-        // Determine nearest valid escape edge and eject
-        if ((AH + AW) - absX < (AHZ + AW) - absZ) {
-          this.x = Math.sign(this.x || 1) * (AH + AW);
-        } else {
-          this.z = Math.sign(this.z || 1) * (AHZ + AW);
-        }
-      }
-      
-      // Outer floor bounds
-      this.x = clamp(this.x, -(AH + 1.4), AH + 1.4);
-      this.z = clamp(this.z, -(AHZ + 1.2), AHZ + 1.2);
-    } else {
-      // RING zone bounds
-      this.x = clamp(this.x, -AH, AH);
-      this.z = clamp(this.z, -AHZ, AHZ);
-    }
-  };
-
-  try{
-    window.MANIFESTO && window.MANIFESTO.register({
-      key: 'brick57.zone_fix',
-      kind: 'physics-bounds',
-      summary: 'Kills accidental auto-walk-off zoning by masking inputs during updateZone. Reinforces _zoneClamp so FLOOR fighters cannot clip under the ring mat.',
-      call: 'Fighter.prototype.updateZone wrap, Fighter.prototype._zoneClamp replace'
-    });
-  } catch(e) {}
-
-  console.log('%c[BANNON · BRICK 57] MAT CLIPPING & AUTO-ZONE FIX ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
-})();
-/* BANNON SYSTEM BRICK — RAGDOLL ANGULAR MOMENTUM TRANSFER */
-(function() {
-  if (typeof Fighter === 'undefined') return;
-
-  // 1. Store actual world joint positions every frame
-  const _origUpdate = Fighter.prototype.update;
-  if (_origUpdate) {
-    Fighter.prototype.update = function(dt) {
-      if (!this.ragdoll && this.J) {
-        if (!this._prevWorldJ) this._prevWorldJ = {};
-        for (const j in this.J) {
-          const wp = this.worldJoint(j);
-          this._prevWorldJ[j] = wp;
-        }
-      }
-      _origUpdate.call(this, dt);
-    };
-  }
-
-  // 2. Override seedRagdoll to inject that true velocity into Verlet nodes
-  const _origSeed = Fighter.prototype.seedRagdoll;
-  if (_origSeed) {
-    Fighter.prototype.seedRagdoll = function() {
-      _origSeed.call(this); // Let original set up V nodes, set ragdoll=true, etc.
-
-      // Overgrowth Energy injection
-      if (this.V && this._prevWorldJ) {
-        for (const j in this.V) {
-          if (this._prevWorldJ[j]) {
-            const wp = this.worldJoint(j);
-            const pwp = this._prevWorldJ[j];
-            // Calculate actual distance traveled in the last frame
-            const dx = wp.x - pwp.x;
-            const dy = wp.y - pwp.y;
-            const dz = wp.z - pwp.z;
-            
-            // Limit the physical injection to prevent explosive velocity glitches
-            const MAX_VEL = 0.5; // per frame max
-            const vx = clamp(dx, -MAX_VEL, MAX_VEL);
-            const vy = clamp(dy, -MAX_VEL, MAX_VEL);
-            const vz = clamp(dz, -MAX_VEL, MAX_VEL);
-
-            // Set the old coordinate backward so the verlet integrator 
-            // naturally throws the limb forward on the next physics step.
-            this.V[j].old.x = wp.x - vx;
-            this.V[j].old.y = wp.y - vy;
-            this.V[j].old.z = wp.z - vz;
-          }
-        }
-      }
-    };
-  }
-
-  try {
-    if (window.MANIFESTO) window.MANIFESTO.register({
-      key: 'physics.angular_momentum_transfer',
-      kind: 'physics',
-      summary: 'Brick: Transfers true animated bone velocity directly into the Verlet ragdoll upon KO to preserve angular momentum.',
-      call: 'Fighter.prototype.seedRagdoll velocity injection'
-    });
-  } catch(e) {}
-  console.log('%c[BANNON] RAGDOLL ANGULAR MOMENTUM TRANSFER — injected', 'color:#ff00ff;font-weight:bold');
-})();
-
-/* BANNON SYSTEM BRICK — RAYCAST-DRIVEN FOOT IK */
-(function() {
-  if (typeof Fighter === 'undefined' || typeof THREE === 'undefined') return;
-
-  const _raycaster = new THREE.Raycaster();
-  const _down = new THREE.Vector3(0, -1, 0);
-
-  // We patch solveFootIK to determine dynamic groundY via raycast
-  const _origSolveFootIK = Fighter.prototype.solveFootIK;
-  if (_origSolveFootIK) {
-    Fighter.prototype.solveFootIK = function(dt, walking) {
-      if (!this.J || !this.J['hipL'] || typeof rawScene === 'undefined') {
-        _origSolveFootIK.call(this, dt, walking);
-        return;
-      }
-
-      // Default
-      let FP = (window.LOCO && window.LOCO.footPlant) || {};
-      let baselineGroundY = (FP.groundY != null ? FP.groundY : 0.05);
-      
-      // Perform a raycast straight down from the fighter's root/hips
-      const origin = new THREE.Vector3(this.x, 2.0, this.z);
-      _raycaster.set(origin, _down);
-      
-      // Assume rawScene holds the arena environment
-      const intersects = _raycaster.intersectObject(rawScene, true);
-      
-      let dynamicGroundY = baselineGroundY;
-      
-      for (const hit of intersects) {
-        // Exclude UI, helpers, and characters (keep it strictly environment)
-        if (!hit.object.isFighter && !hit.object.userData.isHUD && hit.distance > 0) {
-          dynamicGroundY = Math.max(baselineGroundY, hit.point.y + 0.05);
-          break;
-        }
-      }
-
-      // Temporarily override the LOCO groundY
-      const oldGroundY = FP.groundY;
-      if (!window.LOCO) window.LOCO = { footPlant: {} };
-      window.LOCO.footPlant.groundY = dynamicGroundY;
-
-      _origSolveFootIK.call(this, dt, walking);
-
-      // Restore
-      if (oldGroundY !== undefined) {
-          window.LOCO.footPlant.groundY = oldGroundY;
-      } else {
-          delete window.LOCO.footPlant.groundY;
-      }
-    };
-  }
-
-  try {
-    if (window.MANIFESTO) window.MANIFESTO.register({
-      key: 'physics.raycast_foot_ik',
-      kind: 'physics',
-      summary: 'Brick: Dynamic Raycast-Driven Foot IK. Replaces hardcoded floor planes with true vertical ray projections against rawScene geometry.',
-      call: 'Fighter.prototype.solveFootIK dynamic groundY injection'
-    });
-  } catch(e) {}
-  console.log('%c[BANNON] RAYCAST-DRIVEN FOOT IK — injected', 'color:#ff00ff;font-weight:bold');
-})();
-
-/* BANNON SYSTEM BRICK — NARROWPHASE MULTI-BODY COLLISION */
-(function() {
-  if (typeof Fighter === 'undefined') return;
-
-  const _origUpdateRagdoll = Fighter.prototype.updateRagdoll;
-  if (_origUpdateRagdoll) {
-    Fighter.prototype.updateRagdoll = function(dt) {
-      _origUpdateRagdoll.call(this, dt);
-
-      // Multi-body resolution: Check this ragdoll against ALL other fighters
-      if (this.ragdoll && this.V && typeof fighters !== 'undefined') {
-        const COLLISION_RADIUS = 0.25; 
-        const STIFFNESS = 0.4;
-        
-        for (const other of fighters) {
-          if (other === this || !other.V) continue;
-
-          // Simple particle-to-particle sweeping for narrowphase
-          for (const keyA in this.V) {
-            const vA = this.V[keyA];
-            for (const keyB in other.V) {
-              const vB = other.V[keyB];
-              
-              const dx = vB.pos.x - vA.pos.x;
-              const dy = vB.pos.y - vA.pos.y;
-              const dz = vB.pos.z - vA.pos.z;
-              let dist = Math.hypot(dx, dy, dz);
-
-              if (dist < COLLISION_RADIUS) {
-                // Safeguard against NaN/Infinity repulsion explosions
-                if (dist < 0.001) {
-                   dist = 0.001; 
-                }
-                const overlap = COLLISION_RADIUS - dist;
-                const resolve = (overlap / dist) * 0.5 * STIFFNESS;
-                
-                // Hard cap resolution velocity to prevent spaghetti limbs
-                const maxResolve = 0.15;
-                const ox = THREE.MathUtils.clamp(dx * resolve, -maxResolve, maxResolve);
-                const oy = THREE.MathUtils.clamp(dy * resolve, -maxResolve, maxResolve);
-                const oz = THREE.MathUtils.clamp(dz * resolve, -maxResolve, maxResolve);
-
-                if (!vA.pinned) { vA.pos.x -= ox; vA.pos.y -= oy; vA.pos.z -= oz; }
-                if (!vB.pinned) { vB.pos.x += ox; vB.pos.y += oy; vB.pos.z += oz; }
-              }
-            }
-          }
-        }
-      }
-    };
-  }
-
-  try {
-    if (window.MANIFESTO) window.MANIFESTO.register({
-      key: 'physics.narrowphase_multibody',
-      kind: 'physics',
-      summary: 'Brick: Narrowphase multi-body mass resolution. Dynamically resolves inter-character collisions via particle repulsion during ragdoll integration.',
-      call: 'Fighter.prototype.updateRagdoll narrowphase append'
-    });
-  } catch(e) {}
-  console.log('%c[BANNON] NARROWPHASE MULTI-BODY COLLISION — injected', 'color:#ff00ff;font-weight:bold');
-})();
-
-/* BANNON SYSTEM BRICK 58 — OVERGROWTH VERLET VELOCITY CLAMP & SELF-COLLISION */
-(function() {
-  if (typeof Fighter === 'undefined') return;
-
-  const _origUpdateRagdoll = Fighter.prototype.updateRagdoll;
-  if (_origUpdateRagdoll) {
-    Fighter.prototype.updateRagdoll = function(dt) {
-      _origUpdateRagdoll.call(this, dt);
-
-      if (this.ragdoll && this.V && typeof RING !== 'undefined') {
-        const MAX_BONE_VEL = 0.35; // Maximum biological travel distance per frame (~21 m/s)
-        const floorHeight = (this.zone === 'FLOOR') ? RING.floorY - 0.85 : RING.floorY;
-
-        for (const j in this.V) {
-          const v = this.V[j];
-          if (v && v.pos && v.old && !v.pinned) {
-            
-            // 1. Kinetic Energy Limit (Velocity Clamp)
-            // Kills the infinite phantom momentum loops that cause jitter / seizing
-            const dx = v.pos.x - v.old.x;
-            const dy = v.pos.y - v.old.y;
-            const dz = v.pos.z - v.old.z;
-            const spd = Math.hypot(dx, dy, dz);
-            
-            if (spd > MAX_BONE_VEL) {
-              const scale = MAX_BONE_VEL / spd;
-              v.old.x = v.pos.x - (dx * scale);
-              v.old.y = v.pos.y - (dy * scale);
-              v.old.z = v.pos.z - (dz * scale);
-            }
-
-            // 2. Anatomical Self-Collision (Chest vs Wrists/Elbows)
-            // Stops limbs from tunneling through the torso and inverting the mesh
-            if (this.V['chest'] && (j === 'wrL' || j === 'wrR' || j === 'elL' || j === 'elR' || j === 'haL' || j === 'haR')) {
-              const chest = this.V['chest'];
-              const cx = v.pos.x - chest.pos.x;
-              const cy = v.pos.y - chest.pos.y;
-              const cz = v.pos.z - chest.pos.z;
-              const cDist = Math.hypot(cx, cy, cz);
-              const MIN_DIST = 0.18; // Biological volume radius of the torso
-              
-              if (cDist < MIN_DIST && cDist > 0.001) {
-                const overlap = (MIN_DIST - cDist) / cDist * 0.5;
-                v.pos.x += cx * overlap;
-                v.pos.y += cy * overlap;
-                v.pos.z += cz * overlap;
-              }
-            }
-            
-            // 3. Absolute Floor Penetration Bailout
-            if (v.pos.y < floorHeight + 0.04) {
-              v.pos.y = floorHeight + 0.04;
-              // Bleed 90% vertical velocity on hard impact
-              v.old.y = v.pos.y - (v.pos.y - v.old.y) * 0.1;
-            }
-          }
-        }
-      }
-    };
-  }
-
-  try {
-    if (window.MANIFESTO) window.MANIFESTO.register({
-      key: 'brick58.overgrowth_stability',
-      kind: 'physics-stability',
-      summary: 'Caps maximum Verlet kinetic energy per frame and applies anatomical self-collision to stop limb inversion and jitter loops.',
-      call: 'Fighter.prototype.updateRagdoll velocity limit append'
-    });
-  } catch(e) {}
-  console.log('%c[BANNON · BRICK 58] OVERGROWTH KINETIC CAP & SELF-COLLISION ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
-})();
-
-/* BANNON SYSTEM BRICK 59 — EUPHORIA SELF-PRESERVATION (ACTIVE FALL BRACING) */
-(function() {
-  if (typeof Fighter === 'undefined') return;
-
-  const _origUR = Fighter.prototype.updateRagdoll;
-  if (_origUR) {
-    Fighter.prototype.updateRagdoll = function(dt) {
-      _origUR.call(this, dt);
-
-      // Active Ragdoll Muscular Bracing (Euphoria Paradigm)
-      // Characters don't just go limp. They brace for impact, reaching hands
-      // toward the ground and tucking the head upward to prevent trauma.
-      if (this.ragdoll && this.V && this.downStage < 1.0) {
-        
-        const chest = this.V['chest'];
-        const pelvis = this.V['pelvis'];
-        const head = this.V['head'];
-        
-        // Stamina determines how hard the fighter works to brace
-        const stamina = (this.stamina != null) ? this.stamina : 100;
-        const awareness = Math.max(0, Math.min(1.0, stamina / 50.0)); 
-
-        if (awareness > 0.05 && chest && pelvis) {
-          
-          // Determine physical falling velocity
-          if (chest.pos && chest.old) {
-            const vy = chest.pos.y - chest.old.y;
-            
-            // Trigger panic bracing if actively falling fast or thrown
-            if (vy < -0.015 || this.state === 'falling') {
-               
-               // Calculate skeletal facing direction (using Verlet world nodes)
-               const sz = Math.sign(chest.pos.z - pelvis.pos.z) || 1;
-               const sx = Math.sign(chest.pos.x - pelvis.pos.x) || 1;
-
-               // 1. Hands reach down and array to break the fall
-               for (const h of ['haL', 'haR']) {
-                 const hand = this.V[h];
-                 if (hand && !hand.pinned && hand.pos) {
-                   hand.pos.y -= 0.06 * awareness; // Reach toward floor
-                   hand.pos.x += sx * 0.03 * awareness; // Spread out to catch weight
-                   hand.pos.z += sz * 0.03 * awareness;
-                 }
-               }
-
-               // 2. Neck Bracing Reflex (pull head up and back to avoid mat collision)
-               if (head && !head.pinned && head.pos && head.old) {
-                 head.pos.y += 0.04 * awareness; // Pull up against gravity
-                 head.pos.x -= sx * 0.02 * awareness; // Pull back
-                 head.pos.z -= sz * 0.02 * awareness;
-                 
-                 // Dampen head velocity natively (stiffen neck muscles)
-                 head.old.x = head.old.x + (head.pos.x - head.old.x) * (0.1 * awareness);
-                 head.old.y = head.old.y + (head.pos.y - head.old.y) * (0.1 * awareness);
-                 head.old.z = head.old.z + (head.pos.z - head.old.z) * (0.1 * awareness);
-               }
-
-               // 3. Fetal Knee Tuck (pull knees up toward chest)
-               for (const k of ['knL', 'knR']) {
-                 const knee = this.V[k];
-                 if (knee && !knee.pinned && knee.pos) {
-                   knee.pos.y += 0.03 * awareness;
-                   knee.pos.x += sx * 0.02 * awareness;
-                   knee.pos.z += sz * 0.02 * awareness;
-                 }
-               }
-            }
-          }
-        }
-      }
-    };
-  }
-  
-  try {
-    if (window.MANIFESTO) window.MANIFESTO.register({
-      key: 'brick59.euphoria_bracing',
-      kind: 'physics-stability',
-      summary: 'Euphoria-style active fall bracing. Verlet nodes (hands, head, knees) autonomously contract toward defensive postures when falling in ragdoll state.',
-      call: 'Fighter.prototype.updateRagdoll append'
-    });
-  } catch(e) {}
-  console.log('%c[BANNON · BRICK 59] EUPHORIA FALL BRACING ONLINE', 'color:#00ffcc;font-weight:bold;background:#000;padding:3px 8px');
-})();
-
-/* BANNON SYSTEM BRICK 60 — KINEMATIC STRIKE RETARGETING & GOAL-ORIENTED STANCES */
-(function() {
-  if (typeof Fighter === 'undefined') return;
-
-  const _v3 = typeof THREE !== 'undefined' ? new THREE.Vector3() : null;
-
-  // 1. Kinematic Target Tracking (Magnetic Homing for Strikes)
-  const _origSolveIK = Fighter.prototype.solveLimbIK;
-  if (_origSolveIK && _v3) {
-    Fighter.prototype.solveLimbIK = function() {
-      // Execute original kinematics first
-      _origSolveIK.call(this);
-
-      // Height and Angle Retargeting during strike execution
-      if (this.state === 'attack' && this.attackData && this.attackPhase > 0.20 && this.attackPhase < 0.95) {
-         const isLeft = this.attackData.limb && this.attackData.limb.includes('LEFT');
-         const hand = isLeft ? this.J.haL : this.J.haR;
-         const opp = typeof this.opponent === 'function' ? this.opponent() : null;
-
-         if (opp && opp.worldJoint && !this._whiffed && hand && hand.tgt && this.root) {
-           
-           // Lock onto height-appropriate limb based on move category
-           const isHigh = this.attackData.height === 'HIGH' || this.attackData.height === 'OVERHEAD';
-           const tBoneName = isHigh ? 'head' : 'chest';
-           
-           const worldHitbox = opp.worldJoint(tBoneName);
-           if (worldHitbox) {
-             _v3.copy(worldHitbox);
-             this.root.updateMatrixWorld(true);
-             this.root.worldToLocal(_v3); // Convert opponent bone into attacker's local coordinate space
-             
-             // Calculate magnetic pull based on strike temporal phase (peaks right before impact)
-             const magPeak = Math.max(0, 1.0 - Math.abs(this.attackPhase - 0.75) * 3.5);
-             
-             const dx = _v3.x - hand.tgt.x;
-             const dy = _v3.y - hand.tgt.y;
-             const dz = _v3.z - hand.tgt.z;
-             
-             // Only auto-correct if within plausible biological range (don't stretch arms 3 meters)
-             const distToTarget = Math.hypot(dx, dy, dz);
-             if (distToTarget < 1.2) {
-               // Interpolate the hand's kinematic target toward the opponent's actual bone mesh
-               hand.tgt.y += dy * magPeak * 0.70; // Highly prioritize Y axis to fix short/tall gaps
-               hand.tgt.x += dx * magPeak * 0.40;
-               hand.tgt.z += dz * magPeak * 0.40;
-             }
-           }
-         }
-      }
-    };
-  }
-
-  // 2. Goal-Oriented Action Planning (Injury Stance Swap)
-  const _origUpdate = Fighter.prototype.update;
-  if (_origUpdate) {
-    Fighter.prototype.update = function(dt) {
-      _origUpdate.call(this, dt);
-
-      // Autonomous Posture Protection
-      if (this.parts && this.state !== 'down' && !this.ragdoll && this.root) {
-        
-        // Sum critical damage per side
-        const leftDanger = (this.parts.legL || 100) + (this.parts.armL || 100);
-        const rightDanger = (this.parts.legR || 100) + (this.parts.armR || 100);
-        
-        // Determine protective torque
-        let offsetGoal = 0;
-        if (leftDanger < rightDanger - 40 && leftDanger < 120) {
-          offsetGoal = 0.45; // Angle left side away from opponent
-        } else if (rightDanger < leftDanger - 40 && rightDanger < 120) {
-          offsetGoal = -0.45; // Angle right side away from opponent
-        }
-        
-        if (offsetGoal !== 0) {
-           if (!this._injuryOffset) this._injuryOffset = 0;
-           // Smooth blend
-           this._injuryOffset += (offsetGoal - this._injuryOffset) * Math.min(1.0, dt * 2.0);
-           
-           // Apply directly to rendering root (overrides standard base orientation slightly)
-           this.root.rotation.y += this._injuryOffset;
-        }
-      }
-    };
-  }
-  
-  try {
-    if (window.MANIFESTO) window.MANIFESTO.register({
-      key: 'brick60.kinematic_retargeting',
-      kind: 'physics-stability',
-      summary: 'Goal-oriented Stance Selection (Southpaw shifting for limb protection) and Kinematic Height Retargeting for strikes (arms magnetically correct trajectory to strike actual bone coordinates of different-sized opponents).',
-      call: 'Fighter.prototype.update / solveLimbIK append'
-    });
-  } catch(e) {}
-  console.log('%c[BANNON · BRICK 60] KINEMATIC STRIKE RETARGETING & GOAL-ORIENTED STANCES 
-<script>
-(function() {
-    console.log('[BANNON AUTO-IDLE] Loading xbot.glb to extract Idle animation...');
-    if(typeof THREE === 'undefined' || !THREE.GLTFLoader) {
-        console.warn('THREE or GLTFLoader missing, cannot load Idle.');
-        return;
-    }
-    const loader = new THREE.GLTFLoader();
-    loader.load('assets/models/xbot.glb', function(gltf) {
-        if(!gltf.animations || !gltf.animations.length) {
-            console.warn('No animations found in xbot.glb');
-            return;
-        }
-        
-        let clip = gltf.animations[0]; // Assuming first clip is Idle
-        
-        window.ANIM_LIB = window.ANIM_LIB || [];
-        window.ANIM_LIB.push({
-            category: 'IDLE',
-            fighter: null, // applies to everyone
-            clip: clip,
-            opts: { loop: true, fadeIn: 0.2, fadeOut: 0.2 }
-        });
-        
-        console.log('[BANNON AUTO-IDLE] Idle animation successfully loaded and injected into ANIM_LIB.');
-        
-        if(typeof fighters !== 'undefined') {
-            fighters.forEach(f => {
-                if(f) {
-                    f.useAnimBridge = true;
-                    if(f.state === 'idle') f.playAnimClip('IDLE');
-                }
-            });
-        }
-        
-        const _origInit = Fighter.prototype.init;
-        if(_origInit) {
-            Fighter.prototype.init = function() {
-                _origInit.apply(this, arguments);
-                this.useAnimBridge = true;
-            };
-        }
-    }, undefined, function(err) {
-        console.error('[BANNON AUTO-IDLE] Error loading xbot.glb:', err);
-    });
-})();
-</script>
-— ONLINE', 'color:#ff0099;font-weight:bold;background:#000;padding:3px 8px');
-})();
-
-// --- AAA MO-CAP BATCH EXTRACTOR ---
-(function loadCombatAnimations() {
-    const animMap = [
-        { file: 'assets/models/anims/strike.glb', cat: 'STRIKE', loop: false },
-        { file: 'assets/models/anims/grapple.glb', cat: 'GRAPPLE', loop: false },
-        { file: 'assets/models/anims/walking.glb', cat: 'WALK', loop: true },
-        { file: 'assets/models/anims/running.glb', cat: 'RUN', loop: true },
-        // Fallbacks mapping to xbot if specific files aren't found
-        { file: 'assets/models/xbot.glb', cat: 'STRIKE', loop: false },
-        { file: 'assets/models/xbot.glb', cat: 'GRAPPLE', loop: false }
-    ];
-    
-    if(typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
-    const loader = new THREE.GLTFLoader();
-    
-    window.ANIM_LIB = window.ANIM_LIB || [];
-    
-    animMap.forEach(entry => {
-        loader.load(entry.file, function(gltf) {
-            if(!gltf.animations || !gltf.animations.length) return;
-            // Check if already populated to prevent fallback overwrite
-            if(window.ANIM_LIB.some(a => a.category === entry.cat)) return;
-            
-            console.log(`[BANNON ANIM EXTRACTOR] Bound ${entry.cat} from ${entry.file}`);
-            window.ANIM_LIB.push({
-                category: entry.cat,
-                fighter: null,
-                clip: gltf.animations[0],
-                opts: { loop: entry.loop, fadeIn: 0.1, fadeOut: 0.15 }
-            });
-        }, undefined, function(err) {
-            // Silently ignore 404s for missing anim files
-        });
-    });
-})();
-
-
-(function patchIllegalTactics(){
-  const _origSA = Fighter.prototype.startAttack;
-  if(typeof _origSA === 'function'){
-    Fighter.prototype.startAttack = function(mv){
-      // BANNON BITING & ILLEGAL TACTICS (PHASE 5 #39)
-      // Proximity-based dirty moves that bypass normal grapple checks.
-      if (mv && mv.cat === 'DIRTY') {
-          const opp = this.opponent();
-          if (opp && !opp.isDown()) {
-              const dist = Math.hypot(this.x - opp.x, this.z - opp.z);
-              if (dist < 0.6) {
-                  // Super close proximity, bypass grapple checks and instantly lock
-                  console.log("[BANNON] DIRTY TACTIC EXECUTED (BITE/EYE GOUGE)!");
-                  
-                  // Force lockup state
-                  this.state = 'grab';
-                  this.stateTime = 0;
-                  this.grabTarget = opp;
-                  this.grappleStage = 4; // jump to delivery/submission hold
-                  
-                  opp.state = 'grabbed';
-                  opp.grabbedBy = this;
-                  opp.grappleStage = 4;
-                  opp.grabTimer = 0;
-                  
-                  // Flag it as an illegal hold so the ref can see it
-                  this.illegalHold = true;
-                  
-                  // We do not call _origSA because we are forcing a custom grapple flow
-                  return true;
-              }
-          }
-      }
-      return _origSA.call(this, mv);
-    };
-  }
-})();
-
-
-  // BANNON TAG TEAM SPAWNER
-  window.addEventListener('keydown', function(e) {
-      if (e.key === 'T' || e.key === 't') {
-          if (typeof fighters !== 'undefined' && fighters.length === 2) {
-              console.log("[BANNON] SPAWNING TAG TEAM PARTNERS (PHASE 6 #49)");
-              // Spawn P1 Partner
-              const p1p = new Fighter(false, { col:0xcc3311, accent:0xffffff, skin:0xd9a066, name:'PARTNER_A' });
-              p1p.x = fighters[0].x - 1; p1p.z = fighters[0].z - 1;
-              
-              // Spawn P2 Partner
-              const p2p = new Fighter(false, { col:fighters[1].opts.col, accent:0xffffff, skin:fighters[1].opts.skin, name:'PARTNER_B' });
-              p2p.x = fighters[1].x + 1; p2p.z = fighters[1].z + 1;
-              
-              fighters.push(p1p);
-              fighters.push(p2p);
-              
-              // For body meshes
-              if (window.forgeBodyRebuild) window.forgeBodyRebuild();
-          }
-      }
-  });
-
-
-  // =========================================================================
-  // BANNON PHASE 8: DEEP SIMULATION & BRAWLER AI (62, 64, 66, 69)
-  // =========================================================================
-  const _origPhase8AI = Fighter.prototype.updateAI;
-  Fighter.prototype.updateAI = function(dt) {
-      if (this.isPlayer) return;
-      
-      // Init Phase 8 AI variables if missing
-      if (this.aiCowardice === undefined) {
-          this.aiCowardice = Math.random(); // 0 (Aggressive) to 1 (Coward)
-          this.aiTauntBait = Math.random(); // 0 to 1 tendency to taunt
-      }
-      
-      const opp = this.opponent();
-      if (opp && !this.ragdoll && this.state !== 'getup' && this.state !== 'grabbed' && this.state !== 'grab') {
-          const dist = Math.hypot(this.x - opp.x, this.z - opp.z);
-          
-          // Phase 8 #66 & #62: Stamina Conservation & Cowardice vs Aggression Matrix
-          if (this.stamina < 30 && this.aiCowardice > 0.5) {
-              if (this.zone === 'RING' && dist < 3) {
-                  // Roll out of the ring to catch breath
-                  this.state = 'walk';
-                  const dir = Math.sign(this.x) || 1;
-                  this.move2D(dir, 0, dt);
-                  return; // Override base AI
-              }
-          }
-          
-          // Phase 8 #69: Taunt & Momentum Baiting
-          if (this.stamina > 50 && this.momentum < 100 && this.aiTauntBait > 0.6 && dist > 3 && dist < 6) {
-              if (this.state === 'idle' || this.state === 'walk') {
-                  this.state = 'taunt';
-                  this.animTime = 0;
-                  this.momentum += 10;
-                  return; // Override base AI
-              }
-          }
-          
-          // Phase 8 #64: Desperation Move Triggers
-          if (this.hp < 20 && this.stamina < 30 && this.momentum > 70 && dist < 2) {
-              // High risk aerial or desperate strike
-              if (this.zone === 'RING' && this.state !== 'attack') {
-                  this.state = 'attack';
-                  this.animTime = 0;
-                  // Let the normal strike handler take over but we force an attack
-              }
-          }
-      }
-      
-      if (_origPhase8AI) _origPhase8AI.call(this, dt);
-  };
-
-</script>
-</body>
-</html>
+      key:'brick56.visceral_impac
