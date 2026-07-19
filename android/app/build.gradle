@@ -1,48 +1,54 @@
-plugins {
-    id 'com.android.application'
-}
+apply plugin: 'com.android.application'
 
 android {
-    namespace 'com.bannon.game'
-    compileSdk 34
-
+    namespace = "com.bannon.game"
+    compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
         applicationId "com.bannon.game"
-        minSdk 24            // Android 7.0+ (modern WebView with WebGL2)
-        targetSdk 34
-        // versionCode auto-increments from the git commit count so each build is an UPGRADE, never a
-        // "same version" install rejection. Overridable with -PversionCode=N in CI.
-        versionCode (project.hasProperty('versionCode') ? project.versionCode.toInteger() : (System.getenv('BANNON_VERSION_CODE') ? System.getenv('BANNON_VERSION_CODE').toInteger() : 2))
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
         versionName "1.0"
-    }
-
-    // STABLE signing key — every build (CI or local) signs with the SAME key, so the app installs over
-    // any previous BANNON without an "App not installed" signature-mismatch. This is a fixed sideload
-    // key (like Android's public debug key), NOT a Play-upload secret.
-    signingConfigs {
-        bannon {
-            storeFile file('bannon-release.keystore')
-            storePassword 'bannon123'
-            keyAlias 'bannon'
-            keyPassword 'bannon123'
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
-
     buildTypes {
         release {
             minifyEnabled false
-            signingConfig signingConfigs.bannon
-        }
-        debug {
-            signingConfig signingConfigs.bannon
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
     }
 }
 
 dependencies {
-    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 }
