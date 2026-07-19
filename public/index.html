@@ -3263,14 +3263,16 @@ Fighter.prototype.update = function(dt){
     if (Math.abs(this.vx) < 0.05) this.vx = 0;
     if (Math.abs(this.vz) < 0.05) this.vz = 0;
   }
-  // rope rebound — shoot back across the ring (you can fire a running move on the return)
+  // rope rebound — shoot back across the ring (you can fire a running move on the return).
+  // Hammer-thrown fighters travel faster (extra lap of momentum) until the sequence settles.
   if (this.reboundT > 0 && !this.ragdoll){
     this.reboundT -= dt;
     this.running = true;
-    this.x = clamp(this.x + this.reboundDir.x*5.0*dt, -ARENA_HALF, ARENA_HALF);
-    this.z = clamp(this.z + this.reboundDir.z*5.0*dt, -ARENA_HALF_Z, ARENA_HALF_Z);
+    const _rspd = this._hammerWhip ? 6.6 : 5.0;
+    this.x = clamp(this.x + this.reboundDir.x*_rspd*dt, -ARENA_HALF, ARENA_HALF);
+    this.z = clamp(this.z + this.reboundDir.z*_rspd*dt, -ARENA_HALF_Z, ARENA_HALF_Z);
     if (this.state==='idle') this.state='walk';
-  }
+  } else if (this._hammerWhip && this.reboundT<=0){ this._hammerWhip=false; }   // clear once the whip settles
   // momentum slowly bleeds when passive
   if (!this.running && this.state!=='attack') this.momentum = Math.max(0, this.momentum - dt*2);
 
@@ -15351,16 +15353,40 @@ function setupInput(){
         return;
       }
 
-      // --- IRISH WHIP / TOSS into ropes ---
+      // --- IRISH WHIP / TOSS into ropes (with HAMMER-THROW context, WWE-2K26) ---
       if (opp && p.grappling && p.grappleStage >= 1){
-        // Whip into ropes — send opponent running
         if (opp.zone === 'RING'){
-          opp.vx = (opp.x < 0 ? -1 : 1) * 6.5;
-          opp.reboundT = 0.55;
-          opp.reboundDir = { x: opp.vx > 0 ? 1 : -1, z: 0 };
-          opp.state = 'walk'; opp.running = true; opp.runCharge = 1;
+          // HELD whip/run input = a HAMMER THROW (more momentum). CLOSE to the ropes -> launch OVER THE TOP
+          // out of the ring; FAR from the ropes -> the extra speed just buys an extra lap of rope bounces.
+          const held = !!(window._runKeyHeld || (window.heldBtns && window.heldBtns['run']) || (p.runCharge||0) > 0.5);
+          const dir  = (opp.x < 0 ? -1 : 1);                 // toward the nearest side rope
+          const distToRope = ARENA_HALF - Math.abs(opp.x);   // how far the opp is from that rope
           p.grappling = false; p.grabTarget = null;
           if (p.root) p.root.userData.gripping = false;
+          if (held && distToRope < 1.7){
+            // OVER THE TOP ROPE — hammer-throw them out to the floor (mirrors zoneAction CASE 1 ringtoss)
+            opp.grabbedBy = null;
+            p.state='deliver'; p.stateTime=0; opp.state='grabbed'; opp.grappleStage=4;
+            p.deliverFX='ringtoss'; p.deliverType='ringtoss'; p.deliverDir=dir; p._slamPending=true;
+            const dmg = Math.round(58 * (0.5+difficulty*0.1) * DMG_SCALE/2.0);
+            p._slam = { opp, type:'ringtoss', behind:false, d:dir, placeDir:dir,
+                        vH:2.7, vV:1.0, downImp:-0.3, basePow:96, isBridge:false, dmg, land:'floor', ringToss:true, fromZone:'RING' };
+            p._slamTarget = 1;
+            p.hitKick = { T:0.26, t:0.26, dx:dir, mag:0.10, reg:'b' };
+            opp.hitKick = { T:0.22, t:0.22, dx:dir, mag:0.09, reg:'b' };
+            announce('HAMMER THROW — OVER THE TOP ROPE!', p.who ? p.who() : '');
+            if (typeof camShake!=='undefined') camShake = Math.max(camShake||0, 0.5);
+            if (typeof triggerHitStop==='function') triggerHitStop(0.08);
+          } else {
+            // send them running into the ropes; hammer throw = boosted launch + _hammerWhip flag so the
+            // rope-rebound (window.HAMMER_THROW_MULT in the rope function) keeps more energy = extra bounce lap
+            opp.vx = dir * (held ? 8.6 : 6.5);
+            opp.reboundT = held ? 0.75 : 0.55;
+            opp.reboundDir = { x: dir, z: 0 };
+            opp.state='walk'; opp.running = true; opp.runCharge = 1;
+            opp._hammerWhip = !!held;
+            if (held) announce('HAMMER THROW!', p.who ? p.who() : '');
+          }
         }
         btn.classList.add('armed'); setTimeout(()=>btn.classList.remove('armed'), 300);
         return;
@@ -36610,11 +36636,36 @@ window.BANNON_PROPS = (function(){
   // heights each prop launches/stands you at (metres) — feeds the dive launch
   const STAND_H = { chair:0.55, steps:0.9, ladder:2.4, ladder_leaned:1.4, table:1.0, table_stacked:1.9 };
   function standHeight(p){ if(p.type==='ladder'&&p.state==='leaned') return STAND_H.ladder_leaned; if(p.type==='table'&&p.state==='stacked') return STAND_H.table_stacked; return STAND_H[p.type]||1.0; }
-  // CLIMB / STAND ON a prop (ladder/table/steps): puts the fighter atop it, ready to dive or drop a move
+  // A suspended objective (belt / MITB briefcase / TLC) hangs above ring-center; climb a ladder under it,
+  // REACH for it while ON the ladder, and pulling it down wins the ladder/MITB/TLC match.
+  let objective=null;
+  function setObjective(type){ const y=6.2, x=0, z=0; let obj=null;
+    try{ if(typeof scene!=='undefined'){ const g=new THREE.Group(); g.position.set(x,y,z);
+      const cable=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,3.5,5), new THREE.MeshStandardMaterial({color:0x222})); cable.position.y=1.75; g.add(cable);
+      const item=new THREE.Mesh(new THREE.BoxGeometry(type==='belt'?0.7:0.5, type==='belt'?0.22:0.4, 0.12), new THREE.MeshStandardMaterial({color:type==='belt'?0xd4af37:0x2a2a2a, metalness:0.8, roughness:0.3, emissive:0xd4af37, emissiveIntensity:type==='belt'?0.3:0.1})); g.add(item);
+      scene.add(g); obj={type,x,z,y,g,grabbed:false}; } else obj={type,x,z,y,grabbed:false}; }catch(e){ obj={type,x,z,y,grabbed:false}; }
+    objective=obj; return obj; }
+  function clearObjective(){ if(objective&&objective.g){ try{ scene.remove(objective.g); }catch(e){} } objective=null; }
+  // CLIMB onto a ladder/table/steps: ladder = ON THE RUNGS (mid-height, NOT the top yet); table/steps = stand on.
   function climb(f, p){ p=p||nearest(f); if(!f||!p) return false; if(f.ragdoll||f.grappling) return false;
-    f.x=p.x; f.z=p.z; f.airLift=standHeight(p); f._onProp=p; f.state='climb'; f.stateTime=0; f.climbT=0;
-    try{ if(typeof announce==='function') announce((p.state==='leaned'?'LEANED ':'')+p.type.toUpperCase()+' CLIMB', (typeof fname==='function'?fname(f):'')); }catch(e){}
+    const onRungs = (p.type==='ladder' && p.state!=='leaned');
+    f.x=p.x; f.z=p.z; f.airLift = onRungs ? Math.min(1.5, standHeight(p)-0.9) : standHeight(p);
+    f._onProp=p; f._onTop=!onRungs; f.state='climb'; f.stateTime=0; f.climbT=0; f._reach=f._reach||0;
+    try{ if(typeof announce==='function') announce((p.state==='leaned'?'LEANED ':'')+p.type.toUpperCase()+(onRungs?' CLIMB':' — ON TOP'), (typeof fname==='function'?fname(f):'')); }catch(e){}
     return true; }
+  // REACH for the hanging objective — done WHILE on the ladder (before standing on top). Fills a grab
+  // meter; pulling it down wins. (WWE/MDickie order: reach happens on the ladder, not after perching.)
+  function reach(f){ if(!f||!f._onProp||f._onProp.type!=='ladder'||!objective||objective.grabbed) return 0;
+    if(Math.hypot(f.x-objective.x, f.z-objective.z) > 1.6) return 0;   // ladder must be under the objective
+    f._reach = Math.min(1, (f._reach||0) + 0.06);
+    try{ if(typeof announce==='function' && Math.random()<0.15) announce('REACHING FOR THE '+objective.type.toUpperCase()+'!', (typeof fname==='function'?fname(f):'')); }catch(e){}
+    if(f._reach>=1){ objective.grabbed=true; try{ if(objective.g) objective.g.visible=false; }catch(e){}
+      try{ if(typeof announce==='function') announce((objective.type==='belt'?'GRABS THE BELT — MATCH WON!':'RETRIEVES THE BRIEFCASE!'), (typeof fname==='function'?fname(f):'')); }catch(e){}
+      try{ if(typeof declareWinner==='function') declareWinner(f); }catch(e){} return 1; }
+    return f._reach; }
+  // separate input: go from the rungs to STANDING ON TOP (for a dive)
+  function standTop(f){ if(!f||!f._onProp||f._onProp.type!=='ladder') return false; f.airLift=standHeight(f._onProp); f._onTop=true;
+    try{ if(typeof announce==='function') announce('STANDING TALL ON THE LADDER', (typeof fname==='function'?fname(f):'')); }catch(e){} return true; }
   // VAULT / STEP-UP off a chair or steps, then dive (Jeff-Hardy chair vault / step-up springboard)
   function vault(f, p, diveType){ p=p||nearest(f); if(!f||!p) return false;
     f.airLift=standHeight(p); f._sbFrom=(p.type==='chair')?'mid':'ring';
@@ -36624,12 +36675,18 @@ window.BANNON_PROPS = (function(){
   // DIVE OFF whatever prop you're standing on
   function diveOff(f, diveType){ if(!f||!f._onProp) return false; f.airLift=standHeight(f._onProp);
     try{ if(f.startDive) f.startDive(diveType||'DIVING_HEADBUTT', false); f._onProp=null; return true; }catch(e){ return false; } }
-  // CONTEXT interaction resolver (what the interact button does near a prop)
-  function interact(f, diveType){ const p=nearest(f); if(!p) return false;
+  // CONTEXT interaction resolver (what the interact button does near a prop).
+  // WWE/MDickie order on a ladder: (1) climb onto the RUNGS, (2) tap again to REACH for the objective
+  // (this is what wins a ladder/MITB/TLC match — happens WHILE on the rungs), (3) a SEPARATE stand-top
+  // input to perch for a dive. So a repeat interact while already on ladder rungs = reach.
+  function interact(f, diveType){
+    if(f && f._onProp && f._onProp.type==='ladder' && !f._onTop && objective && !objective.grabbed) return reach(f);
+    const p=nearest(f); if(!p) return false;
     if(p.type==='ladder'||p.type==='table'||p.type==='steps') return climb(f,p);
     if(p.type==='chair') return vault(f,p,diveType);
     return false; }
-  return { props, register, clear, setState, nearest, climb, vault, diveOff, interact, standHeight };
+  return { props, register, clear, setState, nearest, climb, vault, diveOff, interact, standHeight,
+           setObjective, clearObjective, reach, standTop, get objective(){ return objective; } };
 })();
 </script>
 
