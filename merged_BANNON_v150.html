@@ -8893,6 +8893,31 @@ Fighter.prototype.poseDeliver = function(dt){
 };
 
 Fighter.prototype.poseGrab = function(dt){
+    // BANNON GROUND-AND-POUND MOUNTING IK (PHASE 4 #30)
+    // If we are grappling a downed opponent, use procedural IK to lock pelvis over their chest.
+    if (this.state === 'grab' && this.grabTarget && this.grabTarget.isDown()) {
+       const opp = this.grabTarget;
+       if (opp.J && opp.J.chest && this.J && this.J.pelvis) {
+          // Calculate mount position (pelvis hovering over chest)
+          this.J.pelvis.tgt.x = opp.J.chest.pos.x;
+          this.J.pelvis.tgt.z = opp.J.chest.pos.z;
+          this.J.pelvis.tgt.y = opp.J.chest.pos.y + 0.6; // Sit on chest
+          
+          // Bend knees to wrap around
+          if (this.J.knL) { this.J.knL.tgt.x = this.x + 0.4; this.J.knL.tgt.y = 0.2; }
+          if (this.J.knR) { this.J.knR.tgt.x = this.x - 0.4; this.J.knR.tgt.y = 0.2; }
+          
+          // Force facing down
+          this.J.chest.tgt.x += Math.sin(this.facing) * 0.4;
+          this.J.chest.tgt.y -= 0.3; // Lean forward
+          
+          // Mark state so we can punch instead of throwing
+          this._isMounting = true;
+       }
+    } else {
+       this._isMounting = false;
+    }
+
   const opp = this.grabTarget;
   const st = this.grappleStage;
   const gType = (GRAPPLE_POSITIONS[this.grapplePos]||GRAPPLE_POSITIONS.STANDARD).delivery || 'slam';
