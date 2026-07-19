@@ -1831,6 +1831,55 @@ let creatorTarget = 'BANNON';
 // edit live per-fighter movesets and bridge imported FBX clips into them. Reference-preserving (edits mutate live arrays).
 try{ window.movesets = movesets; window.getMoves = getMoves; window.customMoves = customMoves; window.cloneMoves = cloneMoves; }catch(e){}
 
+// ===== MOVE CREATOR (WWE-2K-style) — create ANY move, ANY position/category, selectable as a NORMAL
+// in-game move (and equippable as a signature/finisher). Created moves route through the SAME physics
+// as built-in moves (grapples via resolveGrapPos->GRAPPLE_POSITIONS, strikes via startAttack, aerials
+// via DIVE_TYPES), persist to localStorage, and are injected into EVERY fighter's moveset so they show
+// up in the MOVE LIBRARY. This is the real system the owner asked for — Dive Lab is the aerial subset.
+window.CUSTOM_MOVES_KEY = 'BANNON_CUSTOM_MOVES';
+window.injectMoveEverywhere = function(mv){
+  // add to the base pool + every already-built fighter moveset (dedup by name)
+  try{ if(!customMoves.some(m=>m.name===mv.name)) customMoves.push(mv); }catch(e){}
+  try{ for(const k in movesets){ const ms=movesets[k]; if(ms && !ms.some(m=>m.name===mv.name)) ms.push(Object.assign({},mv)); } }catch(e){}
+};
+window.createCustomMove = function(spec){
+  // spec: {name, cat, pos, limb, traj, height, power, speed, style, follow, slot}
+  if(!spec || !spec.name) return {ok:false, err:'name required'};
+  const name = String(spec.name).toUpperCase().replace(/[^A-Z0-9 '._-]/g,'').slice(0,28).trim();
+  if(!name) return {ok:false, err:'bad name'};
+  const cat = (spec.cat||'STRIKE').toUpperCase();
+  const mv = {
+    name: name,
+    cat: cat,
+    limb: spec.limb || (cat==='GRAPPLE'?'GRAPPLE':(cat==='SUBMISSION'?'SUB':'RIGHT CROSS')),
+    traj: spec.traj || 'STRAIGHT',
+    height: spec.height || 'MID',
+    power: Math.max(5, Math.min(100, +spec.power||55)),
+    speed: Math.max(20, Math.min(100, +spec.speed||60)),
+    style: spec.style || 'CUSTOM',
+    follow: spec.follow || 'RESET STANCE',
+    custom: true
+  };
+  // GRAPPLE/AERIAL/SUBMISSION carry a position so resolveGrapPos + the physics know how to run it
+  if(spec.pos) mv.pos = spec.pos;
+  if(cat==='AERIAL') mv.dive = spec.pos || 'CROSSBODY';
+  window.injectMoveEverywhere(mv);
+  // persist
+  try{ const arr=JSON.parse(localStorage.getItem(window.CUSTOM_MOVES_KEY)||'[]'); if(!arr.some(m=>m.name===mv.name)){ arr.push(mv); localStorage.setItem(window.CUSTOM_MOVES_KEY, JSON.stringify(arr)); } }catch(e){}
+  // refresh the MOVE LIBRARY UI if it's open
+  try{ if(typeof window.refreshMoveLibrary==='function') window.refreshMoveLibrary(); }catch(e){}
+  return {ok:true, move:mv};
+};
+window.deleteCustomMove = function(name){
+  name=String(name||'').toUpperCase();
+  try{ let i=customMoves.findIndex(m=>m.name===name&&m.custom); if(i>=0)customMoves.splice(i,1); }catch(e){}
+  try{ for(const k in movesets){ const ms=movesets[k]; const j=ms.findIndex(m=>m.name===name&&m.custom); if(j>=0)ms.splice(j,1); } }catch(e){}
+  try{ const arr=JSON.parse(localStorage.getItem(window.CUSTOM_MOVES_KEY)||'[]').filter(m=>m.name!==name); localStorage.setItem(window.CUSTOM_MOVES_KEY, JSON.stringify(arr)); }catch(e){}
+};
+window.listCustomMoves = function(){ try{ return JSON.parse(localStorage.getItem(window.CUSTOM_MOVES_KEY)||'[]'); }catch(e){ return []; } };
+// boot: re-inject any previously created moves so they're selectable again
+try{ (window.listCustomMoves()||[]).forEach(mv=>{ mv.custom=true; window.injectMoveEverywhere(mv); }); }catch(e){}
+
 // ---- Math ----
 const V3 = (x=0,y=0,z=0) => new THREE.Vector3(x,y,z);
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
@@ -13184,12 +13233,45 @@ window.BPHYS = (function(){
     const _sb2=_mkS('P2 STYLE: ORTHODOX'); _sb2.onclick=()=>{ _s2i=(_s2i+1)%_SK.length; _sb2.textContent='P2 STYLE: '+_SK[_s2i]; _ap(1,_SK[_s2i]); };
     try{ const a=localStorage.getItem('BANNON_STYLE_P1'); if(a&&_SK.includes(a)){ _s1i=_SK.indexOf(a); _sb1.textContent='P1 STYLE: '+a; _ap(0,a); }
          const b2=localStorage.getItem('BANNON_STYLE_P2'); if(b2&&_SK.includes(b2)){ _s2i=_SK.indexOf(b2); _sb2.textContent='P2 STYLE: '+b2; _ap(1,b2); } }catch(e){}
+    // ===== MOVE CREATOR (WWE-2K style) — create ANY move, ANY position/category. Created moves are
+    // selectable as NORMAL in-game moves (and equippable as signature/finisher in the MOVE LIBRARY),
+    // and run through the real physics (grapples via resolveGrapPos, strikes via startAttack, aerials
+    // via DIVE_TYPES). Dive Lab below is the aerial-tuning subset. =====
+    const _mch=document.createElement('div'); _mch.textContent='MOVE CREATOR'; _mch.style.cssText='color:#ffd23f;font-weight:bold;margin:12px 0 3px;letter-spacing:1px;font-size:12px;'; body.appendChild(_mch);
+    const _mcn=document.createElement('div'); _mcn.style.cssText='color:#9fb;font-size:9px;margin-bottom:4px;line-height:1.3;'; _mcn.textContent='Create ANY move → picks it up as a normal move for the roster; equip it as a signature/finisher from any position in the MOVE LIBRARY.'; body.appendChild(_mcn);
+    const _mc = { cat:'STRIKE', pos:'STANDING', limb:'RIGHT CROSS', traj:'STRAIGHT', height:'HIGH', power:60, speed:60, style:'CUSTOM', follow:'KNOCKDOWN' };
+    const _MC_POS = { STRIKE:['STANDING','CORNER','GROUNDED','RUNNING','APRON','TOP ROPE'], KICK:['STANDING','CORNER','GROUNDED','RUNNING'], GRAPPLE:Object.keys(GRAPPLE_POSITIONS), AERIAL:Object.keys(DIVE_TYPES), SUBMISSION:['ARM','LEG','NECK','BACK','STANDING','GROUNDED'] };
+    const _MC_LIMB=['LEFT JAB','RIGHT CROSS','LEFT HOOK','RIGHT HOOK','LEFT UPPERCUT','RIGHT UPPERCUT','ELBOW','KNEE','LEFT KICK','RIGHT KICK','HEADBUTT'];
+    const _MC_TRAJ=['STRAIGHT','HOOK','UPPERCUT','OVERHAND','SPINNING','SWEEP','FLYING']; const _MC_H=['HIGH','MID','LOW'];
+    const _MC_STYLE=['CUSTOM','BOXING','MUAY THAI','MMA','KARATE','STREET','LUCHA','POWER','TECHNICAL','FIRE RAT']; const _MC_FOLLOW=['RESET STANCE','ADVANCE','CHAIN NEXT','STUN','KNOCKDOWN','RETREAT','PIN'];
+    const _cyc=(arr,cur,d)=>{ let i=arr.indexOf(cur); if(i<0)i=0; return arr[(i+(d||1)+arr.length)%arr.length]; };
+    const _mcbtn=(get)=>{ const b=document.createElement('button'); b.style.cssText='display:block;width:100%;margin:3px 0;background:#1a160a;color:#ffe08a;border:1px solid #ffd23f;border-radius:5px;padding:6px;font:bold 10px ui-monospace,monospace;cursor:pointer;'; b.textContent=get(); body.appendChild(b); return b; };
+    const bCat=_mcbtn(()=>'CATEGORY: '+_mc.cat), bPos=_mcbtn(()=>'POSITION: '+_mc.pos), bLimb=_mcbtn(()=>'LIMB: '+_mc.limb), bTraj=_mcbtn(()=>'TRAJECTORY: '+_mc.traj), bH=_mcbtn(()=>'HEIGHT: '+_mc.height);
+    body.appendChild(row('POWER',()=>_mc.power,v=>_mc.power=v,5,100,1));
+    body.appendChild(row('SPEED',()=>_mc.speed,v=>_mc.speed=v,20,100,1));
+    const bStyle=_mcbtn(()=>'STYLE: '+_mc.style), bFollow=_mcbtn(()=>'FOLLOW: '+_mc.follow);
+    bCat.onclick=()=>{ _mc.cat=_cyc(['STRIKE','KICK','GRAPPLE','AERIAL','SUBMISSION'],_mc.cat); _mc.pos=_MC_POS[_mc.cat][0]; bCat.textContent='CATEGORY: '+_mc.cat; bPos.textContent='POSITION: '+_mc.pos; };
+    bPos.onclick=()=>{ _mc.pos=_cyc(_MC_POS[_mc.cat],_mc.pos); bPos.textContent='POSITION: '+_mc.pos; };
+    bLimb.onclick=()=>{ _mc.limb=_cyc(_MC_LIMB,_mc.limb); bLimb.textContent='LIMB: '+_mc.limb; };
+    bTraj.onclick=()=>{ _mc.traj=_cyc(_MC_TRAJ,_mc.traj); bTraj.textContent='TRAJECTORY: '+_mc.traj; };
+    bH.onclick=()=>{ _mc.height=_cyc(_MC_H,_mc.height); bH.textContent='HEIGHT: '+_mc.height; };
+    bStyle.onclick=()=>{ _mc.style=_cyc(_MC_STYLE,_mc.style); bStyle.textContent='STYLE: '+_mc.style; };
+    bFollow.onclick=()=>{ _mc.follow=_cyc(_MC_FOLLOW,_mc.follow); bFollow.textContent='FOLLOW: '+_mc.follow; };
+    const bCreate=document.createElement('button'); bCreate.textContent='➕ CREATE MOVE'; bCreate.style.cssText='display:block;width:100%;margin:6px 0 2px;background:#0a2a12;color:#7CFC00;border:1px solid #7CFC00;border-radius:5px;padding:8px;font:bold 11px ui-monospace,monospace;cursor:pointer;'; body.appendChild(bCreate);
+    const _mcStat=document.createElement('div'); _mcStat.style.cssText='color:#9fb;font-size:9px;min-height:12px;margin:2px 0 6px;'; body.appendChild(_mcStat);
+    bCreate.onclick=()=>{ const nm=(prompt('Name your move:', _mc.cat+' MOVE')||'').trim(); if(!nm) return;
+      const spec={ name:nm, cat:_mc.cat, limb:_mc.limb, traj:_mc.traj, height:_mc.height, power:_mc.power, speed:_mc.speed, style:_mc.style, follow:_mc.follow };
+      if(_mc.cat==='GRAPPLE'||_mc.cat==='AERIAL') spec.pos=_mc.pos;
+      else if(_mc.cat==='SUBMISSION'){ spec.pos=_mc.pos; spec.sub=true; }
+      const r=window.createCustomMove(spec);
+      _mcStat.textContent = r.ok ? ('✓ "'+r.move.name+'" created — selectable now in the MOVE LIBRARY') : ('✕ '+(r.err||'failed'));
+      _mcStat.style.color = r.ok?'#7CFC00':'#ff6666'; };
     // ===== DIVE LAB: every dive is YOURS — tune it, create it, assign it (GOLDEN RULE) =====
     try{ const _dl=JSON.parse(localStorage.getItem('BANNON_DIVES')||'null');
       if(_dl){ if(_dl.types) for(const k in _dl.types) DIVE_TYPES[k]=Object.assign(DIVE_TYPES[k]||{},_dl.types[k]);
                if(_dl.slots) window.DIVE_SLOTS=Object.assign(window.DIVE_SLOTS||{},_dl.slots); } }catch(e){}
     const _dsave=()=>{ try{ localStorage.setItem('BANNON_DIVES', JSON.stringify({types:DIVE_TYPES, slots:window.DIVE_SLOTS||null})); }catch(e){} };
-    const _dh=document.createElement('div'); _dh.textContent='DIVE LAB'; _dh.style.cssText='color:#7dd3fc;font-weight:bold;margin:9px 0 3px;letter-spacing:1px;font-size:11px;'; body.appendChild(_dh);
+    const _dh=document.createElement('div'); _dh.textContent='DIVE LAB · aerial move tuning'; _dh.style.cssText='color:#7dd3fc;font-weight:bold;margin:9px 0 3px;letter-spacing:1px;font-size:11px;'; body.appendChild(_dh);
     let _dk='DIVING_HEADBUTT';
     const _mkB=(txt)=>{ const b=document.createElement('button'); b.textContent=txt; b.style.cssText='display:block;width:100%;margin:3px 0;background:#16202a;color:#bfe9ff;border:1px solid #7dd3fc;border-radius:5px;padding:6px;font:bold 10px ui-monospace,monospace;cursor:pointer;'; body.appendChild(b); return b; };
     const _db=_mkB('DIVE: '+_dk);
