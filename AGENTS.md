@@ -673,3 +673,8 @@ You are an execution engine. Output no conversational pleasantries, no plans, an
 
 ### SHIPPED (PHASE - RESTORATION)
 - **RESTORE full game file (was clobbered to a 1302-line stub) + GLB facing/orphan fixes**: A parallel edit reduced BANNON_v150.html on main from the full ~40k-line game to a 1302-line stub. This restores the complete, verified game to every entry point and folds in this session's fixes (GLB facing, orphan model clones, Items/News/Entrances).
+
+## CRITICAL ARCHITECTURE LAW: NO CLOBBERING / NO FILE REPLACEMENTS
+The Bannon Engine is a ~40,000 line single-file architecture (index.html). You are STRICTLY FORBIDDEN from overwriting the file, writing a "condensed" version, or creating a new file from scratch.
+You must ONLY use surgical insertion (e.g., regex replace(), sed, or appending before </body>) to add new features.
+Before any git push or GitHub API PUT, you MUST run wc -l index.html to verify the line count is >39,000. If the line count is low, you have clobbered the file and must instantly abort the push and restore from remote.
