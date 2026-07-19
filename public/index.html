@@ -37825,7 +37825,13 @@ window.BANNON_MOVE_LIBRARY = (function(){
           else if(m.kind==='strike'){ (LIB.strikes=LIB.strikes||[]).push(m); }
           else { (LIB.grapples=LIB.grapples||[]).push(m); }
         }); } }catch(e){}
+    // AUTO move->mocap-clip map (tools/mocap/auto_map_moves.cjs, NON-MANUAL): attach each move's best
+    // mocap clip so studioApplyClipPose ANIMATES it once the FBX library is loaded (physics-only until then).
+    try{ const r5=await fetch('assets/moves/move_clip_map.json'); const CM=await r5.json(); const map=(CM&&CM.map)||{};
+      all().forEach(m=>{ if(m && !m.clip && map[m.name] && map[m.name].clip){ m.clip=map[m.name].clip; m._clipEngine=map[m.name].engine; } });
+      window.__moveClipMap=map; }catch(e){}
     return LIB; }
+  function clipForMove(name){ try{ const m=window.__moveClipMap||{}; return (m[name]&&m[name].clip)||null; }catch(e){ return null; } }
   function all(){ if(!LIB) return []; return [].concat(LIB.grapples||[],LIB.dives||[],LIB.submissions||[],LIB.strikes||[],LIB.ground||[]); }
   // moves available to a fighting style (technical/powerhouse/highFlyer/brawler/striker/lucha/mma/hardcore/oldSchool/showman)
   function forStyle(style){ return all().filter(m=>!m.style || m.style.indexOf(style)>=0); }
