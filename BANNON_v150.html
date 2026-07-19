@@ -14311,6 +14311,7 @@ const CHAR_MODEL_DEFAULTS = {
   CODY_CALLAHAN:{url:'assets/models/CODY_gear_skinned.glb',name:'CODY · Gear'},
   CAIN_ELIAS:{url:'assets/models/CAIN_ELIAS_gear.glb',name:'CAIN ELIAS · Gear'},
   STICK_UP:{url:'assets/models/STICKUP.glb',name:'STICK-UP'},
+  FINXSSE:{url:'assets/models/NPC_FINXSSE.glb',name:'FINXSSE'},   // was procedural (pink) — real model exists, verified clean raw
   CIPHER:{url:'assets/models/CIPHER.glb',name:'CIPHER'},
   ECHO:{url:'assets/models/ECHO.glb',name:'ECHO'},
   STATIC:{url:'assets/models/STATIC.glb',name:'STATIC'},
@@ -14537,6 +14538,19 @@ function updateFighterModel(f){
                   f.state==='deliver' || f.state==='hurt' || f.state==='stumble' || f.state==='down' ||
                   f.state==='getup' || f.state==='dive' || f.state==='falling');
   const _nativePose = (window.GLB_NATIVE_POSE!==false && _skinnedGLB && _calm);  // hold the model's own perfect pose (no retarget mangling) while standing/idling/walking
+  if(_nativePose){
+    // GROUNDING: the model holds its bind pose, so its feet don't follow the physics foot joints.
+    // Snap the container up/down so the model's foot bones sit at the physics foot height (the stance
+    // the ring is calibrated to) — fixes the model sinking ~9cm into the mat.
+    try{
+      m.updateMatrixWorld(true);
+      const BN=m.userData.boneByName; let mfy=1e9;
+      if(BN){ ['leftfoot','rightfoot','lefttoe','righttoe'].forEach(function(k){ for(var nm in BN){ if(nm.indexOf(k)>=0){ var v=new THREE.Vector3(); BN[nm].getWorldPosition(v); if(v.y<mfy)mfy=v.y; break; } } }); }
+      // put the lowest foot bone at floorY + sole thickness (ankle-to-sole ~0.10) so the BOOT sits ON the
+      // mat (not sinking, not floating). Tunable via window.GLB_SOLE.
+      if(isFinite(mfy)&&mfy<1e8){ var floorY=(typeof RING!=='undefined'&&RING.floorY!=null)?RING.floorY:0; var sole=(window.GLB_SOLE!=null?window.GLB_SOLE:0.10); m.position.y += (floorY + sole - mfy); }
+    }catch(e){}
+  }
   if(!_nativePose && modelCfg.animate && m.userData.mapped && !(typeof FREEPOSE!=='undefined'&&FREEPOSE)){
     try{
       for(const mp of m.userData.mapped){
