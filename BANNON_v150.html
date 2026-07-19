@@ -37745,25 +37745,33 @@ window.BANNON_JUKEBOX = (function(){
   function resolveAudioUrl(rel){ if(!rel || /^(https?:|blob:|data:|idb:)/.test(rel)) return rel;
     return (location.protocol==='file:' || window.BANNON_AUDIO_CDN) ? CDN+rel : rel; }
   const DEFAULT_TRACKS=[
-    {id:'bannon_theme', name:"BANNON Theme (a cappella + rain)", url:A+'bannon_theme.m4a', cat:['entrance','menu'], artist:'M'},
-    {id:'opps_fallin',  name:"Opps Fallin (ft Jackboy/Finxsse)", url:A+'opps_fallin.ogg', cat:['entrance','match'], artist:'M'},
-    {id:'gmg_champion', name:"GMG Champion",         url:A+'gmg_champion.ogg', cat:['victory','entrance'], artist:'M'},
-    {id:'dx',           name:"DX",                   url:A+'dx.ogg',   cat:['entrance','match'], artist:'M'},
-    {id:'cult',         name:"Cult",                 url:A+'cult.ogg', cat:['entrance','match'], artist:'M'},
-    {id:'caution',      name:"Caution",              url:A+'caution.ogg', cat:['match','entrance'], artist:'M'},
-    {id:'jeans',        name:"Jeans",                url:A+'jeans.ogg', cat:['menu','match'], artist:'M'},
-    {id:'ceo_mindset',  name:"CEO Mindset (GMG ft M)",url:A+'ceo_mindset.ogg', cat:['menu','entrance'], artist:'M'},
-    {id:'sickness',     name:"Sickness",             url:A+'sickness.mp3', cat:['match','entrance'], artist:'M'},
-    {id:'slo_burn',     name:"Slo Burn",             url:A+'slo_burn.mp3', cat:['menu'], artist:'M'},
-    {id:'dbz',          name:"DBZ",                  url:A+'dbz.m4a', cat:['match','entrance'], artist:'M'},
-    {id:'mars_japanese_denim',name:"Japanese Denim (Mars FMMG)", url:A+'mars_japanese_denim.m4a', cat:['menu','entrance'], artist:'Mars FMMG'},
-    {id:'mars_zumbando',name:"Zumbando (Mars FMMG)", url:A+'mars_zumbando.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
-    {id:'mars_dio',     name:"Dio (Mars FMMG)",      url:A+'mars_dio.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
-    {id:'mars_picadero',name:"Picadero (Mars FMMG)", url:A+'mars_picadero.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
-    {id:'mars_obscuro', name:"Obscuro Cuerno de Chivo (Mars FMMG)", url:A+'mars_obscuro.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
+    {id:'owe_me', name:"Owe Me", url:A+'m owe me_4.mp3', cat:['menu','match'], artist:'M. Heaven$ent'},
+    {id:'lies', name:"Lies", url:A+'lies m_2.mp3', cat:['menu','match'], artist:'M. Heaven$ent'},
+    {id:'act_like_ya_know', name:"Act Like Ya Know", url:A+'gmg m act like ya know_2.mp3', cat:['menu','match'], artist:'M. Heaven$ent feat. GMG'},
+    {id:'dungeon', name:"Dungeon", url:A+'dungeon m_2 fin_1.mp3', cat:['menu','match'], artist:'M. Heaven$ent feat. Finxsse'},
+    {id:'cream', name:"Cream", url:A+'cream m.mp3', cat:['menu','match'], artist:'M. Heaven$ent'},
+    {id:'business_that_pays', name:"Business That Pays", url:A+'m finxsse gmg business that pays_3 nrw.mp3', cat:['menu','match'], artist:'M. Heaven$ent feat. Finxsse & GMG'},
+    {id:'opps_fallin', name:"Opps Fallin", url:A+'opps fallin m ft jackboy blakk baby j finxsse_4 new mp2', cat:['entrance','match'], artist:'M. Heaven$ent feat. Jackboy, Blakk Baby J, Finxsse'},
+    {id:'hiruzen', name:"Hiruzen", url:A+'4RTMS - HIRUZEN.mp3', cat:['menu','match'], artist:'4rtms'},
+    {id:'paramore', name:"Paramore", url:A+'m tz paramore.mp3', cat:['menu','match'], artist:'M. Heaven$ent feat. Teezzyy'},
+    {id:'dx', name:"DX", url:A+'m dx 3.mp3', cat:['entrance','match'], artist:'M. Heaven$ent'},
+    {id:'stars', name:"Stars", url:A+'m stars.mp3', cat:['menu','match'], artist:'M. Heaven$ent'},
+    {id:'sickness', name:"Sickness", url:A+'m sicikness.mp3', cat:['match','entrance'], artist:'M. Heaven$ent'},
+    {id:'mars_picadero', name:"Picadero", url:A+'Mars FMMG - Picadero', cat:['entrance','match'], artist:'Mars FMMG'},
+    {id:'mars_narco', name:"Narco", url:A+'Mars FMMG - Narco', cat:['entrance','match'], artist:'Mars FMMG'},
+    {id:'castle_nosferatu', name:"Castle Nosferatu (Sega-style FM Synth Remix)", url:A+'04 - Castle Nosferatu (Sega-style FM Synth Remix).aac', cat:['menu','match'], artist:'Bannon OST'},
+    {id:'slo_burn', name:"Slo Burn", url:A+'m slo burn_1.mp3', cat:['menu'], artist:'M. Heaven$ent'},
+    {id:'cult', name:"Cult", url:A+'m cult_3mp3.mp3', cat:['entrance','match'], artist:'M. Heaven$ent'},
+    {id:'champion', name:"Champion", url:A+'m gmg champion 7.mp3', cat:['victory','entrance'], artist:'M. Heaven$ent feat. GMG'},
+    {id:'hell_nah', name:"Hell Nah", url:A+'hell nah m finxsse.mp3', cat:['menu','match'], artist:'M. Heaven$ent feat. Finxsse'},
+    {id:'bannon_theme', name:"Bannon Theme", url:A+'Mars FMMG - Bannon Theme', cat:['entrance','menu'], artist:'Mars FMMG'},
+    {id:'final_master_switch', name:"Final Master Switch", url:A+'final_master_switch.mp3', cat:['menu','match'], artist:'M. Heaven$ent'},
+    {id:'mars_japanese_denim', name:"Japanese Denim", url:A+'Mars FMMG - Japanese Denim', cat:['menu','entrance'], artist:'Mars FMMG'},
+    {id:'mars_zumbando', name:"Zumbando", url:A+'Mars FMMG - Zumbando.m4a', cat:['entrance','match'], artist:'Mars FMMG'},
+    {id:'mars_dio', name:"Dio", url:A+'Mars FMMG - Dio', cat:['entrance','match'], artist:'Mars FMMG'}
   ];
   // default role assignments (canon): BANNON -> his theme; Finxsse/Stick-Up -> the collab.
-  const DEFAULT_CFG={ menu:'ceo_mindset', match:null /* shuffle match pool */, victory:'gmg_champion',
+  const DEFAULT_CFG={ menu:'business_that_pays', match:null /* shuffle match pool */, victory:'champion',
     entrance:{ BANNON:'bannon_theme', MAIME:'sickness', FINXSSE:'opps_fallin', STICK_UP:'opps_fallin' } };
 
   let cfg=(function(){ try{ const s=localStorage.getItem(LS); if(s) return Object.assign({},DEFAULT_CFG,JSON.parse(s)); }catch(e){} return JSON.parse(JSON.stringify(DEFAULT_CFG)); })();
