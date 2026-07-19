@@ -453,10 +453,10 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 }
 .touch #pillBtns { display:flex; }
 .pill-btn {
-  width:116px; height:40px;
-  border-radius:20px;
-  font-family:'Bebas Neue'; font-size:14px;
-  letter-spacing:2px;
+  width:56px; height:34px;                 /* compressed (owner: too wide, blocking the ring) */
+  border-radius:10px;
+  font-family:'Bebas Neue'; font-size:15px;
+  letter-spacing:1px;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
   cursor:pointer; user-select:none;
@@ -465,7 +465,7 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
   touch-action:manipulation;
 }
 .pill-btn:active { transform:scale(0.90); filter:brightness(1.65); }
-.pill-sub { font-family:'Share Tech Mono'; font-size:7px; letter-spacing:0px; opacity:0.65; margin-top:1px; }
+.pill-sub { display:none; }                /* owner: remove the wide instruction subtext */
 /* ZONE — WWE 2K26 LB equivalent: context ring exit/floor/whip/climb/submission/pin */
 .pill-zone {
   background:rgba(0,90,70,0.88);
@@ -823,9 +823,9 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
     <div class="taunt-center">T</div>
   </div>
   <div id="pillBtns">
-    <button id="btnZone" class="pill-btn pill-zone">ZONE<span class="pill-sub">LB · exit/pin/whip/climb</span></button>
-    <button id="btnRun" class="pill-btn pill-run">RUN<span class="pill-sub">hold + dir → ropes</span></button>
-    <button id="btnMod" class="pill-btn pill-mod">MOD<span class="pill-sub">RT · power / reposition</span></button>
+    <button id="btnZone" class="pill-btn pill-zone" title="RB · exit / climb / whip / pin">RB<span class="pill-sub">exit/climb</span></button>
+    <button id="btnRun" class="pill-btn pill-run" title="RUN · hold + dir → ropes">RUN<span class="pill-sub">ropes</span></button>
+    <button id="btnMod" class="pill-btn pill-mod" title="MOD · power / reposition">MOD<span class="pill-sub">power</span></button>
   </div>
   <!-- Zone context label -->
   <div id="zoneLabel" style="opacity: 0;">ZONE: RING</div>
@@ -33846,8 +33846,8 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         msg.style.pointerEvents = 'none';
         msg.style.zIndex = '99999';
         msg.innerHTML = '[v120] POLE VECTOR MATRIX ONLINE. SKELETAL INVERSIONS NEUTRALIZED.';
-        // Wait rendering cycle
-        setTimeout(() => { if(hud) hud.appendChild(msg); }, 1500);
+        // owner: keep the bottom match HUD clear — this dev ticker only shows when the console is opened.
+        if(window.__DEBUG_HUD){ setTimeout(() => { if(hud) hud.appendChild(msg); }, 1500); }
     });
 })();
 </script>
@@ -37097,6 +37097,9 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     it.holder=f; f._weapon=it;
     try{ if(typeof announce==='function') announce(it.spec.label,'picked up'); }catch(e){}
   }
+  // expose for the LB context button (real pickup/drop — no fakery)
+  window.__weaponToggle = togglePick;
+  window.__weaponCtx = function(){ try{ var f=playerF(); if(!f) return null; if(f._weapon) return 'drop'; return nearestItem(f,0.9)?'pickup':null; }catch(e){ return null; } };
   function drop(f){ var it=f._weapon; if(!it) return; it.holder=null; f._weapon=null;
     try{ var p=f.worldJoint('pelvis'); it.g.position.set(p.x+0.4, -0.83+((Math.abs(p.x)<3.5&&Math.abs(p.z)<2.5)?0.83:0), p.z+0.3); it.g.rotation.set(0,Math.random()*6.28,Math.PI/2*0.9); }catch(e){}
   }
@@ -38349,11 +38352,18 @@ window.BANNON_CAREER = (function(){
       const btn = document.createElement('div');
       btn.id = 'btnTag';
       btn.style.cssText = 'position:absolute;left:96px;top:80px;width:56px;height:56px;border-radius:50%;background:rgba(0,200,120,0.25);border:2px solid rgba(0,255,150,0.6);color:#0fa;display:grid;place-items:center;font:bold 11px ui-monospace,monospace;letter-spacing:1px;z-index:80;opacity:0.5;transition:opacity 0.2s;user-select:none;-webkit-user-select:none;';
-      btn.textContent = 'TAG';
+      btn.textContent = 'LB';
       btn.style.pointerEvents = 'auto';
       const parent = document.getElementById('tauntCluster') ? document.getElementById('tauntCluster').parentElement : document.body;
       parent.appendChild(btn);
-      const fire = (e)=>{ e.preventDefault(); try{ markTouch && markTouch(); }catch(_){} window.callTagPartner && window.callTagPartner(); btn.classList.add('armed'); setTimeout(()=>btn.classList.remove('armed'),300); };
+      // LB = WWE-2K Left Bumper: contextual interaction. Priority order (all wired to REAL systems):
+      //   holding / near a weapon -> pick up / drop that weapon; otherwise -> tag partner.
+      // (Climb / ring exit lives on RB — the ZONE pill — per the console control split.)
+      const fire = (e)=>{ e.preventDefault(); try{ markTouch && markTouch(); }catch(_){}
+        let did=false;
+        try{ if(window.__weaponCtx && window.__weaponCtx()){ window.__weaponToggle && window.__weaponToggle(); did=true; } }catch(_){}
+        if(!did){ window.callTagPartner && window.callTagPartner(); }
+        btn.classList.add('armed'); setTimeout(()=>btn.classList.remove('armed'),300); };
       btn.addEventListener('touchstart', fire, {passive:false});
       btn.addEventListener('mousedown', fire);
     }
