@@ -2636,6 +2636,29 @@ Fighter.prototype.pollApronTransition = function(){};
   // 1. Strike Velocity Decay & Sloppy Trajectories
   const _origAttack = Fighter.prototype.poseAttack;
   Fighter.prototype.poseAttack = function(dt) {
+
+  // BANNON PROCEDURAL IK STRIKE FALLBACK
+  // If we don't have mo-cap, procedurally drive the fist toward the opponent
+  if (this.state === 'attack' && this.attackPhase > 0.1 && this.attackPhase < 0.6) {
+    const opp = opponents[0];
+    if (opp && opp.J && opp.J.chest && this.J && this.J.haR) {
+      // Calculate a procedural forward thrust
+      const reachProgress = Math.sin((this.attackPhase - 0.1) * Math.PI / 0.5); // arc from 0 to 1 back to 0
+      const targetPos = new THREE.Vector3().copy(opp.J.chest.pos);
+      targetPos.y += 0.2; // Aim for jaw/upper chest
+      
+      // We don't want to completely snap to the opponent if they are far, just reach outwards.
+      const reachDist = 0.6; // Max arm length
+      const fwd = new THREE.Vector3().copy(targetPos).sub(this.J.haR.pos);
+      if (fwd.lengthSq() > reachDist * reachDist) {
+        fwd.normalize().multiplyScalar(reachDist);
+      }
+      
+      // Apply the procedural IK override
+      this.J.haR.pos.add(fwd.multiplyScalar(reachProgress * 0.5));
+    }
+  }
+
     if (_origAttack) _origAttack.call(this, dt);
     const m = this.attackData;
     if (m && m.limb && !m.limb.includes('KICK') && this.J) {
