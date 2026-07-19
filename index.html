@@ -661,6 +661,16 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
    NOT in-match/pause items). Touch-first: big tap targets, scrolls if the phone is short. */
 .hub-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; max-width:420px; margin:16px auto 0;
   width:100%; }
+/* PLAY MODES submenu — big mode buttons, MDickie-style clarity */
+.play-grid { display:flex; flex-direction:column; gap:10px; max-width:460px; margin:14px auto 0; width:100%; }
+.play-mode { display:grid; grid-template-columns:40px 1fr; grid-template-areas:'ico t' 'ico d'; align-items:center;
+  column-gap:13px; text-align:left; padding:13px 16px; cursor:pointer;
+  background:linear-gradient(100deg, rgba(50,14,0,.75), rgba(24,10,28,.6)); color:var(--white);
+  border:1px solid var(--fire); border-radius:10px; transition:all .16s; box-shadow:0 0 14px rgba(255,69,0,.18); }
+.play-mode:active, .play-mode:hover { background:linear-gradient(100deg, var(--blood), var(--fire)); color:var(--gold); transform:translateX(4px); box-shadow:0 0 24px var(--fire); }
+.play-mode .pm-ico { grid-area:ico; font-size:30px; line-height:1; filter:drop-shadow(0 0 6px currentColor); align-self:center; }
+.play-mode .pm-t { grid-area:t; font-family:'Bebas Neue'; font-size:22px; letter-spacing:3px; }
+.play-mode .pm-d { grid-area:d; font:10px 'Share Tech Mono',monospace; color:#c9b98a; opacity:.85; margin-top:1px; }
 .hub-tile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px;
   aspect-ratio:1/1; min-height:84px; padding:8px 6px; background:linear-gradient(160deg, rgba(40,10,0,0.7), rgba(20,10,30,0.5));
   border:1px solid var(--fire); border-radius:12px; color:var(--white); cursor:pointer; transition:all 0.16s;
@@ -891,9 +901,10 @@ body.match-live #movesBtn { display:none !important; }
     <div class="menu-logo">BANNON</div>
     <div class="menu-sub">FIRE RAT · SCORPIO REIGN · LP3</div>
     <div class="menu-btn-grid">
-      <button class="menu-btn gold" id="btnFight">FIGHT <span class="arrow">▶</span></button>
+      <button class="menu-btn gold" id="btnPlay">▶ PLAY</button>
     </div>
     <div class="match-row">
+      <button class="menu-btn" id="btnFight" style="grid-column:1 / -1;">QUICK FIGHT <span class="arrow">▶</span></button>
       <button class="menu-btn" id="btnArena">ARENA: <span id="arenaName">FIRE PIT</span></button>
       <button class="menu-btn" id="btnDiff">DIFFICULTY: <span id="diffName">VETERAN</span></button>
       <button class="menu-btn" id="btnOpp" style="grid-column:1 / -1;">OPPONENT: <span id="oppName">VIPER</span></button>
@@ -920,6 +931,25 @@ body.match-live #movesBtn { display:none !important; }
       <button class="menu-btn" id="btnMusicAdd" style="font-size:15px;">＋ ADD</button>
     </div>
     <div style="margin-top:18px; font-family:'Share Tech Mono'; font-size:9px; color:#666; letter-spacing:3px;">v77 · WWE 2K26 CONTROLS · VISCERAL PRO WRESTLING</div>
+  </div>
+</div>
+
+<!-- ============================================================================================
+     PLAY MODES SUBMENU — the actual playable game modes, split out MDickie-style (Wrestling Empire's
+     Wrestling Career / Booking Career / Training / Exhibition) so it's obvious what you can PLAY vs the
+     creation/edit menus. =====
+     ============================================================================================ -->
+<div class="menu-overlay hidden" id="playMenu">
+  <div class="menu-inner">
+    <div class="hub-title" style="font-size:16px;">▶ SELECT A MODE</div>
+    <div class="play-grid">
+      <button class="play-mode" id="pmExhibition"><span class="pm-ico">🤼</span><span class="pm-t">EXHIBITION</span><span class="pm-d">Quick single match — pick fighters &amp; go</span></button>
+      <button class="play-mode" id="pmCareer"><span class="pm-ico">📈</span><span class="pm-t">CAREER</span><span class="pm-d">Rise as one wrestler — matches, injuries, titles, aging</span></button>
+      <button class="play-mode" id="pmUniverse"><span class="pm-ico">🌍</span><span class="pm-t">UNIVERSE / BOOKING</span><span class="pm-d">Run the promotion week to week — book, sim, standings</span></button>
+      <button class="play-mode" id="pmGodWithin"><span class="pm-ico">👁️</span><span class="pm-t">GOD WITHIN</span><span class="pm-d">Roam the world, confront the daemon — the story RPG</span></button>
+      <button class="play-mode" id="pmTraining"><span class="pm-ico">🏋️</span><span class="pm-t">TRAINING</span><span class="pm-d">Build your stats between shows</span></button>
+    </div>
+    <button class="menu-btn" id="pmBack" style="margin-top:14px;">◀ BACK</button>
   </div>
 </div>
 
@@ -16069,6 +16099,18 @@ function setupInput(){
   // ── HOOK MENU BUTTONS TO ALSO SAVE ────────────────────────────────────────────────────────────
   // menu buttons
   document.getElementById('btnFight').addEventListener('click', startFight);
+  // ---- PLAY MODES submenu (MDickie-style: the actual game modes, split from creation/edit) ----
+  (function(){
+    const pm=document.getElementById('playMenu'), mm=document.getElementById('mainMenu');
+    const _w=(id,fn)=>{ const b=document.getElementById(id); if(b) b.addEventListener('click', fn); };
+    _w('btnPlay', ()=>{ if(pm) pm.classList.remove('hidden'); });
+    _w('pmBack',  ()=>{ if(pm) pm.classList.add('hidden'); });
+    _w('pmExhibition', ()=>{ if(pm)pm.classList.add('hidden'); if(window.openCharacterSelect) window.openCharacterSelect(); else if(typeof startFight==='function') startFight(); });
+    _w('pmUniverse', ()=>{ if(pm)pm.classList.add('hidden'); if(window.openUniverse) window.openUniverse(); });
+    _w('pmCareer', ()=>{ if(pm)pm.classList.add('hidden'); try{ window.CAREER_ME=window.CAREER_ME||'BANNON'; }catch(e){} if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="career"]').click(); }catch(e){} } });
+    _w('pmTraining', ()=>{ if(pm)pm.classList.add('hidden'); if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="training"]').click(); }catch(e){} } });
+    _w('pmGodWithin', ()=>{ if(pm)pm.classList.add('hidden'); if(window.BANNON_GODWITHIN && window.BANNON_GODWITHIN.start) window.BANNON_GODWITHIN.start(); else (window.toast||alert)('God Within roam mode loading…'); });
+  })();
   // MAIN-MENU CREATION HUB (3×3): each tile opens its subsystem overlay. All null-guarded so a layout
   // change never throws. Moved here from the pause menu (they are not pause-appropriate).
   const _wire=(id,fn)=>{ const el=document.getElementById(id); if(el&&fn) el.addEventListener('click',fn); };
@@ -39910,6 +39952,71 @@ window.BANNON_ENTRANCES = (function(){
 })();
 
 try{ console.log('[AI-STUDIO MODULES] News/Entrances/Promos/Rules/Items/Buckles/Editor online'); }catch(e){}
+</script>
+
+<!-- ============================================================================================
+     GOD WITHIN — ROAM MODE (MDickie Super City / Hard Time 3D lineage): walk the world freely, approach
+     characters, and TALK (relationships/promos) or CHALLENGE (a real physics match) them. A wrestling-RPG
+     roam loop on top of the live engine + BANNON_STORY/PROMOS/UNIVERSE. This is the playable spine; the
+     full open-world map + quests build on it. =====
+     ============================================================================================ -->
+<style>
+#gwBanner{position:fixed;top:calc(var(--safe-top,0px) + 10px);left:50%;transform:translateX(-50%);z-index:9300;display:none;
+  font-family:'Bebas Neue';letter-spacing:4px;font-size:18px;color:#c9a3ff;text-shadow:0 0 12px #6a2 cf,0 2px 4px #000;
+  background:rgba(10,4,20,.6);border:1px solid #7a3ad0;border-radius:8px;padding:5px 14px;pointer-events:none;}
+#gwInteract{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 96px);transform:translateX(-50%);z-index:9301;display:none;
+  flex-direction:column;gap:6px;background:rgba(12,6,22,.94);border:1px solid #7a3ad0;border-radius:12px;padding:11px 12px;
+  box-shadow:0 8px 30px #000b;min-width:220px;}
+#gwInteract .gw-who{font-family:'Bebas Neue';letter-spacing:2px;font-size:16px;color:#e9d5ff;text-align:center;margin-bottom:2px;}
+#gwInteract button{font-family:'Share Tech Mono',monospace;font-size:13px;padding:8px 10px;background:rgba(50,20,70,.8);color:#e9d5ff;
+  border:1px solid #a855f7;border-radius:7px;cursor:pointer;}
+#gwInteract button:hover{background:#a855f7;color:#000;}
+</style>
+<div id="gwBanner">👁 GOD WITHIN — ROAM &amp; CONFRONT</div>
+<div id="gwInteract"><div class="gw-who"></div></div>
+<script>
+window.BANNON_GODWITHIN = (function(){
+  let active=false, target=null, poll=null;
+  const banner=()=>document.getElementById('gwBanner');
+  const box=()=>document.getElementById('gwInteract');
+  function nearestNPC(){ const fs=(typeof fighters!=='undefined')?fighters:window.fighters; if(!fs||!fs.length) return null;
+    const me=fs.find(f=>f.isPlayer)||fs[0]; let best=null,bd=2.4;
+    for(const f of fs){ if(f===me||!f||f.hp<=0) continue; const d=Math.hypot((f.x-me.x),(f.z-me.z)); if(d<bd){bd=d;best=f;} } return best; }
+  function nameOf(f){ try{ return ((f.opts&&f.opts.name)||f.name||'').toString(); }catch(e){ return 'SOMEONE'; } }
+  function showInteract(f){ const b=box(); if(!b) return; target=f; b.querySelector('.gw-who').textContent=nameOf(f).replace(/_/g,' ');
+    b.style.display='flex'; }
+  function hideInteract(){ const b=box(); if(b) b.style.display='none'; target=null; }
+  function tick(){ if(!active) return; if(typeof gameState!=='undefined' && gameState!=='fight'){ return; }
+    const f=nearestNPC(); if(f && f!==target) showInteract(f); else if(!f && target) hideInteract(); }
+  function start(){
+    // enter the world: spawn the player persona + a roster rival in the arena, roam freely
+    try{ const roster=(typeof BANNON_ROSTER!=='undefined'&&BANNON_ROSTER.length)?BANNON_ROSTER:null;
+      const me='BANNON'; let foe='VIPER'; try{ const U=window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get&&window.BANNON_UNIVERSE.get();
+        if(U){ const rv=(window.BANNON_UNIVERSE.rivalsOf?window.BANNON_UNIVERSE.rivalsOf(U,me):[])||[]; if(rv[0]) foe=rv[0]; } }catch(e){}
+      window.MATCH_SETUP={p1Name:me,p2Name:foe,p1Control:'YOU',p2Control:'AI',type:'ONEVONE'};
+      window.__godWithinRoam=true;
+      if(typeof startFight==='function') startFight();
+    }catch(e){}
+    active=true; const b=banner(); if(b) b.style.display='block';
+    if(poll) clearInterval(poll); poll=setInterval(tick, 400);
+    try{ if(window.BANNON_STORY && window.BANNON_STORY.log) window.BANNON_STORY.log('Entered the God Within.'); }catch(e){}
+    return true;
+  }
+  function stop(){ active=false; if(poll){clearInterval(poll);poll=null;} hideInteract(); const b=banner(); if(b) b.style.display='none'; window.__godWithinRoam=false; }
+  function talk(){ if(!target) return; const nm=nameOf(target); const me='BANNON';
+    let line='...'; try{ if(window.BANNON_PROMOS && window.BANNON_PROMOS.line) line=window.BANNON_PROMOS.line(me,nm); }catch(e){}
+    try{ if(window.BANNON_STORY && window.BANNON_STORY.changeRel) window.BANNON_STORY.changeRel(me,nm,+4); }catch(e){}
+    try{ if(typeof announce==='function') announce(line||('You size up '+nm.replace(/_/g,' ')), me); }catch(e){}
+    hideInteract(); }
+  function challenge(){ if(!target) return; try{ if(typeof announce==='function') announce('CHALLENGE!', nameOf(target).replace(/_/g,' ')); }catch(e){}
+    window.__godWithinRoam=false; hideInteract(); }   // the fighter is already live — combat proceeds
+  function wireBtns(){ const b=box(); if(!b || b.__wired) return; b.__wired=true;
+    ['TALK','CHALLENGE','LEAVE'].forEach(lbl=>{ const btn=document.createElement('button'); btn.textContent=lbl;
+      btn.onclick=()=>{ if(lbl==='TALK')talk(); else if(lbl==='CHALLENGE')challenge(); else { hideInteract(); } };
+      b.appendChild(btn); }); }
+  try{ wireBtns(); }catch(e){}
+  return { start, stop, talk, challenge, isActive:()=>active };
+})();
 </script>
 </body>
 </html>
