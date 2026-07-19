@@ -14302,10 +14302,11 @@ function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MO
 // a banked skinned GLB (16-bone, geodesic + anatomical clamps). A user pick in the model menu still
 // overrides (localStorage CHAR_MODEL wins). Add a row when a new canon model banks.
 const CHAR_MODEL_DEFAULTS = {
-  // BANNON: no default GLB — every BANNON GLB currently breaks through the ENGINE RETARGET (chunk-rig
-  // contorts; UniRig-rigged measured with reversed arms/guard + foot mesh not deforming). Until the
-  // retarget/orientation is fixed and MEASURED-correct against the physics rig, no GLB default is set.
-  // BANNON:{url:'assets/models/BANNON_rigged.glb',name:'BANNON (canon)'},   // re-enable when retarget verified
+  // BANNON: default OFF (procedural). MEASURED: even UniRig-rigged + arm-hold, the right arm binds
+  // behind the body — UniRig's rest pose for this mesh isn't a clean stance, so the retarget can't fix
+  // it. The real fix is animation-driven (a proper idle CLIP overrides the bad rest pose) on a shared
+  // skeleton — a dedicated build. Not shipping a measured-broken model as default.
+  // BANNON:{url:'assets/models/BANNON_rigged.glb',name:'BANNON (canon)'},
   MAIME:{url:'assets/models/MAIME.glb',name:'MAIME (canon)'},
   ONYX:{url:'assets/models/ONYX_skinned.glb',name:'ONYX'},
   CODY_CALLAHAN:{url:'assets/models/CODY_gear_skinned.glb',name:'CODY · Gear'},
@@ -14529,6 +14530,16 @@ function updateFighterModel(f){
   if(modelCfg.animate && m.userData.mapped && !(typeof FREEPOSE!=='undefined'&&FREEPOSE)){
     try{
       for(const mp of m.userData.mapped){
+        // ARM-HOLD (window.GLB_ARM_HOLD, default on): the physics arm-aim is unstable for near-horizontal
+        // guard arms — it reverses the guard / crosses arms behind the body (measured). Legs + spine
+        // retarget cleanly; arms don't. So OUTSIDE of actual attacks, hold the arms in the model's own
+        // clean rest pose (symmetric, at the sides) instead of the buggy aim — models stop being mutant
+        // when standing/moving. During a strike/grab the aim runs so arms still swing.
+        if(window.GLB_ARM_HOLD!==false && mp.bone.userData.restQuat){
+          const _isArm=(mp.toJ==='elL'||mp.toJ==='haL'||mp.toJ==='elR'||mp.toJ==='haR');
+          const _attacking=(f.state==='attack'||f.state==='grab'||f.state==='grabbed'||f.state==='deliver');
+          if(_isArm && !_attacking){ mp.bone.quaternion.slerp(mp.bone.userData.restQuat, 0.35); continue; }
+        }
         const a=f.worldJoint(mp.fromJ), b=f.worldJoint(mp.toJ);
         _mDir.set(b.x-a.x, b.y-a.y, b.z-a.z); if(_mDir.lengthSq()<1e-6) continue; _mDir.normalize();
         const par=mp.bone.parent; if(par) par.updateMatrixWorld(true);

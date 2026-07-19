@@ -38,6 +38,22 @@ if (root==null) root = joints[0];
 const name = {};
 name[root] = 'Hips';
 
+// WORLD positions (compose local T*R down the hierarchy) so limb SIDE is read from where the hand/foot
+// actually is in space — the shoulder's tiny local-Z was unreliable and flipped the arms. +Z = LEFT.
+function qrot(q,v){ // rotate vec3 v by quat q [x,y,z,w]
+  const x=v[0],y=v[1],z=v[2], qx=q[0],qy=q[1],qz=q[2],qw=q[3];
+  const ix=qw*x+qy*z-qz*y, iy=qw*y+qz*x-qx*z, iz=qw*z+qx*y-qy*x, iw=-qx*x-qy*y-qz*z;
+  return [ ix*qw+iw*-qx+iy*-qz-iz*-qy, iy*qw+iw*-qy+iz*-qx-ix*-qz, iz*qw+iw*-qz+ix*-qy-iy*-qx ]; }
+const _wp={}, _wq={};
+function computeWorld(idx, pPos, pQuat){ const n=j.nodes[idx];
+  const t=n.translation||[0,0,0], q=n.rotation||[0,0,0,1];
+  const rt=qrot(pQuat,t); const pos=[pPos[0]+rt[0],pPos[1]+rt[1],pPos[2]+rt[2]];
+  // quat multiply pQuat*q
+  const a=pQuat,b=q; const wq=[ a[3]*b[0]+a[0]*b[3]+a[1]*b[2]-a[2]*b[1], a[3]*b[1]-a[0]*b[2]+a[1]*b[3]+a[2]*b[0], a[3]*b[2]+a[0]*b[1]-a[1]*b[0]+a[2]*b[3], a[3]*b[3]-a[0]*b[0]-a[1]*b[1]-a[2]*b[2] ];
+  _wp[idx]=pos; _wq[idx]=wq; (n.children||[]).forEach(c=>computeWorld(c,pos,wq)); }
+computeWorld(root,[0,0,0],[0,0,0,1]);
+function chainTipWorldZ(startIdx){ let idx=startIdx,g=0; while(idx!=null&&g++<12){ const kids=childrenJoints(idx); if(kids.length!==1)break; idx=kids[0]; } return (_wp[idx]||_wp[startIdx]||[0,0,0])[2]; }
+
 // legs = the two children of root with the most-negative Y (down); spine = the remaining up child.
 const rootKids = childrenJoints(root).slice().sort((a,b)=>ty(a)-ty(b));
 const legKids = rootKids.filter(k=>ty(k) < 0.02);
@@ -64,7 +80,7 @@ const neck = chestKids.filter(k=>Math.abs(tz(k))<0.04).sort((a,b)=>ty(b)-ty(a))[
           || chestKids.slice().sort((a,b)=>ty(b)-ty(a))[0];
 if (neck!=null){ name[neck]='Neck'; const nk=childrenJoints(neck); if(nk[0]!=null) name[nk[0]]='Head'; }
 const arms = chestKids.filter(k=>k!==neck).sort((a,b)=>Math.abs(tz(b))-Math.abs(tz(a))).slice(0,2);
-arms.forEach(a=>{ const side = tz(a) >= 0 ? 'Left':'Right';
+arms.forEach(a=>{ const side = chainTipWorldZ(a) >= 0 ? 'Left':'Right';   // side by the HAND's world Z, not the shoulder's local z
   chain(a, [side+'Shoulder', side+'Arm', side+'ForeArm', side+'Hand']); });
 
 // legs by Z sign
