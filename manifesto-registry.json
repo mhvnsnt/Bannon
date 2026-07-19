@@ -443,6 +443,22 @@
         "weight_detection",
         "procedural_failure"
       ]
+    },
+    {
+      "id": "midair_grapple_intercept",
+      "name": "Mid-Air Grapple Interception",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Scans the immediate collision volume in Fighter.update. If the opponent is in an airborne state (dive/jumping/high negative Y velocity) and enters the 1.4m catch radius while the defender is ready (idle/walk/grab), the engine procedurally hijacks the opponent's momentum vector into a physics-based powerslam, neutralizing the aerial attack in mid-air.",
+      "keywords": [
+        "physics",
+        "interception",
+        "mid-air",
+        "dive",
+        "catch",
+        "powerslam",
+        "momentum"
+      ]
     }
   ]
 }
