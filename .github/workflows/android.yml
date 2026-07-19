@@ -32,9 +32,7 @@ jobs:
           # move library / MDickie moves / fbx map — the game fetch()es these at runtime; without them
           # the moveset + story data silently 404 inside the APK.
           cp assets/moves/*.json $A/assets/moves/ 2>/dev/null || true
-          # jukebox audio (owner tracks) so menu/entrance/victory music works offline in the app.
-          cp assets/audio/* $A/assets/audio/ 2>/dev/null || true
-          echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files, audio $(ls $A/assets/audio | wc -l) files"
+          echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files"
 
       - uses: actions/setup-java@v4
         with:
