@@ -27046,24 +27046,62 @@ console.log('[BANNON v89] Dive-damage fix, persistent continuous skin, universal
       if (this.J.knL) { this.J.knL.tgt.y += cL * amp * 0.6; }
       if (this.J.knR) { this.J.knR.tgt.y += cR * amp * 0.6; }
 
-      // ARM FLAIL — both arms thrash, fighting to grab something
-      // Reaches for the attacker's arms, then swings out, then clutches the air
+      
+      // BANNON PROCEDURAL ROPE BREAK REACHES (PHASE 5 #32)
+      // Check distance to ring ropes (x or z near +/- 4.5 assuming standard 5m ring).
+      // If close enough, the free arm abandons flailing and uses FBIK to physically stretch toward the ropes.
+      const ropeLimit = window.ROPE_BOUNDS || 4.2; // default rope edge
+      const distToX = Math.min(Math.abs(this.x - ropeLimit), Math.abs(this.x + ropeLimit));
+      const distToZ = Math.min(Math.abs(this.z - ropeLimit), Math.abs(this.z + ropeLimit));
+      const minDist = Math.min(distToX, distToZ);
+      
+      let reaching = false;
+      let targetX = 0, targetZ = 0;
+      if (minDist < 1.35) { // Within desperate reach distance
+         reaching = true;
+         if (distToX < distToZ) {
+             targetX = this.x > 0 ? ropeLimit + 0.2 : -ropeLimit - 0.2;
+             targetZ = this.z;
+         } else {
+             targetX = this.x;
+             targetZ = this.z > 0 ? ropeLimit + 0.2 : -ropeLimit - 0.2;
+         }
+      }
+
+      // ARM FLAIL OR ROPE REACH
       const flailFreq = 5.5 + panic * 3.5;
       const flailAmp  = 0.08 + panic * 0.10;
       const fL = Math.sin(t * flailFreq + 1.2);
       const fR = Math.cos(t * flailFreq + 0.4);
+      
       if (this.J.haL) {
-        this.J.haL.tgt.x += fL * flailAmp;
-        this.J.haL.tgt.y += Math.abs(fL) * flailAmp * 0.5;
-        this.J.haL.tgt.z += fL * flailAmp * 0.7;
+        if (reaching) {
+            // Stretch arm fully toward the ropes
+            this.J.haL.tgt.x = targetX;
+            this.J.haL.tgt.z = targetZ;
+            this.J.haL.tgt.y = 0.5; // Roughly rope height
+        } else {
+            this.J.haL.tgt.x += fL * flailAmp;
+            this.J.haL.tgt.y += Math.abs(fL) * flailAmp * 0.5;
+            this.J.haL.tgt.z += fL * flailAmp * 0.7;
+        }
       }
+      
       if (this.J.haR) {
-        this.J.haR.tgt.x += fR * flailAmp;
-        this.J.haR.tgt.y += Math.abs(fR) * flailAmp * 0.5;
-        this.J.haR.tgt.z -= fR * flailAmp * 0.7;
+        if (reaching && !this.J.haL) { // Only reach with one arm, prefer left for now, or could check proximity
+            this.J.haR.tgt.x = targetX;
+            this.J.haR.tgt.z = targetZ;
+            this.J.haR.tgt.y = 0.5;
+        } else {
+            this.J.haR.tgt.x += fR * flailAmp;
+            this.J.haR.tgt.y += Math.abs(fR) * flailAmp * 0.5;
+            this.J.haR.tgt.z -= fR * flailAmp * 0.7;
+        }
       }
-      if (this.J.elL) { this.J.elL.tgt.x += fL * flailAmp * 0.4; }
-      if (this.J.elR) { this.J.elR.tgt.x += fR * flailAmp * 0.4; }
+      
+      if (this.J.elL) { this.J.elL.tgt.x += reaching ? 0 : fL * flailAmp * 0.4; }
+      if (this.J.elR) { this.J.elR.tgt.x += (reaching && !this.J.haL) ? 0 : fR * flailAmp * 0.4; }
+
 
       // HEAD THRASH — head twists side to side trying to escape
       if (this.J.head) {
