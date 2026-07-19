@@ -11666,10 +11666,12 @@ function buildArena(){
 // (colors/tron content/barricade style). Additive: touches NOTHING in the verlet ring/ropes/posts.
 // Owner's ring textures (assets/ring/*) skin the tron + banners. Arena editor drives ARENA_PRESET. =====
 window.ARENA_PRESETS = window.ARENA_PRESETS || {
-  BANNON: { name:'BANNON', accent:0xff7a1a, tron:0xff7a1a, barricade:0x1a1a22, ramp:0x14100c, screen:'assets/ring/bannon_mat_logo.png', label:'BANNON' },
-  AWE:    { name:'AWE',    accent:0xffcc33, tron:0xffcc33, barricade:0x101820, ramp:0x0c0c10, screen:null, label:'AWE' },
-  JPCW:   { name:'JPCW',   accent:0x33ccff, tron:0x33ccff, barricade:0x0a1420, ramp:0x0a0e14, screen:null, label:'JPCW' },
-  NWC:    { name:'NWC',    accent:0x22ff88, tron:0x22ff88, barricade:0x0a1a10, ramp:0x0a140c, screen:null, label:'NWC' }
+  // barricadeStyle: 'broadcast' = solid padded WWE-style wall (corners break/spear-through);
+  //                 'guardrail' = ECW/indie metal steel railing (tilts/knocks over, crowd resets it).
+  BANNON: { name:'BANNON', accent:0xff7a1a, tron:0xff7a1a, barricade:0x1a1a22, ramp:0x14100c, screen:'assets/ring/bannon_mat_logo.png', label:'BANNON', barricadeStyle:'broadcast' },
+  AWE:    { name:'AWE',    accent:0xffcc33, tron:0xffcc33, barricade:0x101820, ramp:0x0c0c10, screen:null, label:'AWE', barricadeStyle:'broadcast' },
+  JPCW:   { name:'JPCW',   accent:0x33ccff, tron:0x33ccff, barricade:0x0a1420, ramp:0x0a0e14, screen:null, label:'JPCW', barricadeStyle:'guardrail' },
+  NWC:    { name:'NWC',    accent:0x22ff88, tron:0x22ff88, barricade:0x0a1a10, ramp:0x0a140c, screen:null, label:'NWC', barricadeStyle:'guardrail' }
 };
 window.ARENA_PRESET = window.ARENA_PRESET || 'BANNON';
 let _arenaTronTex=null;
@@ -11741,23 +11743,32 @@ function buildArenaStage(group, accentCol, cold){
   const banner=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,0.5,32,1,true), new THREE.MeshBasicMaterial({map:_arenaTronTex,side:THREE.DoubleSide})); banner.position.y=-1.5; hung.add(banner);
   // hang cables to the truss
   [[-1.6,1.6],[1.6,1.6],[1.6,-1.6],[-1.6,-1.6]].forEach(c=>{ const cab=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,2.4,5), new THREE.MeshStandardMaterial({color:0x222})); cab.position.set(c[0],8.3,c[1]); hung.add(cab.position?cab:cab); group.add(cab); });
-  // --- RINGSIDE BARRICADES — pushed OUT near the crowd (not hugging the ring); the entrance side
-  // runs PARALLEL to the ramp and curves toward the crowd, leaving the ramp opening clear (owner spec) ---
-  const barMat=new THREE.MeshStandardMaterial({ color:P.barricade||0x1a1a22, roughness:0.7, metalness:0.3, emissive:acc, emissiveIntensity:0.08 });
-  const bx = HZ + 5.0, seg=1.4, barH=0.7, rampHalf=1.9;   // bx pushed out toward the crowd
-  window.__barricades = [];   // registered for the destructible-barricade impact system
-  const addBar=(x,z,dir,len)=>{ len=len||seg; const b=new THREE.Mesh(new THREE.BoxGeometry(0.12,barH,len), barMat.clone()); b.position.set(x,barH/2-0.3,z); b.rotation.y=dir; b.castShadow=true; group.add(b);
-    const cap=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.05,len), ledMat.clone()); cap.position.set(x,barH-0.28,z); cap.rotation.y=dir; group.add(cap);
-    window.__barricades.push({ b, cap, x, z, dir, broken:false }); };
-  // front (hard-cam +Z) + two sides — full runs facing the crowd
-  for(let x=-bx; x<=bx; x+=seg){ addBar(x, bx, Math.PI/2); }               // front
-  for(let z=-bx; z<=bx; z+=seg){ addBar(bx, z, 0); addBar(-bx, z, 0); }    // sides
-  // entrance (-Z): straight barricade at the crowd line EXCEPT the ramp gap, then parallel-to-ramp returns
-  for(let x=-bx; x<=bx; x+=seg){ if(Math.abs(x) > rampHalf+0.3) addBar(x, -bx, Math.PI/2); }   // gap left for the ramp
-  // parallel-to-ramp guide rails from the ring out toward the crowd, then a short curve outward
-  for(let z=-HZ-1.2; z> -bx+2.2; z-=seg){ addBar( rampHalf, z, 0); addBar(-rampHalf, z, 0); }
-  // curve returns toward the crowd (angled segments) at the crowd end of the ramp rails
-  [-1,1].forEach(s=>{ for(let k=0;k<3;k++){ const ang=(Math.PI/2)*(k+1)/4; const zc=-bx+2.2 - Math.sin(ang)*1.2*k*0.0; addBar(s*(rampHalf+Math.sin(ang)*1.4*(k+1)*0.5), -bx+2.0 + Math.cos(ang)*0*k, s>0?ang:-ang, seg); } });
+  // --- RINGSIDE GUARDRAILS (ECW/indie metal barricade): straight runs on the 4 sides + ROUNDED
+  // (quarter-circle) CORNERS that curve around toward the crowd, like WWE 2K / real arenas. Only the
+  // corners break/knock-over on impact; straight rails TILT & spring back (real Irish-whip behavior). ---
+  const bx = HZ + 5.0, seg=1.5, cornerR=2.0, rampHalf=1.9;
+  const style = P.barricadeStyle || 'broadcast';
+  window.__barricades = [];
+  const railMetal=(corner)=> new THREE.MeshStandardMaterial({ color:corner?0x6a7686:0x9aa6b6, metalness:0.85, roughness:0.32, emissive:acc, emissiveIntensity:corner?0.14:0.05 });
+  const panelMat=(corner)=> new THREE.MeshStandardMaterial({ color:P.barricade||0x1a1a22, roughness:0.7, metalness:0.3, emissive:acc, emissiveIntensity:corner?0.14:0.08 });
+  // A segment is a GROUP pivoting at its base (so it can tilt/knock over). broadcast=solid padded panel
+  // + LED top; guardrail=2 posts + 3 steel bars. Both register with a HOME transform for crowd-reset.
+  function makeSeg(cx,cz,dir,len,corner){ const g=new THREE.Group(); g.position.set(cx,-0.28,cz); g.rotation.y=dir;
+    if(style==='guardrail'){ const m=railMetal(corner);
+      [-len/2,len/2].forEach(px=>{ const p=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.05,0.86,8), m); p.position.set(px,0.43,0); g.add(p); });
+      [0.20,0.44,0.68].forEach(ry=>{ const r=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,len,8), m); r.rotation.z=Math.PI/2; r.position.set(0,ry,0); g.add(r); }); }
+    else { const panel=new THREE.Mesh(new THREE.BoxGeometry(len,0.72,0.12), panelMat(corner)); panel.position.set(0,0.44,0); g.add(panel);
+      const led=new THREE.Mesh(new THREE.BoxGeometry(len,0.06,0.15), ledMat.clone()); led.position.set(0,0.82,0); g.add(led); }
+    g.castShadow=true; group.add(g);
+    window.__barricades.push({ g, x:cx, z:cz, dir, corner:!!corner, style, broken:false, tilt:0, tiltV:0, home:{x:cx,y:-0.28,z:cz,ry:dir}, clearT:0 }); return g; }
+  const inner=bx-cornerR;
+  for(let x=-inner; x<=inner; x+=seg) makeSeg(x, bx, 0, seg, false);                 // front (+Z)
+  for(let z=-inner; z<=inner; z+=seg){ makeSeg(bx, z, Math.PI/2, seg, false); makeSeg(-bx, z, Math.PI/2, seg, false); }  // sides
+  for(let x=-inner; x<=inner; x+=seg){ if(Math.abs(x) > rampHalf+0.5) makeSeg(x, -bx, 0, seg, false); }   // back, ramp gap clear
+  // rounded corners — quarter-circle arcs that curve toward the crowd (the break/knock-over sections)
+  function cornerArc(scx,scz,a0){ const n=4; for(let k=0;k<n;k++){ const a=a0+(Math.PI/2)*(k+0.5)/n;
+    makeSeg(scx+cornerR*Math.cos(a), scz+cornerR*Math.sin(a), a, (Math.PI/2)*cornerR/n*1.06, true); } }
+  cornerArc( inner,  inner, 0); cornerArc(-inner,  inner, Math.PI/2); cornerArc(-inner, -inner, Math.PI); cornerArc( inner, -inner, -Math.PI/2);
   // stage key light
   const sl0=new THREE.SpotLight(acc, 2.2, 26, Math.PI/6, 0.4); sl0.position.set(0,8,stageZ+2); sl0.target.position.set(0,0,0); group.add(sl0); group.add(sl0.target);
 }
@@ -11860,6 +11871,15 @@ function updateArenaAnim(t){
   // Phase D: animated trons + pyro/smoke particles
   try{ if(window.BANNON_TRON) window.BANNON_TRON.draw(t); }catch(e){}
   try{ if(window.BANNON_FX) window.BANNON_FX.step(); }catch(e){}
+  // Phase C: barricade tilt spring + guardrail crowd-reset (knocked rails stay down while a fighter is
+  // near, then the crowd pushes them back to their home position once the area clears)
+  try{ const B=window.__barricades; if(B){ for(const bar of B){ if(bar.broken||!bar.g) continue;
+    let target=0;
+    if(bar.knocked){ let near=false; if(typeof fighters!=='undefined'&&fighters){ for(const f of fighters){ if(f && Math.hypot(f.x-bar.x, f.z-bar.z)<2.7){ near=true; break; } } }
+      if(near){ bar.clearT=0; target=1.2; } else { bar.clearT=(bar.clearT||0)+0.016; if(bar.clearT>1.2){ bar.knocked=false; target=0; } else target=1.2; } }
+    if(bar.tilt||bar.tiltV||target){ bar.tiltV += (target-bar.tilt)*0.22; bar.tiltV*=0.6; bar.tilt+=bar.tiltV;
+      if(Math.abs(bar.tilt)<0.003 && Math.abs(bar.tiltV)<0.003){ bar.tilt=0; bar.tiltV=0; }
+      bar.g.rotation.x = bar.tilt; } } } }catch(e){}
 }
 
 // ============================================================================
@@ -36528,18 +36548,32 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 // brawling. Same velocity-sampled impact model as the ring posts; no scripted anim. =====
 (function(){
   if(window.__barricadeContact) return; window.__barricadeContact=true;
-  function shatter(bar, f, sev){ bar.broken=true;
-    try{ bar.b.visible=false; bar.cap.visible=false; }catch(e){}
-    // debris: a few tumbling fragments that fall + fade (reuses BANNON_FX smoke + a couple boxes)
-    try{ if(window.BANNON_FX){ const acc=(window.ARENA_PRESETS&&window.ARENA_PRESETS[window.ARENA_PRESET]||{}).accent||0xffaa22; window.BANNON_FX.pyroBurst(bar.x,bar.z,acc,26); window.BANNON_FX.smokePuff(bar.x,bar.z); } }catch(e){}
-    try{ if(typeof scene!=='undefined'){ for(let i=0;i<4;i++){ const d=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.18,0.5), bar.b.material); d.position.set(bar.x+(Math.random()-0.5)*0.8,0.2,bar.z+(Math.random()-0.5)*0.8); d.rotation.set(Math.random(),Math.random(),Math.random()); scene.add(d);
-      (function(m){ let life=1; const iv=setInterval(()=>{ life-=0.05; m.position.y=Math.max(-0.3,m.position.y-0.04); m.rotation.z+=0.1; if(life<=0){ try{scene.remove(m);}catch(_){} clearInterval(iv);} },40); })(d); } } }catch(e){}
-    try{ if(typeof applyDamage==='function') applyDamage(f, (25+70*sev)*(window.DMG_SCALE||1), f.opponent&&f.opponent(), {power:35+55*sev,height:'MID',traj:'STRAIGHT',limb:'BARRICADE',name:'BARRICADE'}, sev>0.7); }catch(e){}
-    try{ if(sev>0.5 && f.triggerKnockdown) f.triggerKnockdown(0,0.9+sev*0.6); }catch(e){}
-    try{ if(typeof camShake!=='undefined') camShake=Math.max(camShake,0.4+0.4*sev); if(typeof triggerHitStop==='function') triggerHitStop(0.06+0.06*sev); }catch(e){}
-    try{ if(typeof announce==='function') announce('THROUGH THE BARRICADE!', (typeof fname==='function'?fname(f):'')+' CRASHES INTO THE CROWD'); }catch(e){}
+  // BROADCAST style: only the CORNER sections break/spear-through (permanent gap); straight panels push
+  // back + spring. GUARDRAIL style (ECW/indie): sections KNOCK OVER on force+angle then the crowd pushes
+  // them back into place once the area clears; light hits just tilt + spring. (tilt/reset in updateArenaAnim)
+  function hitBarricade(bar, f, sev){
+    const acc=(window.ARENA_PRESETS&&window.ARENA_PRESETS[window.ARENA_PRESET]||{}).accent||0xffaa22;
+    if(bar.style==='broadcast' && bar.corner && sev>0.5){
+      bar.broken=true; try{ bar.g.visible=false; }catch(e){}    // spear through the corner — gap to the crowd
+      try{ if(window.BANNON_FX){ window.BANNON_FX.pyroBurst(bar.x,bar.z,acc,18); window.BANNON_FX.smokePuff(bar.x,bar.z); } }catch(e){}
+      try{ if(typeof applyDamage==='function') applyDamage(f, (28+70*sev)*(window.DMG_SCALE||1), f.opponent&&f.opponent(), {power:35+55*sev,height:'MID',traj:'STRAIGHT',limb:'BARRICADE',name:'BARRICADE'}, sev>0.7); }catch(e){}
+      try{ if(f.triggerKnockdown) f.triggerKnockdown(0,1.0+sev*0.6); }catch(e){}
+      try{ if(typeof announce==='function') announce('THROUGH THE BARRICADE!', (typeof fname==='function'?fname(f):'')+' CRASHES INTO THE CROWD'); }catch(e){}
+    } else if(bar.style==='guardrail' && sev>0.5){
+      bar.knocked=true; bar.clearT=0; bar.tiltV += 0.28*sev; bar.tilt = Math.max(bar.tilt, 0.4);   // tipped over toward the crowd; crowd resets it later
+      try{ if(window.BANNON_FX) window.BANNON_FX.smokePuff(bar.x,bar.z); }catch(e){}
+      try{ if(typeof applyDamage==='function') applyDamage(f, (20+55*sev)*(window.DMG_SCALE||1), f.opponent&&f.opponent(), {power:30+45*sev,height:'MID',traj:'STRAIGHT',limb:'BARRICADE',name:'GUARDRAIL'}, sev>0.75); }catch(e){}
+      try{ if(sev>0.7 && f.triggerKnockdown) f.triggerKnockdown(0,0.9+sev*0.5); else if(f.enterStumble) f.enterStumble(0,26*sev); }catch(e){}
+      try{ if(typeof announce==='function') announce('OVER THE GUARDRAIL!', (typeof fname==='function'?fname(f):'')+' flattens the steel rail'); }catch(e){}
+    } else {
+      bar.tiltV += 0.10*sev;   // light: tilt + spring back (no break, no knock-over)
+      try{ if(typeof applyDamage==='function') applyDamage(f, (8+26*sev)*(window.DMG_SCALE||1), f.opponent&&f.opponent(), {power:18+26*sev,height:'MID',traj:'STRAIGHT',limb:'BARRICADE',name:(bar.style==='guardrail'?'GUARDRAIL':'BARRICADE')}, false); }catch(e){}
+      try{ if(f.enterStumble) f.enterStumble(0,18*sev); }catch(e){}
+      try{ if(typeof announce==='function') announce(bar.style==='guardrail'?'INTO THE GUARDRAIL':'INTO THE BARRICADE', (typeof fname==='function'?fname(f):'')+' rattles the steel'); }catch(e){}
+    }
+    try{ if(typeof camShake!=='undefined') camShake=Math.max(camShake,0.3+0.4*sev); if(typeof triggerHitStop==='function') triggerHitStop(0.05+0.06*sev); }catch(e){}
   }
-  window.__shatterBarricade = shatter;   // debug/verify hook
+  window.__shatterBarricade = hitBarricade;   // debug/verify hook
   setInterval(()=>{ try{
     if(typeof gameState==='undefined'||gameState!=='fight'||!window.__barricades||!window.__barricades.length||typeof fighters==='undefined'||!fighters) return;
     for(const f of fighters){ if(!f||f.isDown&&f.isDown()||(f.airLift||0)>0.1||f.state==='grabbed'||f.grappling) continue;
@@ -36549,7 +36583,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       for(const bar of window.__barricades){ if(bar.broken) continue;
         const dx=bar.x-f.x, dz=bar.z-f.z, d=Math.hypot(dx,dz); if(d>0.85) continue;
         const toward=(vx*dx+vz*dz)/(d*Math.max(0.1,spd)); if(toward<0.4) continue;
-        f.__barCd=1.4; shatter(bar, f, Math.min(1,spd/4.2)); break; }
+        f.__barCd=1.4; hitBarricade(bar, f, Math.min(1,spd/4.2)); break; }
     }
   }catch(e){} }, 120);
   console.log('%c[PHASE C] destructible barricades armed', 'color:#ffaa22;font-weight:bold');
