@@ -2280,6 +2280,12 @@ class Fighter {
     this.attackData = null;
     this.attackPhase = 0;    // 0..1 windup->strike->recover
     this.hitLanded = false;
+
+  // BANNON STRIKE ANIMATION INJECTION
+  if (this.useAnimBridge && !this._animMixer || this._animCategory !== 'STRIKE') {
+    this.playAnimClip('STRIKE', {fadeIn: 0.05, fadeOut: 0.1, timeScale: 1.5}); // Fast snap for strike
+  }
+
     this.comboWindow = 0;
     this.blockHold = false;
     this.walkPhase = 0;
@@ -2291,6 +2297,12 @@ class Fighter {
     this.grabTimer = 0;
     this.grappling = false;
     this.grappleStage = 0;
+
+  // BANNON GRAPPLE ANIMATION INJECTION
+  if (this.useAnimBridge && !this._animMixer || this._animCategory !== 'GRAPPLE') {
+    this.playAnimClip('GRAPPLE', {fadeIn: 0.1, fadeOut: 0.1});
+  }
+
     this.grappleAim = 0;
     this.grappleTwist = 0;
     this.grapplePos = 'STANDARD';   // selected position template
@@ -4194,6 +4206,12 @@ Fighter.prototype.startAttack = function(move){
   this.attackData = move;
   this.attackPhase = 0;
   this.hitLanded = false;
+
+  // BANNON STRIKE ANIMATION INJECTION
+  if (this.useAnimBridge && !this._animMixer || this._animCategory !== 'STRIKE') {
+    this.playAnimClip('STRIKE', {fadeIn: 0.05, fadeOut: 0.1, timeScale: 1.5}); // Fast snap for strike
+  }
+
   // DISTANCE-AWARE REACH: lock the extension this strike will use based on range NOW.
   // close target -> short punch; far target -> full extension to reach.
   const opp = this.opponent();
