@@ -520,6 +520,22 @@
         "stagger",
         "bounce"
       ]
+    },
+    {
+      "id": "rope_bounce_momentum",
+      "name": "Rope Bounce Momentum Multiplier",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "When a fighter hits the ring boundary with sufficient velocity (Math.abs(vx) > 0.6) and is not in the corner, they rebound off the ropes. The engine reverses their velocity vector (vx = -vx * 0.62) and now injects a temporary `powerMultiplier = 1.35`. This multiplier is consumed by applyDamage on their next successful strike, rewarding Irish Whips and rope-running with a 35% damage bonus.",
+      "keywords": [
+        "physics",
+        "ropes",
+        "rebound",
+        "momentum",
+        "multiplier",
+        "damage",
+        "irish_whip"
+      ]
     }
   ]
 }
