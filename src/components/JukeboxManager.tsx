@@ -2,32 +2,46 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Play, Pause, FastForward, SkipBack, Volume2, Upload, Plus, Image as ImageIcon, Edit2, X, Music } from 'lucide-react';
 
 export type Track = {
-            id: string;
-    { id: '1', title: 'M. Heaven$ent owe me_4.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '2', title: 'lies m_2.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '3', title: 'gmg M. Heaven$ent act like ya know_2.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '4', title: 'dungeon m_2 fin_1.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '5', title: 'cream M. Heaven$ent.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '6', title: 'M. Heaven$ent finxsse gmg business that pays_3 nrw.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '7', title: 'opps fallin M. Heaven$ent ft jackboy blakk baby j finxsse_4 new mp2...', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '8', title: '4RTMS - HIRUZEN.mp3', duration: '3:00', type: 'menu', artist: '4rtms' },
-    { id: '9', title: 'M. Heaven$ent tz paramore.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '10', title: 'M. Heaven$ent dx 3.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '11', title: 'M. Heaven$ent stars.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '12', title: 'M. Heaven$ent sicikness.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '13', title: 'Mars FMMG - Picadero 2026-07-03 00_01.m4a', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '14', title: 'Mars FMMG - Narco 2026-07-02 05_05.m4a', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '15', title: '04 - Castle Nosferatu (Sega-style FM Synth Remix).aac', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '16', title: 'M. Heaven$ent slo burn_1.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '17', title: 'M. Heaven$ent cult_3mp3.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '18', title: 'M. Heaven$ent gmg champion 7.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '19', title: 'hell nah M. Heaven$ent finxsse.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '20', title: 'Mars FMMG - bannon theme no Acapella 2026-07-17 1...', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '21', title: 'final_master_switch.mp3', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '22', title: 'Mars FMMG - Japanese Denim Apr 22, 2026, 934 AM....', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '23', title: 'Mars FMMG - Zumbando.m4a', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-    { id: '24', title: 'Mars FMMG - Dio 2026-07-03 03_34.m4a', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent' },
-                    id: `local-${Date.now()}-${index}`,
+    id: string;
+    title: string;
+    duration: string;
+    type: string;
+    artist: string;
+    featuredArtist?: string;
+    coverArt?: string;
+    audioUrl?: string;
+};
+
+const INITIAL_TRACKS: Track[] = [
+    { id: '1', title: 'Owe Me', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m owe me_4.mp3' },
+    { id: '2', title: 'Lies', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/lies m_2.mp3' },
+    { id: '3', title: 'Act Like Ya Know', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', featuredArtist: 'GMG', audioUrl: '/assets/audio/gmg m act like ya know_2.mp3' },
+    { id: '4', title: 'Dungeon', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', featuredArtist: 'Finxsse', audioUrl: '/assets/audio/dungeon m_2 fin_1.mp3' },
+    { id: '5', title: 'Cream', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/cream m.mp3' },
+    { id: '6', title: 'Business That Pays', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', featuredArtist: 'Finxsse & GMG', audioUrl: '/assets/audio/m finxsse gmg business that pays_3 nrw.mp3' },
+    { id: '7', title: 'Opps Fallin', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', featuredArtist: 'Jackboy, Blakk Baby J, Finxsse', audioUrl: '/assets/audio/opps fallin m ft jackboy blakk baby j finxsse_4 new mp2' },
+    { id: '8', title: 'Hiruzen', duration: '3:00', type: 'menu', artist: '4rtms', audioUrl: '/assets/audio/4RTMS - HIRUZEN.mp3' },
+    { id: '9', title: 'Paramore', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', featuredArtist: 'Teezzyy', audioUrl: '/assets/audio/m tz paramore.mp3' },
+    { id: '10', title: 'DX', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m dx 3.mp3' },
+    { id: '11', title: 'Stars', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m stars.mp3' },
+    { id: '12', title: 'Sickness', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m sicikness.mp3' },
+    { id: '13', title: 'Picadero', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Picadero' },
+    { id: '14', title: 'Narco', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Narco' },
+    { id: '15', title: 'Castle Nosferatu (Sega-style FM Synth Remix)', duration: '3:00', type: 'menu', artist: 'Bannon OST', audioUrl: '/assets/audio/04 - Castle Nosferatu (Sega-style FM Synth Remix).aac' },
+    { id: '16', title: 'Slo Burn', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m slo burn_1.mp3' },
+    { id: '17', title: 'Cult', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/m cult_3mp3.mp3' },
+    { id: '18', title: 'Champion', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', featuredArtist: 'GMG', audioUrl: '/assets/audio/m gmg champion 7.mp3' },
+    { id: '19', title: 'Hell Nah', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', featuredArtist: 'Finxsse', audioUrl: '/assets/audio/hell nah m finxsse.mp3' },
+    { id: '20', title: 'Bannon Theme', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Bannon Theme' },
+    { id: '21', title: 'Final Master Switch', duration: '3:00', type: 'menu', artist: 'M. Heaven$ent', audioUrl: '/assets/audio/final_master_switch.mp3' },
+    { id: '22', title: 'Japanese Denim', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Japanese Denim' },
+    { id: '23', title: 'Zumbando', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Zumbando.m4a' },
+    { id: '24', title: 'Dio', duration: '3:00', type: 'menu', artist: 'Mars FMMG', audioUrl: '/assets/audio/Mars FMMG - Dio' }
+];
+
+export default function JukeboxManager() {
+    const [tracks, setTracks] = useState<Track[]>(INITIAL_TRACKS);
+    const [currentTrack, setCurrentTrack] = useState<Track>(INITIAL_TRACKS[0]);
     const deleteTrack = (id: string) => {
         setTracks(tracks.filter(t => t.id !== id));
         if (currentTrack.id === id) {
