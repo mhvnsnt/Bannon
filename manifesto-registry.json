@@ -567,6 +567,21 @@
         "hyperextension",
         "limits"
       ]
+    },
+    {
+      "id": "procedural_rope_break",
+      "name": "Procedural Rope Break Reaches",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Intercepts Fighter.prototype.poseGrabbed during submission/grapple states. Calculates the absolute distance to the nearest ring boundary (ropes). If the defender is within 1.35m of the ropes, the routine overrides the standard sine-wave panic arm-flail. Instead, it injects an active FBIK target coordinate, causing the defender's free arm to desperately stretch and crawl linearly toward the nearest rope spline to force a break.",
+      "keywords": [
+        "physics",
+        "ik",
+        "ropes",
+        "submission",
+        "escape",
+        "reach"
+      ]
     }
   ]
 }
