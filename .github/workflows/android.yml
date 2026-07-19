@@ -44,15 +44,15 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Build debug APK (stable-signed, auto-incrementing versionCode)
+      - name: Build release APK (stable-signed, auto-incrementing versionCode)
         uses: gradle/actions/setup-gradle@v3
-      - run: BANNON_VERSION_CODE=$(git rev-list --count HEAD) gradle -p android assembleDebug --no-daemon
+      - run: BANNON_VERSION_CODE=$(git rev-list --count HEAD) gradle -p android assembleRelease --no-daemon
 
       - name: Upload APK (artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: BANNON-debug-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          name: BANNON-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
           if-no-files-found: error
 
       # Keep the in-repo APK current: on a push to main, commit the freshly built APK to dist/BANNON.apk
@@ -62,7 +62,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           mkdir -p dist
-          cp android/app/build/outputs/apk/debug/app-debug.apk dist/BANNON.apk
+          cp android/app/build/outputs/apk/release/app-release.apk dist/BANNON.apk
           git config user.name  "bannon-ci"
           git config user.email "ci@bannon.local"
           git add dist/BANNON.apk
