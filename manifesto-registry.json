@@ -395,6 +395,22 @@
         "fallback",
         "physics"
       ]
+    },
+    {
+      "id": "procedural_ik_grapple",
+      "name": "Procedural IK Collar-and-Elbow Tie-up",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Calculates dynamic hand IK targeting between opponent shoulders when initiating a grapple to simulate a collar-and-elbow tie-up even when baked mo-cap tracks are absent.",
+      "keywords": [
+        "IK",
+        "grapple",
+        "procedural",
+        "animation",
+        "fallback",
+        "physics",
+        "tie-up"
+      ]
     }
   ]
 }
