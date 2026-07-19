@@ -44,9 +44,30 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
+      - name: Generate Gradle wrapper (pinned to 8.7 for AGP 8.5.2 compatibility)
+        run: |
+          cd android
+          gradle wrapper --gradle-version 8.7 --distribution-type bin
+          ./gradlew --version
+
       - name: Build release APK (stable-signed, auto-incrementing versionCode)
-        uses: gradle/actions/setup-gradle@v3
-      - run: BANNON_VERSION_CODE=$(git rev-list --count HEAD) gradle -p android assembleRelease --no-daemon
+        run: |
+          cd android
+          BANNON_VERSION_CODE=$(git rev-list --count HEAD) ./gradlew assembleRelease --no-daemon --no-build-cache
+
+      - name: Verify APK signature (must pass or APK won't install)
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          ls -la $APK
+          # Verify with apksigner (available from Android build-tools)
+          APKSIGNER=$(find $ANDROID_HOME -name apksigner 2>/dev/null | head -1)
+          if [ -n "$APKSIGNER" ]; then
+            $APKSIGNER verify --verbose --print-certs $APK
+          else
+            echo "apksigner not found, using build-tools"
+            BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/*/ 2>/dev/null | tail -1)
+            ${BUILD_TOOLS}apksigner verify --verbose --print-certs $APK
+          fi
 
       - name: Upload APK (artifact)
         uses: actions/upload-artifact@v4
