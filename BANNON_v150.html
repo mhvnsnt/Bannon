@@ -910,6 +910,8 @@ body.match-live #movesBtn { display:none !important; }
       <button class="uni-tab" data-tab="career">MY CAREER</button>
       <button class="uni-tab" data-tab="backstage">BACKSTAGE</button>
       <button class="uni-tab" data-tab="contracts">CONTRACTS</button>
+      <button class="uni-tab" data-tab="training">TRAINING</button>
+      <button class="uni-tab" data-tab="court">COURT</button>
       <button class="uni-tab" data-tab="cup">TOURNAMENT</button>
     </div>
     <div id="uniBody" style="font-family:'Share Tech Mono',monospace; font-size:12px; line-height:1.55; color:#d8d2c4; min-height:220px;"></div>
@@ -39122,6 +39124,132 @@ window.BANNON_ENTRANCE_EDITOR = (function(){
 </script>
 
 <!-- ============================================================================================
+     BANNON_LEGACY — the deep MDickie surrounding-game systems ported into our data model (owner has
+     rights to build on the Wrestling MPire base). COURT CASES (Court.bb), TRAINING (Training.bb),
+     BACKSTAGE MEETINGS (Meetings.bb), and AFTERMATH consequences (Aftermath.bb). Values ported
+     faithfully (court fine = promoBank/10 ×[0.5..2] clamp $100..$10k; injuries mild/serious; etc.).
+     Wired into BANNON_UNIVERSE.advanceWeek so the world LIVES between shows. =====
+     ============================================================================================ -->
+<script>
+window.BANNON_LEGACY = (function(){
+  const U=()=>window.BANNON_UNIVERSE, S=()=>window.BANNON_STORY;
+  function u(){ try{ return U()&&U().get&&U().get(); }catch(e){ return null; } }
+  function rnd(a,b){ return a+Math.random()*(b-a); }
+  function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+  function keys(uu){ return uu&&uu.fighters?Object.keys(uu.fighters):[]; }
+  function rec(uu,k){ return (uu&&uu.fighters&&uu.fighters[k])||{}; }
+  function news(uu,line){ if(uu){ uu.news=uu.news||[]; uu.news.push('W'+(uu.week||0)+': '+line); } return line; }
+  function relOf(a,b){ try{ return S()&&S().rel?S().rel(a,b):0; }catch(e){ return 0; } }
+  function changeRel(a,b,d){ try{ if(S()&&S().changeRel) S().changeRel(a,b,d); }catch(e){} }
+
+  // ---- COURT CASES (Court.bb) — 8 charge archetypes; a guilty verdict fines the promotion, cancels a
+  //      show, or jails the loser (misses weeks). Triggered by bad blood (negative relationship). ----
+  const CHARGES=[
+    { id:'harassment',  accuse:'ran the locker room like a brothel',        guiltyText:'ordered to pay compensation for harassment' },
+    { id:'assault',     accuse:'is a vicious slave driver who went too far', guiltyText:'ordered to pay medical bills' },
+    { id:'contract',    accuse:'broke a "job for life" promise',            guiltyText:'ordered to pay lost earnings' },
+    { id:'ruthless',    accuse:'is a ruthless businessman who ruined a career', guiltyText:'ordered to pay damages' },
+    { id:'lazy',        accuse:'refused to do the job they were paid for',   guiltyText:'found in breach of contract' },
+    { id:'drugs',       accuse:'forced performance-enhancing drugs on talent', guiltyText:'suspended and fined' },
+    { id:'loophole',    accuse:'exploited a contract loophole to withhold pay', guiltyText:'ordered to pay withheld earnings' },
+    { id:'slander',     accuse:'slandered a rival to the press',            guiltyText:'ordered to issue damages' },
+  ];
+  function promoBank(uu){ return (uu && uu.bank!=null)?uu.bank : ((uu&&uu.promoBank)||250000); }
+  function fine(uu){ let f=promoBank(uu)/10; f=rnd(f/2,f*2); f=Math.max(100,Math.min(10000,f)); return Math.round(f/100)*100; }
+  function rollCourt(uu){ uu=uu||u(); if(!uu) return null;
+    // find a pair with bad blood
+    const ks=keys(uu); if(ks.length<2) return null;
+    let a=null,b=null,worst=0;
+    for(let n=0;n<24;n++){ const x=pick(ks), y=pick(ks); if(x===y) continue; const r=relOf(x,y); if(r<worst){ worst=r; a=x; b=y; } }
+    if(!a || worst>-30) return null;                 // needs real bad blood
+    const ch=pick(CHARGES);
+    const guilty=Math.random()< (0.4 + Math.min(0.4,(-worst)/250));  // worse blood = more likely guilty
+    const ev={ type:'court', accuser:b, defendant:a, charge:ch.id };
+    if(guilty){ const amt=fine(uu);
+      const roll=Math.random();
+      if(roll<0.6){ if(uu.bank!=null) uu.bank-=amt; ev.verdict='fine'; ev.amount=amt;
+        news(uu, a+' GUILTY — '+ch.guiltyText+' ($'+amt.toLocaleString()+') after '+b+"'s suit."); }
+      else if(roll<0.85){ const r=rec(uu,a); r.injuredWeeks=Math.max(r.injuredWeeks||0, 1+Math.floor(rnd(1,3))); ev.verdict='suspended'; ev.weeks=r.injuredWeeks;
+        news(uu, a+' SUSPENDED '+r.injuredWeeks+' wk — '+ch.accuse+' (suit by '+b+').'); }
+      else { ev.verdict='show_cancelled'; uu._showCancelled=true;
+        news(uu, "Court injunction from "+b+" CANCELS next week's card ("+ch.id+' case vs '+a+').'); }
+      changeRel(a,b,-14);
+    } else { ev.verdict='dismissed';
+      news(uu, a+' CLEARED — '+b+"'s "+ch.id+' case thrown out. '+b+' looks foolish.');
+      changeRel(a,b,-6); }
+    return ev; }
+
+  // ---- TRAINING (Training.bb) — improve a stat between shows; fatigue + small injury risk. ----
+  const STATS=['strength','stamina','toughness','speed','charisma','technique'];
+  function train(name, stat){ const uu=u(); if(!uu) return null; const r=rec(uu,name); stat=stat||pick(STATS);
+    r.stats=r.stats||{}; const cur=r.stats[stat]||50;
+    if((r.injuredWeeks||0)>0) return { name, stat, blocked:true, msg:name+' is injured — cannot train.' };
+    const gain=Math.round(rnd(1,4)*(1 - cur/140));       // diminishing returns near the ceiling
+    r.stats[stat]=Math.min(100, cur+Math.max(1,gain));
+    let hurt=false; if(Math.random()<0.06){ r.injuredWeeks=Math.max(r.injuredWeeks||0,1); hurt=true; }
+    try{ U().save && U().save(uu); }catch(e){}
+    return { name, stat, gain:r.stats[stat]-cur, now:r.stats[stat], hurt,
+      msg: name+' trained '+stat+' +'+(r.stats[stat]-cur)+' → '+r.stats[stat]+(hurt?' (tweaked something — out 1 wk)':'') }; }
+
+  // ---- BACKSTAGE MEETINGS (Meetings.bb) — formal/casual/post-match encounters that shift
+  //      relationships, form/break teams, issue challenges, or spark romance/betrayal. ----
+  const MEET=[
+    { id:'befriend',  d:+18, line:(a,b)=>a+' and '+b+' hit it off backstage — a friendship forms.' },
+    { id:'argument',  d:-18, line:(a,b)=>a+' and '+b+' get into a heated backstage argument.' },
+    { id:'recruit',   d:+22, line:(a,b)=>a+' pitches '+b+' on forming a team.' },
+    { id:'challenge', d:-10, line:(a,b)=>a+' challenges '+b+' to settle it in the ring.' },
+    { id:'romance',   d:+26, line:(a,b)=>a+' and '+b+' are spotted getting close after the show.' },
+    { id:'betray',    d:-30, line:(a,b)=>a+' turns on '+b+' backstage — the locker room is stunned.' },
+    { id:'mentor',    d:+14, line:(a,b)=>a+' takes '+b+' under their wing.' },
+    { id:'disrespect',d:-14, line:(a,b)=>a+' disrespects '+b+' in front of the boys.' },
+  ];
+  function rollMeetings(uu, n){ uu=uu||u(); if(!uu) return []; const ks=keys(uu); if(ks.length<2) return [];
+    n=n||Math.floor(rnd(1,4)); const out=[];
+    for(let i=0;i<n;i++){ const a=pick(ks), b=pick(ks); if(a===b) continue;
+      const r=relOf(a,b);
+      // relationship biases which kind of meeting happens (allies bond, enemies clash)
+      const pool = r>30 ? MEET.filter(m=>m.d>0).concat([MEET.find(m=>m.id==='betray')])
+                 : r<-30 ? MEET.filter(m=>m.d<0)
+                 : MEET;
+      const m=pick(pool.filter(Boolean)); changeRel(a,b,m.d);
+      if(m.id==='recruit' && r>0){ try{ if(U().formTeam) U().formTeam(uu,a,b); }catch(e){} }
+      out.push({ type:'meeting', kind:m.id, a, b, line:news(uu,m.line(a,b)) }); }
+    return out; }
+
+  // ---- AFTERMATH (Aftermath.bb) — post-match consequences: injury acknowledgement, title heat,
+  //      momentum/morale swings, retirement thoughts for the badly hurt. ----
+  function aftermath(uu, winner, loser){ uu=uu||u(); if(!uu) return null; const ev={type:'aftermath'};
+    const W=rec(uu,winner), L=rec(uu,loser);
+    W.momentum=Math.min(100,(W.momentum||0)+6); L.momentum=Math.max(0,(L.momentum||0)-4);
+    // injury roll on the loser (mild vs serious, ported bands)
+    if(Math.random()<0.14){ const serious=Math.random()<0.35; const wk = serious?Math.floor(rnd(4,10)):Math.floor(rnd(1,3));
+      L.injuredWeeks=Math.max(L.injuredWeeks||0,wk); ev.injury={who:loser,weeks:wk,serious};
+      news(uu, loser+(serious?' SERIOUSLY':' ')+' injured in the match — out '+wk+' wk'+(wk>1?'s':'')+'.');
+      if(serious && (L.age||28)>34 && Math.random()<0.3){ ev.retireThought=true; news(uu, loser+' is questioning how much longer their body can take this...'); } }
+    // title heat
+    if(W.title){ news(uu, winner+' stands tall with the '+W.title+' — statement made.'); }
+    try{ U().save && U().save(uu); }catch(e){}
+    return ev; }
+
+  // ---- WEEKLY TICK — rolls meetings every week, court occasionally; hooks BANNON_UNIVERSE.advanceWeek. ----
+  function weeklyTick(uu){ uu=uu||u(); if(!uu) return; rollMeetings(uu, Math.floor(rnd(1,3)));
+    if(Math.random()<0.22) rollCourt(uu);
+    try{ U().save && U().save(uu); }catch(e){} }
+  (function(){ try{ const UNI=U(); if(UNI && UNI.advanceWeek && !UNI.advanceWeek.__legacyWrapped){
+    const _aw=UNI.advanceWeek; UNI.advanceWeek=function(){ const r=_aw.apply(this,arguments); try{ weeklyTick(); }catch(e){} return r; };
+    UNI.advanceWeek.__legacyWrapped=true; }
+    // every recorded match result (played or simulated) rolls AFTERMATH consequences
+    if(UNI && UNI.applyResult && !UNI.applyResult.__legacyWrapped){
+      const _ar=UNI.applyResult; UNI.applyResult=function(){ const res=_ar.apply(this,arguments);
+        try{ if(res && res.winner && res.loser) aftermath(arguments[0], res.winner, res.loser); }catch(e){} return res; };
+      UNI.applyResult.__legacyWrapped=true; }
+  }catch(e){} })();
+
+  return { CHARGES, STATS, rollCourt, train, rollMeetings, aftermath, weeklyTick, fine };
+})();
+</script>
+
+<!-- ============================================================================================
      UNIVERSE HUB WIRING — makes the surrounding-game systems PLAYABLE from the main menu tile.
      Renders live data from BANNON_UNIVERSE / BANNON_CAREER / BANNON_STORY / BANNON_MDICKIE and drives
      them (advance week, play/sim a card match, cut a promo, sign/negotiate, run a tournament). =====
@@ -39195,6 +39323,24 @@ window.BANNON_ENTRANCE_EDITOR = (function(){
             h+=`<div class="uni-row"><span>${esc(k)}</span><span>${worth} <button class="uni-act" data-sign="${esc(k)}">OFFER</button></span></div>`; });
         } else h+='<div>Contracts module not loaded.</div>';
       }
+      else if(tab==='training'){
+        h+='<div class="uni-h">TRAINING</div>';
+        const L=window.BANNON_LEGACY; const me=(window.CAREER_ME||'BANNON');
+        if(L){ const U2=UNI(),u2=U2&&U2.get&&U2.get(); const r=(u2&&u2.fighters&&u2.fighters[me])||{}; const st=r.stats||{};
+          h+=`<div class="uni-row"><span>Training: ${esc(me)}</span><span>${(r.injuredWeeks>0)?('INJURED '+r.injuredWeeks+'wk'):'ready'}</span></div>`;
+          h+='<div style="margin-top:6px">'+L.STATS.map(s=>`<button class="uni-act" data-train="${s}">${s.toUpperCase()} (${st[s]||50})</button>`).join('')+'</div>';
+          h+='<div id="trainOut" style="margin-top:8px;color:#e8c15a"></div>';
+        } else h+='<div>Training module not loaded.</div>';
+      }
+      else if(tab==='court'){
+        h+='<div class="uni-h">COURT</div>';
+        const L=window.BANNON_LEGACY; const U2=UNI(),u2=U2&&U2.get&&U2.get();
+        if(L&&u2){ h+='<div>Rivalries with real bad blood can end up in court — fines, suspensions, even a cancelled show.</div>';
+          h+='<div style="margin-top:6px"><button class="uni-act" data-court="1">HOLD A COURT SESSION</button></div><div id="courtOut" style="margin-top:8px;color:#e8c15a"></div>';
+          const cases=(u2.news||[]).filter(n=>/GUILTY|CLEARED|SUSPENDED|injunction|court/i.test(typeof n==='string'?n:'')).slice(-5).reverse();
+          if(cases.length){ h+='<div class="uni-h">RECENT CASES</div>'+cases.map(n=>`<div class="uni-row"><span>• ${esc(n)}</span><span></span></div>`).join(''); }
+        } else h+='<div>Court module not loaded.</div>';
+      }
       else if(tab==='cup'){
         h+='<div class="uni-h">TOURNAMENT</div>';
         const md=MD();
@@ -39211,6 +39357,9 @@ window.BANNON_ENTRANCE_EDITOR = (function(){
       (window.toast||alert)((r&&(r.headline||r.text))||'Promo delivered — momentum up.'); }catch(e){} render(); });
     body.querySelectorAll('[data-turn]').forEach(b=>b.onclick=()=>{ const md=MD(),me=(window.CAREER_ME||'BANNON'); try{ md.pushTurn&&md.pushTurn(me); (window.toast||alert)('Turn teased — the locker room is talking.'); }catch(e){} render(); });
     body.querySelectorAll('[data-sign]').forEach(b=>b.onclick=()=>{ const md=MD(); try{ const c=md.generateContract?md.generateContract(b.dataset.sign):null; (window.toast||alert)(c?('Offer to '+b.dataset.sign+': $'+(c.value||c.salary||0).toLocaleString()+'/wk — '+(c.verdict||'pending')):'Offer sent.'); }catch(e){} });
+    body.querySelectorAll('[data-train]').forEach(b=>b.onclick=()=>{ const L=window.BANNON_LEGACY,me=(window.CAREER_ME||'BANNON'); try{ const r=L.train(me,b.dataset.train); const out=document.getElementById('trainOut'); if(out) out.textContent=r?r.msg:'trained'; }catch(e){} setTimeout(render,600); });
+    body.querySelectorAll('[data-court]').forEach(b=>b.onclick=()=>{ const L=window.BANNON_LEGACY,U2=UNI(),u2=U2&&U2.get&&U2.get(); try{ const ev=L.rollCourt(u2); U2.save&&U2.save(u2); const out=document.getElementById('courtOut');
+      if(out) out.textContent = ev ? (ev.defendant+' — '+(ev.verdict==='dismissed'?'case dismissed':ev.verdict.toUpperCase())+(ev.amount?(' $'+ev.amount.toLocaleString()):'')) : 'No case today — not enough bad blood in the locker room.'; }catch(e){} setTimeout(render,700); });
     body.querySelectorAll('[data-cup]').forEach(b=>b.onclick=()=>{ const md=MD(); try{ const t=md.generateTournament?md.generateTournament():null; const res=md.simulateBracket?md.simulateBracket(t):null;
       const out=document.getElementById('cupOut'); if(out) out.innerHTML=res?('WINNER: <b style="color:#e8c15a">'+esc(res.winner||res.champion||(res[0]&&res[0].winner)||'—')+'</b>'):'Tournament simulated.'; }catch(e){ const out=document.getElementById('cupOut'); if(out) out.textContent='cup err'; } });
   }
