@@ -76,9 +76,34 @@ def rerig(key):
     except OSError: pass
     if not os.path.exists(out_path):
         log(f"FAIL {key}: rename produced no output"); return False
-    log(f"DONE {key}: {os.path.basename(out_path)} ({os.path.getsize(out_path)//1024} KB). "
+    nj = _skin_joint_count(out_path)
+    if nj < 16:
+        # the hosted space sometimes returns a DEGENERATE rig (e.g. a 4-bone spine, no arms/legs) under
+        # queue load. Reject it so it isn't banked as a false success that resume would skip — force a retry.
+        log(f"REJECT {key}: degenerate rig ({nj} joints < 16) — deleting so it re-attempts next run")
+        try: os.remove(out_path)
+        except OSError: pass
+        return False
+    log(f"DONE {key}: {os.path.basename(out_path)} ({os.path.getsize(out_path)//1024} KB, {nj} joints). "
         f"Gate it: node tools/model_diag/skinqa (then promote if PASS).")
     return True
+
+
+def _skin_joint_count(glb_path):
+    """Count joints in the first skin of a GLB (cheap JSON-chunk read; no deps)."""
+    try:
+        b = open(glb_path, "rb").read()
+        import struct, json as _json
+        off = 12
+        while off < len(b):
+            clen = struct.unpack_from("<I", b, off)[0]; ctype = struct.unpack_from("<I", b, off+4)[0]
+            if ctype == 0x4E4F534A:
+                j = _json.loads(b[off+8:off+8+clen].decode("utf8"))
+                return len(((j.get("skins") or [{}])[0]).get("joints") or [])
+            off += 8 + clen
+    except Exception:
+        pass
+    return 0
 
 
 def _safe(fn, *a):
