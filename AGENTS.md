@@ -1,5 +1,12 @@
 # BANNON Project Rules & Verification Protocols
 
+> ⛔ **AI-STUDIO / GEMINI AGENT: READ `docs/AI_STUDIO_GUARDRAILS.md` FIRST.** `BANNON_v150.html` is the
+> whole game (~39,000+ lines). NEVER shrink it, NEVER replace it wholesale, NEVER let `index.html` /
+> `public/index.html` diverge from it. Run `node scripts/verify_integrity.cjs` before every commit and
+> only commit if it passes. A commit that reduced this file to a 1,300-line stub wiped the game once —
+> the guard now blocks it. Work additively and surgically only.
+
+
 
 ## VERIFICATION RULE (CRITICAL)
 Never state a file, feature, or fix is done, synced,

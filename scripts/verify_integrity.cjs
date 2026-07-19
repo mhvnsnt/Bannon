@@ -12,7 +12,7 @@ const F = 'BANNON_v150.html';
 const src = fs.readFileSync(F, 'utf8');
 const lines = src.split('\n').length;
 
-const MIN_LINES = 36403;   // raise this as the file legitimately grows; never let a merge sink below it
+const MIN_LINES = 39000;   // raise this as the file legitimately grows; never let a merge sink below it
 const SENTINELS = [
   ['multi-man match engine',      'MATCH RULES + MULTI-MAN ENGINE'],
   ['menu multi-slots',            'MULTI_TYPES'],
@@ -42,6 +42,13 @@ const SENTINELS = [
   ['corner back arsenal',         'CORNER BACK vs FRONT'],
   ['struggle-lift physics',       'STRUGGLE-LIFT'],
   ['any-move-any-position',       'resolveGrapPos'],
+  ['MDickie deep systems',        'BANNON_LEGACY'],
+  ['jukebox soundtrack',          'BANNON_JUKEBOX'],
+  ['jukebox CDN streaming',       'resolveAudioUrl'],
+  ['universe hub UI',             'btnHubUniverse'],
+  ['MDickie weapon arsenal',      'BANNON_WEAPONS_CATALOG'],
+  ['GLB facing yaw offset',       'yawOffset'],
+  ['GLB orphan-clone guard',      '_modelReqId'],
 ];
 
 let bad = [];

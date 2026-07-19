@@ -6264,6 +6264,24 @@ window.CHAR_ALTS = {
   // weapon. Same fighter, unmasked human look (canon: Book 2 origin before the Cyborg Project).
   STICK_UP: [ { id:'ANDREW_CURTIS', label:'Andrew Curtis · Human' } ]
 };
+// GLB ALTERNATE ATTIRES (attire 2, 3, …) — the owner's banked per-character attire GLBs, wired as
+// selectable looks. Picking one loads that GLB (real 3D attire), not a procedural recolor. id = the
+// model basename under assets/models/, label = the display name.
+window.CHAR_ALT_MODELS = {
+  CAIN_ELIAS:      [ {id:'CAIN_ELIAS_ring',label:'Ring Gear',url:'assets/models/CAIN_ELIAS_ring.glb'}, {id:'CAIN_ELIAS_snakeskin',label:'Snakeskin',url:'assets/models/CAIN_ELIAS_snakeskin.glb'}, {id:'CAIN_ELIAS_godwithin',label:'God Within',url:'assets/models/CAIN_ELIAS_godwithin.glb'} ],
+  CIPHER:          [ {id:'CIPHER_minion',label:'Minion',url:'assets/models/CIPHER_minion.glb'}, {id:'CIPHER_feral',label:'Feral',url:'assets/models/CIPHER_feral.glb'} ],
+  CODY:            [ {id:'CODY_sober',label:'Sober',url:'assets/models/CODY_sober.glb'}, {id:'CODY_stressed',label:'Stressed',url:'assets/models/CODY_stressed.glb'} ],
+  EDWIN_KENNEDY:   [ {id:'EDWIN_KENNEDY_unchained',label:'Unchained',url:'assets/models/EDWIN_KENNEDY_unchained.glb'} ],
+  MASTER_SENSEI:   [ {id:'MASTER_SENSEI_rose',label:'Rose',url:'assets/models/MASTER_SENSEI_rose.glb'} ],
+  ONYX:            [ {id:'ONYX_corset',label:'Corset',url:'assets/models/ONYX_corset.glb'}, {id:'ONYX_straightjacket',label:'Straightjacket',url:'assets/models/ONYX_straightjacket.glb'}, {id:'ONYX_street',label:'Street',url:'assets/models/ONYX_street.glb'} ],
+  PABLO:           [ {id:'PABLO_goldenbull',label:'Golden Bull',url:'assets/models/PABLO_goldenbull.glb'}, {id:'PABLO_blackreign',label:'Black Reign',url:'assets/models/PABLO_blackreign.glb'} ],
+  STATIC:          [ {id:'STATIC_alt',label:'Attire 2',url:'assets/models/STATIC_alt.glb'} ],
+  TITAN:           [ {id:'TITAN_unmasked',label:'Unmasked',url:'assets/models/TITAN_unmasked.glb'}, {id:'TITAN_white',label:'White',url:'assets/models/TITAN_white.glb'} ],
+  TRIPLE_XXX:      [ {id:'TRIPLE_XXX_trunks',label:'Trunks',url:'assets/models/TRIPLE_XXX_trunks.glb'}, {id:'TRIPLE_XXX_tights',label:'Tights',url:'assets/models/TRIPLE_XXX_tights.glb'}, {id:'TRIPLE_XXX_suit',label:'Suit',url:'assets/models/TRIPLE_XXX_suit.glb'} ],
+  TYNESHIA:        [ {id:'TYNESHIA_street',label:'Street',url:'assets/models/TYNESHIA_street.glb'} ],
+  WRECK_PATTERSON: [ {id:'WRECK_PATTERSON_attire2',label:'Attire 2',url:'assets/models/WRECK_PATTERSON_attire2.glb'}, {id:'WRECK_PATTERSON_attire3',label:'Attire 3',url:'assets/models/WRECK_PATTERSON_attire3.glb'}, {id:'WRECK_PATTERSON_godwithin',label:'God Within',url:'assets/models/WRECK_PATTERSON_godwithin.glb'} ]
+};
+window.altModelUrl = function(charKey, altId){ const list=(window.CHAR_ALT_MODELS||{})[String(charKey||'').toUpperCase()]||[]; const e=list.find(a=>a.id===altId); return e?e.url:null; };
 window.altsFor = function(name){
   const k=String(name||'').toUpperCase();
   // 'Default' = the character's AAA GLB model (never the procedural body). The procedural/Three.js body
@@ -6272,7 +6290,10 @@ window.altsFor = function(name){
   // Attire layers, in order: Default (AAA GLB) -> character alts -> MDickie Base (a shared low-poly
   // MDickie-style base body mapped to the character by archetype/real-wrestler inspiration — a rung
   // ABOVE the procedural body, for anyone who otherwise only has the legacy look) -> Retro (procedural).
-  return [{ id:null, label:'Default' }].concat(window.CHAR_ALTS[k]||[], [{ id:'MDICKIE', label:'MDickie Base' }, { id:'PROCEDURAL', label:'Retro (Procedural)' }]);
+  // order: Default (main GLB) -> GLB alternate attires (attire 2,3,…) -> persona/recolor alts ->
+  // MDickie Base -> Retro (procedural).
+  const glbAttires = (window.CHAR_ALT_MODELS && window.CHAR_ALT_MODELS[k]) ? window.CHAR_ALT_MODELS[k].map(a=>({id:a.id,label:a.label,glb:true,url:a.url})) : [];
+  return [{ id:null, label:'Default (Attire 1)' }].concat(glbAttires, window.CHAR_ALTS[k]||[], [{ id:'MDICKIE', label:'MDickie Base' }, { id:'PROCEDURAL', label:'Retro (Procedural)' }]);
 };
 
 window.bodyCompFor = function(name){
@@ -14299,8 +14320,12 @@ function startFight(){
   // 'MDICKIE' alt = the MDickie-base attire layer: keep the character's OWN look/moves, but load a
   // shared MDickie-style base body mapped by archetype (handled below via _mdickieBase).
   const p1Mdk = (setup && setup.p1Alt==='MDICKIE'), p2Mdk = (setup && setup.p2Alt==='MDICKIE');
-  const p1Look = (setup && setup.p1Alt && !p1Proc && !p1Mdk) ? setup.p1Alt : p1Name;
-  const p2Look = (setup && setup.p2Alt && !p2Proc && !p2Mdk) ? setup.p2Alt : p2Name;
+  // GLB ALTERNATE ATTIRE: if the chosen alt maps to a banked attire GLB, load THAT model but keep the
+  // character's own name/moves/colors (it's a costume, not a different fighter).
+  const p1AltUrl = (setup && window.altModelUrl) ? window.altModelUrl(p1Name, setup.p1Alt) : null;
+  const p2AltUrl = (setup && window.altModelUrl) ? window.altModelUrl(p2Name, setup.p2Alt) : null;
+  const p1Look = (setup && setup.p1Alt && !p1Proc && !p1Mdk && !p1AltUrl) ? setup.p1Alt : p1Name;
+  const p2Look = (setup && setup.p2Alt && !p2Proc && !p2Mdk && !p2AltUrl) ? setup.p2Alt : p2Name;
   const o1 = fighterOptsFor(p1Look);   // colours/skin/style come from the LOOK
   const o2 = fighterOptsFor(p2Look);
   const p1 = new Fighter(p1Human, { col:o1.col, accent:o1.accent, skin:o1.skin, name:p1Name, style:o1.style }); // NAME/moves from the character
@@ -14308,6 +14333,7 @@ function startFight(){
   p1._lookKey = p1Look; p2._lookKey = p2Look;   // appearance code reads this; moves read opts.name
   p1._forceProc = p1Proc; p2._forceProc = p2Proc;   // Retro attire -> keep the procedural body (skip GLB)
   p1._mdickieBase = p1Mdk ? p1Name : null; p2._mdickieBase = p2Mdk ? p2Name : null;   // MDickie base attire -> load the mapped base body
+  p1._altModelUrl = p1AltUrl || null; p2._altModelUrl = p2AltUrl || null;   // GLB alternate attire -> load this model instead of the default
   // Guarantee exactly one human-input owner unless AI-vs-AI was explicitly chosen.
   if (setup && setup.p1Control==='AI' && setup.p2Control==='AI'){ p1.isPlayer=false; p2.isPlayer=false; }
   fighters = [p1, p2];
@@ -14720,6 +14746,7 @@ function mdickieBaseFor(charName){
 }
 window.mdickieBaseFor = mdickieBaseFor;
 function applyCharModels(){ ['p1','p2'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; if(f._forceProc) return;
+  if(f._altModelUrl){ try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
   if(f._mdickieBase){ var mb=mdickieBaseFor(f._mdickieBase); try{ loadFighterModel(sd, mb, 'MDickie · '+f._mdickieBase); }catch(e){} return; }   // MDickie base attire (falls back to procedural if the base GLB isn't present)
   var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
 function assignCharModel(charKey, url, name){ if(!charKey) return; charKey=charKey.toUpperCase(); try{ if(url){ CHAR_MODEL[charKey]={url:url,name:name||charKey}; } else { delete CHAR_MODEL[charKey]; } localStorage.setItem('bannonCharModels',JSON.stringify(CHAR_MODEL)); }catch(e){} }
@@ -16024,7 +16051,7 @@ function setupInput(){
   _wire('btnHubEntrance',  ()=>{ try{ if(window.BANNON_ENTRANCE_EDITOR) window.BANNON_ENTRANCE_EDITOR.open((window.MATCH_SETUP&&window.MATCH_SETUP.p1Name)||'BANNON'); }catch(e){} });
   // JUKEBOX controls (main menu music bar)
   _wire('btnMusicToggle',  ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); const v=J.getVolume(); if(v>0){ J._mv=v; J.setVolume(0); const b=document.getElementById('btnMusicToggle'); if(b)b.textContent='♪ MUTED'; } else { J.setVolume(J._mv||0.55); J.menu(); const b=document.getElementById('btnMusicToggle'); if(b)b.textContent='♪ MUSIC'; } });
-  _wire('btnMusicNext',    ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); J.menu(); });
+  _wire('btnMusicNext',    ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); (J.next?J.next():J.menu()); });
   _wire('btnMusicAdd',     ()=>{ const J=window.BANNON_JUKEBOX; if(J) J.addTrackPrompt(['menu','match']); });
   document.getElementById('btnArena').addEventListener('click', ()=>{ arenaIdx=(arenaIdx+1)%ARENAS.length; document.getElementById('arenaName').textContent=ARENAS[arenaIdx]; buildArena(); saveMatchState(); });
   document.getElementById('btnDiff').addEventListener('click', ()=>{ difficulty=(difficulty+1)%3; document.getElementById('diffName').textContent=DIFF_NAMES[difficulty]; saveMatchState(); });
@@ -37837,6 +37864,12 @@ window.BANNON_JUKEBOX = (function(){
   // match: assigned match track (or shuffle the match pool)
   async function match(){ const t=cfg.match?trackById(cfg.match):shuffle(pool('match'))[0]; bgAudio.loop=true; await playBg(t); }
   async function stop(){ bgAudio.pause(); curBg=null; }
+  // NEXT (the menu bar's ⏭): advance to a DIFFERENT track. Browses the WHOLE library and skips the
+  // current one, so the assigned menu track can't pin playback to a single song (the "only Business
+  // That Pays ever plays" bug). Loops the picked track like the menu bed.
+  async function next(){ const all=allTracks(); if(!all.length) return null;
+    const others=all.filter(t=>t.id!==curBg); const from=others.length?others:all;
+    const t=from[Math.floor(Math.random()*from.length)]; bgAudio.loop=true; await playBg(t); return t.id; }
   // entrance/victory: one-shots (don't loop), by character where assigned else pool
   async function entrance(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey])|| (shuffle(pool('entrance'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ _apply(oneShot, t, s, unlocked); } return id; }
   async function victory(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey]&&trackById(cfg.entrance[charKey])&&(pool('victory').some(x=>x.id===cfg.entrance[charKey]))?cfg.entrance[charKey]:cfg.victory)||(shuffle(pool('victory'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ bgAudio.pause(); _apply(oneShot, t, s, unlocked); } return id; }
@@ -37866,7 +37899,7 @@ window.BANNON_JUKEBOX = (function(){
   loadUserTracks().then(()=>{ hookGame(); });
 
   return { DEFAULT_TRACKS, list, pool, trackById, addTrack, addTrackPrompt, loadUserTracks,
-           menu, match, stop, entrance, victory, setVolume, getVolume:()=>vol,
+           menu, match, next, stop, entrance, victory, setVolume, getVolume:()=>vol,
            assignMenu, assignMatch, assignVictory, assignEntrance, cfg:()=>cfg, unlock };
 })();
 </script>
@@ -38010,7 +38043,7 @@ window.BANNON_UNIVERSE = (function(){
     return applyResult(u, m, rA>=rB?m.a:m.b, rA>=rB?m.b:m.a); }
 
   // play the player's booked match live through the real fight engine; call recordPlayer() with the winner after.
-  function playMatch(m){ try{ window.MATCH_SETUP={p1Name:m.a,p2Name:m.b,p1Control:'YOU',p2Control:'CPU'}; (window.startFight||function(){})(); }catch(e){} return m; }
+  function playMatch(m){ try{ window.__universeMatch=m; window.MATCH_SETUP={p1Name:m.a,p2Name:m.b,p1Control:'YOU',p2Control:'CPU'}; (window.startFight||function(){})(); }catch(e){} return m; }
   function recordPlayer(u,m,winnerName){ if(m) m._done=1; return applyResult(u, m, winnerName, winnerName===m.a?m.b:m.a); }
 
   // ADVANCE the week: sim every unplayed card match, decay injuries, roll news window, re-book, +1 week.
@@ -39299,6 +39332,37 @@ window.BANNON_LEGACY = (function(){
     try{ U().save && U().save(uu); }catch(e){} return { name, cost }; }
 
   return { CHARGES, STATS, rollCourt, train, rollMeetings, aftermath, weeklyTick, fine, weapons, weaponById, chartsTick, gimmickCost, applyGimmick };
+})();
+</script>
+
+<!-- ============================================================================================
+     UNIVERSE MATCH PERSISTENCE — when a match is launched from the Universe hub (playMatch), record the
+     result into BANNON_UNIVERSE, SAVE it, and return to the hub after the win beat, so progress persists
+     instead of dead-ending on rematch/main-menu. =====
+     ============================================================================================ -->
+<script>
+(function(){
+  if(window.__uniDWWrapped) return; window.__uniDWWrapped=true;
+  const norm=s=>String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+  function wrap(){ if(typeof window.declareWinner!=='function'){ return setTimeout(wrap,600); }
+    if(window.declareWinner.__uniWrapped) return; const _dw=window.declareWinner;
+    window.declareWinner=function(w){ const r=_dw.apply(this,arguments);
+      try{ const m=window.__universeMatch; if(m){ window.__universeMatch=null;
+        const U=window.BANNON_UNIVERSE;
+        if(U && U.get){ const u=U.get();
+          let wn=''; try{ wn=(w&&((w.opts&&w.opts.name)||w.name))||''; }catch(e){}
+          const winner=(norm(wn)===norm(m.b))?m.b:m.a;   // default to p1 (m.a) if the name doesn't match
+          try{ if(U.recordPlayer) U.recordPlayer(u,m,winner); }catch(e){}
+          try{ if(U.save) U.save(u); }catch(e){}
+          try{ if(window.BANNON_LEGACY && window.BANNON_LEGACY.aftermath) window.BANNON_LEGACY.aftermath(u,winner,winner===m.a?m.b:m.a); }catch(e){}
+          try{ if(typeof announce==='function') announce('RESULT SAVED — '+winner+' WINS', 'UNIVERSE'); }catch(e){}
+        }
+        setTimeout(()=>{ try{ if(window.openUniverse) window.openUniverse(); }catch(e){} }, 4000);   // back to the hub
+      } }catch(e){}
+      return r; };
+    window.declareWinner.__uniWrapped=true;
+  }
+  wrap();
 })();
 </script>
 
