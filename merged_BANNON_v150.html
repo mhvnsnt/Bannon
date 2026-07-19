@@ -19908,8 +19908,8 @@ init();
         } else {
           if (this._inCorner){ this._inCorner=null; this._corneredT=0; this._cornerPose=null; }
           // ROPES — bouncy rebound on the boundary hit (enables rope-running)
-          if (atX && Math.sign(this.vx)===Math.sign(this.x) && Math.abs(this.vx)>0.6){ this.vx=-this.vx*0.62; this._rebounded=0.3; if(window.ropeHit&&(this._ropeCD||0)<=0){window.ropeHit(this.x,this.z,1+Math.abs(this.vx));this._ropeCD=0.25;} }
-          if (atZ && Math.sign(this.vz)===Math.sign(this.z) && Math.abs(this.vz)>0.6){ this.vz=-this.vz*0.62; this._rebounded=0.3; if(window.ropeHit&&(this._ropeCD||0)<=0){window.ropeHit(this.x,this.z,1+Math.abs(this.vz));this._ropeCD=0.25;} }
+          if (atX && Math.sign(this.vx)===Math.sign(this.x) && Math.abs(this.vx)>0.6){ this.vx=-this.vx*0.62; this._rebounded=0.3; this.powerMultiplier = 1.35; if(window.ropeHit&&(this._ropeCD||0)<=0){window.ropeHit(this.x,this.z,1+Math.abs(this.vx));this._ropeCD=0.25;} }
+          if (atZ && Math.sign(this.vz)===Math.sign(this.z) && Math.abs(this.vz)>0.6){ this.vz=-this.vz*0.62; this._rebounded=0.3; this.powerMultiplier = 1.35; if(window.ropeHit&&(this._ropeCD||0)<=0){window.ropeHit(this.x,this.z,1+Math.abs(this.vz));this._ropeCD=0.25;} }
         }
         if (this._ropeCD>0) this._ropeCD-=dt;
         if (this._rebounded>0) this._rebounded-=dt;
