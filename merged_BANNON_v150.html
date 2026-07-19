@@ -1576,6 +1576,19 @@ const JOINT_LIMITS = {
 // Apply limit to a y-axis displacement relative to the joint's parent.
 // Used per-joint after spring integration to prevent anatomically impossible bends.
 function clampJointBend(name, dy){
+
+  // BANNON TORQUE-BASED JOINT LOCKS (PHASE 5 #31)
+  // If the joint is under a submission torque overload, we bypass the standard anatomical clamp and force hyperextension.
+  if (window._jointTorqueOverloads && window._jointTorqueOverloads[name]) {
+      const overload = window._jointTorqueOverloads[name];
+      if (overload.active) {
+          // Push the joint past its normal limit based on torque pressure (0 to 1)
+          const torquePush = overload.pressure * overload.direction;
+          return dy + torquePush; // Bypass clamp and hyperextend
+      }
+  }
+
+
   const L=JOINT_LIMITS[name]; if(!L) return dy;
   return dy < L.mn ? L.mn : dy > L.mx ? L.mx : dy;
 }
