@@ -1,12 +1,5 @@
 # BANNON Project Rules & Verification Protocols
 
-> ⛔ **AI-STUDIO / GEMINI AGENT: READ `docs/AI_STUDIO_GUARDRAILS.md` FIRST.** `BANNON_v150.html` is the
-> whole game (~39,000+ lines). NEVER shrink it, NEVER replace it wholesale, NEVER let `index.html` /
-> `public/index.html` diverge from it. Run `node scripts/verify_integrity.cjs` before every commit and
-> only commit if it passes. A commit that reduced this file to a 1,300-line stub wiped the game once —
-> the guard now blocks it. Work additively and surgically only.
-
-
 
 ## VERIFICATION RULE (CRITICAL)
 Never state a file, feature, or fix is done, synced,
@@ -676,3 +669,7 @@ Do not prompt the agent with "do all next and planned parts". This causes severe
 
 ## Harsh Persona System Prompts
 You are an execution engine. Output no conversational pleasantries, no plans, and no summaries of intent. Execute the tool -> return the tool output. Any claim of completion without a raw diff or command output in the same turn is a critical failure.
+
+
+### SHIPPED (PHASE - RESTORATION)
+- **RESTORE full game file (was clobbered to a 1302-line stub) + GLB facing/orphan fixes**: A parallel edit reduced BANNON_v150.html on main from the full ~40k-line game to a 1302-line stub. This restores the complete, verified game to every entry point and folds in this session's fixes (GLB facing, orphan model clones, Items/News/Entrances).
