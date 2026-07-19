@@ -31731,6 +31731,43 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 </script>
 — ONLINE', 'color:#ff0099;font-weight:bold;background:#000;padding:3px 8px');
 })();
+
+// --- AAA MO-CAP BATCH EXTRACTOR ---
+(function loadCombatAnimations() {
+    const animMap = [
+        { file: 'assets/models/anims/strike.glb', cat: 'STRIKE', loop: false },
+        { file: 'assets/models/anims/grapple.glb', cat: 'GRAPPLE', loop: false },
+        { file: 'assets/models/anims/walking.glb', cat: 'WALK', loop: true },
+        { file: 'assets/models/anims/running.glb', cat: 'RUN', loop: true },
+        // Fallbacks mapping to xbot if specific files aren't found
+        { file: 'assets/models/xbot.glb', cat: 'STRIKE', loop: false },
+        { file: 'assets/models/xbot.glb', cat: 'GRAPPLE', loop: false }
+    ];
+    
+    if(typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    const loader = new THREE.GLTFLoader();
+    
+    window.ANIM_LIB = window.ANIM_LIB || [];
+    
+    animMap.forEach(entry => {
+        loader.load(entry.file, function(gltf) {
+            if(!gltf.animations || !gltf.animations.length) return;
+            // Check if already populated to prevent fallback overwrite
+            if(window.ANIM_LIB.some(a => a.category === entry.cat)) return;
+            
+            console.log(`[BANNON ANIM EXTRACTOR] Bound ${entry.cat} from ${entry.file}`);
+            window.ANIM_LIB.push({
+                category: entry.cat,
+                fighter: null,
+                clip: gltf.animations[0],
+                opts: { loop: entry.loop, fadeIn: 0.1, fadeOut: 0.15 }
+            });
+        }, undefined, function(err) {
+            // Silently ignore 404s for missing anim files
+        });
+    });
+})();
+
 </script>
 </body>
 </html>
