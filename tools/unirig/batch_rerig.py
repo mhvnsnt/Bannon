@@ -81,8 +81,56 @@ def rerig(key):
     return True
 
 
+def _safe(fn, *a):
+    try:
+        return fn(*a)
+    except Exception as e:
+        log(f"ERROR {getattr(fn,'__name__',fn)}({a!r}): {e}"); return False
+
+
+def rig_dropin(glb_path):
+    """Auto-rig ANY dropped GLB (owner drops a raw model into assets/models/dropins/; this rigs it
+    through UniRig, renames bones, and banks assets/models/<name>_rigged.glb ready to attach in the
+    creation suite). Resumable: skips if the rigged output already exists."""
+    from gradio_client import Client, handle_file
+    name = os.path.splitext(os.path.basename(glb_path))[0]
+    safe = "".join(c if c.isalnum() else "_" for c in name).strip("_").upper() or "DROPIN"
+    out_path = os.path.join(MODELS, f"{safe}_rigged.glb")
+    if os.path.exists(out_path):
+        log(f"SKIP dropin {name}: already rigged"); return True
+    tok = os.environ.get("HF_TOKEN")
+    log(f"RIG  dropin {name}: connecting {SPACE} ...")
+    c = Client(SPACE, token=tok)
+    t0 = time.time()
+    res = c.predict(handle_file(glb_path), "glb", api_name="/process_pipeline")
+    path = res[0] if isinstance(res, (list, tuple)) else res
+    if isinstance(path, dict):
+        path = path.get("path") or path.get("name") or path.get("value")
+    if not path or not os.path.exists(path):
+        log(f"FAIL dropin {name}: bad space result {res!r}"); return False
+    tmp = out_path + ".raw.glb"; shutil.copy(path, tmp)
+    subprocess.run(["node", os.path.join(os.path.dirname(__file__), "rename_bones.cjs"), tmp, out_path],
+                   capture_output=True, text=True)
+    try: os.remove(tmp)
+    except OSError: pass
+    ok = os.path.exists(out_path)
+    log(f"{'DONE' if ok else 'FAIL'} dropin {name}: {os.path.basename(out_path)} in {int(time.time()-t0)}s. "
+        f"Gate it (tools/model_diag/skinqa.cjs), then attach in the creation suite.")
+    return ok
+
+
 def main():
     args = sys.argv[1:]
+    if "--dropins" in args:
+        # process every .glb in assets/models/dropins/ (or a folder passed after --dropins)
+        i = args.index("--dropins")
+        folder = args[i+1] if i+1 < len(args) and not args[i+1].startswith("--") else os.path.join(MODELS, "dropins")
+        if not os.path.isdir(folder):
+            print(f"no dropins folder: {folder} (create it and drop GLBs in)"); sys.exit(2)
+        glbs = [os.path.join(folder, f) for f in sorted(os.listdir(folder)) if f.lower().endswith(".glb")]
+        log(f"=== dropin rig: {len(glbs)} file(s) in {folder} ===")
+        ok = sum(1 for g in glbs if _safe(rig_dropin, g))
+        log(f"=== dropin rig done: {ok}/{len(glbs)} ==="); return
     if "--fails" in args:
         keys = FAILS
     else:
