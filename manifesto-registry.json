@@ -459,6 +459,21 @@
         "powerslam",
         "momentum"
       ]
+    },
+    {
+      "id": "counter_reversal_physics",
+      "name": "Counter-Reversal Physics Blending",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Replaces canned escape animations with a physics-based torque calculation. When a grapple escape roll is successful (_tryEscape), the engine applies a rotational impulse (tangential torque vector) to the attacker, throwing them backward with a wobble state, while the defender ducks and spins 135 degrees. Arms are thrown wide procedurally via centrifugal logic.",
+      "keywords": [
+        "physics",
+        "reversal",
+        "counter",
+        "torque",
+        "impulse",
+        "escape"
+      ]
     }
   ]
 }
