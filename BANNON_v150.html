@@ -38268,7 +38268,37 @@ window.BANNON_MDICKIE = (function(){
   // ConstructInterPromotional — book a cross-promotion dream match
   function interPromotional(a,b){ const u=U(); const promos=(u&&u.promotions)||['AWE','JPCW','NWC']; a=a||promos[0]; b=b||promos[1%promos.length];
     return { headline:'INTER-PROMOTIONAL WARFARE: '+a+' invades '+b+'!', promoA:a, promoB:b, stakes:'pride + talent-raid rights' }; }
-  return { GIMMICKS, CLAUSES, addGimmick, allegianceRatio, calculateWorth, generateContract, courtDate, attendance, identifyInjury, promotionPotential, interPromotional };
+  // --- AI (AI.bb: FindThreat/SwitchFocus/GetIntensity/Isolated) — MDickie's chaotic focus-switching ---
+  function findThreat(f, all){ all=all||(typeof fighters!=='undefined'?fighters:[]); const u=U(); let best=null,bs=-1;
+    for(const o of all){ if(o===f||!o||(o.hp||0)<=0) continue; const d=Math.hypot((o.x-f.x),(o.z-f.z));
+      const k1=((f&&f.opts&&f.opts.name)||'').toUpperCase(), k2=((o&&o.opts&&o.opts.name)||'').toUpperCase();
+      const hate=(u&&u.chars&&u.chars[k1]&&u.chars[k1].relationships)? -(u.chars[k1].relationships[k2]||0):0;
+      const score=100/(1+d)+hate*0.5; if(score>bs){ bs=score; best=o; } } return best; }
+  function intensity(k){ const u=U(); const r=u&&u.chars&&u.chars[String(k||'').toUpperCase()]; const att=(r&&r.attitude)!=null?r.attitude:50; return Math.max(0.3,Math.min(1.6,0.5+att/80)); }
+  function isIsolated(f, all){ all=all||(typeof fighters!=='undefined'?fighters:[]); const fac=(f&&f.opts&&f.opts.faction)||''; let allies=0; for(const o of all){ if(o!==f&&o.opts&&o.opts.faction===fac) allies++; } return allies===0; }
+  // --- Meetings (Meetings.bb: RiskFormalMeetings/AdjustAttitude) — backstage event shifts attitude/relations ---
+  function backstageMeeting(){ const u=U(); if(!u) return null; const types=['contract dispute','faction sit-down','locker-room confrontation','management review','alliance overture'];
+    const t=types[rng(types.length)]; const keys=Object.keys(u.chars||{}); if(keys.length<2) return {type:t};
+    const a=keys[rng(keys.length)]; let b=keys[rng(keys.length)]; if(b===a) b=keys[(keys.indexOf(a)+1)%keys.length];
+    const ra=rec(u,a); ra.relationships=ra.relationships||{}; const delta=(Math.random()<0.5?-1:1)*(10+rng(20));
+    ra.relationships[b]=(ra.relationships[b]||0)+delta; ra.attitude=Math.max(0,Math.min(100,(ra.attitude||50)+(Math.random()<0.5?-8:8))); save(u);
+    return { type:t, a, b, delta, headline:(delta>0?a+' & '+b+' find common ground ('+t+')':a+' & '+b+' clash backstage ('+t+')') }; }
+  // --- Tournaments (Tournaments.bb: GenerateTournament/DrawBracket/SimulateBracket) ---
+  function generateTournament(entrants, title){ entrants=(entrants&&entrants.slice())||Object.keys((U()||{chars:{}}).chars||{}).slice(0,8); if(entrants.length<2) return null;
+    let n=1; while(n<entrants.length) n*=2; while(entrants.length<n) entrants.push('BYE');
+    for(let i=entrants.length-1;i>0;i--){ const j=rng(i+1); const tmp=entrants[i]; entrants[i]=entrants[j]; entrants[j]=tmp; }
+    const r0=[]; for(let i=0;i<entrants.length;i+=2) r0.push([entrants[i],entrants[i+1]]); return { title:title||'BANNON CUP', bracket:[r0], entrants }; }
+  function simulateBracket(t){ if(!t||!t.bracket) return null; let round=t.bracket[0].slice(); const log=[];
+    while(round.length){ const next=[]; for(const pr of round){ const a=pr[0],b=pr[1]; let w; if(a==='BYE')w=b; else if(b==='BYE')w=a; else w=((promotionPotential(a)+Math.random())>=(promotionPotential(b)+Math.random()))?a:b; if(a!=='BYE'&&b!=='BYE')log.push(a+' def. '+b); next.push(w); }
+      if(next.length<=1){ t.winner=next[0]; break; } const paired=[]; for(let i=0;i<next.length;i+=2) paired.push([next[i],next[i+1]]); round=paired; } t.log=log; return t; }
+  // --- Teams (Teams.bb: FindAssistance) — faction run-in ---
+  function findAssistance(f, all){ all=all||(typeof fighters!=='undefined'?fighters:[]); const fac=(f&&f.opts&&f.opts.faction); if(!fac) return null; for(const o of all){ if(o!==f&&o.opts&&o.opts.faction===fac&&(o.hp||0)>0) return o; } return null; }
+  // --- Promos (Promos.bb: FindEnemy/FindFriend/PushTurn) ---
+  function findEnemy(k){ const r=(U()||{chars:{}}).chars[String(k||'').toUpperCase()]; if(!r||!r.relationships) return null; let w=null,wv=0; for(const o in r.relationships){ if(r.relationships[o]<wv){ wv=r.relationships[o]; w=o; } } return w; }
+  function findFriend(k){ const r=(U()||{chars:{}}).chars[String(k||'').toUpperCase()]; if(!r||!r.relationships) return null; let b=null,bv=0; for(const o in r.relationships){ if(r.relationships[o]>bv){ bv=r.relationships[o]; b=o; } } return b; }
+  function pushTurn(k){ const u=U(); if(!u) return null; const r=rec(u,k); r.alignment=(r.alignment==='heel')?'face':'heel'; save(u); return r.alignment; }
+  return { GIMMICKS, CLAUSES, addGimmick, allegianceRatio, calculateWorth, generateContract, courtDate, attendance, identifyInjury, promotionPotential, interPromotional,
+    findThreat, intensity, isIsolated, backstageMeeting, generateTournament, simulateBracket, findAssistance, findEnemy, findFriend, pushTurn };
 })();
 </script>
 <script>
