@@ -39231,9 +39231,30 @@ window.BANNON_LEGACY = (function(){
     try{ U().save && U().save(uu); }catch(e){}
     return ev; }
 
-  // ---- WEEKLY TICK — rolls meetings every week, court occasionally; hooks BANNON_UNIVERSE.advanceWeek. ----
+  // ---- WEAPONS (Items.bb / Values.bb table) — the full hardcore arsenal with faithful stats. Loaded
+  //      from assets/moves/mdickie_weapons.json; damage/hold/flammable/explode drive the weapon system. ----
+  let WEAPONS=[];
+  (function loadWeapons(){ try{ fetch('assets/moves/mdickie_weapons.json').then(r=>r.json()).then(j=>{ WEAPONS=(j&&j.weapons)||[];
+    try{ window.BANNON_WEAPONS_CATALOG=WEAPONS; }catch(e){} }).catch(()=>{}); }catch(e){} })();
+  function weapons(){ return WEAPONS; }
+  function weaponById(id){ return WEAPONS.find(w=>w.id===id)||null; }
+
+  // ---- CHARTS (Charts.bb: NightSummary/TelevisionRatings) — weekly popularity drift + a TV rating. ----
+  function chartsTick(uu){ uu=uu||u(); if(!uu) return null; const ks=keys(uu); if(!ks.length) return null;
+    let top=null,topPop=-1;
+    ks.forEach(k=>{ const r=rec(uu,k); const w=r.wins||0,l=r.losses||0; const form=(w-l);
+      // popularity chases momentum + win form (PursueValue-style easing)
+      const target=Math.max(0,Math.min(100, 50 + form*2 + ((r.momentum||0)-50)*0.4));
+      r.popularity=Math.round((r.popularity!=null?r.popularity:50) + (target-(r.popularity!=null?r.popularity:50))*0.25);
+      if(r.popularity>topPop){ topPop=r.popularity; top=k; } });
+    const rating=(3.0 + topPop/28 + rnd(-0.3,0.3)).toFixed(1);
+    news(uu, 'TV RATING '+rating+' — '+ (top||'the card') +' is the hottest act in the company ('+topPop+' pop).');
+    return { rating:+rating, hottest:top, pop:topPop }; }
+
+  // ---- WEEKLY TICK — rolls meetings every week, court occasionally, charts always; hooks advanceWeek. ----
   function weeklyTick(uu){ uu=uu||u(); if(!uu) return; rollMeetings(uu, Math.floor(rnd(1,3)));
     if(Math.random()<0.22) rollCourt(uu);
+    chartsTick(uu);
     try{ U().save && U().save(uu); }catch(e){} }
   (function(){ try{ const UNI=U(); if(UNI && UNI.advanceWeek && !UNI.advanceWeek.__legacyWrapped){
     const _aw=UNI.advanceWeek; UNI.advanceWeek=function(){ const r=_aw.apply(this,arguments); try{ weeklyTick(); }catch(e){} return r; };
@@ -39245,7 +39266,7 @@ window.BANNON_LEGACY = (function(){
       UNI.applyResult.__legacyWrapped=true; }
   }catch(e){} })();
 
-  return { CHARGES, STATS, rollCourt, train, rollMeetings, aftermath, weeklyTick, fine };
+  return { CHARGES, STATS, rollCourt, train, rollMeetings, aftermath, weeklyTick, fine, weapons, weaponById, chartsTick };
 })();
 </script>
 
