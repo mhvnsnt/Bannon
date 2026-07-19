@@ -12225,6 +12225,39 @@ function aiEquippedOrPool(f, pool, opp){
 function playerAttack(kind){
   const p = fighters[0];
   if (!p || p.ragdoll || p.state==='down') return;
+  // BANNON TARGETED LIMB STRIKING SYSTEM (PHASE 4 #26)
+  const opp = (window.fighters && window.fighters.length > 1) ? window.fighters[1] : null;
+  if (opp && opp.J && p.state !== 'grab' && p.state !== 'deliver') {
+    let dx = 0, dz = 0;
+    if (window.joystickState && window.joystickState.active) {
+       dx = window.joystickState.nx;
+       dz = window.joystickState.ny;
+    } else if (window.keys) {
+       if(keys['ArrowUp']||keys['KeyW']) dz = -1;
+       if(keys['ArrowDown']||keys['KeyS']) dz = 1;
+       if(keys['ArrowLeft']||keys['KeyA']) dx = -1;
+       if(keys['ArrowRight']||keys['KeyD']) dx = 1;
+    }
+    
+    const mag = Math.sqrt(dx*dx + dz*dz);
+    if (mag > 0.1) {
+       dx /= mag; dz /= mag;
+       let targetNode = null;
+       
+       if (dz < -0.5) targetNode = opp.J.head;
+       else if (dz > 0.5) targetNode = opp.J.ftL || opp.J.ftR; 
+       else if (dx < -0.5) targetNode = opp.J.haL;
+       else if (dx > 0.5) targetNode = opp.J.haR;
+       
+       if (targetNode) {
+          p._strikeTargetNode = targetNode;
+          console.log("[BANNON] TARGETED STRIKE LOCKED: ", targetNode.name || "Node");
+       }
+    } else {
+       p._strikeTargetNode = null;
+    }
+  }
+
 
   // STRUGGLE / PANIC ESCAPE — FIX: while held (state==='grabbed'), every attack/strike input used to
   // be silently swallowed (startAttack() hard-blocks on state==='grabbed', with no exception). The AI
