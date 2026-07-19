@@ -11713,19 +11713,49 @@ function buildArenaStage(group, accentCol, cold){
     const mf=new THREE.Mesh(new THREE.BoxGeometry(3.3,2.0,0.25),frameMat); mf.position.set(x,3.6,stageZ-stageD/2-0.2); stage.add(mf); });
   // --- entrance portal (gap the wrestler walks out of) glowing pillars ---
   [-1.6,1.6].forEach(x=>{ const p=new THREE.Mesh(new THREE.BoxGeometry(0.35,3.2,0.35), ledMat); p.position.set(x,1.3,stageZ+stageD/2-0.1); stage.add(p); });
-  // --- LIGHTING TRUSS over the ring ---
+  // --- LIGHTING TRUSS over the ring (cross rig: X + Z bars) ---
   const trussMat=new THREE.MeshStandardMaterial({color:0x15161a,roughness:0.5,metalness:0.7});
-  const truss=new THREE.Mesh(new THREE.BoxGeometry(14,0.4,0.4),trussMat); truss.position.set(0,9.2,0); group.add(truss);
-  for(let i=-2;i<=2;i++){ const can=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.28,0.5,10), new THREE.MeshStandardMaterial({color:0x0a0a0a,emissive:acc,emissiveIntensity:0.6})); can.position.set(i*3,8.9,0); group.add(can); }
-  // --- RINGSIDE BARRICADES (rectangle of segments around the ring) ---
+  const tX=new THREE.Mesh(new THREE.BoxGeometry(15,0.4,0.4),trussMat); tX.position.set(0,9.4,0); group.add(tX);
+  const tZ=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,15),trussMat); tZ.position.set(0,9.4,0); group.add(tZ);
+  for(let i=-2;i<=2;i++){ const can=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.28,0.5,10), new THREE.MeshStandardMaterial({color:0x0a0a0a,emissive:acc,emissiveIntensity:0.6})); can.position.set(i*3,9.1,0); group.add(can); }
+  // --- MOVING BROADCAST LIGHTS (sweep/skew/focus like WWE/AEW TV) — animated in updateArenaAnim ---
+  window.__arenaMovingLights=[];
+  const mlColors=[acc, 0xffffff, acc, 0x88aaff];
+  for(let i=0;i<4;i++){ const col=mlColors[i%mlColors.length];
+    const sl=new THREE.SpotLight(col, 2.4, 34, Math.PI/9, 0.5, 1.2);
+    const px=(i<2?-1:1)*5.5, pz=(i%2?-1:1)*5.5; sl.position.set(px,9.0,pz);
+    sl.target.position.set(0,0,0); group.add(sl); group.add(sl.target);
+    // visible beam housing
+    const hz=new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.26,0.55,10), new THREE.MeshStandardMaterial({color:0x0a0a0a,emissive:col,emissiveIntensity:0.7})); hz.position.set(px,8.85,pz); group.add(hz);
+    window.__arenaMovingLights.push({ light:sl, housing:hz, ph:i*1.7, sp:0.5+i*0.15, rx:3.2, rz:2.2 }); }
+  // --- CENTER-HUNG TITANTRON (4-sided cube tron over the ring) + circular frame ring ---
+  const cubeMat=new THREE.MeshBasicMaterial({ map:_arenaTronTex });
+  const hung=new THREE.Group(); hung.position.set(0,7.2,0); group.add(hung); window.__hungTron=hung;
+  const cubeGeo=new THREE.PlaneGeometry(3.2,1.8);
+  [[0,0,1.61,0],[0,0,-1.61,Math.PI],[1.61,0,0,-Math.PI/2],[-1.61,0,0,Math.PI/2]].forEach(f=>{ const face=new THREE.Mesh(cubeGeo,cubeMat); face.position.set(f[0],f[1],f[2]); face.rotation.y=f[3]; hung.add(face); });
+  const frameRing=new THREE.Mesh(new THREE.TorusGeometry(2.4,0.12,8,32), new THREE.MeshStandardMaterial({color:0x0a0a0e,metalness:0.6,roughness:0.5,emissive:acc,emissiveIntensity:0.25}));
+  frameRing.rotation.x=Math.PI/2; frameRing.position.y=-1.1; hung.add(frameRing);
+  // banner strip under the frame
+  const banner=new THREE.Mesh(new THREE.CylinderGeometry(2.4,2.4,0.5,32,1,true), new THREE.MeshBasicMaterial({map:_arenaTronTex,side:THREE.DoubleSide})); banner.position.y=-1.5; hung.add(banner);
+  // hang cables to the truss
+  [[-1.6,1.6],[1.6,1.6],[1.6,-1.6],[-1.6,-1.6]].forEach(c=>{ const cab=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,2.4,5), new THREE.MeshStandardMaterial({color:0x222})); cab.position.set(c[0],8.3,c[1]); hung.add(cab.position?cab:cab); group.add(cab); });
+  // --- RINGSIDE BARRICADES — pushed OUT near the crowd (not hugging the ring); the entrance side
+  // runs PARALLEL to the ramp and curves toward the crowd, leaving the ramp opening clear (owner spec) ---
   const barMat=new THREE.MeshStandardMaterial({ color:P.barricade||0x1a1a22, roughness:0.7, metalness:0.3, emissive:acc, emissiveIntensity:0.08 });
-  const bx = HZ + 2.4, seg=1.4, barH=0.7;
-  const addBar=(x,z,horiz)=>{ const b=new THREE.Mesh(new THREE.BoxGeometry(horiz?seg:0.12, barH, horiz?0.12:seg), barMat); b.position.set(x,barH/2-0.3,z); b.castShadow=true; group.add(b);
-    const cap=new THREE.Mesh(new THREE.BoxGeometry(horiz?seg:0.16,0.05,horiz?0.16:seg), ledMat); cap.position.set(x,barH-0.28,z); group.add(cap); };
-  for(let x=-bx; x<=bx; x+=seg){ addBar(x, bx, true); addBar(x, -bx*0.7, true); }   // front + back (back shorter so entrance side stays open)
-  for(let z=-bx*0.7; z<=bx; z+=seg){ addBar(bx, z, false); addBar(-bx, z, false); } // sides
+  const bx = HZ + 5.0, seg=1.4, barH=0.7, rampHalf=1.9;   // bx pushed out toward the crowd
+  const addBar=(x,z,dir,len)=>{ len=len||seg; const b=new THREE.Mesh(new THREE.BoxGeometry(0.12,barH,len), barMat); b.position.set(x,barH/2-0.3,z); b.rotation.y=dir; b.castShadow=true; group.add(b);
+    const cap=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.05,len), ledMat); cap.position.set(x,barH-0.28,z); cap.rotation.y=dir; group.add(cap); };
+  // front (hard-cam +Z) + two sides — full runs facing the crowd
+  for(let x=-bx; x<=bx; x+=seg){ addBar(x, bx, Math.PI/2); }               // front
+  for(let z=-bx; z<=bx; z+=seg){ addBar(bx, z, 0); addBar(-bx, z, 0); }    // sides
+  // entrance (-Z): straight barricade at the crowd line EXCEPT the ramp gap, then parallel-to-ramp returns
+  for(let x=-bx; x<=bx; x+=seg){ if(Math.abs(x) > rampHalf+0.3) addBar(x, -bx, Math.PI/2); }   // gap left for the ramp
+  // parallel-to-ramp guide rails from the ring out toward the crowd, then a short curve outward
+  for(let z=-HZ-1.2; z> -bx+2.2; z-=seg){ addBar( rampHalf, z, 0); addBar(-rampHalf, z, 0); }
+  // curve returns toward the crowd (angled segments) at the crowd end of the ramp rails
+  [-1,1].forEach(s=>{ for(let k=0;k<3;k++){ const ang=(Math.PI/2)*(k+1)/4; const zc=-bx+2.2 - Math.sin(ang)*1.2*k*0.0; addBar(s*(rampHalf+Math.sin(ang)*1.4*(k+1)*0.5), -bx+2.0 + Math.cos(ang)*0*k, s>0?ang:-ang, seg); } });
   // stage key light
-  const sl=new THREE.SpotLight(acc, 2.2, 26, Math.PI/6, 0.4); sl.position.set(0,8,stageZ+2); sl.target.position.set(0,0,0); group.add(sl); group.add(sl.target);
+  const sl0=new THREE.SpotLight(acc, 2.2, 26, Math.PI/6, 0.4); sl0.position.set(0,8,stageZ+2); sl0.target.position.set(0,0,0); group.add(sl0); group.add(sl0.target);
 }
 window.buildArenaStage = buildArenaStage;
 window.setArenaPreset = function(name){ if(window.ARENA_PRESETS[name]){ window.ARENA_PRESET=name; _arenaTronTex=null; try{ buildArena(); }catch(e){} } };
@@ -11818,6 +11848,11 @@ function updateArenaAnim(t){
     }
     for (const im of window.__crowdIMs) im.instanceMatrix.needsUpdate=true;
   }
+  // MOVING BROADCAST LIGHTS — sweep the beam targets (skew + focus) like live TV
+  const ML=window.__arenaMovingLights;
+  if(ML){ for(const m of ML){ const a=t*m.sp+m.ph; if(m.light&&m.light.target){ m.light.target.position.set(Math.sin(a)*m.rx, 0.2, Math.cos(a*0.7)*m.rz); m.light.target.updateMatrixWorld(); m.light.angle=(Math.PI/9)*(0.7+0.3*Math.sin(a*1.3)); } if(m.housing){ m.housing.rotation.z=Math.sin(a)*0.4; m.housing.rotation.x=Math.cos(a*0.7)*0.3; } } }
+  // CENTER-HUNG TRON — slow rotate so all four faces show to the crowd
+  if(window.__hungTron){ window.__hungTron.rotation.y = t*0.25; }
 }
 
 // ============================================================================
