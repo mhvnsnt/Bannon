@@ -680,6 +680,24 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 #uniBody .uni-h { color:var(--gold); font-family:'Bebas Neue'; letter-spacing:3px; font-size:15px; margin:10px 0 4px; }
 #uniBody button.uni-act { font-family:'Share Tech Mono'; font-size:11px; padding:4px 9px; margin:3px 4px 3px 0; background:rgba(50,20,0,0.7); color:#e8c15a; border:1px solid var(--fire); cursor:pointer; }
 #uniBody button.uni-act:hover { background:var(--fire); color:#000; }
+/* visual Universe — MDickie-style show header, match cards, portraits, calendar */
+#uniBody .uni-show { background:linear-gradient(135deg, rgba(60,20,0,.65), rgba(20,8,4,.85)); border:1px solid rgba(255,140,0,.4); border-radius:10px; padding:10px 12px; margin-bottom:10px; }
+#uniBody .uni-show .sh-name { font-family:'Bebas Neue'; letter-spacing:3px; font-size:20px; color:var(--gold); }
+#uniBody .uni-show .sh-sub { font:11px 'Share Tech Mono',monospace; color:#c9b98a; opacity:.85; margin-top:2px; }
+#uniBody .uni-show .sh-rating { float:right; font-family:'Bebas Neue'; font-size:26px; color:#7CFC00; text-shadow:0 0 10px rgba(60,255,90,.4); }
+#uniBody .mcard { display:flex; align-items:center; gap:10px; background:rgba(12,14,20,.7); border:1px solid rgba(255,140,0,.28); border-radius:10px; padding:9px 11px; margin:7px 0; }
+#uniBody .mcard.title-match { border-color:var(--gold); box-shadow:0 0 14px rgba(255,215,0,.18); }
+#uniBody .pf { display:flex; flex-direction:column; align-items:center; gap:3px; width:76px; }
+#uniBody .pf .por { width:46px; height:46px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue'; font-size:19px; color:#fff; border:2px solid rgba(255,255,255,.25); text-shadow:0 1px 3px #000; }
+#uniBody .pf .pn { font:10px 'Share Tech Mono',monospace; color:#ddd; text-align:center; line-height:1.05; max-width:76px; }
+#uniBody .pf .pr { font:9px 'Share Tech Mono',monospace; color:#9a9; }
+#uniBody .mcard .vs { font-family:'Bebas Neue'; font-size:15px; color:var(--fire); letter-spacing:1px; }
+#uniBody .mcard .mc-mid { flex:1; text-align:center; }
+#uniBody .mcard .mc-title { font:9px 'Share Tech Mono',monospace; color:var(--gold); letter-spacing:1px; margin-top:3px; }
+#uniBody .mcard .mc-act { display:flex; flex-direction:column; gap:4px; }
+#uniBody .cal { display:flex; gap:4px; flex-wrap:wrap; margin:6px 0 4px; }
+#uniBody .cal .cw { font:10px 'Share Tech Mono',monospace; padding:4px 7px; border:1px solid rgba(255,140,0,.3); border-radius:6px; color:#c9b98a; }
+#uniBody .cal .cw.now { background:var(--fire); color:#000; border-color:var(--gold); }
 .match-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; max-width:420px; margin:10px auto 0; }
 @media (max-width:380px){ .hub-tile { min-height:72px; } }
 .menu-btn { font-family:'Bebas Neue'; font-size:clamp(18px, 3.4vw, 24px); letter-spacing:5px; padding:13px 18px; background:linear-gradient(90deg, rgba(40,0,0,0.6), rgba(60,20,0,0.4)); color:var(--white); border:1px solid var(--fire); cursor:pointer; transition:all 0.18s; position:relative; box-shadow:0 0 14px rgba(255,69,0,0.25); text-shadow:0 0 8px currentColor; }
@@ -774,6 +792,16 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 <canvas id="gameCanvas" width="1080" height="2032" style="width: 432px; height: 813px;"></canvas>
 <style>
 #freecamBtn{ position:fixed; top:calc(var(--safe-top) + 92px); left:10px; z-index:140; width:46px; height:46px; border-radius:12px; background:rgba(0,0,0,0.55); border:1.5px solid rgba(255,215,0,0.55); color:#FFD700; font-size:21px; display:none; align-items:center; justify-content:center; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+/* FREECAM UI MINIMIZE — in any creative/editor mode, entering freecam fades the panels/menus out of the
+   way so they don't block the view. Tap freecam off (or the ✕) to bring them back. The freecam button,
+   its hint, and the toast stay visible. */
+body.freecam-min #studio, body.freecam-min #creator, body.freecam-min #mcPanel, body.freecam-min #labPanel,
+body.freecam-min .lab-panel, body.freecam-min .creation-panel, body.freecam-min .freecam-hide,
+body.freecam-min .menu-overlay:not(.hidden), body.freecam-min .opt-panel {
+  opacity:0.06 !important; pointer-events:none !important; transition:opacity .22s ease; }
+body.freecam-min #studio:hover, body.freecam-min #creator:hover, body.freecam-min #mcPanel:hover,
+body.freecam-min #labPanel:hover, body.freecam-min .lab-panel:hover { opacity:0.92 !important; pointer-events:auto !important; }
+body.freecam-min #freecamBtn, body.freecam-min #freecamHint { opacity:1 !important; }
 #freecamBtn.on{ background:rgba(255,69,0,0.4); border-color:#FF4500; box-shadow:0 0 14px rgba(255,69,0,0.5); }
 #freecamHint{ position:fixed; top:calc(var(--safe-top) + 98px); left:64px; z-index:140; display:none; font-size:10px; letter-spacing:0.5px; color:#FFD700; background:rgba(0,0,0,0.55); padding:7px 11px; border:1px solid rgba(255,215,0,0.4); border-radius:14px; max-width:60vw; line-height:1.45; pointer-events:none; }
 /* Owner: MOVES / ANIMS / MOCAP-camera / ⚙ tuning are creation/dev tools — they must NOT float on the
@@ -11968,6 +11996,7 @@ function applyFreeCam(){
 }
 function freecamEnter(){
   FREECAM.on=true;
+  try{ document.body.classList.add('freecam-min'); }catch(e){}   // minimize editor/menu UI so it doesn't block the view
   var f=freecamTarget(); if(f && f.worldJoint){ var c=f.worldJoint('chest'); if(c){ FREECAM.tx=c.x; FREECAM.ty=c.y; FREECAM.tz=c.z; } }
   FREECAM.yaw=0.6; FREECAM.pitch=0.12; FREECAM.dist=4.2;
   if(typeof ring3D!=='undefined' && ring3D) ring3D.visible=false;
@@ -11978,6 +12007,7 @@ function freecamEnter(){
   var h=document.getElementById('freecamHint'); if(h)h.style.display='block';
 }
 function freecamExit(){
+  try{ document.body.classList.remove('freecam-min'); }catch(e){}
   if(!FREECAM.on){ var b0=document.getElementById('freecamBtn'); if(b0)b0.classList.remove('on'); var h0=document.getElementById('freecamHint'); if(h0)h0.style.display='none'; return; }
   FREECAM.on=false;
   if(typeof ring3D!=='undefined' && ring3D) ring3D.visible=true;
@@ -39386,25 +39416,50 @@ window.BANNON_LEGACY = (function(){
 
   function rowsHTML(list){ return list.map(r=>`<div class="uni-row"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join(''); }
 
+  // proprietary weekly show names (MDickie-style variety, our universe)
+  const SHOW_NAMES=['FRICTION','AFTERSHOCK','SCORCHED EARTH','THE RECKONING','IRON WILL','MIDNIGHT MASSACRE','APEX','BAD BLOOD','THE GAUNTLET','HOSTILE TAKEOVER','LAST RITES','BROKEN ARROW'];
+  const VENUES=['The Foundry','Steel Cathedral','Saturn Dome','The Crucible','Kennedy Coliseum','Iron District Arena','The Undercroft','Halo Center'];
+  function portColor(name){ let x=0; name=String(name||'?'); for(let i=0;i<name.length;i++) x=(x*31+name.charCodeAt(i))%360; return x; }
+  function pfChip(name){ const u=(UNI()&&UNI().get)?UNI().get():null; const r=(u&&u.fighters&&u.fighters[name])||{}; const c=portColor(name);
+    const init=String(name||'?').replace(/_/g,' ').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+    return `<div class="pf"><div class="por" style="background:linear-gradient(135deg,hsl(${c},60%,42%),hsl(${(c+40)%360},55%,24%))">${esc(init)}</div>`+
+           `<div class="pn">${esc(String(name).replace(/_/g,' '))}</div><div class="pr">${(r.wins||0)}-${(r.losses||0)}</div></div>`; }
   function render(){
     document.querySelectorAll('#uniTabs .uni-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
     let h='';
     try{
       if(tab==='card'){
-        const U=UNI(), u=U&&U.get&&U.get();
-        h+=`<div class="uni-h">WEEK ${u?u.week:0} — CARD</div>`;
+        const U=UNI(), u=U&&U.get&&U.get(); const wk=u?u.week:0;
+        // SHOW HEADER — venue, rating, attendance (MDickie NightSummary flavor)
+        let show=null; try{ show=(CAR()&&CAR().bookShow)?CAR().bookShow(u):null; }catch(e){}
+        let att=null; try{ att=(MD()&&MD().attendance)?MD().attendance(8000,(u&&u.card||[]).flatMap(m=>[m.a,m.b])):null; }catch(e){}
+        const rating=show?show.rating:( (att?att.pct/20:4).toFixed(1) );
+        const venue=show?show.venue:VENUES[wk%VENUES.length];
+        h+=`<div class="uni-show"><span class="sh-rating">${esc(rating)}</span>`+
+           `<div class="sh-name">${esc(SHOW_NAMES[wk%SHOW_NAMES.length])}</div>`+
+           `<div class="sh-sub">Week ${wk} · ${esc(venue)} · ${att?(att.attendance.toLocaleString()+' fans · '+att.band):'live'}</div></div>`;
+        // CALENDAR strip
+        h+='<div class="cal">'+[0,1,2,3,4,5].map(k=>{ const w=wk-2+k; return w>=0?`<span class="cw${w===wk?' now':''}">W${w}</span>`:''; }).join('')+'</div>';
         const card=(u&&u.card)||[];
-        if(!card.length) h+='<div>No card booked. Advance a week to auto-book.</div>';
-        card.forEach((m,i)=>{ const done=m._done?'✔':'▶';
-          h+=`<div class="uni-row"><span>${done} ${esc(m.a)} vs ${esc(m.b)}${m.title?' · '+esc(m.title):''}</span>`+
-             (m._done?`<span>done</span>`:`<span><button class="uni-act" data-play="${i}">PLAY</button><button class="uni-act" data-sim="${i}">SIM</button></span>`)+`</div>`; });
-        const news=(u&&u.news)||[]; if(news.length){ h+='<div class="uni-h">HEADLINES</div>'+news.slice(-6).reverse().map(n=>`<div class="uni-row"><span>• ${esc(typeof n==='string'?n:(n.text||n.headline||''))}</span><span></span></div>`).join(''); }
+        if(!card.length) h+='<div style="opacity:.7">No card booked — ADVANCE WEEK to book the show.</div>';
+        card.forEach((m,i)=>{
+          h+=`<div class="mcard${m.title?' title-match':''}">`+pfChip(m.a)+
+             `<div class="mc-mid"><div class="vs">VS</div>${m.title?`<div class="mc-title">🏆 ${esc(m.title)}</div>`:''}</div>`+pfChip(m.b)+
+             `<div class="mc-act">`+(m._done?`<span style="color:#7CFC00;font:10px monospace">✔ DONE</span>`:`<button class="uni-act" data-play="${i}">PLAY</button><button class="uni-act" data-sim="${i}">SIM</button>`)+`</div></div>`;
+        });
+        const news=(u&&u.news)||[]; if(news.length){ h+='<div class="uni-h">📰 DIRT SHEET</div>'+news.slice(-7).reverse().map(n=>`<div class="uni-row"><span>${esc(typeof n==='string'?n:(n.text||n.headline||''))}</span><span></span></div>`).join(''); }
       }
       else if(tab==='standings'){
         const U=UNI(); const st=(U&&U.standings&&U.standings())||[];
         h+='<div class="uni-h">RANKINGS</div>';
-        if(!st.length) h+='<div>No data yet — advance a week.</div>';
-        st.slice(0,20).forEach((s,i)=>{ h+=`<div class="uni-row"><span>${i+1}. ${esc(s.name)} <span style="opacity:.6">(${esc(s.promo||'')})</span></span><span>${s.w||0}-${s.l||0}${s.title?' 🏆':''}</span></div>`; });
+        if(!st.length) h+='<div style="opacity:.7">No data yet — ADVANCE WEEK.</div>';
+        st.slice(0,20).forEach((s,i)=>{ const medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.'; const c=portColor(s.name);
+          const init=String(s.name||'?').replace(/_/g,' ').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+          h+=`<div class="uni-row" style="align-items:center;padding:5px 0"><span style="display:flex;align-items:center;gap:8px">`+
+             `<b style="width:26px;text-align:center">${medal}</b>`+
+             `<span class="por" style="width:30px;height:30px;font-size:13px;background:linear-gradient(135deg,hsl(${c},60%,42%),hsl(${(c+40)%360},55%,24%))">${esc(init)}</span>`+
+             `<span>${esc(String(s.name).replace(/_/g,' '))} <span style="opacity:.55;font-size:10px">${esc(s.promo||'')}</span></span></span>`+
+             `<span>${s.w||0}-${s.l||0}${s.title?' 🏆':''}</span></div>`; });
       }
       else if(tab==='career'){
         const c=CAR(); h+='<div class="uni-h">MY CAREER</div>';
@@ -39488,6 +39543,373 @@ window.BANNON_LEGACY = (function(){
   const tile=document.getElementById('btnHubUniverse'); if(tile) tile.addEventListener('click', open);
   window.openUniverse=open;
 })();
+</script>
+
+<!-- ====================================================================================
+     AI-STUDIO SALVAGED MODULES — News (dirt-sheet), Entrances (live beats), Promos (in-ring),
+     Rules (interference/rope-break), Items (weapon engine), Buckles (corner injury matrix),
+     Editor (gear presets). Ported from the rescue branch into the full game; self-wire to
+     BANNON_UNIVERSE / BANNON_STORY / BANNON_LEGACY. =====
+     ==================================================================================== -->
+<script>
+/* ===== AI-Studio module: BANNON_BUCKLES (salvaged from rescue branch) ===== */
+window.BANNON_BUCKLES = (function(){
+  const BUCKLES = [
+    { id: 0, x: -100, z: -100, exposed: false },
+    { id: 1, x: 100, z: -100, exposed: false },
+    { id: 2, x: -100, z: 100, exposed: false },
+    { id: 3, x: 100, z: 100, exposed: false }
+  ];
+  
+  // Find the nearest buckle to a given position
+  function nearestBuckle(x, z) {
+    let best = null, bd = 999999;
+    BUCKLES.forEach(b => {
+      const d = Math.hypot(b.x - x, b.z - z);
+      if(d < bd) { bd = d; best = b; }
+    });
+    return { buckle: best, dist: bd };
+  }
+
+  // Corner trapped state (whipped into the corner)
+  function trapInCorner(fighter, targetBuckle) {
+    if(!fighter || !targetBuckle) return;
+    fighter.x = targetBuckle.x;
+    fighter.z = targetBuckle.z;
+    fighter.state = 'corner_trapped';
+    fighter.stamina = Math.max(0, (fighter.stamina||100) - 5);
+    
+    // Extra damage if exposed - hook into BANNON_LEGACY Aftermath injury persistence
+    if(targetBuckle.exposed && fighter.hp) {
+      fighter.hp = Math.max(0, fighter.hp - 12);
+      if(window.BANNON_UNIVERSE && window.BANNON_UNIVERSE.get) {
+         let u = window.BANNON_UNIVERSE.get();
+         if (u && u.fighters && u.fighters[fighter.name]) {
+             // exposed-buckle damage translates to week-to-week injury persistence
+             u.fighters[fighter.name].injuredWeeks = (u.fighters[fighter.name].injuredWeeks || 0) + 2; 
+             if (!u.events) u.events = [];
+             u.events.unshift({type: 'injury', text: fighter.name + " suffered back trauma from an exposed turnbuckle! Out for 2 weeks."});
+             if (window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(u);
+         }
+      }
+    }
+    return true;
+  }
+
+  // Remove the turnbuckle pad (heel tactic)
+  function exposeTurnbuckle(fighter, targetBuckle) {
+    if(!targetBuckle || targetBuckle.exposed) return false;
+    targetBuckle.exposed = true;
+    if(window.BANNON_STORY && window.BANNON_STORY.adjustAttitude) window.BANNON_STORY.adjustAttitude(fighter.name, -5);
+    return true;
+  }
+
+  // High risk aerial move setup
+  function climbTurnbuckle(fighter, targetBuckle) {
+    if(!fighter || !targetBuckle) return;
+    fighter.x = targetBuckle.x;
+    fighter.z = targetBuckle.z;
+    fighter.y = 40; // Elevated Y position
+    fighter.state = 'turnbuckle_climbing';
+    return true;
+  }
+
+  return {
+    BUCKLES,
+    nearestBuckle,
+    trapInCorner,
+    exposeTurnbuckle,
+    climbTurnbuckle
+  };
+})();
+
+/* ===== AI-Studio module: BANNON_EDITOR (salvaged from rescue branch) ===== */
+window.BANNON_EDITOR = (function(){
+  const MAX_ATTRIBUTE_TOTAL = 450; // Force balance (Strength + Stamina + Toughness + Speed + Charisma + Technique)
+  const CATEGORIES = ['Strength', 'Stamina', 'Toughness', 'Speed', 'Charisma', 'Technique'];
+  
+  // Validate and clamp fighter stats to ensure realism
+  function validateStats(stats) {
+    let total = 0;
+    const out = {};
+    CATEGORIES.forEach(c => {
+      const v = Math.max(1, Math.min(99, stats[c] || 50));
+      out[c] = v;
+      total += v;
+    });
+    
+    // Scale down if exceeding max
+    if(total > MAX_ATTRIBUTE_TOTAL) {
+      const ratio = MAX_ATTRIBUTE_TOTAL / total;
+      CATEGORIES.forEach(c => { out[c] = Math.floor(out[c] * ratio); });
+    }
+    return out;
+  }
+
+  // Assign a visual gear preset (mimics the MDickie texture atlas swapping)
+  function setGearPreset(fighter, presetType) {
+    const presets = {
+      'heavyweight': { scale: 1.1, mass: 120, tights: 'trunks', kneepads: true },
+      'cruiserweight': { scale: 0.9, mass: 85, tights: 'long', kneepads: true },
+      'brawler': { scale: 1.0, mass: 105, tights: 'jeans', kneepads: false },
+      'luchador': { scale: 0.95, mass: 90, tights: 'full', mask: true }
+    };
+    const p = presets[presetType] || presets['brawler'];
+    fighter.scale = p.scale;
+    fighter.mass = p.mass;
+    fighter.gear = { tights: p.tights, kneepads: p.kneepads, mask: p.mask||false };
+    return fighter;
+  }
+
+  // Allocate moveset from the dictionary
+  function allocateMoves(fighter, finisherID, signatureID) {
+    fighter.moveset = fighter.moveset || {};
+    fighter.moveset.finisher = finisherID;
+    fighter.moveset.signature = signatureID;
+    return fighter;
+  }
+
+  return {
+    MAX_ATTRIBUTE_TOTAL,
+    validateStats,
+    setGearPreset,
+    allocateMoves
+  };
+})();
+
+/* ===== AI-Studio module: BANNON_RULES (salvaged from rescue branch) ===== */
+window.BANNON_RULES = (function(){
+  const MATCH_TYPES = {
+    'standard': { dq: true, countout: true, ropeBreak: true, fallsCountAnywhere: false, ironMan: false },
+    'hardcore': { dq: false, countout: false, ropeBreak: false, fallsCountAnywhere: true, ironMan: false },
+    'submission': { dq: true, countout: true, ropeBreak: true, fallsCountAnywhere: false, submissionOnly: true }
+  };
+  
+  // Rule checking per frame (MDickie checkRules loop)
+  function checkRopeBreak(fighter1, fighter2) {
+    if(!fighter1 || !fighter2) return false;
+    // If either fighter is touching the bounds (approx 200 distance from center)
+    const d1 = Math.hypot(fighter1.x, fighter1.z);
+    const d2 = Math.hypot(fighter2.x, fighter2.z);
+    if(d1 > 180 || d2 > 180) {
+      if(window.addEvent) window.addEvent("ROPE BREAK! The referee calls off the hold.", 'rules');
+      return true; // Rope break triggered
+    }
+    return false;
+  }
+  
+  // Run-in / Interference (Interference.bb)
+  function triggerRunIn(targetFighterName, isAlly) {
+    let u = null;
+    if(window.BANNON_UNIVERSE) u = window.BANNON_UNIVERSE.get();
+    if(!u || !u.fighters) return null;
+    
+    // Find a valid roster member to run down to the ring
+    const roster = Object.keys(u.fighters);
+    const pool = roster.filter(k => k !== targetFighterName);
+    if(!pool.length) return null;
+    
+    // MDickie logic: pick someone based on relationship graph
+    let intruder = pool[Math.floor(Math.random() * pool.length)];
+    if(window.BANNON_STORY && window.BANNON_STORY.rel) {
+        let bestScore = -999;
+        pool.forEach(p => {
+            let r = window.BANNON_STORY.rel(targetFighterName, p);
+            let score = isAlly ? r : -r; // Allies seek high positive relations, enemies seek high negative
+            if(score > bestScore) { bestScore = score; intruder = p; }
+        });
+    }
+    
+    if(window.addEvent) window.addEvent(`BAH GAWD! ${intruder} is running down to the ring!`, 'interference');
+    return intruder;
+  }
+  
+  return {
+    MATCH_TYPES,
+    checkRopeBreak,
+    triggerRunIn
+  };
+})();
+
+/* ===== AI-Studio module: BANNON_PROMOS (salvaged from rescue branch) ===== */
+window.BANNON_PROMOS = (function(){
+  // MDickie Promos.bb generator
+  const PROMO_THEMES = [
+    { type: 'callout', intensity: 'high', text: "I'm sick of waiting in the back! I want a match tonight!" },
+    { type: 'respect', intensity: 'low', text: "You fought a hell of a match out there. I respect you." },
+    { type: 'betrayal', intensity: 'high', text: "You thought we were friends? You're just a stepping stone!" },
+    { type: 'championship', intensity: 'medium', text: "That title around your waist... it belongs to me." }
+  ];
+  
+  function generateInRingPromo(speaker, target) {
+    const theme = PROMO_THEMES[Math.floor(Math.random() * PROMO_THEMES.length)];
+    let promoScript = `${speaker}: "${theme.text}"`;
+    
+    if(target) {
+        promoScript += `
+${target} stares a hole through ${speaker}...`;
+    }
+    
+    // Impact on momentum
+    if(window.BANNON_UNIVERSE) {
+        let u = window.BANNON_UNIVERSE.get();
+        if(u && u.fighters && u.fighters[speaker]) {
+            u.fighters[speaker].momentum = Math.min(100, (u.fighters[speaker].momentum || 50) + 10);
+            if(window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(u);
+        }
+    }
+    
+    return promoScript;
+  }
+  
+  return {
+    generateInRingPromo
+  };
+})();
+
+/* ===== AI-Studio module: BANNON_ITEMS (salvaged from rescue branch) ===== */
+window.BANNON_ITEMS = (function(){
+  const WEAPONS = [
+    { type: 'chair', damage: 15, mass: 10, reach: 1.5, durability: 3 },
+    { type: 'table', damage: 25, mass: 20, reach: 2.0, durability: 1 },
+    { type: 'bat', damage: 12, mass: 5, reach: 1.2, durability: 5 },
+    { type: 'ladder', damage: 20, mass: 25, reach: 2.5, durability: 4 },
+    { type: 'monitor', damage: 18, mass: 15, reach: 1.0, durability: 1 }
+  ];
+
+  function spawnWeapon(type, x, z) {
+    const template = WEAPONS.find(w => w.type === type);
+    if(!template) return null;
+    return { ...template, x: x, z: z, y: 0, id: Date.now() + Math.random(), state: 'idle' };
+  }
+  
+  function pickupWeapon(fighter, weapon) {
+    if(!fighter || !weapon || weapon.state !== 'idle') return false;
+    const d = Math.hypot(fighter.x - weapon.x, fighter.z - weapon.z);
+    if(d < 50) {
+      weapon.state = 'held';
+      fighter.heldWeapon = weapon;
+      return true;
+    }
+    return false;
+  }
+  
+  function swingWeapon(attacker, defender) {
+    if(!attacker.heldWeapon) return;
+    const w = attacker.heldWeapon;
+    // Calculate arc based on weapon reach
+    const dist = Math.hypot(attacker.x - defender.x, attacker.z - defender.z);
+    if(dist < (40 * w.reach)) {
+      defender.hp = Math.max(0, (defender.hp||100) - w.damage);
+      w.durability--;
+      if(w.durability <= 0) {
+        attacker.heldWeapon = null; // Weapon breaks
+        if(window.addEvent) window.addEvent(`The ${w.type} shattered on impact!`, 'items');
+      }
+      return true;
+    }
+    return false;
+  }
+  
+  function dropWeapon(fighter) {
+    if(!fighter.heldWeapon) return;
+    const w = fighter.heldWeapon;
+    w.state = 'idle';
+    w.x = fighter.x;
+    w.z = fighter.z;
+    fighter.heldWeapon = null;
+  }
+
+  return {
+    WEAPONS,
+    spawnWeapon,
+    pickupWeapon,
+    swingWeapon,
+    dropWeapon
+  };
+})();
+
+/* ===== AI-Studio module: BANNON_NEWS (salvaged from rescue branch) ===== */
+window.BANNON_NEWS = (function(){
+  const NEWS_TEMPLATES = [
+    { type: 'injury', text: "[FIGHTER] is reportedly taking time off to heal nagging injuries." },
+    { type: 'heat', text: "Backstage heat continues to build around [FIGHTER] after recent comments." },
+    { type: 'contract', text: "Rumors indicate [FIGHTER] is in contract negotiations with management." },
+    { type: 'push', text: "Management is extremely high on [FIGHTER], expect a major push soon." },
+    { type: 'debut', text: "A mysterious new talent has been spotted at the training facility." }
+  ];
+
+  function generateHeadline(fighterName) {
+    let tpl = NEWS_TEMPLATES[Math.floor(Math.random() * NEWS_TEMPLATES.length)];
+    let headline = tpl.text.replace("[FIGHTER]", fighterName || "A top star");
+    return headline;
+  }
+  
+  function generateWeeklyNews(universe) {
+    if(!universe || !universe.fighters) return [];
+    const roster = Object.keys(universe.fighters);
+    if(!roster.length) return [];
+    
+    const count = Math.floor(Math.random() * 3) + 1;
+    const headlines = [];
+    for(let i=0; i<count; i++) {
+        const target = roster[Math.floor(Math.random() * roster.length)];
+        headlines.push(generateHeadline(target));
+    }
+    return headlines;
+  }
+
+  return {
+    generateHeadline,
+    generateWeeklyNews
+  };
+})();
+
+/* ===== AI-Studio module: BANNON_ENTRANCES (salvaged from rescue branch) ===== */
+window.BANNON_ENTRANCES = (function(){
+  function startEntrance(fighter) {
+    if(!fighter) return;
+    fighter.state = 'entrance_stage';
+    fighter.z = -500; // Deep in the aisle
+    fighter.x = 0;
+    if(window.addEvent) window.addEvent(`${fighter.name} steps through the curtain!`, 'entrance');
+  }
+  
+  function updateEntrance(fighter) {
+    if(fighter.state === 'entrance_stage') {
+        fighter.z += 2; // Walk down the ramp
+        if(fighter.z >= -100) {
+           fighter.state = 'entrance_apron';
+        }
+    } else if (fighter.state === 'entrance_apron') {
+        fighter.z += 1;
+        fighter.y = 30; // Step onto apron
+        if(fighter.z >= -40) {
+           fighter.state = 'entrance_ring';
+        }
+    } else if (fighter.state === 'entrance_ring') {
+        fighter.z += 1;
+        fighter.y = 0; // Step into ring
+        if(fighter.z >= 0) {
+           fighter.state = 'idle';
+           if(window.addEvent) window.addEvent(`${fighter.name} is ready for action!`, 'entrance');
+        }
+    }
+  }
+  
+  function triggerPyro(fighter) {
+    if(fighter.state !== 'entrance_stage') return;
+    if(window.addEvent) window.addEvent(`BOOM! Pyro goes off for ${fighter.name}!`, 'pyro');
+  }
+
+  return {
+    startEntrance,
+    updateEntrance,
+    triggerPyro
+  };
+})();
+
+try{ console.log('[AI-STUDIO MODULES] News/Entrances/Promos/Rules/Items/Buckles/Editor online'); }catch(e){}
 </script>
 </body>
 </html>
