@@ -14922,14 +14922,26 @@ function setupInput(){
         return;
       }
 
-      // --- IRISH WHIP / TOSS into ropes ---
+      // --- IRISH WHIP / TOSS into ropes (BANNON PHYSICS ENGINE) ---
       if (opp && p.grappling && p.grappleStage >= 1){
         // Whip into ropes — send opponent running
         if (opp.zone === 'RING'){
-          opp.vx = (opp.x < 0 ? -1 : 1) * 6.5;
+          // Calculate whip vector relative to the attacker's facing direction
+          const whipForce = 12.0; // Heavy physics impulse
+          const dirX = Math.cos(p.facing);
+          const dirZ = Math.sin(p.facing);
+          
+          opp.vx = dirX * whipForce;
+          opp.vz = -dirZ * whipForce;
+          
+          // Apply initial stun/stumble state instead of just 'walk' so they can't immediately counter
           opp.reboundT = 0.55;
-          opp.reboundDir = { x: opp.vx > 0 ? 1 : -1, z: 0 };
-          opp.state = 'walk'; opp.running = true; opp.runCharge = 1;
+          opp.reboundDir = { x: Math.sign(opp.vx), z: Math.sign(opp.vz) };
+          opp.state = 'run';
+          opp.running = true;
+          opp.runCharge = 1.0;
+          
+          // Clear grapple state
           p.grappling = false; p.grabTarget = null;
           if (p.root) p.root.userData.gripping = false;
         }
