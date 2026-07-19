@@ -474,6 +474,21 @@
         "impulse",
         "escape"
       ]
+    },
+    {
+      "id": "targeted_limb_striking",
+      "name": "Targeted Limb Striking System",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Calculates a trajectory vector to the nearest weak point based on analog stick (or WASD/Arrows) direction at the moment of strike initiation. Pushing UP routes the procedural IK strike to the head, DOWN to the legs, and LEFT/RIGHT to the corresponding arms. Modifies playerAttack to lock _strikeTargetNode, which the Procedural IK Strike Fallback now consumes instead of defaulting to the chest.",
+      "keywords": [
+        "physics",
+        "strike",
+        "limb",
+        "targeting",
+        "ik",
+        "directional"
+      ]
     }
   ]
 }
