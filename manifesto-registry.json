@@ -552,6 +552,21 @@
         "pound",
         "pelvis"
       ]
+    },
+    {
+      "id": "torque_joint_locks",
+      "name": "Torque-Based Joint Locks",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Modifies the clampJointBend engine to support submission torque overloads. Instead of submissions playing as static health-drain animations, they apply active pressure arrays to window._jointTorqueOverloads. The physics engine reads this pressure and forces joint hyperextension beyond the standard anatomical min/max limits, simulating real physical leverage on the skeletal rig until the limb gives way.",
+      "keywords": [
+        "physics",
+        "submissions",
+        "torque",
+        "joints",
+        "hyperextension",
+        "limits"
+      ]
     }
   ]
 }
