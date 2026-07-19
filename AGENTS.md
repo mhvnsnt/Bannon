@@ -633,6 +633,11 @@ To bypass the 65,536 server-side output token restriction by implementing an aut
 - **Wrestling Mpire Dashboard Visualizer**: Engineered an interactive `<MpireLegacyConsole />` React component inside `Dashboard.tsx` displaying character mappings, dynamic launch force multiplier adjustment, and simulated Blitz3D binary chunk decoding.
 
 
+### SHIPPED (PHASE 76 - ADRENALINE RUSH & FINISHER STATE)
+- **MDickie Adrenaline Engine (Phase 76)**: Intercepted `Fighter.prototype.update` to manage the classic 100% Momentum state. When momentum peaks, triggers a 10-second Adrenaline Rush. Multiplies root motion speed and physical strike power by 1.5x while overriding the mesh's emissive properties to a glowing red `0x550000`.
+- **Finisher Poise Lock**: Hooked `poseAttack` during the Adrenaline state to inject an unbreakable `this.poise = 100` lock and forcefully clamp `attackData.power` to 85+, ensuring finishers hit catastrophically without being interrupted by standard collision checks.
+
+
 ### SHIPPED (PHASE 75 - WEAPON SWINGING ARCS & CHAOS COLLISION HULLS)
 - **MDickie Weapon Swinging Arcs (Phase 75)**: Hooked `Fighter.prototype.poseAttack` to intercept weapon strikes (SMASH and SWING trajectories). Calculated localized IK targets (`verticalArc` and `horizontalArc`) mimicking the classic MDickie over-the-head chair smash and horizontal baseball bat swings.
 - **Chaos-Driven Collision Hulls**: Built native transform updates for `this.heldWeapon`. Bound the weapon mesh position directly to the IK hand target (`haL` or `haR`) each tick, and invoked `updateChaosCollision` to emit continuous spatial physics traces (sphere casts/raycasts) through the swing arc, permanently bypassing static hitbox detection for foreign objects.
