@@ -13798,6 +13798,11 @@ try{
   // play-by-play is Commentator Marks; color rotates through Cody Callahan / Grixf / Edwin Kennedy.
   window.CHAR_OFFICIALS = Object.assign(window.CHAR_OFFICIALS||{}, {
     COMMENTATOR_MARKS: { name:'Commentator Marks', role:'Play-by-Play', canon:true, look:'SUIT', bio:'The voice of the audience — calls the action, gives the wrestling context, and sells the danger.' },
+    // The two commentators coded in-game at base (the live dual-voice desk). VoiceA is the professional
+    // play-by-play analyst — the SAME seat/role as Commentator Marks (they can be the same booth voice);
+    // VoiceB is the chaos-loving color man. Both registered so they carry identities + can get models.
+    COMMENTARY_VOICE_A: { name:'Voice A · Lead Analyst', role:'Play-by-Play (matches Commentator Marks)', canon:true, look:'SUIT', voiceId:'A', bio:'The pro at the desk — "we are LIVE and anything can happen." Calm, credible play-by-play.' },
+    COMMENTARY_VOICE_B: { name:'Voice B · Color', role:'Color Commentary', canon:true, look:'SUIT', voiceId:'B', bio:'"You KNOW I love chaos — ring the bell." The unhinged color voice that roots for the mayhem.' },
     RING_ANNOUNCER:    { name:'The Ring Announcer', role:'Ring Announcer', canon:true, look:'SUIT', bio:'Formal in-ring introductions and official decisions ("The winner, by referee stoppage...").' },
     COLOR_CODY:        { name:'Cody "Corduroy Kid" Callahan', role:'Color / Manic GM', canon:true, ref:'CODY_CALLAHAN' },
     COLOR_GRIXF:       { name:'Grixf', role:'Color (guest)', canon:true, ref:'GRIXF' },
@@ -14403,7 +14408,8 @@ window.MDICKIE_MAP = Object.assign({
   LUCHADOR_RELAMPAGO:'LUCHADOR', LUCHADOR_TRUENO:'LUCHADOR', REY_FUEGO:'LUCHADOR',
   TRIPLE_XXX:'POWERHOUSE', THE_BAD_GAL:'FEMALE', MELISSA_KENNEDY:'FEMALE', LADY_RHIANNON:'FEMALE',
   ASTRID:'FEMALE_ATHLETIC', QUEEN_TYNESHIA:'FEMALE', TIGHTROPE:'FEMALE_ATHLETIC',
-  COMMENTATOR_MARKS:'SUIT', RING_ANNOUNCER:'SUIT', REFEREE:'REFEREE'
+  COMMENTATOR_MARKS:'SUIT', RING_ANNOUNCER:'SUIT', REFEREE:'REFEREE',
+  COMMENTARY_VOICE_A:'SUIT', COMMENTARY_VOICE_B:'SUIT'
 }, window.MDICKIE_MAP||{});
 function mdickieBaseFor(charName){
   var k=String(charName||'').toUpperCase().replace(/[^A-Z0-9]/g,'_');
