@@ -27034,7 +27034,25 @@ console.log('[BANNON v89] Dive-damage fix, persistent continuous skin, universal
       if (!by || by.grappleStage < 2 || this.ragdoll) return r;
 
       const t = this.grabTimer || 0;  // time they've been held
-      const panic = _cl(t / 1.2, 0, 1.0);   // ramps to full panic over 1.2s of being held
+      const panic = _cl(t / 1.2, 0, 1.0);   // ramps to full panic
+
+      // BANNON STAMINA-DRAINED RAGDOLL COLLAPSE (PHASE 5 #34)
+      // If stamina hits 0 during a hold, the character goes fully limp (TKO).
+      if (this.stamina != null && this.stamina <= 0 && window.ALLOW_TKO !== false) {
+          // Trigger collapse
+          this.ragdoll = true;
+          this.ragdollTime = 0;
+          this.state = 'ragdoll'; // force state bypass
+          
+          // If the attacker was lifting/delivering, this breaks the rigid hold, causing dead weight physics
+          if (by.J && by.J.chest) {
+              by.kickWobble && by.kickWobble('chest', 0, -1, 0, 0.8); // attacker stumbles under sudden dead weight
+          }
+          
+          console.log("[BANNON] TKO COLLAPSE: Stamina depleted during submission.");
+          return r; // exit procedural struggle IK, they are limp
+      }
+ over 1.2s of being held
 
       // LEG SCISSOR — alternating, faster + wider amplitude as panic grows
       const freq = 9 + panic * 7;    // 9Hz calm → 16Hz frantic
