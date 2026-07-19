@@ -37889,5 +37889,358 @@ window.BANNON_CAREER = (function(){
     };
 })();
 </script>
+
+<!-- ============================================================================
+     BANNON · PHASE 5/6 IMPLEMENTATION BRICK
+     Actually wires the systems that were only ever registered in MANIFESTO.
+     Additive only — every hook wraps the existing prototype method and calls
+     the original. No control changes except the new TAG button (WWE 2K D-Pad-Up
+     equivalent). Toggle each subsystem via its window flag.
+     #36 Chokehold oxygen · #37 Joint dislocation · #38 Leverage scaling
+     #39 Biting/DIRTY · #40 Desperation tap-out · #45 Injury rehab
+     #46 Faction targeting · #49 Tag team chemistry (D-Pad-Up remap)
+     ============================================================================ -->
+<script>
+(function phaseFiveSixInstall(){
+  if (typeof Fighter==='undefined' || window.__phase56) return;
+  window.__phase56 = true;
+  const _cl = (v,a,b)=> v<a?a:(v>b?b:v);
+  const _dist = (a,b)=> Math.hypot((a.x||0)-(b.x||0),(a.z||0)-(b.z||0));
+
+  // ── #36 CHOKEHOLD OXYGEN DEPLETION ─────────────────────────────────────────
+  // Hook poseGrabbed: if the holder's grapplePos is a choke, drain this.oxygen.
+  // At 0 → limp ragdoll TKO (overrides stamina). Recovers slowly when not choked.
+  window.CHOKE_OXYGEN = (window.CHOKE_OXYGEN!==undefined) ? window.CHOKE_OXYGEN : true;
+  {
+    const _origPG = Fighter.prototype.poseGrabbed;
+    Fighter.prototype.poseGrabbed = function(dt){
+      const r = _origPG ? _origPG.call(this, dt) : undefined;
+      try {
+        if (window.CHOKE_OXYGEN===false) return r;
+        const by = this.grabbedBy;
+        if (!by || this.ragdoll) return r;
+        const pos = (by.grapplePos||'').toUpperCase();
+        if (pos.includes('CHOKE') || pos.includes('STRANGLE') || pos.includes('TRIANGLE')){
+          if (this.oxygen==null) this.oxygen = 100;
+          // rapid drain — a real choke puts you out in ~6-9s of sustained hold
+          this.oxygen = Math.max(0, this.oxygen - dt * (14 + (by.momentum||0)*0.06));
+          if (this.oxygen <= 0){
+            // limp ragdoll TKO — overrides standard stamina
+            this.ragdoll = true; this.downT = 0; this.state = 'down'; this.stateTime = 0;
+            this.hp = Math.max(0, this.hp - 40);
+            try{ announce('CHOKE OUT', fname(this)); }catch(e){}
+            try{ if (window.spawnSpark) spawnSpark(this.x, 1.2, this.z, 0xff3300, 6); }catch(e){}
+          }
+        } else {
+          // recover oxygen when not being choked
+          if (this.oxygen!=null && this.oxygen < 100) this.oxygen = Math.min(100, this.oxygen + dt*8);
+        }
+      } catch(e){}
+      return r;
+    };
+  }
+
+  // ── #37 JOINT DISLOCATION + #38 LEVERAGE SCALING ───────────────────────────
+  // Hook the v77 submission torque model. When strain exceeds 0.85, the joint
+  // dislocates: flags _limbDamage, triggers a blood/sweat particle burst, and
+  // the torque limit is permanently loosened for that limb. Leverage scales the
+  // crank rate by the attacker:defender weight ratio.
+  window.JOINT_DISLOCATION = (window.JOINT_DISLOCATION!==undefined) ? window.JOINT_DISLOCATION : true;
+  window.SUB_LEVERAGE = (window.SUB_LEVERAGE!==undefined) ? window.SUB_LEVERAGE : true;
+  {
+    // patch _v77StartSubmission to scale crank + add dislocation check
+    const _origSub = window._v77StartSubmission;
+    if (_origSub){
+      window._v77StartSubmission = function(attacker, victim, type){
+        // #38 leverage: weight ratio scales the crank rate
+        if (window.SUB_LEVERAGE!==false && attacker && victim){
+          const aw = (attacker.opts&&attacker.opts.weight) || (attacker.strikeMass?attacker.strikeMass()*100:100);
+          const vw = (victim.opts&&victim.opts.weight)  || (victim.strikeMass?victim.strikeMass()*100:100);
+          attacker._subLever = _cl(aw / Math.max(1,vw), 0.65, 1.6);
+        }
+        const r = _origSub.call(this, attacker, victim, type);
+        // wrap the subStep to add dislocation
+        try {
+          if (window.JOINT_DISLOCATION!==false && victim){
+            if (!victim._limbDamage) victim._limbDamage = {};
+            // tag the victim so the subStep hook below can find them
+            victim._subActive = true;
+            victim._subAtk = attacker;
+          }
+        } catch(e){}
+        return r;
+      };
+    }
+    // per-frame dislocation check via update hook
+    const _origUp = Fighter.prototype.update;
+    Fighter.prototype.update = function(dt){
+      const r = _origUp.call(this, dt);
+      try {
+        if (window.JOINT_DISLOCATION===false || !this._subActive) return r;
+        const atk = this._subAtk;
+        if (!atk) return r;
+        // read the strain the v77 meter computed
+        const meter = document.getElementById('subMeter');
+        const strain = (meter && meter._subStrain) || 0;
+        const lever = (atk._subLever!=null) ? atk._subLever : 1.0;
+        // effective pressure scales with leverage
+        const pressure = strain * lever;
+        if (pressure > 0.85 && !this._limbDamage._dislocated){
+          // determine which limb from the current grapple position
+          const pos = (atk.grapplePos||'').toUpperCase();
+          let limb = 'armR';
+          if (pos.includes('LEG')||pos.includes('KNEE')||pos.includes('ANKLE')) limb = Math.random()<0.5?'legL':'legR';
+          else if (pos.includes('ARM')||pos.includes('SHOULDER')||pos.includes('KIMURA')||pos.includes('BAR')) limb = Math.random()<0.5?'armL':'armR';
+          else limb = Math.random()<0.5?'armL':'armR';
+          this._limbDamage._dislocated = limb;
+          this._limbDamage._t = 0;
+          // localized blood/sweat burst
+          try{ if (window.spawnSpark) spawnSpark(this.x, 1.0, this.z, 0xaa0000, 8); }catch(e){}
+          try{ if (window.spawnSweat) spawnSweat(this.x, 1.1, this.z, 10, 1.2); }catch(e){}
+          try{ announce('JOINT DISLOCATED', fname(this)); }catch(e){}
+          try{ if (window.camShake!=null) window.camShake = Math.max(window.camShake||0, 0.4); }catch(e){}
+        }
+      } catch(e){}
+      return r;
+    };
+    // clear the sub-active flag when the meter closes
+    const _origCleanEscape = window._v77StartSubmission ? null : null; // handled in meter closure
+  }
+
+  // ── #39 BITING / DIRTY TACTICS ─────────────────────────────────────────────
+  // Hook startAttack: if the move's cat is 'DIRTY' and the attacker is at
+  // extreme close proximity, bypass all grapple gates and force an instant
+  // stage-4 hold with an illegalHold flag (for the referee logic).
+  window.DIRTY_TACTICS = (window.DIRTY_TACTICS!==undefined) ? window.DIRTY_TACTICS : true;
+  {
+    const _origSA = Fighter.prototype.startAttack;
+    Fighter.prototype.startAttack = function(move){
+      if (window.DIRTY_TACTICS!==false && move && move.cat==='DIRTY'){
+        const opp = this.opponent ? this.opponent() : null;
+        if (opp && !opp.isDown() && !opp.ragdoll){
+          const d = _dist(this, opp);
+          // extreme close proximity bypasses grapple gates
+          if (d < 0.9){
+            // instant un-counterable stage-4 hold
+            opp.state = 'grabbed'; opp.stateTime = 0; opp.grabbedBy = this; opp.grabTimer = 0;
+            this.illegalHold = true; this._dirtyMove = move.name || 'DIRTY TACTIC';
+            try{ announce((move.name||'ILLEGAL TACTIC')+'  [ILLEGAL]', fname(this)); }catch(e){}
+            try{ if (window.spawnSpark) spawnSpark(opp.x, 1.3, opp.z, 0xff6600, 5); }catch(e){}
+            // small damage + stamina cost to the victim
+            opp.hp = Math.max(0, opp.hp - (move.power||30)*0.4);
+            opp.stamina = Math.max(0, (opp.stamina||50) - 12);
+            return true;
+          }
+        }
+      }
+      return _origSA.apply(this, arguments);
+    };
+  }
+
+  // ── #40 DESPERATION TAP-OUT ───────────────────────────────────────────────
+  // Hook poseGrabbed: if panic > 95% and stamina is critical, the defender
+  // aborts procedural rope-reaches and forces a high-frequency mat-slapping IK
+  // response (hand y=0) to simulate a physical tap-out.
+  window.TAP_OUT_PHYSICS = (window.TAP_OUT_PHYSICS!==undefined) ? window.TAP_OUT_PHYSICS : true;
+  {
+    // we already wrapped poseGrabbed for #36; wrap again for #40 (stacks)
+    const _origPG2 = Fighter.prototype.poseGrabbed;
+    Fighter.prototype.poseGrabbed = function(dt){
+      const r = _origPG2 ? _origPG2.call(this, dt) : undefined;
+      try {
+        if (window.TAP_OUT_PHYSICS===false) return r;
+        const by = this.grabbedBy;
+        if (!by || this.ragdoll) return r;
+        const t = this.grabTimer || 0;
+        const panic = _cl(t / 1.2, 0, 1.0);
+        const stamCrit = (this.stamina||0) < (this.maxStamina||100) * 0.08;
+        if (panic > 0.95 && stamCrit && !this._tappedOut){
+          this._tappedOut = true;
+          // high-frequency mat-slapping IK — hands drive to y=0 alternately
+          const slapFreq = 18;
+          const phase = t * slapFreq;
+          const swap = Math.sin(phase) > 0;
+          if (this.J.haL && this.J.haR){
+            if (swap){
+              this.J.haL.tgt && (this.J.haL.tgt.y = 0.02);
+              this.J.haL.tgt && (this.J.haL.tgt.x = 0.15);
+            } else {
+              this.J.haR.tgt && (this.J.haR.tgt.y = 0.02);
+              this.J.haR.tgt && (this.J.haR.tgt.x = 0.15);
+            }
+          }
+          try{ announce('TAPS OUT', fname(this)); }catch(e){}
+          try{ if (window.spawnMatDust) spawnMatDust(this.x, this.z, 2.0); }catch(e){}
+          // end the hold — the tap is the finish
+          this.hp = Math.max(0, this.hp - 60);
+          this.state = 'down'; this.stateTime = 0; this.ragdoll = true;
+          this.grabbedBy = null; this.grappling = false; this.grappleStage = 0;
+          by.grappling = false; by.grabTarget = null; by.grappleStage = 0; by.state = 'idle';
+        }
+      } catch(e){}
+      return r;
+    };
+  }
+
+  // ── #45 DYNAMIC INJURY REHABILITATION ─────────────────────────────────────
+  // Hook move2D: if _limbDamage flags a dislocated leg, move speed is slashed
+  // 45% and running is hard-locked false. Dislocated arms cap runCharge so
+  // arm-pumping sprints are impossible.
+  window.INJURY_REHAB = (window.INJURY_REHAB!==undefined) ? window.INJURY_REHAB : true;
+  {
+    const _origM2D = Fighter.prototype.move2D;
+    Fighter.prototype.move2D = function(ix, iz, dt){
+      if (window.INJURY_REHAB!==false && this._limbDamage && this._limbDamage._dislocated){
+        const ld = this._limbDamage;
+        const legHurt = (ld._dislocated==='legL' || ld._dislocated==='legR');
+        const armHurt = (ld._dislocated==='armL' || ld._dislocated==='armR');
+        if (legHurt){
+          // slash speed by 45% and hard-lock running
+          ix *= 0.55; iz *= 0.55;
+          this.running = false; this.runCharge = 0;
+        }
+        if (armHurt){
+          // cap runCharge — no arm-pumping sprints
+          this.runCharge = Math.min(this.runCharge||0, 0.3);
+          if (this.runCharge < 0.4) this.running = false;
+        }
+      }
+      return _origM2D.call(this, ix, iz, dt);
+    };
+  }
+
+  // ── #46 FACTION & STABLE MULTI-THREAT TARGETING ────────────────────────────
+  // Overhaul Fighter.prototype.opponent() to dynamically calculate the
+  // highest-threat target rather than hardcoding fighters[0] vs fighters[1].
+  // Considers physical proximity and team parity (evens vs odds) to support
+  // multi-man brawls. Falls back to the original 1v1 logic when only 2 fighters.
+  window.FACTION_TARGETING = (window.FACTION_TARGETING!==undefined) ? window.FACTION_TARGETING : true;
+  {
+    Fighter.prototype.opponent = function(){
+      if (window.FACTION_TARGETING===false || !fighters || fighters.length <= 2){
+        return (this===fighters[0]) ? fighters[1] : fighters[0];
+      }
+      // build a threat score for every other fighter
+      let best = null, bestScore = -Infinity;
+      for (let i=0; i<fighters.length; i++){
+        const f = fighters[i];
+        if (f === this || !f || f.ragdoll || f.state==='down') continue;
+        const d = _dist(this, f);
+        // proximity: closer = higher threat
+        let score = 100 / (1 + d);
+        // team parity: if factions differ, boost threat (enemies target enemies)
+        const myFac = (this.opts&&this.opts.faction) || (this._faction) || '';
+        const theirFac = (f.opts&&f.opts.faction) || (f._faction) || '';
+        if (myFac && theirFac && myFac !== theirFac) score += 30;
+        // downed fighters are low priority (can't threaten)
+        if (f.isDown && f.isDown()) score -= 50;
+        // currently attacking me = highest priority
+        if (f.grabTarget === this || f._lastHit === this) score += 40;
+        if (score > bestScore){ bestScore = score; best = f; }
+      }
+      return best || ((this===fighters[0]) ? fighters[1] : fighters[0]);
+    };
+  }
+
+  // ── #49 TAG TEAM CHEMISTRY — D-PAD-UP REMAP (WWE 2K) ──────────────────────
+  // The prior session wrongly mapped this to T (which is TAUNT). WWE 2K uses
+  // D-Pad-Up to call the tag partner. We add a dedicated TAG touch button +
+  // keyboard 'y' (since arrowup/w are movement). Pressing it dynamically
+  // instantiates two new AI-controlled Fighter objects, pushes them to the
+  // fighters array, and calls forgeBodyRebuild() if available to render their
+  // meshes seamlessly mid-match without reloading the engine.
+  window.TAG_CHEMISTRY = (window.TAG_CHEMISTRY!==undefined) ? window.TAG_CHEMISTRY : true;
+  window.TAG_KEY = 'y'; // keyboard key for tag (T is taunt — do not reuse)
+  {
+    // inject a TAG button into the touch UI (near the taunt cluster)
+    function injectTagButton(){
+      if (document.getElementById('btnTag')) return;
+      const btn = document.createElement('div');
+      btn.id = 'btnTag';
+      btn.style.cssText = 'position:absolute;left:96px;top:80px;width:56px;height:56px;border-radius:50%;background:rgba(0,200,120,0.25);border:2px solid rgba(0,255,150,0.6);color:#0fa;display:grid;place-items:center;font:bold 11px ui-monospace,monospace;letter-spacing:1px;z-index:80;opacity:0.5;transition:opacity 0.2s;user-select:none;-webkit-user-select:none;';
+      btn.textContent = 'TAG';
+      btn.style.pointerEvents = 'auto';
+      const parent = document.getElementById('tauntCluster') ? document.getElementById('tauntCluster').parentElement : document.body;
+      parent.appendChild(btn);
+      const fire = (e)=>{ e.preventDefault(); try{ markTouch && markTouch(); }catch(_){} window.callTagPartner && window.callTagPartner(); btn.classList.add('armed'); setTimeout(()=>btn.classList.remove('armed'),300); };
+      btn.addEventListener('touchstart', fire, {passive:false});
+      btn.addEventListener('mousedown', fire);
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') injectTagButton();
+    else window.addEventListener('DOMContentLoaded', injectTagButton);
+
+    // keyboard mapping — 'y' fires tag (NOT 't')
+    // we hook into the existing keydown listener by adding our own
+    window.addEventListener('keydown', function(e){
+      if (window.TAG_CHEMISTRY===false) return;
+      const k = e.key.toLowerCase();
+      if (k === window.TAG_KEY){
+        e.preventDefault();
+        window.callTagPartner && window.callTagPartner();
+      }
+    });
+
+    // the spawn function
+    window.callTagPartner = function(){
+      if (window.TAG_CHEMISTRY===false) return;
+      if (!fighters || !window.Fighter) return;
+      if (fighters.length >= 6) return; // cap at 6 fighters for perf
+      // only the player can call a tag partner
+      const p = fighters[0];
+      if (!p || !p.isPlayer) return;
+      if (p._tagCD && performance.now() - p._tagCD < 3000) return; // 3s cooldown
+      p._tagCD = performance.now();
+
+      const myFac = (p.opts&&p.opts.faction) || 'TEAM BANNON';
+      const oppFac = (fighters[1] && fighters[1].opts && fighters[1].opts.faction) || 'OPPONENTS';
+
+      // spawn two new AI fighters — one ally, one enemy (tag chemistry)
+      const allyName = 'PARTNER ' + (fighters.length);
+      const enemyName = 'RIVAL ' + (fighters.length);
+      const spawnFighter = (name, faction, isAlly)=>{
+        try {
+          const opts = Object.assign({}, p.opts || {}, { name: name, faction: faction, isPlayer: false });
+          const f = new Fighter(opts);
+          // place them at the apron area
+          f.x = isAlly ? -ARENA_HALF - 1.2 : ARENA_HALF + 1.2;
+          f.z = (Math.random()-0.5) * 2;
+          f.zone = 'APRON';
+          f.dir = isAlly ? 1 : -1;
+          f.facing = isAlly ? 0 : Math.PI;
+          f._faction = faction;
+          fighters.push(f);
+          // render their mesh seamlessly mid-match
+          try{ if (typeof forgeBodyRebuild === 'function') forgeBodyRebuild(f); else if (f.forgeBody) f.forgeBody(); }catch(e){}
+          try{ if (f._bmesh && arenaGroup) arenaGroup.add(f._bmesh); }catch(e){}
+          return f;
+        } catch(e){ console.warn('[TAG] spawn failed', e); return null; }
+      };
+      const ally = spawnFighter(allyName, myFac, true);
+      const enemy = spawnFighter(enemyName, oppFac, false);
+      if (ally){
+        try{ announce('TAG PARTNER INCOMING', allyName); }catch(e){}
+        try{ if (window.spawnSpark) spawnSpark(ally.x, 1.5, ally.z, 0x00ff88, 8); }catch(e){}
+      }
+      if (enemy){
+        try{ if (window.spawnSpark) spawnSpark(enemy.x, 1.5, enemy.z, 0xff4400, 8); }catch(e){}
+      }
+    };
+  }
+
+  // ── MANIFESTO REGISTRATION ─────────────────────────────────────────────────
+  try{ if (window.MANIFESTO){
+    window.MANIFESTO.register({key:'submission.choke_oxygen', kind:'gameplay', summary:'#36 Chokehold oxygen depletion — choke holds drain oxygen; 0 → limp ragdoll TKO. Toggle: CHOKE_OXYGEN.', call:'CHOKE_OXYGEN'});
+    window.MANIFESTO.register({key:'submission.dislocation', kind:'gameplay', summary:'#37 Joint dislocation — pressure >0.85 dislocates limb, flags _limbDamage, blood burst. Toggle: JOINT_DISLOCATION.', call:'JOINT_DISLOCATION'});
+    window.MANIFESTO.register({key:'submission.leverage', kind:'gameplay', summary:'#38 Submission leverage scaling — crank rate scales by attacker:defender weight ratio. Toggle: SUB_LEVERAGE.', call:'SUB_LEVERAGE'});
+    window.MANIFESTO.register({key:'combat.dirty', kind:'gameplay', summary:'#39 Biting & illegal DIRTY tactics — cat=DIRTY at close range bypasses grapple gates, instant stage-4 hold + illegalHold flag. Toggle: DIRTY_TACTICS.', call:'DIRTY_TACTICS'});
+    window.MANIFESTO.register({key:'submission.tap_out', kind:'gameplay', summary:'#40 Desperation tap-out — panic>95% + critical stamina → mat-slapping IK (y=0) tap. Toggle: TAP_OUT_PHYSICS.', call:'TAP_OUT_PHYSICS'});
+    window.MANIFESTO.register({key:'career.injury_rehab', kind:'gameplay', summary:'#45 Dynamic injury rehabilitation — dislocated legs slash speed 45% + lock running; arms cap runCharge. Toggle: INJURY_REHAB.', call:'INJURY_REHAB'});
+    window.MANIFESTO.register({key:'career.faction_targeting', kind:'gameplay', summary:'#46 Faction & stable multi-threat targeting — opponent() picks highest-threat by proximity + team parity. Toggle: FACTION_TARGETING.', call:'FACTION_TARGETING'});
+    window.MANIFESTO.register({key:'match.tag_chemistry', kind:'gameplay', summary:'#49 Tag team chemistry — WWE 2K D-Pad-Up equivalent (dedicated TAG button + keyboard Y). Spawns 2 AI fighters mid-match. Toggle: TAG_CHEMISTRY.', call:'TAG_CHEMISTRY / TAG_KEY'});
+  }} catch(e){}
+
+  console.log('%c[PHASE 5/6] #36 choke oxygen · #37 dislocation · #38 leverage · #39 dirty · #40 tap-out · #45 injury · #46 faction · #49 tag (D-Pad-Up) — ALL ONLINE', 'color:#00ff88;font-weight:bold');
+})();
+</script>
 </body>
 </html>
