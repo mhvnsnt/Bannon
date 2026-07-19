@@ -12,7 +12,14 @@
       "file": "/src/types/index.ts",
       "cpp_header": "Source/Bannon/Public/Creation/ECreationCategory.h",
       "description": "Defines 12 structural categories for the superstar and arena creation suites (Superstar_Body, Face, Hair, Torso, Masks, Clothing, Accessories, Moveset_Library, Arena_Barricade, Arena_Ramp, Arena_Tron, Entrance_Sequence).",
-      "keywords": ["category", "superstar", "creation", "apparel", "clothing", "accessory"]
+      "keywords": [
+        "category",
+        "superstar",
+        "creation",
+        "apparel",
+        "clothing",
+        "accessory"
+      ]
     },
     {
       "id": "unlock_state",
@@ -22,7 +29,12 @@
       "file": "/src/types/index.ts",
       "cpp_header": "Source/Bannon/Public/Creation/EUnlockState.h",
       "description": "Enumerates item progression states (Locked, Unlocked, DLC).",
-      "keywords": ["unlock", "locked", "dlc", "progression"]
+      "keywords": [
+        "unlock",
+        "locked",
+        "dlc",
+        "progression"
+      ]
     },
     {
       "id": "creation_item_row",
@@ -32,7 +44,14 @@
       "file": "/src/types/index.ts",
       "cpp_header": "Source/Bannon/Public/Creation/FCreationItemRow.h",
       "description": "Represents a single catalog item row for the character builder DataTable. Contains ItemID, Category, Subcategory, DisplayName, ThumbnailIcon soft pointer, AssetRef soft pointer, UnlockState, SlotIndex, and layering permission flag.",
-      "keywords": ["row", "datatable", "item", "mesh", "part", "accessory"]
+      "keywords": [
+        "row",
+        "datatable",
+        "item",
+        "mesh",
+        "part",
+        "accessory"
+      ]
     },
     {
       "id": "creation_part_asset",
@@ -41,7 +60,14 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Creation/UCreationPartAsset.h",
       "description": "Primary Data Asset for granular customization elements including skeletal meshes, material variant instances, layering limit overrides, and slot tag filters.",
-      "keywords": ["part", "dataasset", "mesh", "material", "layering", "slot"]
+      "keywords": [
+        "part",
+        "dataasset",
+        "mesh",
+        "material",
+        "layering",
+        "slot"
+      ]
     },
     {
       "id": "moveset_library_asset",
@@ -50,7 +76,16 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Creation/UMovesetLibraryAsset.h",
       "description": "Moveset entry defining MoveID, PositionGroup (Standing, Running, Corner, Ground, etc.), MoveClass (Strike, Grapple, Finisher, etc.), AnimMontage reference, and stamina requirements. Moves are state-gated by RequiredOpponentState, RequiredFacing, RequiredLocation, and DirectionalVariant.",
-      "keywords": ["move", "library", "moveset", "animation", "montage", "strike", "grapple", "finisher"]
+      "keywords": [
+        "move",
+        "library",
+        "moveset",
+        "animation",
+        "montage",
+        "strike",
+        "grapple",
+        "finisher"
+      ]
     },
     {
       "id": "equipped_item",
@@ -60,7 +95,13 @@
       "file": "/src/types/index.ts",
       "cpp_header": "Source/Bannon/Public/Save/FEquippedItem.h",
       "description": "Data representation of an active apparel or accessory layer on a superstar, containing ItemID, LayerOrder, ColorOverride (FLinearColor), and material Opacity.",
-      "keywords": ["equip", "apparel", "layer", "color", "opacity"]
+      "keywords": [
+        "equip",
+        "apparel",
+        "layer",
+        "color",
+        "opacity"
+      ]
     },
     {
       "id": "creation_save_profile",
@@ -70,7 +111,14 @@
       "file": "/src/types/index.ts",
       "cpp_header": "Source/Bannon/Public/Save/FCreationSaveProfile.h",
       "description": "Full character design state save payload: ProfileID, Map of SliderValues (Head_Size, etc.), Array of EquippedItems, Map of MovesetSlots, and PoseID.",
-      "keywords": ["profile", "save", "load", "slot", "sliders", "character"]
+      "keywords": [
+        "profile",
+        "save",
+        "load",
+        "slot",
+        "sliders",
+        "character"
+      ]
     },
     {
       "id": "active_ragdolls",
@@ -79,7 +127,14 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Physics/BannonRagdollComponent.h",
       "description": "Blends kinematic keyframe animation data with skeletal ragdoll simulation constraints. Manages non-canned high-impact move reactions, localized torque, environmental impact scaling, and fall momentum modifications.",
-      "keywords": ["ragdoll", "physics", "collision", "impact", "fall", "gravity"]
+      "keywords": [
+        "ragdoll",
+        "physics",
+        "collision",
+        "impact",
+        "fall",
+        "gravity"
+      ]
     },
     {
       "id": "interceptive_collisions",
@@ -88,7 +143,14 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Combat/BannonCombatEngine.h",
       "description": "Calculates real-time combat vectors when striking characters who are in mid-air or diving. Computes falling velocity vectors and applies reactive torque on bone targets.",
-      "keywords": ["air", "mid-air", "strike", "intercept", "dive", "jump"]
+      "keywords": [
+        "air",
+        "mid-air",
+        "strike",
+        "intercept",
+        "dive",
+        "jump"
+      ]
     },
     {
       "id": "goro_rig_bindings",
@@ -97,7 +159,15 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Animation/BannonAnimInstance.h",
       "description": "Unreal Engine AnimInstance bone-scaling transformations mapping client-driven React slider states directly to bone scale parameters: Head_Size, Neck_Width, Shoulder_Width, Chest_Scale, Waist_Scale, Arm_Thickness, Leg_Thickness.",
-      "keywords": ["bone", "scaling", "goro", "rig", "sliders", "skeletal", "anthropometry"]
+      "keywords": [
+        "bone",
+        "scaling",
+        "goro",
+        "rig",
+        "sliders",
+        "skeletal",
+        "anthropometry"
+      ]
     },
     {
       "id": "bannon_ai_dna",
@@ -106,7 +176,15 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/AI/BannonAIPersonality.h",
       "description": "7-axis weight behavior system (aggression, defense, range, grapple, risk, patience, showmanship) derived programmatically from OTTR_DNA natural language prose. Sub-system maps 1-to-1 to Unreal Engine SubTraits as Gameplay Tags (e.g., aggression:0.85).",
-      "keywords": ["ai", "dna", "aggression", "behavior", "weights", "archetype", "subtraits"]
+      "keywords": [
+        "ai",
+        "dna",
+        "aggression",
+        "behavior",
+        "weights",
+        "archetype",
+        "subtraits"
+      ]
     },
     {
       "id": "damage_injury_persistence",
@@ -115,7 +193,14 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Locomotion/BannonLocomotionComponent.h",
       "description": "Tracks cumulative skeletal limb damage and triggers unique gaits, sways, cadences, and limps (e.g., altering locomotion due to leg damage) dynamically throughout matches.",
-      "keywords": ["injury", "damage", "persistence", "gait", "limp", "locomotion"]
+      "keywords": [
+        "injury",
+        "damage",
+        "persistence",
+        "gait",
+        "limp",
+        "locomotion"
+      ]
     },
     {
       "id": "stun_meter",
@@ -124,7 +209,13 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Combat/BannonStunManager.h",
       "description": "Tracks daze/stun threshold. Filled from consecutive light attacks, disabling defensive actions and reversal windows upon reaching capacity.",
-      "keywords": ["stun", "daze", "reversal", "breaker", "window"]
+      "keywords": [
+        "stun",
+        "daze",
+        "reversal",
+        "breaker",
+        "window"
+      ]
     },
     {
       "id": "reversal_types",
@@ -133,7 +224,13 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Combat/BannonReversalSystem.h",
       "description": "Implements five distinct defensive layers: Tap-reversal, Breakers, Block/Guard, Dodge, and mid-move reversal counters.",
-      "keywords": ["reversal", "breaker", "block", "dodge", "counter"]
+      "keywords": [
+        "reversal",
+        "breaker",
+        "block",
+        "dodge",
+        "counter"
+      ]
     },
     {
       "id": "chain_wrestling",
@@ -142,7 +239,12 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Combat/BannonChainWrestling.h",
       "description": "Technical lock-up mini-game exchanging standard positions and advantages via joystick or key sequences at match start.",
-      "keywords": ["lock-up", "chain", "wrestling", "technical"]
+      "keywords": [
+        "lock-up",
+        "chain",
+        "wrestling",
+        "technical"
+      ]
     },
     {
       "id": "drag_carry_system",
@@ -151,7 +253,13 @@
       "owner": "Execution Layer (Unreal Engine C++)",
       "cpp_header": "Source/Bannon/Public/Physics/BannonDragCarryComponent.h",
       "description": "Handles grab-and-drag (ground) and standing grab-and-carry positions. Connects physics pivots to drag opponents to ropes, turnbuckles, barriers, and tables.",
-      "keywords": ["drag", "carry", "grab", "throw", "table"]
+      "keywords": [
+        "drag",
+        "carry",
+        "grab",
+        "throw",
+        "table"
+      ]
     },
     {
       "id": "drive_mechanic",
@@ -160,7 +268,13 @@
       "file": "/server/telegram.ts",
       "cpp_header": "Source/Bannon/Public/Physics/BannonDriveComponent.h",
       "description": "Allows players to push or drive an opponent mid-sequence into weapons, ringside posts, guardrails, and tables.",
-      "keywords": ["drive", "push", "weapon", "barricade", "environmental"]
+      "keywords": [
+        "drive",
+        "push",
+        "weapon",
+        "barricade",
+        "environmental"
+      ]
     },
     {
       "id": "mem0_memory",
@@ -251,6 +365,21 @@
       "name": "Backstage/Arena Transitions",
       "type": "Planned Feature",
       "description": "Seamless transition system between combat zones (Arena/Backstage/Crowd)."
+    },
+    {
+      "id": "bannon_orchestrator",
+      "name": "Bannon Deep Orchestrator",
+      "type": "Python CI/CD Pipeline",
+      "owner": "Autonomous Bannon Agent",
+      "description": "A recursive Python orchestration layer that enforces AAA architectural limits, parses this registry to prevent duplicates, and bridges local files to GitHub bypassing standard git constraints via raw REST calls.",
+      "keywords": [
+        "orchestrator",
+        "automation",
+        "agent",
+        "pipeline",
+        "CD",
+        "github"
+      ]
     }
   ]
 }
