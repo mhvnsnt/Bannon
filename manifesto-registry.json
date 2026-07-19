@@ -411,6 +411,22 @@
         "physics",
         "tie-up"
       ]
+    },
+    {
+      "id": "physics_irish_whip",
+      "name": "Physics-Driven Irish Whip Engine",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Calculates a heavy directional physics impulse (whipForce = 12.0) based on the attacker's rotation (facing angle) to launch the opponent into the ropes, completely replacing predefined animation paths with strict momentum-based velocity vectors.",
+      "keywords": [
+        "IK",
+        "irish whip",
+        "procedural",
+        "momentum",
+        "velocity",
+        "physics",
+        "throw"
+      ]
     }
   ]
 }
