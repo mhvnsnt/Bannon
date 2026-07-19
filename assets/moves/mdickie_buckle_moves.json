@@ -1,0 +1,19 @@
+{
+  "_source": "Wrestling MPire Buckles.bb (turnbuckle/corner/top-rope sequences) — ported with owner's rights, proprietary names, routed through OUR corner/aerial physics (CORNER/TOP_ROPE/GROUND_MOUNT/CLIMB positions).",
+  "moves": [
+    { "name": "Turnbuckle Verdict",     "mdickie": "superplex",         "kind": "grapple", "pos": "TOP_ROPE",     "mode": "front", "deliver": "toss",  "from": "TOP_ROPE",     "style": ["technical","powerhouse"] },
+    { "name": "Cranial Superplex",       "mdickie": "top rope brainbuster","kind": "grapple","pos": "TOP_ROPE",     "mode": "front", "deliver": "spike", "from": "TOP_ROPE",     "style": ["technical"] },
+    { "name": "Sky Skyfall",             "mdickie": "top rope back suplex","kind": "grapple","pos": "TOP_ROPE",     "mode": "rear",  "deliver": "toss",  "from": "TOP_ROPE",     "style": ["technical","highFlyer"] },
+    { "name": "Executioner's Avalanche", "mdickie": "corner avalanche",  "kind": "strike",  "pos": "CORNER_STRIKE","from": "CORNER",       "power": 70, "style": ["powerhouse","brawler"] },
+    { "name": "Mounted Ten Count",       "mdickie": "mounted punches (10 punch)","kind": "strike","pos": "CORNER_STRIKE","from": "CORNER", "power": 60, "style": ["brawler","showman"] },
+    { "name": "Mudhole Reckoning",       "mdickie": "corner stomp",      "kind": "strike",  "pos": "CORNER_STRIKE","from": "CORNER",       "power": 54, "style": ["brawler","hardcore"] },
+    { "name": "Tree Of Woe Stomp",       "mdickie": "tree of woe",       "kind": "strike",  "pos": "CORNER_STRIKE","from": "CORNER",       "power": 62, "style": ["brawler","hardcore"] },
+    { "name": "Corner Cable Choke",      "mdickie": "corner foot choke", "kind": "strike",  "pos": "CORNER_CHOKE", "from": "CORNER",       "power": 40, "style": ["hardcore","technical"] },
+    { "name": "Buckle Foundation Bomb",  "mdickie": "buckle bomb",       "kind": "grapple", "pos": "CORNER_THROW", "mode": "front", "deliver": "slam",  "from": "CORNER",       "style": ["powerhouse"] },
+    { "name": "Monkey Flip Verdict",     "mdickie": "monkey flip",       "kind": "grapple", "pos": "CORNER_THROW", "mode": "front", "deliver": "toss",  "from": "CORNER",       "style": ["highFlyer","lucha"] },
+    { "name": "Snake Eyes Reckoning",    "mdickie": "snake eyes",        "kind": "grapple", "pos": "CORNER_THROW", "mode": "front", "deliver": "drop",  "from": "CORNER",       "style": ["brawler"] },
+    { "name": "Super Frankensteiner",    "mdickie": "top rope hurricanrana","kind": "grapple","pos": "TOP_ROPE",    "mode": "front", "deliver": "toss",  "from": "TOP_ROPE",     "style": ["highFlyer","lucha"] },
+    { "name": "Diving Ten-Bell Splash",  "mdickie": "corner top rope splash","kind": "dive", "dive": "CROSSBODY",   "from": "TOP_ROPE",     "style": ["highFlyer","showman"] },
+    { "name": "Turnbuckle Smash",        "mdickie": "run corner smash",  "kind": "strike",  "pos": "CORNER_STRIKE","from": "ROPE_REBOUND",  "power": 58, "style": ["brawler"] }
+  ]
+}
