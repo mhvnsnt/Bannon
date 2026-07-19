@@ -11702,6 +11702,8 @@ function buildArenaStage(group, accentCol, cold){
   [-1.35,1.35].forEach(x=>{ const s=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.2,rampLen), ledMat); s.position.set(x,-0.2,stageZ+stageD/2+rampLen/2); stage.add(s); });
   // --- TITANTRON (main megatron) ---
   _arenaTronTex = _arenaTronTex || _makeTronCanvas(P.label, acc);
+  window.__arenaTronTexObj = _arenaTronTex;   // expose for BANNON_TRON animation
+  try{ if(window.BANNON_TRON){ window.BANNON_TRON.set(P.label, acc); window.BANNON_TRON.bind(); } }catch(e){}
   const tronMat = new THREE.MeshBasicMaterial({ map:_arenaTronTex });
   const tron = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 4.2), tronMat);
   tron.position.set(0, 5.6, stageZ - stageD/2 - 0.05); stage.add(tron);
@@ -11853,6 +11855,9 @@ function updateArenaAnim(t){
   if(ML){ for(const m of ML){ const a=t*m.sp+m.ph; if(m.light&&m.light.target){ m.light.target.position.set(Math.sin(a)*m.rx, 0.2, Math.cos(a*0.7)*m.rz); m.light.target.updateMatrixWorld(); m.light.angle=(Math.PI/9)*(0.7+0.3*Math.sin(a*1.3)); } if(m.housing){ m.housing.rotation.z=Math.sin(a)*0.4; m.housing.rotation.x=Math.cos(a*0.7)*0.3; } } }
   // CENTER-HUNG TRON — slow rotate so all four faces show to the crowd
   if(window.__hungTron){ window.__hungTron.rotation.y = t*0.25; }
+  // Phase D: animated trons + pyro/smoke particles
+  try{ if(window.BANNON_TRON) window.BANNON_TRON.draw(t); }catch(e){}
+  try{ if(window.BANNON_FX) window.BANNON_FX.step(); }catch(e){}
 }
 
 // ============================================================================
@@ -13663,7 +13668,7 @@ function endMatch(winner){
   setTimeout(()=>{ show('winnerMenu'); }, 1500);
 }
 // back-compat: any leftover KO callbacks route to endRound
-function declareWinner(winner){ endRound(winner); }
+function declareWinner(winner){ try{ if(window.BANNON_ENTRANCE) window.BANNON_ENTRANCE.victory(winner); }catch(e){} endRound(winner); }   // Phase D: victory pyro + tron
 
 function updateRoundPips(){
   const el = document.getElementById('roundNum');
@@ -14254,6 +14259,7 @@ function startFight(){
   document.getElementById('p1-name').textContent = o1.name.replace(/_/g,' ');
   var _p1s=document.getElementById('p1-style'); if(_p1s) _p1s.textContent = (window.CHAR_META[o1.name] && window.CHAR_META[o1.name].label) || o1.style;
   try{ document.body.classList.add('match-live'); }catch(e){}   // hide floating creation/dev buttons during a match (reachable via PAUSE)
+  try{ if(window.BANNON_ENTRANCE) setTimeout(()=>window.BANNON_ENTRANCE.play(p1), 400); }catch(e){}   // Phase D: entrance pyro + tron name
   document.getElementById('p2-name').textContent = o2.name.replace(/_/g,' ');
   document.getElementById('p2-style').textContent = (window.CHAR_META[o2.name] && window.CHAR_META[o2.name].label) || o2.style;
   gameState='fight';
@@ -38194,6 +38200,83 @@ window.BANNON_MDICKIE = (function(){
   function interPromotional(a,b){ const u=U(); const promos=(u&&u.promotions)||['AWE','JPCW','NWC']; a=a||promos[0]; b=b||promos[1%promos.length];
     return { headline:'INTER-PROMOTIONAL WARFARE: '+a+' invades '+b+'!', promoA:a, promoB:b, stakes:'pride + talent-raid rights' }; }
   return { GIMMICKS, CLAUSES, addGimmick, allegianceRatio, calculateWorth, generateContract, courtDate, attendance, identifyInjury, promotionPotential, interPromotional };
+})();
+</script>
+<script>
+// ===== PHASE D — ENTRANCE / VICTORY FX: pyro + smoke particles, animated trons, entrance & victory
+// sequences, and an entrance TIMELINE editor. Builds on the arena stage (trons/ramp/lights). =====
+window.BANNON_FX = (function(){
+  const parts=[]; let smokeParts=[]; const MAXP = 320;   // mobile-safe cap
+  function _pts(n, color, size){ if(typeof THREE==='undefined'||typeof scene==='undefined') return null;
+    const g=new THREE.BufferGeometry(); const pos=new Float32Array(n*3); g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    const m=new THREE.PointsMaterial({ color:color, size:size||0.14, transparent:true, opacity:1, depthWrite:false, blending:THREE.AdditiveBlending });
+    const p=new THREE.Points(g,m); p.frustumCulled=false; scene.add(p); return p; }
+  // PYRO — upward jet of sparks from (x,z), fountain + fade
+  function pyroBurst(x,z,color,n){ n=Math.min(n||90, MAXP); const P=_pts(n, color!=null?color:0xffaa22, 0.16); if(!P) return;
+    const v=[]; const pos=P.geometry.attributes.position.array;
+    for(let i=0;i<n;i++){ pos[i*3]=x+(Math.random()-0.5)*0.5; pos[i*3+1]=-0.2; pos[i*3+2]=z+(Math.random()-0.5)*0.5;
+      v.push([ (Math.random()-0.5)*0.06, 0.18+Math.random()*0.22, (Math.random()-0.5)*0.06 ]); }
+    parts.push({ P, v, life:1, n }); }
+  // SMOKE — expanding grey puff
+  function smokePuff(x,z){ const P=_pts(40,0x555555,0.5); if(!P) return; const v=[]; const pos=P.geometry.attributes.position.array;
+    for(let i=0;i<40;i++){ pos[i*3]=x+(Math.random()-0.5)*0.6; pos[i*3+1]=0.1+Math.random()*0.4; pos[i*3+2]=z+(Math.random()-0.5)*0.6;
+      v.push([ (Math.random()-0.5)*0.03, 0.02+Math.random()*0.03, (Math.random()-0.5)*0.03 ]); }
+    smokeParts.push({ P, v, life:1, n:40 }); }
+  function step(){
+    for(let k=parts.length-1;k>=0;k--){ const e=parts[k]; e.life-=0.018; const pos=e.P.geometry.attributes.position.array;
+      for(let i=0;i<e.n;i++){ e.v[i][1]-=0.011; pos[i*3]+=e.v[i][0]; pos[i*3+1]+=e.v[i][1]; pos[i*3+2]+=e.v[i][2]; }
+      e.P.geometry.attributes.position.needsUpdate=true; e.P.material.opacity=Math.max(0,e.life);
+      if(e.life<=0){ try{ scene.remove(e.P); e.P.geometry.dispose(); e.P.material.dispose(); }catch(_){} parts.splice(k,1); } }
+    for(let k=smokeParts.length-1;k>=0;k--){ const e=smokeParts[k]; e.life-=0.012; const pos=e.P.geometry.attributes.position.array;
+      for(let i=0;i<e.n;i++){ pos[i*3]+=e.v[i][0]; pos[i*3+1]+=e.v[i][1]; pos[i*3+2]+=e.v[i][2]; }
+      e.P.geometry.attributes.position.needsUpdate=true; e.P.material.opacity=Math.max(0,e.life*0.6); e.P.material.size+=0.02;
+      if(e.life<=0){ try{ scene.remove(e.P); e.P.geometry.dispose(); e.P.material.dispose(); }catch(_){} smokeParts.splice(k,1); } }
+  }
+  // stage pyro line (both ramp pillars fire)
+  function stagePyro(){ const HZ=(typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2); const sz=-(HZ+8.5)+2.1;
+    const acc=(window.ARENA_PRESETS[window.ARENA_PRESET]||{}).accent||0xffaa22;
+    pyroBurst(-1.6,sz,acc,80); pyroBurst(1.6,sz,acc,80); smokePuff(0,sz); }
+  return { pyroBurst, smokePuff, step, stagePyro };
+})();
+
+// ANIMATED TRON — redraw the tron canvas each frame (pulse + optional entrance name banner)
+window.BANNON_TRON = (function(){
+  let cv=null, ctx=null, tex=null, label='BANNON', accent=0xff7a1a, mode='idle', nameText='';
+  function bind(){ // grab the tron texture the arena built
+    if(window.__arenaTronTexObj){ tex=window.__arenaTronTexObj; cv=tex.image; ctx=cv.getContext('2d'); return true; } return false; }
+  function set(l,a){ label=l||label; if(a!=null) accent=a; }
+  function entrance(name){ mode='entrance'; nameText=(name||'').toUpperCase(); setTimeout(()=>{ mode='idle'; }, 6000); }
+  function draw(t){ if(!ctx&&!bind()) return; if(!ctx) return;
+    const acc='#'+('000000'+(accent>>>0).toString(16)).slice(-6);
+    ctx.fillStyle='#05060a'; ctx.fillRect(0,0,512,256);
+    const pulse=0.55+0.45*Math.sin(t*2.2);
+    const grd=ctx.createRadialGradient(256,128,10,256,128,300); grd.addColorStop(0,acc); grd.addColorStop(1,'#05060a');
+    ctx.globalAlpha=0.25+0.25*pulse; ctx.fillStyle=grd; ctx.fillRect(0,0,512,256); ctx.globalAlpha=1;
+    // scanline sweep
+    const sy=(t*80)%256; ctx.globalAlpha=0.15; ctx.fillStyle=acc; ctx.fillRect(0,sy,512,3); ctx.globalAlpha=1;
+    ctx.font='bold 110px Arial Black, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle=acc; ctx.shadowColor=acc; ctx.shadowBlur=20+30*pulse;
+    ctx.fillText(mode==='entrance'?nameText:label, 256, mode==='entrance'?110:128);
+    if(mode==='entrance'){ ctx.font='bold 34px Arial'; ctx.fillStyle='#fff'; ctx.shadowBlur=8; ctx.fillText('NOW ENTERING', 256, 200); }
+    ctx.shadowBlur=0; if(tex) tex.needsUpdate=true;
+  }
+  return { bind, set, entrance, draw };
+})();
+
+// ENTRANCE / VICTORY sequences
+window.BANNON_ENTRANCE = (function(){
+  function play(fighter){ try{
+    const nm=(fighter&&fighter.opts&&fighter.opts.name)||'BANNON';
+    if(window.BANNON_TRON) window.BANNON_TRON.entrance(nm);
+    if(window.BANNON_FX){ window.BANNON_FX.stagePyro(); setTimeout(()=>window.BANNON_FX.stagePyro(),700); }
+  }catch(e){} }
+  function victory(winner){ try{
+    const nm=(winner&&winner.opts&&winner.opts.name)||'';
+    if(window.BANNON_TRON){ window.BANNON_TRON.set(nm+' WINS'); window.BANNON_TRON.entrance(nm); }
+    if(window.BANNON_FX){ const HZ=(typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2);
+      window.BANNON_FX.pyroBurst(-2,HZ,0xffdd33,90); window.BANNON_FX.pyroBurst(2,HZ,0xffdd33,90); window.BANNON_FX.stagePyro(); }
+  }catch(e){} }
+  return { play, victory };
 })();
 </script>
 <script>
