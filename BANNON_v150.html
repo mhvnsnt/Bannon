@@ -11717,6 +11717,11 @@ function freecamExit(){
   var h=document.getElementById('freecamHint'); if(h)h.style.display='none';
 }
 function freecamToggle(){ if(FREECAM.on) freecamExit(); else freecamEnter(); }
+// Debug/verification hooks (harness + owner): drive the free camera without the CAW model-viewer
+// hiding the ring/other fighters. Set window.FREECAM.on=true and window.freecamTarget=()=>null to
+// pan a match with a manually-placed camera (see docs/AI_WORKING_CONTRACT.md verification harness).
+try{ window.FREECAM=FREECAM; window.freecamEnter=freecamEnter; window.freecamExit=freecamExit;
+     window.freecamToggle=freecamToggle; window.getFreecamTarget=freecamTarget; }catch(e){}
 (function(){
   var cv=document.getElementById('gameCanvas'); if(!cv) return;
   cv.addEventListener('touchstart',function(e){ if(!FREECAM.on) return; e.preventDefault();
