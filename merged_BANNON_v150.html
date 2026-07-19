@@ -3203,6 +3203,45 @@ Fighter.prototype.enforceBiomechanicalLimits = function() {
 };
 
 Fighter.prototype.update = function(dt){
+  const opponents = window.fighters ? window.fighters.filter(f => f !== this) : [];
+
+  // BANNON MID-AIR GRAPPLE INTERCEPT (PHASE 4 #24)
+  // If the opponent is in the air (dive/jump) and overlaps our hit volume while we hold grapple, powerslam them out of the air.
+  if (this.state === 'idle' || this.state === 'walk' || this.state === 'grab') {
+    const opp = opponents && opponents[0];
+    if (opp && (opp.state === 'dive' || opp.state === 'jumping' || (opp.vy && opp.vy < -3.0 && opp.y > 1.5))) {
+      // Check horizontal distance
+      const distSq = (opp.x - this.x)**2 + (opp.z - this.z)**2;
+      if (distSq < 2.0 && opp.y < 3.5) { // within 1.4m horizontally, falling below 3.5m height
+        // Intercept!
+        console.log("[BANNON] MID-AIR CATCH / POWERSLAM!");
+        
+        // Hijack their state
+        opp.state = 'grabbed';
+        opp.grappling = false;
+        opp.grappleStage = 4; // Delivery/Slam phase
+        opp.grabbedBy = this;
+        
+        // Our state switches to throw/slam
+        this.state = 'deliver';
+        this.stateTime = 0;
+        this.grappling = false;
+        this.grabTarget = null;
+        this.deliverFX = 'powerslam';
+        this.deliverType = 'powerslam';
+        
+        // Transfer their vertical momentum into damage
+        this._slamPending = true;
+        
+        // Adjust positions so they look caught
+        opp.x = this.x + Math.cos(this.facing)*0.5;
+        opp.z = this.z + Math.sin(this.facing)*0.5;
+        opp.y = 2.0; // Caught at chest height
+        opp.vx = 0; opp.vz = 0; opp.vy = 0;
+      }
+    }
+  }
+
   let speedF = 1.0;
   if (this.state === 'grab' && this.grappleStage === 2) {
     const stamRatio = clamp((this.stamina || 0) / 100, 0, 1);
