@@ -505,6 +505,21 @@
         "wobble",
         "incidence"
       ]
+    },
+    {
+      "id": "corner_trapped_state",
+      "name": "Corner Trapped State Machine",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Intercepts Fighter.prototype.updateWobble. If the defender is in the corner (_inCorner === true) and suffers a hit/stagger, the engine overrides the standard backward-sliding kinetic push (setting vx/vz to 0) and instead triggers a procedural chest-bounce against the turnbuckle splines using a high-frequency sine oscillator. This creates the 'trapped' aesthetic where the ropes absorb the impact energy.",
+      "keywords": [
+        "physics",
+        "corner",
+        "turnbuckle",
+        "trapped",
+        "stagger",
+        "bounce"
+      ]
     }
   ]
 }
