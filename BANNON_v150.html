@@ -6148,7 +6148,10 @@ window.CHAR_BODY = {
 // keeping their own moves (canon: Bannon can wear the "Maime" unhinged alter-ego
 // look). Maime also remains a standalone selectable character with his own moves.
 window.CHAR_ALTS = {
-  BANNON: [ { id:'MAIME', label:'Maime · Unhinged' } ]
+  BANNON: [ { id:'MAIME', label:'Maime · Unhinged' } ],
+  // Stick-Up's civilian/human persona — the man (Andrew Curtis) beneath the government "Cyborg Stick-Up"
+  // weapon. Same fighter, unmasked human look (canon: Book 2 origin before the Cyborg Project).
+  STICK_UP: [ { id:'ANDREW_CURTIS', label:'Andrew Curtis · Human' } ]
 };
 window.altsFor = function(name){
   const k=String(name||'').toUpperCase();
@@ -13756,6 +13759,7 @@ try{
   _addChar('RAZOR_GNARLY',    { label:'Razor · Coven',             col:0x1a1a1a, accent:0xcc2222, skin:0xd9a066, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'Edges and cuts — the Coven’s striker, all blades and bad intentions.', archetype:'striker' }, 'LONG_TIGHTS', 'SHORT', {musc:0.62,fat:0.14});
   _addChar('CRUX',            { label:'Crux · Coven',              col:0x1a0d1a, accent:0x8844aa, skin:0xc08a54, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'The Coven’s technician — ties opponents into crosses they can’t escape.', archetype:'technician' }, 'LONG_TIGHTS', 'SHORT', {musc:0.58,fat:0.14});
   _addChar('LUNA_GNARLY',     { label:'Luna · Coven',              col:0x1a1a2a, accent:0xccccff, skin:0xd9a066, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'Moon-pale and airborne — the Coven’s flyer, hauntingly graceful and lethal off the top.', archetype:'highFlyer' }, 'SINGLET_2TONE', 'LONG', {musc:0.48,fat:0.14,fem:1,hips:1.02,glutes:1.06,waist:0.85,bust:0.9});
+  _addChar('JAGER',           { label:'Jager · Coven',             col:0x0a1a0d, accent:0x88cc22, skin:0xd9a870, faction:'Agents of Chaos', stable:'The Coven of Gnarly', canon:true, bio:'The Coven’s scout and screamer (Book 5, Sector 7) — an unhinged wildman who screams at things until they break and hates the President.', archetype:'brawler' }, 'CARGO_PANTS', 'LONG', {musc:0.7,fat:0.2});
   // ---- The Degenerates (Triple X + Hall Nighter already in roster) ----
   _addChar('THE_DOGG',        { label:'The Dogg · Degenerate',     col:0x14251a, accent:0xd4d400, skin:0xe0b088, faction:'Corporate Structure', stable:'The Degenerates', canon:true, bio:'The crude comedic muscle of the crew — struts, taunts, and lariats you inside out.', archetype:'brawler' }, 'TIGHTS', 'BUZZ', {musc:0.68,fat:0.2});
   _addChar('ASS_MAN_BILLY',   { label:'Ass-Man Billy · Degenerate',col:0x1a1a14, accent:0xc0c0c0, skin:0xd9a066, faction:'Corporate Structure', stable:'The Degenerates', canon:true, bio:'A gunslinging good-ol’-boy troublemaker — all attitude, cheap shots optional.', archetype:'brawler' }, 'CARGO_PANTS', 'LONG', {musc:0.64,fat:0.22});
@@ -13775,6 +13779,11 @@ try{
   _addChar('LOCOMOTIVE',      { label:'Locomotive · Straight Shooter',col:0x2a1a0d, accent:0xcc4422, skin:0x8a6a4a, faction:'Independent Variables', stable:'The Straight Shooters', canon:true, bio:'A runaway freight train of a shooter — once he builds a head of steam nothing stays standing.', archetype:'powerhouse' }, 'SINGLET', 'BUZZ', {musc:0.88,fat:0.28});
   _addChar('JOHN_FORD',       { label:'John Ford · Hollywood',     col:0x14243a, accent:0xd4af37, skin:0xe0b088, faction:'Corporate Structure', stable:'Hollywood', canon:true, bio:'A leading-man technician who wrestles for the cameras — every match a screen test he intends to win.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.6,fat:0.16});
   _addChar('THE_BOULDER',     { label:'The Boulder · Hollywood',   col:0x2a2418, accent:0xc0b060, skin:0x7a4a2e, faction:'Independent Variables', stable:'Hollywood', canon:true, bio:'A charismatic mountain of muscle with a catchphrase for every occasion — the people’s powerhouse.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.94,fat:0.24});
+  // ---- REVOLUTION ("The Suits", Book 5 Pt.2 — motto "Revolution is a Mystery"). Leader DRAKE VANE
+  // was entirely missing from the roster; the other members (Triple XXX/El Toro/Slump Jr/Pablo/Krusha)
+  // already exist above and are pulled into the stable registry below. Drake = the "Legend Ender"
+  // prodigy heel (arrogant, predatory, signature arms-outspread pose "basking in the hate").
+  _addChar('DRAKE_VANE',      { label:'Drake "The Viper" Vane · Revolution', col:0x0c0c10, accent:0x3aa02a, skin:0xd9a870, faction:'Corporate Structure', stable:'Revolution', canon:true, bio:'The Legend Ender — a cold, fluid prodigy who disrespects veterans and ends careers. Predatory movement, coiled corner strikes, and a cutter out of nowhere. Basks in the hate.', archetype:'striker' }, 'TIGHTS', 'SHORT', {musc:0.7,fat:0.12});
   // MANAGERS (owner: "managers"): non-wrestling cornermen who buff their fighter (momentum trickle)
   // and can interfere. Data-only for now; slot-menu manager pick + interference wiring queued.
   window.CHAR_MANAGERS = Object.assign(window.CHAR_MANAGERS||{}, {
@@ -13861,7 +13870,9 @@ try{
     THE_THINKER:      { name:'CHECKMATE',                 kind:'grapple', pos:'REVERSE_DDT',  deliver:'spike' },
     LOCOMOTIVE:       { name:'THE DERAILMENT',            kind:'grapple', pos:'SPINEBUSTER',  deliver:'slam'  },
     JOHN_FORD:        { name:'THE FINAL CUT',             kind:'grapple', pos:'DDT',          deliver:'spike' },
-    THE_BOULDER:      { name:'THE ROCK BOTTOM LINE',      kind:'grapple', pos:'SIDE_SLAM',    deliver:'slam'  }
+    THE_BOULDER:      { name:'THE ROCK BOTTOM LINE',      kind:'grapple', pos:'SIDE_SLAM',    deliver:'slam'  },
+    DRAKE_VANE:       { name:'THE VANE CUTTER',           kind:'strike' },   // RKO-class cutter out of nowhere (instant, no lockup)
+    JAGER:            { name:'THE SCREAM',                kind:'strike' }
   });
   // v160 STABLES / factions the book cast belongs to (feeds Universe booking + faction warfare;
   // members are roster keys registered above). Data-only; the Universe engine reads it for feuds/teams.
@@ -13873,7 +13884,11 @@ try{
     THE_MASTERPIECE:    { name:'The Masterpiece', faction:'Corporate Structure', leader:'THE_THINKER', members:['THE_REPETITION','THE_THINKER'] },
     THE_STRAIGHT_SHOOTERS:{ name:'The Straight Shooters', faction:'Independent Variables', leader:'THE_SAINT', members:['THE_SAINT','LOCOMOTIVE'] },
     HOLLYWOOD:          { name:'Hollywood', faction:'Corporate Structure', leader:'JOHN_FORD', members:['JOHN_FORD','THE_BOULDER'] },
-    THE_COVEN_OF_GNARLY:{ name:'The Coven of Gnarly', faction:'Agents of Chaos', leader:'JETT_GNARLY', members:['GRAVE','JETT_GNARLY','MOKK_GNARLY','RAZOR_GNARLY','CRUX','LUNA_GNARLY'] },
+    THE_COVEN_OF_GNARLY:{ name:'The Coven of Gnarly', faction:'Agents of Chaos', leader:'JETT_GNARLY', members:['GRAVE','JETT_GNARLY','MOKK_GNARLY','RAZOR_GNARLY','CRUX','LUNA_GNARLY','JAGER'] },
+    // Revolution ("The Suits", Book 5 Pt.2). Motto "Revolution is a Mystery." CANON MEMBERSHIP after
+    // the Ch.71 swap: El Toro de Oro (Batista-archetype Corporate Enforcer) is IN; Pablo was CAST OUT
+    // and became "The Abstract" (Black Reign) — so Pablo is NOT a member. Never conflate the two.
+    THE_REVOLUTION:     { name:'Revolution', faction:'Corporate Structure', leader:'DRAKE_VANE', members:['DRAKE_VANE','EL_TORO_DE_ORO','RONALD_SLUMP_JR','TRIPLE_XXX'], motto:'Revolution is a Mystery.' },
     SLIME_AND_PRINCE:   { name:'Slime & Prince', faction:'Agents of Chaos', leader:'PRINCE', members:['SLIME','PRINCE'] },
     THE_BASH_BROTHERS:  { name:'The Bash Brothers', faction:'Independent Variables', leader:'SPIKE', members:['SPIKE','HAMMER'] },
     THE_HIGH_ROLLERS:   { name:'The High Rollers', faction:'Corporate Structure', leader:'DICE', members:['DICE','CHIP'] },
