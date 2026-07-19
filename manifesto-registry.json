@@ -536,6 +536,22 @@
         "damage",
         "irish_whip"
       ]
+    },
+    {
+      "id": "ground_and_pound_mount",
+      "name": "Ground-and-Pound Mounting IK",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Intercepts Fighter.prototype.poseGrab. If the grapple target is downed (opp.isDown()), the engine bypasses standard lockup rules and injects procedural IK mapping to mount the opponent. The attacker's pelvis dynamically locks to the victim's chest pos.y + 0.6, while the knees wrap laterally and the chest hinges forward to facilitate downward striking rather than a lifting sequence.",
+      "keywords": [
+        "physics",
+        "mount",
+        "ground",
+        "ik",
+        "mma",
+        "pound",
+        "pelvis"
+      ]
     }
   ]
 }
