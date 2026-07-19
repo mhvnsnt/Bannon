@@ -627,6 +627,76 @@
         "multiplayer",
         "entanglement"
       ]
+    },
+    {
+      "id": "chokehold_oxygen_depletion",
+      "name": "Chokehold Oxygen Depletion Logic",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Introduces a separate this.oxygen property that drains rapidly during CHOKE submissions in poseGrabbed. If oxygen hits 0, it triggers a forced ragdoll TKO state, completely distinct from standard stamina/health depletion.",
+      "keywords": [
+        "physics",
+        "chokehold",
+        "oxygen",
+        "tko",
+        "submission"
+      ]
+    },
+    {
+      "id": "joint_dislocation_events",
+      "name": "Joint Dislocation Events",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Expands the clampJointBend torque override. If the submission pressure applied via window._jointTorqueOverloads exceeds 0.85, the joint physically dislocates, applying a permanent injury flag (this._limbDamage) and spawning a visual blood/sweat particle burst.",
+      "keywords": [
+        "physics",
+        "dislocation",
+        "injury",
+        "limb",
+        "torque"
+      ]
+    },
+    {
+      "id": "submission_leverage_scaling",
+      "name": "Submission Leverage Scaling",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Multiplies submission torque displacement based on the relative size or weight ratio of the attacker versus the defender, dynamically calculating mechanical leverage into the joint limit engine.",
+      "keywords": [
+        "physics",
+        "leverage",
+        "submission",
+        "torque",
+        "scaling"
+      ]
+    },
+    {
+      "id": "biting_illegal_tactics",
+      "name": "Biting & Illegal Tactics",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "A close-proximity intercept in startAttack for moves with cat === 'DIRTY'. Bypasses standard tryGrab hitboxes and instantly locks both fighters into a stage 4 grapple/submission hold (illegal hold flag enabled), simulating quick, dirty street-fight tactics.",
+      "keywords": [
+        "physics",
+        "illegal",
+        "biting",
+        "dirty",
+        "grapple"
+      ]
+    },
+    {
+      "id": "desperation_tap_out",
+      "name": "Desperation Tap-Out Physics",
+      "type": "Physics Routine",
+      "owner": "Autonomous Bannon Agent",
+      "description": "Monitors submission panic levels in poseGrabbed. If panic > 0.95 and stamina is critically low (< 15), the defender aborts rope-break and arm-flailing IK, overriding the hand targets to rapidly slap the mat (y=0) at high frequency, simulating a physical tap-out.",
+      "keywords": [
+        "physics",
+        "tap-out",
+        "submission",
+        "ik",
+        "panic"
+      ]
     }
   ]
 }
