@@ -23019,6 +23019,50 @@ console.log("%c[VERLET ROPES] active — ROPE_SAG / ROPE_BOW to tune, ROPE_PHYS=
   if (typeof window.playerAttack === 'function'){
     const _origAttack = window.playerAttack;
     window.playerAttack = function(kind){
+    const p = window.fighters && window.fighters[0];
+    if (!p) return;
+
+    // BANNON WEIGHT DETECTION LIFT INTERCEPT
+    if (kind === 'attack' && p.state === 'grab' && p.grappleStage === 1 && p.grabTarget) {
+      // Trying to lift them into stage 2
+      const opp = p.grabTarget;
+      const myMass = p.mass || 100;
+      const oppMass = opp.mass || 100;
+      const staminaFactor = Math.max(0.2, (p.stamina || 100) / (p.maxStamina || 100));
+      const liftCapacity = myMass * 1.6 * staminaFactor; // Max 1.6x bodyweight when fresh
+      
+      if (oppMass > liftCapacity) {
+        // LIFT FAILS
+        p.grappling = false;
+        p.grabTarget = null;
+        if (p.root) p.root.userData.gripping = false;
+        
+        p.state = 'stumble';
+        p.stumbleVel = -2.5; 
+        p.stumbleDir = Math.sign(Math.cos(p.facing));
+        
+        if (opp.state === 'grabbed') {
+           opp.state = 'walk';
+           opp.grabbedBy = null;
+        }
+        
+        // Show UI warning
+        const lbl = document.getElementById('zoneLabel');
+        if (lbl) {
+            const oldT = lbl.innerText;
+            lbl.innerText = "TOO HEAVY - LIFT FAILED";
+            lbl.style.color = "#ff3333";
+            lbl.style.opacity = '1';
+            setTimeout(() => { lbl.innerText = oldT; lbl.style.color = "#a1a1aa"; }, 1500);
+        }
+        
+        return; // BLOCK ESCALATION
+      } else {
+        // Lift succeeds, drain stamina
+        p.stamina = Math.max(0, (p.stamina||100) - (oppMass * 0.12));
+      }
+    }
+
       const p = (typeof fighters!=='undefined' && fighters) ? fighters[0] : null;
       if (window.ROPE_INTERACT && p && kind==='grab' && (p.state==='idle'||p.state==='walk'||p.state==='ropelean')){
         const edge=p._ropeEdge();
