@@ -30,11 +30,11 @@ jobs:
           cp manifest.json    $A/manifest.json || true
           cp assets/icons/icon-192.png assets/icons/icon-512.png assets/icons/apple-touch-icon.png $A/assets/icons/ || true
           # move library / MDickie moves / fbx map — the game fetch()es these at runtime; without them
-          # the moveset + story data silently 404 inside the APK. (Small JSON — fine to bundle.)
+          # the moveset + story data silently 404 inside the APK.
           cp assets/moves/*.json $A/assets/moves/ 2>/dev/null || true
-          # jukebox audio is NOT bundled — it STREAMS from the repo CDN (same as the fighter models), so
-          # the APK stays lean (~5MB instead of ~40MB). The jukebox resolves file:// (APK) to the CDN.
-          echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files, audio streamed from CDN"
+          # jukebox audio (owner tracks) so menu/entrance/victory music works offline in the app.
+          cp assets/audio/* $A/assets/audio/ 2>/dev/null || true
+          echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files, audio $(ls $A/assets/audio | wc -l) files"
 
       - uses: actions/setup-java@v4
         with:
@@ -44,31 +44,15 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Generate Gradle wrapper (pinned to 8.7 for AGP 8.5.2 compatibility)
-        run: |
-          cd android
-          gradle wrapper --gradle-version 8.7 --distribution-type bin
-          ./gradlew --version
-
       - name: Build release APK (stable-signed, auto-incrementing versionCode)
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+      - run: BANNON_VERSION_CODE=$(git rev-list --count HEAD) gradle -p android assembleRelease --no-daemon
+      - name: Verify APK Signature
         run: |
-          cd android
-          BANNON_VERSION_CODE=$(git rev-list --count HEAD) ./gradlew assembleRelease --no-daemon --no-build-cache
-
-      - name: Verify APK signature (must pass or APK won't install)
-        run: |
-          APK=android/app/build/outputs/apk/release/app-release.apk
-          ls -la $APK
-          # Verify with apksigner (available from Android build-tools)
-          APKSIGNER=$(find $ANDROID_HOME -name apksigner 2>/dev/null | head -1)
-          if [ -n "$APKSIGNER" ]; then
-            $APKSIGNER verify --verbose --print-certs $APK
-          else
-            echo "apksigner not found, using build-tools"
-            BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/*/ 2>/dev/null | tail -1)
-            ${BUILD_TOOLS}apksigner verify --verbose --print-certs $APK
-          fi
-
+          build-tools_dir=$(ls -d $ANDROID_HOME/build-tools/* | tail -1)
+          $build-tools_dir/apksigner verify --verbose android/app/build/outputs/apk/release/*.apk
       - name: Upload APK (artifact)
         uses: actions/upload-artifact@v4
         with:
@@ -83,7 +67,7 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           mkdir -p dist
-          cp android/app/build/outputs/apk/release/app-release.apk dist/BANNON.apk
+          cp android/app/build/outputs/apk/release/app-release*.apk dist/BANNON.apk
           git config user.name  "bannon-ci"
           git config user.email "ci@bannon.local"
           git add dist/BANNON.apk
