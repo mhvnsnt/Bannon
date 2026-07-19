@@ -37268,6 +37268,75 @@ window.BANNON_JUKEBOX = (function(){
      Native anchors (booking score, match consequence) live in native/include/bannon_universe.h.
      ============================================================================================ -->
 <script>
+// ============================================================================================
+// BANNON STATS — the unified WWE-2K + MDickie attribute/OVR system (owner spec). 8 primary
+// attributes (0-100) + a composite OVERALL, DERIVED from the existing per-character data
+// (MOVESET_DB power/speed/chin/stamina + archetype + faction) so it's grounded, not invented.
+// Feeds the Universe rating, career training, and can scale combat. window.BANNON_STATS.
+//   strength  power moves, lift/carry, strike damage        (WWE Strength + MDickie Strength)
+//   skill     reversals, submissions, technical, fewer botch (MDickie Skill + WWE Grappling)
+//   agility   speed, aerials, dodging, movement              (MDickie Agility + WWE Speed)
+//   toughness damage absorption, knockdown/injury resistance (MDickie Toughness + WWE Durability)
+//   stamina   endurance, regen, vulnerability scaling
+//   popularity crowd reaction, draw, momentum gain           (MDickie core + WWE Charisma)
+//   attitude  AI aggression, teammate reliability, booking
+//   charisma  taunts, entrance, finisher hype                (WWE)
+// ============================================================================================
+window.BANNON_STATS = (function(){
+  const KEY='bannon_stats_v1';
+  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+  const round=v=>Math.round(clamp(v,20,99));
+  // per-archetype attribute LEANS (added to the data-derived base). From WWE/MDickie archetype norms.
+  const ARCH={
+    powerhouse:{strength:+18,skill:-2,agility:-14,toughness:+14,popularity:+4,charisma:+2},
+    brawler:   {strength:+10,skill:0, agility:-4, toughness:+10,popularity:+4,attitude:+6},
+    striker:   {strength:+2, skill:+6,agility:+8, toughness:-2, charisma:+4},
+    technician:{strength:-2, skill:+20,agility:+4,toughness:0,  charisma:+2},
+    highFlyer: {strength:-12,skill:+6,agility:+22,toughness:-12,popularity:+8,charisma:+6},
+    freeAgent: {}
+  };
+  function moveset(k){ return (typeof MOVESET_DB!=='undefined' && MOVESET_DB[k]) || null; }
+  function meta(k){ return (window.CHAR_META&&window.CHAR_META[k])||null; }
+  // derive the 8 attributes for a character from existing data + archetype.
+  function derive(k){ k=String(k).toUpperCase(); const m=moveset(k), me=meta(k)||{};
+    const pw=m?m.powerMultiplier:1.05, sp=m?m.speedMultiplier:1.0, chin=m?m.chin:100, stam=m?m.stamina:200, hp=m?m.maxHp:100;
+    // map the engine multipliers onto a 0-100 feel (1.0 -> ~62, 1.3 -> ~85, 0.85 -> ~48)
+    let a={
+      strength:  50+(pw-1.0)*110,
+      agility:   50+(sp-1.0)*120,
+      toughness: 44+(chin-100)*0.45+(hp-100)*0.14,
+      stamina:   30+(stam-160)*0.26,
+      skill:     58,
+      popularity:(me.canon?66:52),
+      attitude:  (me.faction==='Agents of Chaos'?72:(me.faction==='Corporate Structure'?60:55)),
+      charisma:  (me.canon?64:52)
+    };
+    const lean=ARCH[me.archetype]||ARCH.freeAgent;
+    for(const kk in lean) a[kk]=(a[kk]||55)+lean[kk];
+    // canon marquee names get a star bump to popularity/charisma
+    if(/BANNON|MAIME|FINXSSE|ATLAS_VANCE|CAIN_ELIAS|STAN_COMBS|EDWIN_KENNEDY|HALL_NIGHTER/.test(k)){ a.popularity+=10; a.charisma+=8; }
+    for(const kk in a) a[kk]=round(a[kk]);
+    a.ovr=overall(a); return a; }
+  // OVR: weighted composite (in-ring weight > presentation, like 2K), then STRETCHED to the WWE-2K
+  // feel (jobbers ~60s, mid-card ~75, main-event ~85, marquee elite ~92-97). The raw composite of the
+  // derived attributes clusters mid-band, so we remap ~48..72 -> ~60..97.
+  function overall(a){ const raw =
+    a.strength*0.16 + a.skill*0.20 + a.agility*0.16 + a.toughness*0.14 + a.stamina*0.10 +
+    a.popularity*0.10 + a.charisma*0.08 + a.attitude*0.06;
+    return Math.round(clamp((raw-48)*(97-60)/(72-48)+60, 40, 99)); }
+  let SAVED=(function(){ try{ const s=localStorage.getItem(KEY); if(s) return JSON.parse(s); }catch(e){} return {}; })();
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(SAVED)); }catch(e){} }
+  // of(key): trained/saved overrides win, else derived.
+  function of(k){ k=String(k).toUpperCase(); if(SAVED[k]) return SAVED[k]; return derive(k); }
+  function ovr(k){ return of(k).ovr; }
+  // train an attribute (MDickie gym: risk/reward handled by the career layer; here just apply).
+  function train(k,attr,amt){ k=String(k).toUpperCase(); const cur=SAVED[k]||derive(k); if(cur[attr]==null) return cur;
+    cur[attr]=round(cur[attr]+(amt||1)); cur.ovr=overall(cur); SAVED[k]=cur; save(); return cur; }
+  function set(k,attrs){ k=String(k).toUpperCase(); const cur=Object.assign({}, derive(k), SAVED[k]||{}, attrs); cur.ovr=overall(cur); SAVED[k]=cur; save(); return cur; }
+  // roster ranked by OVR (for rankings/booking).
+  function ranked(){ try{ return (window.ROSTER_ALL?window.ROSTER_ALL():[]).map(c=>({key:c.key||c.name, ovr:ovr(c.key||c.name)})).sort((a,b)=>b.ovr-a.ovr); }catch(e){ return []; } }
+  return { derive, of, ovr, overall, train, set, ranked, ARCH, get saved(){ return SAVED; } };
+})();
 window.BANNON_UNIVERSE = (function(){
   const KEY = 'bannon_universe_v1';
   const PROMOS = ['AWE','JPCW','NWC'];   // canon companies: AWE (Kennedy) + JPCW (Combs global) + NWC (Book 6)
