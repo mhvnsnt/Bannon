@@ -2299,8 +2299,13 @@ class Fighter {
     this.grappleStage = 0;
 
   // BANNON GRAPPLE ANIMATION INJECTION
-  if (this.useAnimBridge && !this._animMixer || this._animCategory !== 'GRAPPLE') {
-    this.playAnimClip('GRAPPLE', {fadeIn: 0.1, fadeOut: 0.1});
+  if (this.useAnimBridge && (!this._animMixer || this._animCategory !== 'GRAPPLE')) {
+    if (window.ANIM_LIB && window.ANIM_LIB['GRAPPLE']) {
+      this.playAnimClip('GRAPPLE', {fadeIn: 0.1, fadeOut: 0.1});
+    } else {
+      console.warn("[BANNON] GRAPPLE animation not found, falling back to IDLE procedural");
+      this.playAnimClip('IDLE', {fadeIn: 0.1, fadeOut: 0.1});
+    }
   }
 
     this.grappleAim = 0;
