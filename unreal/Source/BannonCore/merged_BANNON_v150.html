@@ -32989,6 +32989,85 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     console.log('[BANNON] Phase 75: MDickie Weapon Swinging Arcs & Chaos Collision Integration active');
 })();
 </script>
+
+<script>
+// =========================================================================
+// BANNON PHASE 76: MDICKIE ADRENALINE RUSH & FINISHER STATE
+// =========================================================================
+(function installAdrenalineSystem() {
+    if (typeof Fighter === 'undefined') return;
+
+    const _origUpdateAdrenaline = Fighter.prototype.update;
+    Fighter.prototype.update = function(dt) {
+        if (_origUpdateAdrenaline) _origUpdateAdrenaline.call(this, dt);
+
+        // Cap momentum at 100
+        this.momentum = Math.max(0, Math.min(100, this.momentum || 0));
+
+        // MDickie Adrenaline Trigger
+        if (this.momentum >= 100 && !this.adrenalineActive) {
+            this.adrenalineActive = true;
+            this.adrenalineTimer = 10.0; // 10 seconds of Adrenaline
+            
+            // Apply MDickie Adrenaline buffs
+            this._preAdrenalineSpeed = this.speedMultiplier || 1.0;
+            this._preAdrenalinePower = this.powerMultiplier || 1.0;
+            
+            this.speedMultiplier = this._preAdrenalineSpeed * 1.5;
+            this.powerMultiplier = this._preAdrenalinePower * 1.5;
+            
+            console.log(`[BANNON] 🚨 ADRENALINE RUSH! ${this.opts.name} is on fire!`);
+            
+            // Visual effect (Red tint)
+            if (this.mesh) {
+                this.mesh.traverse((child) => {
+                    if (child.isMesh && child.material && child.material.emissive) {
+                        child.userData.origEmissive = child.material.emissive.clone();
+                        child.material.emissive.setHex(0x550000); // glowing red
+                    }
+                });
+            }
+        }
+
+        // Handle active adrenaline
+        if (this.adrenalineActive) {
+            this.adrenalineTimer -= dt;
+            if (this.adrenalineTimer <= 0) {
+                // Adrenaline crash
+                this.adrenalineActive = false;
+                this.momentum = 0; // Burned out
+                
+                // Revert buffs
+                this.speedMultiplier = this._preAdrenalineSpeed;
+                this.powerMultiplier = this._preAdrenalinePower;
+                
+                // Revert visual
+                if (this.mesh) {
+                    this.mesh.traverse((child) => {
+                        if (child.isMesh && child.material && child.userData.origEmissive) {
+                            child.material.emissive.copy(child.userData.origEmissive);
+                        }
+                    });
+                }
+                console.log(`[BANNON] ADRENALINE CRASH. ${this.opts.name} burnt out.`);
+            }
+        }
+    };
+
+    // Hook attack to intercept Finisher execution
+    const _origPoseAtkFinisher = Fighter.prototype.poseAttack;
+    Fighter.prototype.poseAttack = function(dt) {
+        if (this.adrenalineActive && this.attackData) {
+            // MDickie Finisher Execution: If attacking during Adrenaline, deals massive damage, unbreakable poise
+            this.poise = 100; // Unbreakable during finisher
+            this.attackData.power = Math.max(this.attackData.power || 0, 85); // Force high damage
+            this.attackData._isFinisher = true;
+        }
+        _origPoseAtkFinisher.call(this, dt);
+    };
+})();
+</script>
 </body>
 </html>
+
 
