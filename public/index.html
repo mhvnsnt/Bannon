@@ -11730,7 +11730,7 @@ function buildArenaStage(group, accentCol, cold){
     window.__arenaMovingLights.push({ light:sl, housing:hz, ph:i*1.7, sp:0.5+i*0.15, rx:3.2, rz:2.2 }); }
   // --- CENTER-HUNG TITANTRON (4-sided cube tron over the ring) + circular frame ring ---
   const cubeMat=new THREE.MeshBasicMaterial({ map:_arenaTronTex });
-  const hung=new THREE.Group(); hung.position.set(0,7.2,0); group.add(hung); window.__hungTron=hung;
+  const hung=new THREE.Group(); hung.position.set(0,8.7,0); group.add(hung); window.__hungTron=hung;   // raised high so it clears the ramp + main trons in the broadcast view
   const cubeGeo=new THREE.PlaneGeometry(3.2,1.8);
   [[0,0,1.61,0],[0,0,-1.61,Math.PI],[1.61,0,0,-Math.PI/2],[-1.61,0,0,Math.PI/2]].forEach(f=>{ const face=new THREE.Mesh(cubeGeo,cubeMat); face.position.set(f[0],f[1],f[2]); face.rotation.y=f[3]; hung.add(face); });
   const frameRing=new THREE.Mesh(new THREE.TorusGeometry(2.4,0.12,8,32), new THREE.MeshStandardMaterial({color:0x0a0a0e,metalness:0.6,roughness:0.5,emissive:acc,emissiveIntensity:0.25}));
@@ -38147,6 +38147,53 @@ window.BANNON_CAREER = (function(){
 
   return { seed, condition, ageWeek, injure, isHurt, morale, adjustMorale, moraleWeek,
     checkRetire, hallOfFame, showEconomics, commentary, callLive, tickWeek, VENUES };
+})();
+</script>
+<script>
+// ===== MDICKIE LEGACY SYSTEMS (proprietary port of Wrestling Empire's structural mechanics that our
+// universe lacked — from tools/bbparse/out/surrounding_systems.json: Gimmicks, AllegianceRatio,
+// contract Clauses/CalculateWorth, CourtDate, GenerateAttendance, IdentifyInjury, InterPromotional,
+// PromotionPotential). Operates on BANNON_UNIVERSE.get()/save() — no parallel state. =====
+window.BANNON_MDICKIE = (function(){
+  function U(){ return (window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get)?window.BANNON_UNIVERSE.get():null; }
+  function save(u){ try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(u); }catch(e){} }
+  function rec(u,k){ u.chars=u.chars||{}; return (u.chars[k]=u.chars[k]||{}); }
+  const GIMMICKS = ['Fan Favorite','Cocky Heel','Monster','Underdog','Veteran','Hardcore Legend','Technician','Showman','Cult Leader','Corporate Shill','Enigma','Brawler'];
+  const CLAUSES  = ['Creative Control','No-Compete','Guaranteed Title Shot','Merch Split','Downside Guarantee','Loser Leaves','Injury Protection','Appearance Bonus'];
+  const INJURIES = [['Concussion',6],['Torn ACL',20],['Broken Arm',12],['Cracked Ribs',5],['Sprained Ankle',3],['Herniated Disc',16],['Dislocated Shoulder',8],['Bruised Sternum',2]];
+  const rng=(n)=>Math.floor(Math.random()*n);
+  // AddGimmick — assigns a gimmick that nudges alignment/popularity
+  function addGimmick(k, g){ const u=U(); if(!u) return null; const r=rec(u,k); r.gimmick=g||GIMMICKS[rng(GIMMICKS.length)];
+    r.popularity=(r.popularity||50)+ (/(Favorite|Underdog|Showman|Legend)/.test(r.gimmick)?6:0);
+    r.alignment=(/(Heel|Corporate|Cult|Monster|Cocky)/.test(r.gimmick))?'heel':'face'; save(u); return r.gimmick; }
+  // AllegianceRatio — face/heel lean from relationships (-1 heel .. +1 face)
+  function allegianceRatio(k){ const u=U(); if(!u) return 0; const r=rec(u,k); const rel=(r.relationships||{}); let s=0,n=0;
+    for(const o in rel){ s+=rel[o]; n++; } const base=(r.alignment==='heel'?-0.4:0.4); return Math.max(-1,Math.min(1, base + (n? (s/n)/100 :0))); }
+  // CalculateWorth / GetValue — contract value from wins, popularity, experience
+  function calculateWorth(k){ const u=U(); if(!u) return 0; const r=rec(u,k); const w=(r.wins||0), pop=(r.popularity||50), exp=(r.matches||0);
+    return Math.round(2000 + pop*120 + w*350 + Math.min(exp,300)*40); }
+  // GenerateContract with clauses (ClauseFilter/ClauseEntitled) — bigger stars earn more clauses
+  function generateContract(k){ const u=U(); if(!u) return null; const worth=calculateWorth(k), pop=(rec(u,k).popularity||50);
+    const nClauses=Math.max(1,Math.min(4,Math.round(pop/28))); const pool=CLAUSES.slice(); const cl=[];
+    for(let i=0;i<nClauses&&pool.length;i++){ cl.push(pool.splice(rng(pool.length),1)[0]); }
+    const c={ salary:worth, weeks:26+rng(52), clauses:cl, signed:false }; const r=rec(u,k); r.contract=c; save(u); return c; }
+  // CourtDate — random legal/lawsuit event (MDickie flavor) affecting company money
+  function courtDate(){ const u=U(); if(!u) return null; const cases=['contract dispute','unsafe-working-conditions suit','trademark claim','wellness-policy hearing'];
+    const c=cases[rng(cases.length)]; const cost=5000+rng(45000); u.money=(u.money||100000)-cost; save(u);
+    return { case:c, cost, headline:'COURT DATE: '+c+' costs the promotion $'+cost.toLocaleString() }; }
+  // GenerateAttendance / TranslateAttendance — crowd from combined star power vs venue capacity
+  function attendance(cap, cardKeys){ const u=U(); cap=cap||8000; let star=0; (cardKeys||[]).forEach(k=>{ star+=(rec(u||{chars:{}},k).popularity||50); });
+    const draw=Math.min(1, 0.25 + star/((cardKeys&&cardKeys.length||1)*140)); const att=Math.round(cap*draw*(0.8+Math.random()*0.2));
+    const band = draw>0.85?'SELLOUT':draw>0.6?'PACKED':draw>0.4?'HEALTHY':'SPARSE'; return { attendance:att, capacity:cap, pct:Math.round(draw*100), band }; }
+  // IdentifyInjury — pick an injury + recovery weeks (feeds BANNON_CAREER.injure)
+  function identifyInjury(){ const i=INJURIES[rng(INJURIES.length)]; return { part:i[0], weeks:i[1] }; }
+  // PromotionPotential — likelihood (0..1) this character deserves a push
+  function promotionPotential(k){ const u=U(); if(!u) return 0; const r=rec(u,k); const pop=(r.popularity||50), wr=(r.matches? (r.wins||0)/r.matches :0.5);
+    return Math.max(0,Math.min(1, (pop/100)*0.6 + wr*0.4)); }
+  // ConstructInterPromotional — book a cross-promotion dream match
+  function interPromotional(a,b){ const u=U(); const promos=(u&&u.promotions)||['AWE','JPCW','NWC']; a=a||promos[0]; b=b||promos[1%promos.length];
+    return { headline:'INTER-PROMOTIONAL WARFARE: '+a+' invades '+b+'!', promoA:a, promoB:b, stakes:'pride + talent-raid rights' }; }
+  return { GIMMICKS, CLAUSES, addGimmick, allegianceRatio, calculateWorth, generateContract, courtDate, attendance, identifyInjury, promotionPotential, interPromotional };
 })();
 </script>
 <script>
