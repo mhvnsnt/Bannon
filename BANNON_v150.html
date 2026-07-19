@@ -673,6 +673,13 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 .hub-tile.soon::after { content:'SOON'; position:absolute; }
 .hub-title { font-family:'Share Tech Mono'; font-size:10px; letter-spacing:4px; color:rgba(255,215,0,0.65);
   margin:20px auto 0; }
+.uni-tab { font-family:'Bebas Neue'; font-size:13px; letter-spacing:2px; padding:7px 11px; background:rgba(30,10,0,0.6);
+  color:#c9b98a; border:1px solid rgba(255,120,0,0.35); cursor:pointer; transition:all 0.15s; }
+.uni-tab.active, .uni-tab:hover { background:linear-gradient(120deg, var(--blood), var(--fire)); color:var(--gold); border-color:var(--gold); }
+#uniBody .uni-row { display:flex; justify-content:space-between; gap:10px; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.06); }
+#uniBody .uni-h { color:var(--gold); font-family:'Bebas Neue'; letter-spacing:3px; font-size:15px; margin:10px 0 4px; }
+#uniBody button.uni-act { font-family:'Share Tech Mono'; font-size:11px; padding:4px 9px; margin:3px 4px 3px 0; background:rgba(50,20,0,0.7); color:#e8c15a; border:1px solid var(--fire); cursor:pointer; }
+#uniBody button.uni-act:hover { background:var(--fire); color:#000; }
 .match-row { display:grid; grid-template-columns:1fr 1fr; gap:9px; max-width:420px; margin:10px auto 0; }
 @media (max-width:380px){ .hub-tile { min-height:72px; } }
 .menu-btn { font-family:'Bebas Neue'; font-size:clamp(18px, 3.4vw, 24px); letter-spacing:5px; padding:13px 18px; background:linear-gradient(90deg, rgba(40,0,0,0.6), rgba(60,20,0,0.4)); color:var(--white); border:1px solid var(--fire); cursor:pointer; transition:all 0.18s; position:relative; box-shadow:0 0 14px rgba(255,69,0,0.25); text-shadow:0 0 8px currentColor; }
@@ -874,6 +881,7 @@ body.match-live #movesBtn { display:none !important; }
       <button class="hub-tile" id="btnMainStudio"><span class="hub-ico">🎬</span><span class="hub-lbl">STUDIO</span></button>
       <button class="hub-tile" id="btnMainDir"><span class="hub-ico">🎥</span><span class="hub-lbl">DIRECTOR</span></button>
       <button class="hub-tile" id="btnHubArena"><span class="hub-ico">🏟️</span><span class="hub-lbl">ARENA</span></button>
+      <button class="hub-tile" id="btnHubUniverse"><span class="hub-ico">🌍</span><span class="hub-lbl">UNIVERSE</span></button>
       <button class="hub-tile soon" id="btnHubArenaEd"><span class="hub-ico">🛠️</span><span class="hub-lbl">ARENA CREATOR</span></button>
       <button class="hub-tile soon" id="btnHubEntrance"><span class="hub-ico">🎆</span><span class="hub-lbl">ENTRANCE</span></button>
     </div>
@@ -884,6 +892,31 @@ body.match-live #movesBtn { display:none !important; }
       <button class="menu-btn" id="btnMusicAdd" style="font-size:15px;">＋ ADD</button>
     </div>
     <div style="margin-top:18px; font-family:'Share Tech Mono'; font-size:9px; color:#666; letter-spacing:3px;">v77 · WWE 2K26 CONTROLS · VISCERAL PRO WRESTLING</div>
+  </div>
+</div>
+
+<!-- ============================================================================================
+     UNIVERSE / CAREER HUB — the playable surface for the surrounding-game systems that already exist
+     as logic (BANNON_UNIVERSE booking/standings, BANNON_CAREER aging/injuries/economics, BANNON_STORY
+     relationships/turns, BANNON_MDICKIE contracts/tournaments/backstage). MDickie's game base made
+     reachable. Tabs render live data; buttons drive the real systems (advance week, play/sim, promo). =====
+     ============================================================================================ -->
+<div class="menu-overlay hidden" id="universePanel">
+  <div class="menu-inner" style="max-width:640px; width:94%; max-height:90vh; overflow-y:auto;">
+    <div class="hub-title">🌍 UNIVERSE</div>
+    <div id="uniTabs" style="display:flex; flex-wrap:wrap; gap:6px; justify-content:center; margin:8px 0 12px;">
+      <button class="uni-tab" data-tab="card">THIS WEEK</button>
+      <button class="uni-tab" data-tab="standings">RANKINGS</button>
+      <button class="uni-tab" data-tab="career">MY CAREER</button>
+      <button class="uni-tab" data-tab="backstage">BACKSTAGE</button>
+      <button class="uni-tab" data-tab="contracts">CONTRACTS</button>
+      <button class="uni-tab" data-tab="cup">TOURNAMENT</button>
+    </div>
+    <div id="uniBody" style="font-family:'Share Tech Mono',monospace; font-size:12px; line-height:1.55; color:#d8d2c4; min-height:220px;"></div>
+    <div style="display:flex; gap:8px; margin-top:14px;">
+      <button class="menu-btn" id="btnUniAdvance" style="flex:1;">▶ ADVANCE WEEK</button>
+      <button class="menu-btn gold" id="btnUniClose" style="flex:1;">CLOSE</button>
+    </div>
   </div>
 </div>
 
@@ -38958,12 +38991,24 @@ window.BANNON_ENTRANCE_EDITOR = (function(){
         const myFac = (this.opts&&this.opts.faction) || (this._faction) || '';
         const theirFac = (f.opts&&f.opts.faction) || (f._faction) || '';
         if (myFac && theirFac && myFac !== theirFac) score += 30;
+        // MDickie PERSONAL GRUDGE (the soul of his AI): enemies HUNT each other, allies leave each other
+        // alone. Reads the live relationship graph (BANNON_STORY.rel: -100 bitter enemy .. +100 ally).
+        try{ if(window.BANNON_STORY && window.BANNON_STORY.rel){
+          const kA=((this.opts&&this.opts.name)||this.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'_');
+          const kB=((f.opts&&f.opts.name)||f.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'_');
+          if(kA&&kB&&kA!==kB){ const r=window.BANNON_STORY.rel(kA,kB); score -= r*0.45; } // hate (neg r) raises threat, allies (pos r) lower it
+        } }catch(e){}
         // downed fighters are low priority (can't threaten)
         if (f.isDown && f.isDown()) score -= 50;
         // currently attacking me = highest priority
         if (f.grabTarget === this || f._lastHit === this) score += 40;
+        // FOCUS-SWITCH JITTER (MDickie's chaotic re-targeting): a little noise so the AI doesn't lock
+        // perfectly onto one man in a crowd — grudges + proximity still dominate, but focus drifts.
+        if (fighters.length > 2) score += (Math.random()-0.5)*18;
         if (score > bestScore){ bestScore = score; best = f; }
       }
+      // ISOLATION AWARENESS: a fighter with no allies present fights more desperately (feeds aggression).
+      try{ if(window.BANNON_MDICKIE && window.BANNON_MDICKIE.isIsolated) this._isolated = window.BANNON_MDICKIE.isIsolated(this, fighters); }catch(e){}
       return best || ((this===fighters[0]) ? fighters[1] : fighters[0]);
     };
   }
@@ -39073,6 +39118,109 @@ window.BANNON_ENTRANCE_EDITOR = (function(){
   }} catch(e){}
 
   console.log('%c[PHASE 5/6] #36 choke oxygen · #37 dislocation · #38 leverage · #39 dirty · #40 tap-out · #45 injury · #46 faction · #49 tag (D-Pad-Up) — ALL ONLINE', 'color:#00ff88;font-weight:bold');
+})();
+</script>
+
+<!-- ============================================================================================
+     UNIVERSE HUB WIRING — makes the surrounding-game systems PLAYABLE from the main menu tile.
+     Renders live data from BANNON_UNIVERSE / BANNON_CAREER / BANNON_STORY / BANNON_MDICKIE and drives
+     them (advance week, play/sim a card match, cut a promo, sign/negotiate, run a tournament). =====
+     ============================================================================================ -->
+<script>
+(function(){
+  const panel=document.getElementById('universePanel'), body=document.getElementById('uniBody');
+  if(!panel||!body) return;
+  let tab='card';
+  const esc=s=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const UNI=()=>window.BANNON_UNIVERSE, CAR=()=>window.BANNON_CAREER, STO=()=>window.BANNON_STORY, MD=()=>window.BANNON_MDICKIE;
+  function ensureUniverse(){ try{ const U=UNI(); if(!U) return null; let u=U.get&&U.get(); if(!u||!u.fighters||!Object.keys(u.fighters||{}).length){ if(U.newUniverse) u=U.newUniverse(); else if(U.reset) u=U.reset(); }
+    if(u && (!u.card||!u.card.length) && U.bookWeek){ try{ u.card=U.bookWeek(u); U.save&&U.save(u); }catch(e){} }
+    return u; }catch(e){ return null; } }
+  function open(){ panel.classList.remove('hidden'); ensureUniverse(); render(); }
+  function close(){ panel.classList.add('hidden'); }
+
+  function rowsHTML(list){ return list.map(r=>`<div class="uni-row"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join(''); }
+
+  function render(){
+    document.querySelectorAll('#uniTabs .uni-tab').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
+    let h='';
+    try{
+      if(tab==='card'){
+        const U=UNI(), u=U&&U.get&&U.get();
+        h+=`<div class="uni-h">WEEK ${u?u.week:0} — CARD</div>`;
+        const card=(u&&u.card)||[];
+        if(!card.length) h+='<div>No card booked. Advance a week to auto-book.</div>';
+        card.forEach((m,i)=>{ const done=m._done?'✔':'▶';
+          h+=`<div class="uni-row"><span>${done} ${esc(m.a)} vs ${esc(m.b)}${m.title?' · '+esc(m.title):''}</span>`+
+             (m._done?`<span>done</span>`:`<span><button class="uni-act" data-play="${i}">PLAY</button><button class="uni-act" data-sim="${i}">SIM</button></span>`)+`</div>`; });
+        const news=(u&&u.news)||[]; if(news.length){ h+='<div class="uni-h">HEADLINES</div>'+news.slice(-6).reverse().map(n=>`<div class="uni-row"><span>• ${esc(typeof n==='string'?n:(n.text||n.headline||''))}</span><span></span></div>`).join(''); }
+      }
+      else if(tab==='standings'){
+        const U=UNI(); const st=(U&&U.standings&&U.standings())||[];
+        h+='<div class="uni-h">RANKINGS</div>';
+        if(!st.length) h+='<div>No data yet — advance a week.</div>';
+        st.slice(0,20).forEach((s,i)=>{ h+=`<div class="uni-row"><span>${i+1}. ${esc(s.name)} <span style="opacity:.6">(${esc(s.promo||'')})</span></span><span>${s.w||0}-${s.l||0}${s.title?' 🏆':''}</span></div>`; });
+      }
+      else if(tab==='career'){
+        const c=CAR(); h+='<div class="uni-h">MY CAREER</div>';
+        const me=(window.CAREER_ME||window.__playerKey||'BANNON');
+        let info=null; try{ info = c && (c.status? c.status(me): (c.get?c.get(me):null)); }catch(e){}
+        if(c){
+          const U=UNI(), u=U&&U.get&&U.get(); const rec=(u&&u.fighters&&u.fighters[me])||{};
+          h+=rowsHTML([['Wrestler',me],['Record',(rec.wins||0)+'-'+(rec.losses||0)],['Momentum',(rec.momentum!=null?rec.momentum:'—')],
+            ['Injury',(rec.injuredWeeks>0?rec.injuredWeeks+' wks':'healthy')],['Title',rec.title||'none']]);
+          try{ const show=c.bookShow?c.bookShow(u):null; if(show) h+='<div class="uni-h">LAST GATE</div>'+rowsHTML([['Venue',show.venue],['Attendance',show.attendance+' / '+show.capacity],['Gate','$'+(show.gate||0).toLocaleString()],['Rating',show.rating]]); }catch(e){}
+        } else h+='<div>Career module not loaded.</div>';
+      }
+      else if(tab==='backstage'){
+        h+='<div class="uni-h">BACKSTAGE</div>';
+        const md=MD(); const me=(window.CAREER_ME||'BANNON');
+        if(md){
+          try{ const meet=md.backstageMeeting&&md.backstageMeeting(me); if(meet) h+=`<div class="uni-row"><span>${esc(meet.headline||meet.text||JSON.stringify(meet))}</span><span></span></div>`; }catch(e){}
+          h+='<div style="margin-top:8px">'+
+             '<button class="uni-act" data-promo="charm">CUT PROMO (CHARM)</button>'+
+             '<button class="uni-act" data-promo="callout">CALL SOMEONE OUT</button>'+
+             '<button class="uni-act" data-turn="1">TEASE A TURN</button></div>';
+        }
+        const sto=STO(); if(sto){ h+='<div class="uni-h">RELATIONSHIPS</div>';
+          try{ const U=UNI(), u=U&&U.get&&U.get(); const keys=u?Object.keys(u.fighters).slice(0,8):[];
+            keys.forEach(k=>{ if(k===me) return; const r=sto.rel(me,k); const tag=r>40?'ally':r<-40?'enemy':'neutral';
+              h+=`<div class="uni-row"><span>${esc(k)}</span><span>${tag} (${r})</span></div>`; }); }catch(e){} }
+      }
+      else if(tab==='contracts'){
+        h+='<div class="uni-h">CONTRACTS & FREE AGENCY</div>';
+        const md=MD(); const U=UNI(), u=U&&U.get&&U.get();
+        if(md && u){ const keys=Object.keys(u.fighters).slice(0,10);
+          keys.forEach(k=>{ let worth='—'; try{ worth='$'+(md.calculateWorth?md.calculateWorth(k):0).toLocaleString(); }catch(e){}
+            h+=`<div class="uni-row"><span>${esc(k)}</span><span>${worth} <button class="uni-act" data-sign="${esc(k)}">OFFER</button></span></div>`; });
+        } else h+='<div>Contracts module not loaded.</div>';
+      }
+      else if(tab==='cup'){
+        h+='<div class="uni-h">TOURNAMENT</div>';
+        const md=MD();
+        if(md){ h+='<button class="uni-act" data-cup="1">GENERATE + SIMULATE A CUP</button><div id="cupOut" style="margin-top:8px"></div>'; }
+        else h+='<div>Tournament module not loaded.</div>';
+      }
+    }catch(e){ h='<div>Universe error: '+esc(e.message)+'</div>'; }
+    body.innerHTML=h;
+    // wire dynamic action buttons
+    body.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>{ const U=UNI(),u=U.get(); const m=u.card[+b.dataset.play]; if(m&&U.playMatch){ close(); U.playMatch(m); } });
+    body.querySelectorAll('[data-sim]').forEach(b=>b.onclick=()=>{ const U=UNI(),u=U.get(); const m=u.card[+b.dataset.sim]; if(m){ if(U.simMatch)U.simMatch(u,m); m._done=1; U.save&&U.save(u); render(); } });
+    body.querySelectorAll('[data-promo]').forEach(b=>b.onclick=()=>{ const md=MD(),me=(window.CAREER_ME||'BANNON'); try{ let r=null;
+      if(b.dataset.promo==='charm'&&md.promoCharm) r=md.promoCharm(me); else if(md.backstageMeeting) r=md.backstageMeeting(me);
+      (window.toast||alert)((r&&(r.headline||r.text))||'Promo delivered — momentum up.'); }catch(e){} render(); });
+    body.querySelectorAll('[data-turn]').forEach(b=>b.onclick=()=>{ const md=MD(),me=(window.CAREER_ME||'BANNON'); try{ md.pushTurn&&md.pushTurn(me); (window.toast||alert)('Turn teased — the locker room is talking.'); }catch(e){} render(); });
+    body.querySelectorAll('[data-sign]').forEach(b=>b.onclick=()=>{ const md=MD(); try{ const c=md.generateContract?md.generateContract(b.dataset.sign):null; (window.toast||alert)(c?('Offer to '+b.dataset.sign+': $'+(c.value||c.salary||0).toLocaleString()+'/wk — '+(c.verdict||'pending')):'Offer sent.'); }catch(e){} });
+    body.querySelectorAll('[data-cup]').forEach(b=>b.onclick=()=>{ const md=MD(); try{ const t=md.generateTournament?md.generateTournament():null; const res=md.simulateBracket?md.simulateBracket(t):null;
+      const out=document.getElementById('cupOut'); if(out) out.innerHTML=res?('WINNER: <b style="color:#e8c15a">'+esc(res.winner||res.champion||(res[0]&&res[0].winner)||'—')+'</b>'):'Tournament simulated.'; }catch(e){ const out=document.getElementById('cupOut'); if(out) out.textContent='cup err'; } });
+  }
+
+  // tab switching
+  document.querySelectorAll('#uniTabs .uni-tab').forEach(b=>b.addEventListener('click',()=>{ tab=b.dataset.tab; render(); }));
+  const adv=document.getElementById('btnUniAdvance'); if(adv) adv.onclick=()=>{ try{ const U=UNI(); if(U&&U.advanceWeek) U.advanceWeek(); }catch(e){} render(); };
+  const cls=document.getElementById('btnUniClose'); if(cls) cls.onclick=close;
+  const tile=document.getElementById('btnHubUniverse'); if(tile) tile.addEventListener('click', open);
+  window.openUniverse=open;
 })();
 </script>
 </body>
