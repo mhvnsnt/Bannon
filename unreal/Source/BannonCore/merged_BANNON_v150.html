@@ -32921,5 +32921,74 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   };
 
 </script>
+
+<script>
+// =========================================================================
+// BANNON PHASE 75: MDICKIE WEAPON SWINGING ARCS & COLLISION HULL INTEGRATION
+// =========================================================================
+(function installWeaponPhysics() {
+    if (typeof Fighter === 'undefined') return;
+    
+    const _origPoseAtkWeapon = Fighter.prototype.poseAttack;
+    if (!_origPoseAtkWeapon) return;
+
+    Fighter.prototype.poseAttack = function(dt) {
+        _origPoseAtkWeapon.call(this, dt);
+        
+        // If holding a weapon and actively attacking
+        if (this.heldWeapon && this.attackData && (this.attackData.cat === 'WEAPON' || this.attackData.id.includes('weapon'))) {
+            const p = Math.max(0, Math.min(this.attackPhase || 0, 1.0));
+            const arc = Math.sin(p * Math.PI);
+            const m = this.attackData;
+            
+            // Extract MDickie legacy swing arcs
+            // Over-the-head smash or lateral swing based on move trajectory
+            const traj = m.traj || 'SMASH';
+            
+            const isLeft = m.limb && m.limb.includes('LEFT');
+            const hand = isLeft ? 'haL' : 'haR';
+            
+            if (this.J && this.J[hand]) {
+                const reach = this.reachScale || 1.0;
+                
+                if (traj === 'SMASH') {
+                    // Vertical overhead arc
+                    const verticalArc = Math.sin(p * Math.PI * 1.5) * 1.5 * reach;
+                    this.J[hand].tgt.y += verticalArc;
+                    this.J[hand].tgt.x += (isLeft ? 0.2 : -0.2); // slight inward angle
+                    
+                    // Body pitches forward to put weight behind the swing
+                    if (this.J.chest) this.J.chest.tgt.x += 0.2 * arc;
+                    if (this.J.spineMid) this.J.spineMid.tgt.x += 0.1 * arc;
+                } else if (traj === 'SWING') {
+                    // Horizontal baseball swing
+                    const horizontalArc = Math.cos(p * Math.PI) * 1.2 * reach;
+                    this.J[hand].tgt.z += horizontalArc;
+                    this.J[hand].tgt.x += 0.5 * arc * reach; // extend outward
+                    
+                    // Body twists natively with the swing
+                    if (this.J.chest) this.J.chest.tgt.y -= 0.3 * arc * (isLeft ? -1 : 1);
+                }
+                
+                // Weapon attachment physics transform
+                // Update the weapon's physical bounds natively into the Chaos collision hulls, bypassing static hitbox detection
+                if (this.heldWeapon.updateCollisionHull) {
+                    this.heldWeapon.updateCollisionHull(this.J[hand].tgt, this.J[hand].rot);
+                } else if (this.heldWeapon.mesh) {
+                    // Fallback to transform update for the spatial hash/broadphase
+                    this.heldWeapon.mesh.position.copy(this.J[hand].tgt);
+                    // Emit a raycast/sphere trace natively using the weapon bounds instead of a static hitbox
+                    if (typeof updateChaosCollision === 'function') {
+                        updateChaosCollision(this.heldWeapon.mesh, p);
+                    }
+                }
+            }
+        }
+    };
+    
+    console.log('[BANNON] Phase 75: MDickie Weapon Swinging Arcs & Chaos Collision Integration active');
+})();
+</script>
 </body>
 </html>
+
