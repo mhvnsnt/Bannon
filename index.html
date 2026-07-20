@@ -269,15 +269,15 @@ NEVER rename existing functions or variables.
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <!-- REAL PHYSICS (optional): Rapier loads only over http(s)/localhost. On a double-click it stays off and the game runs exactly as before. -->
 <script type="module">
-(async () => {
-  try{
-    const M = await import('https://esm.sh/@dimforge/rapier3d-compat@0.14.0');
+  import('https://esm.sh/@dimforge/rapier3d-compat@0.14.0').then(M => {
     const R = M.default || M;
-    await R.init();
-    window.RAPIER = R; window.RAPIER_READY = true;
-    console.log('[BANNON] real physics ready', (R.version&&R.version&&R.version&&typeof R.version==='function'?R.version():''));
-  }catch(e){ window.RAPIER_READY = false; console.warn('[BANNON] Rapier off (run from a local server to enable real physics):', (e&&e.message)||e); }
-})();
+    return R.init().then(() => {
+      window.RAPIER = R; window.RAPIER_READY = true;
+      console.log('[BANNON] real physics ready', (R.version&&R.version&&R.version&&typeof R.version==='function'?R.version():''));
+    });
+  }).catch(e => {
+    window.RAPIER_READY = false; console.warn('[BANNON] Rapier off (run from a local server to enable real physics):', (e&&e.message)||e);
+  });
 </script>
 
 <style>
