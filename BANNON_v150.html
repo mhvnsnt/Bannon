@@ -38334,7 +38334,7 @@ window.BANNON_UNIVERSE = (function(){
       team:null, contractWeeks:26+Math.floor(Math.random()*52) }; });
     Object.values(fighters).forEach(f=> f.promo=promoOf(f));
     const titles={}; PROMOS.forEach(p=> titles[p+' World']=null); titles['Inter-Promotional']=null;
-    const u={ v:1, week:1, promos:PROMOS, fighters, titles, card:[], news:[], history:[], teams:{}, tournament:null };
+    const u={ v:1, week:1, startDate:_nextSat(), promos:PROMOS, fighters, titles, card:[], news:[], history:[], teams:{}, tournament:null };
     // seed champions = top-rated available per promotion
     PROMOS.forEach(p=>{ const pool=Object.values(fighters).filter(x=>x.promo===p).sort((a,b)=>rating(b)-rating(a)); if(pool[0]){ titles[p+' World']=pool[0].name; pool[0].title=p+' World'; } });
     seedTeams(u);
@@ -38343,6 +38343,12 @@ window.BANNON_UNIVERSE = (function(){
   }
   function get(){ return load()||newUniverse(); }
   function reset(){ try{ localStorage.removeItem(KEY); }catch(e){} return newUniverse(); }
+
+  // REAL CALENDAR (MDickie Wrestling Empire flavor): every week is a dated Saturday-night show.
+  // startDate = week 1's show; older saves backfill so "today" lands on the current week.
+  function _nextSat(){ const d=new Date(); d.setHours(20,0,0,0); d.setDate(d.getDate()+((6-d.getDay())+7)%7); return d.getTime(); }
+  function showDate(u,w){ u=u||get(); if(!u.startDate){ u.startDate=_nextSat()-((u.week||1)-1)*604800000; save(u); }
+    return new Date(u.startDate+(((w!=null?w:u.week)||1)-1)*604800000); }
 
   // AUTO-BOOK a week's card: title main-events (champ vs top available contender, same promo) + undercard.
   function bookWeek(u){
@@ -38461,7 +38467,7 @@ window.BANNON_UNIVERSE = (function(){
   function feud(u,a,b,amt){ u=u||get(); u.rivalries=u.rivalries||{}; const k=rivKey(a,b); u.rivalries[k]=(u.rivalries[k]||0)+(amt||5); return save(u); }
   function topFeuds(u,n){ u=u||get(); const r=u.rivalries||{}; return Object.keys(r).sort((x,y)=>r[y]-r[x]).slice(0,n||8).map(k=>({pair:k.split('::'),heat:r[k]})); }
 
-  return { KEY, PROMOS, newUniverse, reset, get, save, bookWeek, simMatch, applyResult, playMatch, recordPlayer, advanceWeek, standings, rating, promoOf, allegianceOf,
+  return { KEY, PROMOS, newUniverse, reset, get, save, showDate, bookWeek, simMatch, applyResult, playMatch, recordPlayer, advanceWeek, standings, rating, promoOf, allegianceOf,
            turnHeel, turnFace, rivalsOf, seedTeams, formTeam, worth, freeAgents, sign, rankings, generateTournament, simTournament,
            ego, loyalty, rivalInterest, demands, negotiate, bookingBreach, promoBattle, scoreLine, rivalry, feud, topFeuds };
 })();
@@ -39796,19 +39802,21 @@ window.BANNON_LEGACY = (function(){
 (function(){
   const panel=document.getElementById('universePanel'), body=document.getElementById('uniBody');
   if(!panel||!body) return;
-  let tab='card';
+  let tab='card', viewWk=null;   // viewWk = calendar week being previewed (null = tonight)
   const esc=s=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
   const UNI=()=>window.BANNON_UNIVERSE, CAR=()=>window.BANNON_CAREER, STO=()=>window.BANNON_STORY, MD=()=>window.BANNON_MDICKIE;
   function ensureUniverse(){ try{ const U=UNI(); if(!U) return null; let u=U.get&&U.get(); if(!u||!u.fighters||!Object.keys(u.fighters||{}).length){ if(U.newUniverse) u=U.newUniverse(); else if(U.reset) u=U.reset(); }
     if(u && (!u.card||!u.card.length) && U.bookWeek){ try{ u.card=U.bookWeek(u); U.save&&U.save(u); }catch(e){} }
     return u; }catch(e){ return null; } }
-  function open(){ panel.classList.remove('hidden'); ensureUniverse(); render(); }
+  function open(){ panel.classList.remove('hidden'); viewWk=null; ensureUniverse(); render(); }
   function close(){ panel.classList.add('hidden'); }
 
   function rowsHTML(list){ return list.map(r=>`<div class="uni-row"><span>${esc(r[0])}</span><span>${esc(r[1])}</span></div>`).join(''); }
 
   // proprietary weekly show names (MDickie-style variety, our universe)
   const SHOW_NAMES=['FRICTION','AFTERSHOCK','SCORCHED EARTH','THE RECKONING','IRON WILL','MIDNIGHT MASSACRE','APEX','BAD BLOOD','THE GAUNTLET','HOSTILE TAKEOVER','LAST RITES','BROKEN ARROW'];
+  // every 4th week = a SUPERSHOW (the monthly big night) — proprietary marquee names from our universe
+  const PPV_NAMES=['OFF THE TOP ROPE','TEN HEAVENS','TOTAL ECLIPSE','THE BETRAYAL','CROWN OF THORNS','FALL OF MAN'];
   const VENUES=['The Foundry','Steel Cathedral','Saturn Dome','The Crucible','Kennedy Coliseum','Iron District Arena','The Undercroft','Halo Center'];
   function portColor(name){ let x=0; name=String(name||'?'); for(let i=0;i<name.length;i++) x=(x*31+name.charCodeAt(i))%360; return x; }
   function porHTML(name, px){ px=px||46; const c=portColor(name);
@@ -39827,24 +39835,55 @@ window.BANNON_LEGACY = (function(){
     try{
       if(tab==='card'){
         const U=UNI(), u=U&&U.get&&U.get(); const wk=u?u.week:0;
-        // SHOW HEADER — venue, rating, attendance (MDickie NightSummary flavor)
+        // REAL DATES (MDickie Wrestling Empire flow): every week is a dated Saturday-night show
+        const DOW=['SUN','MON','TUE','WED','THU','FRI','SAT'], MOS=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+        const dOf=w=>{ try{ return (U&&U.showDate)?U.showDate(u,w):null; }catch(e){ return null; } };
+        const fmtD=d=>d?(DOW[d.getDay()]+' '+MOS[d.getMonth()]+' '+d.getDate()+' '+d.getFullYear()):'';
+        const fmtShort=d=>d?(MOS[d.getMonth()]+' '+d.getDate()):'';
+        const isPPV=w=>w>0&&w%4===0;
+        const showName=w=>isPPV(w)?PPV_NAMES[Math.floor(w/4-1)%PPV_NAMES.length]:SHOW_NAMES[w%SHOW_NAMES.length];
+        // SHOW HEADER — date, venue, rating, attendance (MDickie NightSummary flavor)
         let show=null; try{ show=(CAR()&&CAR().bookShow)?CAR().bookShow(u):null; }catch(e){}
-        let att=null; try{ att=(MD()&&MD().attendance)?MD().attendance(8000,(u&&u.card||[]).flatMap(m=>[m.a,m.b])):null; }catch(e){}
+        let att=null; try{ att=(MD()&&MD().attendance)?MD().attendance(isPPV(wk)?15000:8000,(u&&u.card||[]).flatMap(m=>[m.a,m.b])):null; }catch(e){}
         const rating=show?show.rating:( (att?att.pct/20:4).toFixed(1) );
         const venue=show?show.venue:VENUES[wk%VENUES.length];
         h+=`<div class="uni-show"><span class="sh-rating">${esc(rating)}</span>`+
-           `<div class="sh-name">${esc(SHOW_NAMES[wk%SHOW_NAMES.length])}</div>`+
-           `<div class="sh-sub">Week ${wk} · ${esc(venue)} · ${att?(att.attendance.toLocaleString()+' fans · '+att.band):'live'}</div></div>`;
-        // CALENDAR strip
-        h+='<div class="cal">'+[0,1,2,3,4,5].map(k=>{ const w=wk-2+k; return w>=0?`<span class="cw${w===wk?' now':''}">W${w}</span>`:''; }).join('')+'</div>';
+           `<div class="sh-name">${isPPV(wk)?'★ ':''}${esc(showName(wk))}</div>`+
+           `<div class="sh-sub">${esc(fmtD(dOf(wk)))} · Week ${wk} · ${esc(venue)} · ${att?(att.attendance.toLocaleString()+' fans · '+att.band):'live'}${isPPV(wk)?' · SUPERSHOW':''}</div></div>`;
+        // CALENDAR strip — dated, clickable (tap a week to preview that night)
+        h+='<div class="cal">'+[-1,0,1,2,3,4].map(k=>{ const w=wk+k; if(w<1) return ''; const d=dOf(w);
+          const sel=(w===viewWk&&w!==wk)?';border-color:var(--gold);color:var(--gold)':'';
+          return `<span class="cw${w===wk?' now':''}" data-cw="${w}" style="cursor:pointer;text-align:center;line-height:1.25${sel}">W${w}${isPPV(w)?' ★':''}<br><span style="font-size:8px;opacity:.8">${fmtShort(d)}</span></span>`; }).join('')+'</div>';
+        if(viewWk && viewWk!==wk && u){
+          // PREVIEW another night: past = the recorded results; future = date/venue + projected marquee
+          const d=dOf(viewWk), past=viewWk<wk;
+          h+=`<div class="uni-h">${past?'📼 RESULTS':'📅 UPCOMING'} — ${isPPV(viewWk)?'★ ':''}${esc(showName(viewWk))} · ${esc(fmtD(d))} · ${esc(VENUES[viewWk%VENUES.length])}</div>`;
+          if(past){ const res=((u.history)||[]).filter(x=>x.week===viewWk);
+            if(!res.length) h+='<div style="opacity:.7">No recorded results for that night.</div>';
+            res.forEach(r=>{ h+=`<div class="uni-row"><span>${esc(r.winner)} def. ${esc(r.winner===r.a?r.b:r.a)}</span><span>${r.title?('🏆 '+esc(r.title)):''}</span></div>`; });
+          } else {
+            h+='<div style="opacity:.75;font:11px monospace">Card is booked on the night. Projected marquee (hottest feuds):</div>';
+            try{ ((U.topFeuds&&U.topFeuds(u,3))||[]).forEach(f=>{ h+=`<div class="uni-row"><span>${esc(f.pair[0])} vs ${esc(f.pair[1])}</span><span>heat ${f.heat}</span></div>`; }); }catch(e){}
+          }
+          h+=`<div style="margin-top:8px"><button class="uni-act" data-cw="${wk}">← BACK TO TONIGHT</button></div>`;
+        } else {
+        // TONIGHT'S CARD — MDickie running order: undercard opens, MAIN EVENT closes
         const card=(u&&u.card)||[];
         if(!card.length) h+='<div style="opacity:.7">No card booked — ADVANCE WEEK to book the show.</div>';
-        card.forEach((m,i)=>{
+        const ordered=card.map((m,i)=>({m,i})).sort((a,b)=>(a.m.main?1:0)-(b.m.main?1:0));
+        ordered.forEach((o,k)=>{ const m=o.m, i=o.i; const slot=m.main?'MAIN EVENT':('MATCH '+(k+1));
           h+=`<div class="mcard${m.title?' title-match':''}">`+pfChip(m.a)+
-             `<div class="mc-mid"><div class="vs">VS</div>${m.title?`<div class="mc-title">🏆 ${esc(m.title)}</div>`:''}</div>`+pfChip(m.b)+
+             `<div class="mc-mid"><div style="font:8px monospace;color:#e8c15a;letter-spacing:2px">${slot}</div><div class="vs">VS</div>${m.title?`<div class="mc-title">🏆 ${esc(m.title)}</div>`:''}</div>`+pfChip(m.b)+
              `<div class="mc-act">`+(m._done?`<span style="color:#7CFC00;font:10px monospace">✔ DONE</span>`:`<button class="uni-act" data-play="${i}">PLAY</button><button class="uni-act" data-sim="${i}">SIM</button>`)+`</div></div>`;
         });
+        // BETWEEN SHOWS — walk the world (MDickie free-roam inside Universe)
+        h+='<div style="margin:8px 0"><button class="uni-act" data-roam="1">🌍 ROAM THE WORLD (until the show)</button></div>';
+        // UPCOMING SHOWS — the next dated nights on the schedule (tap to preview)
+        h+='<div class="uni-h">📅 UPCOMING</div>';
+        [1,2,3].forEach(k=>{ const w=wk+k, d=dOf(w);
+          h+=`<div class="uni-row" data-cw="${w}" style="cursor:pointer"><span>${isPPV(w)?'★ ':''}${esc(showName(w))} <span style="opacity:.55">· ${esc(VENUES[w%VENUES.length])}</span></span><span>${esc(fmtD(d))}</span></div>`; });
         const news=(u&&u.news)||[]; if(news.length){ h+='<div class="uni-h">📰 DIRT SHEET</div>'+news.slice(-7).reverse().map(n=>`<div class="uni-row"><span>${esc(typeof n==='string'?n:(n.text||n.headline||''))}</span><span></span></div>`).join(''); }
+        }
       }
       else if(tab==='standings'){
         const U=UNI(); const st=(U&&U.standings&&U.standings())||[];
@@ -39953,6 +39992,8 @@ window.BANNON_LEGACY = (function(){
     }catch(e){ h='<div>Universe error: '+esc(e.message)+'</div>'; }
     body.innerHTML=h;
     // wire dynamic action buttons
+    body.querySelectorAll('[data-cw]').forEach(el=>el.onclick=()=>{ try{ const U=UNI(),u=U&&U.get&&U.get(); viewWk=+el.dataset.cw; if(u&&viewWk===u.week) viewWk=null; }catch(e){ viewWk=null; } render(); });
+    body.querySelectorAll('[data-roam]').forEach(b=>b.onclick=()=>{ close(); try{ window.__universeRoam=true; if(window.BANNON_GODWITHIN&&window.BANNON_GODWITHIN.start) window.BANNON_GODWITHIN.start(); else (window.toast||alert)('Roam mode loading…'); }catch(e){} });
     body.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>{ const U=UNI(),u=U.get(); const m=u.card[+b.dataset.play]; if(m&&U.playMatch){ close(); U.playMatch(m); } });
     body.querySelectorAll('[data-sim]').forEach(b=>b.onclick=()=>{ const U=UNI(),u=U.get(); const m=u.card[+b.dataset.sim]; if(m){ if(U.simMatch)U.simMatch(u,m); m._done=1; U.save&&U.save(u); render(); } });
     body.querySelectorAll('[data-promo]').forEach(b=>b.onclick=()=>{ const md=MD(),me=(window.CAREER_ME||'BANNON'); try{ let r=null;
