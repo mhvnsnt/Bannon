@@ -269,15 +269,13 @@ NEVER rename existing functions or variables.
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <!-- REAL PHYSICS (optional): Rapier loads only over http(s)/localhost. On a double-click it stays off and the game runs exactly as before. -->
 <script type="module">
-  import('https://esm.sh/@dimforge/rapier3d-compat@0.14.0').then(M => {
+  try{
+    const M = await import('https://esm.sh/@dimforge/rapier3d-compat@0.14.0');
     const R = M.default || M;
-    return R.init().then(() => {
-      window.RAPIER = R; window.RAPIER_READY = true;
-      console.log('[BANNON] real physics ready', (R.version&&R.version&&R.version&&typeof R.version==='function'?R.version():''));
-    });
-  }).catch(e => {
-    window.RAPIER_READY = false; console.warn('[BANNON] Rapier off (run from a local server to enable real physics):', (e&&e.message)||e);
-  });
+    await R.init();
+    window.RAPIER = R; window.RAPIER_READY = true;
+    console.log('[BANNON] real physics ready', (R.version&&R.version&&R.version&&typeof R.version==='function'?R.version():''));
+  }catch(e){ window.RAPIER_READY = false; console.warn('[BANNON] Rapier off (run from a local server to enable real physics):', (e&&e.message)||e); }
 </script>
 
 <style>
@@ -1166,7 +1164,7 @@ body.match-live #movesBtn { display:none !important; }
         </div>
     </div>
     
-    <div style="flex:1; overflow-y:auto; padding:15px 25px; background:url('data:image/svg+xml;utf8,<svg width=%2240%22 height=%2240%22 viewBox=%220 0 40 40%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20zM20 0h20v20H20V0z%22 fill=%22%230f172a%22 fill-opacity=%220.4%22 fill-rule=%22evenodd%22/></svg>');" id="animBrowserList">
+    <div style="flex:1; overflow-y:auto; padding:15px 25px; background:url('data:image/svg+xml;utf8,<svg width=\"40\" height=\"40\" viewBox=\"0 0 40 40\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20zM20 0h20v20H20V0z\" fill=\"%230f172a\" fill-opacity=\"0.4\" fill-rule=\"evenodd\"/></svg>');" id="animBrowserList">
         <!-- Rendered by JS -->
     </div>
     
@@ -11673,7 +11671,10 @@ function buildArena(){
         const col=crowdPalette[Math.floor(Math.random()*crowdPalette.length)];
         const skinCol=skinTones[Math.floor(Math.random()*skinTones.length)];
         const sz=rand(sizeMin,sizeMax);
-        const px=rand(xMin,xMax), pz=rand(zMin,zMax);
+        let px=rand(xMin,xMax), pz=rand(zMin,zMax);
+        // keep the ENTRANCE RAMP corridor clear — fans were standing on the ramp. The ramp runs up +Z
+        // at center (x∈[-1.3,1.3]); push any member that lands in/near it out to the seats on either side.
+        if(pz>3.0 && Math.abs(px)<2.2){ const edge=Math.max(3.4, Math.abs(px<0?xMin:xMax)); px=(px<0?-1:1)*rand(2.6, edge); }
         const distFromRing=Math.abs(pz)-5;
         const gy=-0.05+Math.max(0,distFromRing*0.06);
         const ry=rand(-0.20,0.20), ca=Math.cos(ry), sa=Math.sin(ry);
@@ -11798,6 +11799,9 @@ function buildArena(){
 window.ARENA_PRESETS = window.ARENA_PRESETS || {
   // barricadeStyle: 'broadcast' = solid padded WWE-style wall (corners break/spear-through);
   //                 'guardrail' = ECW/indie metal steel railing (tilts/knocks over, crowd resets it).
+  // BUC — BANNON Underground Championship: the flagship home arena (gold-on-black underground), FIRST +
+  // DEFAULT on arena selection. This is the yellow-themed BANNON ring.
+  BUC:    { name:'BANNON Underground Championship', accent:0xffcf33, tron:0xffcf33, barricade:0x141210, ramp:0x0e0c08, screen:'assets/ring/bannon_mat_logo.png', label:'BUC', barricadeStyle:'guardrail', venue:'underground' },
   BANNON: { name:'BANNON', accent:0xff7a1a, tron:0xff7a1a, barricade:0x1a1a22, ramp:0x14100c, screen:'assets/ring/bannon_mat_logo.png', label:'BANNON', barricadeStyle:'broadcast', venue:'arena' },
   AWE:    { name:'AWE',    accent:0xffcc33, tron:0xffcc33, barricade:0x101820, ramp:0x0c0c10, screen:null, label:'AWE', barricadeStyle:'broadcast', venue:'stadium' },
   JPCW:   { name:'JPCW',   accent:0x33ccff, tron:0x33ccff, barricade:0x0a1420, ramp:0x0a0e14, screen:null, label:'JPCW', barricadeStyle:'guardrail', venue:'arena' },
@@ -11816,7 +11820,7 @@ window.ARENA_PRESETS = window.ARENA_PRESETS || {
   HOLLYWOOD:{ name:'Hollywood',          accent:0xd4af37, tron:0xffe08a, barricade:0x1a1608, ramp:0x14100a, screen:null, label:'HOLLYWOOD', barricadeStyle:'broadcast', venue:'stadium' },
   SHINOBI:  { name:'Shinobi 99',         accent:0x39ff14, tron:0x39ff14, barricade:0x06120a, ramp:0x040e08, screen:null, label:'SHINOBI 99', barricadeStyle:'guardrail', venue:'neon' }
 };
-window.ARENA_PRESET = window.ARENA_PRESET || 'BANNON';
+window.ARENA_PRESET = window.ARENA_PRESET || 'BUC';   // BANNON Underground Championship = default home arena
 let _arenaTronTex=null;
 function _makeTronCanvas(label, accentHex){
   const c=document.createElement('canvas'); c.width=512; c.height=256; const g=c.getContext('2d');
@@ -14970,7 +14974,6 @@ function _rigSense(side, name, bones, mapped, container, s){
 }
 function loadFighterModel(side, url, name){
   const f=fighterFor(side); if(!f){ setModelStatus(side,'Start a fight first.'); return; }
-  const reqId = (f._modelReqId = (f._modelReqId||0) + 1);
   if(typeof THREE==='undefined' || !THREE.GLTFLoader){ setModelStatus(side,'⚠ 3D loader unavailable here.'); return; }
   url=(url||'').trim(); if(!url){ setModelStatus(side,'Paste a .glb URL first.'); return; }
   removeFighterModel(side);
@@ -31308,7 +31311,6 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   console.log('%c[BANNON · BRICK 56] VISCERAL IMPACT — whiff over-reach · wound clutch · hit-step · arm flail · ground writhe · stagger seed','color:#ff7a1a;font-weight:bold;background:#000;padding:3px 8px');
 })();
 </script>
-<script>
 // ============================================================================
 // BRICK 117: ADVANCED KINEMATICS, JOINT LOCKS & DEEP COMBAT 
 // ============================================================================
@@ -40143,6 +40145,7 @@ window.BANNON_GODWITHIN = (function(){
 window.BANNON_PROMOTIONS = (function(){
   // key -> { name, short, style, region, color, prestige(0-100), desc, source }
   const P = {
+    BUC:      { name:'BANNON Underground Championship', short:'BUC', style:'underground-hardcore', region:'Underground', color:'#ffcf33', prestige:96, desc:"Bannon's own underground fight club — the flagship, gold on black, where the god within is forged.", source:'BANNON canon (home promotion)' },
     AWE:      { name:'Apex Wrestling Entertainment', short:'AWE', style:'sports-entertainment', region:'USA',    color:'#c0392b', prestige:94, desc:"Kennedy's flagship — the WWE-scale spectacle of our world.", source:'All American Wrestling / canon' },
     JPCW:     { name:'Global Combat Wrestling',       short:'JPCW',style:'strong-style',         region:'Global', color:'#2c3e78', prestige:88, desc:"Combs's worldwide network — stiff, sim, international.", source:'Federation Online + puroresu / canon' },
     NWC:      { name:'New World Combat',              short:'NWC', style:'hardcore',             region:'USA',    color:'#7a3ad0', prestige:80, desc:'Book 6 upstart — anything-goes, revolution energy.', source:'canon Book 6' },
