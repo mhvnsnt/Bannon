@@ -36354,7 +36354,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     { id:'LADDER',       label:'LADDER MATCH',        live:false },
     { id:'TABLES',       label:'TABLES MATCH',        live:false },
     { id:'TLC',          label:'TABLES LADDERS CHAIRS', live:false },
-    { id:'CAGE',         label:'STEEL CAGE',          live:false },
+    { id:'CAGE',         label:'STEEL CAGE',          live:true  },   // MDickie legacy cage panels (BANNON_CAGE) + meshPhys cage-wall friction
     { id:'LMS',          label:'LAST ONE STANDING',   live:true  },   // v152: 10-count ref over any downed fighter
     { id:'SUBMISSION',   label:'SUBMISSION',          live:true  },   // v152: landed submission = tapout finish
     { id:'IRONMAN',      label:'IRON MAN (TIME)',     live:true  },   // v152: 180s round, most rounds banked wins
@@ -40606,6 +40606,73 @@ window.BANNON_FULL_PROPS = (function(){
 
   return { catalog, spawnProp, spawnRandomProps };
 })();
+</script>
+
+<!-- ============================================================================================
+     BANNON_CAGE — STEEL CAGE match: 4 MDickie legacy cage panels (assets/models/props/mdickie/cages/)
+     placed around the ring, one with a door. Material name "Wall" => meshPhys() auto-tags them as
+     high-friction cage walls, so the existing BPHYS.buildRingModel trimesh pass makes them physically
+     authoritative (bodies grip + can't pass through). Additive: builds on match start when the picked
+     MATCH_SETUP.matchType is CAGE; removes on the next non-cage match.
+     ============================================================================================ -->
+<script>
+window.BANNON_CAGE = (function(){
+  var WALL='assets/models/props/mdickie/cages/cage_wall.glb';
+  var DOOR='assets/models/props/mdickie/cages/cage_door.glb';
+  var group=null, loaded={};
+  function host(){ try{ return (typeof arenaGroup!=='undefined'&&arenaGroup)?arenaGroup:(typeof scene!=='undefined'?scene:null); }catch(e){ return null; } }
+  function fy(){ try{ return (typeof RING!=='undefined'&&RING.floorY!=null)?RING.floorY:0; }catch(e){ return 0; } }
+  function halfX(){ try{ return (typeof ARENA_HALF!=='undefined')?ARENA_HALF:3.2; }catch(e){ return 3.2; } }
+  function halfZ(){ try{ return (typeof ARENA_HALF_Z!=='undefined')?ARENA_HALF_Z:halfX(); }catch(e){ return halfX(); } }
+  function get(url,cb){ if(loaded[url]){ cb(loaded[url].clone(true)); return; }
+    try{ var L=new THREE.GLTFLoader(); L.load(url,function(g){ loaded[url]=g.scene; cb(g.scene.clone(true)); }, undefined, function(){ cb(null); }); }catch(e){ cb(null); } }
+  // panel local: wide in X (±84), tall in Y, thin in Z. Scale so it spans the ring side + margin.
+  function place(obj, side){
+    if(!obj) return;
+    var hx=halfX(), hz=halfZ(), margin=0.45, H=2.75;
+    obj.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; if(!/wall|cage|fence/i.test(o.material&&o.material.name||'')){ /* keep name for meshPhys */ } } });
+    var box=new THREE.Box3().setFromObject(obj), sz=new THREE.Vector3(); box.getSize(sz);
+    var wall=new THREE.Group(); wall.add(obj);
+    obj.position.set(-((box.min.x+box.max.x)/2), -box.min.y, -((box.min.z+box.max.z)/2)); // origin at base-center
+    var spanW = (side==='px'||side==='nx') ? (2*hz+margin*2) : (2*hx+margin*2);
+    var s = spanW/(sz.x||1); var sh = H/(sz.y||1);
+    wall.scale.set(s, sh, s);
+    if(side==='pz'){ wall.position.set(0, fy(), hz+margin); }
+    else if(side==='nz'){ wall.position.set(0, fy(), -(hz+margin)); wall.rotation.y=Math.PI; }
+    else if(side==='px'){ wall.position.set(hx+margin, fy(), 0); wall.rotation.y=-Math.PI/2; }
+    else if(side==='nx'){ wall.position.set(-(hx+margin), fy(), 0); wall.rotation.y=Math.PI/2; }
+    group.add(wall);
+  }
+  function build(){
+    if(group||typeof THREE==='undefined'||!THREE.GLTFLoader) return;
+    var h=host(); if(!h) return;
+    group=new THREE.Group(); group.name='BANNON_CAGE'; h.add(group);
+    get(DOOR,function(o){ place(o,'pz'); });   // door faces the hard cam
+    get(WALL,function(o){ place(o,'nz'); });
+    get(WALL,function(o){ place(o,'px'); });
+    get(WALL,function(o){ place(o,'nx'); });
+    // rebuild ring trimesh so cage walls become physically solid (if Rapier path live)
+    setTimeout(function(){ try{ if(window.BPHYS&&window.REAL_PHYS&&window.__world&&typeof window.BPHYS.rebuildRing==='function') window.BPHYS.rebuildRing(); }catch(e){} }, 600);
+    try{ if(typeof announce==='function') announce('STEEL CAGE','ESCAPE OR CONQUER'); }catch(e){}
+  }
+  function remove(){ if(!group) return; try{ group.parent&&group.parent.remove(group); group.traverse(function(o){ if(o.isMesh){ o.geometry&&o.geometry.dispose(); } }); }catch(e){} group=null; }
+  function active(){ return !!group; }
+  // hook match start: build the cage iff CAGE was picked, else tear any prior cage down
+  try{
+    var sf=window.startFight;
+    if(typeof sf==='function' && !sf.__cageHooked){
+      window.startFight=function(){
+        var r=sf.apply(this,arguments);
+        try{ var mt=(window.MATCH_SETUP&&window.MATCH_SETUP.matchType)||'ONE_ON_ONE';
+          if(mt==='CAGE'){ remove(); setTimeout(build, 350); } else remove(); }catch(e){}
+        return r;
+      };
+      window.startFight.__cageHooked=1;
+    }
+  }catch(e){}
+  return { build:build, remove:remove, active:active };
+})();
+console.log('%c[BANNON_CAGE] steel cage armed — 4 MDickie legacy panels, meshPhys cage-wall friction','color:#7CFC00');
 </script>
 
 <!-- ============================================================================================
