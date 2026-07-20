@@ -38084,7 +38084,11 @@ window.BANNON_JUKEBOX = (function(){
   async function srcFor(t){ if(!t) return null; if(t.idb) return await idbBlobUrl(t.id); return resolveAudioUrl(t.url); }
 
   // ---- playback ----
-  const bgAudio=new Audio(); bgAudio.loop=true; bgAudio.preload='auto';
+  // bgAudio does NOT loop: when a track ENDS we auto-advance to the next in the current context
+  // (menu/match) like a playlist — fixes "doesn't change song after it finishes". UI events that
+  // re-call menu()/match() are made idempotent below so they DON'T restart the song (fixes "changes
+  // song every time you change menu/attire/character").
+  const bgAudio=new Audio(); bgAudio.loop=false; bgAudio.preload='auto';
   const oneShot=new Audio(); oneShot.preload='auto';
   // CDN error-fallback: if a local/relative track fails to load (e.g. web host without the file, or a
   // stale cache), retry once against the repo CDN before giving up — mirrors the fighter-model fallback.
@@ -38095,24 +38099,35 @@ window.BANNON_JUKEBOX = (function(){
   let vol=(function(){ try{ return +localStorage.getItem('bannon_music_vol')||0.55; }catch(e){ return 0.55; } })();
   bgAudio.volume=vol; oneShot.volume=Math.min(1,vol+0.1);
   function setVolume(v){ vol=Math.max(0,Math.min(1,v)); bgAudio.volume=vol; oneShot.volume=Math.min(1,vol+0.1); try{ localStorage.setItem('bannon_music_vol',String(vol)); }catch(e){} }
-  let curBg=null, unlocked=false;
+  let curBg=null, unlocked=false, curMode='menu';
   // set an audio element's src + remember the RELATIVE path (for the CDN error-fallback) + play intent
   function _apply(aud, t, s, play){ aud.dataset.cdnTried='';
     if(t && !t.idb && t.url && !/^(https?:|blob:|data:)/.test(t.url)) aud.dataset.rel=t.url; else aud.removeAttribute('data-rel');
     aud.dataset.wantPlay=play?'1':''; aud.src=s; if(play) aud.play().catch(()=>{}); }
   async function playBg(t){ if(!t){ bgAudio.pause(); curBg=null; return; } const s=await srcFor(t); if(!s) return; curBg=t.id; _apply(bgAudio, t, s, unlocked); }
   function shuffle(a){ return a.slice().sort(()=>Math.random()-0.5); }
-  // menu: assigned menu track (or shuffle the menu pool)
-  async function menu(){ const t=cfg.menu?trackById(cfg.menu):shuffle(pool('menu'))[0]; bgAudio.loop=true; await playBg(t); }
-  // match: assigned match track (or shuffle the match pool)
-  async function match(){ const t=cfg.match?trackById(cfg.match):shuffle(pool('match'))[0]; bgAudio.loop=true; await playBg(t); }
+  // is the bed currently playing (not paused/ended)? used to keep menu()/match() from restarting a song.
+  function bgPlaying(){ return !!(curBg && bgAudio.src && !bgAudio.paused && !bgAudio.ended); }
+  // AUTO-ADVANCE: when a bed track finishes, roll to the NEXT track in the SAME context (menu/match),
+  // skipping the one that just played — a real playlist instead of a single looping song.
+  bgAudio.addEventListener('ended', ()=>{ try{
+    const p=pool(curMode); const others=p.filter(t=>t.id!==curBg); const from=others.length?others:(p.length?p:allTracks());
+    const t=from[Math.floor(Math.random()*from.length)]; if(t) playBg(t);
+  }catch(e){} });
+  // menu: assigned menu track (or shuffle the menu pool). IDEMPOTENT — if the menu bed is already
+  // playing, DON'T restart it (so opening submenus / changing attire or character keeps the song).
+  async function menu(force){ curMode='menu'; if(!force && bgPlaying()) return;
+    const t=cfg.menu?trackById(cfg.menu):shuffle(pool('menu'))[0]; await playBg(t); }
+  // match: assigned match track (or shuffle the match pool). Idempotent within a match, switches from menu.
+  async function match(force){ const wasMenu=(curMode!=='match'); curMode='match'; if(!force && !wasMenu && bgPlaying()) return;
+    const t=cfg.match?trackById(cfg.match):shuffle(pool('match'))[0]; await playBg(t); }
   async function stop(){ bgAudio.pause(); curBg=null; }
   // NEXT (the menu bar's ⏭): advance to a DIFFERENT track. Browses the WHOLE library and skips the
   // current one, so the assigned menu track can't pin playback to a single song (the "only Business
   // That Pays ever plays" bug). Loops the picked track like the menu bed.
   async function next(){ const all=allTracks(); if(!all.length) return null;
     const others=all.filter(t=>t.id!==curBg); const from=others.length?others:all;
-    const t=from[Math.floor(Math.random()*from.length)]; bgAudio.loop=true; await playBg(t); return t.id; }
+    const t=from[Math.floor(Math.random()*from.length)]; await playBg(t); return t.id; }   // manual skip; auto-advance on 'ended'
   // entrance/victory: one-shots (don't loop), by character where assigned else pool
   async function entrance(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey])|| (shuffle(pool('entrance'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ _apply(oneShot, t, s, unlocked); } return id; }
   async function victory(charKey){ const id=(cfg.entrance&&cfg.entrance[charKey]&&trackById(cfg.entrance[charKey])&&(pool('victory').some(x=>x.id===cfg.entrance[charKey]))?cfg.entrance[charKey]:cfg.victory)||(shuffle(pool('victory'))[0]||{}).id; const t=trackById(id); const s=await srcFor(t); if(s){ bgAudio.pause(); _apply(oneShot, t, s, unlocked); } return id; }
@@ -38135,7 +38150,9 @@ window.BANNON_JUKEBOX = (function(){
     try{ const dw=window.declareWinner; if(typeof dw==='function' && !dw.__jukeHooked){ window.declareWinner=function(w){ try{ let ck=null; if(w){ ck=(typeof charModelKey==='function')?charModelKey(w):String((w.opts&&w.opts.name)||w.name||'').toUpperCase().replace(/[^A-Z0-9]/g,'_'); } victory(ck); }catch(e){} return dw.apply(this,arguments); }; window.declareWinner.__jukeHooked=1; } }catch(e){}
     // watch for return-to-menu: light poll on gameState
     let last=null; setInterval(()=>{ try{ const gs=(typeof gameState!=='undefined')?gameState:window.gameState; if(gs===last) return;
-      if((gs==='menu'||String(gs).indexOf('menu')===0) && curBg==null && unlocked){ menu(); } last=gs; }catch(e){} }, 1200);
+      // on (re)entering a menu with nothing playing (e.g. after a match/victory one-shot), start the
+      // menu bed. menu() is idempotent so this never restarts a song that's already going.
+      if((gs==='menu'||String(gs).indexOf('menu')===0) && !bgPlaying() && unlocked){ menu(); } last=gs; }catch(e){} }, 1200);
   }
 
   // init: load any owner-added tracks, then hook up. (Menu music starts on first interaction.)
