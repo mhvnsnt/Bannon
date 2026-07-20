@@ -8615,7 +8615,7 @@ window.POSITION_TAXONOMY = {
 // (docs/mocap_orientation_master_prompt.md).
 function groundFacingOf(opp){
   try{
-    const V=opp.V; if(!V||!V.pelvis||!V.head||!V.shL||!V.shR) return 'UP';
+    const V=opp.V; if(!V||!V.pelvis||!V.head||!V.shL||!V.shR) return opp._groundFaceDown?'DOWN':'UP';   // verlet-less down: the APEX roll flag decides
     const px=V.head.pos.x-V.pelvis.pos.x, py=V.head.pos.y-V.pelvis.pos.y, pz=V.head.pos.z-V.pelvis.pos.z;
     const sx=V.shR.pos.x-V.shL.pos.x,   sy=V.shR.pos.y-V.shL.pos.y,   sz=V.shR.pos.z-V.shL.pos.z;
     const ny = pz*sx - px*sz;   // y of (spine x shoulderAxis) = the chest normal's vertical part
@@ -12767,6 +12767,18 @@ function playerAttack(kind){
       // CORNER BACK vs FRONT (2K26 positions): if the opponent has turned INTO the buckles (their
       // forward vector points AWAY from the attacker), their back/kidneys/skull are exposed and the
       // attacker swaps to the BACK arsenal — back elbows, forearms to the kidneys, tree-of-woe stomp.
+      // ROPE DRAPE (bent over the middle rope): the tiger-feint / slingshot arsenal — strikes
+      // target the draped head/back at rope height. Set up via APEX stick DOWN at the ropes.
+      if (opp._cornerPose==='ropeDrape'){
+        const DR={
+          jab:  { name:'TIGER FEINT KICK · DRAPED',  cat:'STRIKE', limb:'RIGHT KICK', traj:'SPINNING', height:'MID', power:64, speed:84 },
+          cross:{ name:'RUNNING HIP ATTACK · DRAPED',cat:'STRIKE', limb:'RIGHT CROSS',traj:'HOOKING',  height:'MID', power:60, speed:78 },
+          kick: { name:'SLIDING DROPKICK · DRAPED',  cat:'STRIKE', limb:'RIGHT KICK', traj:'STRAIGHT', height:'MID', power:62, speed:82 }
+        };
+        const dm=Object.assign({ style:p.style||'BRAWLER', follow:'CHAIN NEXT', _corner:true, _drape:true, _aimHead:true }, DR[kind]);
+        dm.power=Math.round(dm.power*1.12);   // hung on the cable — can't defend
+        p.startAttack(dm); return;
+      }
       // TREE OF WOE (upside-down corner state): the hanging victim eats the tree arsenal — every
       // strike aims LOW because the head hangs at boot height (CORNER.positions.TREE_OF_WOE moves).
       if (opp._cornerPose==='treeOfWoe'){
@@ -20712,6 +20724,17 @@ init();
           if (!this._inCorner) this._inCorner='set';
           if (this._towT>3.5){ this._towT=0; this._cornerPose='standing';
             this.state='down'; this.stateTime=0; this.downTimer=Math.max(this.downTimer||0,1.2); }
+        } else if (this._cornerPose==='ropeDrape'){
+          // ROPE DRAPE HOLD (slingshot / tiger-feint position): pinned bent-over on the middle rope
+          // of the nearest rope run; slides free after ~2.8s through the real down state.
+          this._towT=(this._towT||0)+dt;
+          if (Math.abs(this.x)/HX >= Math.abs(this.z)/HZ){ this.x=Math.sign(this.x||1)*(HX-0.05); }
+          else { this.z=Math.sign(this.z||1)*(HZ-0.05); }
+          this.vx=0; this.vz=0;
+          if (this.state!=='grabbed' && this.state!=='down'){ this.state='grabbed'; this.stateTime=0; }
+          if (!this._inCorner) this._inCorner='set';
+          if (this._towT>2.8){ this._towT=0; this._cornerPose='standing';
+            this.state='down'; this.stateTime=0; this.downTimer=Math.max(this.downTimer||0,1.0); }
         } else this._towT=0;
         const atX=Math.abs(this.x)>=HX-0.04, atZ=Math.abs(this.z)>=HZ-0.04;
         if (atX && atZ){
@@ -20720,7 +20743,8 @@ init();
           if (!this._inCorner){ this._inCorner=(this.x>0?'R':'L')+(this.z>0?'F':'B'); this._corneredT=0; if(!this._cornerPose) this._cornerPose='standing'; }
           this._corneredT=(this._corneredT||0)+dt;
         } else {
-          if (this._inCorner){ this._inCorner=null; this._corneredT=0; this._cornerPose=null; }
+          // rope-draped victims live on a rope RUN (not a corner) — the drape pin above owns them
+          if (this._inCorner && this._cornerPose!=='ropeDrape'){ this._inCorner=null; this._corneredT=0; this._cornerPose=null; }
           // ROPES — bouncy rebound on the boundary hit (enables rope-running)
           if (atX && Math.sign(this.vx)===Math.sign(this.x) && Math.abs(this.vx)>0.6){ this.vx=-this.vx*0.62; this._rebounded=0.3; if(window.ropeHit&&(this._ropeCD||0)<=0){window.ropeHit(this.x,this.z,1+Math.abs(this.vx));this._ropeCD=0.25;} }
           if (atZ && Math.sign(this.vz)===Math.sign(this.z) && Math.abs(this.vz)>0.6){ this.vz=-this.vz*0.62; this._rebounded=0.3; if(window.ropeHit&&(this._ropeCD||0)<=0){window.ropeHit(this.x,this.z,1+Math.abs(this.vz));this._ropeCD=0.25;} }
@@ -20833,6 +20857,12 @@ init();
       set('hipL',S*0.04,1.12,0.16); set('hipR',S*0.04,1.12,-0.16); set('pelvis',S*0.04,1.10,0);
       set('chest',S*0.02,0.74,0); set('head',S*0.02,0.40,0);
       set('haL',S*0.06,0.34,0.20); set('haR',S*0.06,0.34,-0.20); set('elL',S*0.04,0.55,0.20); set('elR',S*0.04,0.55,-0.20);
+    } else if (P==='ropeDrape'){        // draped over the MIDDLE rope: hips on the cable, torso+arms
+      // hang OUTSIDE, legs hang inside — the slingshot / tiger-feint setup. S = inward from the rope.
+      set('pelvis',-S*0.02,0.96,0); set('hipL',-S*0.02,0.94,0.14); set('hipR',-S*0.02,0.94,-0.14);
+      set('chest',-S*0.34,0.78,0); set('head',-S*0.52,0.58,0);
+      set('haL',-S*0.60,0.36,0.18); set('haR',-S*0.60,0.36,-0.18); set('elL',-S*0.50,0.55,0.20); set('elR',-S*0.50,0.55,-0.20);
+      set('knL',S*0.22,0.52,0.15); set('knR',S*0.22,0.52,-0.15); set('ftL',S*0.26,0.10,0.16); set('ftR',S*0.26,0.10,-0.16);
     }
   };
   console.log('%c[OVERLAY FIX] standing reactions now write the rendered joint store (_cj)','color:#6cf');
@@ -41190,6 +41220,35 @@ window.BANNON_FULL_PROPS = (function(){
 // ============================================================================================
 window.BANNON_APEX = (function(){
   function player(){ try{ const fs=(typeof fighters!=='undefined')?fighters:[]; return fs.find(f=>f&&f.isPlayer)||fs[0]||null; }catch(e){ return null; } }
+  // ROLL a downed opponent over (2K reposition): true 180° log-roll of the verlet body about its
+  // own spine axis (velocities killed) — face-UP <-> face-DOWN re-reads in the grounded matrix.
+  // Verlet-less downs (state-set) flip the _groundFaceDown flag that groundFacingOf honors.
+  function rollDowned(o){ try{
+    const pv=o.V&&o.V.pelvis&&o.V.pelvis.pos, hd=o.V&&o.V.head&&o.V.head.pos;
+    if(!pv||!hd){ o._groundFaceDown=!o._groundFaceDown; o.facing=(o.facing||0)+Math.PI; return true; }
+    let ax=hd.x-pv.x, az=hd.z-pv.z; const al=Math.hypot(ax,az)||1; ax/=al; az/=al;
+    const cx=pv.x, cz=pv.z;
+    const pts=[]; let cy=0;
+    for(const k in o.V){ const v=o.V[k]; if(!v||!v.pos||!v.old) continue; pts.push(v); cy+=v.pos.y; }
+    if(!pts.length){ o._groundFaceDown=!o._groundFaceDown; o.facing=(o.facing||0)+Math.PI; return true; }
+    cy/=pts.length;
+    let minY=1e9;
+    for(const v of pts){
+      const rx=v.pos.x-cx, rz=v.pos.z-cz;
+      const along=rx*ax+rz*az;
+      const px=rx-along*ax, pz=rz-along*az;
+      v.pos.x=cx+along*ax-px; v.pos.z=cz+along*az-pz;
+      v.pos.y=2*cy-v.pos.y;
+      if(v.pos.y<minY) minY=v.pos.y;
+    }
+    const lift=(minY<0.03)?(0.03-minY):0;
+    for(const v of pts){ v.pos.y+=lift; v.old.x=v.pos.x; v.old.y=v.pos.y; v.old.z=v.pos.z; }
+    o.facing=(o.facing||0)+Math.PI;
+    o._groundFaceDown=!o._groundFaceDown;
+    return true;
+  }catch(e){ window.__rollErr=String(e); return false; } }
+  function atRope(o){ try{ const HX=ARENA_HALF, HZ=(typeof ARENA_HALF_Z!=='undefined')?ARENA_HALF_Z:HX;
+    return (Math.abs(o.x)>=HX-0.30 || Math.abs(o.z)>=HZ-0.30) && !o._inCorner; }catch(e){ return false; } }
   function cmd(dir){
     const p=player(); if(!p || typeof p.opponent!=='function') return false;
     if(p.grappling && p.grappleStage>=2) return false;            // mid-hoist: stick steers pitch/twist, don't hijack
@@ -41198,6 +41257,8 @@ window.BANNON_APEX = (function(){
     const cornered=!!opp._inCorner;
     const say=(t)=>{ try{ if(typeof announce==='function') announce(t,(p.opts&&p.opts.name)||''); }catch(e){} };
     if(dir==='left'||dir==='right'){
+      // grounded reposition first: within kneel-down range, flip them face-up <-> face-down
+      if(Math.hypot(opp.x-p.x, opp.z-p.z)<2.6 && opp.isDown && opp.isDown() && rollDowned(opp)){ say('ROLLED OVER'); return true; }
       if(p.grappling){ p.grappleMode=(p.grappleMode==='rear')?'front':'rear'; say(p.grappleMode==='rear'?'REAR WAISTLOCK':'FRONT LOCKUP'); }
       else { p._apexMode=(p._apexMode==='rear')?'front':'rear'; say(p._apexMode==='rear'?'GO BEHIND':'FACE TO FACE'); }
       return true;
@@ -41209,7 +41270,17 @@ window.BANNON_APEX = (function(){
       return false;
     }
     if(dir==='down'){
-      if(cornered && window.CORNER){ window.CORNER.place(opp,'treeOfWoe'); opp.state='grabbed'; opp.stateTime=0; opp.grabbedBy=p; opp.grabTimer=0; say('TREE OF WOE'); return true; }
+      if(cornered && window.CORNER){
+        // 2K corner flow: first DOWN seats them in the corner; DOWN again hangs the TREE OF WOE
+        if(opp._cornerPose==='seatedBottom'){ window.CORNER.place(opp,'treeOfWoe'); say('TREE OF WOE'); }
+        else { window.CORNER.place(opp,'seatedBottom'); say('SEATED IN THE CORNER'); }
+        opp.state='grabbed'; opp.stateTime=0; opp.grabbedBy=p; opp.grabTimer=0; return true;
+      }
+      // ROPES: drape them over the middle rope — the slingshot / tiger-feint setup position
+      if(near && !opp.isDown() && atRope(opp) && window.CORNER){
+        window.CORNER.place(opp,'ropeDrape'); opp.state='grabbed'; opp.stateTime=0; opp.grabbedBy=p; opp.grabTimer=0;
+        say('DRAPED ON THE ROPES'); return true;
+      }
       return false;
     }
     return false;
@@ -41217,9 +41288,9 @@ window.BANNON_APEX = (function(){
   // keyboard fallback (no touch): I=up J=left K=down L=right
   try{ window.addEventListener('keydown', e=>{ const k=(e.key||'').toLowerCase();
     const m={i:'up',j:'left',k:'down',l:'right'}[k]; if(m && document.body.classList.contains('match-live')) cmd(m); }); }catch(e){}
-  return { cmd, player };
+  return { cmd, player, rollDowned, atRope };
 })();
-console.log('%c[BANNON_APEX] WWE position layer — apex-stick flick / IJKL: turn, lift-grounded, avalanche, tree-of-woe','color:#7CFC00');
+console.log('%c[BANNON_APEX] WWE position layer — apex-stick flick / IJKL: roll-grounded, turn, lift, seat/avalanche, tree-of-woe, rope-drape','color:#7CFC00');
 
 window.BANNON_CAGE = (function(){
   var WALL='assets/models/props/mdickie/cages/cage_wall.glb';
