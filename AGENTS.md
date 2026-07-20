@@ -746,3 +746,12 @@ Before any git push or GitHub API PUT, you MUST run wc -l index.html to verify t
 - **Blunt Force Delivery**: Speak like a real human in a cutthroat wrestling business. Short, punchy sentences. Say exactly what is meant.
 - **The MDickie Rule**: Keep the raw, straightforward, slightly unhinged energy of the original legacy text, but ground it in Bannon's universe.
 - **Translation Example**: Legacy: "I need more money for this match." -> Bannon: "I ain't stepping in the ring for this payout. Add some zeros."
+
+
+### SHIPPED
+- **GLB Model Loading Fix**: Fixed a SyntaxError in `loadFighterModel` in `index.html` (redeclared `reqId`) that was silently breaking GLB imports. Validated clean loading.
+- **Proprietary Ring Branding**: Stripped generic MDickie ring branding in `index.html` `window.ARENA_PRESETS`. Replaced with proprietary identities: NWC (Neo Sold-Out), AWE (WWE+AEW), JPCW (NJPW), STICK-UP (ECW Cathedral), BACKYARD (Neighborhood). Mapped textures (e.g. `njpw_mat.png`, `ecw_church_mat.png`).
+- **Character Attire Base Mapping**: Mapped the entire canon proprietary roster to MDickie base archetypes in `window.MDICKIE_MAP` (`index.html`) to ensure graceful degradation if AAA GLBs are missing.
+- **Weapons Merging**: Updated `unreal/Source/BannonCore/Private/BannonMDickieWeaponImporter.cpp` to explicitly merge and retain high-quality owner weapons alongside the MDickie procedural weapons, providing full creative optionality.
+- **Environment Extraction**: Booted `unity_extract.py` to pull Hard Time III (Jail/Yard) and Infinite Lives (City Block) into GLB formats and cataloged them for the God Within roam mode.
+- **UniRig Kicked Off**: UniRig batch processor initialized and running in the background for automated skeleton -> skin -> merge generation.
