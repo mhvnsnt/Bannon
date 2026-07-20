@@ -37679,10 +37679,16 @@ window.BANNON_PROPS = (function(){
     BASEBALL_BAT: { url:'assets/models/props/weapons/baseball_bat.glb', label:'BASEBALL BAT',     mass:1.1, reach:0.85, integrity:95 },
     SHOVEL      : { url:'assets/models/props/weapons/shovel.glb',       label:'OLD SHOVEL',       mass:2.2, reach:1.00, integrity:110 },
     TABLE       : { url:'assets/models/props/weapons/table.glb',        label:'TABLE',            prop:'table' },
-    LADDER      : { url:'assets/models/props/weapons/ladder.glb',       label:'LADDER',           prop:'ladder' }
+    LADDER      : { url:'assets/models/props/weapons/ladder.glb',       label:'LADDER',           prop:'ladder' },
+    // ── MDickie legacy props (decode_zf3d.mjs → assets/models/props/mdickie/, ~34KB each, no branding) ──
+    STEEL_STEPS : { url:'assets/models/props/mdickie/steps.glb',        label:'STEEL STEPS',      mass:6.0, reach:1.05, integrity:400 },
+    ANNOUNCE_DESK:{ url:'assets/models/props/mdickie/desk.glb',         label:'ANNOUNCE DESK',    prop:'table' },
+    WOOD_CRATE  : { url:'assets/models/props/mdickie/crate.glb',        label:'WOODEN CRATE',     mass:2.4, reach:0.65, integrity:55 },
+    CARDBOARD_BOX:{ url:'assets/models/props/mdickie/cardboard.glb',    label:'CARDBOARD BOX',    mass:0.6, reach:0.6,  integrity:20 }
   };
   var SPAWNS=[ ['STEEL_CHAIR',4.6,0,2.6], ['BASEBALL_BAT',-4.6,0,2.6], ['BARBWIRE_BAT',-4.6,0,-2.6], ['SHOVEL',4.6,0,-2.6],
-               ['TABLE',0,0,3.9], ['LADDER',-5.4,0,0] ];
+               ['TABLE',0,0,3.9], ['LADDER',-5.4,0,0],
+               ['STEEL_STEPS',6.4,0,4.2], ['ANNOUNCE_DESK',0,0,-5.4], ['WOOD_CRATE',5.6,0,-4.2], ['CARDBOARD_BOX',-6.4,0,-4.4] ];
   var W={ items:[], spawned:false, chip:null };
   var MAXSTAM=(typeof MAX_STAMINA!=='undefined')?MAX_STAMINA:440;
   function loadItem(key,x,y,z){
