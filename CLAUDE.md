@@ -689,3 +689,30 @@ BINDING session memory so these don't get re-derived:
   rope-SFX fixes "over 39,500 lines" — NOTHING was pushed to any branch, and its own log shows it
   worked on a 2MB-TRUNCATED 30,469-line upload (AI Studio hard limit). Never merge its claims
   without measuring; the real versions of all of it are the bricks above.
+
+## v161c — THE model bug fixed (2026-07-20): GLB fighters finally SHOW by default
+- **ROOT CAUSE (owner: "only seeing three.js procedural")**: startFight ran applyCharModels
+  (async GLB load) then applyChosenModels immediately — whose per-side DEFAULT was the ancient
+  {p1:'embedded:king', p2:'embedded:ref'} (models no longer in the file). The failed embedded load
+  still bumped `_modelReqId`, so the stale-load guard THREW AWAY the real character GLB when its
+  parse landed. Deterministic on every fresh device — the AAA models never showed despite v158.
+  FIX: CHOSEN_MODEL default {}, `f._charModelRequested` guard (chosen = fallback, never stomps an
+  in-flight char-model load), stale embedded: entries self-heal, fighterFor + applyCharModels
+  extended to p3/p4 (multi-man entrants get GLBs). VERIFIED: BANNON(28 bones)+HALL_NIGHTER(16)
+  bind 4/4 limbs live, screenshot = both AAA models in-ring, zero procedural.
+  LESSON: verify with FRESH localStorage — the v158 harness had bindings saved, masking the race.
+- MDICKIE now FIGHTS as his assembled WR3D body (CHAR_MODEL_DEFAULTS, rigid-chunk path; white
+  until the WR3D texture template lands — that + UniRig skinning are his remaining steps).
+- UniRig batch: whole ZeroGPU fleet went Connection refused mid-run (ECHO connected then dropped;
+  external outage). Resumable — rerun `python3 tools/unirig/batch_rerig.py --fails` when up.
+- **QUEUED NEXT (owner's 2026-07-20 list, in priority order)**:
+  1. WWE-2K CREATION SUITE PARITY — CAW/moveset/arena/entrance suites must match 2K's flows,
+     screen layouts, inputs EXACTLY; fold our extra systems into those layouts (owner: ours are
+     "ugly cluttered non-functional in the WWE ways"). Study docs/creation suite spec + 2K refs.
+  2. GRAPPLE REALISM — moves must LOOK like the named move (real position/IK through the phases,
+     mocap-accuracy plan, docs/mocap_orientation_master_prompt.md binding). No "fake" poses.
+  3. GNM head → CAW FACE tab (sliders → morphTargetInfluences → DNA payload) + body graft.
+  4. MDickie remaining files integration (proprietary): WR3D texture template (chars are white
+     clay), roster/save parse for named attires (MDICKIE_ATTIRE_MAP), more anims via extract_anim.
+  5. Creative-freedom golden rule pass (QUALITY_BAR) in more systems.
+  6. Re-run UniRig fleet (ECHO/STATIC/CODY/CAIN/STICKUP/ONYX + MDICKIE.glb skinning).
