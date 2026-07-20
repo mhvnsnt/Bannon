@@ -40467,6 +40467,9 @@ window.BANNON_PROMOTIONS = (function(){
      cached data-URI. Lazy (renders on first request per character) so it costs nothing until shown. =====
      ============================================================================================ -->
 <script>
+// Portrait-only model overrides: show a character's authored/assembled GLB on their card even when
+// it isn't (yet) their riggable in-match fighter. MDickie's assembled WR3D body is portrait-ready.
+window.CHAR_PORTRAIT_MODEL = window.CHAR_PORTRAIT_MODEL || { MDICKIE:'assets/models/mdickie_char/MDICKIE.glb' };
 window.BANNON_PORTRAITS = (function(){
   const cache={}; let R=null, scene=null, cam=null, lightsAdded=false;
   function init(){ if(R) return R; if(typeof THREE==='undefined') return null;
@@ -40519,7 +40522,11 @@ window.BANNON_PORTRAITS = (function(){
     }
     // GLB RENDER CARDS: if this character has a banked GLB model, render THAT over the procedural bust
     // (async, one at a time) and swap it into the card via the 'bannonPortrait' event. Falls back to bust.
-    try{ if(glbCache[key]===undefined && window.charModelFor){ const ck=(window.charModelKey?null:null); const cm=window.charModelFor(key);
+    try{ if(glbCache[key]===undefined){
+      // portrait-model override first (e.g. MDickie's assembled-but-unrigged WR3D body shows on his
+      // CARD without being his in-match fighter), else the character's real fighter GLB.
+      var pm=(window.CHAR_PORTRAIT_MODEL&&window.CHAR_PORTRAIT_MODEL[key])||null;
+      var cm=pm?{url:pm}:(window.charModelFor?window.charModelFor(key):null);
       if(cm&&cm.url){ glbCache[key]=null; enqueueGLB(key, cm.url); } } }catch(e){}
     return glbCache[key] || cache[key];
   }
