@@ -6044,7 +6044,11 @@ window.BANNON_DNA = (function(){
       spec:sp,                  // palette + attireStyle + hairStyle + ink + style + name
       // v157 IMPORT->TEMPLATE: the bound model rides in the recipe (URL only, never mesh data).
       // idb: URLs persist via the BLIB IndexedDB library on this device; assets/ + embedded: travel anywhere.
-      model:(f.modelUrl?{url:f.modelUrl}:undefined)
+      model:(f.modelUrl?{url:f.modelUrl}:undefined),
+      // v161e GNM FACE: the scan-grade face recipe (38 morph influences from the FACE LAB) rides in
+      // the DNA — engine-agnostic (maps 1:1 onto gnm_head.glb morphTargetInfluences in any engine).
+      gnmFace:(function(){ try{ const nm=(f.specName||(f.opts&&f.opts.name)||'').toUpperCase();
+        return (window.BANNON_GNM_FACE&&window.BANNON_GNM_FACE.facesFor)?(window.BANNON_GNM_FACE.facesFor(nm)||undefined):undefined; }catch(e){ return undefined; } })()
     };
   }
   // apply(f, dna) -> reshape a live fighter from a recipe (procedural body today)
@@ -6065,6 +6069,10 @@ window.BANNON_DNA = (function(){
           if(_sd) loadFighterModel(_sd, dna.model.url, dna.name||'model');
         }
       }catch(_e){}
+      // v161e GNM FACE round-trip: a recipe carrying a face restores it into the FACE LAB store,
+      // keyed to the recipe's name — the face travels with the DNA across devices/engines.
+      if(dna.gnmFace){ try{ const _fk='bannon_gnm_faces'; const _fm=JSON.parse(localStorage.getItem(_fk)||'{}');
+        _fm[String(dna.name||'FIGHTER').toUpperCase()]=dna.gnmFace; localStorage.setItem(_fk, JSON.stringify(_fm)); }catch(_e2){} }
       return true;
     }catch(e){ console.warn('[BANNON_DNA] apply failed', e); return false; }
   }
