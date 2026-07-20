@@ -40673,7 +40673,8 @@ window.BANNON_ENVIRONMENTS = (function(){
     const tiles = env.glbTiles || [[0,0,0]];
     const place=(scn)=>{ try{
       const box=new THREE.Box3().setFromObject(scn), sz=new THREE.Vector3(); box.getSize(sz);
-      const s=env.glbScale||1;
+      // 'auto' = fit the biggest horizontal span to ~26 units so any MDickie location drops in roamable
+      const s = (env.glbScale==='auto' || env.glbScale==null) ? (26/(Math.max(sz.x,sz.z)||26)) : env.glbScale;
       tiles.forEach(t=>{ const g=scn.clone(true); g.scale.setScalar(s);
         const b2=new THREE.Box3().setFromObject(g), mn=b2.min;
         g.position.set(t[0]-((b2.min.x+b2.max.x)/2), -mn.y, t[2]);
@@ -40741,6 +40742,33 @@ window.BANNON_ENVIRONMENTS = (function(){
   }
 
   return { ENVS, buildCurrent };
+})();
+
+// BANNON_WORLD — the full MDickie world: loads assets/models/env/mdickie/world/venues.json (49+
+// locations, 13 vehicles, 74 props from Hard Time III / Infinite Lives, unity_extract --roots) and
+// injects every LOCATION as a roamable God-Within environment (auto-scaled). Also exposes the venue
+// list so matches/roam can pick any of them. Streams from CDN in the APK.
+window.BANNON_WORLD = (function(){
+  const st = { venues:null, locations:[], vehicles:[], props:[] };
+  const BASE = 'assets/models/env/mdickie/world/';
+  function inject(v){
+    st.venues = v; const all = [];
+    Object.keys(v.game||{}).forEach(g=>{ (v.game[g]||[]).forEach(it=>{ it._game=g; all.push(it); }); });
+    st.locations = all.filter(x=>x.cat==='location');
+    st.vehicles  = all.filter(x=>x.cat==='vehicle');
+    st.props     = all.filter(x=>x.cat==='prop');
+    // add locations to the roam env list (skip dup ids); id = uppercased name
+    try{ const ENVS = window.BANNON_ENVIRONMENTS && window.BANNON_ENVIRONMENTS.ENVS;
+      if(ENVS){ const have = new Set(ENVS.map(e=>e.id));
+        st.locations.forEach(l=>{ const id='LOC_'+l.name.toUpperCase().replace(/[^A-Z0-9]/g,'_');
+          if(have.has(id)) return; have.add(id);
+          ENVS.push({ id, name:l.name, color:0x14161c, wall:0x20242c, glb:BASE+l.file, glbScale:'auto', glbTiles:[[0,0,0]] }); });
+        console.log('%c[BANNON_WORLD] '+st.locations.length+' MDickie locations roamable, '+st.vehicles.length+' vehicles, '+st.props.length+' props','color:#7CFC00'); } }catch(e){}
+  }
+  (function load(){ try{ const cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    fetch(BASE+'venues.json').then(r=>r.ok?r.json():Promise.reject()).catch(()=>fetch(cdn+BASE+'venues.json').then(r=>r.json()))
+      .then(inject).catch(()=>{}); }catch(e){} })();
+  return { list:(cat)=>cat?(st[cat+'s']||st[cat]||[]):st, url:(file)=>BASE+file };
 })();
 
 // Monkeypatch buildArena for environments
