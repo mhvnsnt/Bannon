@@ -739,3 +739,10 @@ Before any git push or GitHub API PUT, you MUST run wc -l index.html to verify t
 ### SHIPPED (MDICKIE PROPRIETARY DIALOGUE MAPPER)
 - **Dialogue Extraction & Synthesis Engine (`tools/mdickie_scraper/dialogue_mapper.cjs`)**: Engineered a pipeline to intercept legacy MDickie text arrays, parse their mechanical context, and pass them through the established Bannon multi-model fallback chain (Claude -> Gemini -> Grok). 
 - **Ontological Context Injection**: The script automatically synthesizes raw MDickie lines (e.g., "I need more money") into Bannon's God-Within and Career mode context (e.g., "My Star Power dictates a higher merch cut..."). This ensures all scraped dialogue strictly adheres to Bannon's proprietary universe rules rather than acting as a direct 1:1 rip.
+
+
+### DIALOGUE MAPPER SEMANTIC CONSTRAINT (ANTI-AI THEATRE)
+- **Zero AI Theatre**: Do not use words like "dictates," "alignment," "shifts," or any pseudo-intellectual RPG jargon.
+- **Blunt Force Delivery**: Speak like a real human in a cutthroat wrestling business. Short, punchy sentences. Say exactly what is meant.
+- **The MDickie Rule**: Keep the raw, straightforward, slightly unhinged energy of the original legacy text, but ground it in Bannon's universe.
+- **Translation Example**: Legacy: "I need more money for this match." -> Bannon: "I ain't stepping in the ring for this payout. Add some zeros."
