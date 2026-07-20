@@ -14165,6 +14165,13 @@ try{
   // HOLLOW (owner-made, Onyx's God Within stable w/ CIPHER/ECHO/STATIC) — Super Dragon-inspired:
   // stiff, violent, technically brutal death-move junkie; masked, silent, all business.
   _addChar('HOLLOW',         { label:'The Void Made Flesh',     col:0x0c0c10, accent:0x9a1a1a, skin:0x6a4a34, faction:'Agents of Chaos', canon:false, bio:'A masked absence where a man should be — Super-Dragon-stiff, all curb stomps and psycho drivers. Says nothing, breaks everything.', archetype:'technician' }, 'LONG_TIGHTS', 'BALD', {musc:0.7,fat:0.12});
+  // BUFFALO BILL — the SECRET, unrevealed boss of the Onyx stable (owner reveal). Proprietary take on
+  // Bill $aber (Buffalo underground CREATOR / "Blck Goku"): an anti-aging antagonist who never seems to
+  // age, the hidden hand Cipher/Static/Echo/Hollow/Onyx all actually answer to. Cryptic mastermind heel.
+  _addChar('BUFFALO_BILL',   { label:'The Creator',             col:0x0a0c14, accent:0xc8a028, skin:0x5a3a24, faction:'Agents of Chaos', canon:true, bio:'The unrevealed hand behind the whole stable — a creator who does not age. Buffalo-cold, patient, decades of it. By the time you learn his name, you were already part of the design.', archetype:'striker' }, 'LONG_TIGHTS', 'DREADS', {musc:0.74,fat:0.14});
+  // MDickie — literally the game-maker himself as a playable legend (owner add), rendered in his own
+  // Wrestling-Revolution low-poly model (his native in-game look). The reclusive architect of the world.
+  _addChar('MDICKIE',        { label:'The Architect',           col:0x2a2a30, accent:0xdedede, skin:0xe7c9a4, faction:'Independent Variables', canon:false, bio:'The reclusive god-programmer whose world this all is. Fights in his own hand-built low-poly body — physics-first, unbothered, quietly unbeatable in the ring he coded.', archetype:'technician' }, 'TRUNKS', 'SHORT', {musc:0.5,fat:0.24});
   // PABLO "The Minotaur" (canon) — NOT El Toro de Oro; a minotaur-headed monster heel with a Black
   // Reign/Golden Bull attire set. Bully-brawler powerhouse.
   // PABLO "The Minotaur" — nicknamed for his labyrinthine brawling, but HUMAN-HEADED (the bull head
@@ -14310,6 +14317,8 @@ try{
     HALL_NIGHTER:    { name:'THE CURTAIN CALL',          kind:'strike' },
     STATIC:          { name:'DEAD AIR',                  kind:'grapple', pos:'DDT',         deliver:'spike' },
     HOLLOW:          { name:'THE VANISHING POINT',       kind:'grapple', pos:'TIGER_DRIVER',deliver:'spike' },
+    BUFFALO_BILL:    { name:'THE FINAL DRAFT',           kind:'grapple', pos:'CROSS_POWERBOMB', deliver:'slam' },   // the Creator writes your ending
+    MDICKIE:         { name:'THE PATCH NOTES',           kind:'grapple', pos:'VERTICAL_SUPLEX', deliver:'slam' },   // physics-first, hand-coded
     PABLO:           { name:'THE GORING',                kind:'grapple', pos:'POWERBOMB',   deliver:'slam'  },
     TRIPLE_XXX:      { name:'THE LAST INDULGENCE',       kind:'grapple', pos:'DDT',         deliver:'spike' },
     KOBRA:           { name:'THE ENVENOMATION',          kind:'grapple', pos:'CHOKESLAM',   deliver:'choke' },
@@ -14389,6 +14398,9 @@ try{
     // and became "The Abstract" (Black Reign) — so Pablo is NOT a member. Never conflate the two.
     THE_REVOLUTION:     { name:'Revolution', faction:'Corporate Structure', leader:'DRAKE_VANE', members:['DRAKE_VANE','EL_TORO_DE_ORO','RONALD_SLUMP_JR','TRIPLE_XXX'], motto:'Revolution is a Mystery.' },
     SLIME_AND_PRINCE:   { name:'Slime & Prince', faction:'Agents of Chaos', leader:'PRINCE', members:['SLIME','PRINCE'] },
+    // THE ONYX STABLE — publicly fronted by Onyx; the SECRET boss is Buffalo Bill (the anti-aging
+    // "Creator"), revealed late. Cipher/Static/Echo/Hollow all answer to him whether they know it or not.
+    THE_ONYX_STABLE:    { name:'Onyx', faction:'Agents of Chaos', leader:'BUFFALO_BILL', secretBoss:'BUFFALO_BILL', front:'ONYX', members:['ONYX','CIPHER','STATIC','ECHO','HOLLOW','BUFFALO_BILL'] },
     THE_BASH_BROTHERS:  { name:'The Bash Brothers', faction:'Independent Variables', leader:'SPIKE', members:['SPIKE','HAMMER'] },
     THE_HIGH_ROLLERS:   { name:'The High Rollers', faction:'Corporate Structure', leader:'DICE', members:['DICE','CHIP'] },
     THE_LUCHADOR_TWINS: { name:'The Luchador Twins', faction:'Independent Variables', leader:'LUCHADOR_RELAMPAGO', members:['LUCHADOR_RELAMPAGO','LUCHADOR_TRUENO'] },
@@ -38490,6 +38502,11 @@ window.CHAR_VOICE = window.CHAR_VOICE || {
   BRUTUS:      { respect:['"You took it and stood back up. Respect. Barely."'], insult:['"All that footwork, waste of air. I\'ll pin you to the fence."'], recruit:['"Stand next to me and nobody closes the distance. Simple."'], challenge:['"Center of the ring. No running. You sleep standing or on your back."'], betray:['"Your boy runs the second it gets heavy. I\'ve seen it."'], taunt:['"No running."'], win:['"Took your air. Told you."'] },
   FINXSSE:     { respect:['"Ha! You showed up with the jewels on, I respect the shine."'], insult:['"You\'re bus fare in a private-jet business, homie."'], recruit:['"Run with me and we eat every night, that\'s a promise on the cross."'], challenge:['"GETBACKK is comin\' — mark the date, spend it wisely."'], betray:['"Your circle got a leak, and it ain\'t me... this time."'], taunt:['"Opps fallin\'!"'], win:['"Chain snatched. Next."'] },
   STICK_UP:    { respect:['"The congregation felt that one. Blessed."'], insult:['"You\'re a collection plate nobody fills."'], recruit:['"Kneel with the cult — we take what we\'re owed."'], challenge:['"Leap of faith, and you don\'t come back up."'], betray:['"Even the faithful whisper. Especially about you."'], taunt:['"Believe."'], win:['"Amen. Take the fall."'] },
+  // BUFFALO BILL — the anti-aging Creator, secret boss. Patient, cryptic, decades-cold; talks like he
+  // already wrote your ending. (proprietary Bill $aber / Blck Goku energy — Buffalo underground creator.)
+  BUFFALO_BILL:{ respect:['"Good. You lasted longer than I drafted. I\'ll revise."'], insult:['"You\'re a rough sketch. I\'ve erased better."'], recruit:['"You\'ve been on my payroll since before you knew my name. Kneel and keep it."'], challenge:['"I don\'t age, and I don\'t rush. You\'re already in the design."'], betray:['"Onyx thinks she leads them. Cute. Tell her who signs the checks."'], taunt:['"Creepin. Lurkin."'], win:['"Final draft. Filed."'] },
+  // MDickie — the game-maker himself: meta, blunt, physics-first, completely unbothered.
+  MDICKIE:     { respect:['"Not bad. The collision detection agreed with you tonight."'], insult:['"You\'re a placeholder asset. I never textured you."'], recruit:['"Stand here. I coded this spot to be safe. Mostly."'], challenge:['"My ring, my physics, my rules. Good luck with the ragdoll."'], betray:['"I can see everyone\'s stats. Yours don\'t like your friends."'], taunt:['"It\'s only a game. Ha."'], win:['"Patch notes: you lose."'] },
 };
 // alignment + archetype fallback pools so EVERY character has an in-character voice
 window.VOICE_FALLBACK = window.VOICE_FALLBACK || {
