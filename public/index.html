@@ -40626,21 +40626,25 @@ window.BANNON_CAGE = (function(){
   function halfZ(){ try{ return (typeof ARENA_HALF_Z!=='undefined')?ARENA_HALF_Z:halfX(); }catch(e){ return halfX(); } }
   function get(url,cb){ if(loaded[url]){ cb(loaded[url].clone(true)); return; }
     try{ var L=new THREE.GLTFLoader(); L.load(url,function(g){ loaded[url]=g.scene; cb(g.scene.clone(true)); }, undefined, function(){ cb(null); }); }catch(e){ cb(null); } }
-  // panel local: wide in X (±84), tall in Y, thin in Z. Scale so it spans the ring side + margin.
+  // BOTH panels (plain wall + door) share ONE fence frame: the source fence spans y∈[-3.5,64.76],
+  // width ±84, centered in x/z. (The door panel's box.min dips to -22 from its DoorWall sub-part —
+  // aligning by box.min floated the door wall off the apron + made it a different height. So we IGNORE
+  // per-panel bbox and use this fixed reference: every wall gets the SAME scale + the same base, so all
+  // four are identical height and their fence bottoms all seat on the apron, door side included.)
+  var REF_MIN=-3.5, REF_MAX=64.76, REF_W=168.4, CAGE_H=2.75;
   function place(obj, side){
     if(!obj) return;
-    var hx=halfX(), hz=halfZ(), margin=0.45, H=2.75;
-    obj.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; if(!/wall|cage|fence/i.test(o.material&&o.material.name||'')){ /* keep name for meshPhys */ } } });
-    var box=new THREE.Box3().setFromObject(obj), sz=new THREE.Vector3(); box.getSize(sz);
-    var wall=new THREE.Group(); wall.add(obj);
-    obj.position.set(-((box.min.x+box.max.x)/2), -box.min.y, -((box.min.z+box.max.z)/2)); // origin at base-center
-    var spanW = (side==='px'||side==='nx') ? (2*hz+margin*2) : (2*hx+margin*2);
-    var s = spanW/(sz.x||1); var sh = H/(sz.y||1);
-    wall.scale.set(s, sh, s);
-    if(side==='pz'){ wall.position.set(0, fy(), hz+margin); }
-    else if(side==='nz'){ wall.position.set(0, fy(), -(hz+margin)); wall.rotation.y=Math.PI; }
-    else if(side==='px'){ wall.position.set(hx+margin, fy(), 0); wall.rotation.y=-Math.PI/2; }
-    else if(side==='nx'){ wall.position.set(-(hx+margin), fy(), 0); wall.rotation.y=Math.PI/2; }
+    var hx=halfX(), hz=halfZ(), margin=0.42;
+    obj.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
+    var targetW = 2*Math.max(hx,hz) + 1.4;                 // span the ring side + overlap so corners close
+    var sX = targetW/REF_W, sY = CAGE_H/(REF_MAX-REF_MIN); // shared by ALL walls -> identical dimensions
+    var wall=new THREE.Group(); wall.add(obj);             // keep panel's native centered x/z origin
+    wall.scale.set(sX, sY, sX);
+    var baseY = fy() - REF_MIN*sY;                          // fence bottom (REF_MIN) lands exactly on the apron
+    if(side==='pz'){ wall.position.set(0, baseY, hz+margin); }
+    else if(side==='nz'){ wall.position.set(0, baseY, -(hz+margin)); wall.rotation.y=Math.PI; }
+    else if(side==='px'){ wall.position.set(hx+margin, baseY, 0); wall.rotation.y=-Math.PI/2; }
+    else if(side==='nx'){ wall.position.set(-(hx+margin), baseY, 0); wall.rotation.y=Math.PI/2; }
     group.add(wall);
   }
   function build(){
