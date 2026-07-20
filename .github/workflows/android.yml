@@ -25,13 +25,16 @@ jobs:
       - name: Bundle the game + manifest/icons + local assets into the app
         run: |
           A=android/app/src/main/assets
-          mkdir -p $A/assets/icons $A/assets/moves $A/assets/audio
+          mkdir -p $A/assets/icons $A/assets/moves $A/assets/audio $A/assets/mocap
           cp BANNON_v150.html $A/index.html
           cp manifest.json    $A/manifest.json || true
           cp assets/icons/icon-192.png assets/icons/icon-512.png assets/icons/apple-touch-icon.png $A/assets/icons/ || true
           # move library / MDickie moves / fbx map — the game fetch()es these at runtime; without them
           # the moveset + story data silently 404 inside the APK.
           cp assets/moves/*.json $A/assets/moves/ 2>/dev/null || true
+          # mocap manifest (tiny) so BANNON_LOAD_FBX_LIBRARY knows the full clip list offline; the FBX
+          # themselves stay CDN-streamed (too big to bundle).
+          cp assets/mocap/*.json $A/assets/mocap/ 2>/dev/null || true
           echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files"
 
       - uses: actions/setup-java@v4

@@ -31633,6 +31633,15 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
             'Brutal Assassination.fbx','Breakdance Uprock To Ground.fbx','Breakdance Footwork To Freeze.fbx'
         ];
         let FILES = [...new Set([...ASSETS, ...COMBAT_CLIPS])];
+        // COMPLETE OFFLINE LIST: the banked drive_manifest.json lists every wrestling-move FBX in
+        // assets/mocap/drive/. Merging it in means ALL clips the move->clip map references actually
+        // load — in the APK / on Pages / anywhere, with no daemon. (This is why most moves fell back
+        // to the authored pose: the clips they mapped to were never in the hardcoded load list.)
+        try { const _cdnM = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+            let mr = await fetch('assets/mocap/drive_manifest.json').catch(()=>null);
+            if (!mr || !mr.ok) mr = await fetch(_cdnM+'assets/mocap/drive_manifest.json').catch(()=>null);
+            if (mr && mr.ok) { const mj = await mr.json(); const names=(mj.files||[]).filter(n=>/\.fbx$/i.test(n));
+                FILES = [...new Set([...FILES, ...names])]; } } catch (_e) {}
         // when the daemon serves us, ask IT for the real list (includes everything drive-sync pulled)
         try { const lr = await fetch('/api/list-mocap-files'); if (lr.ok) { const lj = await lr.json();
             const names = (lj.files || lj || []).map(f => (typeof f === 'string' ? f : f.name)).filter(n => /\.fbx$/i.test(n));
@@ -31667,13 +31676,18 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
                 if (!response || !response.ok) continue;
                 const buffer = await response.arrayBuffer();
                 
-                const clipName = file.replace(/\.fbx$/i, '').toUpperCase().replace(/[^A-Z0-9]/g, '_');
-                
+                const baseName = file.replace(/\.fbx$/i, '');                            // e.g. "GermanSuplex", "Big Body Blow"
+                const clipName = baseName.toUpperCase().replace(/[^A-Z0-9]/g, '_');        // e.g. "GERMANSUPLEX"
+
                 // Parse synchronously here (could be chunked if UI freezes)
                 const fbxObj = loader.parse(buffer, '');
                 if (fbxObj.animations && fbxObj.animations.length) {
                     const clip = extractClipFromGLTF(fbxObj.animations[0], fbxObj);
                     STUDIO.clips[clipName] = clip;
+                    // ALSO key under the RAW basename — move_clip_map.json references clips by basename
+                    // ("GermanSuplex", "Big Body Blow"), not the uppercased key, so without this alias
+                    // every mapped move's STUDIO.clips[m.clip] lookup missed and no mocap ever played.
+                    if (baseName !== clipName) STUDIO.clips[baseName] = clip;
                     loadedCount++;
 
                     // Register in MOVEDEX dynamically based on heuristics
