@@ -1808,7 +1808,11 @@ let DMG_SCALE = 8.0;          // damage multiplier — was 0.32, ~25x too low: a
                                // clean strike lands ~30-45 hits to KO, a believable wrestling/MMA pace.
                                // Now a real variable (not const) so it can be live-tuned, same pattern
                                // as FIGHT_LEN below.
-const ROUNDS_TO_WIN = 2;     // best-of-3 rounds (UFC/boxing style)
+let ROUNDS_TO_WIN = 2;       // best-of-3 by default — driven by MATCH_RULES.rounds at startRound
+// MATCH RULES (owner spec 2026-07-20): time limit defaults to INFINITE (no countdown — matches end
+// by finish, MDickie flow); the old 90s-style countdown and round counts are OPTIONS. Persisted.
+window.MATCH_RULES = (function(){ try{ return Object.assign({time:'INF',rounds:'BO3'}, JSON.parse(localStorage.getItem('bannon_match_rules')||'{}')); }catch(e){ return {time:'INF',rounds:'BO3'}; } })();
+window.saveMatchRules = function(){ try{ localStorage.setItem('bannon_match_rules', JSON.stringify(window.MATCH_RULES)); }catch(e){} };
 
 let scene, camera, renderer, clock;
 let gameState = 'menu';
@@ -11736,25 +11740,38 @@ function buildArena(){
     buildCrowdBand(32,-7, 6, -13,-7.5, 0.40,0.66, 0.12, true,  true);
     buildCrowdBand(32,-7, 6,   7.5,13, 0.40,0.66, 0.12, true,  true);
 
-    // bake the spec into one InstancedMesh per primitive kind
+    // bake the spec into InstancedMeshes — SECTOR-SPLIT for real frustum culling. One IM per kind
+    // per 90° sector around ring center (max 20, typically ~14 non-empty). r128 culls an
+    // InstancedMesh by geometry.boundingSphere × matrixWorld only (never per instance), so each
+    // sector gets its OWN geometry clone carrying an explicit sphere that encloses its instances.
+    // Camera looking across the ring -> the banks behind it cull; one whole-crowd IM never could
+    // (the 360° sphere always intersects the frustum).
     const _cGeo={ body:new THREE.BoxGeometry(1,1,1), head:new THREE.SphereGeometry(1,7,6),
                   arm:new THREE.CylinderGeometry(1,1,1,5), phone:new THREE.BoxGeometry(1,1,1), sign:new THREE.BoxGeometry(1,1,1) };
-    const _byKind={};
-    for(const s of _cSpec){ (_byKind[s.kind]=_byKind[s.kind]||[]).push(s); }
+    const _byBank={};
+    for(const s of _cSpec){ const sec=Math.min(3, Math.floor((Math.atan2(s.z, s.x)+Math.PI)/(Math.PI/2)));
+      const bk=s.kind+'_'+sec; (_byBank[bk]=_byBank[bk]||{kind:s.kind, list:[]}).list.push(s); }
     const _M=new THREE.Matrix4(), _Q=new THREE.Quaternion(), _E=new THREE.Euler(), _S=new THREE.Vector3(), _P=new THREE.Vector3(), _C=new THREE.Color();
     window.__crowdIMs=[];
-    for(const kind in _byKind){
-      const list=_byKind[kind];
-      const im=new THREE.InstancedMesh(_cGeo[kind], new THREE.MeshBasicMaterial({color:0xffffff}), list.length);
+    for(const bk in _byBank){
+      const kind=_byBank[bk].kind, list=_byBank[bk].list;
+      const geo=_cGeo[kind].clone();
+      const im=new THREE.InstancedMesh(geo, new THREE.MeshBasicMaterial({color:0xffffff}), list.length);
+      let cx=0, cy=0, cz=0, maxS=0;
       list.forEach((s,i)=>{
         _E.set(0, s.ry, s.rz); _Q.setFromEuler(_E);
         _P.set(s.x, s.y, s.z); _S.set(s.sx, s.sy, s.sz);
         _M.compose(_P,_Q,_S); im.setMatrixAt(i,_M);
         _C.set(s.col).multiplyScalar(s.lum); im.setColorAt(i,_C);
         s.member.parts.push({im, i, baseY:s.y});
+        cx+=s.x; cy+=s.y; cz+=s.z; maxS=Math.max(maxS, s.sx, s.sy, s.sz);
       });
+      cx/=list.length; cy/=list.length; cz/=list.length;
+      let r2=0; for(const s of list){ const d2=(s.x-cx)*(s.x-cx)+(s.y-cy)*(s.y-cy)+(s.z-cz)*(s.z-cz); if(d2>r2) r2=d2; }
+      // enclosing sphere: farthest instance origin + full instance extent + bob headroom
+      geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(cx,cy,cz), Math.sqrt(r2)+maxS*1.8+0.2);
       im.instanceMatrix.needsUpdate=true; if(im.instanceColor) im.instanceColor.needsUpdate=true;
-      im.frustumCulled=false;   // one bounding test would cull ALL fans at once — skip it
+      im.frustumCulled=true;    // per-bank sphere makes this test real (was false: one 360° IM per kind)
       arenaGroup.add(im); window.__crowdIMs.push(im);
     }
     window.__crowdMembers=_cMembers;
@@ -12090,19 +12107,33 @@ function switchArena(key){
 }
 
 
+const _cullFrus=new THREE.Frustum(), _cullM4=new THREE.Matrix4(), _cullSph=new THREE.Sphere();
 function updateArenaAnim(t){
   for (const c of crowdMeshes){
     c.mesh.position.y = c.base + Math.sin(t*c.sp + c.ph)*0.08;
   }
   // v152 instanced-crowd bob: write translation-Y straight into each instance matrix
   // (column-major element 13) — a few hundred float writes, no Matrix4 recompose.
+  // CROWD CULLING: test each sector bank's sphere against the camera frustum once per frame;
+  // hidden banks skip BOTH the per-part writes and the instanceMatrix GPU re-upload (needsUpdate).
+  // The renderer culls the draw call itself via im.frustumCulled + the same sphere.
   const M=window.__crowdMembers;
   if (M){
+    try{ if(typeof camera!=='undefined' && window.__crowdIMs){
+      _cullM4.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+      _cullFrus.setFromProjectionMatrix ? _cullFrus.setFromProjectionMatrix(_cullM4) : _cullFrus.setFromMatrix(_cullM4);
+      for (const im of window.__crowdIMs){
+        if (im.geometry.boundingSphere){
+          _cullSph.copy(im.geometry.boundingSphere).applyMatrix4(im.matrixWorld);
+          im.__vis = _cullFrus.intersectsSphere(_cullSph);
+        } else im.__vis = true;
+      }
+    } }catch(e){ for (const im of (window.__crowdIMs||[])) im.__vis=true; }
     for (const m of M){
       const dy=Math.sin(t*m.sp + m.ph)*0.08;
-      for (const p of m.parts) p.im.instanceMatrix.array[p.i*16+13]=p.baseY+dy;
+      for (const p of m.parts){ if (p.im.__vis!==false) p.im.instanceMatrix.array[p.i*16+13]=p.baseY+dy; }
     }
-    for (const im of window.__crowdIMs) im.instanceMatrix.needsUpdate=true;
+    for (const im of window.__crowdIMs){ if (im.__vis!==false) im.instanceMatrix.needsUpdate=true; }
   }
   // MOVING BROADCAST LIGHTS — sweep the beam targets (skew + focus) like live TV
   const ML=window.__arenaMovingLights;
@@ -12736,6 +12767,18 @@ function playerAttack(kind){
       // CORNER BACK vs FRONT (2K26 positions): if the opponent has turned INTO the buckles (their
       // forward vector points AWAY from the attacker), their back/kidneys/skull are exposed and the
       // attacker swaps to the BACK arsenal — back elbows, forearms to the kidneys, tree-of-woe stomp.
+      // TREE OF WOE (upside-down corner state): the hanging victim eats the tree arsenal — every
+      // strike aims LOW because the head hangs at boot height (CORNER.positions.TREE_OF_WOE moves).
+      if (opp._cornerPose==='treeOfWoe'){
+        const TOW={
+          jab:  { name:'HANGING STOMP · TREE OF WOE',  cat:'STRIKE', limb:'RIGHT KICK', traj:'STRAIGHT', height:'LOW', power:60, speed:82 },
+          cross:{ name:'RUNNING KNEE · TREE OF WOE',   cat:'STRIKE', limb:'RIGHT KNEE', traj:'STRAIGHT', height:'LOW', power:66, speed:74 },
+          kick: { name:'BASEBALL SLIDE · TREE OF WOE', cat:'STRIKE', limb:'RIGHT KICK', traj:'STRAIGHT', height:'LOW', power:64, speed:80 }
+        };
+        const tm=Object.assign({ style:p.style||'BRAWLER', follow:'CHAIN NEXT', _corner:true, _tow:true, _aimHead:true }, TOW[kind]);
+        tm.power=Math.round(tm.power*1.15);   // hung upside down — fully helpless
+        p.startAttack(tm); return;
+      }
       const _of = opp.forward ? opp.forward() : { x:Math.cos(opp.facing||0), z:-Math.sin(opp.facing||0) };
       const _backExposed = (_of.x*(p.x-opp.x) + _of.z*(p.z-opp.z)) < 0;
       const CORNER_B={
@@ -13871,19 +13914,26 @@ function announce(text, sub){
   a.classList.remove('announce-show'); void a.offsetWidth; a.classList.add('announce-show');
 }
 function startRound(){
-  // v152 IRON MAN: a long timed round — most rounds banked when time expires wins (pips system).
-  roundTimer = (window.MATCH_SETUP && MATCH_SETUP.matchType==='IRONMAN') ? 180 : 99;
-  document.getElementById('timer').textContent = roundTimer;
+  // MATCH RULES (owner spec): time limit defaults to INFINITE — no countdown, matches end by finish
+  // (MDickie flow). The old countdown (90s-class) + round counts live on as options. IRONMAN keeps
+  // its fixed 180s round (match-type rule beats the option).
+  const _MR=window.MATCH_RULES||{};
+  ROUNDS_TO_WIN = ({SINGLE:1,BO3:2,BO5:3})[_MR.rounds]||2;
+  roundTimer = (window.MATCH_SETUP && MATCH_SETUP.matchType==='IRONMAN') ? 180 :
+               ((_MR.time==null||_MR.time==='INF') ? Infinity : (+_MR.time||90));
+  document.getElementById('timer').textContent = (roundTimer===Infinity)?'∞':roundTimer;
   updateRoundPips();
   if (roundTimerInterval) clearInterval(roundTimerInterval);
-  roundTimerInterval = setInterval(()=>{
-    if (gameState!=='fight') return;
-    roundTimer--;
-    const tEl=document.getElementById('timer');
-    tEl.textContent = roundTimer;
-    if (roundTimer<=10) tEl.classList.add('warning'); else tEl.classList.remove('warning');
-    if (roundTimer<=0){ clearInterval(roundTimerInterval); timeUp(); }
-  },1000);
+  if (roundTimer!==Infinity){
+    roundTimerInterval = setInterval(()=>{
+      if (gameState!=='fight') return;
+      roundTimer--;
+      const tEl=document.getElementById('timer');
+      tEl.textContent = roundTimer;
+      if (roundTimer<=10) tEl.classList.add('warning'); else tEl.classList.remove('warning');
+      if (roundTimer<=0){ clearInterval(roundTimerInterval); timeUp(); }
+    },1000);
+  } else { const tEl=document.getElementById('timer'); if(tEl) tEl.classList.remove('warning'); }
   announce('FIGHT', 'ROUND '+currentRound);
 }
 function timeUp(){
@@ -13925,6 +13975,7 @@ function nextRound(){
 }
 function endMatch(winner){
   gameState='winner';
+  try{ if(window.BANNON_ENTRANCE) window.BANNON_ENTRANCE.victory(winner); }catch(e){}   // outro pyro fires HERE — once, at the true match end
   if (roundTimerInterval) clearInterval(roundTimerInterval);
   if (typeof clearActiveFightState==='function') clearActiveFightState();
   const nm = fname(winner);
@@ -13933,7 +13984,9 @@ function endMatch(winner){
   setTimeout(()=>{ show('winnerMenu'); }, 1500);
 }
 // back-compat: any leftover KO callbacks route to endRound
-function declareWinner(winner){ try{ if(window.BANNON_ENTRANCE) window.BANNON_ENTRANCE.victory(winner); }catch(e){} endRound(winner); }   // Phase D: victory pyro + tron
+// victory pyro moved INTO endMatch: declareWinner fired it BEFORE endRound's re-entry guard, so every
+// stray KO callback / pin / per-elimination call re-burst full pyro mid-match (the "always firing" drain).
+function declareWinner(winner){ endRound(winner); }
 
 function updateRoundPips(){
   const el = document.getElementById('roundNum');
@@ -20633,6 +20686,19 @@ init();
     try{
       if (window.CORNER_PHYS!==false && !this.ragdoll && typeof ARENA_HALF!=='undefined'){
         const HX=ARENA_HALF, HZ=(typeof ARENA_HALF_Z!=='undefined')?ARENA_HALF_Z:HX;
+        // TREE-OF-WOE HOLD (runs BEFORE the corner classification so the pin feeds it): a hung
+        // victim stays HOOKED in the buckles — poseGrabbed drag / body-separation would otherwise
+        // pull them off-corner and the clear branch below would empty the tree in <1 frame. No
+        // escape roll; gravity wins after ~3.5s and they slump out through the real down state.
+        if (this._cornerPose==='treeOfWoe'){
+          this._towT=(this._towT||0)+dt;
+          this.x=Math.sign(this.x||1)*(HX-0.03); this.z=Math.sign(this.z||1)*(HZ-0.03);
+          this.vx=0; this.vz=0;
+          if (this.state!=='grabbed' && this.state!=='down'){ this.state='grabbed'; this.stateTime=0; }
+          if (!this._inCorner) this._inCorner='set';
+          if (this._towT>3.5){ this._towT=0; this._cornerPose='standing';
+            this.state='down'; this.stateTime=0; this.downTimer=Math.max(this.downTimer||0,1.2); }
+        } else this._towT=0;
         const atX=Math.abs(this.x)>=HX-0.04, atZ=Math.abs(this.z)>=HZ-0.04;
         if (atX && atZ){
           // CORNER — HARD STOP. No bounce. Trapped. This sets up the corner move tree.
@@ -24133,12 +24199,20 @@ console.log("%c[VERLET ROPES] active — ROPE_SAG / ROPE_BOW to tune, ROPE_PHYS=
     this.ropeClimbFrom = fromMid ? MID_H : 0.2;
     this.ropeClimbTo   = (level==='top') ? TOP_H : MID_H;
     this.ropeClimbLevel = level;
+    this._rcSfxStep = 0;   // procedural climb audio: hand-over-hand grip markers reset per climb
     return true;
   };
   Fighter.prototype.poseRopeClimb = function(dt){
     const e=this.ropeEdge; if(!e){ this.state='idle'; this.stateTime=0; return; }
     this.ropeClimbT = Math.min(1, this.ropeClimbT + dt*2.2);
     const t = this.ropeClimbT;
+    // PROCEDURAL CLIMB AUDIO (WebAudio IMPACT SFX synth): a low 'grip' snap as each hand takes the
+    // next rope (the reach pulse peaks mid-climb), heavier on the top-rope climb.
+    if (window.IMPACT_SFX!==false){
+      const gp = (this.ropeClimbLevel==='top') ? 0.22 : 0.16;
+      if (this._rcSfxStep<1 && t>=0.34){ this._rcSfxStep=1; try{ window.__sfxSnap && window.__sfxSnap(gp); }catch(e){} }
+      if (this._rcSfxStep<2 && t>=0.68){ this._rcSfxStep=2; try{ window.__sfxSnap && window.__sfxSnap(gp+0.04); }catch(e){} }
+    }
     this.airLift = lerp(this.ropeClimbFrom, this.ropeClimbTo, Math.sin(t*Math.PI*0.5));
     const reach = 0.3 + 0.15*Math.sin(t*Math.PI);
     this.J.pelvis.set(-e.nx*0.04, 0.88, -e.nz*0.04);
@@ -24149,7 +24223,10 @@ console.log("%c[VERLET ROPES] active — ROPE_SAG / ROPE_BOW to tune, ROPE_PHYS=
     this.J.hipL.set(0.06, 0.78, 0.13); this.J.hipR.set(0.06, 0.78, -0.13);
     this.J.knL.set(0.16, 0.42, 0.15); this.J.knR.set(0.16, 0.42, -0.15);
     this.J.ftL.set(0.10, 0.05, 0.16); this.J.ftR.set(0.10, 0.05, -0.16);
-    if (t>=1){ this.state='ropeperch'; this.stateTime=0; this.ropePerchLevel=this.ropeClimbLevel; }
+    if (t>=1){ this.state='ropeperch'; this.stateTime=0; this.ropePerchLevel=this.ropeClimbLevel;
+      // body settles onto the perch — one weight thud through the same impact synth
+      if (window.IMPACT_SFX!==false){ try{ window.__sfxThud && window.__sfxThud(this.ropePerchLevel==='top'?0.38:0.30); }catch(e){} }
+    }
   };
   Fighter.prototype.poseRopePerch = function(dt){
     const e=this.ropeEdge||{nx:0,nz:0};
@@ -24244,6 +24321,21 @@ console.log("%c[VERLET ROPES] active — ROPE_SAG / ROPE_BOW to tune, ROPE_PHYS=
   const _origAttack3 = window.playerAttack;
   window.playerAttack = function(kind){
     const p = (typeof fighters!=='undefined' && fighters) ? fighters[0] : null;
+    // TREE-OF-WOE GRAPPLE DISPATCH: grab on a hanging victim = CRAVATE YANK — rips them out of the
+    // tree by the head; the release + crash run through the real damage/knockdown physics, no canned
+    // path. (This is the grapple half of CORNER.positions.TREE_OF_WOE: 'cravate pull'.)
+    if (window.CORNER_SETUP && p && !p.grappling && kind==='grab'){
+      const o = p.opponent && p.opponent();
+      if (o && o._cornerPose==='treeOfWoe' && Math.hypot(o.x-p.x, o.z-p.z) < 1.5){
+        window.CORNER.release(o);
+        o.state='idle'; o.stateTime=0; o.grabbedBy=null;
+        try{ if(typeof applyDamage==='function') applyDamage(o, 90*(window.DMG_SCALE||1), p, {power:52,height:'LOW',traj:'HOOKING',limb:'CRAVATE',name:'CRAVATE YANK · TREE OF WOE'}, false); }catch(e){}
+        try{ if(o.triggerKnockdown) o.triggerKnockdown((p.x>o.x?-1:1)*0.5, 1.0); }catch(e){}
+        try{ if(typeof announce==='function') announce('CRAVATE YANK', 'OUT OF THE TREE OF WOE'); }catch(e){}
+        try{ window.__sfxSnap && window.__sfxSnap(0.4); }catch(e){}
+        return;
+      }
+    }
     if (window.CORNER_SETUP && p && p.grappling && p.grappleStage===1 && kind==='grab'){
       const opp = p.grabTarget;
       if (opp && opp._inCorner){
@@ -36596,6 +36688,8 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         '<div class="csOpt"><div class="ol">PAYBACK</div><div class="csCyc" id="csPayback">Comeback</div></div>'+
         '<div class="csOpt"><div class="ol">MANAGER</div><div class="csCyc" id="csManager">None</div></div>'+
         '<div class="csOpt"><div class="ol">STAGE</div><div class="csCyc" id="csStage">FIRE PIT</div></div>'+
+        '<div class="csOpt"><div class="ol">TIME LIMIT</div><div class="csCyc" id="csTime">NO LIMIT</div></div>'+
+        '<div class="csOpt"><div class="ol">ROUNDS</div><div class="csCyc" id="csRounds">BEST OF 3</div></div>'+
         '<button id="csStart">FIGHT ▶</button>'+
       '</div>'+
     '</div>';
@@ -36661,6 +36755,10 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
           d.style.color = (sel.side===sd)?'#ffd24a':'#ffd9a8'; }); }
     }catch(_){}
     try { document.getElementById('csStage').textContent = (typeof ARENAS!=='undefined'?ARENAS[sel.stageIdx%ARENAS.length]:'FIRE PIT'); } catch(_){}
+    // MATCH RULES cyclers — read the persisted source of truth (window.MATCH_RULES)
+    try { var MR=window.MATCH_RULES||{};
+      document.getElementById('csTime').textContent = (MR.time==null||MR.time==='INF')?'NO LIMIT':(MR.time+'s');
+      document.getElementById('csRounds').textContent = ({SINGLE:'SINGLE FALL',BO3:'BEST OF 3',BO5:'BEST OF 5'})[MR.rounds]||'BEST OF 3'; } catch(_){}
     try { var aSide=sel.side, aChar=sel[aSide], aCur=sel[aSide+'Alt']||null, aList=(window.altsFor?window.altsFor(aChar):[{id:null,label:'Default'}]); var aMatch=aList.find(function(a){return a.id===aCur;}); var aEl=document.getElementById('csAttire'); aEl.textContent=(aMatch?aMatch.label:'Default'); aEl.classList.toggle('dim', aList.length<=1); } catch(_){}
     // v155 per-slot payback + manager for the ACTIVE slot
     try { var ps=sel.side; document.getElementById('csPayback').textContent = PAYBACKS[(sel.payback[ps]||0)%PAYBACKS.length].split(' (')[0];
@@ -36704,6 +36802,15 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   document.getElementById('csMode').addEventListener('click', function(){ sel.modeIdx=(sel.modeIdx+1)%MODES.length; refresh(); });
   document.getElementById('csType').addEventListener('click', function(){ sel.typeIdx=(sel.typeIdx+1)%MATCH_TYPES.length; refresh(); });
   document.getElementById('csStage').addEventListener('click', function(){ try{ sel.stageIdx=(sel.stageIdx+1)%ARENAS.length; if(typeof arenaIdx!=='undefined'){ arenaIdx=sel.stageIdx; var an=document.getElementById('arenaName'); if(an)an.textContent=ARENAS[arenaIdx]; if(typeof buildArena==='function') buildArena(); } }catch(_){} refresh(); });
+  // MATCH RULES cyclers — TIME LIMIT (default NO LIMIT) + ROUNDS (single fall / best-of). Persisted.
+  document.getElementById('csTime').addEventListener('click', function(){
+    var T=['INF',60,90,99,180,300], MR=window.MATCH_RULES||(window.MATCH_RULES={});
+    var i=T.indexOf(MR.time==null?'INF':MR.time); MR.time=T[(i+1)%T.length];
+    if(window.saveMatchRules) window.saveMatchRules(); refresh(); });
+  document.getElementById('csRounds').addEventListener('click', function(){
+    var R=['SINGLE','BO3','BO5'], MR=window.MATCH_RULES||(window.MATCH_RULES={});
+    var i=R.indexOf(MR.rounds||'BO3'); MR.rounds=R[(i+1)%R.length];
+    if(window.saveMatchRules) window.saveMatchRules(); refresh(); });
   // v155 per-slot PAYBACK + MANAGER cyclers — advance only the ACTIVE slot's value
   document.getElementById('csPayback').addEventListener('click', function(){ var ps=sel.side; sel.payback[ps]=((sel.payback[ps]||0)+1)%PAYBACKS.length; refresh(); });
   document.getElementById('csManager').addEventListener('click', function(){ var ps=sel.side, ml=managerList(); sel.manager[ps]=((sel.manager[ps]||0)+1)%ml.length; refresh(); });
@@ -38952,12 +39059,20 @@ window.BANNON_MDICKIE = (function(){
 // sequences, and an entrance TIMELINE editor. Builds on the arena stage (trons/ramp/lights). =====
 window.BANNON_FX = (function(){
   const parts=[]; let smokeParts=[]; const MAXP = 320;   // mobile-safe cap
+  // FX WINDOW (owner spec 2026-07-20): pyro fires ONLY inside a time-boxed window opened by show
+  // intros (entrances) and outros (victory) — never mid-match. Every burst is a new additive Points
+  // draw call; unwindowed callers (stray declareWinner repeats, per-elimination victory FX) were
+  // stacking them during play and eating frame budget on phones. window.PYRO_ALWAYS=true = debug.
+  let fxUntil=0;
+  const _now=()=> (typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+  function openWindow(sec){ fxUntil=Math.max(fxUntil, _now()+(sec||6)*1000); }
+  function fxAllowed(){ return window.PYRO_ALWAYS===true || _now()<fxUntil; }
   function _pts(n, color, size){ if(typeof THREE==='undefined'||typeof scene==='undefined') return null;
     const g=new THREE.BufferGeometry(); const pos=new Float32Array(n*3); g.setAttribute('position',new THREE.BufferAttribute(pos,3));
     const m=new THREE.PointsMaterial({ color:color, size:size||0.14, transparent:true, opacity:1, depthWrite:false, blending:THREE.AdditiveBlending });
     const p=new THREE.Points(g,m); p.frustumCulled=false; scene.add(p); return p; }
   // PYRO — upward jet of sparks from (x,z), fountain + fade
-  function pyroBurst(x,z,color,n){ n=Math.min(n||90, MAXP); const P=_pts(n, color!=null?color:0xffaa22, 0.16); if(!P) return;
+  function pyroBurst(x,z,color,n){ if(!fxAllowed()) return; n=Math.min(n||90, MAXP); const P=_pts(n, color!=null?color:0xffaa22, 0.16); if(!P) return;
     const v=[]; const pos=P.geometry.attributes.position.array;
     for(let i=0;i<n;i++){ pos[i*3]=x+(Math.random()-0.5)*0.5; pos[i*3+1]=-0.2; pos[i*3+2]=z+(Math.random()-0.5)*0.5;
       v.push([ (Math.random()-0.5)*0.06, 0.18+Math.random()*0.22, (Math.random()-0.5)*0.06 ]); }
@@ -38978,10 +39093,10 @@ window.BANNON_FX = (function(){
       if(e.life<=0){ try{ scene.remove(e.P); e.P.geometry.dispose(); e.P.material.dispose(); }catch(_){} smokeParts.splice(k,1); } }
   }
   // stage pyro line (both ramp pillars fire)
-  function stagePyro(){ const HZ=(typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2); const sz=-(HZ+8.5)+2.1;
+  function stagePyro(){ if(!fxAllowed()) return; const HZ=(typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2); const sz=-(HZ+8.5)+2.1;
     const acc=(window.ARENA_PRESETS[window.ARENA_PRESET]||{}).accent||0xffaa22;
     pyroBurst(-1.6,sz,acc,80); pyroBurst(1.6,sz,acc,80); smokePuff(0,sz); }
-  return { pyroBurst, smokePuff, step, stagePyro };
+  return { pyroBurst, smokePuff, step, stagePyro, openWindow, fxAllowed };
 })();
 
 // ANIMATED TRON — redraw the tron canvas each frame (pulse + optional entrance name banner)
@@ -39012,12 +39127,14 @@ window.BANNON_TRON = (function(){
 window.BANNON_ENTRANCE = (function(){
   function play(fighter){ try{
     const nm=(fighter&&fighter.opts&&fighter.opts.name)||'BANNON';
+    if(window.BANNON_FX&&window.BANNON_FX.openWindow) window.BANNON_FX.openWindow(6.5);   // intro FX window — pyro dies with it
     if(runTimeline(nm)) return;   // use the character's saved entrance timeline if they have one
     if(window.BANNON_TRON) window.BANNON_TRON.entrance(nm);
     if(window.BANNON_FX){ window.BANNON_FX.stagePyro(); setTimeout(()=>window.BANNON_FX.stagePyro(),700); }
   }catch(e){} }
   function victory(winner){ try{
     const nm=(winner&&winner.opts&&winner.opts.name)||'';
+    if(window.BANNON_FX&&window.BANNON_FX.openWindow) window.BANNON_FX.openWindow(8);     // outro FX window
     if(window.BANNON_TRON){ window.BANNON_TRON.set(nm+' WINS'); window.BANNON_TRON.entrance(nm); }
     if(window.BANNON_FX){ const HZ=(typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2);
       window.BANNON_FX.pyroBurst(-2,HZ,0xffdd33,90); window.BANNON_FX.pyroBurst(2,HZ,0xffdd33,90); window.BANNON_FX.stagePyro(); }
@@ -39025,6 +39142,8 @@ window.BANNON_ENTRANCE = (function(){
   return { play, victory, runTimeline };
   // run a saved entrance timeline (cues fire at their times)
   function runTimeline(name){ const tl=window.BANNON_ENTRANCE_EDITOR&&window.BANNON_ENTRANCE_EDITOR.get(name); if(!tl||!tl.length) return false;
+    // FX window spans the authored timeline + tail, then slams shut (owner: pyro ENDS at specific times)
+    try{ const maxT=Math.max.apply(null, tl.map(c=>c.t||0)); if(window.BANNON_FX&&window.BANNON_FX.openWindow) window.BANNON_FX.openWindow(maxT+3); }catch(e){}
     if(window.BANNON_TRON) window.BANNON_TRON.entrance(name);
     tl.forEach(c=>{ setTimeout(()=>{ try{ const HZ=(typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:2.2); const acc=(window.ARENA_PRESETS[window.ARENA_PRESET]||{}).accent||0xffaa22;
       if(c.type==='PYRO') window.BANNON_FX.stagePyro();
