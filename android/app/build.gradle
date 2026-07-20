@@ -13,7 +13,9 @@ android {
 
     defaultConfig {
         applicationId "com.bannon.game"
-        minSdkVersion 24
+        minSdkVersion 21   // Android 5.0+ (was 24) — installs on far more devices AND forces v1 JAR
+                           // signing to stay on (AGP auto-drops v1 at minSdk>=24), fixing "problem
+                           // parsing the package" on OEM/older installers. WebView game runs fine on 21+.
         targetSdkVersion 34
         // auto-incrementing versionCode from commit count (CI sets BANNON_VERSION_CODE); default 1 locally
         versionCode (System.getenv("BANNON_VERSION_CODE") ? System.getenv("BANNON_VERSION_CODE").toInteger() : 1)
@@ -30,6 +32,12 @@ android {
             storePassword _storePw
             keyAlias 'bannon'
             keyPassword _keyPw
+            // FIX "problem parsing the package": the build was v2-ONLY (v1 JAR sig off), which many
+            // Android installers (esp. API 24-27 + several OEMs) reject on install. Sign v1+v2+v3 so
+            // it installs everywhere from minSdk 24 up.
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
         }
     }
 
