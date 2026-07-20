@@ -14849,7 +14849,11 @@ const thumbFor = (url)=> (url && url.includes('readyplayer.me')) ? url.replace(/
 const modelCfg = { animate:true };
 const MODEL_CFG = { userScale:1 };
 let modelSel = 'p1';   // which fighter the menu is editing
-let CHOSEN_MODEL = (function(){ try{ var r=localStorage.getItem('bannonChosenModels'); if(r) return JSON.parse(r); }catch(e){} return {p1:{url:'embedded:king',name:'King'}, p2:{url:'embedded:ref',name:'Referee'}}; })();
+// DEFAULT = {} (no per-side override). The old {king/ref} default raced applyCharModels every
+// match: the embedded models no longer exist, but the failed load still bumped the request
+// ticket, so the stale-load guard DROPPED the real character GLB when it finished parsing —
+// every fighter stayed procedural on every fresh device. (Root cause of "only seeing three.js".)
+let CHOSEN_MODEL = (function(){ try{ var r=localStorage.getItem('bannonChosenModels'); if(r) return JSON.parse(r); }catch(e){} return {}; })();
 const modelStatusText = { p1:'', p2:'' };
 const BONE_MAP = [
   ['leftarm','shL','elL'], ['leftforearm','elL','haL'],
@@ -14885,7 +14889,7 @@ const BONE_MAP_OVERRIDES = {
     ['spine','pelvis','chest'], ['neck','chest','head']
   ]
 };
-function fighterFor(side){ return (side==='p1')?fighters[0]:fighters[1]; }
+function fighterFor(side){ return (side==='p1')?fighters[0]:(side==='p2')?fighters[1]:(side==='p3')?fighters[2]:(side==='p4')?fighters[3]:null; }
 function setModelStatus(side,t){ modelStatusText[side]=t; if(side===modelSel){ const el=document.getElementById('modelStatus'); if(el) el.textContent=t; } refreshModelUI(); }
 function setProcVisible(f,vis){ for(const k in f.seg){ if(k==='aura')continue; if(f.seg[k]) f.seg[k].visible=vis; } }
 // Fully free a model's GPU memory (geometry + materials + textures + skeleton). Without this, every
@@ -14906,7 +14910,14 @@ function removeFighterModel(side){
   if(f.model){ try{scene.remove(f.model);}catch(e){} try{ disposeObject3D(f.model); }catch(e){} f.model=null; }
   f.modelUrl=null; if(f.seg) setProcVisible(f,true);
 }
-function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MODEL&&CHOSEN_MODEL[sd]; var f=fighterFor(sd); if(f && !f.model && ch && ch.url){ try{ loadFighterModel(sd, ch.url, ch.name); }catch(e){} } }); }
+function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MODEL&&CHOSEN_MODEL[sd]; var f=fighterFor(sd); if(!f || f.model || !ch || !ch.url) return;
+  // NEVER stomp an in-flight character-model load: bumping the ticket makes the stale-load guard
+  // drop the real GLB when it lands (THE procedural-fighters-only bug). Chosen model is a
+  // fallback for sides with NO character model, not an override.
+  if(f._charModelRequested) return;
+  // self-heal stale saved choices pointing at embedded models that no longer ship in the file
+  if(ch.url.indexOf('embedded:')===0){ var k=ch.url.slice(9); if(typeof FIGHTER_GLB_B64==='undefined' || !FIGHTER_GLB_B64[k]) return; }
+  try{ loadFighterModel(sd, ch.url, ch.name); }catch(e){} }); }
 
 // ===== UNIQUE PER-CHARACTER MODELS — each character carries its OWN .glb so the roster isn't a set
 // of generic shared bodies. Keyed by character identity (name), persisted, and auto-loaded whenever
@@ -15001,10 +15012,10 @@ function mdickieBaseFor(charName){
   return window.MDICKIE_BASE_DIR + base + '.glb';
 }
 window.mdickieBaseFor = mdickieBaseFor;
-function applyCharModels(){ ['p1','p2'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; if(f._forceProc) return;
-  if(f._altModelUrl){ try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
-  if(f._mdickieBase){ var mb=mdickieBaseFor(f._mdickieBase); try{ loadFighterModel(sd, mb, 'MDickie · '+f._mdickieBase); }catch(e){} return; }   // MDickie base attire (falls back to procedural if the base GLB isn't present)
-  var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
+function applyCharModels(){ ['p1','p2','p3','p4'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; if(f._forceProc) return;
+  if(f._altModelUrl){ f._charModelRequested=true; try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
+  if(f._mdickieBase){ var mb=mdickieBaseFor(f._mdickieBase); f._charModelRequested=true; try{ loadFighterModel(sd, mb, 'MDickie · '+f._mdickieBase); }catch(e){} return; }   // MDickie base attire (falls back to procedural if the base GLB isn't present)
+  var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ f._charModelRequested=true; try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
 function assignCharModel(charKey, url, name){ if(!charKey) return; charKey=charKey.toUpperCase(); try{ if(url){ CHAR_MODEL[charKey]={url:url,name:name||charKey}; } else { delete CHAR_MODEL[charKey]; } localStorage.setItem('bannonCharModels',JSON.stringify(CHAR_MODEL)); }catch(e){} }
 // Bind the model currently shown on a side to that side's CHARACTER so it persists as theirs.
 function assignCurrentModelToChar(side){ var f=fighterFor(side); if(!f) return; var ck=charModelKey(f);
