@@ -935,6 +935,10 @@ body.match-live #movesBtn { display:none !important; }
       <button class="menu-btn" id="btnMusicNext" style="font-size:15px;">⏭ NEXT</button>
       <button class="menu-btn" id="btnMusicAdd" style="font-size:15px;">＋ ADD</button>
     </div>
+    <!-- Match music defaults OFF (hear crowd + commentary); tap to allow music during matches. -->
+    <div class="match-row" style="grid-template-columns:1fr; margin-top:8px;">
+      <button class="menu-btn" id="btnMatchMusic" style="font-size:14px;">🎵 MATCH MUSIC: OFF</button>
+    </div>
     <div style="margin-top:18px; font-family:'Share Tech Mono'; font-size:9px; color:#666; letter-spacing:3px;">v77 · WWE 2K26 CONTROLS · VISCERAL PRO WRESTLING</div>
   </div>
 </div>
@@ -16281,6 +16285,11 @@ function setupInput(){
   // JUKEBOX controls (main menu music bar)
   _wire('btnMusicToggle',  ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); const v=J.getVolume(); if(v>0){ J._mv=v; J.setVolume(0); const b=document.getElementById('btnMusicToggle'); if(b)b.textContent='♪ MUTED'; } else { J.setVolume(J._mv||0.55); J.menu(); const b=document.getElementById('btnMusicToggle'); if(b)b.textContent='♪ MUSIC'; } });
   _wire('btnMusicNext',    ()=>{ const J=window.BANNON_JUKEBOX; if(!J) return; J.unlock(); (J.next?J.next():J.menu()); });
+  _wire('btnMatchMusic',   ()=>{ const J=window.BANNON_JUKEBOX; if(!J||!J.setMatchMusic) return; const on=J.setMatchMusic(!J.getMatchMusic());
+    const b=document.getElementById('btnMatchMusic'); if(b) b.textContent='🎵 MATCH MUSIC: '+(on?'ON':'OFF');
+    try{ if(window.BANNON_SETTINGS_MENU){ window.BANNON_SETTINGS_MENU.get().matchMusic=on; window.BANNON_SETTINGS_MENU.save(); } }catch(e){} });
+  // reflect persisted state on the button at load
+  try{ const _b=document.getElementById('btnMatchMusic'); const _J=window.BANNON_JUKEBOX; if(_b&&_J&&_J.getMatchMusic) _b.textContent='🎵 MATCH MUSIC: '+(_J.getMatchMusic()?'ON':'OFF'); }catch(e){}
   _wire('btnMusicAdd',     ()=>{ const J=window.BANNON_JUKEBOX; if(J) J.addTrackPrompt(['menu','match']); });
   document.getElementById('btnArena').addEventListener('click', ()=>{ 
     if (window.BANNON_ENVIRONMENTS) {
@@ -38155,7 +38164,15 @@ window.BANNON_JUKEBOX = (function(){
   async function menu(force){ curMode='menu'; if(!force && bgPlaying()) return;
     const t=cfg.menu?trackById(cfg.menu):shuffle(pool('menu'))[0]; await playBg(t); }
   // match: assigned match track (or shuffle the match pool). Idempotent within a match, switches from menu.
-  async function match(force){ const wasMenu=(curMode!=='match'); curMode='match'; if(!force && !wasMenu && bgPlaying()) return;
+  // MATCH MUSIC IS OFF BY DEFAULT (owner): during a match we want the crowd + commentary, not a bed.
+  // matchMusicOn is persisted; the settings toggle / music bar flips it. When off, match() stops the bed.
+  let matchMusicOn = (function(){ try{ return localStorage.getItem('bannon_match_music')==='1'; }catch(e){ return false; } })();
+  function getMatchMusic(){ return matchMusicOn; }
+  function setMatchMusic(on){ matchMusicOn=!!on; try{ localStorage.setItem('bannon_match_music', matchMusicOn?'1':'0'); }catch(e){}
+    // apply immediately if a match is live
+    try{ const gs=(typeof gameState!=='undefined')?gameState:window.gameState; if(gs==='fight'){ matchMusicOn?match(true):stop(); } }catch(e){} return matchMusicOn; }
+  async function match(force){ if(!matchMusicOn){ await stop(); return; }   // off by default -> silence the bed for crowd/commentary
+    const wasMenu=(curMode!=='match'); curMode='match'; if(!force && !wasMenu && bgPlaying()) return;
     const t=cfg.match?trackById(cfg.match):shuffle(pool('match'))[0]; await playBg(t); }
   async function stop(){ bgAudio.pause(); curBg=null; }
   // NEXT (the menu bar's ⏭): advance to a DIFFERENT track. Browses the WHOLE library and skips the
@@ -38196,6 +38213,7 @@ window.BANNON_JUKEBOX = (function(){
 
   return { DEFAULT_TRACKS, list, pool, trackById, addTrack, addTrackPrompt, loadUserTracks,
            menu, match, next, stop, entrance, victory, setVolume, getVolume:()=>vol,
+           getMatchMusic, setMatchMusic,
            assignMenu, assignMatch, assignVictory, assignEntrance, cfg:()=>cfg, unlock };
 })();
 </script>
@@ -40936,6 +40954,7 @@ window.BANNON_SETTINGS_MENU = (function(){
     blood: true,
     cameraShake: true,
     hardcore: false,
+    matchMusic: false,          // OFF by default — hear the crowd + commentary during matches
     graphicsQuality: 'High'
   };
 
@@ -40960,10 +40979,14 @@ window.BANNON_SETTINGS_MENU = (function(){
       currentSettings[key] = q[(q.indexOf(currentSettings[key]) + 1) % q.length];
     }
     save();
+    // MATCH MUSIC toggle is owned by the jukebox (it persists + applies live) — mirror it there.
+    if (key==='matchMusic') { try{ if(window.BANNON_JUKEBOX && window.BANNON_JUKEBOX.setMatchMusic) window.BANNON_JUKEBOX.setMatchMusic(currentSettings.matchMusic); }catch(e){} }
     if (window.addEvent) window.addEvent(`Setting ${key} changed to ${currentSettings[key]}`, 'settings');
   }
 
   load();
+  // on boot, sync the persisted match-music setting into the jukebox source-of-truth
+  try{ if(window.BANNON_JUKEBOX && window.BANNON_JUKEBOX.setMatchMusic) window.BANNON_JUKEBOX.setMatchMusic(!!currentSettings.matchMusic); }catch(e){}
 
   return { get: () => currentSettings, toggle: toggleSetting, save, load };
 })();
