@@ -11742,7 +11742,7 @@ function buildArena(){
   // Reduced ambient so shadows are actually dark (the #1 thing that kills "arcade look").
 
   // AMBIENT: kept intentionally low — deep shadows sell physicality.
-  const amb=new THREE.AmbientLight(0x1a1a24, cold?0.35:0.22); arenaGroup.add(amb);
+  const amb=new THREE.AmbientLight(0x1a1a24, cold?0.35:0.22); arenaGroup.add(amb); window.__arenaAmbient=amb;   // exposed for per-promotion mood (buildArenaStage)
 
   // HEMISPHERE: sky/ground separation (blue-ish overhead, warm floor bounce) — cheap GI
   const hemi=new THREE.HemisphereLight(cold?0x2a3a5a:0x2a1a0a, cold?0x0a1020:0x0a0500, cold?0.45:0.38);
@@ -11821,14 +11821,52 @@ window.ARENA_PRESETS = window.ARENA_PRESETS || {
   SHINOBI:  { name:'Shinobi 99',         accent:0x39ff14, tron:0x39ff14, barricade:0x06120a, ramp:0x040e08, screen:null, label:'SHINOBI 99', barricadeStyle:'guardrail', venue:'neon' }
 };
 window.ARENA_PRESET = window.ARENA_PRESET || 'BUC';   // BANNON Underground Championship = default home arena
+// PROPRIETARY PER-PROMOTION IDENTITY (owner's real-world parallels, baked as OUR own vibes — no
+// trademarks; drives apron/tron branding text, crowd/light mood, and venue atmosphere). tagline shows
+// on the tron; mood tints the arena fog/ambient; skirt is the apron-band text.  (owner mapping 2026-07-20)
+window.PROMO_VIBES = window.PROMO_VIBES || {
+  BUC:      { tagline:'UNDERGROUND', mood:'underground', bg:0x0b0a06 },   // gold-on-black flagship
+  BANNON:   { tagline:'THE ARCHITECT', mood:'arena', bg:0x0c0a10 },
+  AWE:      { tagline:'GLOBAL SPECTACLE', mood:'broadcast', bg:0x0a0e16 }, // WWE+AEW mainstream apex
+  JPCW:     { tagline:'STRONG STYLE', mood:'strongstyle', bg:0x0c1016 },   // NJPW — clean, prestige, tournament
+  NWC:      { tagline:'HOSTILE TAKEOVER', mood:'hijacked', bg:0x050705 },  // nWo Souled Out — dark, renegade
+  LUCHA:    { tagline:'LUCHA ETERNAL', mood:'festival', bg:0x140a04 },     // AAA/CMLL — bright, masks, chaos
+  RISING:   { tagline:"KING'S ROAD", mood:'strongstyle', bg:0x100608 },    // AJPW/NOAH — grueling epics
+  MAPLE:    { tagline:'THE DUNGEON', mood:'cold', bg:0x06100c },           // Stampede — cold chain-wrestling
+  IRONDOJO: { tagline:'SHOOT-STYLE', mood:'shoot', bg:0x0a0c10 },          // UWFi/Bloodsport — minimalist, no-frills
+  SANDLOT:  { tagline:'BACKYARD WARFARE', mood:'backyard', bg:0x87a04a },  // backyard — outdoor grass/dirt DIY
+  OCTAGON:  { tagline:'NO ESCAPE', mood:'mma', bg:0x06080c },              // UFC/Pride — the cage
+  LEGACY:   { tagline:'TERRITORY DAYS', mood:'smoky', bg:0x120e08 },       // NWA/Crockett — 80s smoky southern
+  NETFED:   { tagline:'GONE VIRAL', mood:'indie', bg:0x080c14 },           // GCW/internet indies — chaotic spot-fests
+  PROVING:  { tagline:'PROVE IT', mood:'developmental', bg:0x0c0e10 },     // NXT/OVW — developmental drill
+  STICKUP:  { tagline:'THE CONGREGATION', mood:'cathedral', bg:0x0a0403 }, // ECW-in-a-cathedral — grunge, cult heat
+  HOLLYWOOD:{ tagline:'BOX OFFICE', mood:'glam', bg:0x140f04 },            // celebrity crossover spectacle
+  SHINOBI:  { tagline:'LEVEL 99', mood:'neon', bg:0x030a06 },              // FMW/Michinoku — neon deathmatch, book Lv99
+};
+window.promoVibe = function(k){ return window.PROMO_VIBES[k] || window.PROMO_VIBES.BANNON; };
 let _arenaTronTex=null;
-function _makeTronCanvas(label, accentHex){
+// Apron-skirt band texture: the promotion name repeated across the mat skirt in its colors (real
+// wrestling aprons print the promotion; this is OUR proprietary version, generated — no MDickie art).
+function _makeApronCanvas(label, accentHex, mood){
+  const c=document.createElement('canvas'); c.width=1024; c.height=128; const g=c.getContext('2d');
+  const acc='#'+('000000'+(accentHex>>>0).toString(16)).slice(-6);
+  const dark = (mood==='backyard'||mood==='glam') ? '#141008' : '#07070b';
+  g.fillStyle=dark; g.fillRect(0,0,1024,128);
+  g.fillStyle=acc; g.fillRect(0,0,1024,6); g.fillRect(0,122,1024,6);            // trim strips
+  g.font='bold 66px Arial Black, sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+  g.fillStyle=acc; g.globalAlpha=0.92;
+  for(let i=0;i<4;i++){ g.fillText(label||'BANNON', 128+i*256, 66); }            // repeated brand
+  g.globalAlpha=1;
+  const t=new THREE.CanvasTexture(c); t.wrapS=THREE.RepeatWrapping; t.repeat.set(2,1); t.anisotropy=4; return t;
+}
+function _makeTronCanvas(label, accentHex, tagline){
   const c=document.createElement('canvas'); c.width=512; c.height=256; const g=c.getContext('2d');
   const acc='#'+('000000'+(accentHex>>>0).toString(16)).slice(-6);
   g.fillStyle='#05060a'; g.fillRect(0,0,512,256);
   const grd=g.createRadialGradient(256,128,20,256,128,300); grd.addColorStop(0,acc); grd.addColorStop(1,'#05060a'); g.globalAlpha=0.35; g.fillStyle=grd; g.fillRect(0,0,512,256); g.globalAlpha=1;
-  g.font='bold 120px Arial Black, sans-serif'; g.textAlign='center'; g.textBaseline='middle';
-  g.fillStyle=acc; g.shadowColor=acc; g.shadowBlur=40; g.fillText(label||'BANNON',256,128); g.shadowBlur=0;
+  g.font='bold 108px Arial Black, sans-serif'; g.textAlign='center'; g.textBaseline='middle';
+  g.fillStyle=acc; g.shadowColor=acc; g.shadowBlur=40; g.fillText(label||'BANNON',256,108); g.shadowBlur=0;
+  if(tagline){ g.font='bold 30px Arial, sans-serif'; g.globalAlpha=0.85; g.fillStyle='#e8e8ee'; g.fillText(tagline,256,196); g.globalAlpha=1; }
   const t=new THREE.CanvasTexture(c); t.anisotropy=4; return t;
 }
 function buildArenaStage(group, accentCol, cold){
@@ -11850,7 +11888,8 @@ function buildArenaStage(group, accentCol, cold){
   const ledMat=new THREE.MeshStandardMaterial({ color:acc, emissive:acc, emissiveIntensity:1.2, roughness:0.4 });
   [-1.35,1.35].forEach(x=>{ const s=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.2,rampLen), ledMat); s.position.set(x,-0.2,stageZ+stageD/2+rampLen/2); stage.add(s); });
   // --- TITANTRON (main megatron) ---
-  _arenaTronTex = _arenaTronTex || _makeTronCanvas(P.label, acc);
+  const _vibe = (window.promoVibe?window.promoVibe(window.ARENA_PRESET):{});
+  _arenaTronTex = _arenaTronTex || _makeTronCanvas(P.label, acc, _vibe.tagline);
   window.__arenaTronTexObj = _arenaTronTex;   // expose for BANNON_TRON animation
   try{ if(window.BANNON_TRON){ window.BANNON_TRON.set(P.label, acc); window.BANNON_TRON.bind(); } }catch(e){}
   const tronMat = new THREE.MeshBasicMaterial({ map:_arenaTronTex });
@@ -11918,6 +11957,36 @@ function buildArenaStage(group, accentCol, cold){
   cornerArc( inner,  inner, 0); cornerArc(-inner,  inner, Math.PI/2); cornerArc(-inner, -inner, Math.PI); cornerArc( inner, -inner, -Math.PI/2);
   // stage key light
   const sl0=new THREE.SpotLight(acc, 2.2, 26, Math.PI/6, 0.4); sl0.position.set(0,8,stageZ+2); sl0.target.position.set(0,0,0); group.add(sl0); group.add(sl0.target);
+
+  // --- PROPRIETARY APRON SKIRT: the promotion name printed around the ring skirt (our generated art) ---
+  try{
+    const AH=(typeof ARENA_HALF!=='undefined'?ARENA_HALF:3.2), AHZ=HZ;
+    const fy=(typeof RING!=='undefined'&&RING.floorY!=null?RING.floorY:0);
+    const skirtTex=_makeApronCanvas(P.label, acc, _vibe.mood);
+    const skirtMat=new THREE.MeshStandardMaterial({ map:skirtTex, roughness:0.85, metalness:0.05, emissive:acc, emissiveIntensity:0.05 });
+    const bandH=0.82, edge=0.56, yMid=fy-0.30;                          // skirt hangs from mat down toward floor
+    const sides=[ [0, AHZ+edge, 2*(AH+edge), 0], [0, -(AHZ+edge), 2*(AH+edge), Math.PI],
+                  [AH+edge, 0, 2*(AHZ+edge), -Math.PI/2], [-(AH+edge), 0, 2*(AHZ+edge), Math.PI/2] ];
+    sides.forEach(s=>{ const m=new THREE.Mesh(new THREE.PlaneGeometry(s[2], bandH), skirtMat);
+      m.position.set(s[0], yMid, s[1]); m.rotation.y=s[3]; m.receiveShadow=true; group.add(m); });
+  }catch(e){}
+  // --- PER-VIBE MOOD: tint arena fog/background + ambient so each promotion reads distinctly
+  // (NWC dark/hijacked, JPCW clean strong-style, STICKUP cathedral-red, SANDLOT outdoor daylight...) ---
+  try{
+    const bg=(_vibe.bg!=null?_vibe.bg:0x0a0a10);
+    if(typeof scene!=='undefined' && scene){
+      if(scene.fog){ scene.fog.color.setHex(bg); if(_vibe.mood==='backyard'){ scene.fog.near=18; scene.fog.far=70; } }
+      scene.background = new THREE.Color(bg);
+    }
+    if(window.__arenaAmbient && window.__arenaAmbient.color){
+      const bright=(_vibe.mood==='backyard'||_vibe.mood==='festival'||_vibe.mood==='glam');
+      const dark=(_vibe.mood==='hijacked'||_vibe.mood==='cathedral'||_vibe.mood==='underground'||_vibe.mood==='smoky');
+      window.__arenaAmbient.intensity = bright?0.85 : dark?0.32 : 0.55;
+      if(_vibe.mood==='cathedral') window.__arenaAmbient.color.setHex(0x552222);
+      else if(_vibe.mood==='backyard') window.__arenaAmbient.color.setHex(0xbfd0a0);
+      else window.__arenaAmbient.color.setHex(0xffffff);
+    }
+  }catch(e){}
 }
 window.buildArenaStage = buildArenaStage;
 window.setArenaPreset = function(name){ if(window.ARENA_PRESETS[name]){ window.ARENA_PRESET=name; _arenaTronTex=null; try{ buildArena(); }catch(e){} } };
