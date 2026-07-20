@@ -309,6 +309,100 @@ def export_merged(env, out, target, limit):
     print(f"merged {n} GameObject subtrees -> {out}")
 
 
+def _collect_subtree(root_t, parse_obj_fn):
+    """Walk a Transform subtree, bake child transforms into world space, group prims by texture."""
+    import io
+    groups = {}
+    def walk(t, parent_m):
+        try:
+            lp = t.m_LocalPosition; lr = t.m_LocalRotation; ls = t.m_LocalScale
+            local = _mat_trs((lp.x, lp.y, lp.z), (lr.x, lr.y, lr.z, lr.w), (ls.x, ls.y, ls.z))
+            world = _mat_mul(parent_m, local)
+            go = t.m_GameObject.read(); mf = mr = None
+            for c in go.m_Component:
+                cp = c.component if hasattr(c, 'component') else c
+                try: cc = cp.read()
+                except Exception: continue
+                tn = cc.__class__.__name__
+                if 'MeshFilter' in tn: mf = cc
+                elif 'MeshRenderer' in tn: mr = cc
+            if mf and getattr(mf, 'm_Mesh', None):
+                try:
+                    mesh = mf.m_Mesh.read(); V, VN, VT, F = parse_obj_fn(mesh.export())
+                    png = None
+                    if mr:
+                        try:
+                            mats = getattr(mr, 'm_Materials', [])
+                            if mats:
+                                mat = mats[0].read()
+                                for k, v in mat.m_SavedProperties.m_TexEnvs:
+                                    if v.m_Texture:
+                                        tex = v.m_Texture.read(); img = tex.image
+                                        if img:
+                                            if max(img.size) > 512: img = img.resize((min(512, img.size[0]), min(512, img.size[1])))
+                                            buf = io.BytesIO(); img.convert('RGB').save(buf, 'PNG'); png = buf.getvalue()
+                                        break
+                        except Exception: png = None
+                    key = id(png) if png else 0
+                    g = groups.setdefault(key, {'png': png, 'pos': [], 'nrm': [], 'uv': []})
+                    for tri in F:
+                        for (vi, ti, ni) in tri:
+                            p = V[vi-1] if 0 < vi <= len(V) else (0, 0, 0); wv = _mat_apply(world, [p[0], p[1], p[2]]); g['pos'] += wv
+                            nn = VN[ni-1] if VN and 0 < ni <= len(VN) else (0, 1, 0)
+                            nx = world[0][0]*nn[0]+world[0][1]*nn[1]+world[0][2]*nn[2]; ny = world[1][0]*nn[0]+world[1][1]*nn[1]+world[1][2]*nn[2]; nz = world[2][0]*nn[0]+world[2][1]*nn[1]+world[2][2]*nn[2]
+                            nl = (nx*nx+ny*ny+nz*nz) ** 0.5 or 1; g['nrm'] += [nx/nl, ny/nl, nz/nl]
+                            t2 = VT[ti-1] if VT and 0 < ti <= len(VT) else (0, 0); g['uv'] += [t2[0], t2[1]]
+                except Exception: pass
+            for ch in (t.m_Children or []):
+                try: walk(ch.read(), world)
+                except Exception: pass
+        except Exception: pass
+    ident = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]]
+    walk(root_t, ident)
+    return list(groups.values())
+
+
+def export_all_roots(env, out, min_tris, limit):
+    """Export EVERY top-level (parent-less) GameObject subtree as its own GLB — all locations at once."""
+    import re as _re
+    def transform_of(go):
+        for c in go.m_Component:
+            cp = c.component if hasattr(c, 'component') else c
+            try:
+                cc = cp.read()
+                if 'Transform' in cc.__class__.__name__ and 'Rect' not in cc.__class__.__name__: return cc
+            except Exception: pass
+        return None
+    roots = []
+    for o in env.objects:
+        if o.type.name != 'GameObject': continue
+        try:
+            go = o.read(); t = transform_of(go)
+            if not t: continue
+            father = getattr(t, 'm_Father', None)
+            has_parent = False
+            try: has_parent = bool(father) and getattr(father, 'path_id', 0) != 0
+            except Exception: has_parent = False
+            if not has_parent: roots.append((go.m_Name or 'root', t))
+        except Exception: pass
+    manifest = {'roots': []}; n = 0; seen = {}
+    for name, rt in roots:
+        try: groups = _collect_subtree(rt, parse_obj)
+        except Exception: continue
+        tris = sum(len(g['pos']) // 9 for g in groups)
+        if tris < min_tris: continue
+        safe = _re.sub(r'[^A-Za-z0-9_.-]', '_', name)[:48] or 'root'; seen[safe] = seen.get(safe, 0) + 1
+        fn = safe if seen[safe] == 1 else f'{safe}_{seen[safe]}'
+        try:
+            write_multi_glb(groups, os.path.join(out, fn + '.glb'))
+            manifest['roots'].append({'name': name, 'file': fn + '.glb', 'tris': tris}); n += 1
+        except Exception: pass
+        if limit and n >= limit: break
+    manifest['count'] = n
+    json.dump(manifest, open(os.path.join(out, 'manifest.json'), 'w'), indent=1)
+    print(f"exported {n} root subtrees (>= {min_tris} tris) -> {out}")
+
+
 def write_multi_glb(groups, out_path):
     """groups: [{png, pos[], nrm[], uv[]}] -> one GLB, a primitive per group, each with its texture."""
     import array, struct as _st, json as _json
@@ -352,7 +446,13 @@ def main():
     ap.add_argument('--names', default=''); ap.add_argument('--limit', type=int, default=0)
     ap.add_argument('--go', action='store_true', help='textured GameObject export (mesh + baked main texture)')
     ap.add_argument('--merge', default='', help='export a GameObject subtree (car body+wheels) baked into one GLB')
+    ap.add_argument('--roots', action='store_true', help='export EVERY top-level (parent-less) GameObject subtree — pulls all locations/environments at once')
+    ap.add_argument('--min-tris', type=int, default=200, help='skip root subtrees below this triangle count (--roots)')
     a = ap.parse_args()
+    if a.roots:
+        os.makedirs(a.out, exist_ok=True)
+        export_all_roots(UnityPy.load(a.bundle), a.out, a.min_tris, a.limit)
+        return
     if a.merge:
         os.makedirs(a.out, exist_ok=True)
         export_merged(UnityPy.load(a.bundle), a.out, a.merge, a.limit)
