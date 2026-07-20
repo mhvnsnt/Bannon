@@ -734,3 +734,8 @@ Before any git push or GitHub API PUT, you MUST run wc -l index.html to verify t
 - **Autonomous MDickie Ingestion Script (`tools/mdickie_scraper/autonomous_ingestion.cjs`)**: Engineered a chunked-stream downloading buffer to handle massive 300MB+ Unity APKs without memory bottlenecking. 
 - **Headless Unpack & UnityFS Decryption**: Pipeline automatically decompresses LZMA/LZ4 Unity bundles, aggressively filters out Unity logic scripts, and performs cryptographic delta-checks against the Bannon repo to prevent asset duplication.
 - **Strict Routing Protocol**: Isolated legacy 2D textures and low-poly meshes are strictly diverted into the Three.js nostalgia sandbox (`public/assets/nostalgia`). Extracted save structures and text assets are scraped, converted into Bannon-proprietary JSON structures (`proprietary_dialogue_map.json`), and fed directly into the Node.js universe backend.
+
+
+### SHIPPED (MDICKIE PROPRIETARY DIALOGUE MAPPER)
+- **Dialogue Extraction & Synthesis Engine (`tools/mdickie_scraper/dialogue_mapper.cjs`)**: Engineered a pipeline to intercept legacy MDickie text arrays, parse their mechanical context, and pass them through the established Bannon multi-model fallback chain (Claude -> Gemini -> Grok). 
+- **Ontological Context Injection**: The script automatically synthesizes raw MDickie lines (e.g., "I need more money") into Bannon's God-Within and Career mode context (e.g., "My Star Power dictates a higher merch cut..."). This ensures all scraped dialogue strictly adheres to Bannon's proprietary universe rules rather than acting as a direct 1:1 rip.
