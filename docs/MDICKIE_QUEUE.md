@@ -1,6 +1,21 @@
 # MDickie integration — live queue (owner priority order, 2026-07-20)
 
-Done this session (all committed + pushed to branch + main):
+## Infra / bug pass (session 2, all committed + pushed):
+- **AI-Studio counter-layer** — `scripts/heal_clobber.cjs` (auto-restores a clobbered/stubbed
+  BANNON_v150.html from the last healthy commit) + `scripts/stub_scan.cjs` (flags fake/lying stubs)
+  run by `.github/workflows/guard.yml` on every push to main + claude/**. A clobber now SELF-HEALS
+  in one CI run. Verified: a 2-line stub auto-restored to 41k lines.
+- **Music bugs fixed** — loop=false + 'ended' auto-advance (playlist), menu()/match() idempotent so
+  UI changes (menu/attire/character) don't restart the song.
+- **Apex position stick** — persists on-screen during a match; flick / IJKL = turn front<->rear,
+  lift-grounded (new startGroundLift), avalanche-perch, tree-of-woe. Verified in-harness.
+- **KNOWN STUBS to complete later** (owner: after mdickie env+mocap): `tools/mocap_ingester/
+  mocap_ingest.py` + `validate_retargeting.py` are AI-Studio print-only narrative mocks;
+  `src/components/{GlobalLeaderboard,SnapshotGallery}.tsx` use mock data. `run node scripts/stub_scan.cjs`.
+- **UniRig space DOWN** — jasongzy/UniRig HF space keeps returning `Connection refused` (external
+  outage); batch rigged only CIPHER. Re-run `python3 tools/unirig/batch_rerig.py --fails` when it's back.
+
+Done session 1 (all committed + pushed to branch + main):
 1. **UniRig kickoff** — `tools/unirig/batch_rerig.py --fails` (hosted jasongzy/UniRig). Self-QAs
    (rejects degenerate <16-joint rigs). Re-run any time; resumable (skips existing `_rigged.glb`).
    Committed so far: BANNON, CIPHER. The HF space intermittently refuses connections — just re-launch.
