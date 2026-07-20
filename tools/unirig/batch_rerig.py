@@ -23,9 +23,41 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 MODELS = os.path.join(REPO, "assets", "models")
 LOG = os.path.join(os.path.dirname(__file__), "rerig_log.txt")
 SPACE = os.environ.get("UNIRIG_SPACE", "jasongzy/UniRig")
-# FALLBACK SPACES — jasongzy/UniRig intermittently returns Connection refused (ZeroGPU outage). Try
-# these in order so a single space being down doesn't block the whole batch. Override with UNIRIG_SPACE.
-SPACES = [SPACE] + [s for s in ["VAST-AI/UniRig", "Zhengyi/UniRig", "MohamedRashad/UniRig"] if s != SPACE]
+# FALLBACK SPACES — jasongzy/UniRig intermittently returns Connection refused (ZeroGPU outage).
+# Audited 2026-07-20 against the HF spaces API: VAST-AI/UniRig + Zhengyi/UniRig now 401 (gone
+# private/dead) — REMOVED; live public mirrors added (MohamedRashad 68 likes, monaverse,
+# MajorDaniel). Override the primary with UNIRIG_SPACE, or the whole list with UNIRIG_SPACES
+# (comma-separated).
+_env_list = [s.strip() for s in os.environ.get("UNIRIG_SPACES", "").split(",") if s.strip()]
+SPACES = _env_list or ([SPACE] + [s for s in [
+    "MohamedRashad/UniRig", "monaverse/UniRig", "MajorDaniel/UniRig", "netw1z/UniRig",
+] if s != SPACE])
+
+
+def _space_stage(sp):
+    """HF spaces API runtime stage ('RUNNING'/'SLEEPING'/'PAUSED'/...) — a 2s probe that saves a
+    long dead gradio connect. Unknown/unreachable -> '?' (still tried, just last)."""
+    try:
+        import urllib.request, json as _j
+        req = urllib.request.Request("https://huggingface.co/api/spaces/" + sp,
+                                     headers={"User-Agent": "bannon-rerig"})
+        with urllib.request.urlopen(req, timeout=6) as r:
+            return ((_j.load(r).get("runtime") or {}).get("stage")) or "?"
+    except Exception:
+        return "?"
+
+
+def _ordered_spaces():
+    """RUNNING spaces first (instant queue entry), then sleeping/unknown (connect wakes ZeroGPU),
+    dead (RUNTIME_ERROR/PAUSED) last — a whole-fleet probe costs seconds vs 20-min blind jobs."""
+    ranked = []
+    for sp in SPACES:
+        st = _space_stage(sp)
+        rank = 0 if st == "RUNNING" else (2 if st in ("RUNTIME_ERROR", "PAUSED", "STOPPED", "CONFIG_ERROR", "BUILD_ERROR") else 1)
+        ranked.append((rank, sp, st))
+        log(f"     probe {sp}: {st}")
+    ranked.sort(key=lambda x: x[0])
+    return [sp for _, sp, _ in ranked]
 
 # KEY -> source mesh to feed UniRig (the current banked model; UniRig ignores any existing weights)
 SRC = {
@@ -62,7 +94,7 @@ def rerig(key):
     tok = os.environ.get("HF_TOKEN")
     t0 = time.time()
     res = None
-    for sp in SPACES:
+    for sp in _ordered_spaces():
         try:
             log(f"RIG  {key}: connecting {sp} ...")
             c = Client(sp, token=tok)

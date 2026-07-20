@@ -651,3 +651,41 @@ BINDING session memory so these don't get re-derived:
 - STILL QUEUED from the owner's Universe ask: roaming WHILE in Universe should feel like the MDickie
   world loop (walk venue → show starts at the dated time) — the roam button is the entry, the
   clock/venue-walk tie-in is the next layer. Char-select GLB render cards on the gradient plates.
+
+## v161b — GNM head + pyro/timer/culling/TOW pass (2026-07-20, all harness-verified, on main)
+- **GOOGLE GNM HEAD LANDED** (owner's askNK video → real integration): google/GNM (Apache 2.0)
+  scan-grade parametric head → `tools/gnm/export_head.py` → `assets/models/face/gnm_head.glb`
+  (9.1MB, 17,821v, **38 morph targets**: 20 identity axes @2σ + 18 expressions). Verified in
+  r128 GLTFLoader: dict 38, max delta 17.3mm, 3 distinct heads rendered from sliders. THE fix
+  for MODEL GAP #2 (tube-head faces). Next: CAW FACE tab → influences → DNA payload; graft onto
+  base body; semantic sampler presets. Notes: docs/GNM_OMNIVERSE_notes.md. Omniverse = owner-side
+  (Audio2Face → GNM visemes; mocap retarget) — documented, not sandbox-runnable.
+- **MATCH_RULES** (persisted): time limit DEFAULT INFINITE ('∞' on the HUD, no countdown; owner
+  spec), options 60/90/99/180/300s; ROUNDS option SINGLE/BO3/BO5 → `let ROUNDS_TO_WIN`. Cyclers in
+  char-select foot (csTime/csRounds). IRONMAN still forces 180s. startRound reads it all.
+- **PYRO GATE**: BANNON_FX pyroBurst/stagePyro only fire inside a time-boxed window —
+  entrance play() 6.5s, authored timeline maxT+3s, victory 8s. Victory FX MOVED from
+  declareWinner (fired before endRound's re-entry guard → stray KO callbacks + every elimination
+  re-burst pyro mid-match = the owner's "always firing" frame drain) into endMatch. PYRO_ALWAYS
+  debug override. Verified: blocked mid-match, declareWinner×3 fires none, endMatch opens outro.
+- **CROWD CULLING**: crowd IMs sector-split (kind × 90° sector, 19 banks), each geometry CLONE
+  carries an explicit enclosing boundingSphere + frustumCulled=true (r128 culls IMs whole by
+  geometry sphere — one 360° IM can never cull). updateArenaAnim frustum-tests each bank,
+  hidden banks skip the instanceMatrix GPU upload. MEASURED (onBeforeRender counters): 9 banks
+  drawn facing the bowl vs 4 facing away; 13 skip upload.
+- **ROPE-CLIMB SFX**: poseRopeClimb fires __sfxSnap grips at t=0.34/0.68 (heavier on top-rope) +
+  __sfxThud on perch settle. IMPACT_SFX=false kills it.
+- **TREE OF WOE is now REAL**: (1) HOLD pin in the corner-physics update runs BEFORE the corner
+  classification (poseGrabbed drag/body-separation emptied the tree in <1 frame — the pose never
+  survived to be attacked); victim pinned ~3.5s, no escape roll, slumps out via down state.
+  (2) strike dispatch vs hanging victim (HANGING STOMP/RUNNING KNEE/BASEBALL SLIDE · TREE OF WOE,
+  LOW aim, ×1.15). (3) grab = CRAVATE YANK (release + real damage + knockdown). Verified live:
+  pose holds, HANGING STOMP connects for 215.
+- **UNIRIG FLEET**: VAST-AI + Zhengyi spaces DEAD (401) — pruned; MohamedRashad/monaverse/
+  MajorDaniel/netw1z added; `_ordered_spaces()` probes HF API runtime.stage (RUNNING first) before
+  any 20-min blind connect. UNIRIG_SPACES env overrides. jasongzy was RUNNING at audit; --fails
+  batch relaunched in background.
+- **AI-STUDIO CLAIM AUDIT (2026-07-20)**: its transcript claimed Brick 87 BANNON_FX/MATCH_SETTINGS/
+  rope-SFX fixes "over 39,500 lines" — NOTHING was pushed to any branch, and its own log shows it
+  worked on a 2MB-TRUNCATED 30,469-line upload (AI Studio hard limit). Never merge its claims
+  without measuring; the real versions of all of it are the bricks above.
