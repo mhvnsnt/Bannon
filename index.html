@@ -269,6 +269,7 @@ NEVER rename existing functions or variables.
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <!-- REAL PHYSICS (optional): Rapier loads only over http(s)/localhost. On a double-click it stays off and the game runs exactly as before. -->
 <script type="module">
+(async () => {
   try{
     const M = await import('https://esm.sh/@dimforge/rapier3d-compat@0.14.0');
     const R = M.default || M;
@@ -276,6 +277,7 @@ NEVER rename existing functions or variables.
     window.RAPIER = R; window.RAPIER_READY = true;
     console.log('[BANNON] real physics ready', (R.version&&R.version&&R.version&&typeof R.version==='function'?R.version():''));
   }catch(e){ window.RAPIER_READY = false; console.warn('[BANNON] Rapier off (run from a local server to enable real physics):', (e&&e.message)||e); }
+})();
 </script>
 
 <style>
@@ -1164,7 +1166,7 @@ body.match-live #movesBtn { display:none !important; }
         </div>
     </div>
     
-    <div style="flex:1; overflow-y:auto; padding:15px 25px; background:url('data:image/svg+xml;utf8,<svg width=\"40\" height=\"40\" viewBox=\"0 0 40 40\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20zM20 0h20v20H20V0z\" fill=\"%230f172a\" fill-opacity=\"0.4\" fill-rule=\"evenodd\"/></svg>');" id="animBrowserList">
+    <div style="flex:1; overflow-y:auto; padding:15px 25px; background:url('data:image/svg+xml;utf8,<svg width=%2240%22 height=%2240%22 viewBox=%220 0 40 40%22 xmlns=%22http://www.w3.org/2000/svg%22><path d=%22M0 0h40v40H0V0zm20 20h20v20H20V20zM0 20h20v20H0V20zM20 0h20v20H20V0z%22 fill=%22%230f172a%22 fill-opacity=%220.4%22 fill-rule=%22evenodd%22/></svg>');" id="animBrowserList">
         <!-- Rendered by JS -->
     </div>
     
@@ -31293,6 +31295,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   console.log('%c[BANNON · BRICK 56] VISCERAL IMPACT — whiff over-reach · wound clutch · hit-step · arm flail · ground writhe · stagger seed','color:#ff7a1a;font-weight:bold;background:#000;padding:3px 8px');
 })();
 </script>
+<script>
 // ============================================================================
 // BRICK 117: ADVANCED KINEMATICS, JOINT LOCKS & DEEP COMBAT 
 // ============================================================================
