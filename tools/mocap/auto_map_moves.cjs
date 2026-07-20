@@ -12,7 +12,7 @@ const M=path.join(__dirname,'..','..','assets','moves');
 const rd=f=>{ try{ return JSON.parse(fs.readFileSync(path.join(M,f),'utf8')); }catch(e){ return null; } };
 const fbx=rd('fbx_move_map.json')||{clips:[]};
 const clips=fbx.clips||[];
-const libs=['bannon_move_library.json','mdickie_moves.json','mdickie_buckle_moves.json'];
+const libs=['bannon_move_library.json','mdickie_moves.json','mdickie_buckle_moves.json','mdickie_ground_moves.json'];
 const CATMAP={ grapple:['grapple','throw','slam','suplex','powerbomb','ddt','driver'], strike:['strike','punch','kick','chop','clothesline','forearm'],
   dive:['dive','aerial','splash','moonsault','senton','crossbody'], submission:['submission','hold','lock','choke'] };
 const toks=s=>String(s||'').toLowerCase().split(/[^a-z0-9]+/).filter(x=>x.length>2);

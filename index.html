@@ -37884,6 +37884,13 @@ window.BANNON_MOVE_LIBRARY = (function(){
           else if(m.kind==='strike'){ (LIB.strikes=LIB.strikes||[]).push(m); }
           else { (LIB.grapples=LIB.grapples||[]).push(m); }
         }); } }catch(e){}
+    // MDickie Ground.bb — grounded mat-game holds (head-side + leg-side submissions), routed via sub+limb.
+    try{ const r5g=await fetch('assets/moves/mdickie_ground_moves.json'); const GR=await r5g.json();
+      if(GR&&GR.moves){ const have=new Set(all().map(m=>m.name));
+        GR.moves.forEach(m=>{ if(have.has(m.name)) return;
+          if(m.kind==='strike'){ (LIB.strikes=LIB.strikes||[]).push(m); }
+          else { (LIB.submissions=LIB.submissions||[]).push(m); }
+        }); } }catch(e){}
     // AUTO move->mocap-clip map (tools/mocap/auto_map_moves.cjs, NON-MANUAL): attach each move's best
     // mocap clip so studioApplyClipPose ANIMATES it once the FBX library is loaded (physics-only until then).
     try{ const r5=await fetch('assets/moves/move_clip_map.json'); const CM=await r5.json(); const map=(CM&&CM.map)||{};
