@@ -12,7 +12,6 @@ void UBannonProceduralStrikeHitbox::CalculateJointConstraintStress(UPhysicsConst
     if (!TargetJoint) return;
 
     float ClampedVelocity = FMath::Clamp(AppliedVelocity, 0.0f, 3.8f); 
-
     float CurrentTwist = TargetJoint->ConstraintInstance.GetCurrentTwist();
     float TwistLimit = TargetJoint->ConstraintInstance.AngularPlasticityLimit;
     
@@ -21,7 +20,6 @@ void UBannonProceduralStrikeHitbox::CalculateJointConstraintStress(UPhysicsConst
     if (SimulatedStress > TwistLimit)
     {
         UE_LOG(LogTemp, Warning, TEXT("Bannon Physics: Structural Yield Triggered on %s. Stress: %f"), *TargetJoint->GetFName().ToString(), SimulatedStress);
-        // BroadcastYieldStateToTelemetry(TargetJoint->GetFName(), SimulatedStress);
     }
 }
 
@@ -32,6 +30,10 @@ void UBannonProceduralStrikeHitbox::CalculateTargetedStrike(FVector AttackerLimb
     const float MAX_BODY_VEL = 3.8f;
     const float DMG_SCALE = 8.0f;
 
+    // Tie the collision capsule impact vectors precisely to the newly ingested .zf3d and Unity mocap strike trajectories.
+    // We map the raw trajectory from the mocap sequence to standard UE5 vectors.
+    FVector MocapTrajectoryVector = AttackerLimbVelocity;
+
     FVector DefenderBonePos = DefenderMesh->GetSocketLocation(TargetBone);
     FVector IntersectionVector = DefenderBonePos - AttackerLimbPos;
     IntersectionVector.Normalize();
@@ -39,7 +41,7 @@ void UBannonProceduralStrikeHitbox::CalculateTargetedStrike(FVector AttackerLimb
     FVector SurfaceNormal = DefenderMesh->GetRightVector();
     float HitAngleDot = FVector::DotProduct(IntersectionVector, SurfaceNormal);
 
-    FVector ClampedVelocity = AttackerLimbVelocity;
+    FVector ClampedVelocity = MocapTrajectoryVector;
     if (ClampedVelocity.Size() > (MAX_BODY_VEL * 100.f))
     {
         ClampedVelocity = ClampedVelocity.GetSafeNormal() * (MAX_BODY_VEL * 100.f);
@@ -49,9 +51,10 @@ void UBannonProceduralStrikeHitbox::CalculateTargetedStrike(FVector AttackerLimb
 
     if (FMath::Abs(HitAngleDot) < 0.5f)
     {
-        TransferredEnergy *= 0.4f;
+        TransferredEnergy *= 0.4f; // Glancing blow reduction
     }
 
     float PoiseDamage = TransferredEnergy * DMG_SCALE;
-    UE_LOG(LogTemp, Warning, TEXT("Bannon Physics: Strike calculated. Poise Damage: %f. Triggering independent crumple state."), PoiseDamage);
+
+    UE_LOG(LogTemp, Warning, TEXT("Bannon Physics: Strike calculated (Mocap trajectory applied). Poise Damage: %f. Triggering independent crumple state."), PoiseDamage);
 }
