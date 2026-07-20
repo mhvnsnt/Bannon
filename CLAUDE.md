@@ -716,3 +716,13 @@ BINDING session memory so these don't get re-derived:
      clay), roster/save parse for named attires (MDICKIE_ATTIRE_MAP), more anims via extract_anim.
   5. Creative-freedom golden rule pass (QUALITY_BAR) in more systems.
   6. Re-run UniRig fleet (ECHO/STATIC/CODY/CAIN/STICKUP/ONYX + MDICKIE.glb skinning).
+
+## v161d — APEX 2K positioning matrix (2026-07-20, verified 10/10, on main)
+- Apex stick position layer COMPLETE + ADDITIVE (hoist pitch/twist + dive control keep priority):
+  L/R grounded = TRUE 180° log-roll (verlet mirror about spine axis; _groundFaceDown flag covers
+  verlet-less downs, groundFacingOf honors it) / standing = go-behind; DOWN corner = seatedBottom
+  → DOWN again = treeOfWoe; UP corner = seatedTop; UP grounded = lift; DOWN at ropes = NEW
+  ROPE DRAPE (pinned 2.8s over middle rope, corner-clear guarded for rope runs, slumps to down;
+  draped arsenal TIGER FEINT KICK / RUNNING HIP ATTACK / SLIDING DROPKICK · DRAPED ×1.12).
+  BANNON_APEX exports rollDowned/atRope for tests. GOTCHA: fake state-set downs have EMPTY o.V —
+  test rolls against a real knockdown or the flag path; "GO BEHIND" on flick = out of kneel range.
