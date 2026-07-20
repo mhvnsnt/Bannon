@@ -732,3 +732,9 @@ BINDING session memory so these don't get re-derived:
   read hook). Verified: 38 sliders, save round-trips, screenshot clean. NEXT: graft onto fighter
   bodies + fold into BANNON_DNA capture. WR3D texture template: source zf3d re-pull needed
   (MDICKIE.glb has 80 materials, 0 images — decoder didn't embed textures); still queued.
+- v161f: 🎶 TRACK MANAGER live (main-menu btnTrackMgr → BANNON_JUKEBOX.openManager(): preview/
+  rename/artist/delete-or-hide/add; built-ins = bannon_jukebox_meta overrides, IDB tracks edit
+  in place; hidden drop from all pools). DNA now carries gnmFace (capture/apply round-trip).
+  UniRig bg batch: ECHO errored on the space, STATIC in progress — rerun --fails; bank+gate any
+  *_rigged.glb it leaves in assets/models/. NEXT SESSION: 2K creation-suite parity FIRST, then
+  grapple-IK realism (queue above).
