@@ -41693,6 +41693,82 @@ window.BANNON_MDICKIE_LEGACY_MODULE = (function(){
   return { triggerCourt, triggerMeeting, generateNewsHeadline, postMatchAftermath, PROMOTIONS };
 })();
 </script>
+<script>
+// ============================================================================================
+// BANNON_GNM_FACE — the GNM FACE STUDIO (Google GNM head, Apache 2.0, banked as
+// assets/models/face/gnm_head.glb with 38 REAL morph targets: 20 scan-learned identity axes +
+// 18 expressions). Sliders drive mesh.morphTargetInfluences live in an own-canvas preview;
+// SAVE persists per-character (localStorage bannon_gnm_faces) — the DNA-payload face layer.
+// Opens from a CREATION hub tile (👤 FACE LAB) or window.openGnmFace('CHARKEY').
+// ============================================================================================
+window.BANNON_GNM_FACE = (function(){
+  const URLGLB='assets/models/face/gnm_head.glb', KEY='bannon_gnm_faces';
+  let panel=null, ren=null, sc=null, cam=null, mesh=null, charKey='BANNON', raf=0;
+  function saved(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } }
+  function store(m){ try{ localStorage.setItem(KEY, JSON.stringify(m)); }catch(e){} }
+  function build(){ if(panel) return; panel=document.createElement('div');
+    panel.style.cssText='position:fixed;inset:4% 6%;z-index:100001;background:#0a0c12f7;border:1px solid #ff7a1a;border-radius:12px;padding:14px;color:#ffd9a8;font:12px ui-monospace,monospace;display:none;box-shadow:0 12px 44px #000d;overflow:hidden;';
+    panel.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+      '<b style="color:#ff7a1a;font-size:15px;letter-spacing:2px">👤 GNM FACE LAB <span style="font-size:10px;color:#9a8">scan-grade parametric head · 38 axes</span></b>'+
+      '<span><input id="gnmChar" style="background:#14100c;border:1px solid #543;color:#ffe0b0;padding:4px 8px;border-radius:5px;width:130px;text-transform:uppercase" value="BANNON">'+
+      '<button id="gnmClose" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">✕</button></span></div>'+
+      '<div style="display:flex;gap:12px;height:calc(100% - 74px)">'+
+      '<canvas id="gnmCv" width="300" height="340" style="background:#10131a;border:1px solid #333;border-radius:8px;flex:0 0 300px"></canvas>'+
+      '<div id="gnmSliders" style="flex:1;overflow-y:auto;padding-right:6px"></div></div>'+
+      '<div style="display:flex;gap:8px;margin-top:9px">'+
+      '<button id="gnmRnd" style="flex:1;background:#1a2a3a;border:1px solid #4af;color:#9cf;padding:9px;border-radius:7px;cursor:pointer;font:bold 12px ui-monospace">🎲 RANDOMIZE</button>'+
+      '<button id="gnmRst" style="flex:1;background:#2a1a1a;border:1px solid #a55;color:#faa;padding:9px;border-radius:7px;cursor:pointer;font:bold 12px ui-monospace">RESET</button>'+
+      '<button id="gnmSave" style="flex:2;background:#7CFC00;border:none;color:#08110a;padding:9px;border-radius:7px;cursor:pointer;font:bold 13px ui-monospace">💾 SAVE FACE</button></div>';
+    document.body.appendChild(panel);
+    panel.querySelector('#gnmClose').onclick=close;
+    panel.querySelector('#gnmChar').oninput=e=>{ charKey=(e.target.value||'BANNON').toUpperCase(); applySaved(); };
+    panel.querySelector('#gnmSave').onclick=()=>{ if(!mesh) return; const m=saved(); m[charKey]=Array.from(mesh.morphTargetInfluences); store(m);
+      panel.querySelector('#gnmSave').textContent='💾 SAVED · '+charKey; setTimeout(()=>{ try{ panel.querySelector('#gnmSave').textContent='💾 SAVE FACE'; }catch(e){} },1200); };
+    panel.querySelector('#gnmRnd').onclick=()=>{ if(!mesh) return; const d=mesh.morphTargetDictionary;
+      for(const nm in d){ const i=d[nm]; mesh.morphTargetInfluences[i]= nm.indexOf('id_')===0 ? (Math.random()*1.6-0.8) : 0; } syncSliders(); };
+    panel.querySelector('#gnmRst').onclick=()=>{ if(!mesh) return; mesh.morphTargetInfluences.fill(0); syncSliders(); };
+  }
+  function applySaved(){ if(!mesh) return; const m=saved()[charKey]; mesh.morphTargetInfluences.fill(0);
+    if(m) m.forEach((v,i)=>{ if(i<mesh.morphTargetInfluences.length) mesh.morphTargetInfluences[i]=v; }); syncSliders(); }
+  function syncSliders(){ if(!panel||!mesh) return;
+    panel.querySelectorAll('input[data-gi]').forEach(s=>{ s.value=mesh.morphTargetInfluences[+s.dataset.gi]; }); }
+  function sliders(){ const host=panel.querySelector('#gnmSliders'); host.innerHTML=''; const d=mesh.morphTargetDictionary;
+    const grp=(t)=>{ const h=document.createElement('div'); h.style.cssText='color:#ff7a1a;letter-spacing:2px;margin:8px 0 4px;font-weight:bold'; h.textContent=t; host.appendChild(h); };
+    grp('IDENTITY (scan axes)');
+    let didEx=false;
+    Object.keys(d).forEach(nm=>{ if(nm.indexOf('ex_')===0 && !didEx){ grp('EXPRESSION'); didEx=true; }
+      const i=d[nm], row=document.createElement('div'); row.style.cssText='display:flex;align-items:center;gap:8px;margin:2px 0';
+      const lb=document.createElement('span'); lb.style.cssText='width:150px;color:#c9b98a;font-size:10px'; lb.textContent=nm.replace(/^(id|ex)_/,'').replace(/_/g,' ');
+      const sl=document.createElement('input'); sl.type='range'; sl.min=nm.indexOf('id_')===0?-1:0; sl.max=1; sl.step=0.02; sl.value=0; sl.dataset.gi=i; sl.style.flex='1';
+      sl.oninput=()=>{ mesh.morphTargetInfluences[i]=+sl.value; };
+      row.appendChild(lb); row.appendChild(sl); host.appendChild(row); });
+  }
+  function init3d(){ if(ren||typeof THREE==='undefined') return;
+    const cv=panel.querySelector('#gnmCv');
+    ren=new THREE.WebGLRenderer({canvas:cv,antialias:true}); ren.setSize(300,340,false);
+    sc=new THREE.Scene(); sc.background=new THREE.Color(0x10131a);
+    cam=new THREE.PerspectiveCamera(26,300/340,0.01,10); cam.position.set(0,0.24,0.62); cam.lookAt(0,0.22,0);
+    const dl=new THREE.DirectionalLight(0xffffff,1.05); dl.position.set(0.5,0.8,1); sc.add(dl);
+    sc.add(new THREE.AmbientLight(0x8899aa,0.62));
+    const L=new THREE.GLTFLoader();
+    const bind=(g)=>{ g.scene.traverse(o=>{ if(o.isMesh&&!mesh){ mesh=o; o.material=new THREE.MeshStandardMaterial({color:0xd0a184,roughness:0.6,morphTargets:true}); } });
+      sc.add(g.scene); sliders(); applySaved(); };
+    L.load(URLGLB, bind, undefined, ()=>{ const cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/'; L.load(cdn+URLGLB, bind); });
+    (function loop(){ raf=requestAnimationFrame(loop); if(sc.children.length&&panel.style.display!=='none'){ sc.rotation.y=Math.sin(performance.now()*0.0004)*0.5; ren.render(sc,cam); } })();
+  }
+  function open(k){ build(); if(k) charKey=String(k).toUpperCase(); panel.querySelector('#gnmChar').value=charKey; panel.style.display='block'; init3d(); if(mesh) applySaved(); }
+  function close(){ if(panel) panel.style.display='none'; }
+  function facesFor(k){ return saved()[String(k||'').toUpperCase()]||null; }   // engine/DNA read hook
+  // CREATION hub tile
+  try{ const uni=document.getElementById('btnHubUniverse');
+    if(uni&&uni.parentElement){ const b=document.createElement('button'); b.className='hub-tile'; b.id='btnHubGnmFace';
+      b.innerHTML='<span class="hub-ico">👤</span><span class="hub-lbl">FACE LAB</span>';
+      b.addEventListener('click',()=>open(charKey)); uni.parentElement.appendChild(b); } }catch(e){}
+  window.openGnmFace=open;
+  return { open, close, facesFor };
+})();
+console.log('%c[GNM FACE LAB] scan-grade parametric face studio — hub tile 👤 / openGnmFace()','color:#7CFC00');
+</script>
 </body></html>
 
 

@@ -726,3 +726,9 @@ BINDING session memory so these don't get re-derived:
   draped arsenal TIGER FEINT KICK / RUNNING HIP ATTACK / SLIDING DROPKICK · DRAPED ×1.12).
   BANNON_APEX exports rollDowned/atRope for tests. GOTCHA: fake state-set downs have EMPTY o.V —
   test rolls against a real knockdown or the flag path; "GO BEHIND" on flick = out of kneel range.
+- v161e GNM FACE LAB SHIPPED: hub tile 👤 FACE LAB / openGnmFace() — own-canvas preview of
+  gnm_head.glb, 38 live sliders (identity −1..1, expression 0..1) → morphTargetInfluences,
+  SAVE per character (localStorage bannon_gnm_faces; BANNON_GNM_FACE.facesFor(key) = engine/DNA
+  read hook). Verified: 38 sliders, save round-trips, screenshot clean. NEXT: graft onto fighter
+  bodies + fold into BANNON_DNA capture. WR3D texture template: source zf3d re-pull needed
+  (MDICKIE.glb has 80 materials, 0 images — decoder didn't embed textures); still queued.
