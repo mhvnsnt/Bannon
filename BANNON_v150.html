@@ -40850,7 +40850,62 @@ window.BANNON_GODWITHIN_OPEN_WORLD = (function(){
   return { initiateBrawl, startQuestTalk };
 })();
 </script>
+
+<!-- ============================================================================================
+     BANNON_MDICKIE_LEGACY_MODULE — Proprietary conversion of Court, Meetings, Aftermath, News, Promotions
+     ============================================================================================ -->
+<script>
+window.BANNON_MDICKIE_LEGACY_MODULE = (function(){
+  // Bannon Court System (legacy Hard Time trial system)
+  function triggerCourt(fighterName, charge) {
+    if (window.addEvent) {
+      window.addEvent(`⚖️ THE COURT OF BANNON ⚖️`, 'system');
+      window.addEvent(`${fighterName} has been charged with: ${charge}.`, 'system');
+      
+      const verdict = Math.random() > 0.5 ? 'GUILTY' : 'NOT GUILTY';
+      window.addEvent(`The verdict is in... ${verdict}!`, 'system');
+      
+      if (verdict === 'GUILTY') {
+         window.addEvent(`${fighterName} has been sentenced to the Supermax Block!`, 'hazard');
+         window.CURRENT_ENV = 'PRISON';
+      }
+    }
+  }
+
+  // Backstage Meetings & Promotions
+  const PROMOTIONS = ['Federation Online', 'All American Wrestling', 'Super Lucha Libre', 'Strong Style Japan', 'BANNON Underground'];
+  
+  function triggerMeeting(fighterName) {
+    const promo = PROMOTIONS[Math.floor(Math.random() * PROMOTIONS.length)];
+    if (window.addEvent) {
+      window.addEvent(`🤝 BACKSTAGE MEETING 🤝`, 'system');
+      window.addEvent(`A promoter from ${promo} approaches ${fighterName}...`, 'dialogue');
+      if (window.BANNON_RPG) window.BANNON_RPG.grantXP(fighterName, 50);
+    }
+  }
+
+  // News & Aftermath (Post-match newspaper/dirt sheet headlines)
+  function generateNewsHeadline(winner, loser, env) {
+    const headlines = [
+      `${winner} DESTROYS ${loser} IN BRUTAL SHOWDOWN AT ${env}!`,
+      `CONTROVERSY: Did ${winner} cross the line against ${loser}?`,
+      `INJURY UPDATE: ${loser} seen leaving ${env} in an ambulance after fight with ${winner}.`
+    ];
+    return headlines[Math.floor(Math.random() * headlines.length)];
+  }
+  
+  function postMatchAftermath(winner, loser) {
+    if (window.addEvent) {
+      window.addEvent(`📰 BANNON DIRT SHEET 📰`, 'system');
+      window.addEvent(generateNewsHeadline(winner, loser, window.CURRENT_ENV || 'THE ARENA'), 'system');
+    }
+  }
+
+  return { triggerCourt, triggerMeeting, generateNewsHeadline, postMatchAftermath, PROMOTIONS };
+})();
+</script>
 </body></html>
+
 
 
 
