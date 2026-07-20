@@ -698,3 +698,10 @@ Before any git push or GitHub API PUT, you MUST run wc -l index.html to verify t
 - **BANNON_WORLD_UPGRADES (Proprietary Zone Physics)**: Wrote custom MDickie-legacy-inspired rules specifically for the proprietary environments (Supermax Block, Metro General, Popcorn Hotel, Promoter Desk, Neon Strip). Added real-time hazard triggers (rogue vehicles in streets/parking, slipping hazards in hospital/office, rioting prop spawns in prison block) hooking straight into the `applyDamage` physics pipeline.
 - **BANNON_ANIMATION_DECOMPRESSOR**: Unpacked the legacy MDickie animation dictionaries mapping the final Brawler and Submission templates into `BANNON_MOVE_LIBRARY`. `BRAWLER_TEMPLATES` now covers punches, hooks, headbutts, and dirty tactics. `SUBMISSION_TEMPLATES` now maps Triangle Chokes, Guillotines, Kimura Locks, and Heel Hooks directly into our positional engine.
 - **BANNON_GODWITHIN_OPEN_WORLD (Free Roam Brawling & Dialogue)**: Injected the core 'seamless transition' logic to the `gwInteract` prompt. Users can click 'TALK' to trigger the RPG dialogue engine (granting XP), or click 'BRAWL!' to instantaneously drop the UI and trigger a dynamic physics fight on the spot without loading into an exhibition match.
+
+
+### SHIPPED (PHASE 8 & MDICKIE LEGACY MODULES)
+- **BANNON_MDICKIE_LEGACY_MODULE (Proprietary Conversions)**: Finalized the decryption and porting of the remaining core MDickie framework (Court, Meetings, Aftermath, News, Promotions). 
+- **Bannon Court System**: Upgraded the Hard Time trial system. Random verdict generation ('GUILTY' vs 'NOT GUILTY') that actively drops the player into the 'PRISON' environment (Supermax Block) upon a guilty verdict.
+- **Backstage Meetings & Promotions**: Generates random promoter encounters (from 5 proprietary Bannon-universe federations) giving dynamic RPG XP scaling via `BANNON_RPG`.
+- **News & Aftermath**: Dynamic Dirt Sheet headlines tracking post-match wins, losses, environment contexts, and generating simulated controversy or injury updates directly into the UI log.
