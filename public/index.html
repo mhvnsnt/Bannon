@@ -38465,6 +38465,48 @@ window.BANNON_UNIVERSE = (function(){
      through BANNON_JUKEBOX. Persistent in localStorage. No trademarks — proprietary universe names.
      ============================================================================================ -->
 <script>
+// ============================================================================================
+// CHAR_VOICE — REAL per-character dialogue (the fix for generic stub lines: every fighter used to
+// say the same 5 lines). Each character speaks in their own voice for the 5 branch choices + default
+// situations (taunt/win/entrance/callout). Characters WITHOUT a hand-authored set fall back to a pool
+// picked by ALIGNMENT (heel/face/tweener) + ARCHETYPE, so ALL 116 get flavored, in-character lines.
+// ============================================================================================
+window.CHAR_VOICE = window.CHAR_VOICE || {
+  BANNON:      { respect:['"You lasted. Most don\'t. That\'s the whole compliment."'], insult:['"You\'re a load-bearing wall in a building I\'m condemning."'], recruit:['"Stand where I put you and the structure holds."'], challenge:['"I\'ve already drawn the blueprint of your collapse."'], betray:['"The people beside you are just supports waiting to buckle."'], taunt:['"Brace yourself."'], win:['"Demolition complete."'] },
+  MAIME:       { respect:['"Ooo you\'re STILL breathing, that\'s so POLITE of you hehehe!"'], insult:['"You smell like a hospital gift shop — sad and closing down!"'], recruit:['"Come play in my head, there\'s ROOM now!"'], challenge:['"Let\'s leak a little, you and me, drip drip drip!"'], betray:['"Psst — your best friend laughs when you cry!"'], taunt:['"VERBAL... LEAKAGE!"'], win:['"Was it good for you? It was GREAT for the voices!"'] },
+  SOLARIS_JUSTICE:{ respect:['"Truth recognizes truth. Well fought."'], insult:['"I\'ve seen your kind fold the second the lights get hot."'], recruit:['"Stand in the light with me — they can\'t hide from both of us."'], challenge:['"Justice doesn\'t wait for a convenient date. Tonight."'], betray:['"Ask yourself who really has your back when it counts."'], taunt:['"Look up — the sun\'s already on you."'], win:['"Let that be the truth of it."'] },
+  CIPHER:      { respect:['"Your number came up clean. Rare."'], insult:['"I ran you three times. You lose in all of them."'], recruit:['"Two variables, one solution. Solve it with me."'], challenge:['"The equation says you fall. I\'m just the proof."'], betray:['"Recalculate your allies. The math changed."'], taunt:['"...seven... four... you\'re already gone."'], win:['"Result: undefined. For you."'] },
+  STATIC:      { respect:['"Okay okay okay respect respect — you good, you GOOD, moving on!"'], insult:['"You\'re a buffering wheel in a person suit, nobody\'s waiting, refresh yourself!"'], recruit:['"Yo team up team up we\'d be UNMUTABLE, get it? get it? let\'s GO!"'], challenge:['"Me? You? Now-now-now, don\'t think, you\'ll hurt it!"'], betray:['"Between us between us — your boy\'s already talkin\', I heard ALL of it!"'], taunt:['"Can\'t hear the ref over ME, baby!"'], win:['"Dead. Air. Say goodnight, nobody\'s listening to YOU!"'] },
+  ECHO:        { respect:['"...well fought. (well fought.)"'], insult:['"You\'ll say that again. And again. And again."'], recruit:['"Say yes once. I\'ll make it last."'], challenge:['"You heard me. You\'ll hear me all night."'], betray:['"Listen close — they said it behind you first."'], taunt:['"...again... again..."'], win:['"That\'ll ring for a while."'] },
+  HOLLOW:      { respect:['"There\'s nothing behind my eyes and even I saw greatness."'], insult:['"You\'re a costume with no one inside."'], recruit:['"Come empty yourself out. It\'s quieter here."'], challenge:['"I\'ll show you what\'s left when everything\'s gone."'], betray:['"They filled your head with lies. I can hollow it out."'], taunt:['"..."'], win:['"Nothing personal. Nothing at all."'] },
+  ONYX:        { respect:['"You bent. You didn\'t break. Noted."'], insult:['"Cheap stone cracks. That\'s all you are."'], recruit:['"Under pressure, only the hardest survive. Stand with me."'], challenge:['"I\'ll press until you shatter."'], betray:['"Your foundation\'s already fractured — look who put it there."'], taunt:['"Pressure makes diamonds. Or dust."'], win:['"Cut, polished, done."'] },
+  FINXSSE:     { respect:['"Ha! You showed up with the jewels on, I respect the shine."'], insult:['"You\'re bus fare in a private-jet business, homie."'], recruit:['"Run with me and we eat every night, that\'s a promise on the cross."'], challenge:['"GETBACKK is comin\' — mark the date, spend it wisely."'], betray:['"Your circle got a leak, and it ain\'t me... this time."'], taunt:['"Opps fallin\'!"'], win:['"Chain snatched. Next."'] },
+  STICK_UP:    { respect:['"The congregation felt that one. Blessed."'], insult:['"You\'re a collection plate nobody fills."'], recruit:['"Kneel with the cult — we take what we\'re owed."'], challenge:['"Leap of faith, and you don\'t come back up."'], betray:['"Even the faithful whisper. Especially about you."'], taunt:['"Believe."'], win:['"Amen. Take the fall."'] },
+};
+// alignment + archetype fallback pools so EVERY character has an in-character voice
+window.VOICE_FALLBACK = window.VOICE_FALLBACK || {
+  heel:   { respect:['"Don\'t get used to me saying it."'], insult:['"You don\'t belong on the same card as me."'], recruit:['"Useful. For now. Fall in line."'], challenge:['"I\'ll end you and enjoy it."'], betray:['"Your friends sold you out before I did."'], taunt:['"Pathetic."'], win:['"Exactly as planned."'] },
+  face:   { respect:['"You earned every bit of that. Respect."'], insult:['"I don\'t trash-talk. I just beat you."'], recruit:['"Together we give these people something to believe in."'], challenge:['"You, me, and everybody watching. Let\'s go."'], betray:['"Watch your back — someone in your corner isn\'t real."'], taunt:['"Come on then!"'], win:['"For everybody who counted me out."'] },
+  tweener:{ respect:['"Fair\'s fair. That was good."'], insult:['"You\'re in my way. That\'s a mistake."'], recruit:['"I don\'t do friends. I do business. In?"'], challenge:['"Name the night. I\'ll be there."'], betray:['"Loyalty\'s a rumor. Ask around about your crew."'], taunt:['"Is that it?"'], win:['"Told you."'] },
+};
+window.voiceLine = function(charKey, situation){
+  try{
+    const k=String(charKey||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_');
+    const cv=window.CHAR_VOICE[k];
+    if(cv && cv[situation] && cv[situation].length) return cv[situation][Math.floor(Math.random()*cv[situation].length)];
+    // fallback by alignment
+    let align='tweener';
+    try{ if(window.BANNON_STORY&&window.BANNON_STORY.align) align=window.BANNON_STORY.align(k)||align; }catch(e){}
+    if(align!=='heel'&&align!=='face'){ // derive from faction if story has no alignment yet
+      try{ const meta=(window.CHAR_META&&window.CHAR_META[k])||{}; const f=(meta.faction||'').toLowerCase();
+        if(/corporate|chaos|temptation/.test(f)) align='heel'; else if(/alliance/.test(f)) align='face'; }catch(e){}
+    }
+    const fb=window.VOICE_FALLBACK[align]||window.VOICE_FALLBACK.tweener;
+    const pool=fb[situation]||fb.challenge; return pool[Math.floor(Math.random()*pool.length)];
+  }catch(e){ return '"..."'; }
+};
+</script>
+<script>
 window.BANNON_STORY = (function(){
   const KEY='bannon_story_v1';
   const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -38542,13 +38584,16 @@ window.BANNON_STORY = (function(){
 
   // ---- DIALOGUE + BRANCHES (Promos.bb: Speak + choices -> ChangeRelationship/Allegiance/Turn/Team) ----
   function dialogueChoices(a,b,tone){
-    // every choice has an outcome that mutates real story state (relationship/turn/team/allegiance).
+    // every choice mutates real story state; the LINE is now spoken in the SPEAKER's own voice
+    // (window.voiceLine -> CHAR_VOICE per character, alignment/archetype fallback otherwise) so
+    // Cipher sounds like Cipher and Static won't shut up — not one generic line for all 116.
+    const vl=(s,f)=>{ try{ return window.voiceLine? window.voiceLine(a,s) : f; }catch(e){ return f; } };
     return [
-      { id:'respect', text:'Show respect', outcome:'rel+', line:`"You earned it out there."` },
-      { id:'insult',  text:'Run them down', outcome:'rel-', line:`"You don't belong in my ring."` },
-      { id:'recruit', text:'Pitch an alliance', outcome:'team', line:`"Together, nobody touches us."` },
-      { id:'challenge',text:'Issue a challenge', outcome:'feud', line:`"You and me. No excuses."` },
-      { id:'betray',  text:'Plant the seed of a turn', outcome:'turn', line:`"Your friends aren't who you think."` }
+      { id:'respect', text:'Show respect', outcome:'rel+', line:vl('respect',`"You earned it out there."`) },
+      { id:'insult',  text:'Run them down', outcome:'rel-', line:vl('insult',`"You don't belong in my ring."`) },
+      { id:'recruit', text:'Pitch an alliance', outcome:'team', line:vl('recruit',`"Together, nobody touches us."`) },
+      { id:'challenge',text:'Issue a challenge', outcome:'feud', line:vl('challenge',`"You and me. No excuses."`) },
+      { id:'betray',  text:'Plant the seed of a turn', outcome:'turn', line:vl('betray',`"Your friends aren't who you think."`) }
     ]; }
   // resolve a dialogue choice -> real consequences (this is the branch logic).
   function choose(a,b,choiceId){ let res={a,b,choice:choiceId};
