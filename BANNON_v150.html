@@ -938,6 +938,7 @@ body.match-live #movesBtn { display:none !important; }
     <!-- Match music defaults OFF (hear crowd + commentary); tap to allow music during matches. -->
     <div class="match-row" style="grid-template-columns:1fr; margin-top:8px;">
       <button class="menu-btn" id="btnMatchMusic" style="font-size:14px;">🎵 MATCH MUSIC: OFF</button>
+      <button class="menu-btn" id="btnTrackMgr" style="font-size:14px;">🎶 TRACKS · EDIT MUSIC</button>
     </div>
     <div style="margin-top:18px; font-family:'Share Tech Mono'; font-size:9px; color:#666; letter-spacing:3px;">v77 · WWE 2K26 CONTROLS · VISCERAL PRO WRESTLING</div>
   </div>
@@ -16389,6 +16390,7 @@ function setupInput(){
     try{ if(window.BANNON_SETTINGS_MENU){ window.BANNON_SETTINGS_MENU.get().matchMusic=on; window.BANNON_SETTINGS_MENU.save(); } }catch(e){} });
   // reflect persisted state on the button at load
   try{ const _b=document.getElementById('btnMatchMusic'); const _J=window.BANNON_JUKEBOX; if(_b&&_J&&_J.getMatchMusic) _b.textContent='🎵 MATCH MUSIC: '+(_J.getMatchMusic()?'ON':'OFF'); }catch(e){}
+  _wire('btnTrackMgr', ()=>{ try{ if(window.BANNON_JUKEBOX&&window.BANNON_JUKEBOX.openManager) window.BANNON_JUKEBOX.openManager(); }catch(e){} });
   _wire('btnMusicAdd',     ()=>{ const J=window.BANNON_JUKEBOX; if(J) J.addTrackPrompt(['menu','match']); });
   document.getElementById('btnArena').addEventListener('click', ()=>{ 
     if (window.BANNON_ENVIRONMENTS) {
@@ -38291,7 +38293,14 @@ window.BANNON_JUKEBOX = (function(){
   let userTracks=[];   // IDB-added tracks {id,name,cat,idb:true}; blobs resolved to object URLs on demand
   const urlCache={};   // id -> objectURL for idb blobs
   function saveCfg(){ try{ localStorage.setItem(LS, JSON.stringify(cfg)); }catch(e){} }
-  function allTracks(){ return DEFAULT_TRACKS.concat(userTracks); }
+  // TRACK MANAGER metadata layer: rename/artist/hide overrides for BUILT-IN tracks persist in
+  // localStorage; IDB-added tracks edit their own records. Hidden tracks drop out of every pool.
+  const METAKEY='bannon_jukebox_meta';
+  let meta=(function(){ try{ return JSON.parse(localStorage.getItem(METAKEY)||'{}'); }catch(e){ return {}; } })();
+  function saveMeta(){ try{ localStorage.setItem(METAKEY, JSON.stringify(meta)); }catch(e){} }
+  function allTracks(){ return DEFAULT_TRACKS.concat(userTracks)
+    .map(t=>{ const m=meta[t.id]; return m?Object.assign({},t,{name:(m.name!=null?m.name:t.name),artist:(m.artist!=null?m.artist:t.artist),_hidden:!!m.hidden}):t; })
+    .filter(t=>!t._hidden); }
   function trackById(id){ return allTracks().find(t=>t.id===id)||null; }
   function pool(cat){ return allTracks().filter(t=>(t.cat||[]).indexOf(cat)>=0); }
 
@@ -38309,6 +38318,53 @@ window.BANNON_JUKEBOX = (function(){
     inp.onchange=async()=>{ for(const f of inp.files){ await addTrack(f, cat||['menu','match'], f.name.replace(/\.[^.]+$/,'')); } try{ (window.toast||function(){})('Added '+inp.files.length+' track(s) to the jukebox.'); }catch(e){} };
     inp.click(); }
   async function idbBlobUrl(id){ if(urlCache[id]) return urlCache[id]; const db=await idb(); const rec=await new Promise((res)=>{ const tx=db.transaction(STORE,'readonly'); tx.objectStore(STORE).get(id).onsuccess=e=>res(e.target.result); }); if(!rec||!rec.blob) return null; return urlCache[id]=URL.createObjectURL(rec.blob); }
+  // ---- TRACK MANAGER ops: delete (idb = real delete; built-in = hide), rename, artist ----
+  async function idbDel(id){ try{ const db=await idb(); await new Promise((res,rej)=>{ const tx=db.transaction(STORE,'readwrite'); tx.objectStore(STORE).delete(id); tx.oncomplete=res; tx.onerror=rej; });
+    if(urlCache[id]){ try{ URL.revokeObjectURL(urlCache[id]); }catch(e){} delete urlCache[id]; } await loadUserTracks(); return true; }catch(e){ return false; } }
+  async function idbUpdate(id,patch){ try{ const db=await idb(); const rec=await new Promise(res=>{ const tx=db.transaction(STORE,'readonly'); tx.objectStore(STORE).get(id).onsuccess=e=>res(e.target.result); });
+    if(!rec) return false; Object.assign(rec,patch); await idbPut(rec); await loadUserTracks(); return true; }catch(e){ return false; } }
+  async function removeTrack(id){ if(DEFAULT_TRACKS.find(x=>x.id===id)){ meta[id]=Object.assign({},meta[id],{hidden:true}); saveMeta(); return 'hidden'; }
+    return (await idbDel(id))?'deleted':false; }
+  function renameTrack(id,name,artist){ const u=userTracks.find(x=>x.id===id);
+    if(u) return idbUpdate(id, Object.assign({}, name!=null?{name:name}:{}, artist!=null?{artist:artist}:{}));
+    meta[id]=Object.assign({},meta[id], name!=null?{name:name}:{}, artist!=null?{artist:artist}:{}); saveMeta(); return Promise.resolve(true); }
+  function restoreHidden(){ for(const k in meta){ if(meta[k]) delete meta[k].hidden; } saveMeta(); }
+  // ---- TRACK MANAGER panel: see every track (incl. hidden), preview to IDENTIFY it, rename /
+  // set artist / delete-or-hide / re-add. The "mystery accidental song" flow: hit ▶ on each row. ----
+  let mgr=null; const pv=(typeof Audio!=='undefined')?new Audio():null;
+  async function openManager(){ await loadUserTracks();
+    if(!mgr){ mgr=document.createElement('div');
+      mgr.style.cssText='position:fixed;inset:7% 9%;z-index:100002;background:#0a0c12f7;border:1px solid #ff7a1a;border-radius:12px;padding:14px;color:#ffd9a8;font:12px ui-monospace,monospace;overflow:auto;box-shadow:0 12px 44px #000d;';
+      document.body.appendChild(mgr); }
+    mgr.style.display='block';
+    const rows=DEFAULT_TRACKS.map(t=>{ const m=meta[t.id]||{}; return Object.assign({},t,{name:(m.name!=null?m.name:t.name),artist:(m.artist!=null?m.artist:t.artist),_hidden:!!m.hidden,_src:'BUILT-IN'}); })
+      .concat(userTracks.map(t=>Object.assign({},t,{_src:'ADDED'})));
+    let h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'+
+      '<b style="color:#ff7a1a;font-size:15px;letter-spacing:2px">🎶 TRACK MANAGER <span style="font-size:10px;color:#9a8">'+rows.length+' tracks · ▶ to identify · idb deletes are permanent</span></b>'+
+      '<span><button data-jm="add" style="background:#1a2a12;border:1px solid #7CFC00;color:#7CFC00;padding:6px 10px;border-radius:6px;cursor:pointer;font:bold 11px ui-monospace">＋ ADD TRACKS</button> '+
+      '<button data-jm="unhide" style="background:#14100c;border:1px solid #543;color:#c9b98a;padding:6px 10px;border-radius:6px;cursor:pointer;font:11px ui-monospace">↺ RESTORE HIDDEN</button> '+
+      '<button data-jm="close" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">✕</button></span></div>';
+    rows.forEach(t=>{ h+='<div style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #221a28'+(t._hidden?';opacity:.45':'')+'">'+
+      '<button data-jp="'+t.id+'" style="background:#14202c;border:1px solid #4af;color:#9cf;width:30px;padding:4px 0;border-radius:5px;cursor:pointer">▶</button>'+
+      '<span style="flex:1"><b style="color:#ffe0b0">'+String(t.name).replace(/[<>&]/g,'')+'</b>'+(t._hidden?' <i style="color:#a55">(hidden)</i>':'')+
+      '<br><span style="font-size:10px;color:#9a8">'+String(t.artist||'?').replace(/[<>&]/g,'')+' · '+(t.cat||[]).join('/')+' · '+t._src+'</span></span>'+
+      '<button data-jr="'+t.id+'" style="background:#14100c;border:1px solid #543;color:#ffd9a8;padding:4px 8px;border-radius:5px;cursor:pointer">✏ NAME</button>'+
+      '<button data-ja="'+t.id+'" style="background:#14100c;border:1px solid #543;color:#ffd9a8;padding:4px 8px;border-radius:5px;cursor:pointer">🎤 ARTIST</button>'+
+      '<button data-jd="'+t.id+'" style="background:#2a1212;border:1px solid #a55;color:#faa;padding:4px 8px;border-radius:5px;cursor:pointer">'+(t._src==='ADDED'?'✕ DELETE':(t._hidden?'UNHIDE':'✕ HIDE'))+'</button></div>'; });
+    mgr.innerHTML=h;
+    mgr.querySelector('[data-jm="close"]').onclick=()=>{ mgr.style.display='none'; try{ pv&&pv.pause(); }catch(e){} };
+    mgr.querySelector('[data-jm="add"]').onclick=()=>{ addTrackPrompt(); setTimeout(openManager,1500); };
+    mgr.querySelector('[data-jm="unhide"]').onclick=()=>{ restoreHidden(); openManager(); };
+    mgr.querySelectorAll('[data-jp]').forEach(b=>b.onclick=async()=>{ try{ const t=DEFAULT_TRACKS.find(x=>x.id===b.dataset.jp)||userTracks.find(x=>x.id===b.dataset.jp);
+      const s=await srcFor(t); if(!s||!pv) return; if(!pv.paused && pv.__id===t.id){ pv.pause(); b.textContent='▶'; return; }
+      pv.src=s; pv.__id=t.id; pv.volume=0.9; pv.play(); mgr.querySelectorAll('[data-jp]').forEach(x=>x.textContent='▶'); b.textContent='■'; }catch(e){} });
+    mgr.querySelectorAll('[data-jr]').forEach(b=>b.onclick=async()=>{ const nm=prompt('New track name:'); if(nm!=null&&nm.trim()){ await renameTrack(b.dataset.jr, nm.trim(), null); openManager(); } });
+    mgr.querySelectorAll('[data-ja]').forEach(b=>b.onclick=async()=>{ const ar=prompt('Artist:'); if(ar!=null&&ar.trim()){ await renameTrack(b.dataset.ja, null, ar.trim()); openManager(); } });
+    mgr.querySelectorAll('[data-jd]').forEach(b=>b.onclick=async()=>{ const id=b.dataset.jd;
+      if(DEFAULT_TRACKS.find(x=>x.id===id)&&meta[id]&&meta[id].hidden){ delete meta[id].hidden; saveMeta(); openManager(); return; }
+      if(userTracks.find(x=>x.id===id)&&!confirm('Permanently DELETE this added track?')) return;
+      await removeTrack(id); openManager(); });
+  }
   async function srcFor(t){ if(!t) return null; if(t.idb) return await idbBlobUrl(t.id); return resolveAudioUrl(t.url); }
 
   // ---- playback ----
@@ -38396,7 +38452,7 @@ window.BANNON_JUKEBOX = (function(){
 
   return { DEFAULT_TRACKS, list, pool, trackById, addTrack, addTrackPrompt, loadUserTracks,
            menu, match, next, stop, entrance, victory, setVolume, getVolume:()=>vol,
-           getMatchMusic, setMatchMusic,
+           getMatchMusic, setMatchMusic, openManager, removeTrack, renameTrack, restoreHidden,
            assignMenu, assignMatch, assignVictory, assignEntrance, cfg:()=>cfg, unlock };
 })();
 </script>
