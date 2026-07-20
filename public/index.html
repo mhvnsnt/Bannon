@@ -1123,7 +1123,7 @@ body.match-live #movesBtn { display:none !important; }
           <div id="selectedClipName" style="flex:1; border:2px solid #3b82f6; background:#020617; color:#60a5fa; font-family:'Bebas Neue'; font-size:32px; padding:16px 20px; letter-spacing:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:6px; box-shadow:inset 0 0 20px rgba(59,130,246,0.3);">NONE (PROCEDURAL)</div>
           <button class="opt-chip" style="background:linear-gradient(135deg, #1e3a8a, #3b82f6); color:#fff; font-size:24px; font-family:'Bebas Neue'; letter-spacing:3px; padding:20px 30px; margin:0; border-radius:6px; border:2px solid #60a5fa; box-shadow:0 0 15px rgba(59,130,246,0.4); cursor:pointer;" onclick="window.openAnimBrowser()">BROWSE 80+ MOVES</button>
         </div>
-        <button class="opt-chip" style="background:#0f172a; padding:16px; margin:8px 0 0 0; border:2px dashed #3b82f6; color:#bfdbfe; font-family:'Bebas Neue'; font-size:20px; letter-spacing:2px; width:100%; border-radius:6px; cursor:pointer;" id="btnLoadFbxLib" onclick="this.textContent='LOADING OVER 80 AAA ANIMATIONS...'; if(window.BANNON_LOAD_FBX_LIBRARY){ window.BANNON_LOAD_FBX_LIBRARY().then(()=>{ window.renderClipChips&&window.renderClipChips(); this.style.display='none'; }) } else { this.textContent='MODULE NOT FOUND'; }">INITIALIZE WWE 2K MOCAP LIBRARY CORE</button>
+        <button class="opt-chip" style="background:#0f172a; padding:16px; margin:8px 0 0 0; border:2px dashed #3b82f6; color:#bfdbfe; font-family:'Bebas Neue'; font-size:20px; letter-spacing:2px; width:100%; border-radius:6px; cursor:pointer;" id="btnLoadFbxLib" onclick="this.textContent='LOADING OVER 80 AAA ANIMATIONS...'; if(window.BANNON_LOAD_FBX_LIBRARY){ window.BANNON_LOAD_FBX_LIBRARY().then(()=>{ window.renderClipChips&&window.renderClipChips(); this.style.display='none'; }) } else { this.textContent='MODULE NOT FOUND'; }">MOCAP LIBRARY · AUTO-LOADS (tap to reload)</button>
       </div>
       <div class="field-label">POWER <span id="powerVal" style="float:right; color:#60a5fa;">50</span></div>
       <div class="slider-wrap"><input type="range" id="sl-power" min="10" max="100" value="50"></div>
@@ -11796,10 +11796,23 @@ function buildArena(){
 window.ARENA_PRESETS = window.ARENA_PRESETS || {
   // barricadeStyle: 'broadcast' = solid padded WWE-style wall (corners break/spear-through);
   //                 'guardrail' = ECW/indie metal steel railing (tilts/knocks over, crowd resets it).
-  BANNON: { name:'BANNON', accent:0xff7a1a, tron:0xff7a1a, barricade:0x1a1a22, ramp:0x14100c, screen:'assets/ring/bannon_mat_logo.png', label:'BANNON', barricadeStyle:'broadcast' },
-  AWE:    { name:'AWE',    accent:0xffcc33, tron:0xffcc33, barricade:0x101820, ramp:0x0c0c10, screen:null, label:'AWE', barricadeStyle:'broadcast' },
-  JPCW:   { name:'JPCW',   accent:0x33ccff, tron:0x33ccff, barricade:0x0a1420, ramp:0x0a0e14, screen:null, label:'JPCW', barricadeStyle:'guardrail' },
-  NWC:    { name:'NWC',    accent:0x22ff88, tron:0x22ff88, barricade:0x0a1a10, ramp:0x0a140c, screen:null, label:'NWC', barricadeStyle:'guardrail' }
+  BANNON: { name:'BANNON', accent:0xff7a1a, tron:0xff7a1a, barricade:0x1a1a22, ramp:0x14100c, screen:'assets/ring/bannon_mat_logo.png', label:'BANNON', barricadeStyle:'broadcast', venue:'arena' },
+  AWE:    { name:'AWE',    accent:0xffcc33, tron:0xffcc33, barricade:0x101820, ramp:0x0c0c10, screen:null, label:'AWE', barricadeStyle:'broadcast', venue:'stadium' },
+  JPCW:   { name:'JPCW',   accent:0x33ccff, tron:0x33ccff, barricade:0x0a1420, ramp:0x0a0e14, screen:null, label:'JPCW', barricadeStyle:'guardrail', venue:'arena' },
+  NWC:    { name:'NWC',    accent:0x22ff88, tron:0x22ff88, barricade:0x0a1a10, ramp:0x0a140c, screen:null, label:'NWC', barricadeStyle:'guardrail', venue:'arena' },
+  // ENVIRONMENT variety ported from MDickie World.bb (Hall/Stadium + outdoor/underground types), one per promotion.
+  LUCHA:    { name:'Lucha Eternal',      accent:0xe67e22, tron:0xffd24a, barricade:0x2a1206, ramp:0x1a0e04, screen:null, label:'LUCHA ETERNAL', barricadeStyle:'guardrail', venue:'arena' },
+  RISING:   { name:'Rising Sun Circuit', accent:0xff3b3b, tron:0xffffff, barricade:0x14060a, ramp:0x120608, screen:null, label:'RISING SUN', barricadeStyle:'guardrail', venue:'hall' },
+  MAPLE:    { name:'Maple Chain',        accent:0x16a085, tron:0x16a085, barricade:0x08160f, ramp:0x08120c, screen:null, label:'MAPLE CHAIN', barricadeStyle:'guardrail', venue:'hall' },
+  IRONDOJO: { name:'Iron Dojo',          accent:0x8895a5, tron:0x8895a5, barricade:0x101216, ramp:0x0a0c10, screen:null, label:'IRON DOJO', barricadeStyle:'guardrail', venue:'dojo' },
+  SANDLOT:  { name:'Sandlot',            accent:0xb8862f, tron:0x8a6a2a, barricade:0x241a0e, ramp:0x1c1408, screen:null, label:'SANDLOT', barricadeStyle:'guardrail', venue:'backyard' },
+  OCTAGON:  { name:'Octagon League',     accent:0x11cfff, tron:0x11cfff, barricade:0x0a0c12, ramp:0x08090e, screen:null, label:'OCTAGON', barricadeStyle:'cage', venue:'cage' },
+  LEGACY:   { name:'Legacy Territories', accent:0xb8912f, tron:0xd9b84a, barricade:0x161008, ramp:0x120c06, screen:null, label:'LEGACY', barricadeStyle:'guardrail', venue:'hall' },
+  NETFED:   { name:'NetFed',             accent:0x2980f0, tron:0x2980f0, barricade:0x0a1020, ramp:0x080c18, screen:null, label:'NETFED', barricadeStyle:'guardrail', venue:'warehouse' },
+  PROVING:  { name:'The Proving Ground', accent:0x7f8c8d, tron:0x9aa7a8, barricade:0x14161a, ramp:0x101216, screen:null, label:'PROVING GROUND', barricadeStyle:'guardrail', venue:'gym' },
+  STICKUP:  { name:'Stick-Up Cult',      accent:0x2a2a2a, tron:0xff2222, barricade:0x0c0c0c, ramp:0x080808, screen:null, label:'THE CULT', barricadeStyle:'guardrail', venue:'underground' },
+  HOLLYWOOD:{ name:'Hollywood',          accent:0xd4af37, tron:0xffe08a, barricade:0x1a1608, ramp:0x14100a, screen:null, label:'HOLLYWOOD', barricadeStyle:'broadcast', venue:'stadium' },
+  SHINOBI:  { name:'Shinobi 99',         accent:0x39ff14, tron:0x39ff14, barricade:0x06120a, ramp:0x040e08, screen:null, label:'SHINOBI 99', barricadeStyle:'guardrail', venue:'neon' }
 };
 window.ARENA_PRESET = window.ARENA_PRESET || 'BANNON';
 let _arenaTronTex=null;
@@ -31605,6 +31618,11 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
                 let response = await fetch('assets/mocap/drive/' + encodeURIComponent(file)).catch(() => null);
                 if (!response || !response.ok) response = await fetch('assets/mocap/' + encodeURIComponent(file)).catch(() => null);
                 if (!response || !response.ok) response = await fetch('/' + encodeURIComponent(file)).catch(() => null);
+                // CDN FALLBACK — the APK (file://) has no bundled mocap; stream it from the repo like the
+                // models/audio so the auto-loader actually works in-app (this is why moves weren't animating).
+                if (!response || !response.ok){ const _cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+                  response = await fetch(_cdn+'assets/mocap/drive/'+encodeURIComponent(file)).catch(()=>null);
+                  if (!response || !response.ok) response = await fetch(_cdn+'assets/mocap/'+encodeURIComponent(file)).catch(()=>null); }
                 if (!response || !response.ok) continue;
                 const buffer = await response.arrayBuffer();
                 
