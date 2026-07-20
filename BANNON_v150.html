@@ -38534,6 +38534,7 @@ window.BANNON_DIALOGUE = (function(){
 // in-character callout — the MDickie "everybody talks" flow, now in their real voice, all modes.
 try{ var _sfV=window.startFight; if(typeof _sfV==='function' && !_sfV.__voiceHooked){
   window.startFight=function(){ var r=_sfV.apply(this,arguments); try{
+    if(Math.random()>0.28) return r;   // MDickie flow: callouts are OCCASIONAL, not every match
     setTimeout(function(){ try{ var fs=(typeof fighters!=='undefined')?fighters:[]; var opp=fs&&fs[1]; if(!opp) return;
       var ck=(typeof charModelKey==='function')?charModelKey(opp):String((opp.opts&&opp.opts.name)||opp.name||'');
       var nm=String((opp.opts&&opp.opts.name)||opp.name||ck);
