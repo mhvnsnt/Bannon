@@ -1,5 +1,4 @@
 // Copyright BANNON.
-
 #pragma once
 
 #include "CoreMinimal.h"
@@ -21,4 +20,8 @@ public:
 	// Triggers ragdoll only on a specific limb (e.g. dead leg)
 	UFUNCTION(BlueprintCallable, Category="Bannon|Physics")
 	void TriggerLimbRagdoll(FName LimbRootBone);
+    
+    // Updates FBIK targets for foot placement based on trace hits
+    UFUNCTION(BlueprintCallable, Category="Bannon|IK")
+    void UpdateFootPlacement(FVector LeftFootLoc, FVector RightFootLoc);
 };
