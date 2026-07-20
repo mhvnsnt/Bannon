@@ -48,33 +48,54 @@ for (const mb of xml.matchAll(/<material\b[^>]*id="(\d+)"[\s\S]*?<\/material>/g)
   const dm = mb[0].match(/<diffuse[^>]*map="(\d+)"/);
   if (dm && materials[mb[1]]) materials[mb[1]].map = dm[1];
 }
-const nodes = [];
-for (const nb of xml.matchAll(/<node\b[^>]*\/?>/g)) {
-  const n = nb[0];
-  if (attr(n, 'type') !== 'mesh') continue;
-  nodes.push({
-    name: attr(n, 'name') || ('part' + nodes.length),
-    surface: attr(n, 'surfaces'),
-    material: attr(n, 'materials'),
-    transform: (attr(n, 'transform') || '').split(',').map(Number),
-  });
+// ---- matrix helpers: the <nodes> are a NESTED SKELETON HIERARCHY (Hips>Body>Bicep>Arm>Hand>fingers,
+// each transform RELATIVE to its parent). A flat world-space bake scatters the parts — so we compose
+// world = parent_world * local down the tree. float3x4 = 9 basis (column-major) + 3 translation. ----
+function mat4FromF3x4(t) {                        // -> row-major 4x4
+  if (!t || t.length < 12) return [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]];
+  return [[t[0], t[3], t[6], t[9]], [t[1], t[4], t[7], t[10]], [t[2], t[5], t[8], t[11]], [0, 0, 0, 1]];
+}
+function mat4mul(a, b) {
+  const c = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,1]];
+  for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) c[i][j] = a[i][0]*b[0][j] + a[i][1]*b[1][j] + a[i][2]*b[2][j] + a[i][3]*b[3][j];
+  return c;
+}
+function apply(m, x, y, z) {  // full transform (point)
+  return [m[0][0]*x + m[0][1]*y + m[0][2]*z + m[0][3], m[1][0]*x + m[1][1]*y + m[1][2]*z + m[1][3], m[2][0]*x + m[2][1]*y + m[2][2]*z + m[2][3]];
+}
+function apply3(m, x, y, z) { // 3x3 part only (normals)
+  return [m[0][0]*x + m[0][1]*y + m[0][2]*z, m[1][0]*x + m[1][1]*y + m[1][2]*z, m[2][0]*x + m[2][1]*y + m[2][2]*z];
 }
 
-// ---- 3. read each node's vertex stream, optionally bake its float3x4 transform ------------------
-// float3x4 layout (libgdx / MDickie): 9 basis floats (column-major) + 3 translation.
-function apply(t, x, y, z) {
-  if (!t || t.length < 12) return [x, y, z];
-  // columns: c0=(t0,t1,t2) c1=(t3,t4,t5) c2=(t6,t7,t8), translation=(t9,t10,t11)
-  return [
-    t[0] * x + t[3] * y + t[6] * z + t[9],
-    t[1] * x + t[4] * y + t[7] * z + t[10],
-    t[2] * x + t[5] * y + t[8] * z + t[11],
-  ];
-}
-function apply3(t, x, y, z) { // linear part only (normals)
-  if (!t || t.length < 12) return [x, y, z];
-  return [t[0] * x + t[3] * y + t[6] * z, t[1] * x + t[4] * y + t[7] * z, t[2] * x + t[5] * y + t[8] * z];
-}
+// walk the nested <node> tree, accumulating each node's WORLD matrix
+const IDENT = [[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]];
+const nodes = [];
+const nodesBlock = (xml.match(/<nodes>([\s\S]*?)<\/nodes>/) || [,''])[1] || xml;
+(function walkNodes(str, parentWorld) {
+  // scan tokens at this depth: an opening <node ...> (with children until </node>) or a self-closing <node .../>
+  const re = /<node\b([^>]*?)(\/?)>/g; let m;
+  while ((m = re.exec(str))) {
+    const attrs = m[1], selfClose = m[2] === '/';
+    const local = mat4FromF3x4((attr('<node' + attrs + '>', 'transform') || '').split(',').map(Number));
+    const world = mat4mul(parentWorld, local);
+    if (attr('<node' + attrs + '>', 'type') === 'mesh') {
+      nodes.push({ name: attr('<node' + attrs + '>', 'name') || ('part' + nodes.length),
+                   surface: attr('<node' + attrs + '>', 'surfaces'), material: attr('<node' + attrs + '>', 'materials'), world });
+    }
+    if (!selfClose) {
+      // find this node's matching </node> to recurse into its children (handles nesting)
+      let depth = 1, i = re.lastIndex; const open = /<node\b[^>]*?(\/?)>/g, close = /<\/node>/g;
+      let childStart = i;
+      while (depth > 0 && i < str.length) {
+        open.lastIndex = i; close.lastIndex = i;
+        const o = open.exec(str), c = close.exec(str);
+        if (c && (!o || c.index < o.index)) { depth--; if (depth === 0) { walkNodes(str.slice(childStart, c.index), world); re.lastIndex = c.index + c[0].length; break; } i = c.index + c[0].length; }
+        else if (o) { if (o[1] !== '/') depth++; i = o.index + o[0].length; }
+        else break;
+      }
+    }
+  }
+})(nodesBlock, IDENT);
 
 const prims = []; // {name, pos:Float32Array, nrm, uv, texFile}
 for (const nd of nodes) {
@@ -89,7 +110,7 @@ for (const nd of nodes) {
     const b = i * stride;
     let px = fl[b], py = fl[b + 1], pz = fl[b + 2];
     let nx = fl[b + 3], ny = fl[b + 4], nz = fl[b + 5];
-    if (!KEEP_LOCAL) { [px, py, pz] = apply(nd.transform, px, py, pz);[nx, ny, nz] = apply3(nd.transform, nx, ny, nz); }
+    if (!KEEP_LOCAL) { [px, py, pz] = apply(nd.world, px, py, pz);[nx, ny, nz] = apply3(nd.world, nx, ny, nz); }
     const nl = Math.hypot(nx, ny, nz) || 1;
     pos[i * 3] = px; pos[i * 3 + 1] = py; pos[i * 3 + 2] = pz;
     nrm[i * 3] = nx / nl; nrm[i * 3 + 1] = ny / nl; nrm[i * 3 + 2] = nz / nl;
