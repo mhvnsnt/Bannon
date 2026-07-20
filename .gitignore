@@ -18,3 +18,8 @@ assets/models/incoming/
 tools/unirig/rerig_log.txt
 tools/unirig/rerig_*.out
 assets/models/*_rigged.glb.raw.glb
+
+# MDickie APK extraction workspace — raw third-party games never committed
+/tmp/mdickie_pull/
+assets/mdickie_extracted/*.apk
+assets/mdickie_extracted/raw/
