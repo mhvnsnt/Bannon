@@ -39876,6 +39876,15 @@ window.BANNON_LEGACY = (function(){
              `<div class="mc-mid"><div style="font:8px monospace;color:#e8c15a;letter-spacing:2px">${slot}</div><div class="vs">VS</div>${m.title?`<div class="mc-title">🏆 ${esc(m.title)}</div>`:''}</div>`+pfChip(m.b)+
              `<div class="mc-act">`+(m._done?`<span style="color:#7CFC00;font:10px monospace">✔ DONE</span>`:`<button class="uni-act" data-play="${i}">PLAY</button><button class="uni-act" data-sim="${i}">SIM</button>`)+`</div></div>`;
         });
+        // NIGHT SUMMARY (MDickie in-between screen): the show is in the books — results + gate + advance
+        if(card.length && card.every(m=>m._done)){
+          const res=((u&&u.history)||[]).filter(x=>x.week===wk);
+          h+='<div class="uni-show" style="border-color:rgba(124,252,0,.45)"><div class="sh-name" style="color:#7CFC00;font-size:16px">🌙 NIGHT SUMMARY</div>'+
+             `<div class="sh-sub">${esc(showName(wk))} is in the books · ${esc(fmtD(dOf(wk)))}</div>`+
+             res.slice(0,8).map(r=>`<div class="uni-row"><span>${esc(r.winner)} def. ${esc(r.winner===r.a?r.b:r.a)}</span><span>${r.title?('🏆 '+esc(r.title)):''}</span></div>`).join('')+
+             (show?`<div class="sh-sub">Gate $${(show.gate||0).toLocaleString()} · ${show.attendance||'—'}/${show.capacity||'—'} · rated ${esc(show.rating)}</div>`:'')+
+             '<div style="margin-top:6px"><button class="uni-act" data-adv="1">ADVANCE TO NEXT WEEK →</button></div></div>';
+        }
         // BETWEEN SHOWS — walk the world (MDickie free-roam inside Universe)
         h+='<div style="margin:8px 0"><button class="uni-act" data-roam="1">🌍 ROAM THE WORLD (until the show)</button></div>';
         // UPCOMING SHOWS — the next dated nights on the schedule (tap to preview)
@@ -39994,6 +40003,7 @@ window.BANNON_LEGACY = (function(){
     // wire dynamic action buttons
     body.querySelectorAll('[data-cw]').forEach(el=>el.onclick=()=>{ try{ const U=UNI(),u=U&&U.get&&U.get(); viewWk=+el.dataset.cw; if(u&&viewWk===u.week) viewWk=null; }catch(e){ viewWk=null; } render(); });
     body.querySelectorAll('[data-roam]').forEach(b=>b.onclick=()=>{ close(); try{ window.__universeRoam=true; if(window.BANNON_GODWITHIN&&window.BANNON_GODWITHIN.start) window.BANNON_GODWITHIN.start(); else (window.toast||alert)('Roam mode loading…'); }catch(e){} });
+    body.querySelectorAll('[data-adv]').forEach(b=>b.onclick=()=>{ try{ const U=UNI(); if(U&&U.advanceWeek) U.advanceWeek(); }catch(e){} viewWk=null; render(); });
     body.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>{ const U=UNI(),u=U.get(); const m=u.card[+b.dataset.play]; if(m&&U.playMatch){ close(); U.playMatch(m); } });
     body.querySelectorAll('[data-sim]').forEach(b=>b.onclick=()=>{ const U=UNI(),u=U.get(); const m=u.card[+b.dataset.sim]; if(m){ if(U.simMatch)U.simMatch(u,m); m._done=1; U.save&&U.save(u); render(); } });
     body.querySelectorAll('[data-promo]').forEach(b=>b.onclick=()=>{ const md=MD(),me=(window.CAREER_ME||'BANNON'); try{ let r=null;
