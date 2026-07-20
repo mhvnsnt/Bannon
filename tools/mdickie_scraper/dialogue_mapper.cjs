@@ -1,40 +1,61 @@
+// BANNON ENGINE — AI ORIENTATION BLOCK v114
+// READ THIS ENTIRE BLOCK BEFORE TOUCHING ANY CODE
+
 const fs = require('fs');
+const path = require('path');
 
-// BANNON ENGINE — MDICKIE DIALOGUE TRANSLATOR
-// Maps extracted legacy text to Bannon proprietary interactions using the LLM engine.
-// STRICT SEMANTIC CONSTRAINT: Blunt, human, MDickie-style delivery. Zero AI theatre.
+// Load Character Matrix
+const bannonStringsPath = path.resolve(__dirname, 'bannon_strings_v4.json');
 
-function translateDialogue(legacyFile, outputFile) {
-    console.log(`[DIALOGUE MAPPER] Loading legacy dialogue baseline: ${legacyFile}`);
-    console.log(`[DIALOGUE MAPPER] Routing through Bannon multi-model fallback chain (Claude -> Gemini -> Grok)...`);
-    console.log(`[DIALOGUE MAPPER] Synthesizing proprietary Bannon-universe interactions with BLUNT FORCE semantic constraints...`);
+async function translateDialogue(characterId, rawMdickieText, matchContext) {
+    const bannonStrings = JSON.parse(fs.readFileSync(bannonStringsPath, 'utf8'));
+    const characterData = bannonStrings.roster[characterId];
     
-    const payload = {
-        _note: "BANNON UNIVERSE AUTO-GENERATED PROPRIETARY DIALOGUE FROM LEGACY BASELINE",
-        system: "Career Mode / Backstage Politics",
-        mapped_interactions: [
-            { 
-                trigger: "TITLE_DEMAND",
-                legacy_baseline: "I want a title shot tonight or I'm quitting!", 
-                bannon_adaptation: "Put the belt on the line tonight or I walk. I'm not playing games anymore." 
-            },
-            {
-                trigger: "CONTRACT_DISPUTE",
-                legacy_baseline: "I need more money for this match.",
-                bannon_adaptation: "I ain't stepping in the ring for this payout. Add some zeros."
-            },
-            {
-                trigger: "HOSPITAL_VISIT",
-                legacy_baseline: "I hope you feel better soon.",
-                bannon_adaptation: "Tough break. Heal up fast, the promoter's already looking for your replacement."
-            }
-        ]
-    };
+    if (!characterData) {
+        throw new Error(`Character ID ${characterId} missing from bannon_strings_v4.json`);
+    }
 
-    fs.writeFileSync(outputFile, JSON.stringify(payload, null, 2));
-    console.log(`[DIALOGUE MAPPER] Successfully wrote adapted proprietary dialogue to ${outputFile}`);
+    // Isolate dynamic contextual triggers (e.g., losing streak, champion status)
+    const contextState = matchContext ? `
+        Current State:
+        - Streak: ${matchContext.streak || 'Neutral'}
+        - Title Status: ${matchContext.isChampion ? 'Champion' : 'Challenger'}
+        - Match Stage: ${matchContext.stage || 'Pre-match'}
+        - Opponent: ${matchContext.opponentId || 'Unknown'}
+    ` : 'Current State: Neutral';
+
+    // Construct the LLM Prompt Payload
+    const promptPayload = `
+        You are the dialogue synthesis engine for the Bannon wrestling simulator.
+        Translate the following raw MDickie procedural text into the specific voice of the target character.
+        Zero robotic filler. Zero AI syntax. Break the fourth wall only if the character archetype demands it.
+        
+        TARGET CHARACTER: ${characterData.name}
+        ARCHETYPE: ${characterData.archetype}
+        
+        VOICE MATRIX / CONSTRAINTS:
+        ${characterData.voiceConstraints.join('\n')}
+        
+        CONTEXTUAL FILTERS:
+        ${contextState}
+        
+        RAW MDICKIE TEXT:
+        "${rawMdickieText}"
+        
+        OUTPUT REQUIREMENT:
+        Provide ONLY the translated dialogue string. Do not explain the dialogue.
+    `;
+
+    return await callLlmSynthesisPipeline(promptPayload);
+}
+
+// Dummy wrapper for local test
+async function callLlmSynthesisPipeline(payload) {
+    return "[LLM Response Payload]: Simulated return";
 }
 
 if (require.main === module) {
-    translateDialogue('legacy_strings.json', 'bannon_strings.json');
+    console.log("[DIALOGUE MAPPER] Initializing Bannon-universe dialogue synthesis matrix...");
 }
+
+module.exports = { translateDialogue };
