@@ -11800,7 +11800,7 @@ window.ARENA_PRESETS = window.ARENA_PRESETS || {
   BANNON:    { name:'BANNON',   accent:0xff7a1a, tron:0xff7a1a, barricade:0x1a1a22, ramp:0x14100c, screen:'assets/ring/bannon_mat_logo.png', label:'BANNON', barricadeStyle:'broadcast' },
   AWE:       { name:'AWE',      accent:0xff0033, tron:0xcc0000, barricade:0x101820, ramp:0x0c0c10, screen:'assets/ring/awe_mat.png', label:'AWE', barricadeStyle:'broadcast', styleVibe:'WWE+AEW' },
   JPCW:      { name:'JPCW',     accent:0xcc0000, tron:0xffffff, barricade:0x0a1420, ramp:0x0a0e14, screen:'assets/ring/njpw_mat.png', label:'JPCW', barricadeStyle:'guardrail', styleVibe:'NJPW' },
-  NWC:       { name:'NWC',      accent:0x111111, tron:0xffffff, barricade:0x0a1a10, ramp:0x0a140c, screen:'assets/ring/nwc_mat.png', label:'NWC', barricadeStyle:'guardrail', styleVibe:'Neo Sold-Out' },
+  NWC:       { name:'NWC',      accent:0x111111, tron:0xffffff, barricade:0x0a1a10, ramp:0x0a140c, screen:'assets/ring/nwc_mat.png', label:'NWC', barricadeStyle:'guardrail', styleVibe:'NWO Sold-Out' },
   STICK_UP:  { name:'STICK-UP', accent:0x440000, tron:0x330000, barricade:0x050505, ramp:0x050505, screen:'assets/ring/ecw_church_mat.png', label:'STICK UP', barricadeStyle:'guardrail', styleVibe:'ECW Cathedral' },
   BACKYARD:  { name:'BACKYARD', accent:0x55aa55, tron:0x55aa55, barricade:0x113311, ramp:0x112211, screen:'assets/ring/backyard_mat.png', label:'BACKYARD', barricadeStyle:'none', styleVibe:'Neighborhood' }
 };
@@ -14803,14 +14803,22 @@ window.MDICKIE_BASE_DIR = window.MDICKIE_BASE_DIR || 'assets/models/mdickie_base
 window.MDICKIE_BASES = window.MDICKIE_BASES || ['MONSTER','POWERHOUSE','TECHNICIAN','BRAWLER','CRUISER','LUCHADOR','SUIT','FEMALE','FEMALE_ATHLETIC','REFEREE'];
 // named overrides: character key -> base (real-wrestler inspiration or a specific silhouette)
 window.MDICKIE_MAP = Object.assign({
+  // Canon / Bannon Characters
+  BANNON:'BRAWLER', MAIME:'FEMALE_ATHLETIC', ONYX:'POWERHOUSE', CODY_CALLAHAN:'TECHNICIAN', CAIN_ELIAS:'BRAWLER',
+  STICK_UP:'BRAWLER', FINXSSE:'CRUISER', CIPHER:'CRUISER', ECHO:'TECHNICIAN', STATIC:'LUCHADOR', HOLLOW:'MONSTER',
+  HALL_NIGHTER:'BRAWLER', EDWIN_KENNEDY:'SUIT', PABLO:'BRAWLER', QUEEN_TYNESHIA:'FEMALE', TRIPLE_XXX:'POWERHOUSE',
+  EL_TORO_DE_ORO:'POWERHOUSE', STAN_COMBS:'SUIT', VIPER:'TECHNICIAN', BRUTUS:'POWERHOUSE', TITAN:'MONSTER',
+  KOBRA:'LUCHADOR', MASTER_SENSEI:'TECHNICIAN', WRECK_PATTERSON:'BRAWLER', AARON_RUBEN:'TECHNICIAN',
+  
+  // Existing AI / Roster
   VAIN_ABEL:'MONSTER', IRON_TUSK:'MONSTER', GRAVE:'MONSTER', MOKK_GNARLY:'MONSTER', KRUSHA_P:'MONSTER',
-  TITAN:'MONSTER', GOLEM:'MONSTER', THE_BOULDER:'POWERHOUSE', EL_TORO_DE_ORO:'POWERHOUSE', BRUTUS:'POWERHOUSE',
+  GOLEM:'MONSTER', THE_BOULDER:'POWERHOUSE',
   LOCOMOTIVE:'POWERHOUSE', KRAY_Z:'BRAWLER', JUDAS_MESSIAH:'TECHNICIAN', THE_SAINT:'TECHNICIAN',
   DRAKE_VANE:'TECHNICIAN', JOHN_FORD:'TECHNICIAN', THE_THINKER:'TECHNICIAN', THE_REPETITION:'TECHNICIAN',
   KID_GLIDE:'CRUISER', AIR_JORDAN:'CRUISER', THE_VELOCITY:'CRUISER', LUNA_GNARLY:'FEMALE_ATHLETIC',
   LUCHADOR_RELAMPAGO:'LUCHADOR', LUCHADOR_TRUENO:'LUCHADOR', REY_FUEGO:'LUCHADOR',
-  TRIPLE_XXX:'POWERHOUSE', THE_BAD_GAL:'FEMALE', MELISSA_KENNEDY:'FEMALE', LADY_RHIANNON:'FEMALE',
-  ASTRID:'FEMALE_ATHLETIC', QUEEN_TYNESHIA:'FEMALE', TIGHTROPE:'FEMALE_ATHLETIC',
+  THE_BAD_GAL:'FEMALE', MELISSA_KENNEDY:'FEMALE', LADY_RHIANNON:'FEMALE',
+  ASTRID:'FEMALE_ATHLETIC', TIGHTROPE:'FEMALE_ATHLETIC',
   COMMENTATOR_MARKS:'SUIT', RING_ANNOUNCER:'SUIT', REFEREE:'REFEREE',
   COMMENTARY_VOICE_A:'SUIT', COMMENTARY_VOICE_B:'SUIT'
 }, window.MDICKIE_MAP||{});
