@@ -36536,7 +36536,10 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
    '#csVig{position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,5,12,.82) 0%,rgba(8,5,12,.10) 22%,rgba(8,5,12,0) 42%,rgba(8,5,12,0) 50%,rgba(6,4,10,.55) 74%,rgba(6,4,10,.96) 100%);pointer-events:none}',
    // top header
    '#csTop{position:absolute;top:0;left:0;right:0;display:flex;align-items:flex-start;justify-content:space-between;padding:12px 16px 0;pointer-events:none}',
-   '.csPlate{width:min(33%,340px);pointer-events:auto;cursor:pointer;background:linear-gradient(180deg,rgba(20,14,26,.92),rgba(12,8,18,.78));border:2px solid #3a2c44;border-radius:10px;padding:9px 12px;backdrop-filter:blur(3px)}',
+   '.csPlate{position:relative;width:min(33%,340px);pointer-events:auto;cursor:pointer;background:linear-gradient(180deg,rgba(20,14,26,.92),rgba(12,8,18,.78));border:2px solid #3a2c44;border-radius:10px;padding:9px 12px;backdrop-filter:blur(3px)}',
+   // GLB render portrait on the plate (over the character color strip colors)
+   '.csPlate .cspor{position:absolute;top:8px;right:10px;width:54px;height:62px;border-radius:6px;border:1px solid #3a2c44;background-size:cover;background-position:center top}',
+   '.csPlate.p2 .cspor{right:auto;left:10px}',
    '.csPlate.active{border-color:#ffb000;box-shadow:0 0 18px #ffb00055}',
    '.csPlate.p2{text-align:right}',
    '.csPlate .role{font-size:9px;letter-spacing:3px;color:#8a7}',
@@ -36560,7 +36563,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
    '#csRoster{display:flex;gap:7px;overflow-x:auto;overflow-y:hidden;padding-bottom:7px;scrollbar-width:thin}',
    '.csCard{position:relative;flex:0 0 auto;width:86px;border:1px solid #3a2c44;border-radius:8px;padding:6px;cursor:pointer;background:linear-gradient(160deg,#1e1626,#140e1c);transition:transform .08s,border-color .12s}',
    '.csCard:hover{transform:translateY(-2px);border-color:#ffb000}',
-   '.csCard .swatch{width:100%;height:34px;border-radius:5px;margin-bottom:5px}',
+   '.csCard .swatch{width:100%;height:52px;border-radius:5px;margin-bottom:5px;background-size:cover;background-position:center top}',
    '.csCard .nm{font-size:9px;color:#fff;letter-spacing:.5px;line-height:1.05}',
    '.csCard .tag{position:absolute;top:3px;right:3px;font-size:6px;padding:1px 3px;border-radius:3px;background:#000a;color:#ffb000}',
    '.csCard.canon .tag{color:#7CFC00}.csCard.forged .tag{color:#00ddff}',
@@ -36611,7 +36614,12 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     list.forEach(function(c){
       var d = document.createElement('div');
       d.className = 'csCard'+(c.canon?' canon':'')+(c.forged?' forged':'');
-      d.innerHTML = '<div class="swatch" style="background:linear-gradient(135deg,'+hx(c.col)+','+hx(c.accent)+')"></div>'+
+      // GLB render card: character render layered OVER the color gradient (alpha PNG keeps the
+      // color plate visible); live-swaps via the 'bannonPortrait' event when the GLB finishes.
+      var key=String(c.name).toUpperCase().replace(/[^A-Z0-9_]/g,'_');
+      var grad='linear-gradient(135deg,'+hx(c.col)+','+hx(c.accent)+')';
+      var uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(c.name):null; }catch(e){}
+      d.innerHTML = '<div class="swatch" data-porbg="'+key+'" data-porgrad="'+grad+'" style="background-image:'+(uri?('url('+uri+'),'):'')+grad+'"></div>'+
                     '<div class="nm">'+c.name.replace(/_/g,' ')+'</div>'+
                     (c.canon?'<div class="tag">C</div>':(c.forged?'<div class="tag">F</div>':''));
       d.addEventListener('click', function(){ assign(c.name); });
@@ -36621,7 +36629,11 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
 
   function plateHTML(c, role){
     function stat(n,v,max){ var p=Math.max(4,Math.min(100,Math.round(v/max*100))); return '<div class="csStat"><span class="bn">'+n+'</span><span class="bar"><i style="width:'+p+'%"></i></span></div>'; }
-    return '<div class="role">'+role+'</div><div class="pnm">'+c.name.replace(/_/g,' ')+'</div>'+
+    var key=String(c.name).toUpperCase().replace(/[^A-Z0-9_]/g,'_');
+    var grad='linear-gradient(135deg,'+hx(c.col)+','+hx(c.accent)+')';
+    var uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(c.name):null; }catch(e){}
+    return '<div class="cspor" data-porbg="'+key+'" data-porgrad="'+grad+'" style="background-image:'+(uri?('url('+uri+'),'):'')+grad+'"></div>'+
+      '<div class="role">'+role+'</div><div class="pnm">'+c.name.replace(/_/g,' ')+'</div>'+
       '<div class="plb">'+c.label+'</div><div class="pfc">'+c.faction+(c.canon?' · CANON':'')+' · '+c.style+'</div>'+
       '<div class="strip" style="background:linear-gradient(90deg,'+hx(c.col)+','+hx(c.accent)+')"></div>'+
       stat('PWR',c.stats.power,150)+stat('SPD',c.stats.speed,130)+stat('CHIN',c.stats.chin,130)+stat('HP',c.stats.hp,150);
@@ -40612,7 +40624,9 @@ window.BANNON_PORTRAITS = (function(){
 // GLB render cards: when a GLB portrait finishes, swap it into any card <img data-por="KEY"> live.
 try{ window.addEventListener('bannonPortrait', function(e){ try{ var k=e.detail.key, u=e.detail.uri;
   document.querySelectorAll('img[data-por="'+k+'"]').forEach(function(im){ im.src=u; im.style.objectFit='cover'; });
-  document.querySelectorAll('[data-porbg="'+k+'"]').forEach(function(el){ el.style.backgroundImage='url('+u+')'; });
+  document.querySelectorAll('[data-porbg="'+k+'"]').forEach(function(el){
+    // keep the character color gradient UNDER the render when the element declares one
+    el.style.backgroundImage='url('+u+')'+(el.dataset.porgrad?(','+el.dataset.porgrad):''); });
 }catch(_){} }); }catch(e){}
 </script>
 
