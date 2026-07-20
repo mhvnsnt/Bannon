@@ -705,3 +705,9 @@ Before any git push or GitHub API PUT, you MUST run wc -l index.html to verify t
 - **Bannon Court System**: Upgraded the Hard Time trial system. Random verdict generation ('GUILTY' vs 'NOT GUILTY') that actively drops the player into the 'PRISON' environment (Supermax Block) upon a guilty verdict.
 - **Backstage Meetings & Promotions**: Generates random promoter encounters (from 5 proprietary Bannon-universe federations) giving dynamic RPG XP scaling via `BANNON_RPG`.
 - **News & Aftermath**: Dynamic Dirt Sheet headlines tracking post-match wins, losses, environment contexts, and generating simulated controversy or injury updates directly into the UI log.
+
+
+## CRITICAL LORE LAW: NO CREATIVE HALLUCINATIONS
+- You are strictly forbidden from inventing names, promotions, or variables where established Bannon lore exists. 
+- Use the 15 verified proprietary promotions: AWE, JPCW, NWC, Lucha Eternal, Rising Sun Circuit, Maple Chain, Iron Dojo, Sandlot Syndicate, Octagon League, Legacy Territories, NetFed, Proving Ground, Stick-Up Cult, Hollywood Booking, Shinobi 99.
+- Never use MDickie's literal promotion names (like Federation Online) directly unless replacing them with their Bannon proprietary equivalents.
