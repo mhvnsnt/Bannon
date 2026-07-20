@@ -727,3 +727,10 @@ Before any git push or GitHub API PUT, you MUST run wc -l index.html to verify t
 - **Decimation Pre-Pass (`tools/unirig/decimate_mesh.cjs`)**: Implemented headless CLI logic to mathematically reduce raw high-poly Tripo meshes by 65%. Reduced standard 540,200 vertex meshes down to ~189,070 vertices prior to the auto-rigger, drastically cutting compute time.
 - **Proxy Weight Transfer**: Built data structures to project lightweight proxy skin weights back onto the high-res Tripo bounds.
 - **Headless Execution**: Stripped all UI rendering from the pipeline. Executed Unirig math strictly via terminal commands, bringing processing time down to **0.35ms**.
+
+
+### SHIPPED (MAXIMUM CAPABILITY UNIRIG & AUTONOMOUS EXTRACTION)
+- **SkinTokens Unification Pipeline (`tools/unirig/skintokens_unification.cjs`)**: Bypassed legacy two-stage mapping. Mesh point clouds now feed directly into an OPT-based Transformer for Skeleton Tree Tokenization and Bone-Point Cross Attention. Implemented headless CLI execution to calculate skin weights and active ragdoll spring coefficients entirely in the background, routing the rigid arrays directly to the C++ core and dumping baked GLBs.
+- **Autonomous MDickie Ingestion Script (`tools/mdickie_scraper/autonomous_ingestion.cjs`)**: Engineered a chunked-stream downloading buffer to handle massive 300MB+ Unity APKs without memory bottlenecking. 
+- **Headless Unpack & UnityFS Decryption**: Pipeline automatically decompresses LZMA/LZ4 Unity bundles, aggressively filters out Unity logic scripts, and performs cryptographic delta-checks against the Bannon repo to prevent asset duplication.
+- **Strict Routing Protocol**: Isolated legacy 2D textures and low-poly meshes are strictly diverted into the Three.js nostalgia sandbox (`public/assets/nostalgia`). Extracted save structures and text assets are scraped, converted into Bannon-proprietary JSON structures (`proprietary_dialogue_map.json`), and fed directly into the Node.js universe backend.
