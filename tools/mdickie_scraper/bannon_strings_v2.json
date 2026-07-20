@@ -1,0 +1,60 @@
+{
+  "_note": "BANNON UNIVERSE AUTO-GENERATED PROPRIETARY DIALOGUE FROM LEGACY BASELINE",
+  "system": "Career Mode / Backstage Politics / Promos",
+  "mapped_interactions": [
+    {
+      "character": "cipher",
+      "trigger": "AMBUSH_BACKSTAGE",
+      "legacy_baseline": "I'm going to attack you when you least expect it.",
+      "bannon_adaptation": "They think it's a game. A game! No no no... He knows. He sees you. He sees you trying to hide! The cuts, the cuts, the cuts! Stronger and stronger and stronger!"
+    },
+    {
+      "character": "cipher",
+      "trigger": "TITLE_DEMAND",
+      "legacy_baseline": "I want a title shot tonight or I'm quitting!",
+      "bannon_adaptation": "The gold... the bag... it's mine! It's always been mine! Give it to me! If you don't... he sees you. He knows. He knows what you did!"
+    },
+    {
+      "character": "cipher",
+      "trigger": "POST_MATCH_WIN",
+      "legacy_baseline": "I told you I was better than you.",
+      "bannon_adaptation": "It's fine. It's fine. See the blood? He likes it. He likes it! Bleed for him! Stronger and stronger and stronger!"
+    },
+    {
+      "character": "cipher",
+      "trigger": "CONTRACT_DISPUTE",
+      "legacy_baseline": "I need more money for this match.",
+      "bannon_adaptation": "The paper... it's empty! Empty! He needs more! Add to the pile! If you don't... the rain comes. And it cuts! It cuts deep!"
+    },
+    {
+      "character": "hollow",
+      "trigger": "AMBUSH_BACKSTAGE",
+      "legacy_baseline": "I'm going to attack you when you least expect it.",
+      "bannon_adaptation": "Target acquired. Structural integrity test initiated."
+    },
+    {
+      "character": "hollow",
+      "trigger": "TITLE_DEMAND",
+      "legacy_baseline": "I want a title shot tonight or I'm quitting!",
+      "bannon_adaptation": "System parameters dictate a championship transition. Authorize the match, or face total system wipe."
+    },
+    {
+      "character": "onyx",
+      "trigger": "CONTRACT_DISPUTE",
+      "legacy_baseline": "I need more money for this match.",
+      "bannon_adaptation": "The metrics don't align with your offer. Readjust the decimal, or the faction calculates your liquidation."
+    },
+    {
+      "character": "echo",
+      "trigger": "POST_MATCH_WIN",
+      "legacy_baseline": "I told you I was better than you.",
+      "bannon_adaptation": "Look at you! Scrub that blood off the mat before I run you over again! Welcome to the wasteland, bitch!"
+    },
+    {
+      "character": "static",
+      "trigger": "TITLE_DEMAND",
+      "legacy_baseline": "I want a title shot tonight or I'm quitting!",
+      "bannon_adaptation": "Badaboom! You got the realest guy in the room staring at a fake champion! Put the belt on the line tonight or I walk, and take the ratings with me! How you doin'?!"
+    }
+  ]
+}
