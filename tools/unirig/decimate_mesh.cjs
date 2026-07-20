@@ -1,76 +1,59 @@
+#!/usr/bin/env node
+/* decimate_mesh.cjs — REAL binary-GLB poly-count QA readout (was a lying stub that read a nonexistent
+ * .vertices JSON field and printed a fake "65% reduction in 0.35ms" every time).
+ *
+ * This actually parses the GLB JSON chunk, sums real POSITION vertex counts + real triangle counts
+ * from the accessors, flags models over a phone budget, and reports which banked GLBs need the real
+ * decimation pass (gltf-transform `weld`+`simplify` / meshoptimizer, run outside Node when available).
+ * No fake numbers — every count comes from the actual file.
+ *
+ *   node tools/unirig/decimate_mesh.cjs <file.glb> [file2.glb ...]
+ *   node tools/unirig/decimate_mesh.cjs assets/models         (scans a dir for .glb)
+ */
 const fs = require('fs');
-const { performance } = require('perf_hooks');
+const path = require('path');
+const BUDGET = +(process.env.DECIMATE_BUDGET || 40000);   // per-model triangle budget for phones
 
-// BANNON ENGINE — UNIRIG PIPELINE ACCELERATION
-// Block 1: Decimation Pre-Pass
-// Block 2: Proxy Weight Transfer
-// Block 3: Headless Execution
-
-function decimateMesh(inputFile, targetReduction = 0.65) {
-    if (!fs.existsSync(inputFile)) {
-        console.error(`[UNIRIG ERROR] Missing input file: ${inputFile}`);
-        return;
-    }
-
-    try {
-        console.log(`[HEADLESS EXECUTION] Starting UniRig mesh optimization...`);
-        const startTime = performance.now();
-        
-        const rawData = JSON.parse(fs.readFileSync(inputFile, 'utf-8'));
-        const originalVertexCount = rawData.vertices ? rawData.vertices.length : 540200; // Mock high-poly count if missing
-        
-        // Decimation Logic
-        const targetVertexCount = Math.floor(originalVertexCount * (1.0 - targetReduction));
-        console.log(`[DECIMATION PRE-PASS] Reducing poly count by ${targetReduction * 100}%...`);
-        console.log(`- Original Vertices: ${originalVertexCount}`);
-        console.log(`- Target Vertices: ${targetVertexCount}`);
-        
-        // Proxy Weight Transfer calculation (Simulated data generation for C++)
-        console.log(`[PROXY WEIGHT TRANSFER] Calculating proxy skin weights and projecting to high-res bounds...`);
-        
-        const payload = {
-            _note: "ROUTED DIRECTLY TO C++ NATIVE PHYSICS BOUNDS HANDLER.",
-            mesh_name: rawData.mesh_name || "UNKNOWN_MESH",
-            decimation: {
-                original_vertices: originalVertexCount,
-                proxy_vertices: targetVertexCount,
-                reduction_ratio: targetReduction
-            },
-            weight_transfer: {
-                status: "PROJECTED_TO_HIGH_RES",
-                matrix_ready: true
-            }
-        };
-
-        const outName = inputFile.replace('.json', '_proxy.json');
-        fs.writeFileSync(outName, JSON.stringify(payload, null, 2));
-        
-        const endTime = performance.now();
-        const duration = (endTime - startTime).toFixed(2);
-        
-        console.log(`[UNIRIG SUCCESS] Optimization complete.`);
-        console.log(`- Processing Time: ${duration}ms (Accelerated via headless proxy transfer)`);
-        console.log(`- Output Payload: ${outName}`);
-
-    } catch (e) {
-        console.error("[UNIRIG FATAL] Failed to parse mesh JSON:", e.message);
-    }
+function glbStats(file) {
+  const b = fs.readFileSync(file);
+  if (b.readUInt32LE(0) !== 0x46546C67) return { err: 'not a GLB' };
+  let off = 12, json = null;
+  while (off < b.length) {
+    const len = b.readUInt32LE(off), type = b.readUInt32LE(off + 4);
+    if (type === 0x4E4F534A) { json = JSON.parse(b.slice(off + 8, off + 8 + len).toString('utf8')); break; }
+    off += 8 + len;
+  }
+  if (!json) return { err: 'no JSON chunk' };
+  const acc = json.accessors || [];
+  let verts = 0, tris = 0, skinned = false;
+  for (const m of (json.meshes || [])) for (const p of (m.primitives || [])) {
+    const pa = acc[p.attributes && p.attributes.POSITION]; if (pa) verts += pa.count || 0;
+    if (p.attributes && (p.attributes.JOINTS_0 != null)) skinned = true;
+    if (p.indices != null && acc[p.indices]) tris += (acc[p.indices].count || 0) / 3;
+    else if (pa) tris += (pa.count || 0) / 3;
+  }
+  return { verts, tris: Math.round(tris), skinned, sizeKB: Math.round(b.length / 1024),
+           skins: (json.skins || []).length };
 }
 
-// CLI Execution
-if (require.main === module) {
-    const args = process.argv.slice(2);
-    if (args.length < 1) {
-        console.log("Usage: node decimate_mesh.cjs <mesh.json>");
-        // Run sample
-        const sampleIn = 'sample_tripo.json';
-        if (fs.existsSync(sampleIn)) {
-            decimateMesh(sampleIn, 0.65);
-        } else {
-            fs.writeFileSync(sampleIn, JSON.stringify({ mesh_name: "TRIPO_BASE_MALE_01" }));
-            decimateMesh(sampleIn, 0.65);
-        }
-    } else {
-        decimateMesh(args[0], 0.65);
-    }
+function walk(p, out) {
+  const st = fs.statSync(p);
+  if (st.isDirectory()) { for (const e of fs.readdirSync(p)) walk(path.join(p, e), out); }
+  else if (/\.glb$/i.test(p)) out.push(p);
 }
+
+const args = process.argv.slice(2);
+if (!args.length) { console.log('usage: node decimate_mesh.cjs <file.glb|dir> ...'); process.exit(2); }
+const files = []; for (const a of args) { try { walk(a, files); } catch (e) { console.error('skip', a, e.message); } }
+let over = 0, total = 0;
+console.log(`\nGLB poly-count QA (phone budget ${BUDGET} tris):\n`);
+for (const f of files.sort()) {
+  const s = glbStats(f);
+  if (s.err) { console.log(`  ?  ${f}  (${s.err})`); continue; }
+  total++;
+  const flag = s.tris > BUDGET ? '⚠ OVER' : '  ok  ';
+  if (s.tris > BUDGET) over++;
+  console.log(`  ${flag} ${String(s.tris).padStart(7)} tris  ${String(s.sizeKB).padStart(6)}KB  ${s.skinned ? 'skinned' : 'static '}  ${path.relative('.', f)}`);
+}
+console.log(`\n${total} GLBs, ${over} over the ${BUDGET}-tri budget${over ? ' — run gltf-transform weld+simplify on those (real decimation needs the lib/GPU pass, not Node).' : '.'}\n`);
+process.exit(0);

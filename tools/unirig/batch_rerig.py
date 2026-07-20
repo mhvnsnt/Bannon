@@ -23,6 +23,9 @@ REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 MODELS = os.path.join(REPO, "assets", "models")
 LOG = os.path.join(os.path.dirname(__file__), "rerig_log.txt")
 SPACE = os.environ.get("UNIRIG_SPACE", "jasongzy/UniRig")
+# FALLBACK SPACES — jasongzy/UniRig intermittently returns Connection refused (ZeroGPU outage). Try
+# these in order so a single space being down doesn't block the whole batch. Override with UNIRIG_SPACE.
+SPACES = [SPACE] + [s for s in ["VAST-AI/UniRig", "Zhengyi/UniRig", "MohamedRashad/UniRig"] if s != SPACE]
 
 # KEY -> source mesh to feed UniRig (the current banked model; UniRig ignores any existing weights)
 SRC = {
@@ -57,10 +60,19 @@ def rerig(key):
         log(f"SKIP {key}: already rigged ({os.path.basename(out_path)})"); return True
     from gradio_client import Client, handle_file
     tok = os.environ.get("HF_TOKEN")
-    log(f"RIG  {key}: connecting {SPACE} ...")
-    c = Client(SPACE, token=tok)
     t0 = time.time()
-    res = c.predict(handle_file(src_path), "glb", api_name="/process_pipeline")
+    res = None
+    for sp in SPACES:
+        try:
+            log(f"RIG  {key}: connecting {sp} ...")
+            c = Client(sp, token=tok)
+            res = c.predict(handle_file(src_path), "glb", api_name="/process_pipeline")
+            break
+        except Exception as e:
+            log(f"     {sp} unavailable ({str(e).splitlines()[0][:80]}) — trying next space")
+            res = None
+    if res is None:
+        log(f"FAIL {key}: every UniRig space is down (tried {len(SPACES)}). Re-run later."); return False
     path = res[0] if isinstance(res, (list, tuple)) else res
     if isinstance(path, dict):
         path = path.get("path") or path.get("name") or path.get("value")
