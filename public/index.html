@@ -38530,6 +38530,17 @@ window.BANNON_DIALOGUE = (function(){
     var arr=c[String(trigger||'').toUpperCase()]; if(!arr||!arr.length) return null; return arr[Math.floor(Math.random()*arr.length)]; }catch(e){ return null; } }
   return { line, isReady:()=>ready, chars:()=>Object.keys(DB.byChar) };
 })();
+// WIRE pre-match: entering ANY match (exhibition/career/universe/roam), the opponent throws an
+// in-character callout — the MDickie "everybody talks" flow, now in their real voice, all modes.
+try{ var _sfV=window.startFight; if(typeof _sfV==='function' && !_sfV.__voiceHooked){
+  window.startFight=function(){ var r=_sfV.apply(this,arguments); try{
+    setTimeout(function(){ try{ var fs=(typeof fighters!=='undefined')?fighters:[]; var opp=fs&&fs[1]; if(!opp) return;
+      var ck=(typeof charModelKey==='function')?charModelKey(opp):String((opp.opts&&opp.opts.name)||opp.name||'');
+      var nm=String((opp.opts&&opp.opts.name)||opp.name||ck);
+      var ln=(window.BANNON_DIALOGUE&&(window.BANNON_DIALOGUE.line(ck,'PRE_MATCH_LOCKER_ROOM')||window.BANNON_DIALOGUE.line(ck,'RIVALRY_START')))||(window.voiceLine&&window.voiceLine(ck,'challenge'));
+      if(ln && typeof announce==='function') announce(nm.toUpperCase(), ln.replace(/^"|"$/g,'').slice(0,140));
+    }catch(e){} }, 1600);
+  }catch(e){} return r; }; window.startFight.__voiceHooked=1; } }catch(e){}
 // WIRE post-match: the WINNER speaks their in-character POST_MATCH_WIN line (Cipher goes feral, etc).
 try{ var _dwV=window.declareWinner; if(typeof _dwV==='function' && !_dwV.__voiceHooked){
   window.declareWinner=function(w){ try{ if(w){ var ck=(typeof charModelKey==='function')?charModelKey(w):String((w.opts&&w.opts.name)||w.name||'');
