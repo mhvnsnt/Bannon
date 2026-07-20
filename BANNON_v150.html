@@ -771,6 +771,11 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 #craneLabel { position:absolute; bottom:-16px; left:0; right:0; text-align:center; font-size:9px; letter-spacing:1px; color:#ffb000; opacity:0.85; }
 .touch.grappling #craneStick { display:block; }
 .touch.airborne #craneStick { display:block; }   /* APEX stick also appears midair (dives) for flip/twist control */
+/* PERSIST the APEX stick during a live fight (owner ask): it's the WWE POSITION control — flick it to
+   turn (L/R), lift a grounded opponent / avalanche perch (UP), or tree-of-woe (DOWN). During a hoist it
+   keeps steering pitch/twist. Dimmed when idle so it doesn't fight the action grid for attention. */
+.touch.match-live #craneStick { display:block; opacity:0.6; }
+.touch.match-live.grappling #craneStick, .touch.match-live.airborne #craneStick { opacity:1; }
 @media (orientation:portrait) { .touch.grappling #craneStick { right:24px; bottom:calc(260px + var(--safe-bot)); } }
 .touch .action-grid { display:grid; }
 /* pill btn already defined above in new WWE 2K26 block */
@@ -8526,6 +8531,22 @@ Fighter.prototype.startGrab = function(){
   return true;
 };
 
+// LIFT OFF THE MAT — pick a DOWNED opponent up into a standing lockup (startGrab rejects downed foes).
+// This is the missing WWE "lift grounded opponent" position: stand over them + APEX-stick UP.
+Fighter.prototype.startGroundLift = function(){
+  if (this.grappling || this.ragdoll || this.state==='grab' || this.state==='deliver' || this.state==='getup') return false;
+  const opp = this.opponent();
+  if (!opp || !opp.isDown()) return false;
+  if (Math.hypot(opp.x-this.x, opp.z-this.z) > 1.9) return false;     // must be standing over them
+  opp.ragdoll=false; opp.airLift=0; opp.state='grabbed'; opp.stateTime=0; opp.grabbedBy=this; opp.grabTimer=0;
+  this.state='grab'; this.stateTime=0; this.grappling=true; this.grappleStage=1; this._aiGrapChosen=false;
+  this.grappleMode='front'; this.grabTarget=opp; this.hitLanded=false;
+  try{ if (window.PHYS_GRAPPLE && window.BPHYS && window.BPHYS.ready && window.BPHYS.ready()) window.BPHYS.linkGrab(this, opp); }catch(e){}
+  this.stamina=Math.max(0,this.stamina-9);
+  try{ if(typeof announce==='function') announce('LIFTED OFF THE MAT', (this.opts&&this.opts.name)||''); }catch(e){}
+  return true;
+};
+
 // front / rear grapple selection matrices: [button][dir] -> position; *_M = modifier variant
 const GRAPPLE_MATRIX = {
   front: {
@@ -15456,7 +15477,22 @@ function setupInput(){
     cknob.style.transform=`translate(${dx}px,${dy}px)`;
     joy2.x = dx/max; joy2.y = dy/max;
   }
-  function csEnd(){ joy2.active=false; joy2.x=0; joy2.y=0; cknob.style.transform='translate(0,0)'; csId=null; }
+  function csEnd(){
+    // APEX POSITION FLICK: when NOT steering a live hoist (grappleStage<2) or a midair dive, a decisive
+    // flick of the persistent apex stick issues a WWE position command (turn / lift / tree-of-woe /
+    // avalanche) via BANNON_APEX. During a hoist/dive the stick keeps its pitch/twist role (no hijack).
+    try{
+      const p=(typeof fighters!=='undefined'&&fighters)?fighters[0]:null;
+      const hoisting=!!(p && p.grappling && p.grappleStage>=2) || document.body.classList.contains('airborne');
+      const mag=Math.hypot(joy2.x,joy2.y);
+      if(!hoisting && mag>0.6 && window.BANNON_APEX){
+        const dir = Math.abs(joy2.x)>Math.abs(joy2.y) ? (joy2.x<0?'left':'right') : (joy2.y<0?'up':'down');
+        window.BANNON_APEX.cmd(dir);
+      }
+    }catch(e){}
+    joy2.active=false; joy2.x=0; joy2.y=0; cknob.style.transform='translate(0,0)'; csId=null;
+    try{ const lbl=document.getElementById('craneLabel'); if(lbl && !document.body.classList.contains('grappling') && !document.body.classList.contains('airborne')) lbl.textContent='POSITION'; }catch(e){}
+  }
   cs.addEventListener('touchstart', e=>{e.preventDefault(); csStart(e);}, {passive:false});
   cs.addEventListener('touchmove', e=>{e.preventDefault(); csMove(e);}, {passive:false});
   cs.addEventListener('touchend', e=>{e.preventDefault(); csEnd();}, {passive:false});
@@ -40740,6 +40776,47 @@ window.BANNON_FULL_PROPS = (function(){
      MATCH_SETUP.matchType is CAGE; removes on the next non-cage match.
      ============================================================================================ -->
 <script>
+// ============================================================================================
+// BANNON_APEX — the WWE POSITION layer on the persistent apex stick. Flick directions map to real
+// positioning actions (all built on existing engine states, no stubs):
+//   LEFT / RIGHT = turn opponent FRONT <-> REAR (waistlock / go-behind)
+//   UP           = LIFT a grounded opponent off the mat  | AVALANCHE PERCH if they're in the corner
+//   DOWN         = TREE OF WOE if the opponent is in the corner
+// Also callable from keyboard (I/J/K/L) so it works without touch. Persists on-screen during a match.
+// ============================================================================================
+window.BANNON_APEX = (function(){
+  function player(){ try{ const fs=(typeof fighters!=='undefined')?fighters:[]; return fs.find(f=>f&&f.isPlayer)||fs[0]||null; }catch(e){ return null; } }
+  function cmd(dir){
+    const p=player(); if(!p || typeof p.opponent!=='function') return false;
+    if(p.grappling && p.grappleStage>=2) return false;            // mid-hoist: stick steers pitch/twist, don't hijack
+    const opp=p.opponent(); if(!opp) return false;
+    const near=Math.hypot(opp.x-p.x, opp.z-p.z) < 2.2;
+    const cornered=!!opp._inCorner;
+    const say=(t)=>{ try{ if(typeof announce==='function') announce(t,(p.opts&&p.opts.name)||''); }catch(e){} };
+    if(dir==='left'||dir==='right'){
+      if(p.grappling){ p.grappleMode=(p.grappleMode==='rear')?'front':'rear'; say(p.grappleMode==='rear'?'REAR WAISTLOCK':'FRONT LOCKUP'); }
+      else { p._apexMode=(p._apexMode==='rear')?'front':'rear'; say(p._apexMode==='rear'?'GO BEHIND':'FACE TO FACE'); }
+      return true;
+    }
+    if(dir==='up'){
+      if(opp.isDown && opp.isDown()){ return !!(p.startGroundLift && p.startGroundLift()); }   // lift off the mat
+      if(cornered && window.CORNER){ window.CORNER.place(opp,'seatedTop'); opp.state='grabbed'; opp.stateTime=0; opp.grabbedBy=p; opp.grabTimer=0; say('AVALANCHE PERCH'); return true; }
+      if(near && !p.grappling && p.startGrab) return !!p.startGrab();                            // otherwise start a lift lockup
+      return false;
+    }
+    if(dir==='down'){
+      if(cornered && window.CORNER){ window.CORNER.place(opp,'treeOfWoe'); opp.state='grabbed'; opp.stateTime=0; opp.grabbedBy=p; opp.grabTimer=0; say('TREE OF WOE'); return true; }
+      return false;
+    }
+    return false;
+  }
+  // keyboard fallback (no touch): I=up J=left K=down L=right
+  try{ window.addEventListener('keydown', e=>{ const k=(e.key||'').toLowerCase();
+    const m={i:'up',j:'left',k:'down',l:'right'}[k]; if(m && document.body.classList.contains('match-live')) cmd(m); }); }catch(e){}
+  return { cmd, player };
+})();
+console.log('%c[BANNON_APEX] WWE position layer — apex-stick flick / IJKL: turn, lift-grounded, avalanche, tree-of-woe','color:#7CFC00');
+
 window.BANNON_CAGE = (function(){
   var WALL='assets/models/props/mdickie/cages/cage_wall.glb';
   var DOOR='assets/models/props/mdickie/cages/cage_door.glb';
