@@ -633,3 +633,21 @@ BINDING session memory so these don't get re-derived:
   engine's REAL skinned path (autoRig:false, all 4 limbs+spine+head). BANNON done + verified CLEAN + banked
   `assets/models/BANNON_rigged.glb` + set as default. Re-rig the other unskinned statues (MAIME/CODY_gear/
   ONYX*) the same way. `tools/unirig/rig.sh` (self-host) + `rig_via_space.py` (hosted) both end with the rename.
+
+## v161 — MDickie UNIVERSE FLOW (2026-07-20, harness-verified, on main)
+- `BANNON_UNIVERSE.showDate(u,w)`: every Universe week = a dated SATURDAY-night show; `startDate`
+  seeded in newUniverse, BACKFILLED for old saves so the current week lands on today. Exported.
+- Universe hub card tab: real dates in header + calendar (W# + MMM D, clickable → past weeks show
+  that night's recorded results, future weeks show date/venue + hottest-feud marquee); every 4th
+  week = ★ SUPERSHOW (PPV_NAMES: OFF THE TOP ROPE / TEN HEAVENS / TOTAL ECLIPSE / THE BETRAYAL /
+  CROWN OF THORNS / FALL OF MAN, 15k house); tonight's card in MDickie running order (MATCH 1..N,
+  MAIN EVENT closes); UPCOMING strip (next 3 dated shows); 🌍 ROAM THE WORLD button →
+  BANNON_GODWITHIN.start() with `__universeRoam` flag; 🌙 NIGHT SUMMARY in-between screen when the
+  full card is done (results + gate + ADVANCE TO NEXT WEEK). Played matches already round-trip
+  (declareWinner __uniWrapped → recordPlayer → reopen hub after 4s) — verified, don't re-wire.
+- Harness scripts: pwtest/uniflow.cjs (24 checks) + uninight.cjs (8 checks); playwright needs
+  `NODE_PATH=/opt/node22/lib/node_modules` now. GOTCHA: Grep tool display can EAT a leading slash
+  ("// ADVANCE" showed as "/ ADVANCE") — trust the syntax gate + a direct Read, don't panic-fix.
+- STILL QUEUED from the owner's Universe ask: roaming WHILE in Universe should feel like the MDickie
+  world loop (walk venue → show starts at the dated time) — the roam button is the entry, the
+  clock/venue-walk tie-in is the next layer. Char-select GLB render cards on the gradient plates.
