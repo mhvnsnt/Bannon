@@ -37,6 +37,24 @@
       "trigger": "POST_MATCH_WIN",
       "legacy_baseline": "I told you I was better than you.",
       "bannon_adaptation": "No, no, no, no, no, no, no. It's fine, it's fine. You think you caught me? He let you. He wants them to know. It's always been him, it's always been me."
+    },
+    {
+      "character": "cipher_01",
+      "trigger": "PRE_MATCH_LOCKER_ROOM_AMBUSH",
+      "legacy_baseline": "I'm going to attack you when you least expect it.",
+      "bannon_adaptation": "You locked the door, didn't you? Checking over your shoulder. You should. He sees you. He sees you. He knows!"
+    },
+    {
+      "character": "cipher_01",
+      "trigger": "FACTION_BETRAYAL",
+      "legacy_baseline": "I'm tired of carrying you. We're done.",
+      "bannon_adaptation": "You thought we were safe? You thought he liked you?! He hates you! A sacrifice! The rain is coming, and it washes the weak away! Cuts! Cuts! Cuts!"
+    },
+    {
+      "character": "cipher_01",
+      "trigger": "SPECIFIC_INJURY_TAUNT",
+      "legacy_baseline": "I'm going to hurt your arm.",
+      "bannon_adaptation": "The bone... it's fragile! Like glass! Snap snap snap! He wants it to snap! And when it breaks, we bleed! Stronger and stronger and stronger!"
     }
   ]
 }
