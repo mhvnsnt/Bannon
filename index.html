@@ -11796,12 +11796,13 @@ function buildArena(){
 // (colors/tron content/barricade style). Additive: touches NOTHING in the verlet ring/ropes/posts.
 // Owner's ring textures (assets/ring/*) skin the tron + banners. Arena editor drives ARENA_PRESET. =====
 window.ARENA_PRESETS = window.ARENA_PRESETS || {
-  // barricadeStyle: 'broadcast' = solid padded WWE-style wall (corners break/spear-through);
-  //                 'guardrail' = ECW/indie metal steel railing (tilts/knocks over, crowd resets it).
-  BANNON: { name:'BANNON', accent:0xff7a1a, tron:0xff7a1a, barricade:0x1a1a22, ramp:0x14100c, screen:'assets/ring/bannon_mat_logo.png', label:'BANNON', barricadeStyle:'broadcast' },
-  AWE:    { name:'AWE',    accent:0xffcc33, tron:0xffcc33, barricade:0x101820, ramp:0x0c0c10, screen:null, label:'AWE', barricadeStyle:'broadcast' },
-  JPCW:   { name:'JPCW',   accent:0x33ccff, tron:0x33ccff, barricade:0x0a1420, ramp:0x0a0e14, screen:null, label:'JPCW', barricadeStyle:'guardrail' },
-  NWC:    { name:'NWC',    accent:0x22ff88, tron:0x22ff88, barricade:0x0a1a10, ramp:0x0a140c, screen:null, label:'NWC', barricadeStyle:'guardrail' }
+  // barricadeStyle: 'broadcast' = WWE/AWE style, 'guardrail' = indie/ECW/NJPW style, 'none' = backyard
+  BANNON:    { name:'BANNON',   accent:0xff7a1a, tron:0xff7a1a, barricade:0x1a1a22, ramp:0x14100c, screen:'assets/ring/bannon_mat_logo.png', label:'BANNON', barricadeStyle:'broadcast' },
+  AWE:       { name:'AWE',      accent:0xff0033, tron:0xcc0000, barricade:0x101820, ramp:0x0c0c10, screen:'assets/ring/awe_mat.png', label:'AWE', barricadeStyle:'broadcast', styleVibe:'WWE+AEW' },
+  JPCW:      { name:'JPCW',     accent:0xcc0000, tron:0xffffff, barricade:0x0a1420, ramp:0x0a0e14, screen:'assets/ring/njpw_mat.png', label:'JPCW', barricadeStyle:'guardrail', styleVibe:'NJPW' },
+  NWC:       { name:'NWC',      accent:0x111111, tron:0xffffff, barricade:0x0a1a10, ramp:0x0a140c, screen:'assets/ring/nwc_mat.png', label:'NWC', barricadeStyle:'guardrail', styleVibe:'Neo Sold-Out' },
+  STICK_UP:  { name:'STICK-UP', accent:0x440000, tron:0x330000, barricade:0x050505, ramp:0x050505, screen:'assets/ring/ecw_church_mat.png', label:'STICK UP', barricadeStyle:'guardrail', styleVibe:'ECW Cathedral' },
+  BACKYARD:  { name:'BACKYARD', accent:0x55aa55, tron:0x55aa55, barricade:0x113311, ramp:0x112211, screen:'assets/ring/backyard_mat.png', label:'BACKYARD', barricadeStyle:'none', styleVibe:'Neighborhood' }
 };
 window.ARENA_PRESET = window.ARENA_PRESET || 'BANNON';
 let _arenaTronTex=null;
