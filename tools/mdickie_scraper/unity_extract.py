@@ -75,11 +75,135 @@ def build_glb(V, VN, VT, F, out_path):
     return len(pos) // 9
 
 
+def build_glb_tex(V, VN, VT, F, out_path, png_bytes):
+    """Same de-index as build_glb, but bake a base-color texture (PNG bytes) into the GLB."""
+    pos, nrm, uv = [], [], []
+    for tri in F:
+        for (vi, ti, ni) in tri:
+            p = V[vi - 1] if 0 < vi <= len(V) else (0, 0, 0); pos += [p[0], p[1], p[2]]
+            n = VN[ni - 1] if VN and 0 < ni <= len(VN) else (0, 1, 0); nrm += [n[0], n[1], n[2]]
+            t = VT[ti - 1] if VT and 0 < ti <= len(VT) else (0, 0); uv += [t[0], t[1]]
+    if not pos:
+        return 0
+    import array, struct as _st
+    def pad(b): return b + b'\x00' * ((4 - len(b) % 4) % 4)
+    blob = b''; views = []; accs = []
+    for arr_f, comps, typ, mn, mx in [
+        (pos, 3, 'VEC3', [min(pos[0::3]), min(pos[1::3]), min(pos[2::3])], [max(pos[0::3]), max(pos[1::3]), max(pos[2::3])]),
+        (nrm, 3, 'VEC3', None, None), (uv, 2, 'VEC2', None, None)]:
+        arr = array.array('f', arr_f).tobytes(); off = len(blob); blob = pad(blob + arr)
+        views.append({'buffer': 0, 'byteOffset': off, 'byteLength': len(arr), 'target': 34962})
+        acc = {'bufferView': len(views) - 1, 'componentType': 5126, 'count': len(pos) // 3, 'type': typ}
+        if mn: acc['min'] = mn; acc['max'] = mx
+        accs.append(acc)
+    imgView = None
+    if png_bytes:
+        off = len(blob); blob = pad(blob + png_bytes)
+        views.append({'buffer': 0, 'byteOffset': off, 'byteLength': len(png_bytes)}); imgView = len(views) - 1
+    mat = {'pbrMetallicRoughness': {'metallicFactor': 0, 'roughnessFactor': 0.9}, 'doubleSided': True}
+    gltf = {'asset': {'version': '2.0', 'generator': 'bannon-unity_extract'}, 'scene': 0, 'scenes': [{'nodes': [0]}],
+            'nodes': [{'name': os.path.basename(out_path)[:-4], 'mesh': 0}],
+            'meshes': [{'primitives': [{'attributes': {'POSITION': 0, 'NORMAL': 1, 'TEXCOORD_0': 2}, 'material': 0, 'mode': 4}]}],
+            'materials': [mat], 'accessors': accs, 'bufferViews': views, 'buffers': [{'byteLength': len(blob)}]}
+    if imgView is not None:
+        gltf['images'] = [{'bufferView': imgView, 'mimeType': 'image/png'}]
+        gltf['samplers'] = [{'wrapS': 10497, 'wrapT': 10497}]
+        gltf['textures'] = [{'source': 0, 'sampler': 0}]
+        mat['pbrMetallicRoughness']['baseColorTexture'] = {'index': 0}
+    else:
+        mat['pbrMetallicRoughness']['baseColorFactor'] = [0.8, 0.8, 0.8, 1]
+    js = json.dumps(gltf).encode(); js = js + b' ' * ((4 - len(js) % 4) % 4)
+    with open(out_path, 'wb') as f:
+        f.write(b'glTF'); f.write(_st.pack('<II', 2, 12 + 8 + len(js) + 8 + len(blob)))
+        f.write(_st.pack('<I', len(js))); f.write(b'JSON'); f.write(js)
+        f.write(_st.pack('<I', len(blob))); f.write(b'BIN\x00'); f.write(blob)
+    return len(pos) // 9
+
+
+def export_gameobjects(env, out, filt, limit):
+    """Textured export: walk GameObjects with MeshFilter+MeshRenderer, bake each mesh's main texture."""
+    import io
+    manifest = {'exported': [], 'skipped': 0}; n = 0; seen = {}
+    for o in env.objects:
+        if o.type.name != 'GameObject':
+            continue
+        try:
+            go = o.read(); nm = go.m_Name or 'go'
+        except Exception:
+            continue
+        low = nm.lower()
+        if filt and not any(k in low for k in filt):
+            continue
+        mf = mr = None
+        try:
+            for c in go.m_Component:
+                cp = c.component if hasattr(c, 'component') else c
+                try: cc = cp.read()
+                except Exception: continue
+                tn = cc.__class__.__name__
+                if 'MeshFilter' in tn: mf = cc
+                elif 'MeshRenderer' in tn: mr = cc
+        except Exception:
+            continue
+        if not (mf and mr and getattr(mf, 'm_Mesh', None)):
+            continue
+        try:
+            mesh = mf.m_Mesh.read()
+        except Exception:
+            manifest['skipped'] += 1; continue
+        png = None
+        try:
+            mats = getattr(mr, 'm_Materials', [])
+            if mats:
+                mat = mats[0].read(); tex = None
+                envs = mat.m_SavedProperties.m_TexEnvs
+                for k, v in envs:
+                    if k in ('_MainTex', '_BaseMap', '_BaseColorMap') and v.m_Texture:
+                        try: tex = v.m_Texture.read(); break
+                        except Exception: pass
+                if tex is None:
+                    for k, v in envs:
+                        if v.m_Texture:
+                            try: tex = v.m_Texture.read(); break
+                            except Exception: pass
+                if tex is not None:
+                    img = tex.image
+                    if img is not None:
+                        if max(img.size) > 512:
+                            img = img.resize((min(512, img.size[0]), min(512, img.size[1])))
+                        buf = io.BytesIO(); img.convert('RGB').save(buf, 'PNG'); png = buf.getvalue()
+        except Exception:
+            png = None
+        safe = re.sub(r'[^A-Za-z0-9_.-]', '_', nm); seen[safe] = seen.get(safe, 0) + 1
+        fn = safe if seen[safe] == 1 else f'{safe}_{seen[safe]}'
+        try:
+            V, VN, VT, F = parse_obj(mesh.export())
+            tris = build_glb_tex(V, VN, VT, F, os.path.join(out, fn + '.glb'), png)
+            if tris:
+                manifest['exported'].append({'go': nm, 'file': fn + '.glb', 'tris': tris, 'textured': png is not None})
+                n += 1
+        except Exception:
+            manifest['skipped'] += 1
+        if limit and n >= limit:
+            break
+    return manifest, n
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('bundle'); ap.add_argument('out')
     ap.add_argument('--names', default=''); ap.add_argument('--limit', type=int, default=0)
+    ap.add_argument('--go', action='store_true', help='textured GameObject export (mesh + baked main texture)')
     a = ap.parse_args()
+    if a.go:
+        os.makedirs(a.out, exist_ok=True)
+        env = UnityPy.load(a.bundle)
+        filt = [s.strip().lower() for s in a.names.split(',') if s.strip()]
+        manifest, n = export_gameobjects(env, a.out, filt, a.limit)
+        manifest['bundle'] = os.path.basename(a.bundle)
+        json.dump(manifest, open(os.path.join(a.out, 'manifest.json'), 'w'), indent=1)
+        print(f"exported {n} textured GameObjects -> {a.out} (skipped {manifest['skipped']})")
+        return
     os.makedirs(a.out, exist_ok=True)
     filt = [s.strip().lower() for s in a.names.split(',') if s.strip()]
     env = UnityPy.load(a.bundle)

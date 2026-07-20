@@ -40431,10 +40431,32 @@ window.BANNON_ENVIRONMENTS = (function(){
     { id:'ARENA', name:'Main Arena' },
     { id:'BACKSTAGE', name:'Backstage Hallways', color: 0x2a2a2e, wall: 0x44444a },
     { id:'PARKING', name:'Parking Lot', color: 0x111111, wall: 0x222222 },
-    { id:'CITY', name:'City Streets', color: 0x1a1a1a, wall: 0x333333 },
+    { id:'CITY', name:'City Streets', color: 0x1a1a1a, wall: 0x30343c, glb:'assets/models/env/mdickie/city_block.glb', glbScale:0.03, glbTiles:[[0,0,0],[0,0,12.2],[0,0,-12.2]] },
+    { id:'JAIL', name:'The Yard (Jail)', color: 0x2a2824, wall: 0x3a3a42, glb:'assets/models/env/mdickie/jail_cell.glb', glbScale:0.03, glbTiles:[[-4,0,0],[0,0,0],[4,0,0]] },
     { id:'GYM', name:'Training Gym', color: 0x332b22, wall: 0x554433 }
   ];
   window.CURRENT_ENV = 'ARENA';
+
+  // Load a banked MDickie environment GLB (decoded via tools/mdickie_scraper/*), tile it a few
+  // times to make a roamable space, drop it on the roam floor. CDN fallback for APK/Pages.
+  function loadEnvGLB(env){
+    if(typeof THREE==='undefined' || !THREE.GLTFLoader || !env.glb) return;
+    const tiles = env.glbTiles || [[0,0,0]];
+    const place=(scn)=>{ try{
+      const box=new THREE.Box3().setFromObject(scn), sz=new THREE.Vector3(); box.getSize(sz);
+      const s=env.glbScale||1;
+      tiles.forEach(t=>{ const g=scn.clone(true); g.scale.setScalar(s);
+        const b2=new THREE.Box3().setFromObject(g), mn=b2.min;
+        g.position.set(t[0]-((b2.min.x+b2.max.x)/2), -mn.y, t[2]);
+        g.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; o.frustumCulled=false; } });
+        arenaGroup.add(g); });
+    }catch(e){} };
+    const L=new THREE.GLTFLoader();
+    L.load(env.glb, g=>place(g.scene), undefined, ()=>{
+      const cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+      L.load(cdn+env.glb, g=>place(g.scene), undefined, ()=>{});
+    });
+  }
 
   function buildCurrent() {
     if (typeof arenaGroup !== 'undefined' && arenaGroup) scene.remove(arenaGroup);
@@ -40457,6 +40479,8 @@ window.BANNON_ENVIRONMENTS = (function(){
     floor.receiveShadow = true;
     arenaGroup.add(floor);
     
+    // Real MDickie environment GLB (city block / jail) — falls back to boxes if it can't load.
+    if (env.glb) { loadEnvGLB(env); }
     // Spawn environmental props based on zone
     if (env.id === 'BACKSTAGE') {
       spawnBlock(5, 5, 2, 2, 0x555555); // Vending machine
