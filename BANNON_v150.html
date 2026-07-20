@@ -39795,10 +39795,12 @@ window.BANNON_LEGACY = (function(){
   const VENUES=['The Foundry','Steel Cathedral','Saturn Dome','The Crucible','Kennedy Coliseum','Iron District Arena','The Undercroft','Halo Center'];
   function portColor(name){ let x=0; name=String(name||'?'); for(let i=0;i<name.length;i++) x=(x*31+name.charCodeAt(i))%360; return x; }
   function porHTML(name, px){ px=px||46; const c=portColor(name);
+    const key=String(name||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_');
     const init=String(name||'?').replace(/_/g,' ').split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
     let uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(name):null; }catch(e){}
-    if(uri) return `<div class="por" style="width:${px}px;height:${px}px;background:#0a0c12 url(${uri}) center top/cover"></div>`;
-    return `<div class="por" style="width:${px}px;height:${px}px;background:linear-gradient(135deg,hsl(${c},60%,42%),hsl(${(c+40)%360},55%,24%))">${esc(init)}</div>`; }
+    // data-porbg lets BANNON_PORTRAITS swap in the real GLB render live when it finishes loading
+    if(uri) return `<div class="por" data-porbg="${key}" style="width:${px}px;height:${px}px;background:#0a0c12 url(${uri}) center top/cover"></div>`;
+    return `<div class="por" data-porbg="${key}" style="width:${px}px;height:${px}px;background:linear-gradient(135deg,hsl(${c},60%,42%),hsl(${(c+40)%360},55%,24%))">${esc(init)}</div>`; }
   function pfChip(name){ const u=(UNI()&&UNI().get)?UNI().get():null; const r=(u&&u.fighters&&u.fighters[name])||{};
     return `<div class="pf">${porHTML(name,46)}`+
            `<div class="pn">${esc(String(name).replace(/_/g,' '))}</div><div class="pr">${(r.wins||0)}-${(r.losses||0)}</div></div>`; }
@@ -40487,20 +40489,56 @@ window.BANNON_PORTRAITS = (function(){
       if(fg.dreads && !fg.hairUp){ for(let i=0;i<6;i++){ const a=(i/6)*Math.PI*2; const d=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.02,0.4,5),new THREE.MeshStandardMaterial({color:hc,roughness:0.95})); d.position.set(Math.cos(a)*0.32,1.5,Math.sin(a)*0.2-0.1); d.rotation.x=0.3; g.add(d);} } }
     return g;
   }
-  function get(name){ const key=String(name||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_'); if(cache[key]!==undefined) return cache[key];
-    if(!init()){ cache[key]=null; return null; }
-    try{
-      const o=(window.fighterOptsFor?window.fighterOptsFor(key):null)||{};
-      const fg=(window.CHAR_FACEGEAR&&(window.CHAR_FACEGEAR[key]||window.CHAR_FACEGEAR[name]))||null;
-      for(let i=scene.children.length-1;i>=0;i--){ const c=scene.children[i]; if(!c.isLight){ scene.remove(c); c.traverse&&c.traverse(x=>{ if(x.geometry)x.geometry.dispose&&x.geometry.dispose(); if(x.material)x.material.dispose&&x.material.dispose(); }); } }
-      scene.add(buildBust(o,fg));
+  function clearScene(){ for(let i=scene.children.length-1;i>=0;i--){ const c=scene.children[i]; if(!c.isLight){ scene.remove(c); c.traverse&&c.traverse(x=>{ if(x.geometry)x.geometry.dispose&&x.geometry.dispose(); if(x.material)x.material.dispose&&x.material.dispose(); }); } } }
+  function get(name){ const key=String(name||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_');
+    if(cache[key]===undefined){
+      if(!init()){ cache[key]=null; }
+      else { try{
+        const o=(window.fighterOptsFor?window.fighterOptsFor(key):null)||{};
+        const fg=(window.CHAR_FACEGEAR&&(window.CHAR_FACEGEAR[key]||window.CHAR_FACEGEAR[name]))||null;
+        clearScene(); scene.add(buildBust(o,fg)); R.render(scene,cam);
+        const uri=R.domElement.toDataURL('image/png'); cache[key]=(uri&&uri.length>200)?uri:null;
+      }catch(e){ cache[key]=null; } }
+    }
+    // GLB RENDER CARDS: if this character has a banked GLB model, render THAT over the procedural bust
+    // (async, one at a time) and swap it into the card via the 'bannonPortrait' event. Falls back to bust.
+    try{ if(glbCache[key]===undefined && window.charModelFor){ const ck=(window.charModelKey?null:null); const cm=window.charModelFor(key);
+      if(cm&&cm.url){ glbCache[key]=null; enqueueGLB(key, cm.url); } } }catch(e){}
+    return glbCache[key] || cache[key];
+  }
+  // ---- GLB portrait pipeline (async, serialized so we never thrash the GPU) ----
+  const glbCache={}; const glbQ=[]; let glbBusy=false;
+  function enqueueGLB(key,url){ glbQ.push([key,url]); pumpGLB(); }
+  function pumpGLB(){ if(glbBusy || !glbQ.length) return; if(typeof THREE==='undefined'||!THREE.GLTFLoader||!init()) return;
+    glbBusy=true; const [key,url]=glbQ.shift();
+    let L; try{ L=new THREE.GLTFLoader(); }catch(e){ glbBusy=false; return; }
+    const cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    const done=()=>{ glbBusy=false; setTimeout(pumpGLB, 40); };
+    const render=(gltf)=>{ try{
+      clearScene(); const obj=gltf.scene;
+      const box=new THREE.Box3().setFromObject(obj), sz=new THREE.Vector3(); box.getSize(sz); const ctr=new THREE.Vector3(); box.getCenter(ctr);
+      const h=sz.y||2; const s=1.8/h; obj.scale.setScalar(s);         // normalize height
+      const box2=new THREE.Box3().setFromObject(obj); const c2=new THREE.Vector3(); box2.getCenter(c2); const s2=new THREE.Vector3(); box2.getSize(s2);
+      obj.position.set(-c2.x, -box2.min.y, -c2.z);                     // feet at 0, centered
+      obj.traverse(o=>{ if(o.isMesh){ o.frustumCulled=false; } });
+      scene.add(obj);
+      // frame head + upper torso (portrait crop)
+      const topY=s2.y; cam.position.set(0, topY*0.82, topY*0.95); cam.lookAt(0, topY*0.72, 0);
       R.render(scene,cam);
       const uri=R.domElement.toDataURL('image/png');
-      cache[key]=(uri&&uri.length>200)?uri:null; return cache[key];
-    }catch(e){ cache[key]=null; return null; }
+      // restore the default bust camera for sync get()
+      cam.position.set(0,1.58,2.9); cam.lookAt(0,1.5,0);
+      if(uri&&uri.length>400){ glbCache[key]=uri; try{ window.dispatchEvent(new CustomEvent('bannonPortrait',{detail:{key,uri}})); }catch(e){} }
+    }catch(e){} done(); };
+    L.load(url, render, undefined, ()=>{ L.load(cdn+url, render, undefined, done); });
   }
-  return { get, cache };
+  return { get, cache, glbCache };
 })();
+// GLB render cards: when a GLB portrait finishes, swap it into any card <img data-por="KEY"> live.
+try{ window.addEventListener('bannonPortrait', function(e){ try{ var k=e.detail.key, u=e.detail.uri;
+  document.querySelectorAll('img[data-por="'+k+'"]').forEach(function(im){ im.src=u; im.style.objectFit='cover'; });
+  document.querySelectorAll('[data-porbg="'+k+'"]').forEach(function(el){ el.style.backgroundImage='url('+u+')'; });
+}catch(_){} }); }catch(e){}
 </script>
 
 <!-- ============================================================================================
