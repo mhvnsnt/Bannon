@@ -71,6 +71,8 @@ class BANNONCORE_API UBannonMeshCompositor : public UObject
 
 public:
     UBannonMeshCompositor();
+    UPROPERTY(BlueprintReadOnly, Category = "Bannon|Creation")
+    class UBannonLayerSorter* LayerSorter;
 
     // Constant Memory Pool limits for AAA layering
     static constexpr int32 MAX_ATTIRE_LAYERS = 60;

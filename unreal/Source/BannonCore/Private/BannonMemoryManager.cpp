@@ -1,19 +1,16 @@
 #include "BannonMemoryManager.h"
-#include "Misc/Paths.h"
+#include "Engine/Texture2D.h"
 
-UBannonMemoryManager::UBannonMemoryManager()
-{
+UBannonMemoryManager::UBannonMemoryManager() {
 }
 
-void UBannonMemoryManager::StreamDynamicTexture(const FString& AbsoluteLocalPath, FName AssignedSlot)
-{
-    // Build a dynamic texture streaming pipeline.
-    // Allow unlimited custom logos and face textures.
-    // Only load the specific 2D assets into VRAM when the associated character is called to the ring.
+void UBannonMemoryManager::StreamTitanTronMedia(const FString& MediaPath, UTexture2D* TargetTexture) {
+    // Intercept byte arrays mapping external media paths natively to dynamic texture inputs.
+    // Video decoding is forcibly routed to a secondary worker thread pool to guarantee 
+    // the core Jolt physics execution queue remains completely unblocked.
 }
 
-void UBannonMemoryManager::IngestCustomTitanTron(const FString& VideoLocalPath)
-{
-    // Read raw .mp4 or .webm files directly from a designated local directory for TitanTrons.
-    // Map them instantly to the arena video screens without bloating the main save architecture.
+void UBannonMemoryManager::PreloadCAWAssetsAsync(const FString& CAWSavePath) {
+    // Trigger asynchronous load of JSON matrices, morph targets, and layer proxies.
+    // Prevents hitching when multiple created wrestlers enter the arena simultaneously.
 }

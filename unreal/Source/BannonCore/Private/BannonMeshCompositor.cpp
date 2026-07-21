@@ -1,9 +1,11 @@
 #include "BannonMeshCompositor.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "BannonLayerSorter.h"
 
 UBannonMeshCompositor::UBannonMeshCompositor()
 {
     PrimaryMesh = nullptr;
+    LayerSorter = CreateDefaultSubobject<UBannonLayerSorter>(TEXT("LayerSorter"));
 }
 
 void UBannonMeshCompositor::AssembleCompositeMesh()
