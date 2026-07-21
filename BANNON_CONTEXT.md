@@ -55,3 +55,8 @@
 - **Target Architecture**: Android ARM64 strict enforcement. ARMv7 and x86_64 are permanently disabled to optimize Dalvik AOT native pointers.
 - **Rendering API**: Vulkan is enforced as the sole API to guarantee continuous-body skinning and RGB sweat/damage buffers render without artifacting on mobile GPUs.
 - **CI/CD**: Epic Games GameCI pipeline handles automated artifact generation for `Shipping` configurations on push.
+
+## Roster, Rigging & DNA Generation (AGENTS.md DIRECTIVES)
+- **Tripo 3D Alternative Integration**: System handles runtime GLB base mesh injection via `UBannonDNAParser`.
+- **Exclusion Protocol**: Cipher, Echo, Static, Hollow, and the Onyx teammate are permanently hard-coded as excluded in the C++ logic. Automatic generation bypasses these entries entirely.
+- **Anatomical Weight Clamps**: `UBannonRiggingStabilizer` aggressively scrubs imported skin weights. Pelvis vertices cannot inherit leg-bone weights (fixing the "hips widen" bug permanently). Weak influences (<0.05) are pruned, and smooth passes are hard-capped at 3.
