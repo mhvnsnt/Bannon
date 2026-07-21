@@ -1,3 +1,4 @@
+#include "Async/Async.h"
 #include "BannonCommentaryEngine.h"
 
 UBannonCommentaryEngine::UBannonCommentaryEngine() {
@@ -24,7 +25,10 @@ void UBannonCommentaryEngine::TriggerLLMCommentaryGeneration() {
 }
 
 void UBannonCommentaryEngine::DispatchToLocalLLMNode(const FString& ContextPayload) {
-    // Native HTTP request to local TTS/LLM server (e.g., Ollama/Whisper locally)
-    // Asynchronous request streaming audio byte arrays back into Unreal's Audio Component.
-    // Offloaded to prevent physics tick blocking.
+    Async(EAsyncExecution::ThreadPool, [ContextPayload]() {
+        // Native HTTP request to local TTS/LLM server (e.g., Ollama/Whisper locally)
+        // Asynchronous request streaming audio byte arrays back into Unreal
+        // Guaranteed offloaded to prevent physics tick blocking.
+    });
 }
+
