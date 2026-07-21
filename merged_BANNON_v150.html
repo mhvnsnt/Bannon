@@ -826,6 +826,15 @@ body.match-live #fbxImpToggle,
 body.match-live #bphysPanel,
 body.match-live #mcStudioBtn,
 body.match-live #movesBtn { display:none !important; }
+
+/* Touch-responsiveness fix for Physics/Tuning panel */
+#bphysPanel > div {
+  touch-action: pan-y !important;
+  overscroll-behavior: contain !important;
+}
+#bphysPanel button {
+  touch-action: manipulation !important;
+}
 /* NOTE: #freecamBtn is intentionally NOT hidden here — it must stay reachable in move creator / CAW /
    arena / entrance / victory / director / studio (owner). It's already hidden during a live fight by
    show()/hideAll (only shown for PREVIEW_OVERLAYS), and available mid-match via PAUSE > FREE CAM. */
