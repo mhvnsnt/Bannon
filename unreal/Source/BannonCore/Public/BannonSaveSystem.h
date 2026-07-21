@@ -15,6 +15,10 @@ struct FCustomSuperstarData
 
 	UPROPERTY(BlueprintReadWrite, Category = "Bannon|Save")
 	TMap<FName, float> MorphTargets;
+	
+	// Support up to 4 alternate attire sub-routes within the single base file
+	UPROPERTY(BlueprintReadWrite, Category = "Bannon|Save")
+	TArray<FString> AttirePayloads;
 };
 
 UCLASS()
@@ -23,11 +27,10 @@ class BANNONCORE_API UBannonSaveSystem : public UObject
 	GENERATED_BODY()
 
 public:
-	// Serialize this data into a lightweight JSON payload and write to SaveSlot
+	// Dynamic Serialization to local disk - Killing the 100 CAW cap
 	UFUNCTION(BlueprintCallable, Category = "Bannon|Save")
-	static bool SaveCustomSuperstar(int32 SaveSlot, const FString& SuperstarName, UBannonCharacterBuilder* Builder);
+	static bool SaveCustomSuperstarDynamic(const FString& SaveFilePath, UBannonCharacterBuilder* Builder);
 
-	// Load custom superstar from JSON payload
 	UFUNCTION(BlueprintCallable, Category = "Bannon|Save")
-	static bool LoadCustomSuperstar(int32 SaveSlot, UBannonCharacterBuilder* OutBuilder);
+	static bool LoadCustomSuperstarDynamic(const FString& SaveFilePath, UBannonCharacterBuilder* OutBuilder);
 };

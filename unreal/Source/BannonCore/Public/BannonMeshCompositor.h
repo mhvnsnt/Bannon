@@ -46,4 +46,8 @@ public:
     // Apply PBR material overrides
     UFUNCTION(BlueprintCallable, Category = "Bannon|Creation")
     void ApplyAttireMaterialOverride(int32 LayerIndex, const FAttireMaterialOverride& MaterialProps);
+
+    // Anti-Clipping & Unrestricted Layering via Jolt collision proxies
+    UFUNCTION(BlueprintCallable, Category = "Bannon|Creation")
+    void InjectJoltCollisionProxiesForAttire();
 };

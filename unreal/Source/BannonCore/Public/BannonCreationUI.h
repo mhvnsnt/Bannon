@@ -11,24 +11,44 @@ class BANNONCORE_API UBannonCreationUI : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	// Phase 1: Entry & Baseline Initialization
-	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI")
-	void InitializeNewCustomSuperstar(FName BaseTemplate, FName Archetype, float WeightClass);
+	// Phase 1: Personal Information (Meta-Data & Engine Constants)
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase1")
+	void SetIdentity(const FString& SuperstarName, const FString& EntranceName, const FName& CommentaryAudioFlag);
 
-	// Phase 2 & 3: Appearance & Anatomy
-	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI")
-	void UpdateMorphSlider(FName BoneName, float Value);
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase1")
+	void SetPresentationSigns(int32 SignIndex, const FString& SignAssetPath);
 
-	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI")
-	void UpdateHairTwoTone(FLinearColor RootColor, FLinearColor TipColor, float BlendPosition, float Sharpness);
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase1")
+	void AllocateAttributes(float HitPoints, float Speed, float DamageModifier);
 
-	// Phase 4: Attire & Material Layering
-	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI")
-	void ApplyAttireLayer(int32 LayerIndex, FName AttirePieceID, FAttireMaterialOverride MaterialOverride);
+	// Phase 2: Advanced Anatomy & Morphing (Physics-Linked Deformation)
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase2")
+	void UpdateFaceMorph(FName Region, float Depth, float Width, float Angle, float Height);
 
-	// Phase 5: Finalize
-	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI")
-	void FinalizeAndSave(int32 SaveSlot, const FString& SuperstarName);
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase2")
+	void UpdateBodyMorph(FName Region, float ScaleX, float ScaleY, float ScaleZ);
+
+	// Phase 3: Hair & Dye (Shader UI)
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase3")
+	void UpdateHairDye(FName HairRegion, FLinearColor BaseColor, FLinearColor TipColor, float BlendPosition, float BlendSharpness);
+
+	// Phase 4: Body Art & Decals (40-Layer Pool)
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase4")
+	void ApplyBodyArt(int32 LayerIndex, const FString& DecalAsset, FVector2D Translation, FVector2D Scale, float Rotation, float Opacity);
+
+	// Phase 5: Attire Construction Hub (60-Layer Pool)
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase5")
+	void ApplyAttirePart(int32 LayerIndex, FName Category, const FString& MeshAsset, const FString& MaterialOverride, TArray<FLinearColor> ChannelColors);
+
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase5")
+	void ReorderAttireLayer(int32 CurrentIndex, int32 NewIndex);
+
+	// Phase 6: Serialization & Finalization
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase6")
+	void SelectMenuPose(FName PoseID);
+
+	UFUNCTION(BlueprintCallable, Category = "Bannon|CreationUI|Phase6")
+	void FinalizeAndSave(const FString& CustomSavePath);
 
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Bannon|CreationUI")

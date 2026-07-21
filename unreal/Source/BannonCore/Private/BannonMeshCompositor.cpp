@@ -22,3 +22,10 @@ void UBannonMeshCompositor::ApplyAttireMaterialOverride(int32 LayerIndex, const 
 
     // Apply PBR material overrides (matte, gloss, vinyl, metallic) to the runtime UI for all attire layers.
 }
+
+void UBannonMeshCompositor::InjectJoltCollisionProxiesForAttire()
+{
+    // Remove all categorical mesh blocks.
+    // Inject real-time Jolt collision proxies between layer groups.
+    // The Jolt engine will force overlapping meshes to dynamically drape over outer attire layers rather than clipping.
+}
