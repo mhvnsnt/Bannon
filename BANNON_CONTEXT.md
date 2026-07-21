@@ -60,3 +60,7 @@
 - **Tripo 3D Alternative Integration**: System handles runtime GLB base mesh injection via `UBannonDNAParser`.
 - **Exclusion Protocol**: Cipher, Echo, Static, Hollow, and the Onyx teammate are permanently hard-coded as excluded in the C++ logic. Automatic generation bypasses these entries entirely.
 - **Anatomical Weight Clamps**: `UBannonRiggingStabilizer` aggressively scrubs imported skin weights. Pelvis vertices cannot inherit leg-bone weights (fixing the "hips widen" bug permanently). Weak influences (<0.05) are pruned, and smooth passes are hard-capped at 3.
+
+## Weapons & Procedural Audio (Liontamer Concurrency)
+- **Weapon Physics**: `UBannonWeaponPhysicsComponent` acts as an independent mass/velocity modifier multiplying against the Jolt framework. Instantly triggers max-level `HitStop` and `DMG_SCALE` (8.0) ragdoll overrides upon collision.
+- **Procedural Impact Synthesis**: `UBannonProceduralImpactAudio` scales MetaSound parameters (Amplitude, Pitch, Distortion) directly from the raw float data of the weapon collision, eradicating the need for static impact `.wav` banks.
