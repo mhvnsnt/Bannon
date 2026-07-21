@@ -41,3 +41,7 @@
 ## Network & Open WebUI Tailscale Bridge
 - **Local API Endpoints**: `UBannonAPIBridge` establishes a local C++ HTTP/WebSocket server listening (default: 8080) for incoming parameter sweeps from the Open WebUI mobile app over Tailscale.
 - **Real-Time Physics Sync**: High-speed JSON payloads route directly to `UpdateMorph`, `UpdateMaterial`, and `SaveCAW` methods, dynamically syncing visual and Jolt collision matrices with sub-10ms latency.
+
+## AI Audio & Crowd Dynamics
+- **Generative Commentary**: `UBannonCommentaryEngine` builds context strings from Jolt impacts and combat animator state changes. Impacts exceeding 75% of `DMG_SCALE` (8.0) trigger immediate local LLM/TTS generation async requests.
+- **Physics-Driven Crowd**: `UBannonCrowdDynamics` dictates crowd roar and sentiment purely through math. Intensity directly correlates to physical impact force (Jolt metrics) and inverse `Poise` values rather than scripted animation events.
