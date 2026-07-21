@@ -33,5 +33,9 @@ public class BannonCore : ModuleRules
 		// External Open Source Integration: GGPO (Rollback Netcode for Fighting Games)
 		string GGPOInclude = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "ThirdParty", "GGPO", "src", "include"));
 		PublicIncludePaths.Add(GGPOInclude);
+
+		// External Open Source Integration: llama.cpp (Edge AI Inference)
+		string LlamaInclude = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", "..", "ThirdParty", "llama.cpp", "include"));
+		PublicIncludePaths.Add(LlamaInclude);
 	}
 }

@@ -7,3 +7,6 @@
 [submodule "unreal/ThirdParty/GGPO"]
 	path = unreal/ThirdParty/GGPO
 	url = https://github.com/pond3r/ggpo.git
+[submodule "unreal/ThirdParty/llama.cpp"]
+	path = unreal/ThirdParty/llama.cpp
+	url = https://github.com/ggerganov/llama.cpp.git
