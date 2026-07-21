@@ -25,3 +25,11 @@
 ## Design Philosophy
 - **No Blueprints for Core Logic**: All logic, physics syncing, and memory management stays strictly in C++.
 - **Jolt Physics Sync**: Every morph slider adjusts hitbox arrays and center of mass instantly via the solver.
+
+## Combat & Animation Directives
+- **Mocap Root Motion**: Root motion velocity is strictly bounded by MAX_BODY_VEL (3.8 m/s). Scaled down natively in C++ via `UBannonMocapBridge` if exceeded.
+- **Hit Reactions & Active Ragdoll**: Dynamic Jolt physics blending based on DMG_SCALE (8.0). Heavy impacts force a 1.0 physics blend weight on the hit bone chain.
+- **Hit-Stop Time Dilation**: Heavy strikes trigger a 3-5 frame micro-freeze (time dilation multiplier) via `UBannonCombatAnimator`.
+- **Poise Crumple**: When Poise reaches 0, mocap is severed and full-body Jolt ragdoll is forced.
+- **Continuous-Body Skinning**: Uses `UBannonOptimizedSkeletalMeshComponent` with optimized buffer attributes (vertex colors/norms) and per-vertex LOD to maintain AAA frame rates for distant fighters.
+- **GGPO Rollback Sync**: State serialization (`IBannonRollbackInterface`) captures AnimSequenceTime, CurrentBlendWeight, and Jolt bone transform offsets in the ring buffer.
