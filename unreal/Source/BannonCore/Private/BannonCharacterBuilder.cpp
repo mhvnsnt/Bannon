@@ -1,7 +1,9 @@
 #include "BannonCharacterBuilder.h"
+#include "BannonVerletClothComponent.h"
+#include "BannonJigglePhysicsComponent.h"
+#include "GameFramework/Actor.h"
 
-UBannonCharacterBuilder::UBannonCharacterBuilder()
-{
+UBannonCharacterBuilder::UBannonCharacterBuilder() {
     MeshCompositor = CreateDefaultSubobject<UBannonMeshCompositor>(TEXT("MeshCompositor"));
     IKBridge = CreateDefaultSubobject<UBannonGrappleIKBridge>(TEXT("IKBridge"));
     MaxHitPoints = 10000.0f;
@@ -9,22 +11,29 @@ UBannonCharacterBuilder::UBannonCharacterBuilder()
     DamageScale = 8.0f;
 }
 
-void UBannonCharacterBuilder::ApplyMorphAndSyncPhysics()
-{
-    if (MeshCompositor && MeshCompositor->PrimaryMesh)
-    {
-        // 1. Apply all extreme micro-morphing arrays to the skeletal mesh
-        for (const auto& Pair : MorphTargets)
-        {
+void UBannonCharacterBuilder::ApplyMorphAndSyncPhysics() {
+    if (MeshCompositor && MeshCompositor->PrimaryMesh) {
+        for (const auto& Pair : MorphTargets) {
             MeshCompositor->PrimaryMesh->SetMorphTarget(Pair.Key, Pair.Value);
         }
 
-        // 2. Sync Jolt physics bounds.
-        // Recalculates Poise capacity based on Torso/Neck composite volume
         float CoreWidth = MorphTargets.Contains(TEXT("Core_ScaleX")) ? MorphTargets[TEXT("Core_ScaleX")] : 1.0f;
         float ArmMass = MorphTargets.Contains(TEXT("Arms_ScaleX")) ? MorphTargets[TEXT("Arms_ScaleX")] : 1.0f;
         
-        // Dynamically adjust hitboxes in Jolt
-        // In real implementation: JoltPhysicsEngine::UpdateBodyScale(this, CoreWidth, ArmMass);
+        AActor* OwnerActor = MeshCompositor->PrimaryMesh->GetOwner();
+        if (OwnerActor) {
+            UBannonJigglePhysicsComponent* JiggleComp = OwnerActor->FindComponentByClass<UBannonJigglePhysicsComponent>();
+            if (!JiggleComp) {
+                JiggleComp = NewObject<UBannonJigglePhysicsComponent>(OwnerActor);
+                JiggleComp->RegisterComponent();
+                JiggleComp->AutoDetectJiggleBones(MeshCompositor->PrimaryMesh);
+            }
+
+            UBannonVerletClothComponent* ClothComp = OwnerActor->FindComponentByClass<UBannonVerletClothComponent>();
+            if (!ClothComp) {
+                ClothComp = NewObject<UBannonVerletClothComponent>(OwnerActor);
+                ClothComp->RegisterComponent();
+            }
+        }
     }
 }
