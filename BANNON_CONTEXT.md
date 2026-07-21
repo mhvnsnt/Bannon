@@ -37,3 +37,7 @@
 ## Layering & Dynamic Media (Rendering & Memory)
 - **Attire Mesh Dynamic Drape**: Handled natively by `UBannonLayerSorter` inside `UBannonMeshCompositor`. Applies progressive depth-buffer stencil masking and DMI offsets per layer (1-60) while generating Jolt proxy collisions to force cloth over-draping, eradicating the need for mesh booleans.
 - **Custom Entrance Media**: `UBannonMemoryManager` isolates `.mp4` and `.webm` video decoding pipelines strictly onto separate worker threads, translating raw bytes to dynamic textures without ever blocking the primary Jolt physics queue.
+
+## Network & Open WebUI Tailscale Bridge
+- **Local API Endpoints**: `UBannonAPIBridge` establishes a local C++ HTTP/WebSocket server listening (default: 8080) for incoming parameter sweeps from the Open WebUI mobile app over Tailscale.
+- **Real-Time Physics Sync**: High-speed JSON payloads route directly to `UpdateMorph`, `UpdateMaterial`, and `SaveCAW` methods, dynamically syncing visual and Jolt collision matrices with sub-10ms latency.
