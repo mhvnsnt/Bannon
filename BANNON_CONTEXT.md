@@ -84,3 +84,7 @@
 ## Camera AI & Springboard Physics (Liontamer Concurrency)
 - **Director Camera AI**: `UBannonDirectorCamera` physically paths the camera based on actor midpoints and Jolt momentum vectors. `HitStop` triggers above 6.0f execute algorithmic FOV punch-ins and screen shake, completely decoupling the camera from static ringside rail mounts.
 - **Springboard Physics Hooks**: `UBannonSpringboardEngine` natively intersects with `UBannonVerletRopesComponent`. Springboard attacks do not use canned animations; they invert capsule velocities and multiply against environmental spring-damper tension variables to launch the actor mathematically.
+
+## Soft Body & Hair Dynamics (Liontamer Concurrency)
+- **Muscle & Fat Jiggle Physics**: `UBannonSoftBodyDynamics` auto-detects secondary body bones (pecs, glutes, belly) and calculates mathematical spring-dampers utilizing `MuscleDensity` (stiffness) and `FatDensity` (amplitude) mapped from the Tripo GLB/DNA payloads. Operates strictly as a visual overlay, bounded mathematically to prevent destabilization of the primary Jolt ragdoll IK constraints.
+- **Strand-Based Hair Physics**: `UBannonHairDynamics` eradicates rigidly attached or statically animated hair meshes. Employs a localized pendulum/spring solver driven directly by the `MAX_BODY_VEL` vector and physical gravity, enforcing anti-clipping collision bounds against the core skull socket.
