@@ -50,3 +50,8 @@
 - **Physical Pin Mechanics**: Pin counts (`UBannonMatchStateLogic`) are NOT triggered by animation states. They explicitly demand Jolt physics verification that both `bone_Shoulder_L` and `bone_Shoulder_R` collision proxies are within tolerance (15cm) of the ring mat bounds.
 - **Localized Bone Fatigue**: Submissions and heavy strikes apply exact localized damage vectors to limb arrays, directly mathematically degrading the base `Poise` regeneration formula.
 - **Referee AI Pathfinding**: `ABannonRefereeAIController` uses real-time NavMesh checks to step around active ragdolls, employing Grapple IK to physically snap the hand to the mat instead of relying on pre-baked counting clips.
+
+## Deployment & Pipeline
+- **Target Architecture**: Android ARM64 strict enforcement. ARMv7 and x86_64 are permanently disabled to optimize Dalvik AOT native pointers.
+- **Rendering API**: Vulkan is enforced as the sole API to guarantee continuous-body skinning and RGB sweat/damage buffers render without artifacting on mobile GPUs.
+- **CI/CD**: Epic Games GameCI pipeline handles automated artifact generation for `Shipping` configurations on push.
