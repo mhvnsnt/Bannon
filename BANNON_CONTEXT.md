@@ -92,3 +92,7 @@
 ## Neural Generation & Tailscale API (Liontamer Concurrency)
 - **Google GNM Morph Integration**: `UBannonGNMBalancer` ingests generative neural mesh latent vectors natively. It applies these float arrays directly to the skeletal mesh morph targets, bypassing heavy topology swaps. Furthermore, it overlays physics-driven `EXPR_Pain` variables strictly derived from the `UBannonMatchStateLogic` bone fatigue arrays, dynamically contorting the generated neural face during a fight.
 - **Tailscale WebUI Sync**: `UBannonAPIBridge` intercepts `GNM_Weights` arrays from the JSON WebSocket directly. This executes asynchronously, pumping neural generation parameters from the mobile WebUI straight to the C++ skeletal mesh without hitting the physics loop.
+
+## Master Module Linkage (Architecture Lock)
+- **Character Core**: `ABannonCharacter` explicitly instantiates `CombatAnimator`, `GNMBalancer`, `SoftBodyDynamics`, `HairDynamics`, and `DNAParser` via native C++ object instantiation. The CAW entity is fully autonomous and systemic on spawn.
+- **Match Core**: `ABannonMatchManager` governs the environment globally by initializing `MatchStateLogic`, `DirectorCamera`, `TelemetryLogger`, `CrowdInstancer`, and `RingRopes`. The arena environment is alive, bound, and independently reactive.
