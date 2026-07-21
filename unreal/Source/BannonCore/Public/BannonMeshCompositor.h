@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "Components/SkeletalMeshComponent.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "BannonMeshCompositor.generated.h"
 
 // Define material properties for AAA attire layering
@@ -23,6 +25,45 @@ struct FAttireMaterialOverride
     bool bIsVinyl;
 };
 
+USTRUCT(BlueprintType)
+struct FBodyArtDecal
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    FString AssetPath;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    FVector2D Translation;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    FVector2D Scale;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    float Rotation;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    float Opacity;
+};
+
+USTRUCT(BlueprintType)
+struct FAttireLayerData
+{
+    GENERATED_BODY()
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    FName Category;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    FString MeshAssetPath;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    TArray<FLinearColor> ChannelColors;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    FAttireMaterialOverride MaterialProps;
+};
+
 UCLASS()
 class BANNONCORE_API UBannonMeshCompositor : public UObject
 {
@@ -34,6 +75,21 @@ public:
     // Constant Memory Pool limits for AAA layering
     static constexpr int32 MAX_ATTIRE_LAYERS = 60;
     static constexpr int32 MAX_BODY_LAYERS = 40;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    TMap<int32, FString> SignAssets;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    TMap<int32, FBodyArtDecal> BodyArtLayers;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    TMap<int32, FAttireLayerData> AttireLayers;
+    
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    USkeletalMeshComponent* PrimaryMesh;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    TArray<UMaterialInstanceDynamic*> DynamicMaterials;
 
     // Isolate body/head morphs from attire to prevent Z-fighting
     UFUNCTION(BlueprintCallable, Category = "Bannon|Creation")

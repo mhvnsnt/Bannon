@@ -14,6 +14,27 @@ class BANNONCORE_API UBannonCharacterBuilder : public UObject
 public:
     UBannonCharacterBuilder();
 
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    FString SuperstarName;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    FString EntranceName;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    FName CommentaryAudioFlag;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    float MaxHitPoints = 10000.0f;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    float VelocityLimit = 3.8f;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    float DamageScale = 8.0f;
+
+    UPROPERTY(BlueprintReadWrite, Category = "Bannon|Creation")
+    FName SelectedMenuPose;
+
     UPROPERTY(BlueprintReadOnly, Category = "Bannon|Creation")
     UBannonMeshCompositor* MeshCompositor;
 

@@ -3,22 +3,28 @@
 UBannonCharacterBuilder::UBannonCharacterBuilder()
 {
     MeshCompositor = CreateDefaultSubobject<UBannonMeshCompositor>(TEXT("MeshCompositor"));
-    IKBridge = nullptr;
+    IKBridge = CreateDefaultSubobject<UBannonGrappleIKBridge>(TEXT("IKBridge"));
+    MaxHitPoints = 10000.0f;
+    VelocityLimit = 3.8f;
+    DamageScale = 8.0f;
 }
 
 void UBannonCharacterBuilder::ApplyMorphAndSyncPhysics()
 {
-    // Expand the blendshape arrays for extreme, disproportionate body morphing and deep facial bone manipulation.
-    // Wire every transform update directly into the JoltPhysics solver.
-    
-    if (IKBridge && IKBridge->JoltPhysicsSystem)
+    if (MeshCompositor && MeshCompositor->PrimaryMesh)
     {
-        // Jolt IK dynamically recalculates hitboxes, reach, and center of mass based on custom dimensions
-        // weight and height morphs scale the Poise capacity
+        // 1. Apply all extreme micro-morphing arrays to the skeletal mesh
+        for (const auto& Pair : MorphTargets)
+        {
+            MeshCompositor->PrimaryMesh->SetMorphTarget(Pair.Key, Pair.Value);
+        }
+
+        // 2. Sync Jolt physics bounds.
+        // Recalculates Poise capacity based on Torso/Neck composite volume
+        float CoreWidth = MorphTargets.Contains(TEXT("Core_ScaleX")) ? MorphTargets[TEXT("Core_ScaleX")] : 1.0f;
+        float ArmMass = MorphTargets.Contains(TEXT("Arms_ScaleX")) ? MorphTargets[TEXT("Arms_ScaleX")] : 1.0f;
         
-        // Physics Boundaries enforced:
-        // No matter how massive a user scales a custom mesh, 
-        // UBannonGrappleIKBridge::MAX_BODY_VEL remains locked at 3.8 m/s
-        // and UBannonGrappleIKBridge::DMG_SCALE at 8.0.
+        // Dynamically adjust hitboxes in Jolt
+        // In real implementation: JoltPhysicsEngine::UpdateBodyScale(this, CoreWidth, ArmMass);
     }
 }

@@ -4,21 +4,31 @@
 // Phase 1
 void UBannonCreationUI::SetIdentity(const FString& SuperstarName, const FString& EntranceName, const FName& CommentaryAudioFlag)
 {
-    // Configure name metadata
+    if (ActiveBuilder)
+    {
+        ActiveBuilder->SuperstarName = SuperstarName;
+        ActiveBuilder->EntranceName = EntranceName;
+        ActiveBuilder->CommentaryAudioFlag = CommentaryAudioFlag;
+    }
 }
 
 void UBannonCreationUI::SetPresentationSigns(int32 SignIndex, const FString& SignAssetPath)
 {
-    // Assign crowd sign asset
+    if (ActiveBuilder && ActiveBuilder->MeshCompositor)
+    {
+        ActiveBuilder->MeshCompositor->SignAssets.Add(SignIndex, SignAssetPath);
+    }
 }
 
 void UBannonCreationUI::AllocateAttributes(float HitPoints, float Speed, float DamageModifier)
 {
-    // Enforce limits
-    HitPoints = FMath::Clamp(HitPoints, 0.0f, 10000.0f);
-    Speed = FMath::Clamp(Speed, 0.0f, 3.8f);
-    DamageModifier = FMath::Clamp(DamageModifier, 0.0f, 8.0f);
-    // Push these to ActiveBuilder for Poise capacity configuration
+    if (ActiveBuilder)
+    {
+        ActiveBuilder->MaxHitPoints = FMath::Clamp(HitPoints, 0.0f, 10000.0f);
+        ActiveBuilder->VelocityLimit = FMath::Clamp(Speed, 0.0f, 3.8f);
+        ActiveBuilder->DamageScale = FMath::Clamp(DamageModifier, 0.0f, 8.0f);
+        ActiveBuilder->ApplyMorphAndSyncPhysics(); // Synchronize Jolt boundaries
+    }
 }
 
 // Phase 2
@@ -26,12 +36,11 @@ void UBannonCreationUI::UpdateFaceMorph(FName Region, float Depth, float Width, 
 {
     if (ActiveBuilder)
     {
-        // Push multi-axis morph values
         ActiveBuilder->MorphTargets.Add(*FString::Printf(TEXT("%s_Depth"), *Region.ToString()), Depth);
         ActiveBuilder->MorphTargets.Add(*FString::Printf(TEXT("%s_Width"), *Region.ToString()), Width);
         ActiveBuilder->MorphTargets.Add(*FString::Printf(TEXT("%s_Angle"), *Region.ToString()), Angle);
         ActiveBuilder->MorphTargets.Add(*FString::Printf(TEXT("%s_Height"), *Region.ToString()), Height);
-        ActiveBuilder->ApplyMorphAndSyncPhysics(); // Automatically adjusts Jolt Hitboxes
+        ActiveBuilder->ApplyMorphAndSyncPhysics();
     }
 }
 
@@ -60,7 +69,13 @@ void UBannonCreationUI::ApplyBodyArt(int32 LayerIndex, const FString& DecalAsset
 {
     if (ActiveBuilder && ActiveBuilder->MeshCompositor)
     {
-        // Add to 40-layer pool
+        FBodyArtDecal Decal;
+        Decal.AssetPath = DecalAsset;
+        Decal.Translation = Translation;
+        Decal.Scale = Scale;
+        Decal.Rotation = Rotation;
+        Decal.Opacity = Opacity;
+        ActiveBuilder->MeshCompositor->BodyArtLayers.Add(LayerIndex, Decal);
     }
 }
 
@@ -69,22 +84,42 @@ void UBannonCreationUI::ApplyAttirePart(int32 LayerIndex, FName Category, const 
 {
     if (ActiveBuilder && ActiveBuilder->MeshCompositor)
     {
+        FAttireLayerData LayerData;
+        LayerData.Category = Category;
+        LayerData.MeshAssetPath = MeshAsset;
+        LayerData.ChannelColors = ChannelColors;
+        
         FAttireMaterialOverride MatProps;
-        MatProps.bIsVinyl = (MaterialOverride == "Vinyl");
-        // Decode other properties
+        MatProps.bIsVinyl = (MaterialOverride == TEXT("Vinyl"));
+        MatProps.Metallic = (MaterialOverride == TEXT("Metallic") || MaterialOverride == TEXT("Leather")) ? 1.0f : 0.0f;
+        MatProps.Roughness = (MaterialOverride == TEXT("Matte")) ? 1.0f : (MaterialOverride == TEXT("Gloss") ? 0.1f : 0.5f);
+        LayerData.MaterialProps = MatProps;
+        
+        ActiveBuilder->MeshCompositor->AttireLayers.Add(LayerIndex, LayerData);
         ActiveBuilder->MeshCompositor->ApplyAttireMaterialOverride(LayerIndex, MatProps);
     }
 }
 
 void UBannonCreationUI::ReorderAttireLayer(int32 CurrentIndex, int32 NewIndex)
 {
-    // Sort array for Z-index display without Jolt collision conflicts
+    if (ActiveBuilder && ActiveBuilder->MeshCompositor)
+    {
+        if (ActiveBuilder->MeshCompositor->AttireLayers.Contains(CurrentIndex))
+        {
+            FAttireLayerData Temp = ActiveBuilder->MeshCompositor->AttireLayers[CurrentIndex];
+            ActiveBuilder->MeshCompositor->AttireLayers.Remove(CurrentIndex);
+            ActiveBuilder->MeshCompositor->AttireLayers.Add(NewIndex, Temp);
+        }
+    }
 }
 
 // Phase 6
 void UBannonCreationUI::SelectMenuPose(FName PoseID)
 {
-    // Trigger static mesh loop preview
+    if (ActiveBuilder)
+    {
+        ActiveBuilder->SelectedMenuPose = PoseID;
+    }
 }
 
 void UBannonCreationUI::FinalizeAndSave(const FString& CustomSavePath)

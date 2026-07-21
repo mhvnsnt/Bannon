@@ -9,6 +9,14 @@ bool UBannonSaveSystem::SaveCustomSuperstarDynamic(const FString& SaveFilePath, 
 
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 
+    JsonObject->SetStringField(TEXT("SuperstarName"), Builder->SuperstarName);
+    JsonObject->SetStringField(TEXT("EntranceName"), Builder->EntranceName);
+    JsonObject->SetStringField(TEXT("CommentaryAudioFlag"), Builder->CommentaryAudioFlag.ToString());
+    JsonObject->SetNumberField(TEXT("MaxHitPoints"), Builder->MaxHitPoints);
+    JsonObject->SetNumberField(TEXT("VelocityLimit"), Builder->VelocityLimit);
+    JsonObject->SetNumberField(TEXT("DamageScale"), Builder->DamageScale);
+    JsonObject->SetStringField(TEXT("SelectedMenuPose"), Builder->SelectedMenuPose.ToString());
+
 	TSharedPtr<FJsonObject> MorphsObject = MakeShareable(new FJsonObject());
 	for (const auto& Pair : Builder->MorphTargets)
 	{
@@ -40,6 +48,15 @@ bool UBannonSaveSystem::LoadCustomSuperstarDynamic(const FString& SaveFilePath, 
 
 	if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
 	{
+        OutBuilder->SuperstarName = JsonObject->GetStringField(TEXT("SuperstarName"));
+        OutBuilder->EntranceName = JsonObject->GetStringField(TEXT("EntranceName"));
+        OutBuilder->CommentaryAudioFlag = FName(*JsonObject->GetStringField(TEXT("CommentaryAudioFlag")));
+        
+        double OutNum;
+        if (JsonObject->TryGetNumberField(TEXT("MaxHitPoints"), OutNum)) OutBuilder->MaxHitPoints = OutNum;
+        if (JsonObject->TryGetNumberField(TEXT("VelocityLimit"), OutNum)) OutBuilder->VelocityLimit = OutNum;
+        if (JsonObject->TryGetNumberField(TEXT("DamageScale"), OutNum)) OutBuilder->DamageScale = OutNum;
+
 		TSharedPtr<FJsonObject> MorphsObject = JsonObject->GetObjectField(TEXT("MorphTargets"));
 		if (MorphsObject.IsValid())
 		{

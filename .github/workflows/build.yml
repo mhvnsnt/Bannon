@@ -35,9 +35,9 @@ jobs:
         with:
           lfs: true
           
-      # Uses GameCI to build Unreal Engine projects autonomously without a local PC
-      - name: Build Unreal Project (GameCI)
-        id: build_unreal
+      # Build Linux Editor/Server
+      - name: Build Unreal Project (Linux)
+        id: build_unreal_linux
         uses: epicgames/unreal-engine-github-action@v1
         with:
           project: unreal/Bannon.uproject
@@ -46,6 +46,25 @@ jobs:
           platform: Linux
         env:
           GITHUB_TOKEN: ${{ secrets.UE_GITHUB_TOKEN }}
+          
+      # Build Android APK Artifacts
+      - name: Build Unreal Project (Android APK)
+        id: build_unreal_android
+        uses: epicgames/unreal-engine-github-action@v1
+        with:
+          project: unreal/Bannon.uproject
+          target: Bannon
+          build-configuration: Shipping
+          platform: Android
+        env:
+          GITHUB_TOKEN: ${{ secrets.UE_GITHUB_TOKEN }}
+          
+      # Upload APK to GitHub Artifacts for the user to download and play
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bannon-Android-APK
+          path: unreal/Saved/StagedBuilds/Android/
           
       # The n8n Orchestrator Loop: Route failure logs straight to the AI for autonomous fixes
       - name: Trigger n8n Agent Webhook on Failure
