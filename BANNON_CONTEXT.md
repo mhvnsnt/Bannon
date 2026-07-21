@@ -80,3 +80,7 @@
 ## FX Fluid & Volumetric Physics (Liontamer Concurrency)
 - **Blood Fluid Dynamics**: `UBannonFluidDynamicsComponent` calculates real-time raycasts using swing velocity, impact force (>6.0f), and bone fatigue (>75%). Spawns deferred decals accurately on ring mats or ropes, ensuring visual damage maps directly to Jolt collision math rather than pre-scripted events.
 - **Volumetric Fog Displacement**: `UBannonVolumetricDisplacement` tracks capsule `MAX_BODY_VEL` velocities and bridges them into Niagara parameter collections, generating physical atmospheric air displacement in the arena grid instantly.
+
+## Camera AI & Springboard Physics (Liontamer Concurrency)
+- **Director Camera AI**: `UBannonDirectorCamera` physically paths the camera based on actor midpoints and Jolt momentum vectors. `HitStop` triggers above 6.0f execute algorithmic FOV punch-ins and screen shake, completely decoupling the camera from static ringside rail mounts.
+- **Springboard Physics Hooks**: `UBannonSpringboardEngine` natively intersects with `UBannonVerletRopesComponent`. Springboard attacks do not use canned animations; they invert capsule velocities and multiply against environmental spring-damper tension variables to launch the actor mathematically.
