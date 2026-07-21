@@ -37,6 +37,7 @@ jobs:
           
       # Uses GameCI to build Unreal Engine projects autonomously without a local PC
       - name: Build Unreal Project (GameCI)
+        id: build_unreal
         uses: epicgames/unreal-engine-github-action@v1
         with:
           project: unreal/Bannon.uproject
@@ -44,5 +45,12 @@ jobs:
           build-configuration: Development
           platform: Linux
         env:
-          # Required to access Unreal Engine Docker images
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      # The n8n Orchestrator Loop: Route failure logs straight to the AI for autonomous fixes
+      - name: Trigger n8n Agent Webhook on Failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"repository\": \"${{ github.repository }}\", \"commit\": \"${{ github.sha }}\", \"status\": \"failed\", \"error_log_url\": \"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
