@@ -76,3 +76,7 @@
 ## High-Density Rendering & Audio LODs (Liontamer Concurrency)
 - **Instanced Crowd Rendering**: `UBannonCrowdInstancer` uses `UHierarchicalInstancedStaticMeshComponent` (HISM). Tens of thousands of crowd members render in a single draw call. `CurrentCrowdIntensity` floats are injected natively into Custom Primitive Data, allowing the Vulkan shader to compute jump/jitter animations via World Position Offsets directly on the GPU, completely eradicating CPU skeletal mesh updates.
 - **Spacial Audio LODing**: `UBannonProceduralImpactAudio` checks squared camera distance against `AudioLODDistanceThreshold` (2500.0f). Distant procedural sounds are aggressively culled or routed through simplified noise generation matrices (`LOD_Mode = 1.0f`) to prevent MetaSound thread blowout during mass-collision brawls.
+
+## FX Fluid & Volumetric Physics (Liontamer Concurrency)
+- **Blood Fluid Dynamics**: `UBannonFluidDynamicsComponent` calculates real-time raycasts using swing velocity, impact force (>6.0f), and bone fatigue (>75%). Spawns deferred decals accurately on ring mats or ropes, ensuring visual damage maps directly to Jolt collision math rather than pre-scripted events.
+- **Volumetric Fog Displacement**: `UBannonVolumetricDisplacement` tracks capsule `MAX_BODY_VEL` velocities and bridges them into Niagara parameter collections, generating physical atmospheric air displacement in the arena grid instantly.
