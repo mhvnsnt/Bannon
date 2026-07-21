@@ -2,7 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
-#include "RTIKSolver.h"
+// External JoltPhysics Headers for Open-Source IK/Physics wiring
+#include "Jolt/Jolt.h"
+#include "Jolt/Physics/PhysicsSystem.h"
 #include "BannonGrappleIKBridge.generated.h"
 
 UCLASS()
@@ -13,8 +15,8 @@ class BANNONCORE_API UBannonGrappleIKBridge : public UObject
 public:
 	UBannonGrappleIKBridge();
 
-	// The active instance of the open-source solver
-	FRTIKSolver IKSolver;
+	// JoltPhysics system for handling Grapple Inverse Kinematics and constraints
+	JPH::PhysicsSystem* JoltPhysicsSystem;
 
 	// Anchors to Bannon Physics Constants (Mandatory limiters)
 	static constexpr float MAX_HP = 10000.0f;
