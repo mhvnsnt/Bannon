@@ -96,3 +96,7 @@
 ## Master Module Linkage (Architecture Lock)
 - **Character Core**: `ABannonCharacter` explicitly instantiates `CombatAnimator`, `GNMBalancer`, `SoftBodyDynamics`, `HairDynamics`, and `DNAParser` via native C++ object instantiation. The CAW entity is fully autonomous and systemic on spawn.
 - **Match Core**: `ABannonMatchManager` governs the environment globally by initializing `MatchStateLogic`, `DirectorCamera`, `TelemetryLogger`, `CrowdInstancer`, and `RingRopes`. The arena environment is alive, bound, and independently reactive.
+
+## Combat Animation & Ragdoll Hooks
+- **Root Motion Stability**: `UBannonCombatAnimator` explicitly intercepts root motion curves natively in `ExtractAndApplyRootMotion`. It calculates translation velocity, binds it to the `bannon::MAX_BODY_VEL` limits, and executes a swept physical collision update (`AddActorWorldOffset(..., true)`), guaranteeing foot planting and spatial coherence without sliding.
+- **Tyneshia's Reality Check Mechanic**: In-game signature move logic explicitly implemented. `ExecuteRealityCheck()` utilizes localized hitstop (15 frames) and forces a `spine_03` ragdoll crumple with strict angular constraint limits to prevent erratic simulation behavior. 

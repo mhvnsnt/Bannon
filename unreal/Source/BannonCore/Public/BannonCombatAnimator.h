@@ -1,33 +1,48 @@
+// AI ORIENTATION BLOCK v114
+// godmode prefix. Autonomous. Constants immutable. No WebGL/Three legacy.
+
 #pragma once
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "BannonRollbackInterface.h"
+#include "BannonPhysicsLaws.h"
 #include "BannonCombatAnimator.generated.h"
 
+class USkeletalMeshComponent;
+
 UCLASS(ClassGroup=(BannonCombat), meta=(BlueprintSpawnableComponent))
-class BANNONCORE_API UBannonCombatAnimator : public UActorComponent, public IBannonRollbackInterface {
+class BANNONCORE_API UBannonCombatAnimator : public UActorComponent {
     GENERATED_BODY()
 public:
     UBannonCombatAnimator();
     virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-    UFUNCTION(BlueprintCallable, Category="Bannon|Combat")
-    void ApplyHitStop(int32 Frames, float DilationScale);
+    UFUNCTION(BlueprintCallable, Category = "Bannon|Combat")
+    void InitializeAnimator(USkeletalMeshComponent* InMesh);
 
-    UFUNCTION(BlueprintCallable, Category="Bannon|Combat")
-    void ProcessActiveRagdoll(FName HitBone, float ImpactForce);
+    // Binds root motion curve extraction directly to the physics proxy for foot planting stability
+    UFUNCTION(BlueprintCallable, Category = "Bannon|Combat")
+    void ExtractAndApplyRootMotion(float DeltaTime);
 
-    UFUNCTION(BlueprintCallable, Category="Bannon|Combat")
-    void TriggerPoiseCrumple();
+    // Time dilation manipulation for 3-5 frame heavy impact weights
+    UFUNCTION(BlueprintCallable, Category = "Bannon|Combat")
+    void TriggerHitStop(float DurationFrames);
 
-    // Rollback Interface
-    virtual void SerializeState(TArray<uint8>& OutBuffer) override;
-    virtual void DeserializeState(const TArray<uint8>& InBuffer) override;
-    virtual void SnapToFrame(float AnimSequenceTime, float CurrentBlendWeight) override;
+    // GGPO-friendly Active Ragdoll blend on a per-limb basis via Jolt/Chaos constraints
+    UFUNCTION(BlueprintCallable, Category = "Bannon|Combat")
+    void BlendActiveRagdollLimb(FName BoneName, float BlendWeight);
+
+    // Applies realistic angular swing/twist limits to physical constraints dynamically
+    UFUNCTION(BlueprintCallable, Category = "Bannon|Combat|Physics")
+    void ApplyRealisticJointLimits(FName JointName, float Swing1Limit, float Swing2Limit, float TwistLimit);
+
+    // Tyneshia / Karma God Within Mode In-Game Mechanic
+    UFUNCTION(BlueprintCallable, Category = "Bannon|Combat|Moves")
+    void ExecuteRealityCheck(class ABannonCharacter* Target);
 
 private:
-    float CurrentBlendWeight;
-    float HitStopTimeDilation;
-    int32 HitStopFramesRemaining;
-    bool bIsCrumpled;
+    UPROPERTY()
+    USkeletalMeshComponent* OwnerMesh;
+
+    float CurrentHitStopTimer;
+    bool bIsHitStopActive;
 };
