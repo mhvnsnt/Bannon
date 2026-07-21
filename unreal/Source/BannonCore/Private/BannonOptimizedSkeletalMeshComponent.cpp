@@ -44,3 +44,27 @@ void UBannonOptimizedSkeletalMeshComponent::OptimizeVertexBuffersForDistance() {
         VisibilityBasedAnimTickOption = EVisibilityBasedAnimTickOption::AlwaysTickPoseAndRefreshBones;
     }
 }
+
+#include "BannonMatchStateLogic.h"
+#include "Materials/MaterialInstanceDynamic.h"
+
+void UBannonOptimizedSkeletalMeshComponent::UpdateLiveDamageVisuals(UBannonMatchStateLogic* MatchLogic) {
+    if (!MatchLogic || bDisableMorphTarget) return;
+
+    // Head / Torso fatigue mapped to dynamic sweat and laceration vectors
+    float HeadFatigue = MatchLogic->GetCurrentLimbFatigue(TEXT("bone_Head"));
+    float TorsoFatigue = MatchLogic->GetCurrentLimbFatigue(TEXT("bone_Spine_02"));
+
+    // Calculate normalized damage/sweat floats (0.0 to 1.0)
+    float SweatOpacity = FMath::Clamp(TorsoFatigue / 50.0f, 0.0f, 1.0f);
+    float BloodOpacity = FMath::Clamp((HeadFatigue - 50.0f) / 50.0f, 0.0f, 1.0f); // Starts bleeding after 50% fatigue
+
+    // Apply to DMI parameters directly rendering over the RGB vertex buffer map
+    for (int32 i = 0; i < GetNumMaterials(); ++i) {
+        UMaterialInstanceDynamic* DMI = Cast<UMaterialInstanceDynamic>(GetMaterial(i));
+        if (DMI) {
+            DMI->SetScalarParameterValue(TEXT("SweatLayer_Opacity"), SweatOpacity);
+            DMI->SetScalarParameterValue(TEXT("DamageLayer_Opacity"), BloodOpacity);
+        }
+    }
+}

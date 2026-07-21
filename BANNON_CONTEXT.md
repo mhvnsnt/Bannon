@@ -68,3 +68,7 @@
 ## AI Spacing & Environmental Physics (Liontamer Concurrency)
 - **Ring Generalship**: `ABannonRingGeneralshipAI` dictates spacial awareness. AI movement vectors are directly controlled by `Poise` thresholds. Low poise triggers NavMesh retreats; high poise triggers intercept vectors.
 - **Verlet Ring Ropes**: `UBannonVerletRopesComponent` eradicates static bounding boxes. Ring ropes operate as interconnected spring-damper nodes in the Jolt solver, dynamically deforming based on capsule intersection, mass, and velocity.
+
+## Telemetry & Live-Sync Visual Damage (Liontamer Concurrency)
+- **Headless Analytics Server**: `UBannonTelemetryLogger` continuously exports limb damage, force vectors, and Poise levels as JSON objects. I/O operations are forcibly offloaded via `Async(EAsyncExecution::ThreadPool, ...)` to guarantee zero main-thread hitching.
+- **Dynamic Laceration & Sweat Arrays**: `UBannonOptimizedSkeletalMeshComponent` natively queries `LimbFatigueArrays` from the match logic. It calculates `SweatOpacity` and `BloodOpacity` floats directly from the underlying bone damage parameters, replacing standard health bars with immediate RGB vertex buffer visual feedback.

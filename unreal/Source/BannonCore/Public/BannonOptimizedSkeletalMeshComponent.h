@@ -22,4 +22,5 @@ public:
 private:
     void ApplyContinuousBodySkinning();
     void OptimizeVertexBuffersForDistance();
+    void UpdateLiveDamageVisuals(class UBannonMatchStateLogic* MatchLogic);
 };
