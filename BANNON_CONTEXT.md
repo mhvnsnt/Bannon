@@ -45,3 +45,8 @@
 ## AI Audio & Crowd Dynamics
 - **Generative Commentary**: `UBannonCommentaryEngine` builds context strings from Jolt impacts and combat animator state changes. Impacts exceeding 75% of `DMG_SCALE` (8.0) trigger immediate local LLM/TTS generation async requests.
 - **Physics-Driven Crowd**: `UBannonCrowdDynamics` dictates crowd roar and sentiment purely through math. Intensity directly correlates to physical impact force (Jolt metrics) and inverse `Poise` values rather than scripted animation events.
+
+## Match State Logic & Physical AI
+- **Physical Pin Mechanics**: Pin counts (`UBannonMatchStateLogic`) are NOT triggered by animation states. They explicitly demand Jolt physics verification that both `bone_Shoulder_L` and `bone_Shoulder_R` collision proxies are within tolerance (15cm) of the ring mat bounds.
+- **Localized Bone Fatigue**: Submissions and heavy strikes apply exact localized damage vectors to limb arrays, directly mathematically degrading the base `Poise` regeneration formula.
+- **Referee AI Pathfinding**: `ABannonRefereeAIController` uses real-time NavMesh checks to step around active ragdolls, employing Grapple IK to physically snap the hand to the mat instead of relying on pre-baked counting clips.
