@@ -74,3 +74,36 @@ void UBannonAPIBridge::RouteSaveCommand(const TSharedPtr<FJsonObject>& JsonObjec
     FString SaveFileName = JsonObject->GetStringField(TEXT("FileName"));
     UBannonSaveSystem::SaveCustomSuperstarDynamic(SaveFileName, ActiveBuilder);
 }
+
+#include "BannonGNMBalancer.h"
+#include "Serialization/JsonSerializer.h"
+
+void UBannonAPIBridge::RouteGNMPayload(const FString& JsonPayload, AActor* TargetCAW) {
+    if (!TargetCAW) return;
+    
+    UBannonGNMBalancer* GNMBalancer = TargetCAW->FindComponentByClass<UBannonGNMBalancer>();
+    USkeletalMeshComponent* CAWMesh = TargetCAW->FindComponentByClass<USkeletalMeshComponent>();
+
+    if (GNMBalancer && CAWMesh) {
+        TSharedPtr<FJsonObject> JsonObject;
+        TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonPayload);
+
+        if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid()) {
+            TMap<FName, float> MorphMap;
+            
+            // Extract the neural weight array natively
+            const TArray<TSharedPtr<FJsonValue>>* WeightArray;
+            if (JsonObject->TryGetArrayField(TEXT("GNM_Weights"), WeightArray)) {
+                for (const auto& Val : *WeightArray) {
+                    TSharedPtr<FJsonObject> WeightObj = Val->AsObject();
+                    FName MorphName = FName(*WeightObj->GetStringField(TEXT("id")));
+                    float MorphVal = WeightObj->GetNumberField(TEXT("val"));
+                    MorphMap.Add(MorphName, MorphVal);
+                }
+            }
+            
+            // Push directly to the skeletal mesh buffers
+            GNMBalancer->IngestNeuralMorphWeights(MorphMap, CAWMesh);
+        }
+    }
+}

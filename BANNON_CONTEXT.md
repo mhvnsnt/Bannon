@@ -88,3 +88,7 @@
 ## Soft Body & Hair Dynamics (Liontamer Concurrency)
 - **Muscle & Fat Jiggle Physics**: `UBannonSoftBodyDynamics` auto-detects secondary body bones (pecs, glutes, belly) and calculates mathematical spring-dampers utilizing `MuscleDensity` (stiffness) and `FatDensity` (amplitude) mapped from the Tripo GLB/DNA payloads. Operates strictly as a visual overlay, bounded mathematically to prevent destabilization of the primary Jolt ragdoll IK constraints.
 - **Strand-Based Hair Physics**: `UBannonHairDynamics` eradicates rigidly attached or statically animated hair meshes. Employs a localized pendulum/spring solver driven directly by the `MAX_BODY_VEL` vector and physical gravity, enforcing anti-clipping collision bounds against the core skull socket.
+
+## Neural Generation & Tailscale API (Liontamer Concurrency)
+- **Google GNM Morph Integration**: `UBannonGNMBalancer` ingests generative neural mesh latent vectors natively. It applies these float arrays directly to the skeletal mesh morph targets, bypassing heavy topology swaps. Furthermore, it overlays physics-driven `EXPR_Pain` variables strictly derived from the `UBannonMatchStateLogic` bone fatigue arrays, dynamically contorting the generated neural face during a fight.
+- **Tailscale WebUI Sync**: `UBannonAPIBridge` intercepts `GNM_Weights` arrays from the JSON WebSocket directly. This executes asynchronously, pumping neural generation parameters from the mobile WebUI straight to the C++ skeletal mesh without hitting the physics loop.
