@@ -72,3 +72,7 @@
 ## Telemetry & Live-Sync Visual Damage (Liontamer Concurrency)
 - **Headless Analytics Server**: `UBannonTelemetryLogger` continuously exports limb damage, force vectors, and Poise levels as JSON objects. I/O operations are forcibly offloaded via `Async(EAsyncExecution::ThreadPool, ...)` to guarantee zero main-thread hitching.
 - **Dynamic Laceration & Sweat Arrays**: `UBannonOptimizedSkeletalMeshComponent` natively queries `LimbFatigueArrays` from the match logic. It calculates `SweatOpacity` and `BloodOpacity` floats directly from the underlying bone damage parameters, replacing standard health bars with immediate RGB vertex buffer visual feedback.
+
+## High-Density Rendering & Audio LODs (Liontamer Concurrency)
+- **Instanced Crowd Rendering**: `UBannonCrowdInstancer` uses `UHierarchicalInstancedStaticMeshComponent` (HISM). Tens of thousands of crowd members render in a single draw call. `CurrentCrowdIntensity` floats are injected natively into Custom Primitive Data, allowing the Vulkan shader to compute jump/jitter animations via World Position Offsets directly on the GPU, completely eradicating CPU skeletal mesh updates.
+- **Spacial Audio LODing**: `UBannonProceduralImpactAudio` checks squared camera distance against `AudioLODDistanceThreshold` (2500.0f). Distant procedural sounds are aggressively culled or routed through simplified noise generation matrices (`LOD_Mode = 1.0f`) to prevent MetaSound thread blowout during mass-collision brawls.

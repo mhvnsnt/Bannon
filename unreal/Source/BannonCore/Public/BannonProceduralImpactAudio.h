@@ -11,4 +11,7 @@ public:
 
     UFUNCTION(BlueprintCallable, Category = "Bannon|Audio")
     void SynthesizeImpactSound(float ImpactForce, float MaterialHardness);
+
+    UPROPERTY(EditAnywhere, Category="Bannon|Audio")
+    float AudioLODDistanceThreshold = 2500.0f;
 };
