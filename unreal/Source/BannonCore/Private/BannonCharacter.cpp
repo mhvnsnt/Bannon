@@ -1,3 +1,4 @@
+// AI ORIENTATION BLOCK v114
 #include "BannonCharacter.h"
 #include "BannonCombatAnimator.h"
 #include "BannonGNMBalancer.h"
@@ -9,7 +10,6 @@
 ABannonCharacter::ABannonCharacter() {
     PrimaryActorTick.bCanEverTick = true;
     
-    // Natively binding all specialized engine components directly to the base character class.
     CombatAnimator = CreateDefaultSubobject<UBannonCombatAnimator>(TEXT("CombatAnimator"));
     GNMBalancer = CreateDefaultSubobject<UBannonGNMBalancer>(TEXT("GNMBalancer"));
     SoftBodyDynamics = CreateDefaultSubobject<UBannonSoftBodyDynamics>(TEXT("SoftBodyDynamics"));
@@ -19,9 +19,25 @@ ABannonCharacter::ABannonCharacter() {
 
 void ABannonCharacter::BeginPlay() {
     Super::BeginPlay();
-    
-    // Global Linkage Initialization Hooks
     if (HairDynamics && GetMesh()) {
         HairDynamics->RegisterHairStrands(GetMesh());
     }
+}
+
+void ABannonCharacter::ApplyHit(const FHitResult& Hit, float RawDamage) {
+    bannon::PhysicsLaws::ApplyDamage(Health, RawDamage, Poise);
+    
+    FVector UnrealVel = GetVelocity();
+    bannon::Vec3 NativeVel = { static_cast<float>(UnrealVel.X), static_cast<float>(UnrealVel.Y), static_cast<float>(UnrealVel.Z) };
+    bannon::PhysicsLaws::EnforceVelocity(NativeVel);
+    
+    if (Poise.crumpleActive && GetMesh()) {
+        GetMesh()->SetAllBodiesBelowSimulatePhysics(Hit.BoneName, true, true);
+    }
+
+    CurrentHitStop.durationFrames = (RawDamage > 50.0f) ? 5.0f : 3.0f;
+}
+
+void ABannonCharacter::UpdateMorph(float Torso, float Neck) {
+    Poise.max = bannon::PhysicsLaws::RecalcPoiseFromMorph(Torso, Neck);
 }

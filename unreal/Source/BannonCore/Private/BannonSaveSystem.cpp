@@ -1,71 +1,49 @@
+// AI ORIENTATION BLOCK v114
 #include "BannonSaveSystem.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
-#include "Serialization/JsonSerializer.h"
+#include "HAL/PlatformFileManager.h"
 
-bool UBannonSaveSystem::SaveCustomSuperstarDynamic(const FString& SaveFilePath, UBannonCharacterBuilder* Builder)
-{
-	if (!Builder) return false;
-
-	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
-
-    JsonObject->SetStringField(TEXT("SuperstarName"), Builder->SuperstarName);
-    JsonObject->SetStringField(TEXT("EntranceName"), Builder->EntranceName);
-    JsonObject->SetStringField(TEXT("CommentaryAudioFlag"), Builder->CommentaryAudioFlag.ToString());
-    JsonObject->SetNumberField(TEXT("MaxHitPoints"), Builder->MaxHitPoints);
-    JsonObject->SetNumberField(TEXT("VelocityLimit"), Builder->VelocityLimit);
-    JsonObject->SetNumberField(TEXT("DamageScale"), Builder->DamageScale);
-    JsonObject->SetStringField(TEXT("SelectedMenuPose"), Builder->SelectedMenuPose.ToString());
-
-	TSharedPtr<FJsonObject> MorphsObject = MakeShareable(new FJsonObject());
-	for (const auto& Pair : Builder->MorphTargets)
-	{
-		MorphsObject->SetNumberField(Pair.Key.ToString(), Pair.Value);
-	}
-	JsonObject->SetObjectField(TEXT("MorphTargets"), MorphsObject);
-
-	// Instead of hardcoded slot limits, route JSON serialization directly to dynamic local disk storage.
-	FString OutputString;
-	TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&OutputString);
-	FJsonSerializer::Serialize(JsonObject.ToSharedRef(), Writer);
-
-	// Strip the hardcoded 100 CAW slot limit - save directly based on user's defined path in Saved/
-	FString AbsolutePath = FPaths::ProjectSavedDir() / SaveFilePath;
-	return FFileHelper::SaveStringToFile(OutputString, *AbsolutePath);
+void UBannonSaveSystem::Initialize(FSubsystemCollectionBase& Collection) {
+    Super::Initialize(Collection);
 }
 
-bool UBannonSaveSystem::LoadCustomSuperstarDynamic(const FString& SaveFilePath, UBannonCharacterBuilder* OutBuilder)
-{
-	if (!OutBuilder) return false;
+FString UBannonSaveSystem::SaveCharacterToDisk(const FString& CharacterJsonPayload) {
+    FString SlotId = FString::Printf(TEXT("caw_%lld.json"), FDateTime::Now().ToUnixTimestamp());
+    FString SaveDirectory = FPaths::ProjectSavedDir() / TEXT("Characters");
+    
+    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+    if (!PlatformFile.DirectoryExists(*SaveDirectory)) {
+        PlatformFile.CreateDirectoryTree(*SaveDirectory);
+    }
+    
+    FString FullPath = SaveDirectory / SlotId;
+    if (FFileHelper::SaveStringToFile(CharacterJsonPayload, *FullPath, FFileHelper::EEncodingOptions::ForceUTF8)) {
+        return SlotId;
+    }
+    
+    return TEXT("");
+}
 
-	FString AbsolutePath = FPaths::ProjectSavedDir() / SaveFilePath;
-	FString JsonString;
-	
-	if (!FFileHelper::LoadFileToString(JsonString, *AbsolutePath)) return false;
+FString UBannonSaveSystem::LoadCharacterFromDisk(const FString& SlotId) {
+    FString FullPath = FPaths::ProjectSavedDir() / TEXT("Characters") / SlotId;
+    FString JsonContent;
+    if (FFileHelper::LoadFileToString(JsonContent, *FullPath)) {
+        return JsonContent;
+    }
+    return TEXT("");
+}
 
-	TSharedPtr<FJsonObject> JsonObject;
-	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
-
-	if (FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
-	{
-        OutBuilder->SuperstarName = JsonObject->GetStringField(TEXT("SuperstarName"));
-        OutBuilder->EntranceName = JsonObject->GetStringField(TEXT("EntranceName"));
-        OutBuilder->CommentaryAudioFlag = FName(*JsonObject->GetStringField(TEXT("CommentaryAudioFlag")));
-        
-        double OutNum;
-        if (JsonObject->TryGetNumberField(TEXT("MaxHitPoints"), OutNum)) OutBuilder->MaxHitPoints = OutNum;
-        if (JsonObject->TryGetNumberField(TEXT("VelocityLimit"), OutNum)) OutBuilder->VelocityLimit = OutNum;
-        if (JsonObject->TryGetNumberField(TEXT("DamageScale"), OutNum)) OutBuilder->DamageScale = OutNum;
-
-		TSharedPtr<FJsonObject> MorphsObject = JsonObject->GetObjectField(TEXT("MorphTargets"));
-		if (MorphsObject.IsValid())
-		{
-			for (const auto& Pair : MorphsObject->Values)
-			{
-				OutBuilder->MorphTargets.Add(FName(*Pair.Key), Pair.Value->AsNumber());
-			}
-		}
-		return true;
-	}
-	return false;
+TArray<FString> UBannonSaveSystem::GetAllCharacterSlots() {
+    FString SaveDirectory = FPaths::ProjectSavedDir() / TEXT("Characters");
+    TArray<FString> FoundFiles;
+    
+    IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+    PlatformFile.FindFiles(FoundFiles, *SaveDirectory, TEXT(".json"));
+    
+    for (int32 i = 0; i < FoundFiles.Num(); ++i) {
+        FoundFiles[i] = FPaths::GetCleanFilename(FoundFiles[i]);
+    }
+    
+    return FoundFiles;
 }

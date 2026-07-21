@@ -1,20 +1,23 @@
-#include "Async/Async.h"
+// AI ORIENTATION BLOCK v114
 #include "BannonMemoryManager.h"
 #include "Engine/Texture2D.h"
+#include "ImageUtils.h"
+#include "Misc/FileHelper.h"
 
-UBannonMemoryManager::UBannonMemoryManager() {
+UTexture2D* UBannonMemoryManager::LoadTextureFromDiskAsync(const FString& ImagePath) {
+    TArray<uint8> RawFileData;
+    if (FFileHelper::LoadFileToArray(RawFileData, *ImagePath)) {
+        UTexture2D* LoadedTexture = FImageUtils::ImportBufferAsTexture2D(RawFileData);
+        if (LoadedTexture) {
+            LoadedTexture->UpdateResource();
+            return LoadedTexture;
+        }
+    }
+    return nullptr;
 }
 
-void UBannonMemoryManager::StreamTitanTronMedia(const FString& MediaPath, UTexture2D* TargetTexture) {
-    Async(EAsyncExecution::ThreadPool, [MediaPath, TargetTexture]() {
-        // Intercept byte arrays mapping external media paths natively to dynamic texture inputs.
-        // Video decoding is forcibly routed to a secondary worker thread pool.
-    });
+void UBannonMemoryManager::PurgeTextureFromVRAM(UTexture2D* Texture) {
+    if (Texture) {
+        Texture->ConditionalBeginDestroy();
+    }
 }
-
-void UBannonMemoryManager::PreloadCAWAssetsAsync(const FString& CAWSavePath) {
-    Async(EAsyncExecution::ThreadPool, [CAWSavePath]() {
-        // Trigger asynchronous load of JSON matrices, morph targets, and layer proxies.
-    });
-}
-

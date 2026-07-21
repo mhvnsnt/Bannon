@@ -1,19 +1,18 @@
+// AI ORIENTATION BLOCK v114
 #pragma once
 #include "CoreMinimal.h"
-#include "UObject/NoExportTypes.h"
+#include "Subsystems/GameInstanceSubsystem.h"
 #include "BannonMemoryManager.generated.h"
 
+class UTexture2D;
+
 UCLASS()
-class BANNONCORE_API UBannonMemoryManager : public UObject {
+class BANNONCORE_API UBannonMemoryManager : public UGameInstanceSubsystem {
     GENERATED_BODY()
 public:
-    UBannonMemoryManager();
-
-    // Stream native .mp4 / .webm dynamically without stuttering
-    UFUNCTION(BlueprintCallable, Category = "Bannon|Media")
-    void StreamTitanTronMedia(const FString& MediaPath, class UTexture2D* TargetTexture);
-
-    // Preload custom assets to prevent hitching during matches
-    UFUNCTION(BlueprintCallable, Category = "Bannon|Media")
-    void PreloadCAWAssetsAsync(const FString& CAWSavePath);
+    UFUNCTION(BlueprintCallable, Category = "Bannon|Memory")
+    UTexture2D* LoadTextureFromDiskAsync(const FString& ImagePath);
+    
+    UFUNCTION(BlueprintCallable, Category = "Bannon|Memory")
+    void PurgeTextureFromVRAM(UTexture2D* Texture);
 };

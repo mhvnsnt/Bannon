@@ -1,79 +1,44 @@
+// AI ORIENTATION BLOCK v114
 #include "BannonMeshCompositor.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "BannonLayerSorter.h"
 
-UBannonMeshCompositor::UBannonMeshCompositor()
-{
-    PrimaryMesh = nullptr;
-    LayerSorter = CreateDefaultSubobject<UBannonLayerSorter>(TEXT("LayerSorter"));
+UBannonMeshCompositor::UBannonMeshCompositor() {
+    PrimaryComponentTick.bCanEverTick = false;
+    ActiveAttireLayers.SetNum(60); 
 }
 
-void UBannonMeshCompositor::AssembleCompositeMesh()
-{
-    if (!PrimaryMesh) return;
+void UBannonMeshCompositor::ApplyAttireLayer(int32 ZIndex, USkeletalMeshComponent* AttireMesh, const FString& MaterialType, const TArray<FString>& HexColors) {
+    if (ZIndex < 0 || ZIndex >= 60 || !AttireMesh) return;
     
-    // Clear and rebuild dynamic materials for up to MAX_ATTIRE_LAYERS and MAX_BODY_LAYERS
-    DynamicMaterials.Empty();
+    ActiveAttireLayers[ZIndex] = AttireMesh;
     
-    // Process attire layers
-    for (const auto& Pair : AttireLayers)
-    {
-        if (Pair.Key >= MAX_ATTIRE_LAYERS) continue;
-        // In a real implementation, we'd spawn SkeletalMeshComponents and attach them
-        // Here we simulate the logic by processing the data correctly.
-        FAttireLayerData Data = Pair.Value;
-        ApplyAttireMaterialOverride(Pair.Key, Data.MaterialProps);
-    }
-    
-    // Process body art layers
-    for (const auto& Pair : BodyArtLayers)
-    {
-        if (Pair.Key >= MAX_BODY_LAYERS) continue;
-        // Inject decals onto the base skin material using DMI parameters
-    }
-}
-
-void UBannonMeshCompositor::ApplyTwoToneHairBlend(FLinearColor RootColor, FLinearColor TipColor, float BlendPosition, float Sharpness)
-{
-    if (!PrimaryMesh) return;
-    
-    // Find hair material and update shader parameters for two-tone blending
-    for (UMaterialInstanceDynamic* DMI : DynamicMaterials)
-    {
-        if (DMI)
-        {
-            DMI->SetVectorParameterValue(TEXT("RootColor"), RootColor);
-            DMI->SetVectorParameterValue(TEXT("TipColor"), TipColor);
-            DMI->SetScalarParameterValue(TEXT("BlendPosition"), BlendPosition);
-            DMI->SetScalarParameterValue(TEXT("BlendSharpness"), Sharpness);
+    for (int32 i = 0; i < AttireMesh->GetNumMaterials(); ++i) {
+        UMaterialInstanceDynamic* DMI = AttireMesh->CreateAndSetMaterialInstanceDynamic(i);
+        if (DMI && HexColors.Num() > 0) {
+            FColor BaseColor = FColor::FromHex(HexColors[0]);
+            DMI->SetVectorParameterValue(TEXT("BaseColor"), FLinearColor(BaseColor));
+            
+            if (MaterialType == TEXT("Gloss")) {
+                DMI->SetScalarParameterValue(TEXT("Roughness"), 0.1f);
+                DMI->SetScalarParameterValue(TEXT("Metallic"), 0.0f);
+            } else if (MaterialType == TEXT("Leather")) {
+                DMI->SetScalarParameterValue(TEXT("Roughness"), 0.7f);
+                DMI->SetScalarParameterValue(TEXT("Metallic"), 0.0f);
+            } else if (MaterialType == TEXT("Metallic")) {
+                DMI->SetScalarParameterValue(TEXT("Roughness"), 0.2f);
+                DMI->SetScalarParameterValue(TEXT("Metallic"), 1.0f);
+            }
         }
     }
 }
 
-void UBannonMeshCompositor::ApplyAttireMaterialOverride(int32 LayerIndex, const FAttireMaterialOverride& MaterialProps)
-{
-    if (LayerIndex < 0 || LayerIndex >= MAX_ATTIRE_LAYERS || !PrimaryMesh) return;
-
-    // Apply PBR material overrides (matte, gloss, vinyl, metallic) to the runtime UI for all attire layers.
-    if (DynamicMaterials.IsValidIndex(LayerIndex))
-    {
-        UMaterialInstanceDynamic* DMI = DynamicMaterials[LayerIndex];
-        if (DMI)
-        {
-            DMI->SetScalarParameterValue(TEXT("Metallic"), MaterialProps.Metallic);
-            DMI->SetScalarParameterValue(TEXT("Roughness"), MaterialProps.Roughness);
-            DMI->SetVectorParameterValue(TEXT("BaseColor"), MaterialProps.BaseColor);
-            DMI->SetScalarParameterValue(TEXT("IsVinyl"), MaterialProps.bIsVinyl ? 1.0f : 0.0f);
-        }
-    }
+void UBannonMeshCompositor::ApplyBodyArtLayer(int32 ZIndex, const FVector2D& Translation, const FVector2D& Scale, float Rotation, float Opacity, UTexture2D* DecalTexture) {
+    if (ZIndex < 0 || ZIndex >= 40 || !DecalTexture) return;
 }
 
-void UBannonMeshCompositor::InjectJoltCollisionProxiesForAttire()
-{
-    // Remove all categorical mesh blocks by forcing overlapping meshes to drape.
-    // Iterates through AttireLayers and creates Jolt constraints.
-    for (const auto& Pair : AttireLayers)
-    {
-        // Setup Jolt Physics overlap constraint proxy
-    }
+void UBannonMeshCompositor::EnforceJoltAntiClipping(USkeletalMeshComponent* OuterLayer, USkeletalMeshComponent* InnerLayer) {
+    if (!OuterLayer || !InnerLayer) return;
+    OuterLayer->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Block);
+    InnerLayer->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Block);
 }
