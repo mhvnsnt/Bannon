@@ -64,3 +64,7 @@
 ## Weapons & Procedural Audio (Liontamer Concurrency)
 - **Weapon Physics**: `UBannonWeaponPhysicsComponent` acts as an independent mass/velocity modifier multiplying against the Jolt framework. Instantly triggers max-level `HitStop` and `DMG_SCALE` (8.0) ragdoll overrides upon collision.
 - **Procedural Impact Synthesis**: `UBannonProceduralImpactAudio` scales MetaSound parameters (Amplitude, Pitch, Distortion) directly from the raw float data of the weapon collision, eradicating the need for static impact `.wav` banks.
+
+## AI Spacing & Environmental Physics (Liontamer Concurrency)
+- **Ring Generalship**: `ABannonRingGeneralshipAI` dictates spacial awareness. AI movement vectors are directly controlled by `Poise` thresholds. Low poise triggers NavMesh retreats; high poise triggers intercept vectors.
+- **Verlet Ring Ropes**: `UBannonVerletRopesComponent` eradicates static bounding boxes. Ring ropes operate as interconnected spring-damper nodes in the Jolt solver, dynamically deforming based on capsule intersection, mass, and velocity.
