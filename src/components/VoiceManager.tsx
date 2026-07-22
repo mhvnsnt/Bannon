@@ -30,6 +30,7 @@ const BATCH_3 = [
 
 const BATCH_2 = [
   { id: 'solaris_justice', name: 'Solaris Justice' },
+  { id: 'edwin_john_kennedy', name: 'Edwin John Kennedy' },
   { id: 'atlas_vance', name: 'Atlas Vance' },
   { id: 'stick_up', name: 'Stick Up (Andre Curtis)' },
   { id: 'finxsse', name: 'Finxsse' },
