@@ -105,3 +105,4 @@
 - **Character Voice Archetypes**: Mapped accurately based on books and parodies (e.g. Judas Messiah as Chris Jericho, The Saint as CM Punk, Vain Abel as Kane).
 - **TTS Cloning Pipeline**: `VoiceMapper.ts` implemented for Godmode Backend. Hooks into local Piper/Coqui XTTS for accurate generation from reference audio.
 - **God Within Dialog**: Exposed `triggerGodWithinRealityCheck` to apply heavy echo/distortion for Reality Check moments.
+- **Removed files**: Deleted `assets/audio/dbz.m4a` from the repo.

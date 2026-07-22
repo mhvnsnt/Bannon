@@ -674,10 +674,21 @@ You are an execution engine. Output no conversational pleasantries, no plans, an
 ### SHIPPED (PHASE - RESTORATION)
 - **RESTORE full game file (was clobbered to a 1302-line stub) + GLB facing/orphan fixes**: A parallel edit reduced BANNON_v150.html on main from the full ~40k-line game to a 1302-line stub. This restores the complete, verified game to every entry point and folds in this session's fixes (GLB facing, orphan model clones, Items/News/Entrances).
 
-## CRITICAL ARCHITECTURE LAW: NO CLOBBERING / NO FILE REPLACEMENTS
-The Bannon Engine is a ~40,000 line single-file architecture (index.html). You are STRICTLY FORBIDDEN from overwriting the file, writing a "condensed" version, or creating a new file from scratch.
-You must ONLY use surgical insertion (e.g., regex replace(), sed, or appending before </body>) to add new features.
-Before any git push or GitHub API PUT, you MUST run wc -l index.html to verify the line count is >39,000. If the line count is low, you have clobbered the file and must instantly abort the push and restore from remote.
+## CRITICAL ARCHITECTURE LAW: UE5/C++ IS PRIMARY
+
+Unreal Engine 5 (C++), under unreal/Source/BannonCore/, is the primary and
+official engine for BANNON going forward. All new feature work, physics,
+animation, and combat systems are built here.
+
+The original Three.js/HTML single-file build (index.html / BANNON_v150.html)
+is retained as a legacy/retro mode only — a selectable nostalgia arena and
+model option, not the main game. It is no longer the primary architecture
+and should not be treated as such in any future planning, docs, or agent
+instructions.
+
+Do not reintroduce "index.html is the real engine" framing in future docs.
+If a doc still says that, it's stale and should be corrected to match this
+law.
 
 ### SHIPPED (PHASE - ANTI-CLOBBERING & RESTORATION)
 - **Appended Anti-Clobbering Law to AGENTS.md**: Injected the strict new CRITICAL ARCHITECTURE LAW: NO CLOBBERING / NO FILE REPLACEMENTS directly to the bottom of the AGENTS.md file. The agent will now check the file size and line counts (>39000) before executing any pushes.
