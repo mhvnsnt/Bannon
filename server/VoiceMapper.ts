@@ -100,7 +100,7 @@ export const VoiceMap = {
     },
     "Cipher": {
         voiceId: "cipher", cloneFrom: "lio_rush_blackheart", style: "dark_manic_unhinged",
-        description: "2026 Blackheart Lio Rush type. Dark, manic, whispering-to-screaming erratic intensity. (Requires ripping 2026 indie/GCW-era promos for reference). Unhinged and brooding, not a cocky hype man."
+        description: "2026 Blackheart Lio Rush type. Dark, manic, whispering-to-screaming erratic intensity. Unhinged and brooding, corrupted by an unseen entity he calls \"he\" and \"him\". Possessed most of the time, used to be a cocky hype man. (Requires ripping 2026 indie/GCW-era promos for reference)."
     },
     "Echo": {
         voiceId: "echo", cloneFrom: "shotzi_blackheart", style: "punk_wild",
