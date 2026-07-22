@@ -177,8 +177,8 @@ export const VoiceMap = {
         description: "Fragmented syntax, talks in disjointed clauses, art-snob."
     },
     "General Vance": {
-        voiceId: "general_vance", cloneFrom: "vince_mcmahon", style: "booming_boss",
-        description: "Vince McMahon archetype. Barked, military cadence, clipped commands."
+        voiceId: "general_vance", cloneFrom: "sgt_slaughter", style: "military_drill_sergeant",
+        description: "Sgt. Slaughter archetype. Barked, military cadence, clipped commands."
     },
     "Pretty Flacko": {
         voiceId: "pretty_flacko", cloneFrom: "asap_rocky", style: "harlem_smooth",
@@ -371,8 +371,8 @@ export const VoiceMap = {
         description: "Street/cult psycho / cyborg enforcer, short sentences."
     },
     "Edwin John Kennedy": {
-        voiceId: "edwin_john_kennedy", cloneFrom: "original", style: "prim_old_money",
-        description: "Prim old-money diction."
+        voiceId: "edwin_john_kennedy", cloneFrom: "vince_mcmahon", style: "booming_boss",
+        description: "Vince McMahon archetype. Prim old-money diction mixed with booming boss authority."
     },
     "Sam Kennedy": {
         voiceId: "sam_kennedy", cloneFrom: "original", style: "eager_young_brother",
