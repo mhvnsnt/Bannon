@@ -100,11 +100,11 @@ export const VoiceMap = {
     },
     "Cipher": {
         voiceId: "cipher", cloneFrom: "lio_rush_blackheart", style: "dark_manic_unhinged",
-        description: "2026 Blackheart Lio Rush type. Dark, manic, whispering-to-screaming erratic intensity. Unhinged and brooding, not a cocky hype man."
+        description: "2026 Blackheart Lio Rush type. Dark, manic, whispering-to-screaming erratic intensity. (Requires ripping 2026 indie/GCW-era promos for reference). Unhinged and brooding, not a cocky hype man."
     },
     "Echo": {
         voiceId: "echo", cloneFrom: "shotzi_blackheart", style: "punk_wild",
-        description: "Shotzi Blackheart type. Wild, howling, punk energy."
+        description: "Shotzi Blackheart type. Wild, howling, punk energy. (Requires ripping 2026 WWE return promos for reference)."
     },
     "Onyx": {
         voiceId: "onyx", cloneFrom: "original", style: "dark_cryptic",
@@ -388,7 +388,8 @@ export class BannonVoiceGenerator {
 
     constructor() {
         // Points to local Godmode TTS Server (FastAPI hosting Coqui XTTS/Piper)
-        this.ttsEndpoint = process.env.LOCAL_TTS_SERVER || 'http://localhost:5002/api/tts';
+        this.ttsEndpoint = process.env.LOCAL_TTS_SERVER || "http://localhost:5002/api/tts";
+        // In July 2026, we run F5-TTS or Coqui XTTSv2 locally here for 100% free open-source zero-shot cloning.;
     }
 
     /**

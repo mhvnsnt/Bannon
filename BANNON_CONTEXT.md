@@ -106,3 +106,5 @@
 - **TTS Cloning Pipeline**: `VoiceMapper.ts` implemented for Godmode Backend. Hooks into local Piper/Coqui XTTS for accurate generation from reference audio.
 - **God Within Dialog**: Exposed `triggerGodWithinRealityCheck` to apply heavy echo/distortion for Reality Check moments.
 - **Removed files**: Deleted `assets/audio/dbz.m4a` from the repo.
+
+- **TTS Engine / Voice Cloning Pipeline (July 2026 Architecture)**: The engine completely avoids paid APIs (like ElevenLabs). It uses **F5-TTS** and **Coqui XTTSv2** (free, open-source, local zero-shot cloning). To get accurate voices (e.g., Lio Rush's 2026 dark/indie promos for Cipher, Shotzi's 2026 promos for Echo), users must place 5-15 second clean `.wav` rips of their recent likeness targets into `assets/voice_references/`. The local FastAPI server (`server/local_tts_server.py`) handles the generation.
