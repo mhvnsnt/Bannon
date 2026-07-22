@@ -155,7 +155,41 @@ def add_armature(obj):
             bone(tag+"Foot",(s*0.12,0,0.12),(s*0.12,0.18,0.04),ll)
         bpy.ops.object.mode_set(mode='OBJECT')
         obj.select_set(True); rig.select_set(True); bpy.context.view_layer.objects.active = rig
+        
         bpy.ops.object.parent_set(type='ARMATURE_AUTO')
+        
+        # --- ANATOMICAL WEIGHT CLAMPS ---
+        print("Enforcing Anatomical Weight Clamps...")
+        vg_idx = {vg.name: vg.index for vg in obj.vertex_groups}
+        for v in obj.data.vertices:
+            # Prevent pelvis vertices from carrying leg-bone weights (Z > 0.95 is roughly pelvis)
+            if v.co.z > 0.95:
+                for leg_bone in ["LeftUpLeg", "RightUpLeg", "LeftLeg", "RightLeg"]:
+                    if leg_bone in vg_idx:
+                        try: obj.vertex_groups[vg_idx[leg_bone]].remove([v.index])
+                        except: pass
+            
+            # Weak-influence pruning (< 0.05) & sharp falloff
+            groups = []
+            for g in v.groups:
+                if g.weight > 0.05:
+                    groups.append((g.group, g.weight))
+                else:
+                    obj.vertex_groups[g.group].remove([v.index])
+                    
+            # Normalize
+            total = sum(w for _, w in groups)
+            if total > 0:
+                for g_idx, w in groups:
+                    obj.vertex_groups[g_idx].add([v.index], w / total, 'REPLACE')
+                    
+        bpy.context.view_layer.objects.active = obj
+        bpy.ops.object.mode_set(mode='WEIGHT_PAINT')
+        bpy.ops.object.vertex_group_smooth(group_select_mode='ALL', factor=0.5, repeat=3)
+        bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.context.view_layer.objects.active = rig
+        # --------------------------------
+
         return True
     except Exception as e:
         print("armature/skinning skipped:", e); return False
