@@ -1,0 +1,233 @@
+{
+  "bannon": {
+    "story": [
+      "The truth is written in shadows. Only the blind fail to read it.",
+      "I didn't break the world... I just removed the illusion that it was whole."
+    ],
+    "universe": [
+      "This timeline is fractured. I will be the one to reset it.",
+      "You challenge me? A mere echo against the void?"
+    ],
+    "exhibition": [
+      "Let's see if you're worth remembering.",
+      "I will shatter you."
+    ],
+    "free_roam": [
+      "Too much light here... it sickens me.",
+      "They walk around, completely unaware of the abyss beneath their feet."
+    ],
+    "career": [
+      "My ascension is inevitable. Your defeat is just a footnote."
+    ]
+  },
+  "queen_tyneshia": {
+    "story": [
+      "Bow before true royalty, or I will break your knees myself.",
+      "A queen does not ask for loyalty, she commands it."
+    ],
+    "universe": [
+      "This entire domain belongs to me. You are merely trespassing.",
+      "I am the crown, the scepter, and the executioner."
+    ],
+    "exhibition": [
+      "Try not to bore me.",
+      "I'll make this quick, peasant."
+    ],
+    "free_roam": [
+      "Where are my guards? This place is filthy.",
+      "The air here is thick with mediocrity."
+    ],
+    "career": [
+      "The throne is mine. Anyone in my path will be crushed."
+    ]
+  },
+  "maime": {
+    "story": [
+      "They left me in the dark! Now they'll see what the dark made me!",
+      "I trusted you! And you let me bleed!"
+    ],
+    "universe": [
+      "Everything spins! The pain never stops!",
+      "You can't fix what's already broken into a thousand pieces!"
+    ],
+    "exhibition": [
+      "I'm gonna tear your face off!",
+      "HAHAHAHA! Let's bleed!"
+    ],
+    "free_roam": [
+      "Can you hear them? The voices in the walls...",
+      "Scratch... scratch... scratch... it never goes away."
+    ],
+    "career": [
+      "I'll claw my way to the top! I'll make them all pay!"
+    ]
+  },
+  "onyx": {
+    "story": [
+      "The veil between worlds is thin... I can hear the spirits screaming.",
+      "Death isn't the end. It's just a doorway, and I hold the key."
+    ],
+    "universe": [
+      "Shadows stretch across the realms... We are all just ghosts waiting to happen.",
+      "Your soul is loud. Let me silence it."
+    ],
+    "exhibition": [
+      "Fade to black.",
+      "The crypt awaits."
+    ],
+    "free_roam": [
+      "The spirits are restless tonight.",
+      "This place smells like old dust and forgotten promises."
+    ],
+    "career": [
+      "I will drag this entire division into the underworld."
+    ]
+  },
+  "static": {
+    "story": [
+      "Bada boom! Realest guy in the room, how you doin'?!",
+      "You can't teach this energy! It's electric!"
+    ],
+    "universe": [
+      "We taking over this whole timeline, straight up!",
+      "Ain't nobody on my level, you hear me?"
+    ],
+    "exhibition": [
+      "Let's get it popping!",
+      "I'm about to shock the world!"
+    ],
+    "free_roam": [
+      "Where the cameras at? I need my close-up!",
+      "Lotta haters around here, man. Gotta keep my head on a swivel."
+    ],
+    "career": [
+      "Straight to the top, baby! Championship gold is mine!"
+    ]
+  },
+  "echo": {
+    "story": [
+      "Welcome to the ball pit! Time to get wild!",
+      "I don't play by the rules, I break them into tiny pieces!"
+    ],
+    "universe": [
+      "Howl with me! The moon is high and we are taking over!",
+      "Chaos is my middle name, baby!"
+    ],
+    "exhibition": [
+      "Let's ride!",
+      "You ready for this wild ride?!"
+    ],
+    "free_roam": [
+      "Need a tank! Where can I find a tank around here?",
+      "Too quiet... let's make some noise!"
+    ],
+    "career": [
+      "I'm burning rubber all the way to the main event!"
+    ]
+  },
+  "cipher": {
+    "story": [
+      "I move too fast for you to even perceive me! I am the black heart of this business!",
+      "You think you can outsmart me? I'm playing chess while you're playing checkers!"
+    ],
+    "universe": [
+      "This universe moves at my pace! Slow down and you get left behind!",
+      "I'm the ultimate puzzle, and you're missing all the pieces!"
+    ],
+    "exhibition": [
+      "Blink and you'll miss me!",
+      "I'm already three steps ahead!"
+    ],
+    "free_roam": [
+      "Gotta keep moving. Stagnation is death.",
+      "Too slow... everyone is moving so slow."
+    ],
+    "career": [
+      "I'm speeding past everyone straight to the gold!"
+    ]
+  },
+  "master_sensei": {
+    "story": [
+      "You lack discipline, young one... but you also lack the drip! Pimpin' ain't easy, but kung fu is!",
+      "Hehe... a wise man once said, keep your pimp hand strong and your chi balanced!"
+    ],
+    "universe": [
+      "The universe flows like a river of sauce! Can you dig it?",
+      "My chi is dripping with swagger!"
+    ],
+    "exhibition": [
+      "Let me teach you a lesson in style!",
+      "Focus your energy... and watch this drip!"
+    ],
+    "free_roam": [
+      "Ooh, look at that... very nice form, young lady. Hehehe...",
+      "Need to meditate... or maybe hit the club. Why not both?"
+    ],
+    "career": [
+      "I'm taking this dojo all the way to the bank, baby!"
+    ]
+  },
+  "atlas_vance": {
+    "story": [
+      "Listen up, maggot! You are going to respect the chain of command, or I will break you in half!",
+      "This isn't a game! This is war! And I am your commanding officer!"
+    ],
+    "universe": [
+      "I will bring order to this entire chaotic universe, that's an order!",
+      "Fall in line!"
+    ],
+    "exhibition": [
+      "Drop and give me fifty!",
+      "At attention!"
+    ],
+    "free_roam": [
+      "Disgraceful! Look at the posture on these civilians!",
+      "I need to inspect the barracks. This place is a mess."
+    ],
+    "career": [
+      "I'm marching straight to the top of the ranks!"
+    ]
+  },
+  "edwin_john_kennedy": {
+    "story": [
+      "You're fired! Get out of my building! I made you, and I can destroy you!",
+      "I am the boss! What I say goes! This is my empire!"
+    ],
+    "universe": [
+      "I own this universe! Every single asset belongs to me!",
+      "No chance in hell you're taking my company from me!"
+    ],
+    "exhibition": [
+      "Don't cross the boss!",
+      "I'm signing the checks!"
+    ],
+    "free_roam": [
+      "Who approved this decor? Fire them immediately!",
+      "Time is money! Move out of my way!"
+    ],
+    "career": [
+      "I'm running this board and I'm taking the gold!"
+    ]
+  },
+  "finxsse": {
+    "story": [
+      "Yeah, I'm out here getting mine, you know what I'm saying? Can't stop the hustle!",
+      "All gas, no brakes! We shining on these fools!"
+    ],
+    "universe": [
+      "Whole universe know my name, man! We global!",
+      "Ain't nobody out-hustling me in any dimension."
+    ],
+    "exhibition": [
+      "Let's get this money!",
+      "Watch me work!"
+    ],
+    "free_roam": [
+      "Gotta check the accounts... making moves.",
+      "They hating on the drip, I see 'em looking."
+    ],
+    "career": [
+      "Championship gold around my waist, that's the ultimate flex!"
+    ]
+  }
+}

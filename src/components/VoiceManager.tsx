@@ -22,8 +22,7 @@ const BATCH_3 = [
   { id: 'jason_sledge', name: 'Jason Sledge' },
   { id: 'el_lobo_loco', name: 'El Lobo Loco' },
   { id: 'hollow', name: 'Hollow' },
-  { id: 'onyx_1', name: 'Onyx Teammate 1' },
-  { id: 'onyx_2', name: 'Onyx Teammate 2' },
+  { id: 'onyx', name: 'Onyx' },
   { id: 'static', name: 'Static' },
   { id: 'echo', name: 'Echo' }
 ];
