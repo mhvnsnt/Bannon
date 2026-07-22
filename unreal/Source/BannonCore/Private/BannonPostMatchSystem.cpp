@@ -27,8 +27,8 @@ UBannonBreakoutController::UBannonBreakoutController() {
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UBannonBreakoutController::TriggerBreakout() {
-    UE_LOG(LogTemp, Warning, TEXT("BREAKOUT INITIATED! Aborting victory timeline, snapping camera to dynamic gameplay angle."));
+void UBannonBreakoutController::TriggerBreakout(const FString& InstigatorId) {
+    UE_LOG(LogTemp, Warning, TEXT("BREAKOUT INITIATED by %s! Aborting timeline, snapping camera to dynamic gameplay angle. Total unpredictability!"), *InstigatorId);
     
     AActor* FSM = UGameplayStatics::GetActorOfClass(GetWorld(), ABannonMatchStateMachine::StaticClass());
     if (FSM) {
