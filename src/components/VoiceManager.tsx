@@ -3,6 +3,18 @@ import { VoiceRecorder } from './VoiceRecorder';
 
 // Using a subset for Batch 1 as a starting point. This can be expanded.
 
+
+const BATCH_3 = [
+  { id: 'master_sensei', name: 'Master Sensei' },
+  { id: 'jason_sledge', name: 'Jason Sledge' },
+  { id: 'el_lobo_loco', name: 'El Lobo Loco' },
+  { id: 'hollow', name: 'Hollow' },
+  { id: 'onyx_1', name: 'Onyx Teammate 1' },
+  { id: 'onyx_2', name: 'Onyx Teammate 2' },
+  { id: 'static', name: 'Static' },
+  { id: 'echo', name: 'Echo' }
+];
+
 const BATCH_2 = [
   { id: 'solaris_justice', name: 'Solaris Justice' },
   { id: 'atlas_vance', name: 'Atlas Vance' },
@@ -40,7 +52,7 @@ export const VoiceManager = () => {
     fetchReferences();
   }, []);
 
-  const getCharName = (id: string) => [...BATCH_1, ...BATCH_2].find(c => c.id === id)?.name || id;
+  const getCharName = (id: string) => [...BATCH_1, ...BATCH_2, ...BATCH_3].find(c => c.id === id)?.name || id;
 
   return (
     <div className="voice-manager bg-black/90 p-4 border border-red-900/50 rounded-md w-full mt-4">
@@ -81,6 +93,27 @@ export const VoiceManager = () => {
         <h4 className="text-gray-300 font-bold mb-2">Batch 2 (Core Additions)</h4>
         <div className="flex flex-wrap gap-2">
           {BATCH_2.map(char => {
+            const hasRef = availableReferences.includes(char.id);
+            return (
+              <button
+                key={char.id}
+                onClick={() => setSelectedChar(char.id)}
+                className={`px-3 py-2 border rounded text-sm font-bold transition-all ${
+                  selectedChar === char.id ? 'ring-2 ring-red-500 bg-gray-800' : 'bg-black hover:bg-gray-900'
+                } ${hasRef ? 'border-green-600 text-green-500' : 'border-red-900/50 text-red-500'}`}
+              >
+                {char.name} {hasRef && '✓'}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+  
+      
+      <div className="mb-4">
+        <h4 className="text-gray-300 font-bold mb-2">Batch 3 (Mentors & Enigmas)</h4>
+        <div className="flex flex-wrap gap-2">
+          {BATCH_3.map(char => {
             const hasRef = availableReferences.includes(char.id);
             return (
               <button
