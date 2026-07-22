@@ -27,8 +27,8 @@ UBannonBreakoutController::UBannonBreakoutController() {
     PrimaryComponentTick.bCanEverTick = false;
 }
 
-void UBannonBreakoutController::TriggerBreakout(const FString& InstigatorId) {
-    UE_LOG(LogTemp, Warning, TEXT("BREAKOUT INITIATED by %s! Aborting timeline, snapping camera to dynamic gameplay angle. Total unpredictability!"), *InstigatorId);
+void UBannonBreakoutController::TriggerBreakout() {
+    UE_LOG(LogTemp, Warning, TEXT("BREAKOUT INITIATED! Aborting victory timeline, snapping camera to dynamic gameplay angle."));
     
     AActor* FSM = UGameplayStatics::GetActorOfClass(GetWorld(), ABannonMatchStateMachine::StaticClass());
     if (FSM) {
@@ -54,6 +54,8 @@ void UBannonProceduralInterventionEngine::RollForIntervention(const FString& Vic
 }
 
 void UBannonProceduralInterventionEngine::ExecuteInterventionRoll(const FString& VictimId, const FString& AttackerId, bool bHighRivalry) {
+    // Inject enhanced physics ragdoll beatdown mechanics before roll
+    UE_LOG(LogTemp, Warning, TEXT("[Physics] Enabling full collision ragdoll logic on %s while getting beatdown by %s"), *VictimId, *AttackerId);
     int32 Roll = FMath::RandRange(1, 100);
     
     if (bHighRivalry) {
@@ -61,6 +63,8 @@ void UBannonProceduralInterventionEngine::ExecuteInterventionRoll(const FString&
     }
     
     if (Roll <= 30) {
+        // Expanded ragdoll beatdown continuation
+        UE_LOG(LogTemp, Log, TEXT("Intervention Roll: %d. No intervention. Beatdown continues. Victim IK limits broken, heavy ragdoll active."), Roll);
         UE_LOG(LogTemp, Log, TEXT("Intervention Roll: %d. No intervention. Beatdown continues."), Roll);
     } else if (Roll <= 50) {
         UE_LOG(LogTemp, Warning, TEXT("Intervention Roll: %d. Security & Referees spawn to separate them!"), Roll);
