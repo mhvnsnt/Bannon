@@ -18,6 +18,18 @@
     ],
     "career": [
       "My ascension is inevitable. Your defeat is just a footnote."
+    ],
+    "entrance_taunt": [
+      "The void welcomes you.",
+      "Submit to the dark."
+    ],
+    "victory": [
+      "Inevitability.",
+      "You were broken before we began."
+    ],
+    "defeat": [
+      "This timeline... it shifts...",
+      "I will return from the shadows!"
     ]
   },
   "queen_tyneshia": {
@@ -39,6 +51,18 @@
     ],
     "career": [
       "The throne is mine. Anyone in my path will be crushed."
+    ],
+    "entrance_taunt": [
+      "Kneel!",
+      "Witness royalty!"
+    ],
+    "victory": [
+      "The crown remains mine.",
+      "Take out the trash."
+    ],
+    "defeat": [
+      "Treason!",
+      "Guards! Seize them!"
     ]
   },
   "maime": {
@@ -60,6 +84,18 @@
     ],
     "career": [
       "I'll claw my way to the top! I'll make them all pay!"
+    ],
+    "entrance_taunt": [
+      "I'm gonna bite you!",
+      "No more cages!"
+    ],
+    "victory": [
+      "More blood! More!",
+      "Hehehehe! Who's next?!"
+    ],
+    "defeat": [
+      "No! The dark! Not again!",
+      "It hurts!"
     ]
   },
   "onyx": {
@@ -81,6 +117,18 @@
     ],
     "career": [
       "I will drag this entire division into the underworld."
+    ],
+    "entrance_taunt": [
+      "Welcome to the crypt.",
+      "The spirits demand a sacrifice."
+    ],
+    "victory": [
+      "Dust to dust.",
+      "Rest now, in pieces."
+    ],
+    "defeat": [
+      "I return to the soil...",
+      "The echo fades..."
     ]
   },
   "static": {
@@ -102,6 +150,18 @@
     ],
     "career": [
       "Straight to the top, baby! Championship gold is mine!"
+    ],
+    "entrance_taunt": [
+      "Bada boom!",
+      "Let's turn it up!"
+    ],
+    "victory": [
+      "And you can't teach that!",
+      "Still the realest!"
+    ],
+    "defeat": [
+      "Man, the ref was counting too fast!",
+      "I tripped!"
     ]
   },
   "echo": {
@@ -123,6 +183,18 @@
     ],
     "career": [
       "I'm burning rubber all the way to the main event!"
+    ],
+    "entrance_taunt": [
+      "Let's howl!",
+      "Rev it up!"
+    ],
+    "victory": [
+      "AWOOOO!",
+      "That's how we ride!"
+    ],
+    "defeat": [
+      "Busted my tire...",
+      "You got lucky, punk!"
     ]
   },
   "cipher": {
@@ -144,6 +216,18 @@
     ],
     "career": [
       "I'm speeding past everyone straight to the gold!"
+    ],
+    "entrance_taunt": [
+      "I'm already in your head.",
+      "Watch my dust."
+    ],
+    "victory": [
+      "Checkmate.",
+      "Too slow!"
+    ],
+    "defeat": [
+      "Impossible! My calculations...",
+      "A glitch in the system!"
     ]
   },
   "master_sensei": {
@@ -165,6 +249,18 @@
     ],
     "career": [
       "I'm taking this dojo all the way to the bank, baby!"
+    ],
+    "entrance_taunt": [
+      "Class is in session!",
+      "Respect the drip, grasshopper."
+    ],
+    "victory": [
+      "A flawless technique! And the suit ain't wrinkled!",
+      "Wax on, wax off, baby."
+    ],
+    "defeat": [
+      "My back! Oof!",
+      "This old master needs a vacation."
     ]
   },
   "atlas_vance": {
@@ -186,6 +282,18 @@
     ],
     "career": [
       "I'm marching straight to the top of the ranks!"
+    ],
+    "entrance_taunt": [
+      "At attention, maggot!",
+      "I'm declaring war!"
+    ],
+    "victory": [
+      "Mission accomplished!",
+      "That's how it's done in the trenches!"
+    ],
+    "defeat": [
+      "Tactical retreat!",
+      "Medic!"
     ]
   },
   "edwin_john_kennedy": {
@@ -207,6 +315,18 @@
     ],
     "career": [
       "I'm running this board and I'm taking the gold!"
+    ],
+    "entrance_taunt": [
+      "I own this ring!",
+      "You're all fired!"
+    ],
+    "victory": [
+      "No chance in hell!",
+      "Another successful merger!"
+    ],
+    "defeat": [
+      "My lawyers will hear about this!",
+      "You'll never work in this town again!"
     ]
   },
   "finxsse": {
@@ -228,6 +348,540 @@
     ],
     "career": [
       "Championship gold around my waist, that's the ultimate flex!"
+    ],
+    "entrance_taunt": [
+      "Money moves only!",
+      "Ice on my neck, ice in my veins."
+    ],
+    "victory": [
+      "Bag secured!",
+      "That's just how we do it on the block."
+    ],
+    "defeat": [
+      "Man, they hating on the hustle!",
+      "I'll be back on top by tomorrow!"
+    ]
+  },
+  "cain_elias": {
+    "story": [
+      "I walk the path of the righteous, leaving a trail of broken bones."
+    ],
+    "universe": [
+      "My judgment is absolute.",
+      "I am the hammer of justice."
+    ],
+    "exhibition": [
+      "Prepare for salvation.",
+      "I will purge your weakness."
+    ],
+    "free_roam": [
+      "So much sin in this arena...",
+      "I must cleanse this place."
+    ],
+    "career": [
+      "I will carry the championship like a holy relic."
+    ],
+    "entrance_taunt": [
+      "Your penance begins now.",
+      "Be cleansed!"
+    ],
+    "victory": [
+      "Amen.",
+      "Justice is served."
+    ],
+    "defeat": [
+      "My faith... wavers...",
+      "I must pray for strength..."
+    ]
+  },
+  "solaris_justice": {
+    "story": [
+      "I fight for those who cannot fight for themselves!",
+      "The light of truth will blind you!"
+    ],
+    "universe": [
+      "A hero's work is never done.",
+      "I am the shield of this universe."
+    ],
+    "exhibition": [
+      "Let's have a clean, fair match!",
+      "Give it your all!"
+    ],
+    "free_roam": [
+      "I should patrol the perimeter.",
+      "Always ready to lend a hand."
+    ],
+    "career": [
+      "I'll wear this belt as a symbol of hope!"
+    ],
+    "entrance_taunt": [
+      "Justice shines bright!",
+      "For truth and honor!"
+    ],
+    "victory": [
+      "Good always triumphs!",
+      "A hard-fought victory!"
+    ],
+    "defeat": [
+      "I let them down...",
+      "I'll train harder next time!"
+    ]
+  },
+  "stick_up": {
+    "story": [
+      "Nobody giving me nothing, I gotta take it!",
+      "This is a stick up, hands in the air!"
+    ],
+    "universe": [
+      "I'm robbing everybody in this universe, straight up.",
+      "Empty your pockets!"
+    ],
+    "exhibition": [
+      "Gimme the loot!",
+      "I'm leaving with everything you got."
+    ],
+    "free_roam": [
+      "Where they keeping the cash around here?",
+      "I smell money."
+    ],
+    "career": [
+      "I'm stealing the show and the title!"
+    ],
+    "entrance_taunt": [
+      "Hands up!",
+      "I'm collecting debts!"
+    ],
+    "victory": [
+      "Easiest heist of my life.",
+      "Payday!"
+    ],
+    "defeat": [
+      "Man, I got robbed!",
+      "I'll catch you slipping later!"
+    ]
+  },
+  "red_cloud": {
+    "story": [
+      "The spirits of my ancestors guide my fists.",
+      "I fight with the strength of the storm."
+    ],
+    "universe": [
+      "This universe has lost its connection to the earth.",
+      "I will restore the balance."
+    ],
+    "exhibition": [
+      "Honor the ring.",
+      "Show me your spirit!"
+    ],
+    "free_roam": [
+      "The wind speaks of a coming battle.",
+      "I must center myself."
+    ],
+    "career": [
+      "This championship honors my people."
+    ],
+    "entrance_taunt": [
+      "The storm approaches!",
+      "Feel the thunder!"
+    ],
+    "victory": [
+      "The ancestors are pleased.",
+      "Balance restored."
+    ],
+    "defeat": [
+      "My spirit must heal...",
+      "I was outmatched this day."
+    ]
+  },
+  "cassian_thorne": {
+    "story": [
+      "Everything has a price, and yours is too low.",
+      "I only bet on myself."
+    ],
+    "universe": [
+      "This universe is just another casino, and I'm the house.",
+      "The odds are always in my favor."
+    ],
+    "exhibition": [
+      "Care to make a wager?",
+      "You're out of your league."
+    ],
+    "free_roam": [
+      "Look at these amateurs.",
+      "I need a better tailor."
+    ],
+    "career": [
+      "The championship looks good with my suit."
+    ],
+    "entrance_taunt": [
+      "Place your bets!",
+      "The house always wins."
+    ],
+    "victory": [
+      "Cash me out.",
+      "Read 'em and weep."
+    ],
+    "defeat": [
+      "A bad beat...",
+      "The dealer cheated!"
+    ]
+  },
+  "sombra_negra": {
+    "story": [
+      "The mask is my soul. You will never take it.",
+      "From the shadows of the ring, I rise."
+    ],
+    "universe": [
+      "I am the nightmare you cannot wake from.",
+      "Lucha Libre is not a game, it is life and death."
+    ],
+    "exhibition": [
+      "The shadows hunger.",
+      "Feel the sting of the Black Shadow!"
+    ],
+    "free_roam": [
+      "...",
+      "[Stares silently from the darkness]"
+    ],
+    "career": [
+      "I will bring the gold into the darkness."
+    ],
+    "entrance_taunt": [
+      "*Silent threatening gesture*",
+      "You cannot fight a shadow."
+    ],
+    "victory": [
+      "The darkness claims another.",
+      "*Silent nod of victory*"
+    ],
+    "defeat": [
+      "*Fades into the shadows*",
+      "The light... burns..."
+    ]
+  },
+  "karma": {
+    "story": [
+      "What goes around, comes around... and I'm coming for you.",
+      "The universe demands a reckoning."
+    ],
+    "universe": [
+      "I am the consequence of every bad choice made in this timeline.",
+      "Payback is inevitable."
+    ],
+    "exhibition": [
+      "Time to pay the toll.",
+      "Let's settle the score."
+    ],
+    "free_roam": [
+      "So many guilty consciences walking these halls.",
+      "I see the weight of their sins."
+    ],
+    "career": [
+      "I'm collecting on every debt owed to me!"
+    ],
+    "entrance_taunt": [
+      "Karma's a... well, you know.",
+      "Your past catches up to you now."
+    ],
+    "victory": [
+      "The scale is balanced.",
+      "Justice served cold."
+    ],
+    "defeat": [
+      "My own karma... returning...",
+      "The cycle continues..."
+    ]
+  },
+  "the_boulder": {
+    "story": [
+      "Finally... The Boulder has come back!",
+      "I'm going to lay the smackdown on your candy ass!"
+    ],
+    "universe": [
+      "I am the most electrifying man in this entire universe!",
+      "Know your role and shut your mouth!"
+    ],
+    "exhibition": [
+      "Just bring it!",
+      "Do you smell what The Boulder is cooking?!"
+    ],
+    "free_roam": [
+      "Look at all these jabronis.",
+      "Where's the pie?"
+    ],
+    "career": [
+      "The Boulder is taking the gold straight to the millions... AND MILLIONS of his fans!"
+    ],
+    "entrance_taunt": [
+      "*Raises eyebrow*",
+      "Electrifying!"
+    ],
+    "victory": [
+      "The People's Champion prevails!",
+      "If ya smell..."
+    ],
+    "defeat": [
+      "This isn't over, jabroni!",
+      "You got lucky!"
+    ]
+  },
+  "el_lobo_loco": {
+    "story": [
+      "AWOOOOO! El Lobo Loco is hungry for the title!",
+      "I run with the pack, but I hunt alone!"
+    ],
+    "universe": [
+      "This universe is my territory! I mark it with victories!",
+      "No one tames the crazy wolf!"
+    ],
+    "exhibition": [
+      "Let's go loco!",
+      "I'm gonna tear you to shreds!"
+    ],
+    "free_roam": [
+      "*Sniff sniff* I smell fear...",
+      "Gotta stay moving, gotta stay wild!"
+    ],
+    "career": [
+      "The Alpha takes the gold!"
+    ],
+    "entrance_taunt": [
+      "AWOOOOO!",
+      "Loco! Loco! Loco!"
+    ],
+    "victory": [
+      "The pack survives!",
+      "Too crazy for you!"
+    ],
+    "defeat": [
+      "The wolf licks his wounds...",
+      "I'll bite back harder next time!"
+    ]
+  },
+  "hollow": {
+    "story": [
+      "I feel nothing. I am the void.",
+      "You can't hurt what's already empty."
+    ],
+    "universe": [
+      "This universe will eventually succumb to the emptiness. I am just its herald.",
+      "Everything fades."
+    ],
+    "exhibition": [
+      "Stare into the abyss.",
+      "I am hollow... make me feel something!"
+    ],
+    "free_roam": [
+      "It's so cold...",
+      "Why am I here?"
+    ],
+    "career": [
+      "Even a hollow shell can wear a crown of gold."
+    ],
+    "entrance_taunt": [
+      "...",
+      "Embrace the void."
+    ],
+    "victory": [
+      "Still nothing...",
+      "It doesn't matter."
+    ],
+    "defeat": [
+      "Pain... at last...",
+      "I fade..."
+    ]
+  },
+  "jason_sledge": {
+    "story": [
+      "I'm bringing the hammer down!",
+      "Welcome to the construction zone!"
+    ],
+    "universe": [
+      "I'm rebuilding this universe, one broken bone at a time!",
+      "Demolition time!"
+    ],
+    "exhibition": [
+      "Time to go to work!",
+      "I'm clocking in and knocking you out!"
+    ],
+    "free_roam": [
+      "This place needs a renovation.",
+      "Where did I put my hard hat?"
+    ],
+    "career": [
+      "I'm building a legacy, brick by brick!"
+    ],
+    "entrance_taunt": [
+      "Sledgehammer time!",
+      "Let's break things!"
+    ],
+    "victory": [
+      "Another day, another dollar.",
+      "Nailed it!"
+    ],
+    "defeat": [
+      "I got demolished...",
+      "Back to the drawing board!"
+    ]
+  },
+  "the_cubist": {
+    "story": [
+      "I see you from all angles at once."
+    ],
+    "universe": [
+      "Your form is too traditional, let me break it down."
+    ],
+    "exhibition": [
+      "Abstract violence!"
+    ],
+    "entrance_taunt": [
+      "I see you from all angles at once."
+    ],
+    "victory": [
+      "Your form is too traditional, let me break it down."
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ]
+  },
+  "the_repetition": {
+    "story": [
+      "Fame is fleeting. Fifteen minutes. Over and over."
+    ],
+    "universe": [
+      "Mass production of pain."
+    ],
+    "exhibition": [
+      "Soup cans and suplexes."
+    ],
+    "entrance_taunt": [
+      "Fame is fleeting. Fifteen minutes. Over and over."
+    ],
+    "victory": [
+      "Mass production of pain."
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ]
+  },
+  "the_matador": {
+    "story": [
+      "Surreal! The clocks are melting, and so is your face!"
+    ],
+    "universe": [
+      "I am the dream, you are the nightmare."
+    ],
+    "exhibition": [
+      "Olé!"
+    ],
+    "entrance_taunt": [
+      "Surreal! The clocks are melting, and so is your face!"
+    ],
+    "victory": [
+      "I am the dream, you are the nightmare."
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ]
+  },
+  "the_destroyer": {
+    "story": [
+      "My pain is my canvas!"
+    ],
+    "universe": [
+      "I paint with the blood of my enemies!"
+    ],
+    "exhibition": [
+      "Viva la revolución!"
+    ],
+    "entrance_taunt": [
+      "My pain is my canvas!"
+    ],
+    "victory": [
+      "I paint with the blood of my enemies!"
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ]
+  },
+  "the_velocity": {
+    "story": [
+      "The stars are swirling! Too fast! Too fast!"
+    ],
+    "universe": [
+      "Yellow! Blue! Violence!"
+    ],
+    "exhibition": [
+      "I am a chaotic brushstroke!"
+    ],
+    "entrance_taunt": [
+      "The stars are swirling! Too fast! Too fast!"
+    ],
+    "victory": [
+      "Yellow! Blue! Violence!"
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ]
+  },
+  "slime": {
+    "story": [
+      "Slime season! We sliding on 'em!"
+    ],
+    "universe": [
+      "Melodies and chaos, you feel me?"
+    ],
+    "exhibition": [
+      "Too unpredictable!"
+    ],
+    "entrance_taunt": [
+      "Slime season! We sliding on 'em!"
+    ],
+    "victory": [
+      "Melodies and chaos, you feel me?"
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ]
+  },
+  "club_god": {
+    "story": [
+      "Turn up! We tearing the roof off!"
+    ],
+    "universe": [
+      "Loud and proud, baby!"
+    ],
+    "exhibition": [
+      "BeatKing in the building!"
+    ],
+    "entrance_taunt": [
+      "Turn up! We tearing the roof off!"
+    ],
+    "victory": [
+      "Loud and proud, baby!"
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ]
+  },
+  "prince": {
+    "story": [
+      "Talk fast, move faster!"
+    ],
+    "universe": [
+      "Hype train never stops!"
+    ],
+    "exhibition": [
+      "Too nasal? Too bad, I'm winning!"
+    ],
+    "entrance_taunt": [
+      "Talk fast, move faster!"
+    ],
+    "victory": [
+      "Hype train never stops!"
+    ],
+    "defeat": [
+      "My art... misunderstood!"
     ]
   }
 }
