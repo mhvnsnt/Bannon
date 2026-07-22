@@ -26,9 +26,9 @@ class BANNONCORE_API UBannonBreakoutController : public UActorComponent {
 public:
     UBannonBreakoutController();
 
-    // Listens for a Face Button press during ENTRANCE or VICTORY_SEQUENCE from any entrant (winner, loser, etc.)
+    // Listens for R3 / Right Stick press during VICTORY_SEQUENCE
     UFUNCTION(BlueprintCallable, Category = "Post Match")
-    void TriggerBreakout(const FString& InstigatorId);
+    void TriggerBreakout();
 };
 
 UCLASS(ClassGroup=(BannonCAW), meta=(BlueprintSpawnableComponent))

@@ -6,12 +6,12 @@
 UENUM(BlueprintType)
 enum class EMatchState : uint8 {
     Init,
-    PreMatchEntrance,\n    EntrancePreview,
+    EntrancePreview,
     EntranceRunning,
     EntranceBrawl,
     MatchActive,
     MatchFinished,
-    VictorySequence,\n    PostMatchVictory,
+    VictorySequence,
     PostMatchBrawl
 };
 
