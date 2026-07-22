@@ -30,6 +30,38 @@
     "defeat": [
       "This timeline... it shifts...",
       "I will return from the shadows!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending.",
+      "The shadows... they bow to my will. I am absolute!"
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently.",
+        "I will rip your timeline apart!",
+        "Do not speak to a god!"
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it.",
+        "I offer you the void. Take it willingly."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes.",
+        "I am the pause between heartbeats."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "queen_tyneshia": {
@@ -63,6 +95,33 @@
     "defeat": [
       "Treason!",
       "Guards! Seize them!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "maime": {
@@ -96,6 +155,34 @@
     "defeat": [
       "No! The dark! Not again!",
       "It hurts!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending.",
+      "The dark gave me teeth! Big, sharp teeth!"
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "onyx": {
@@ -129,6 +216,34 @@
     "defeat": [
       "I return to the soil...",
       "The echo fades..."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending.",
+      "The spirits have possessed this host. We are legion."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "static": {
@@ -162,6 +277,34 @@
     "defeat": [
       "Man, the ref was counting too fast!",
       "I tripped!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending.",
+      "I got lightning in my veins, baby! Pure electricity!"
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "echo": {
@@ -195,6 +338,33 @@
     "defeat": [
       "Busted my tire...",
       "You got lucky, punk!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "cipher": {
@@ -228,6 +398,33 @@
     "defeat": [
       "Impossible! My calculations...",
       "A glitch in the system!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "master_sensei": {
@@ -261,6 +458,33 @@
     "defeat": [
       "My back! Oof!",
       "This old master needs a vacation."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "atlas_vance": {
@@ -294,6 +518,33 @@
     "defeat": [
       "Tactical retreat!",
       "Medic!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "edwin_john_kennedy": {
@@ -327,6 +578,33 @@
     "defeat": [
       "My lawyers will hear about this!",
       "You'll never work in this town again!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "finxsse": {
@@ -360,6 +638,33 @@
     "defeat": [
       "Man, they hating on the hustle!",
       "I'll be back on top by tomorrow!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "cain_elias": {
@@ -392,6 +697,33 @@
     "defeat": [
       "My faith... wavers...",
       "I must pray for strength..."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "solaris_justice": {
@@ -425,6 +757,33 @@
     "defeat": [
       "I let them down...",
       "I'll train harder next time!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "stick_up": {
@@ -458,6 +817,33 @@
     "defeat": [
       "Man, I got robbed!",
       "I'll catch you slipping later!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "red_cloud": {
@@ -491,6 +877,33 @@
     "defeat": [
       "My spirit must heal...",
       "I was outmatched this day."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "cassian_thorne": {
@@ -524,6 +937,33 @@
     "defeat": [
       "A bad beat...",
       "The dealer cheated!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "sombra_negra": {
@@ -557,6 +997,33 @@
     "defeat": [
       "*Fades into the shadows*",
       "The light... burns..."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "karma": {
@@ -590,6 +1057,33 @@
     "defeat": [
       "My own karma... returning...",
       "The cycle continues..."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "the_boulder": {
@@ -623,6 +1117,33 @@
     "defeat": [
       "This isn't over, jabroni!",
       "You got lucky!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "el_lobo_loco": {
@@ -656,6 +1177,33 @@
     "defeat": [
       "The wolf licks his wounds...",
       "I'll bite back harder next time!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "hollow": {
@@ -689,6 +1237,33 @@
     "defeat": [
       "Pain... at last...",
       "I fade..."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "jason_sledge": {
@@ -722,6 +1297,33 @@
     "defeat": [
       "I got demolished...",
       "Back to the drawing board!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "the_cubist": {
@@ -742,6 +1344,33 @@
     ],
     "defeat": [
       "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "the_repetition": {
@@ -762,6 +1391,33 @@
     ],
     "defeat": [
       "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "the_matador": {
@@ -782,6 +1438,33 @@
     ],
     "defeat": [
       "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "the_destroyer": {
@@ -802,6 +1485,33 @@
     ],
     "defeat": [
       "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "the_velocity": {
@@ -822,6 +1532,33 @@
     ],
     "defeat": [
       "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "slime": {
@@ -842,6 +1579,33 @@
     ],
     "defeat": [
       "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "club_god": {
@@ -862,6 +1626,33 @@
     ],
     "defeat": [
       "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   },
   "prince": {
@@ -882,6 +1673,33 @@
     ],
     "defeat": [
       "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
     ]
   }
 }
