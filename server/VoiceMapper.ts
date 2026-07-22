@@ -1,328 +1,382 @@
-// AI ORIENTATION BLOCK v114
 // Godmode TTS Mapping System
+// Links the canonical Bannon universe character list to stylized, parody-likeness voice IDs 
+// for the dialogue and entrance systems, and handles God Within Reality Check distortion.
 
 import fs from 'fs';
 import path from 'path';
 
-// Mapping of in-game character identities to their real-world likeness/parody voice archetypes.
-// These archetypes dictate the voice cloning reference to be used (e.g., Coqui XTTS, Piper).
+// Mapping of in-game character identities to their stylized voice archetypes
 export const VoiceMap = {
     // ---- CORE CHARACTERS ----
-    "Tyneshia": {
-        voiceId: "tyneshia_godwithin",
-        cloneFrom: "reference_tyneshia_promo.wav",
-        style: "intense_revelatory",
-        description: "Intense, philosophical, authoritative (God Within mode)"
-    },
     "Bannon": {
-        voiceId: "bannon_main",
-        cloneFrom: "bannon_interview_clip.wav",
-        style: "commanding",
-        description: "Deep, commanding, grizzled veteran"
+        voiceId: "bannon_main", cloneFrom: "original", style: "commanding",
+        description: "Marquis Whitacre's alter ego. Deep, commanding, grizzled veteran."
+    },
+    "Cain Elias": {
+        voiceId: "cain_elias", cloneFrom: "undertaker_hoss_delgado", style: "demonic_brawler",
+        description: "Undertaker / Hoss Delgado / Brick Samson archetype. Imposing, deep."
+    },
+    "Queen Tyneshia": {
+        voiceId: "queen_tyneshia", cloneFrom: "original", style: "intense_royal",
+        description: "Intense, philosophical, authoritative."
+    },
+    "Solaris Justice": {
+        voiceId: "solaris_justice", cloneFrom: "original", style: "heroic_focused",
+        description: "Marquis Whitacre's first persona. Pure, focused, energetic."
+    },
+    "Atlas Vance": {
+        voiceId: "atlas_vance", cloneFrom: "original", style: "corporate_authoritative",
+        description: "Authoritative boss energy, disciplined."
+    },
+    "Stick-Up": {
+        voiceId: "stick_up", cloneFrom: "original", style: "street_enforcer",
+        description: "Andre Curtis. Street enforcer, short sentences."
+    },
+    "Finxsse": {
+        voiceId: "finxsse", cloneFrom: "original", style: "slick_hustler",
+        description: "Narvin Jackson. Smooth talker, hustler energy."
+    },
+    "Red Cloud": {
+        voiceId: "red_cloud", cloneFrom: "tatanka", style: "proud_warrior",
+        description: "Tatanka archetype. Proud, traditional cadence."
+    },
+    "Cassian Thorne": {
+        voiceId: "cassian_thorne", cloneFrom: "original", style: "dark_intensity",
+        description: "Dark, intense, calculating."
+    },
+    "Sombra Negra": {
+        voiceId: "sombra_negra", cloneFrom: "la_parka_bushi_sin_cara", style: "cryptic_masked",
+        description: "Masked luchador mystery archetype, cryptic, speaks rarely and in riddles."
+    },
+    "Maime": {
+        voiceId: "maime", cloneFrom: "original", style: "manic_feral",
+        description: "Unhinged manic Marquis Whitacre, paranoid and feral, betrayed."
+    },
+    "Karma": {
+        voiceId: "karma", cloneFrom: "original", style: "vengeful",
+        description: "Tyneshia Hall's first wrestling persona. Vengeful, sharp."
+    },
+    "Viper": {
+        voiceId: "viper", cloneFrom: "tyson_mayweather", style: "fast_aggressive",
+        description: "Mike Tyson mixed with Floyd Mayweather. Fast, aggressive, unpredictable."
+    },
+    "Kage": {
+        voiceId: "kage", cloneFrom: "original", style: "shadow_ninja",
+        description: "Shadowy, whisper-quiet ninja."
+    },
+    "Brutus": {
+        voiceId: "brutus", cloneFrom: "bronson_reed", style: "heavy_bruiser",
+        description: "Bronson Reed archetype. Heavy, booming bruiser."
+    },
+    "Zephyr": {
+        voiceId: "zephyr", cloneFrom: "original", style: "rhythmic_fighter",
+        description: "Brazilian capoeira fighter. Rhythmic, flowing cadence."
+    },
+    "Mortus": {
+        voiceId: "mortus", cloneFrom: "original", style: "death_obsessed",
+        description: "Death-obsessed, slow dragging voice."
+    },
+    "Titan": {
+        voiceId: "titan", cloneFrom: "vader_big_bear", style: "roaring_monster",
+        description: "Vader / Big Bear archetype. Loud roars, heavy breathing."
+    },
+    "Golem": {
+        voiceId: "golem", cloneFrom: "original", style: "monosyllabic_giant",
+        description: "Monosyllabic giant, gravelly voice."
+    },
+    "Ronin": {
+        voiceId: "ronin", cloneFrom: "original", style: "stoic_ninja",
+        description: "Japanese ninja, traditional and stoic."
+    },
+    
+    // ---- ADDITIONS (PABLO, EL TORO DE ORO, CIPHER, ECHO, ONYX, STATIC, HOLLOW) ----
+    "Pablo": {
+        voiceId: "pablo", cloneFrom: "picasso_goldust_black_reign", style: "bizarre_artistic",
+        description: "Pablo Picasso mixed with Goldust mixed with TNA Black Reign. Deep breathing, bizarre cadence."
+    },
+    "El Toro de Oro": {
+        voiceId: "el_toro_de_oro", cloneFrom: "batista_corporate", style: "snob_enforcer",
+        description: "Batista type but corporate snob pretty boy type enforcer."
+    },
+    "Cipher": {
+        voiceId: "cipher", cloneFrom: "lio_rush_blackheart", style: "fast_cocky",
+        description: "2026 Blackheart Lio Rush type. Fast-talking, arrogant, energetic."
+    },
+    "Echo": {
+        voiceId: "echo", cloneFrom: "shotzi_blackheart", style: "punk_wild",
+        description: "Shotzi Blackheart type. Wild, howling, punk energy."
+    },
+    "Onyx": {
+        voiceId: "onyx", cloneFrom: "original", style: "dark_cryptic",
+        description: "Dark mysterious cryptic original. Monotone, echoing."
+    },
+    "Static": {
+        voiceId: "static", cloneFrom: "enzo_amore", style: "loud_mouth",
+        description: "Enzo Amore type. Loud, raspy, endless catchphrases."
+    },
+    "Hollow": {
+        voiceId: "hollow", cloneFrom: "super_dragon_ai", style: "soulless_robotic",
+        description: "Super Dragon type but AI-like, soulless, robotic, cryptic."
     },
 
-    // ---- PARODY LIKENESSES ----
+    // ---- EXTENDED ROSTER ----
     "Judas Messiah": {
-        voiceId: "judas_messiah",
-        cloneFrom: "reference_chris_jericho.wav",
-        style: "arrogant_savior",
-        description: "Chris Jericho archetype. Arrogant, charismatic, slow deliberate cadence."
+        voiceId: "judas_messiah", cloneFrom: "chris_jericho", style: "arrogant_savior",
+        description: "Chris Jericho archetype. Cold, theatrical precision. Long pauses, controlled volume."
     },
     "The Saint": {
-        voiceId: "the_saint",
-        cloneFrom: "reference_cm_punk.wav",
-        style: "straight_edge_intense",
-        description: "CM Punk archetype. Intense, rebellious, sharply articulated."
+        voiceId: "the_saint", cloneFrom: "cm_punk", style: "straight_edge_intense",
+        description: "CM Punk archetype. Clipped, disciplined, flat affect until provoked."
     },
     "Vain Abel": {
-        voiceId: "vain_abel",
-        cloneFrom: "reference_kane.wav",
-        style: "demonic_growl",
-        description: "Kane archetype. Deep, distorted demonic growl, slow speech."
+        voiceId: "vain_abel", cloneFrom: "kane", style: "demonic_growl",
+        description: "Kane archetype. Low, gravel-heavy, deliberately slow."
     },
     "The Bad Gal": {
-        voiceId: "bad_gal",
-        cloneFrom: "reference_rhea_ripley.wav", // Or Rihanna based on prompt interpretation
-        style: "punk_aggressive",
-        description: "Rhea Ripley archetype. Aggressive, raspy, taunting."
-    },
-    "Slime & Prince": {
-        voiceId: "slime_and_prince",
-        cloneFrom: "reference_young_bucks.wav",
-        style: "obnoxious_hype",
-        description: "Young Bucks / Hype bros archetype. Fast-talking, synchronized, annoying."
+        voiceId: "the_bad_gal", cloneFrom: "rihanna_punk", style: "punk_aggressive",
+        description: "Rihanna archetype. Sharp, fast, sarcastic — talks over people."
     },
     "The Matador": {
-        voiceId: "the_matador",
-        cloneFrom: "reference_tito_santana.wav",
-        style: "proud_heroic",
-        description: "Tito Santana / Los Matadores archetype. Proud, rolling R's, traditional babyface."
+        voiceId: "the_matador", cloneFrom: "original", style: "proud_heroic",
+        description: "Formal, accented cadence, treats every match like a performance."
     },
     "The Phoenix": {
-        voiceId: "the_phoenix",
-        cloneFrom: "reference_beth_phoenix.wav",
-        style: "powerful_confident",
-        description: "Beth Phoenix archetype. Strong, confident, deliberate."
+        voiceId: "the_phoenix", cloneFrom: "original", style: "powerful_confident",
+        description: "Breathless, earnest, rises in pitch when talking about comebacks."
     },
     "Slick Willy": {
-        voiceId: "slick_willy",
-        cloneFrom: "reference_slick.wav",
-        style: "jive_manager",
-        description: "Slick archetype. Fast-talking, smooth 80s manager jive."
+        voiceId: "slick_willy", cloneFrom: "original", style: "jive_manager",
+        description: "Southern con-man charm, unbroken smile in the voice."
     },
-    
-    // ---- TAG TEAMS & STABLES ----
-    "Spike": {
-        voiceId: "spike_bash_brother",
-        cloneFrom: "reference_dvon_dudley.wav",
-        style: "aggressive_brawler",
-        description: "Dudley Boyz archetype. Gruff, loud."
+    "Air Jordan": {
+        voiceId: "air_jordan", cloneFrom: "ricochet", style: "energetic_cocky",
+        description: "Ricochet archetype. Cocky, athletic swagger."
     },
-    "Hammer": {
-        voiceId: "hammer_bash_brother",
-        cloneFrom: "reference_bubba_ray.wav",
-        style: "loud_bully",
-        description: "Dudley Boyz archetype. Bullying, shouting."
-    },
-    "Dice": {
-        voiceId: "dice_high_roller",
-        cloneFrom: "reference_jbl.wav",
-        style: "arrogant_rich",
-        description: "JBL/APA archetype. Loud, booming, arrogant."
-    },
-    "Chip": {
-        voiceId: "chip_high_roller",
-        cloneFrom: "reference_ron_simmons.wav",
-        style: "deep_stoic",
-        description: "Ron Simmons archetype. Deep bass, short sentences."
-    },
-    "Air Jordan (Shackle III)": {
-        voiceId: "air_jordan",
-        cloneFrom: "reference_ricochet.wav",
-        style: "energetic_cocky",
-        description: "Ricochet/Kofi archetype. High energy, cocky."
-    },
-    "Tank (Shackle IV)": {
-        voiceId: "tank",
-        cloneFrom: "reference_tank_abbott.wav",
-        style: "gruff_fighter",
-        description: "Tank Abbott archetype. Unpolished, gruff, street-fighter."
+    "Tank": {
+        voiceId: "tank", cloneFrom: "tank_abbott", style: "gruff_fighter",
+        description: "Tank Abbott archetype. Monosyllabic, heavy."
     },
     "Kid Glide": {
-        voiceId: "kid_glide",
-        cloneFrom: "reference_rey_mysterio.wav",
-        style: "underdog_hero",
-        description: "Rey Mysterio archetype. Respectful, fiery underdog."
+        voiceId: "kid_glide", cloneFrom: "rey_mysterio", style: "underdog_hero",
+        description: "Rey Mysterio archetype. Young, hyper, skater-slang cadence."
     },
     "Iron Tusk": {
-        voiceId: "iron_tusk",
-        cloneFrom: "reference_samoa_joe.wav",
-        style: "quiet_menace",
-        description: "Samoa Joe archetype. Low register, highly articulate, menacing."
+        voiceId: "iron_tusk", cloneFrom: "samoa_joe", style: "quiet_menace",
+        description: "Samoa Joe archetype. Guttural, minimal words, menacing."
     },
     "Hardcore Harry": {
-        voiceId: "hardcore_harry",
-        cloneFrom: "reference_hardcore_holly.wav",
-        style: "bitter_veteran",
-        description: "Hardcore Holly archetype. Bitter, no-nonsense, abrasive."
-    },
-    "The Luchador Twins": {
-        voiceId: "luchador_twins",
-        cloneFrom: "reference_lucha_bros.wav",
-        style: "intense_spanish",
-        description: "Lucha Brothers archetype. Intense, rapid-fire spanglish."
-    },
-    "The Corporate Auditors": {
-        voiceId: "corporate_auditor",
-        cloneFrom: "reference_irs.wav",
-        style: "smug_bureaucrat",
-        description: "IRS/Right to Censor archetype. Monotone, smug, nagging."
-    },
-
-    // ---- THE COVEN OF GNARLY (Ministry/Judgment Day) ----
-    "Grave": {
-        voiceId: "grave_coven",
-        cloneFrom: "reference_undertaker.wav",
-        style: "slow_ominous",
-        description: "Undertaker archetype. Slow, deep, echoing."
-    },
-    "Jett Gnarly": {
-        voiceId: "jett_gnarly",
-        cloneFrom: "reference_edge_brood.wav",
-        style: "manic_goth",
-        description: "Edge (Brood era) archetype. Whispering, manic."
-    },
-    "Mokk Gnarly": {
-        voiceId: "mokk_gnarly",
-        cloneFrom: "reference_gangrel.wav",
-        style: "growling_vampiric",
-        description: "Gangrel archetype. Growling, animalistic."
-    },
-    "Razor": {
-        voiceId: "razor_coven",
-        cloneFrom: "reference_razor_ramon.wav",
-        style: "machismo_goth",
-        description: "Razor Ramon archetype. Smooth, machismo with a dark twist."
-    },
-    "Crux": {
-        voiceId: "crux_coven",
-        cloneFrom: "reference_raven.wav",
-        style: "nihilistic_grunge",
-        description: "Raven archetype. Intellectual, nihilistic, soft-spoken."
-    },
-    "Luna": {
-        voiceId: "luna_coven",
-        cloneFrom: "reference_luna_vachon.wav",
-        style: "screaming_manic",
-        description: "Luna Vachon archetype. Screaming, unhinged."
-    },
-
-    // ---- THE DEGENERATES (DX Parody) ----
-    "Triple X": {
-        voiceId: "triple_x",
-        cloneFrom: "reference_triple_h.wav",
-        style: "commanding_cocky",
-        description: "Triple H archetype. Slow, deliberate, arrogant."
-    },
-    "Hall Nighter": {
-        voiceId: "hall_nighter",
-        cloneFrom: "reference_shawn_michaels.wav",
-        style: "flamboyant_arrogant",
-        description: "Shawn Michaels archetype. Flamboyant, high-energy, arrogant."
-    },
-    "The Dogg": {
-        voiceId: "the_dogg",
-        cloneFrom: "reference_road_dogg.wav",
-        style: "hype_mc",
-        description: "Road Dogg archetype. Rhythmic, rhyming, crowd-work."
-    },
-    "Ass-Man Billy": {
-        voiceId: "ass_man_billy",
-        cloneFrom: "reference_billy_gunn.wav",
-        style: "loud_cocky",
-        description: "Billy Gunn archetype. Loud, booming catchphrases."
-    },
-    "X-Kid": {
-        voiceId: "x_kid",
-        cloneFrom: "reference_xpac.wav",
-        style: "nasal_hyper",
-        description: "X-Pac archetype. Nasal, hyperactive."
-    },
-    "Melissa Kennedy": {
-        voiceId: "melissa_kennedy",
-        cloneFrom: "reference_chyna.wav", // Or Stephanie McMahon
-        style: "strong_imposing",
-        description: "Chyna archetype. Deep, imposing, few words."
-    },
-
-    // ---- THE NWC (nWo Parody) ----
-    "The Vandal": {
-        voiceId: "the_vandal",
-        cloneFrom: "reference_hulk_hogan_hollywood.wav",
-        style: "raspy_brother",
-        description: "Hollywood Hogan archetype. Raspy, uses 'brother/dude'."
-    },
-    "Vato": {
-        voiceId: "vato_nwc",
-        cloneFrom: "reference_scott_hall.wav",
-        style: "smooth_machismo",
-        description: "Scott Hall archetype. 'Hey yo', smooth, relaxed."
-    },
-    "Big Cash": {
-        voiceId: "big_cash",
-        cloneFrom: "reference_kevin_nash.wav",
-        style: "cool_sarcastic",
-        description: "Kevin Nash archetype. Deep voice, slow, very sarcastic."
-    },
-    "Aaron Reiner": {
-        voiceId: "aaron_reiner",
-        cloneFrom: "reference_syxx.wav",
-        style: "hyper_heel",
-        description: "Syxx/Sean Waltman archetype. Fast, abrasive."
-    },
-    "Toxin": {
-        voiceId: "toxin_nwc",
-        cloneFrom: "reference_sting_crow.wav",
-        style: "whisper_vigilante",
-        description: "Crow Sting archetype. Whispering, brooding, minimal dialogue."
-    },
-
-    // ---- THE DYNASTY & THE MASTERPIECE ----
-    "Kray-Z": {
-        voiceId: "kray_z",
-        cloneFrom: "reference_jay_z.wav",
-        style: "brooklyn_smooth",
-        description: "Jay-Z archetype. Cool, calculated, rhythmic speech."
-    },
-    "Krusha P": {
-        voiceId: "krusha_p",
-        cloneFrom: "reference_master_p.wav",
-        style: "southern_hype",
-        description: "Master P archetype. 'Uhh', loud, southern bounce."
-    },
-    "The Repetition": {
-        voiceId: "the_repetition",
-        cloneFrom: "reference_echoing.wav",
-        style: "rhythmic_chant",
-        description: "Conceptual character. Speaks in rhythmic, repeating cadence."
-    },
-    "The Thinker": {
-        voiceId: "the_thinker",
-        cloneFrom: "reference_lanny_poffo.wav",
-        style: "poetic_condescending",
-        description: "The Genius archetype. Uses big words, recites poetry condescendingly."
+        voiceId: "hardcore_harry", cloneFrom: "hardcore_holly_terry_funk", style: "bitter_veteran",
+        description: "Hardcore Holly / Terry Funk archetype. Raspy, unhinged enthusiasm for violence."
     },
     "The Velocity": {
-        voiceId: "the_velocity",
-        cloneFrom: "reference_paul_london.wav",
-        style: "frantic_fast",
-        description: "Paul London archetype. Frantic, out-of-breath, fast-talking."
+        voiceId: "the_velocity", cloneFrom: "paul_london", style: "frantic_fast",
+        description: "Paul London archetype. Rapid-fire, words blur together."
     },
     "The Cubist": {
-        voiceId: "the_cubist",
-        cloneFrom: "reference_artistic_snob.wav",
-        style: "avant_garde_snob",
-        description: "Avant-garde snob archetype. Uses art terminology, disdainful."
+        voiceId: "the_cubist", cloneFrom: "original", style: "avant_garde_snob",
+        description: "Fragmented syntax, talks in disjointed clauses, art-snob."
     },
-
-    // ---- THE STRAIGHT SHOOTERS & HOLLYWOOD ----
-    "Locomotive": {
-        voiceId: "locomotive",
-        cloneFrom: "reference_stone_cold.wav",
-        style: "intense_brawler",
-        description: "Stone Cold Steve Austin archetype. Loud, aggressive, intense."
-    },
-    "John Ford": {
-        voiceId: "john_ford",
-        cloneFrom: "reference_john_cena.wav",
-        style: "intense_preacher",
-        description: "John Cena archetype. Loud, earnest, rises to a screaming crescendo."
-    },
-    "The Boulder": {
-        voiceId: "the_boulder",
-        cloneFrom: "reference_the_rock.wav",
-        style: "electrifying_cocky",
-        description: "The Rock archetype. Third-person references, highly charismatic, dynamic range."
-    },
-    
-    // ---- MANAGEMENT / EXTRAS ----
     "General Vance": {
-        voiceId: "general_vance",
-        cloneFrom: "reference_vince_mcmahon.wav",
-        style: "booming_boss",
-        description: "Vince McMahon archetype. Booming, aggressive, iconic growl."
+        voiceId: "general_vance", cloneFrom: "vince_mcmahon", style: "booming_boss",
+        description: "Vince McMahon archetype. Barked, military cadence, clipped commands."
     },
     "Pretty Flacko": {
-        voiceId: "pretty_flacko",
-        cloneFrom: "reference_asap_rocky.wav",
-        style: "harlem_smooth",
-        description: "A$AP Rocky archetype. Smooth, fashion-forward, laid back."
+        voiceId: "pretty_flacko", cloneFrom: "asap_rocky", style: "harlem_smooth",
+        description: "A$AP Rocky archetype. Mumble-melodic, laid-back, half-sung delivery."
     },
     "Club God": {
-        voiceId: "club_god",
-        cloneFrom: "reference_club_promoter.wav",
-        style: "loud_party",
-        description: "Hype man/Club promoter archetype. Constant yelling, party energy."
+        voiceId: "club_god", cloneFrom: "original", style: "loud_party",
+        description: "Booming, promoter-showman energy, hype intro."
+    },
+    "Slime": {
+        voiceId: "slime", cloneFrom: "lil_keed", style: "nasal_hype",
+        description: "Lil Keed archetype. Nasal, oily, always selling something."
+    },
+    "Prince": {
+        voiceId: "prince", cloneFrom: "young_thug", style: "smooth_closer",
+        description: "Young Thug archetype. Smoother counterpart, lets Slime do the noise."
+    },
+    "Spike": {
+        voiceId: "spike", cloneFrom: "apa_dudley", style: "rapid_punchy",
+        description: "Dudley Boyz / APA archetype. Rapid, punchy delivery, finishes Hammer's sentences."
+    },
+    "Hammer": {
+        voiceId: "hammer", cloneFrom: "apa_dudley", style: "booming_slow",
+        description: "Dudley Boyz / APA archetype. Booming, slow, drops one loud line."
+    },
+    "Dice": {
+        voiceId: "dice", cloneFrom: "deuce", style: "rapid_hustler",
+        description: "Deuce n Domino archetype. Cocky, rapid patter, always closing."
+    },
+    "Chip": {
+        voiceId: "chip", cloneFrom: "domino", style: "dry_deadpan",
+        description: "Deuce n Domino archetype. Dry, deadpan counter to Dice's hype."
+    },
+    "Luchador Relampago": {
+        voiceId: "luchador_relampago", cloneFrom: "lucha_bros", style: "intense_spanish",
+        description: "Lucha Bros archetype. Mirror each other's cadence exactly."
+    },
+    "Luchador Trueno": {
+        voiceId: "luchador_trueno", cloneFrom: "lucha_bros", style: "intense_spanish",
+        description: "Lucha Bros archetype. Alternate lines mid-sentence."
+    },
+    "Auditor Prime": {
+        voiceId: "auditor_prime", cloneFrom: "rtc", style: "monotone_bureaucrat",
+        description: "Right to Censor archetype. Monotone, bureaucratic, unsettling calm."
+    },
+    "Auditor Second": {
+        voiceId: "auditor_second", cloneFrom: "rtc", style: "monotone_bureaucrat",
+        description: "Right to Censor archetype. Alternate delivering bad news in flat cadence."
+    },
+    "Grave": {
+        voiceId: "grave", cloneFrom: "gangrel", style: "droning_funeral",
+        description: "Gangrel archetype. Droning, funeral-slow."
+    },
+    "Jett Gnarly": {
+        voiceId: "jett_gnarly", cloneFrom: "jeff_hardy", style: "manic_skate_punk",
+        description: "Jeff Hardy archetype. Manic skate-punk energy."
+    },
+    "Mokk Gnarly": {
+        voiceId: "mokk_gnarly", cloneFrom: "matt_hardy", style: "manic_skate_punk",
+        description: "Matt Hardy archetype. Sharp and clipped."
+    },
+    "Razor": {
+        voiceId: "razor", cloneFrom: "edge", style: "machismo_goth",
+        description: "Edge archetype. Sharp and clipped, dark-twist machismo."
+    },
+    "Crux": {
+        voiceId: "crux", cloneFrom: "christian", style: "sharp_clipped",
+        description: "Christian archetype. Sharp and clipped."
+    },
+    "Luna Gnarly": {
+        voiceId: "luna_gnarly", cloneFrom: "lita", style: "dreamy_detached",
+        description: "Lita archetype. Dreamy, detached."
+    },
+    "Jager": {
+        voiceId: "jager", cloneFrom: "fred_rico_hinter", style: "arrogant_euro",
+        description: "Fred Rico Hinter archetype. Arrogant."
+    },
+    "Triple X": {
+        voiceId: "triple_x", cloneFrom: "triple_h", style: "brash_frat",
+        description: "Triple H archetype. Brash frat-boy bravado."
+    },
+    "Hall Nighter": {
+        voiceId: "hall_nighter", cloneFrom: "shawn_michaels", style: "raspy_chaos",
+        description: "Shawn Michaels archetype. Raspy chaos."
+    },
+    "The Dogg": {
+        voiceId: "the_dogg", cloneFrom: "road_dogg", style: "laid_back_drawl",
+        description: "Road Dogg archetype. Laid-back drawl."
+    },
+    "Ass-Man Billy": {
+        voiceId: "ass_man_billy", cloneFrom: "billy_gunn", style: "loud_dumb_jock",
+        description: "Billy Gunn archetype. Loud dumb-jock energy."
+    },
+    "X-Kid": {
+        voiceId: "x_kid", cloneFrom: "x_pac", style: "hyper_sidekick",
+        description: "X-Pac archetype. Hyper young sidekick."
+    },
+    "The Vandal": {
+        voiceId: "the_vandal", cloneFrom: "hollywood_hogan", style: "raspy_brother",
+        description: "Hollywood Hogan archetype. Raspy, uses brother/dude."
+    },
+    "Vato": {
+        voiceId: "vato", cloneFrom: "scott_hall", style: "street_smooth",
+        description: "Scott Hall archetype. Street-smooth, machismo."
+    },
+    "Big Cash": {
+        voiceId: "big_cash", cloneFrom: "kevin_nash", style: "money_obsessed",
+        description: "Kevin Nash archetype. Money-obsessed swagger."
+    },
+    "Aaron Reiner": {
+        voiceId: "aaron_reiner", cloneFrom: "scott_steiner", style: "manic_math",
+        description: "Scott Steiner archetype. Manic, unhinged Steiner math."
+    },
+    "Toxin": {
+        voiceId: "toxin", cloneFrom: "crow_sting", style: "sinister_undertone",
+        description: "Crow Sting archetype. Sinister undertone, whispering."
+    },
+    "Kray-Z": {
+        voiceId: "kray_z", cloneFrom: "jay_z", style: "manic_pitch_swings",
+        description: "Jay-Z archetype. Manic, unpredictable pitch swings."
+    },
+    "Krusha P": {
+        voiceId: "krusha_p", cloneFrom: "pusha_t", style: "deadpan_menace",
+        description: "Pusha T archetype. Deadpan menace underneath, slick dealer."
+    },
+    "The Repetition": {
+        voiceId: "the_repetition", cloneFrom: "warhol", style: "glitchy_repeat",
+        description: "Warhol archetype. Literally repeats phrases, glitchy cadence."
+    },
+    "The Thinker": {
+        voiceId: "the_thinker", cloneFrom: "famous_artist", style: "analytical_pauses",
+        description: "Overly analytical, pauses mid-sentence to calculate."
+    },
+    "Locomotive": {
+        voiceId: "locomotive", cloneFrom: "stone_cold", style: "relentless_driving",
+        description: "Stone Cold archetype. Relentless, driving cadence."
+    },
+    "John Ford": {
+        voiceId: "john_ford", cloneFrom: "john_cena", style: "gravelly_authority",
+        description: "John Cena archetype. Gravelly old-guard authority."
+    },
+    "The Boulder": {
+        voiceId: "the_boulder", cloneFrom: "the_rock", style: "slow_massive",
+        description: "The Rock archetype. Slow, massive, few words."
+    },
+    "Ronald Slump": {
+        voiceId: "ronald_slump", cloneFrom: "donald_trump", style: "blustery_interrupting",
+        description: "Donald Trump archetype. Blustery, interrupts himself, brags mid-sentence."
+    },
+    "Ronald Slump Jr.": {
+        voiceId: "ronald_slump_jr", cloneFrom: "donald_trump_jr_ric_flair", style: "trying_too_hard",
+        description: "Donald Trump Jr / Ric Flair archetype. Says woo, eager, voice cracks under pressure."
+    },
+    "Melissa Kennedy": {
+        voiceId: "melissa_kennedy", cloneFrom: "stephanie_mcmahon_chyna", style: "sharp_manager",
+        description: "Stephanie McMahon / Chyna archetype. Sharp, in-control manager voice."
+    },
+    "Drake Vane": {
+        voiceId: "drake_vane", cloneFrom: "randy_orton_evolution", style: "snobby_rich",
+        description: "Randy Orton Legend Killer archetype. Acts posh, snobby, calls people indie trash."
+    },
+    
+    // ---- ADDITIONS (FROM REPO LOGS/BOOKS) ----
+    "Ronye": {
+        voiceId: "ronye", cloneFrom: "original", style: "scrappy_mouthy",
+        description: "Scrappy underdog archetype, quick and mouthy."
+    },
+    "Agent Smith": {
+        voiceId: "agent_smith", cloneFrom: "original", style: "deadpan_enforcer",
+        description: "Corporate Auditors-adjacent, deadpan enforcer archetype, government-suit menace."
+    },
+    "The Minotaur": {
+        voiceId: "the_minotaur", cloneFrom: "original", style: "monstrous_powerhouse",
+        description: "Monstrous powerhouse archetype, minimal dialogue, roars over words."
+    },
+    "The Radiant Child": {
+        voiceId: "the_radiant_child", cloneFrom: "basquiat", style: "soft_unsettling",
+        description: "Cult-leader/messianic, basquiat type. Soft-spoken but unsettling."
+    },
+    "Marquis Whitacre": {
+        voiceId: "marquis_whitacre", cloneFrom: "original", style: "smooth_villain",
+        description: "Smooth, controlled, corporate-villain calm — never raises his voice, except when manic."
+    },
+    "Tyneshia Hall": {
+        voiceId: "tyneshia_hall", cloneFrom: "original", style: "controlled_intensity",
+        description: "Controlled intensity, drops into a lower, slower register during God Within moments."
+    },
+    "Andre Curtis": {
+        voiceId: "andre_curtis", cloneFrom: "original", style: "street_psycho",
+        description: "Street/cult psycho / cyborg enforcer, short sentences."
+    },
+    "Edwin John Kennedy": {
+        voiceId: "edwin_john_kennedy", cloneFrom: "original", style: "prim_old_money",
+        description: "Prim old-money diction."
+    },
+    "Sam Kennedy": {
+        voiceId: "sam_kennedy", cloneFrom: "original", style: "eager_young_brother",
+        description: "Younger, faster, trying to prove himself against Edwin."
     }
 };
 
@@ -338,7 +392,7 @@ export class BannonVoiceGenerator {
     }
 
     /**
-     * Generates cloned VO for a specific character.
+     * Generates stylized VO for a specific character.
      * @param characterName In-game character name
      * @param dialogue The text to speak
      * @param context (Optional) Emotion or context like "godwithin" or "taunt"
@@ -353,7 +407,7 @@ export class BannonVoiceGenerator {
         const payload = {
             text: dialogue,
             voice_id: charVoice ? charVoice.voiceId : "generic_male",
-            reference_audio: charVoice ? charVoice.cloneFrom : "generic.wav",
+            reference_audio: charVoice ? charVoice.cloneFrom : "generic",
             emotion: context || charVoice?.style || "neutral"
         };
 
@@ -379,10 +433,21 @@ export class BannonVoiceGenerator {
     }
 
     /**
-     * Helper to trigger a Reality Check line with heavy reverb/distortion via TTS parameters.
+     * Helper to trigger a Reality Check line with heavy reverb/distortion/cadence shift via TTS parameters.
      */
     async triggerGodWithinRealityCheck(characterName: string, dialogue: string): Promise<Buffer> {
         console.log(`[VoiceMapper] Triggering GOD WITHIN Reality Check for ${characterName}`);
-        return this.generateVoice(characterName, dialogue, "intense_revelatory_echo");
+        
+        // Apply God Within specific distortion/echo modifiers
+        let godWithinContext = "intense_revelatory_echo_distortion";
+        
+        // Character specific God Within overrides
+        if (characterName === "Tyneshia Hall" || characterName === "Queen Tyneshia") {
+            godWithinContext = "lower_slower_register_deliberate"; // As specified in lore
+        } else if (characterName === "Marquis Whitacre") {
+            godWithinContext = "out_of_control_manic_distortion";
+        }
+        
+        return this.generateVoice(characterName, dialogue, godWithinContext);
     }
 }
