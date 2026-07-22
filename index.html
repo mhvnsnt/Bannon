@@ -780,7 +780,7 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 .touch .action-grid { display:grid; }
 /* pill btn already defined above in new WWE 2K26 block */
 @media (orientation:portrait) { #pillBtns { bottom:calc(248px + var(--safe-bot)); left:4px; } }
-</style>
+/* CSS Transitions for MATCH_ACTIVE to POST_MATCH_VICTORY fade */\n#hud-container { transition: opacity 1.5s ease, transform 1.5s ease; }\n.hud-hidden { opacity: 0; transform: translateY(-50px); pointer-events: none; }\n.health-bar, .stamina-bar { transition: width 0.3s ease-out, background-color 0.3s ease; }</style>
 <style>
 /* ===== BANNON STUDIO ===== */
 #studio .creator-card{ max-width:600px; }
