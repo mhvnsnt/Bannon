@@ -137,8 +137,8 @@ export const VoiceMap = {
         description: "Rihanna archetype. Sharp, fast, sarcastic — talks over people."
     },
     "The Matador": {
-        voiceId: "the_matador", cloneFrom: "original", style: "proud_heroic",
-        description: "Formal, accented cadence, treats every match like a performance."
+        voiceId: "the_matador", cloneFrom: "salvador_dali", style: "eccentric_surreal",
+        description: "Salvador Dali archetype. Eccentric, formal, accented cadence, treats every match like a surreal performance."
     },
     "The Phoenix": {
         voiceId: "the_phoenix", cloneFrom: "original", style: "powerful_confident",
@@ -168,13 +168,17 @@ export const VoiceMap = {
         voiceId: "hardcore_harry", cloneFrom: "hardcore_holly_terry_funk", style: "bitter_veteran",
         description: "Hardcore Holly / Terry Funk archetype. Raspy, unhinged enthusiasm for violence."
     },
+    "The Destroyer": {
+        voiceId: "the_destroyer", cloneFrom: "frida_kahlo", style: "intense_passionate",
+        description: "Frida Kahlo archetype. Intense, passionate, unyielding defiance."
+    },
     "The Velocity": {
-        voiceId: "the_velocity", cloneFrom: "paul_london", style: "frantic_fast",
-        description: "Paul London archetype. Rapid-fire, words blur together."
+        voiceId: "the_velocity", cloneFrom: "vincent_van_gogh", style: "frantic_fast",
+        description: "Vincent van Gogh archetype. Frantic, rapid-fire, words blur together in a manic blur."
     },
     "The Cubist": {
-        voiceId: "the_cubist", cloneFrom: "original", style: "avant_garde_snob",
-        description: "Fragmented syntax, talks in disjointed clauses, art-snob."
+        voiceId: "the_cubist", cloneFrom: "pablo_picasso", style: "avant_garde_snob",
+        description: "Pablo Picasso archetype. Fragmented syntax, talks in disjointed clauses, art-snob."
     },
     "General Vance": {
         voiceId: "general_vance", cloneFrom: "sgt_slaughter", style: "military_drill_sergeant",
@@ -185,16 +189,16 @@ export const VoiceMap = {
         description: "A$AP Rocky archetype. Mumble-melodic, laid-back, half-sung delivery."
     },
     "Club God": {
-        voiceId: "club_god", cloneFrom: "original", style: "loud_party",
-        description: "Booming, promoter-showman energy, hype intro."
+        voiceId: "club_god", cloneFrom: "beatking", style: "loud_party",
+        description: "BeatKing archetype. Booming, promoter-showman energy, loud party rap hype intro."
     },
     "Slime": {
-        voiceId: "slime", cloneFrom: "lil_keed", style: "nasal_hype",
-        description: "Lil Keed archetype. Nasal, oily, always selling something."
+        voiceId: "slime", cloneFrom: "young_thug", style: "nasal_hype",
+        description: "Young Thug archetype. Melodic, oily, unpredictable pitch swings."
     },
     "Prince": {
-        voiceId: "prince", cloneFrom: "young_thug", style: "smooth_closer",
-        description: "Young Thug archetype. Smoother counterpart, lets Slime do the noise."
+        voiceId: "prince", cloneFrom: "lil_keed", style: "smooth_closer",
+        description: "Lil Keed archetype. Nasal, fast-talking hype, smoother counterpart."
     },
     "Spike": {
         voiceId: "spike", cloneFrom: "apa_dudley", style: "rapid_punchy",
@@ -305,8 +309,8 @@ export const VoiceMap = {
         description: "Pusha T archetype. Deadpan menace underneath, slick dealer."
     },
     "The Repetition": {
-        voiceId: "the_repetition", cloneFrom: "warhol", style: "glitchy_repeat",
-        description: "Warhol archetype. Literally repeats phrases, glitchy cadence."
+        voiceId: "the_repetition", cloneFrom: "andy_warhol", style: "glitchy_repeat",
+        description: "Andy Warhol archetype. Flat affect, literally repeats phrases, glitchy cadence."
     },
     "The Thinker": {
         voiceId: "the_thinker", cloneFrom: "famous_artist", style: "analytical_pauses",
@@ -321,8 +325,8 @@ export const VoiceMap = {
         description: "John Cena archetype. Gravelly old-guard authority."
     },
     "The Boulder": {
-        voiceId: "the_boulder", cloneFrom: "the_rock", style: "slow_massive",
-        description: "The Rock archetype. Slow, massive, few words."
+        voiceId: "the_boulder", cloneFrom: "dwayne_the_rock_johnson", style: "electrifying_swagger",
+        description: "Dwayne \"The Rock\" Johnson archetype. Electrifying, massive, theatrical delivery, speaks in third person."
     },
     "Ronald Slump": {
         voiceId: "ronald_slump", cloneFrom: "donald_trump", style: "blustery_interrupting",
