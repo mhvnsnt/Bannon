@@ -9,12 +9,13 @@ Requires 5-15 seconds of clean, isolated reference audio from 2026-era promos
 for accurate likeness cloning.
 """
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 import os
+import shutil
 
 # Pseudo-import for 2026 state-of-the-art open-source TTS
-# In a real environment, you'd `pip install f5-tts TTS`
 try:
     from f5_tts import F5TTS
     from TTS.api import TTS
@@ -31,6 +32,7 @@ class TTSRequest(BaseModel):
 
 # Path where we store the 2026 reference clips
 REFERENCE_DIR = os.path.join(os.path.dirname(__file__), "..", "assets", "voice_references")
+os.makedirs(REFERENCE_DIR, exist_ok=True)
 
 @app.post("/api/tts")
 async def generate_tts(req: TTSRequest):
@@ -40,26 +42,41 @@ async def generate_tts(req: TTSRequest):
         # Fallback to a generic voice if the specific 2026 reference hasn't been ripped yet
         ref_path = os.path.join(REFERENCE_DIR, "generic.wav")
         if not os.path.exists(ref_path):
-            raise HTTPException(status_code=404, detail=f"Reference audio missing: {req.reference_audio}.wav")
+            raise HTTPException(status_code=404, detail=f"Reference audio missing: {req.reference_audio}.wav. Please upload via /api/upload_reference")
 
     print(f"[TTS Server] Cloning voice from {ref_path}")
     print(f"[TTS Server] Applying Emotion/Style modifier: {req.emotion}")
     print(f"[TTS Server] Generating dialogue: {req.text}")
     
-    # Example F5-TTS / XTTS generation call:
-    # wav = tts_model.synthesize(
-    #     text=req.text,
-    #     speaker_wav=ref_path,
-    #     language="en",
-    #     speed=1.0,
-    #     emotion_prompt=req.emotion  # Used by 2026 multi-modal models to steer delivery
-    # )
-    
     # Save to temp file and return
     output_path = f"/tmp/generated_{req.voice_id}.wav"
-    # wav.save(output_path)
+    # Mocking generation...
     
     return {"status": "success", "file": output_path, "engine": "F5-TTS-OpenSource"}
+
+@app.post("/api/upload_reference")
+async def upload_reference(voice_id: str, file: UploadFile = File(...)):
+    """
+    Endpoint to upload a 5-15 second clean .wav rip for a character.
+    This persists it so the game can use it for F5-TTS.
+    """
+    if not file.filename.endswith('.wav'):
+        raise HTTPException(status_code=400, detail="Only .wav files are supported for zero-shot cloning.")
+        
+    file_location = os.path.join(REFERENCE_DIR, f"{voice_id}.wav")
+    with open(file_location, "wb+") as file_object:
+        shutil.copyfileobj(file.file, file_object)
+        
+    return JSONResponse(content={"message": f"Successfully saved reference for {voice_id}", "path": file_location})
+
+@app.get("/api/list_references")
+async def list_references():
+    """
+    Returns a list of all current voice references available in the assets folder.
+    """
+    files = os.listdir(REFERENCE_DIR)
+    wav_files = [f.replace('.wav', '') for f in files if f.endswith('.wav')]
+    return {"available_references": wav_files}
 
 if __name__ == "__main__":
     import uvicorn
