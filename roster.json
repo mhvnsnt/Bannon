@@ -13,10 +13,26 @@
     "manager": "None",
     "bio": "The physical nucleus and absolute force of the Bannon Engine. Driven by raw physics and unmatched grit.",
     "attires": [
-      { "id": "classic", "name": "Classic Black & Gold", "color": "#000000", "accent": "#f59e0b" },
-      { "id": "street", "name": "Street Fight", "color": "#1e293b", "accent": "#ef4444" },
-      { "id": "apex", "name": "Apex Champion", "color": "#ffffff", "accent": "#ffd700" }
-    ]
+      {
+        "id": "classic",
+        "name": "Classic Black & Gold",
+        "color": "#000000",
+        "accent": "#f59e0b"
+      },
+      {
+        "id": "street",
+        "name": "Street Fight",
+        "color": "#1e293b",
+        "accent": "#ef4444"
+      },
+      {
+        "id": "apex",
+        "name": "Apex Champion",
+        "color": "#ffffff",
+        "accent": "#ffd700"
+      }
+    ],
+    "has_custom_reference": true
   },
   {
     "id": "cierra",
@@ -32,8 +48,18 @@
     "manager": "None",
     "bio": "High-velocity high-flyer and official co-admin of CODEDUMMY bot remote systems. Blurs the line between physics and speed.",
     "attires": [
-      { "id": "neon", "name": "Cyber Neon", "color": "#111827", "accent": "#ec4899" },
-      { "id": "glitch", "name": "Glitch Lacing", "color": "#06b6d4", "accent": "#f43f5e" }
+      {
+        "id": "neon",
+        "name": "Cyber Neon",
+        "color": "#111827",
+        "accent": "#ec4899"
+      },
+      {
+        "id": "glitch",
+        "name": "Glitch Lacing",
+        "color": "#06b6d4",
+        "accent": "#f43f5e"
+      }
     ]
   },
   {
@@ -50,8 +76,18 @@
     "manager": "Cierra",
     "bio": "The Administrator. Exercises final authority with god-tier stats and absolute command of the developmental ring.",
     "attires": [
-      { "id": "ceo", "name": "CEO Suit", "color": "#1e1b4b", "accent": "#ffd700" },
-      { "id": "armor", "name": "Dark Gold Plate", "color": "#0f172a", "accent": "#d97706" }
+      {
+        "id": "ceo",
+        "name": "CEO Suit",
+        "color": "#1e1b4b",
+        "accent": "#ffd700"
+      },
+      {
+        "id": "armor",
+        "name": "Dark Gold Plate",
+        "color": "#0f172a",
+        "accent": "#d97706"
+      }
     ]
   },
   {
@@ -68,8 +104,18 @@
     "manager": "None",
     "bio": "The 24/7 autonomous loop mascot. Holographic visual structures built on unpredictable, high-velocity math.",
     "attires": [
-      { "id": "hologram", "name": "Holographic Blue", "color": "#1e1b4b", "accent": "#06b6d4" },
-      { "id": "slate", "name": "Slang Slate Text", "color": "#0f172a", "accent": "#10b981" }
+      {
+        "id": "hologram",
+        "name": "Holographic Blue",
+        "color": "#1e1b4b",
+        "accent": "#06b6d4"
+      },
+      {
+        "id": "slate",
+        "name": "Slang Slate Text",
+        "color": "#0f172a",
+        "accent": "#10b981"
+      }
     ]
   },
   {
@@ -81,13 +127,23 @@
     "hp": 9500,
     "speed": 75,
     "strength": 82,
-    "physicsScale": 1.0,
+    "physicsScale": 1,
     "payback": "Instant Pin",
     "manager": "None",
     "bio": "Classic low-poly retro combatant paying ultimate homage to the MDickie selection flows and heavy hit reactions.",
     "attires": [
-      { "id": "classic_shorts", "name": "Classic Shorts", "color": "#ef4444", "accent": "#ffffff" },
-      { "id": "referee", "name": "Ref Stripes", "color": "#000000", "accent": "#ffffff" }
+      {
+        "id": "classic_shorts",
+        "name": "Classic Shorts",
+        "color": "#ef4444",
+        "accent": "#ffffff"
+      },
+      {
+        "id": "referee",
+        "name": "Ref Stripes",
+        "color": "#000000",
+        "accent": "#ffffff"
+      }
     ]
   },
   {
@@ -99,12 +155,17 @@
     "hp": 8000,
     "speed": 50,
     "strength": 50,
-    "physicsScale": 1.0,
+    "physicsScale": 1,
     "payback": "None",
     "manager": "None",
     "bio": "The baseline target skin of the Bannon Engine. Ideal for testing deep hit-reaction damping curves and velocity hard-caps.",
     "attires": [
-      { "id": "default", "name": "Safety Orange", "color": "#f97316", "accent": "#1f2937" }
+      {
+        "id": "default",
+        "name": "Safety Orange",
+        "color": "#f97316",
+        "accent": "#1f2937"
+      }
     ]
   },
   {
@@ -121,7 +182,12 @@
     "manager": "None",
     "bio": "A power manager with extreme authority modifiers. Commands attention from the ringside.",
     "attires": [
-      { "id": "classic_suit", "name": "Striped Suit", "color": "#111827", "accent": "#94a3b8" }
+      {
+        "id": "classic_suit",
+        "name": "Striped Suit",
+        "color": "#111827",
+        "accent": "#94a3b8"
+      }
     ]
   },
   {
@@ -133,13 +199,23 @@
     "hp": 9800,
     "speed": 90,
     "strength": 87,
-    "physicsScale": 1.0,
+    "physicsScale": 1,
     "payback": "Teleport Strike",
     "manager": "None",
     "bio": "An advanced operations specialist of the Bannon system. Moves with superconductive speed and razor-sharp precision.",
     "attires": [
-      { "id": "cyber", "name": "Cyber Tech Suit", "color": "#0284c7", "accent": "#38bdf8" },
-      { "id": "stealth", "name": "Stealth Mode", "color": "#18181b", "accent": "#f43f5e" }
+      {
+        "id": "cyber",
+        "name": "Cyber Tech Suit",
+        "color": "#0284c7",
+        "accent": "#38bdf8"
+      },
+      {
+        "id": "stealth",
+        "name": "Stealth Mode",
+        "color": "#18181b",
+        "accent": "#f43f5e"
+      }
     ]
   },
   {
@@ -156,8 +232,18 @@
     "manager": "None",
     "bio": "A heavy-duty architectural compiler entity. Holds stable physical structures under extreme stress limits.",
     "attires": [
-      { "id": "sapphire", "name": "Deep Sapphire", "color": "#1e3a8a", "accent": "#60a5fa" },
-      { "id": "reactor", "name": "Active Reactor", "color": "#172554", "accent": "#fbbf24" }
+      {
+        "id": "sapphire",
+        "name": "Deep Sapphire",
+        "color": "#1e3a8a",
+        "accent": "#60a5fa"
+      },
+      {
+        "id": "reactor",
+        "name": "Active Reactor",
+        "color": "#172554",
+        "accent": "#fbbf24"
+      }
     ]
   },
   {
@@ -174,8 +260,18 @@
     "manager": "None",
     "bio": "A construct of stone and clay — the biggest frame in the building, unmoved and unmaking.",
     "attires": [
-      { "id": "clay", "name": "Clay Skin", "color": "#7d7f86", "accent": "#ff7a1a" },
-      { "id": "lava", "name": "Lava Cracks", "color": "#1f1f1f", "accent": "#ff3300" }
+      {
+        "id": "clay",
+        "name": "Clay Skin",
+        "color": "#7d7f86",
+        "accent": "#ff7a1a"
+      },
+      {
+        "id": "lava",
+        "name": "Lava Cracks",
+        "color": "#1f1f1f",
+        "accent": "#ff3300"
+      }
     ]
   },
   {
@@ -192,8 +288,18 @@
     "manager": "None",
     "bio": "The ginga never settles — a windstorm of inverted capoeira kicks, leaps, and acrobatic feints.",
     "attires": [
-      { "id": "green_wind", "name": "Windstorm Green", "color": "#152030", "accent": "#44aaff" },
-      { "id": "white_breeze", "name": "White Breeze", "color": "#ffffff", "accent": "#33cc77" }
+      {
+        "id": "green_wind",
+        "name": "Windstorm Green",
+        "color": "#152030",
+        "accent": "#44aaff"
+      },
+      {
+        "id": "white_breeze",
+        "name": "White Breeze",
+        "color": "#ffffff",
+        "accent": "#33cc77"
+      }
     ]
   },
   {
@@ -210,7 +316,12 @@
     "manager": "None",
     "bio": "Every step causes a tremor, every heavy blow behaves like a fault line. The colossal powerhouse of the ring.",
     "attires": [
-      { "id": "quake", "name": "Quake Tights", "color": "#222633", "accent": "#c0c4cc" }
+      {
+        "id": "quake",
+        "name": "Quake Tights",
+        "color": "#222633",
+        "accent": "#c0c4cc"
+      }
     ]
   },
   {
@@ -227,7 +338,12 @@
     "manager": "None",
     "bio": "Cold, long-range southpaw striker who utilizes a rigid shoulder roll to freeze opponents and strike with venomous range.",
     "attires": [
-      { "id": "ice", "name": "Glacier Blue", "color": "#102015", "accent": "#33ff88" }
+      {
+        "id": "ice",
+        "name": "Glacier Blue",
+        "color": "#102015",
+        "accent": "#33ff88"
+      }
     ]
   },
   {
@@ -239,12 +355,17 @@
     "hp": 9200,
     "speed": 110,
     "strength": 85,
-    "physicsScale": 1.0,
+    "physicsScale": 1,
     "payback": "Teleport Strike",
     "manager": "None",
     "bio": "The shadow ninja executing lightning karate blitzes, spin hooks, and high-frequency strikes.",
     "attires": [
-      { "id": "shadow", "name": "Shinobi Black", "color": "#2a2a3a", "accent": "#9966ff" }
+      {
+        "id": "shadow",
+        "name": "Shinobi Black",
+        "color": "#2a2a3a",
+        "accent": "#9966ff"
+      }
     ]
   },
   {
@@ -261,7 +382,12 @@
     "manager": "None",
     "bio": "Gritty cruiserweight powerhouse with heavy iron hands who relishes close-range brawls.",
     "attires": [
-      { "id": "iron", "name": "Iron Brown", "color": "#6b5844", "accent": "#ffaa00" }
+      {
+        "id": "iron",
+        "name": "Iron Brown",
+        "color": "#6b5844",
+        "accent": "#ffaa00"
+      }
     ]
   },
   {
@@ -278,7 +404,12 @@
     "manager": "None",
     "bio": "A dark grappler whose grips feel like solid bone clamps, grinding matches down to tactical submissions.",
     "attires": [
-      { "id": "bone", "name": "Cemetery Red", "color": "#882244", "accent": "#ff44aa" }
+      {
+        "id": "bone",
+        "name": "Cemetery Red",
+        "color": "#882244",
+        "accent": "#ff44aa"
+      }
     ]
   },
   {
@@ -290,12 +421,17 @@
     "hp": 10000,
     "speed": 110,
     "strength": 90,
-    "physicsScale": 1.0,
+    "physicsScale": 1,
     "payback": "Code Crash",
     "manager": "None",
     "bio": "A masterless wanderer who delivers surgical, katana-fast strikes before slipping out of the line of fire.",
     "attires": [
-      { "id": "steel", "name": "Wanderer Grey", "color": "#301015", "accent": "#ff3355" }
+      {
+        "id": "steel",
+        "name": "Wanderer Grey",
+        "color": "#301015",
+        "accent": "#ff3355"
+      }
     ]
   },
   {
@@ -312,7 +448,12 @@
     "manager": "None",
     "bio": "Cold, brutal corporate enforcer representing past trauma. Finisher: Tombstone Piledriver.",
     "attires": [
-      { "id": "suit", "name": "Enforcer Suit", "color": "#09090b", "accent": "#dc2626" }
+      {
+        "id": "suit",
+        "name": "Enforcer Suit",
+        "color": "#09090b",
+        "accent": "#dc2626"
+      }
     ]
   },
   {
@@ -329,7 +470,12 @@
     "manager": "None",
     "bio": "The moral foundation and anchor of the Anti-Hero Alliance. Exceptional counter-wrestling and submissions.",
     "attires": [
-      { "id": "classic", "name": "Alliance Blue", "color": "#1e3a8a", "accent": "#3b82f6" }
+      {
+        "id": "classic",
+        "name": "Alliance Blue",
+        "color": "#1e3a8a",
+        "accent": "#3b82f6"
+      }
     ]
   },
   {
@@ -341,12 +487,17 @@
     "hp": 10200,
     "speed": 95,
     "strength": 95,
-    "physicsScale": 1.0,
+    "physicsScale": 1,
     "payback": "Low Blow",
     "manager": "None",
     "bio": "The System's Weapon turned Rebel. A highly agile fighter who rob opponents of their momentum.",
     "attires": [
-      { "id": "street", "name": "Rebel Hood", "color": "#18181b", "accent": "#10b981" }
+      {
+        "id": "street",
+        "name": "Rebel Hood",
+        "color": "#18181b",
+        "accent": "#10b981"
+      }
     ]
   },
   {
@@ -363,8 +514,14 @@
     "manager": "None",
     "bio": "Gravity is a suggestion to this high-flying vanguard of the Anti-Hero Alliance.",
     "attires": [
-      { "id": "static", "name": "Static Yellow", "color": "#1e1b4b", "accent": "#eab308" }
-    ]
+      {
+        "id": "static",
+        "name": "Static Yellow",
+        "color": "#1e1b4b",
+        "accent": "#eab308"
+      }
+    ],
+    "has_custom_reference": true
   },
   {
     "id": "red_cloud",
@@ -380,7 +537,12 @@
     "manager": "None",
     "bio": "Chief Red Cloud: Moral ground-technician who locks down the biggest powerhouses with the Ancestor's Lock.",
     "attires": [
-      { "id": "heritage", "name": "Clay Heritage", "color": "#451a03", "accent": "#ea580c" }
+      {
+        "id": "heritage",
+        "name": "Clay Heritage",
+        "color": "#451a03",
+        "accent": "#ea580c"
+      }
     ]
   },
   {
@@ -397,7 +559,12 @@
     "manager": "None",
     "bio": "Flawless and elegant corporate lure who tests Marquis with clinical perfection.",
     "attires": [
-      { "id": "emerald", "name": "Emerald Silk", "color": "#064e3b", "accent": "#10b981" }
+      {
+        "id": "emerald",
+        "name": "Emerald Silk",
+        "color": "#064e3b",
+        "accent": "#10b981"
+      }
     ]
   },
   {
@@ -414,7 +581,12 @@
     "manager": "None",
     "bio": "Mysterious high-flyer who mirrors opponents' signature offenses mid-match.",
     "attires": [
-      { "id": "eclipse", "name": "Eclipse Violet", "color": "#2e1065", "accent": "#a855f7" }
+      {
+        "id": "eclipse",
+        "name": "Eclipse Violet",
+        "color": "#2e1065",
+        "accent": "#a855f7"
+      }
     ]
   },
   {
@@ -426,13 +598,19 @@
     "hp": 10500,
     "speed": 115,
     "strength": 88,
-    "physicsScale": 1.0,
+    "physicsScale": 1,
     "payback": "Beast Mode",
     "manager": "None",
     "bio": "Marquis's chaotic alter-ego representing raw, unchecked, and self-destructive manic momentum.",
     "attires": [
-      { "id": "asylum", "name": "Straightjacket White", "color": "#f4f4f5", "accent": "#71717a" }
-    ]
+      {
+        "id": "asylum",
+        "name": "Straightjacket White",
+        "color": "#f4f4f5",
+        "accent": "#71717a"
+      }
+    ],
+    "has_custom_reference": true
   },
   {
     "id": "solaris_justice",
@@ -443,12 +621,17 @@
     "hp": 9400,
     "speed": 102,
     "strength": 86,
-    "physicsScale": 1.0,
+    "physicsScale": 1,
     "payback": "Instant Pin",
     "manager": "None",
     "bio": "The charismatic public high-flyer of Life Path 3 before betrayal broke him down into Bannon.",
     "attires": [
-      { "id": "gold_sun", "name": "Golden Radiance", "color": "#fef08a", "accent": "#ca8a04" }
+      {
+        "id": "gold_sun",
+        "name": "Golden Radiance",
+        "color": "#fef08a",
+        "accent": "#ca8a04"
+      }
     ]
   },
   {
@@ -465,8 +648,14 @@
     "manager": "None",
     "bio": "A dominant, regal powerhouse of the Alliance who commands absolute presence inside any ring.",
     "attires": [
-      { "id": "royal", "name": "Royal Purple", "color": "#4c1d95", "accent": "#f59e0b" }
-    ]
+      {
+        "id": "royal",
+        "name": "Royal Purple",
+        "color": "#4c1d95",
+        "accent": "#f59e0b"
+      }
+    ],
+    "has_custom_reference": true
   },
   {
     "id": "karma",
@@ -482,7 +671,12 @@
     "manager": "None",
     "bio": "High-velocity striker who collects ring debts with interest, striking down corrupt heavyweights.",
     "attires": [
-      { "id": "crimson", "name": "Crimson Retribution", "color": "#7f1d1d", "accent": "#f43f5e" }
+      {
+        "id": "crimson",
+        "name": "Crimson Retribution",
+        "color": "#7f1d1d",
+        "accent": "#f43f5e"
+      }
     ]
   }
 ]
