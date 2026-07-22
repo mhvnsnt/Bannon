@@ -108,3 +108,8 @@
 - **Removed files**: Deleted `assets/audio/dbz.m4a` from the repo.
 
 - **TTS Engine / Voice Cloning Pipeline (July 2026 Architecture)**: The engine completely avoids paid APIs (like ElevenLabs). It uses **F5-TTS** and **Coqui XTTSv2** (free, open-source, local zero-shot cloning). To get accurate voices (e.g., Lio Rush's 2026 dark/indie promos for Cipher, Shotzi's 2026 promos for Echo), users must place 5-15 second clean `.wav` rips of their recent likeness targets into `assets/voice_references/`. The local FastAPI server (`server/local_tts_server.py`) handles the generation.
+
+- **Voice Reference Manager (In-Engine Upload)**: Because pulling copyrighted/live YouTube videos directly from a cloud instance runs into blocks and audio-isolation issues, the `local_tts_server.py` now includes two APIs to handle references:
+  - `/api/upload_reference`: Allows uploading a 5-15s clean `.wav` file into `assets/voice_references/` directly through the game's developer/audio menu.
+  - `/api/list_references`: Checks which voices already have ripped `.wav` files available and which ones still need them.
+  This allows users (or devs) to securely inject their own clean rips per character so that they persist in the local clone environment for F5-TTS zero-shot generation.
