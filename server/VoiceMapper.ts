@@ -99,8 +99,8 @@ export const VoiceMap = {
         description: "Batista type but corporate snob pretty boy type enforcer."
     },
     "Cipher": {
-        voiceId: "cipher", cloneFrom: "lio_rush_blackheart", style: "fast_cocky",
-        description: "2026 Blackheart Lio Rush type. Fast-talking, arrogant, energetic."
+        voiceId: "cipher", cloneFrom: "lio_rush_blackheart", style: "dark_manic_unhinged",
+        description: "2026 Blackheart Lio Rush type. Dark, manic, whispering-to-screaming erratic intensity. Unhinged and brooding, not a cocky hype man."
     },
     "Echo": {
         voiceId: "echo", cloneFrom: "shotzi_blackheart", style: "punk_wild",
