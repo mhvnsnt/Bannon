@@ -42011,8 +42011,11 @@ console.log('%c[BANNON_MOCAP] mocap activator online — loadClipFor() + mobile-
 window.BANNON_MOVESET_LIB = (function(){
   const LS='bannon_movesets_v1'; let MAP=null, panel=null, whoKey=null, tab='STRIKES';
   const CATS=[['STRIKES','strike','#ff7a1a'],['GRAPPLES','grapple','#c084fc'],['AERIALS','dive','#4ac8ff'],
-    ['SUBMISSIONS','submission','#7CFC00'],['TAUNTS','taunt','#ffd23f'],['LOCOMOTION','locomotion','#9ad1ff'],
-    ['SIGNATURES','signature','#ff4d8a'],['FINISHERS','finisher','#ff2a2a']];
+    ['SUBMISSIONS','submission','#7CFC00'],['TAG TEAM','tag','#ff8c00'],['TAUNTS','taunt','#ffd23f'],
+    ['LOCOMOTION','locomotion','#9ad1ff'],['SIGNATURES','signature','#ff4d8a'],['FINISHERS','finisher','#ff2a2a']];
+  // TAG-TEAM detection: a clip with 2+ skeletons (assisted/double/stereo/tag combos) — WWE has a
+  // dedicated tag moveset section. Named-pattern here (the FBX skeleton count confirms it at load).
+  const TAG_RX=/assisted|double\s|doublesuplex|stereo|tag\s|tagsuperkick|2[-\s]?man|combo|wishbone/i;
   const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
   function saved(){ try{ return JSON.parse(localStorage.getItem(LS)||'{}'); }catch(e){ return {}; } }
   function store(m){ try{ localStorage.setItem(LS, JSON.stringify(m)); }catch(e){} }
@@ -42024,11 +42027,18 @@ window.BANNON_MOVESET_LIB = (function(){
   function roster(){ try{ return (window.ROSTER_ALL?window.ROSTER_ALL():[]).map(c=>c.name); }catch(e){ return ['BANNON']; } }
   // classify a clip into one of our category tabs (map cat -> tab; signature/finisher inferred by name)
   function tabOf(c){ const cat=(c.cat||'').toLowerCase(), nm=(c.clip||'').toLowerCase();
+    if(TAG_RX.test(nm)) return 'TAG TEAM';
     if(/finish|tombstone|piledriver|brainbuster|strongzero/.test(nm)) return 'FINISHERS';
     if(cat==='strike') return 'STRIKES'; if(cat==='grapple') return 'GRAPPLES';
     if(cat==='dive'||cat==='aerial_transition') return 'AERIALS'; if(cat==='submission') return 'SUBMISSIONS';
     if(cat==='taunt'||cat==='style_stance') return 'TAUNTS'; if(cat==='locomotion'||cat==='irish_whip') return 'LOCOMOTION';
     return 'STRIKES'; }
+  // DEFAULT MOVESET: one representative clip per POSITION derived from the 158 positioned clips, so
+  // every fighter plays real mocap by DEFAULT (equippedClipFor falls back to this when nothing is
+  // manually equipped). Built once from the map. This is the "map all 182 clips -> slots" auto-wire.
+  let _defaults=null;
+  function defaults(){ if(_defaults) return _defaults; _defaults={}; try{ const clips=(MAP&&MAP.clips)||[];
+    clips.forEach(c=>{ if(c.pos && !TAG_RX.test((c.clip||'')) && !_defaults[c.pos]) _defaults[c.pos]=c.clip; }); }catch(e){} return _defaults; }
   function build(){ if(panel) return; panel=document.createElement('div');
     panel.style.cssText='position:fixed;inset:3% 4%;z-index:100003;background:#0a0c12f8;border:1px solid #ff7a1a;border-radius:12px;color:#ffd9a8;font:12px ui-monospace,monospace;display:none;flex-direction:column;box-shadow:0 12px 44px #000d;overflow:hidden;';
     document.body.appendChild(panel); }
@@ -42085,7 +42095,13 @@ window.BANNON_MOVESET_LIB = (function(){
   try{ var mv=document.getElementById('btnHubMoves'); if(mv&&mv.parentElement){ var b=document.createElement('button'); b.className='hub-tile'; b.id='btnHubMovesetLib';
     b.innerHTML='<span class="hub-ico">📋</span><span class="hub-lbl">MOVESET</span>'; b.addEventListener('click',open); mv.parentElement.insertBefore(b, mv.nextSibling); } }catch(e){}
   // engine read hook: a fighter's equipped clip for a position (moveset → combat)
-  window.equippedClipFor=function(charKey,pos){ try{ const m=saved()[String(charKey).toUpperCase().replace(/[^A-Z0-9_]/g,'_')]; return m?m[pos]:null; }catch(e){ return null; } };
+  // moveset -> combat read hook: MANUAL equip wins, else the auto-mapped DEFAULT for that position
+  // (every one of the 158 positioned clips drives combat by default; manual equips override per char).
+  window.equippedClipFor=function(charKey,pos){ try{ const m=saved()[String(charKey).toUpperCase().replace(/[^A-Z0-9_]/g,'_')];
+    if(m && m[pos]) return m[pos]; const d=defaults(); return (d&&d[pos])||null; }catch(e){ return null; } };
+  window.movesetDefaults=defaults;
+  // preload the map at boot so defaults() is ready for combat before the editor is ever opened
+  try{ loadMap(); }catch(e){}
   return { open, close, loadMap, tabOf };
 })();
 console.log('%c[BANNON_MOVESET_LIB] 2K moveset editor — hub 📋 MOVESET / openMovesetLib()','color:#7CFC00');

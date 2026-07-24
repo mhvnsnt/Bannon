@@ -1,5 +1,20 @@
 # BANNON Project Rules & Verification Protocols
 
+## FINISH-THE-SYSTEM RULE (BINDING — owner 2026-07-24, top priority)
+FULLY INTEGRATE ONE SYSTEM BEFORE STARTING ANOTHER. Do not half-build and jump to the next
+easy/shiny thing. When you are mid-build on a system/mechanic/engine part, you FINISH it —
+every sub-part, wired, verified — before touching anything else, even if the owner mentions
+other things. Mentioning ≠ "go do it now": LOG new asks to CLAUDE.md's queue, then RETURN to the
+in-progress system and complete it.
+- **Track it**: CLAUDE.md keeps an `### IN PROGRESS: <system>` marker with a checklist of its
+  remaining sub-parts. Every session, FIRST action = read that marker and CONTINUE it to done —
+  automatically, without being told — before anything new.
+- **"Logged for next session" is NOT allowed as a stopping point mid-system.** If you wrote "what's
+  left is X, Y, Z — logged as the next build order", that is a signal you must KEEP GOING and do
+  X, Y, Z now, not stop. Only stop a system when its checklist is fully ✔.
+- Do NOT jump to bug-of-the-moment or the easiest item when a system is open. Depth over breadth.
+- The owner has repeatedly been burned by half-built systems from AI jumping around. This rule
+  exists to end that. Breadth-first dabbling = the failure mode; finish-one-fully = the fix.
 
 ## VERIFICATION RULE (CRITICAL)
 Never state a file, feature, or fix is done, synced,
