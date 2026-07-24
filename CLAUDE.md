@@ -40,3 +40,9 @@
 - Root Motion Lock syncs Defender's transform strictly to Attacker's root motion.
 - Constraint Failsafe triggers GRAPPLE_TENSION_EXCEEDED via UE_LOG_STREAM and breaks grapple to prevent systemic crashes.
 - Added impulse-based recoil, stretch debug mode, and anticipation frames hooks.
+
+## Native Match State & Pinfall Kinematics
+- Match State Component (BannonMatchStateComponent) created to track referee count and ring boundaries.
+- Pinfall Synchronization implemented by extending BannonGrappleComponent with PinfallState, locking rigs to the mat and syncing referee physical count to GameThread DeltaTime.
+- Kick-Out Probability Matrix isolates probability math strictly against MAX_HP and Stamina, excluding Poise.
+- Submission DPS Routing continuously degrades structural integrity via DMG_SCALE and logs submission DPS to UE_LOG_STREAM.
