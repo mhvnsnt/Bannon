@@ -87,3 +87,36 @@ Took ONE system fully (FINISH-THE-SYSTEM rule). WWE-2K zoning:
   window.DIVE_INTENT=false reverts. Verified: bare tap → no dive, UP-held → dives.
 - Verified in-harness: FLOOR -0.85 consistent, RING/APRON 0, smoothing mid-transition (-0.109 after 1
   frame toward -0.85), bare-tap no-dive / intent-dive. 0 pageerrors. ZONING SYSTEM DONE.
+
+## OWNER BINDING SPEC (2026-07-24, do NOT re-derive, do NOT make the owner repeat these)
+The owner has had to correct these repeatedly. They are LAW now:
+1. **DIVES ARE PERFECT — do NOT touch them.** They work as WWE-2K26: neutral, directional, and
+   modified inputs (like our game already does). Never add "dive intent gates" or change dive
+   triggering. (I wrongly added one; reverted. Never again.)
+2. **The serpent/caduceus ⚕ button ALREADY EXISTS** = `#surgeon-toggle` → the BANNON SELF-BUILDER
+   panel (BUILD/AI CHAT/SCAN/MEMORY tabs, Ollama localhost:11434 + LM Studio localhost:1234, swarm
+   nodes). Do NOT build a new button. FIX/COMPLETE this one.
+3. **THE SELF-BUILDER AND THE GOD MODE OS ARE THE SAME THING — UNIFY THEM.** The ⚕ self-builder IS
+   the God Mode OS in-game front end. Wire the full godmode/ files (daemon, app, EvolutionDaemon,
+   swarm, vault/RAG, Bannon.Modelfile) into it. It is the God Within builder gadget — an unlimited-
+   token in-game IDE + chat + local-LLM wrapper that uses NO owner device storage (server/local-LLM).
+   Everything AI Studio built (unreal/ C++ + src/ React) must be reachable/integrated in it too.
+   It lives in / is reachable from the God Within mode.
+4. **UE / C++ IS THE MAIN GAME NOW — wire it IN, not "separate/legacy".** Stop saying UE/C++ "doesn't
+   touch the live game." The native/ + unreal/ C++ (Jolt/GGPO/llama.cpp/BannonPhysicsLaws/etc) must be
+   actually integrated into the shipping game + APK build. Three.js single-file = legacy nostalgia only.
+5. **IMPLEMENT ALL MDICKIE FILES FULLY — STOP TIPTOEING.** Every move, animation, environment, model,
+   vehicle, file from ALL MDickie games/apps/zips → into OUR proprietary universe (moveset library,
+   creation suite, ALL modes: Universe/Career/God Within/Exhibition). The game should feel like a full
+   MDickie-based game but eaten up and made proprietary. TAG moves detected by # skeletons in the FBX.
+6. **NEXT FULL SYSTEM = cleaner MODELS + COMBAT from OPEN SOURCE.** Pull real open-source (UniRig,
+   Mixamo/AccuRIG, mocap libs, foot-IK) — don't hand-roll.
+7. **FINISH-THE-SYSTEM (AGENTS.md law): fully integrate ONE system before starting another.** Log new
+   asks, don't jump. The owner is burned by half-built systems from jumping around.
+8. Commentary box = under health bars, transparent, off the buttons (DONE). Roam ≠ forced 1v1 (DONE).
+   Startup race + procedural pop (DONE). Waist-deep zoning Y-baseline (DONE). Mocap pipeline + 2K
+   moveset editor + CAW front door + creation-suite router (DONE).
+### CURRENT SYSTEM IN PROGRESS: God Mode OS ⇄ Self-Builder UNIFICATION (item 2+3 above)
+Checklist: [ ] godmode/ daemon+swarm+RAG wired into the ⚕ panel · [ ] AI Studio unreal/+src work
+reachable from it · [ ] it's the God Within builder gadget (open from God Within) · [ ] local-LLM
+wrapper (no device storage) confirmed · [ ] verify panel opens + chat routes + live-apply works.
