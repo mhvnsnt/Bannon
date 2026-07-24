@@ -825,3 +825,23 @@ submodules). Next UE bricks: wire the native headers into a compiling BannonCore
 verlet/PD combat + MAX_BODY_VEL clamp to Chaos, bring the mocap FBX in as UE AnimSequences (the same
 clips that fix the JS marionette look), build the Creation Suite as UMG mirroring WWE 2K. The JS game
 stays as the playable legacy reference while UE becomes the star.
+
+## v161i (2026-07-24) — mocap ALIVE + 2K moveset editor + CAW front door (verified, on main)
+- **FBXLoader VENDORED** (assets/vendor/FBXLoader.js + fflate.min.js, script-loaded local-first) —
+  THE fix: it was CDN-only so the offline APK never loaded it → 0 clips → marionette. Verified: real
+  wrestling FBX parses to 520 tracks / full skeleton.
+- **BANNON_MOCAP activator** (guaranteed-running; the legacy BULK-FBX IIFE is DORMANT, defines nothing
+  at runtime): window.loadClipFor(name) lazy single-clip loader → STUDIO.clips; mobile-safe 26-clip
+  CORE auto-load at menu lull (never all 179 = ~1GB OOM). Verified Chokeslam.fbx loads on demand.
+- **BANNON_MOVESET_LIB** (hub 📋 MOVESET): WWE-2K editor — SELECT-WRESTLER-FIRST roster grid (120) →
+  category tabs (STRIKES/GRAPPLES/AERIALS/SUBMISSIONS/TAUNTS/LOCOMOTION/SIGNATURES/FINISHERS) ×
+  POSITION groups, driven by the 182-clip fbx_move_map.json; ▶ preview (loadClipFor) + EQUIP (persist
+  bannon_movesets_v1). window.equippedClipFor(char,pos) = engine read hook. Verified 77 strikes/22
+  grapples grouped by position, equip persists.
+- **BANNON_CAW_FRONT** (SUPERSTAR tile intercepted): CAW opens to a ROSTER GRID — ✚ CREATE NEW (slot 1)
+  → 6 base TEMPLATES (male/female × cruiser/athletic/power/giant) → editor; existing fighters + saved
+  CAWs → edit/alt-attire. No more slider-dump-on-open. Verified: create-new→templates→back flow.
+- STILL TO WIRE (next): equippedClipFor → actually swap the move's clip at delivery (studioApplyClipPose
+  already reads STUDIO.clips — hook equippedClipFor into resolveGrapPos/move dispatch); Creation Suite
+  landing ROUTER (menu → Arena/CAW/Moveset/Move/Entrance sub-flows); map all 182 clips → each move slot;
+  Arena + Entrance creators to 2K parity. The animation PIPE is proven working end-to-end now.

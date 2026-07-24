@@ -42061,6 +42061,86 @@ window.BANNON_MOVESET_LIB = (function(){
 })();
 console.log('%c[BANNON_MOVESET_LIB] 2K moveset editor — hub 📋 MOVESET / openMovesetLib()','color:#7CFC00');
 </script>
+<script>
+// ============================================================================================
+// BANNON_CAW_FRONT — WWE-2K CAW FRONT DOOR (owner spec 2026-07-24). Entering CAW must NOT dump you
+// into a 90-slider list with a P1/P2 toggle. It opens to a ROSTER GRID:
+//   slot 1 = ✚ CREATE NEW  → TEMPLATE PICKER (fresh base: male/female × body archetype) → editor
+//   every other slot = in-game fighters + your saved CAWs → EDIT / add ALT ATTIRE
+// Then it hands off to the existing CAW editor (tab layout BODY/FACE/LOOK/INK/…). Guaranteed-running
+// module; intercepts the SUPERSTAR/CAW hub tile.
+// ============================================================================================
+window.BANNON_CAW_FRONT=(function(){
+  let panel=null;
+  const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  // WWE-style base templates: shape presets applied to the fresh fighter before the editor opens
+  const TEMPLATES=[
+    ['Male · Cruiserweight',{fem:0,musc:0.55,fat:0.15,height:0.92}],
+    ['Male · Athletic',     {fem:0,musc:0.7,fat:0.18,height:1.0}],
+    ['Male · Powerhouse',   {fem:0,musc:0.9,fat:0.32,height:1.06}],
+    ['Male · Giant',        {fem:0,musc:0.85,fat:0.5,height:1.18}],
+    ['Female · Athletic',   {fem:1,musc:0.5,fat:0.2,height:0.9}],
+    ['Female · Powerhouse', {fem:1,musc:0.72,fat:0.28,height:0.98}],
+  ];
+  function roster(){ try{ return (window.ROSTER_ALL?window.ROSTER_ALL():[]).map(c=>c.name); }catch(e){ return ['BANNON']; } }
+  function savedCAWs(){ try{ return (window.BANNON_DNA&&window.BANNON_DNA.list)?window.BANNON_DNA.list():[]; }catch(e){ return []; } }
+  function build(){ if(panel) return; panel=document.createElement('div');
+    panel.style.cssText='position:fixed;inset:3% 4%;z-index:100004;background:#0a0c12f8;border:1px solid #ff7a1a;border-radius:12px;color:#ffd9a8;font:12px ui-monospace,monospace;display:none;flex-direction:column;box-shadow:0 12px 44px #000d;overflow:hidden;';
+    document.body.appendChild(panel); }
+  function open(){ build(); panel.style.display='flex'; renderGrid(); }
+  function close(){ if(panel) panel.style.display='none'; }
+  function renderGrid(){
+    const caws=savedCAWs();
+    let h='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ff7a1a55">'+
+      '<b style="color:#ff7a1a;font-size:15px;letter-spacing:2px">🤼 CREATE A WRESTLER</b>'+
+      '<button data-cf="close" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">✕</button></div>'+
+      '<div style="flex:1;overflow-y:auto;min-height:0;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">';
+    // slot 1 = CREATE NEW
+    h+='<button data-cf="new" style="background:linear-gradient(160deg,#1a2a10,#0e1608);border:2px dashed #7CFC00;border-radius:8px;padding:16px 8px;cursor:pointer;color:#7CFC00;font:bold 12px ui-monospace;min-height:78px">✚<br>CREATE NEW</button>';
+    if(caws.length){ h+='<div style="grid-column:1/-1;color:#c084fc;letter-spacing:2px;margin:4px 0 0;font-size:10px">YOUR CREATIONS</div>';
+      caws.forEach(nm=>{ h+='<button data-cf="edit" data-name="'+esc(nm)+'" style="background:linear-gradient(160deg,#22182e,#160e1e);border:1px solid #c084fc55;border-radius:8px;padding:12px 8px;cursor:pointer;color:#e9d6ff;font:bold 11px ui-monospace">'+esc(String(nm).replace(/_/g,' '))+'</button>'; }); }
+    h+='<div style="grid-column:1/-1;color:#ff7a1a;letter-spacing:2px;margin:6px 0 0;font-size:10px">IN-GAME ROSTER · edit or add attire</div>';
+    roster().forEach(nm=>{ h+='<button data-cf="edit" data-name="'+esc(nm)+'" style="background:linear-gradient(160deg,#1e1626,#140e1c);border:1px solid #3a2c44;border-radius:8px;padding:12px 8px;cursor:pointer;color:#fff;font:bold 11px ui-monospace">'+esc(String(nm).replace(/_/g,' '))+'</button>'; });
+    h+='</div>'; panel.innerHTML=h; wireGrid();
+  }
+  function renderTemplates(){
+    let h='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ff7a1a55">'+
+      '<b style="color:#7CFC00;font-size:15px;letter-spacing:2px">✚ PICK A BASE TEMPLATE</b>'+
+      '<span><button data-cf="back" style="background:#14100c;border:1px solid #543;color:#ffd9a8;padding:6px 10px;border-radius:6px;cursor:pointer">◀ BACK</button> '+
+      '<button data-cf="close" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">✕</button></span></div>'+
+      '<div style="flex:1;overflow-y:auto;min-height:0;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">';
+    TEMPLATES.forEach((t,i)=>{ h+='<button data-cf="tpl" data-i="'+i+'" style="background:linear-gradient(160deg,#1e2416,#12180c);border:1px solid #7CFC0055;border-radius:9px;padding:18px 10px;cursor:pointer;color:#dfffcf;font:bold 12px ui-monospace;min-height:70px">'+esc(t[0])+'</button>'; });
+    h+='</div>'; panel.innerHTML=h; wireGrid();
+  }
+  function startEditor(){ close();
+    try{ var cb=document.getElementById('cawBtn'); if(cb){ cb.click(); return; } }catch(e){}
+    try{ if(typeof openModelLab==='function') openModelLab(); }catch(e){}
+  }
+  function applyTemplate(tpl){ // apply base shape to the P1 edit fighter, then open the editor
+    try{ var f=(typeof fighterFor==='function')?fighterFor('p1'):(window.fighters&&window.fighters[0]);
+      if(f){ f.shape=Object.assign(f.shape||{}, tpl); if(window.restyleFighter) window.restyleFighter(f); if(window.enterCreatePreview) window.enterCreatePreview(0); } }catch(e){}
+    startEditor();
+  }
+  function editExisting(name){ // set the edit target to this character then open the editor
+    try{ if(window.MATCH_SETUP){ window.MATCH_SETUP.p1Name=name; } window.__cawEditTarget=name;
+      if(typeof enterCreatePreview==='function'){ /* the drawer reads the current p1 */ }
+    }catch(e){}
+    startEditor();
+  }
+  function wireGrid(){
+    panel.querySelectorAll('[data-cf="close"]').forEach(b=>b.onclick=close);
+    panel.querySelectorAll('[data-cf="back"]').forEach(b=>b.onclick=renderGrid);
+    panel.querySelectorAll('[data-cf="new"]').forEach(b=>b.onclick=renderTemplates);
+    panel.querySelectorAll('[data-cf="tpl"]').forEach(b=>b.onclick=()=>applyTemplate(TEMPLATES[+b.dataset.i][1]));
+    panel.querySelectorAll('[data-cf="edit"]').forEach(b=>b.onclick=()=>editExisting(b.dataset.name));
+  }
+  window.openCawFront=open;
+  // INTERCEPT the SUPERSTAR/CAW hub tile so it opens the front door, not the raw slider lab
+  try{ const t=document.getElementById('btnHubSuperstar'); if(t){ const fresh=t.cloneNode(true); t.parentNode.replaceChild(fresh,t); fresh.addEventListener('click', open); } }catch(e){}
+  return { open, close };
+})();
+console.log('%c[BANNON_CAW_FRONT] CAW front door — roster grid + template picker (SUPERSTAR tile)','color:#7CFC00');
+</script>
 </body></html>
 
 
