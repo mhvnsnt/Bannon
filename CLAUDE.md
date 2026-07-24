@@ -882,3 +882,17 @@ FIXED + verified + on main this session:
 6. **UE/C++ = the star**: fully wire native/ + unreal/ into a compiling BannonCore and into the APK
    build; the JS single-file is LEGACY nostalgia. Port combat/physics/anim to Chaos + bring the mocap
    FBX in as UE AnimSequences. This is the primary engine now.
+
+## v161k (2026-07-24) — CREATION-SUITE SYSTEM FINISHED (per FINISH-THE-SYSTEM rule)
+Completed the system I was mid-build on (no jumping away):
+- ✔ Mocap pipeline alive (vendored FBXLoader + BANNON_MOCAP activator + loadClipFor)
+- ✔ 2K MOVESET editor (select-wrestler-first → category×position library, 182 clips)
+- ✔ ALL 158 positioned clips auto-mapped to combat (equippedClipFor default fallback) — real mocap
+  by default, manual equips override; TAG TEAM section for the 9 assisted/double/stereo clips
+- ✔ moveset→combat wiring (poseAttack adopts equipped/default clip + lazy-loads)
+- ✔ CAW front door (roster grid + Create-New template picker vs edit-existing)
+- ✔ CREATION SUITE ROUTER (🎨 CREATE tile → CAW/MOVESET/CREATE-A-MOVE/ENTRANCE/ARENA/FACE LAB
+  sub-flows; verified routing into the moveset roster grid)
+- ✔ GNM face integrated into CAW FACE tab + DNA
+SYSTEM DONE. NEXT SYSTEM (start fresh, finish fully): pick ONE — Zoning (waist-deep/Y-clamp +
+dive-intent thresholds) OR MDickie-full-integration OR UE-into-APK. Do NOT start two.

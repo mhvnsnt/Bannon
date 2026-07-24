@@ -42186,6 +42186,49 @@ window.BANNON_CAW_FRONT=(function(){
 })();
 console.log('%c[BANNON_CAW_FRONT] CAW front door — roster grid + template picker (SUPERSTAR tile)','color:#7CFC00');
 </script>
+<script>
+// ============================================================================================
+// BANNON_CREATION_SUITE — the WWE-2K CREATION SUITE LANDING (owner spec 2026-07-24). One clean
+// menu that routes to each sub-flow: ARENA · CAW · MOVESET · CREATE-A-MOVE · ENTRANCE/VICTORY.
+// Replaces the cluttered tile-dump as the FRONT DOOR (the extra systems — DNA/forge/GNM/jukebox —
+// live INSIDE these flows, not as floating tiles). openCreationSuite() / hub 🎨 CREATE tile.
+// ============================================================================================
+window.BANNON_CREATION_SUITE=(function(){
+  let panel=null;
+  const MODES=[
+    ['🤼','CREATE A WRESTLER','Body, face, attire, paint — WWE CAW flow', ()=>{ try{ window.openCawFront&&window.openCawFront(); }catch(e){} }],
+    ['📋','MOVESET','Pick a wrestler → edit their move library', ()=>{ try{ window.openMovesetLib&&window.openMovesetLib(); }catch(e){} }],
+    ['🥊','CREATE-A-MOVE','Author a custom move + attach a mocap clip', ()=>{ try{ if(typeof openCreator==='function') openCreator(); else document.getElementById('btnHubMoves')&&document.getElementById('btnHubMoves').click(); }catch(e){} }],
+    ['🎆','ENTRANCE / VICTORY','Pyro, tron, lights, timeline', ()=>{ try{ if(window.BANNON_ENTRANCE_EDITOR&&window.BANNON_ENTRANCE_EDITOR.open) window.BANNON_ENTRANCE_EDITOR.open((window.MATCH_SETUP&&window.MATCH_SETUP.p1Name)||'BANNON'); }catch(e){} }],
+    ['🏟️','ARENA','Ring, stage, barricades, crowd, lighting', ()=>{ try{ document.getElementById('btnHubArena')&&document.getElementById('btnHubArena').click(); }catch(e){} }],
+    ['👤','FACE LAB (GNM)','Scan-grade parametric head', ()=>{ try{ window.openGnmFace&&window.openGnmFace('BANNON'); }catch(e){} }],
+  ];
+  function build(){ if(panel) return; panel=document.createElement('div');
+    panel.style.cssText='position:fixed;inset:4% 5%;z-index:100005;background:#0a0c12f8;border:1px solid #ff7a1a;border-radius:12px;color:#ffd9a8;font:12px ui-monospace,monospace;display:none;flex-direction:column;box-shadow:0 12px 44px #000d;overflow:hidden;';
+    document.body.appendChild(panel); }
+  function open(){ build(); panel.style.display='flex'; render(); }
+  function close(){ if(panel) panel.style.display='none'; }
+  function render(){
+    let h='<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #ff7a1a55">'+
+      '<b style="color:#ff7a1a;font-size:16px;letter-spacing:3px">◆ CREATION SUITE ◆</b>'+
+      '<button data-cs="close" style="background:none;border:none;color:#ffd9a8;font-size:20px;cursor:pointer">✕</button></div>'+
+      '<div style="flex:1;overflow-y:auto;min-height:0;padding:16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">';
+    MODES.forEach((m,i)=>{ h+='<button data-cs="'+i+'" style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;background:linear-gradient(160deg,#1e1626,#140e1c);border:1px solid #3a2c44;border-radius:10px;padding:18px 16px;cursor:pointer;color:#fff;text-align:left;min-height:96px">'+
+      '<span style="font-size:30px">'+m[0]+'</span><b style="font-family:\'Bebas Neue\';letter-spacing:2px;font-size:17px;color:var(--gold)">'+m[1]+'</b>'+
+      '<span style="font-size:10px;color:#9a8">'+m[2]+'</span></button>'; });
+    h+='</div>'; panel.innerHTML=h;
+    panel.querySelectorAll('[data-cs="close"]').forEach(b=>b.onclick=close);
+    MODES.forEach((m,i)=>{ const b=panel.querySelector('[data-cs="'+i+'"]'); if(b) b.onclick=()=>{ close(); m[3](); }; });
+  }
+  window.openCreationSuite=open;
+  // add a clean CREATE tile at the front of the hub (the router; the raw tiles stay for power users)
+  try{ var host=document.getElementById('btnHubSuperstar')&&document.getElementById('btnHubSuperstar').parentElement;
+    if(host){ var b=document.createElement('button'); b.className='hub-tile'; b.id='btnHubCreationSuite';
+      b.innerHTML='<span class="hub-ico">🎨</span><span class="hub-lbl">CREATE</span>'; b.addEventListener('click',open); host.insertBefore(b, host.firstChild); } }catch(e){}
+  return { open, close };
+})();
+console.log('%c[BANNON_CREATION_SUITE] creation-suite router — 🎨 CREATE / openCreationSuite()','color:#7CFC00');
+</script>
 </body></html>
 
 
