@@ -112,7 +112,7 @@ app.post('/api/quable-build', async (req, res) => {
     const { prompt } = req.body;
     
     // Target the remote-local LLM endpoint (RunPod, Vast.ai, or local rig)
-    const QUABLE_ENDPOINT = process.env.QUABLE_LLM_URL || 'http://YOUR_REMOTE_GPU_IP:8000/v1/completions';
+    const QUABLE_ENDPOINT = process.env.QUABLE_LLM_URL || 'http://127.0.0.1:11434/api/generate';
     
     try {
         const proxyResponse = await fetch(QUABLE_ENDPOINT, {
@@ -122,7 +122,7 @@ app.post('/api/quable-build', async (req, res) => {
                 'Authorization': `Bearer ${process.env.QUABLE_API_KEY}`
             },
             body: JSON.stringify({
-                model: "quable-coder-base",
+                model: "qwable-abliterated",
                 prompt: prompt,
                 max_tokens: 4096,
                 temperature: 0.1
