@@ -845,3 +845,40 @@ stays as the playable legacy reference while UE becomes the star.
   already reads STUDIO.clips — hook equippedClipFor into resolveGrapPos/move dispatch); Creation Suite
   landing ROUTER (menu → Arena/CAW/Moveset/Move/Entrance sub-flows); map all 182 clips → each move slot;
   Arena + Entrance creators to 2K parity. The animation PIPE is proven working end-to-end now.
+
+## v161j (2026-07-24) — startup race + procedural-pop fixed; BIG BUILDS scoped (open-source-first)
+FIXED + verified + on main this session:
+- **Startup RACE**: menu (Play→Exhibition / QUICK FIGHT) could drop STRAIGHT INTO A MATCH skipping
+  char-select, or select was empty until a back-retry. `window.openSelectWhenReady()` now polls for
+  the select screen + a populated ROSTER_ALL before opening, and NEVER auto-starts a match as a
+  fallback. btnFight + pmExhibition route through it.
+- **PROCEDURAL POP**: fighters flashed the procedural tube before the GLB bound. applyCharModels hides
+  the segs the instant it kicks the load; a post-setup pass in startFight (after dressFighter/restyle,
+  which re-showed them) keeps them hidden until _bindFighterGltf reveals the model (failed load
+  restores procedural). Verified procCount 0 pre-bind.
+
+### BIG BUILDS STILL OPEN (owner 2026-07-24 — do these, OPEN-SOURCE-FIRST, don't hand-roll):
+1. **ENTRANCE-SKIP** (part of the LOD race): entrances sometimes don't play. BANNON_ENTRANCE.play()
+   fires at startFight+400ms but if models/state aren't ready it's skipped. Gate the entrance on
+   model-bound + arena-ready; queue it, don't fire-and-forget. Owner wants a real entrance scenario
+   every match (unless quick-match option).
+2. **ZONING ANIMS + THRESHOLDS (WWE-2K)** — the "dives happen too easy/on accident" + "fighter appears
+   WAIST-DEEP in the ring" on enter/exit ring/apron/floor. This is a Y-clamp + zone-transition bug:
+   zone changes don't set the correct floor Y and there's no threshold/intent gate on dives. Pull an
+   open-source locomotion/zoning reference; add per-zone Y baselines (ring mat / apron / floor) + a
+   dive INTENT threshold (hold/aim, not a light touch). Search: wrestling/fighting locomotion repos,
+   foot-IK/ground-snap (e.g. RTIK already referenced in unreal/).
+3. **MDICKIE FULL INTEGRATION** — wire ALL MDickie game files into moveset + creation + modes
+   (Universe/Career/God Within). Add MDickie moves to BANNON_MOVE_LIBRARY; classify every FBX to its
+   slot. TAG-TEAM section: the fbx_move_map already flags multi-fighter clips (Assisted*/Double*/
+   Stereo*/Tag*) — WWE has a TAG moveset category; detect by # skeletons in the FBX and route there.
+4. **GOD WITHIN GADGET = in-game IDE + LOCAL LLM wrapper** (red+gold medical-serpent/caduceus icon).
+   Partially built but broken/unwired. Wire it to the repo + game as an unlimited-token build/edit
+   brain that DOESN'T use the owner's device storage (server/local-LLM wrapper). Open-source: pull an
+   in-browser IDE (e.g. CodeMirror/Monaco) + a local-LLM HTTP wrapper (Ollama/llama.cpp already a
+   submodule in unreal/). This is the owner's between-sessions builder.
+5. **STATUS HEADER at very top** — owner says a status-header UI at the top boundary is unnecessary;
+   identify the exact element (ver-badge / a top progress bar) and hide it for the frontend build.
+6. **UE/C++ = the star**: fully wire native/ + unreal/ into a compiling BannonCore and into the APK
+   build; the JS single-file is LEGACY nostalgia. Port combat/physics/anim to Chaos + bring the mocap
+   FBX in as UE AnimSequences. This is the primary engine now.
