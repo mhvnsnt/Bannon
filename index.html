@@ -42229,6 +42229,166 @@ window.BANNON_CREATION_SUITE=(function(){
 })();
 console.log('%c[BANNON_CREATION_SUITE] creation-suite router — 🎨 CREATE / openCreationSuite()','color:#7CFC00');
 </script>
+
+// ============================================================================
+// BANNON · BRICK 99 — VERLET CLOTH SIMULATION (Capes & Loincloths)
+// ============================================================================
+(function initClothSim() {
+  if (typeof THREE === 'undefined') return;
+  if (window.__v99Cloth) return;
+  window.__v99Cloth = true;
+
+  class ClothSim {
+    constructor(anchorJoint, isCape, color, width, length, segsX, segsY) {
+      this.anchor = anchorJoint;
+      this.isCape = isCape;
+      this.segsX = segsX;
+      this.segsY = segsY;
+      this.nodes = [];
+      this.links = [];
+      
+      const restDistX = width / segsX;
+      const restDistY = length / segsY;
+      
+      for(let y=0; y<=segsY; y++) {
+        for(let x=0; x<=segsX; x++) {
+          this.nodes.push({
+            pos: new THREE.Vector3((x - segsX/2)*restDistX, -y*restDistY, 0),
+            old: new THREE.Vector3((x - segsX/2)*restDistX, -y*restDistY, 0),
+            acc: new THREE.Vector3(0, -9.8, 0),
+            mass: y===0 ? 0 : 1.0,
+            u: x/segsX, v: y/segsY
+          });
+        }
+      }
+      
+      for(let y=0; y<=segsY; y++) {
+        for(let x=0; x<=segsX; x++) {
+          let i = y*(segsX+1)+x;
+          if(x < segsX) this.links.push({a:i, b:i+1, rest:restDistX});
+          if(y < segsY) this.links.push({a:i, b:i+(segsX+1), rest:restDistY});
+        }
+      }
+      for(let y=0; y<segsY; y++) {
+        for(let x=0; x<segsX; x++) {
+          let i = y*(segsX+1)+x;
+          let diag = Math.hypot(restDistX, restDistY);
+          this.links.push({a:i, b:i+(segsX+1)+1, rest:diag});
+          this.links.push({a:i+1, b:i+(segsX+1), rest:diag});
+        }
+      }
+      
+      this.geo = new THREE.BufferGeometry();
+      const posArr = new Float32Array(this.nodes.length * 3);
+      const uvArr = new Float32Array(this.nodes.length * 2);
+      const idxArr = [];
+      
+      for(let y=0; y<segsY; y++) {
+        for(let x=0; x<segsX; x++) {
+          let i = y*(segsX+1)+x;
+          idxArr.push(i, i+(segsX+1), i+1);
+          idxArr.push(i+1, i+(segsX+1), i+(segsX+1)+1);
+          
+          uvArr[i*2] = x/segsX; uvArr[i*2+1] = 1 - y/segsY;
+          uvArr[(i+1)*2] = (x+1)/segsX; uvArr[(i+1)*2+1] = 1 - y/segsY;
+          uvArr[(i+segsX+1)*2] = x/segsX; uvArr[(i+segsX+1)*2+1] = 1 - (y+1)/segsY;
+          uvArr[(i+segsX+2)*2] = (x+1)/segsX; uvArr[(i+segsX+2)*2+1] = 1 - (y+1)/segsY;
+        }
+      }
+      this.geo.setAttribute('position', new THREE.BufferAttribute(posArr, 3));
+      this.geo.setAttribute('uv', new THREE.BufferAttribute(uvArr, 2));
+      this.geo.setIndex(idxArr);
+      
+      this.mat = new THREE.MeshPhongMaterial({color: color, side: THREE.DoubleSide, flatShading: true});
+      this.mesh = new THREE.Mesh(this.geo, this.mat);
+      this.mesh.castShadow = true;
+      
+      this.anchorPos = new THREE.Vector3();
+      this.anchorQuat = new THREE.Quaternion();
+    }
+    
+    update(dt, drag, wind) {
+      if(!this.anchor || !this.anchor.mesh) return;
+      this.anchor.mesh.getWorldPosition(this.anchorPos);
+      this.anchor.mesh.getWorldQuaternion(this.anchorQuat);
+      
+      const steps = 3;
+      const sdt = dt / steps;
+      if(sdt <= 0 || sdt > 0.1) return;
+      
+      for(let step=0; step<steps; step++) {
+        for(let n of this.nodes) {
+          if(n.mass === 0) {
+            let local = new THREE.Vector3((n.u - 0.5)*(this.segsX * (this.isCape?0.08:0.04)), this.isCape?0.1:0, this.isCape?-0.15:0.1);
+            local.applyQuaternion(this.anchorQuat).add(this.anchorPos);
+            n.pos.copy(local);
+            n.old.copy(local);
+          } else {
+            let vel = n.pos.clone().sub(n.old).multiplyScalar(1.0 - drag*sdt);
+            n.old.copy(n.pos);
+            let force = n.acc.clone().add(wind).multiplyScalar(sdt*sdt);
+            n.pos.add(vel).add(force);
+          }
+        }
+        
+        for(let i=0; i<3; i++) {
+          for(let l of this.links) {
+            let a = this.nodes[l.a], b = this.nodes[l.b];
+            let diff = b.pos.clone().sub(a.pos);
+            let dist = diff.length();
+            if(dist === 0) continue;
+            let corr = (dist - l.rest) / dist * 0.5;
+            let offset = diff.multiplyScalar(corr);
+            if(a.mass > 0) a.pos.add(offset);
+            if(b.mass > 0) b.pos.sub(offset);
+          }
+        }
+        
+        for(let n of this.nodes) {
+          if(n.pos.y < 0.05) n.pos.y = 0.05;
+        }
+      }
+      
+      const posAttr = this.geo.attributes.position;
+      for(let i=0; i<this.nodes.length; i++) {
+        posAttr.setXYZ(i, this.nodes[i].pos.x, this.nodes[i].pos.y, this.nodes[i].pos.z);
+      }
+      posAttr.needsUpdate = true;
+      this.geo.computeVertexNormals();
+    }
+  }
+
+  window.ClothSim = ClothSim;
+
+  const _origInit = window.Fighter.prototype.initModel;
+  if(_origInit) {
+    window.Fighter.prototype.initModel = function(modelObj) {
+      _origInit.call(this, modelObj);
+      if(this.side && !this.cloth && this.J) {
+        let isCape = Math.random() > 0.5;
+        let joint = isCape ? this.J.chest : this.J.pelvis;
+        let color = isCape ? 0xcc1111 : 0x2222cc;
+        if(joint) {
+          this.cloth = new ClothSim(joint, isCape, color, isCape?0.8:0.4, isCape?1.5:0.7, 8, isCape?12:6);
+          if(typeof window.arenaGroup !== 'undefined') window.arenaGroup.add(this.cloth.mesh);
+          else if(typeof window.scene !== 'undefined') window.scene.add(this.cloth.mesh);
+        }
+      }
+    };
+  }
+
+  const _origUpdate = window.Fighter.prototype.updateProcedural;
+  if(_origUpdate) {
+    window.Fighter.prototype.updateProcedural = function(dt) {
+      _origUpdate.call(this, dt);
+      if(this.cloth) {
+        let wind = new THREE.Vector3(Math.sin(Date.now()*0.001)*0.5, 0, Math.cos(Date.now()*0.001)*0.5);
+        this.cloth.update(dt, 2.0, wind);
+      }
+    };
+  }
+})();
+
 </body></html>
 
 
