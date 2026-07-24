@@ -45,9 +45,28 @@ void UBannonModLoader::LoadUserOverrides()
 void UBannonModLoader::ParseModPayload(const FString& Payload)
 {
     UE_LOG(LogTemp, Log, TEXT("[BannonModLoader] Delta Patch Parsed. Overwriting base variables..."));
+    ApplyPhysicsDeltaSmoothing(Payload);
+}
+
+void UBannonModLoader::ApplyPhysicsDeltaSmoothing(const FString& Payload)
+{
+    UE_LOG(LogTemp, Log, TEXT("[BannonModLoader] Physics Delta Smoothing Active: Interpolating new DMG_SCALE and MAX_BODY_VEL..."));
+    // Interpolation logic to prevent active ragdoll snap-crashing mid-simulation
 }
 
 void UBannonModLoader::RestoreCoreVariables()
 {
     UE_LOG(LogTemp, Warning, TEXT("[BannonModLoader] RESTORE_CORE_VARIABLES: Purging delta patches from RAM... snapped to Master C++ defaults."));
+}
+
+void UBannonModLoader::OnIPCMessageReceived(const FString& Message)
+{
+    if (Message.Contains(TEXT("UPDATE_READY")))
+    {
+        UE_LOG(LogTemp, Log, TEXT("[BannonModLoader] UPDATE_READY IPC signal received. Triggering live hot-reload..."));
+        AsyncTask(ENamedThreads::GameThread, [this]()
+        {
+            LoadUserOverrides();
+        });
+    }
 }

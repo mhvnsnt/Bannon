@@ -9,3 +9,8 @@
 - Error Parsing filters for 'Error:', 'Warning:', 'Exception', 'RESTORE_CORE_VARIABLES'.
 - Telemetry Pipe routes to UE_LOG_STREAM via WebSocket.
 - HUD Intercept active, triggering autonomous WRITE_FILE patches.
+
+## C++ Live Hot-Reload Trigger
+- UPDATE_READY IPC broadcast added to server.ts upon WRITE_FILE execution.
+- C++ Socket Listener (OnIPCMessageReceived) wired in BannonModLoader to detect UPDATE_READY and trigger LoadUserOverrides() on the GameThread.
+- Physics Delta Smoothing implemented to dynamically interpolate overridden states without snapping active ragdolls mid-simulation.

@@ -21,6 +21,10 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Bannon|Mods")
     void RestoreCoreVariables();
 
+    UFUNCTION(BlueprintCallable, Category = "Bannon|IPC")
+    void OnIPCMessageReceived(const FString& Message);
+
 private:
     void ParseModPayload(const FString& Payload);
+    void ApplyPhysicsDeltaSmoothing(const FString& Payload);
 };

@@ -35,3 +35,12 @@ export function initLogWatcher(wss) {
         }
     });
 }
+
+export function notifyUpdateReady(wss) {
+    console.log("[L.I.O.N.T.A.M.E.R.] WRITE_FILE delta patch applied. Broadcasting UPDATE_READY.");
+    wss.clients.forEach(client => {
+        if (client.readyState === 1) {
+            client.send(JSON.stringify({ type: 'UPDATE_READY', payload: 'Delta patch ready for hot-reload' }));
+        }
+    });
+}
