@@ -42282,6 +42282,54 @@ window.BANNON_CREATION_SUITE=(function(){
 })();
 console.log('%c[BANNON_CREATION_SUITE] creation-suite router — 🎨 CREATE / openCreationSuite()','color:#7CFC00');
 </script>
+<script>
+// ============================================================================================
+// BANNON_VENUES — surfaces the 96 banked MDICKIE WORLD locations (+ base arenas) as SELECTABLE
+// match stages across ALL modes (owner: "all environments from the mdickie files in our game").
+// The data was loaded (BANNON_WORLD → BANNON_ENVIRONMENTS.ENVS) but never pickable. The STAGE
+// option now opens a venue grid; picking a MDickie venue sets CURRENT_ENV + rebuilds the arena.
+// ============================================================================================
+window.BANNON_VENUES=(function(){
+  let panel=null;
+  const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  function baseArenas(){ try{ return (typeof ARENAS!=='undefined'?ARENAS:['FIRE PIT','ICE CAGE','VOID DOJO']); }catch(e){ return ['FIRE PIT']; } }
+  function mdickieLocs(){ try{ return (window.BANNON_WORLD&&window.BANNON_WORLD.list)?(window.BANNON_WORLD.list('locations')||[]):[]; }catch(e){ return []; } }
+  function build(){ if(panel) return; panel=document.createElement('div');
+    panel.style.cssText='position:fixed;inset:5% 6%;z-index:100006;background:#0a0c12f8;border:1px solid #ff7a1a;border-radius:12px;color:#ffd9a8;font:12px ui-monospace,monospace;display:none;flex-direction:column;box-shadow:0 12px 44px #000d;overflow:hidden;';
+    document.body.appendChild(panel); }
+  function open(){ build(); panel.style.display='flex'; render(); }
+  function close(){ if(panel) panel.style.display='none'; }
+  function pickBase(i){ try{ if(typeof arenaIdx!=='undefined') arenaIdx=i%baseArenas().length; window.CURRENT_ENV='ARENA';
+    var an=document.getElementById('arenaName'); if(an) an.textContent=baseArenas()[i%baseArenas().length];
+    var cs=document.getElementById('csStage'); if(cs) cs.textContent=baseArenas()[i%baseArenas().length];
+    if(typeof buildArena==='function') buildArena(); }catch(e){} close(); }
+  function pickMdickie(loc){ try{ const id='LOC_'+loc.name.toUpperCase().replace(/[^A-Z0-9]/g,'_'); window.CURRENT_ENV=id;
+    try{ if(window.MATCH_SETUP) window.MATCH_SETUP.venue=id; }catch(e){}
+    var cs=document.getElementById('csStage'); if(cs) cs.textContent=loc.name;
+    if(typeof buildArena==='function') buildArena(); (window.toast||function(){})('Venue: '+loc.name); }catch(e){} close(); }
+  function render(){
+    const locs=mdickieLocs();
+    let h='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ff7a1a55">'+
+      '<b style="color:#ff7a1a;font-size:15px;letter-spacing:2px">🌍 SELECT VENUE <span style="font-size:10px;color:#9a8">'+(baseArenas().length+locs.length)+' stages · '+locs.length+' MDickie world</span></b>'+
+      '<button data-vn="close" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">✕</button></div>'+
+      '<div style="flex:1;overflow-y:auto;min-height:0;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px">';
+    h+='<div style="grid-column:1/-1;color:#ff7a1a;letter-spacing:2px;font-size:10px">ARENAS</div>';
+    baseArenas().forEach((a,i)=>{ h+='<button data-base="'+i+'" style="background:linear-gradient(160deg,#2a1408,#160c04);border:1px solid #ff7a1a55;border-radius:8px;padding:14px 8px;cursor:pointer;color:#ffe0b0;font:bold 11px ui-monospace">'+esc(a)+'</button>'; });
+    if(locs.length){ h+='<div style="grid-column:1/-1;color:#4ac8ff;letter-spacing:2px;font-size:10px;margin-top:6px">MDICKIE WORLD ('+locs.length+')</div>';
+      locs.forEach((l,i)=>{ h+='<button data-loc="'+i+'" style="background:linear-gradient(160deg,#0e1826,#08101a);border:1px solid #4ac8ff44;border-radius:8px;padding:12px 8px;cursor:pointer;color:#cfe8ff;font:bold 10px ui-monospace">'+esc(l.name.replace(/_/g,' '))+'</button>'; }); }
+    h+='</div>'; panel.innerHTML=h;
+    panel.querySelector('[data-vn="close"]').onclick=close;
+    panel.querySelectorAll('[data-base]').forEach(b=>b.onclick=()=>pickBase(+b.dataset.base));
+    panel.querySelectorAll('[data-loc]').forEach(b=>b.onclick=()=>pickMdickie(locs[+b.dataset.loc]));
+  }
+  window.openVenuePicker=open;
+  // make the char-select STAGE option OPEN the picker (was a 3-item cycle). Poll until it exists.
+  (function wire(){ var cs=document.getElementById('csStage'); if(!cs){ return setTimeout(wire,600); }
+    cs.addEventListener('click', function(ev){ ev.stopImmediatePropagation(); open(); }, true); })();
+  return { open, close, list:()=>({ arenas:baseArenas(), mdickie:mdickieLocs() }) };
+})();
+console.log('%c[BANNON_VENUES] MDickie venue picker — STAGE option / openVenuePicker()','color:#7CFC00');
+</script>
 </body></html>
 
 
