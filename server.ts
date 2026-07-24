@@ -1,3 +1,4 @@
+import { exec } from "child_process";
 import dgram from "dgram";
 import { MemoryManager } from "./server/memory_manager";
 import express from "express";
@@ -276,6 +277,7 @@ wss.on("connection", (ws) => {
   ws.on("message", (msg) => {
     try {
       const data = JSON.parse(msg.toString());
+
       if (data.type === 'INPUT') {
         console.log("Bridging God Mode OS Input to C++ UDP Port 4001:", data);
         const udpClient = dgram.createSocket('udp4');
@@ -285,6 +287,79 @@ wss.on("connection", (ws) => {
             udpClient.close();
         });
       }
+
+      // 1. FileOps Module & 2. GitOps Module Routing
+      const isGod = !!process.env.GOD_MODE_KEY;
+      const baseRepoDir = process.cwd();
+      const overridesDir = path.join(baseRepoDir, 'UserOverrides');
+      
+      if (!fs.existsSync(overridesDir)) {
+          fs.mkdirSync(overridesDir, { recursive: true });
+      }
+
+      if (data.type === 'READ_FILE') {
+          // Both Creator and Community can read files to fix them
+          const targetPath = path.join(baseRepoDir, data.payload.filePath || '');
+          try {
+              const fileContent = fs.readFileSync(targetPath, 'utf-8');
+              ws.send(JSON.stringify({ event: 'FILE_READ_RESULT', data: { filePath: data.payload.filePath, content: fileContent } }));
+          } catch (e) {
+              ws.send(JSON.stringify({ event: 'FILE_READ_ERROR', data: { error: e.message } }));
+          }
+      }
+
+      if (data.type === 'WRITE_FILE') {
+          try {
+              let targetPath = "";
+              if (isGod) {
+                  targetPath = path.join(baseRepoDir, data.payload.filePath || '');
+                  console.log("God Mode: Writing directly to main repository file:", targetPath);
+              } else {
+                  targetPath = path.join(overridesDir, path.basename(data.payload.filePath || 'unnamed_override.txt'));
+                  console.log("Community Mode: Writing to UserOverrides directory:", targetPath);
+              }
+              fs.writeFileSync(targetPath, data.payload.content || '', 'utf-8');
+              ws.send(JSON.stringify({ event: 'WRITE_FILE_RESULT', data: { success: true, filePath: targetPath } }));
+          } catch (e) {
+              ws.send(JSON.stringify({ event: 'WRITE_FILE_ERROR', data: { error: e.message } }));
+          }
+      }
+
+      if (data.type === 'GIT_COMMIT') {
+          const branch = isGod ? "main" : "community_branch";
+          const commitMsg = data.payload.message || "Auto-commit from V8-GLOMAR HUD";
+          
+          let cmd = "";
+          if (isGod) {
+              cmd = `cd ${baseRepoDir} && git add . && git commit -m "${commitMsg}" && git push origin main`;
+          } else {
+              cmd = `cd ${baseRepoDir} && git checkout -b community_branch || git checkout community_branch && git add UserOverrides/ && git commit -m "${commitMsg}" && git push origin community_branch`;
+          }
+          
+          exec(cmd, (err, stdout, stderr) => {
+              if (err) {
+                  ws.send(JSON.stringify({ event: 'GIT_COMMIT_ERROR', data: { error: err.message, stderr } }));
+                  return;
+              }
+              ws.send(JSON.stringify({ event: 'GIT_COMMIT_RESULT', data: { branch, stdout } }));
+          });
+      }
+
+      if (data.type === 'FETCH_COMMUNITY_BRANCH') {
+          if (!isGod) {
+              ws.send(JSON.stringify({ event: 'FETCH_ERROR', data: { error: 'Unauthorized: Only God Mode can fetch community branches into HUD' } }));
+              return;
+          }
+          const cmd = `cd ${baseRepoDir} && git fetch origin community_branch && git log origin/community_branch -n 5`;
+          exec(cmd, (err, stdout, stderr) => {
+              if (err) {
+                  ws.send(JSON.stringify({ event: 'FETCH_ERROR', data: { error: err.message, stderr } }));
+                  return;
+              }
+              ws.send(JSON.stringify({ event: 'FETCH_RESULT', data: { log: stdout } }));
+          });
+      }
+
     } catch (e) {
       console.error("Failed to parse LiveLink message:", e);
     }

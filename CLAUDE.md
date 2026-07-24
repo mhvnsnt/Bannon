@@ -911,3 +911,9 @@ dive-intent thresholds) OR MDickie-full-integration OR UE-into-APK. Do NOT start
 * **God Mode Listener:** `UBannonGodModeListener` (C++) runs a background UDP socket listener on port 4001, awaiting JSON overrides from Node.js.
 * **Routing:** `server.ts` relays UDP 4000 telemetry to `Bannon_v150.html` via WebSockets, and forwards God Mode inputs (from `window.sendGodModeCommand`) to UDP 4001 in C++.
 * **Thread Safety:** Incoming UDP God Mode overrides in C++ are parsed asynchronously and pushed to `ENamedThreads::GameThread` for safe physics alterations (`MAX_HP`, `DMG_SCALE`, `MAX_BODY_VEL`, poise/crumple states).
+
+### MODULAR OVERRIDE & BRANCH ROUTING SYSTEM
+* **FileOps & GitOps Integration:** `server.ts` now supports `READ_FILE`, `WRITE_FILE`, `GIT_COMMIT`, and `FETCH_COMMUNITY_BRANCH` IPC commands directly from the V8-GLOMAR HUD.
+* **Creator (God Mode) Authority:** If the Node.js environment variable `GOD_MODE_KEY` is present, the L.I.O.N.T.A.M.E.R. agent is granted root authority. `WRITE_FILE` edits source files directly, and `GIT_COMMIT` targets the `main` branch.
+* **Community Sandbox Isolation:** If `GOD_MODE_KEY` is absent (regular players), `WRITE_FILE` commands are automatically rerouted to a localized `UserOverrides/` directory structure, preserving the native engine core. `GIT_COMMIT` actions are restricted to a `community_branch` to prevent main branch corruption.
+* **Runtime Layering Preparation:** Future updates will command the C++ core to parse active scripts within `UserOverrides/` sequentially during engine boot to apply isolated user modifications.
