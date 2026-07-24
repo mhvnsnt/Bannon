@@ -4473,6 +4473,17 @@ Fighter.prototype.poseAttack = function(dt){
     if(window.PHYS_STRIKE && window.RK_BODY && window.BPHYS && window.BPHYS.physStrike) window.BPHYS.physStrike(this, m);
     registerHit(this, m);
   }
+  // MOVESET -> COMBAT: if this move has NO clip but the fighter EQUIPPED one for this position in
+  // the MOVESET editor, adopt it (bridges the moveset lib to live combat). Loads lazily.
+  if (m && !m.clip && window.equippedClipFor){ try{
+    var _ck=(this.opts&&this.opts.name)||this.specName;
+    var _pos=m.pos||m.grapplePos||(window.resolveGrapPos?window.resolveGrapPos(m):null);
+    var _eq=_pos?window.equippedClipFor(_ck,_pos):null;
+    if(_eq) m.clip=_eq;
+  }catch(_e){} }
+  // LAZY-LOAD a mapped clip that isn't in STUDIO yet (the #1 reason mapped moves fell back to
+  // procedural: the clip was named on the move but never loaded). Next rep plays the real mocap.
+  if (m && m.clip && window.loadClipFor && typeof STUDIO!=='undefined' && !(STUDIO.clips&&(STUDIO.clips[m.clip]))){ try{ window.loadClipFor(m.clip); }catch(_e){} }
   // BANNON STUDIO: custom clip drives the body while hit/damage above stays as-is
   if (m && typeof STUDIO!=='undefined' && m.clip && STUDIO.clips[m.clip]) { studioApplyClipPose(this, STUDIO.clips[m.clip], p); return; }
 
