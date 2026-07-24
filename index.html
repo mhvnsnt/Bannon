@@ -21535,8 +21535,8 @@ init();
     </div>
     
     <div class="v8-nav">
-      <button class="v8-tab active" data-target="lion-tamer-matrix">LION TAMER (IDE)</button>
-      <button class="v8-tab" data-target="rabbits-foot-matrix">RABBIT'S FOOT (LOGS)</button>
+      <button class="v8-tab active" data-target="lion-tamer-matrix">L.I.O.N.T.A.M.E.R. (IDE)</button>
+      <button class="v8-tab" data-target="rabbits-foot-matrix">R.A.B.B.I.T.S.F.O.O.T. (LOGS)</button>
       <button class="v8-tab" data-target="mca-matrix">M.C.A. (TELEMETRY)</button>
     </div>
 
@@ -21545,7 +21545,7 @@ init();
       <div id="monaco-editor-container" class="holo-glass"></div>
       <div id="quable-console-output" class="holo-text"></div>
       <div style="margin-top: 8px;">
-        <button class="s-btn s-btn-fire" id="s-run-btn" onclick="runSurgery()" style="width:100%;">▶ EXECUTE LION TAMER</button>
+        <button class="s-btn s-btn-fire" id="s-run-btn" onclick="runSurgery()" style="width:100%;">▶ EXECUTE L.I.O.N.T.A.M.E.R.</button>
       </div>
     </div>
     
@@ -21581,13 +21581,22 @@ init();
   let editorInitialized = false;
 
   // ── PANEL TOGGLE ──
-  document.getElementById('surgeon-toggle').addEventListener('click', () => {
+  document.getElementById('surgeon-toggle').addEventListener('click', async () => {
     const hud = document.getElementById('v8-glomar-hud');
     const isHidden = hud.classList.contains('hidden');
     
     if (isHidden) {
         hud.classList.remove('hidden');
         window.__bannonInputsLocked = true; // Lock physics/gameplay (Lion Tamer active)
+        
+        // Fetch BRICK_LOG.md (CLAUDE.md)
+        try {
+            const memRes = await fetch('/api/bridge/memory');
+            const memData = await memRes.json();
+            document.getElementById('live-brick-log').innerText = memData.brickLog;
+        } catch (e) {
+            document.getElementById('live-brick-log').innerText = "[ERROR] Could not sync with R.A.B.B.I.T.S.F.O.O.T.";
+        }
         
         // Lazy load Monaco instance for V8
         if (!editorInitialized) {
@@ -21630,7 +21639,7 @@ document.querySelectorAll('.v8-tab').forEach(tab => {
       
       const codePayload = window.monacoEditorInstance.getValue();
       const consoleOut = document.getElementById('quable-console-output');
-      consoleOut.innerHTML += "\n> Executing Quable Request...";
+      consoleOut.innerHTML += "\n> Executing M.C.A. Inference Stream...\n";
 
       try {
           const response = await fetch('/api/quable-build', {
@@ -21639,8 +21648,36 @@ document.querySelectorAll('.v8-tab').forEach(tab => {
               body: JSON.stringify({ prompt: codePayload })
           });
 
-          const data = await response.json();
-          consoleOut.innerHTML += `\n[SUCCESS]: ${data.message}`;
+          if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder("utf-8");
+          
+          while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              
+              const chunk = decoder.decode(value, { stream: true });
+              const lines = chunk.split('\n');
+              for (const line of lines) {
+                  if (line.startsWith('data: ')) {
+                      try {
+                          const dataStr = line.substring(6);
+                          if (dataStr === "[DONE]") continue;
+                          const data = JSON.parse(dataStr);
+                          if (data.response) {
+                              consoleOut.innerHTML += data.response;
+                              consoleOut.scrollTop = consoleOut.scrollHeight;
+                          }
+                      } catch (e) {
+                          // Ignore parsing errors for incomplete chunks
+                      }
+                  }
+              }
+          }
+          consoleOut.innerHTML += "\n\n[SUCCESS]: Execution Stream Complete.";
       } catch (error) {
           consoleOut.innerHTML += `\n[ERROR]: Pipeline failure. ${error.message}`;
       }

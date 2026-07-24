@@ -109,6 +109,15 @@ app.post("/api/bannon/mode/backstage", (req, res) => {
   res.json({ result: BackstageMode.initBackstageMode() });
 });
 
+app.get('/api/bridge/memory', async (req, res) => {
+    try {
+        const brickLog = await fs.promises.readFile(path.join(process.cwd(), 'CLAUDE.md'), 'utf-8').catch(() => "CLAUDE.md not found");
+        res.json({ brickLog });
+    } catch(e) {
+        res.json({ brickLog: "Error reading memory" });
+    }
+});
+
 app.post('/api/quable-build', async (req, res) => {
     const { prompt, includeContext } = req.body;
     
@@ -127,19 +136,53 @@ app.post('/api/quable-build', async (req, res) => {
             body: JSON.stringify({
                 model: "qwable-abliterated",
                 prompt: fullPrompt,
-                stream: false,
+                stream: true,
                 options: { temperature: 0.1, num_ctx: 32000 }
             })
         });
 
-        const data = await proxyResponse.json();
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
         
-        await MemoryManager.logInteraction(prompt, data.response);
+        if (!proxyResponse.ok) {
+            throw new Error(`HTTP error! status: ${proxyResponse.status}`);
+        }
+        
+        let fullResponse = "";
+        
+        if (proxyResponse.body) {
+            const reader = proxyResponse.body.getReader();
+            const decoder = new TextDecoder("utf-8");
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+                
+                for(const line of lines) {
+                   if (line.trim()) {
+                      try {
+                          const data = JSON.parse(line);
+                          if (data.response) fullResponse += data.response;
+                          res.write(`data: ${JSON.stringify(data)}\n\n`);
+                      } catch (e) {}
+                   }
+                }
+            }
+        }
+        
+        res.write(`data: [DONE]\n\n`);
+        res.end();
+        
+        await MemoryManager.logInteraction(prompt, fullResponse);
 
-        res.json({ message: "Local Qwable execution successful", code: data.response });
     } catch (error) {
-        res.status(500).json({ message: "Local AI server offline or unreachable", error: error.message });
+        res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
+        res.end();
     }
 });
 
-app.get("/api/bridge/status"app.get("/api/bridge/status", (req, res) => {
+app.get("/api/bridge/status"app.get("/api/bridge/status"app.get("/api/bridge/status", (req, res) => {

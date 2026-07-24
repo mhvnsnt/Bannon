@@ -898,9 +898,10 @@ SYSTEM DONE. NEXT SYSTEM (start fresh, finish fully): pick ONE — Zoning (waist
 dive-intent thresholds) OR MDickie-full-integration OR UE-into-APK. Do NOT start two.
 
 ### SYSTEM STATE: GOD MODE OS
-* **Device Designation:** V8-G.L.O.M.A.R. (God Mode Lion Tamer OS Metaconscious Apotheosis Rabbit's Foot)
+* **Device Designation:** V8-G.L.O.M.A.R. (God Mode OS, LIONTAMER, Ouroborous Engine, Metaconscious, Apotheosis, RABBITSFOOT)
 * **UI State:** Retinal holographic overlay. Neural projection layout.
 * **Core Modules:**
-  - LION TAMER: Input lock & active Monaco IDE surgeon mode.
-  - RABBIT'S FOOT: Self-healing protocol & live `BRICK_LOG.md` memory reader.
-  - M.C.A.: Metaconscious Apotheosis (Local, zero-cost Qwable-Abliterated inference telemetry).
+  - LIONTAMER: (Logic Input Override Network / Tactical Agent Matrix Executive Runtime) Input lock & active Monaco IDE surgeon mode.
+  - OUROBOROUS ENGINE: Core environment for the system.
+  - M.C.A.: (Metaconscious Apotheosis) Local, zero-cost Qwable-Abliterated inference telemetry.
+  - RABBITSFOOT: (Real-time Algorithmic Build & Behavior Integrated Telemetry System / Focused On Ouroborous Tracking) Context injection, memory manager, and live `CLAUDE.md` memory reader.
