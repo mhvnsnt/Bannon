@@ -796,6 +796,67 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 .touch .action-grid { display:grid; }
 /* pill btn already defined above in new WWE 2K26 block */
 @media (orientation:portrait) { #pillBtns { bottom:calc(248px + var(--safe-bot)); left:4px; } }
+
+/* V8-GLOMAR Hologram Styling */
+#v8-glomar-hud {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    pointer-events: none; 
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at center, transparent 50%, rgba(0, 15, 25, 0.6) 100%);
+    transition: opacity 0.3s ease-out;
+}
+
+#v8-glomar-hud:not(.hidden) {
+    pointer-events: auto; 
+}
+
+.retinal-overlay {
+    width: 88vw; height: 88vh;
+    background: rgba(0, 15, 20, 0.2);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    border: 1px solid rgba(0, 255, 255, 0.1);
+    box-shadow: 0 0 50px rgba(0, 255, 255, 0.05) inset;
+    /* Neural curvature effect */
+    transform: perspective(1200px) rotateX(3deg);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.v8-header, .holo-text {
+    color: rgba(0, 255, 255, 0.8);
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.4);
+    text-transform: uppercase;
+}
+
+.v8-tab {
+    background: transparent;
+    border: none;
+    color: rgba(0, 255, 255, 0.4);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.v8-tab.active {
+    color: rgba(0, 255, 255, 1);
+    border-bottom: 2px solid rgba(0, 255, 255, 0.8);
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.6);
+}
+
+.holo-glass {
+    flex-grow: 1;
+    background: transparent;
+    border: none;
+    margin-top: 20px;
+}
+
 </style>
 <style>
 /* ===== BANNON STUDIO ===== */
@@ -21466,26 +21527,39 @@ init();
 <button id="surgeon-toggle" title="Open BANNON Self-Builder">⚕</button>
 
 <!-- MAIN SURGEON PANEL -->
-<div id="surgeon-panel">
-  <div id="surgeon-header">
-    <div id="surgeon-title">BANNON // SELF-BUILDER</div>
-    <button id="surgeon-close">✕</button>
-  </div>
+<div id="v8-glomar-hud" class="holo-projection hidden">
+  <div class="retinal-overlay">
+    <div class="v8-header">
+      <span class="neural-link-status">V8-G.L.O.M.A.R. // CORTEX SYNC: ACTIVE</span>
+      <span class="model-status">ENGINE: QWABLE_ABLITERATED</span>
+    </div>
+    
+    <div class="v8-nav">
+      <button class="v8-tab active" data-target="lion-tamer-matrix">LION TAMER (IDE)</button>
+      <button class="v8-tab" data-target="rabbits-foot-matrix">RABBIT'S FOOT (LOGS)</button>
+      <button class="v8-tab" data-target="mca-matrix">M.C.A. (TELEMETRY)</button>
+    </div>
 
-  <div id="surgeon-tabs">
-    <button class="surgeon-tab active" data-tab="build">BUILD</button>
-    <button class="surgeon-tab" data-tab="chat">AI CHAT</button>
-    <button class="surgeon-tab" data-tab="scan">SCAN</button>
-    <button class="surgeon-tab" data-tab="memory">MEMORY</button>
-  </div>
-
-  <div id="surgeon-body">
-    <!-- BUILD TAB -->
-    <div class="s-panel active" id="tab-build" style="height:100%; display:flex; flex-direction:column; padding: 10px;">
-      <div id="monaco-editor-container" style="width: 100%; height: 70%; text-align: left;"></div>
-      <div id="quable-console-output" style="width: 100%; height: 30%; background: #000; color: #0f0; overflow-y: auto; padding: 5px; font-family: monospace; font-size: 11px; white-space: pre-wrap;">// Quable Engine Standby...</div>
+    <!-- Lion Tamer: Active Code Execution Matrix -->
+    <div id="lion-tamer-matrix" class="v8-viewport active">
+      <div id="monaco-editor-container" class="holo-glass"></div>
+      <div id="quable-console-output" class="holo-text"></div>
       <div style="margin-top: 8px;">
-        <button class="s-btn s-btn-fire" id="s-run-btn" onclick="runSurgery()" style="width:100%;">▶ EXECUTE SWARM</button>
+        <button class="s-btn s-btn-fire" id="s-run-btn" onclick="runSurgery()" style="width:100%;">▶ EXECUTE LION TAMER</button>
+      </div>
+    </div>
+    
+    <!-- Rabbit's Foot: Live Self-Healing & Brick Log View -->
+    <div id="rabbits-foot-matrix" class="v8-viewport hidden">
+      <pre id="live-brick-log" class="holo-text">Pulling BRICK_LOG.md & CONVERSATION_MEMORY.json...</pre>
+    </div>
+
+    <!-- M.C.A.: Model Status & Context Window -->
+    <div id="mca-matrix" class="v8-viewport hidden">
+      <div class="holo-text">
+        <p>METACONSCIOUS APOTHEOSIS ACTIVE</p>
+        <p>BACKEND: LOCAL OLLAMA INFERENCE</p>
+        <p>COST: $0.00 // TOKEN LIMIT: UNCAPPED</p>
       </div>
     </div>
   </div>
@@ -21508,34 +21582,49 @@ init();
 
   // ── PANEL TOGGLE ──
   document.getElementById('surgeon-toggle').addEventListener('click', () => {
-    document.getElementById('surgeon-panel').classList.toggle('open');
-    window.__bannonInputsLocked = true; // Lock inputs
-
-    if (!editorInitialized) {
-        const loaderScript = document.createElement('script');
-        loaderScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs/loader.js';
-        loaderScript.onload = () => {
-            require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs' }});
-            require(['vs/editor/editor.main'], function() {
-                window.monacoEditorInstance = monaco.editor.create(document.getElementById('monaco-editor-container'), {
-                    value: "// Awaiting direct structural inputs...",
-                    language: 'javascript',
-                    theme: 'vs-dark',
-                    automaticLayout: true
+    const hud = document.getElementById('v8-glomar-hud');
+    const isHidden = hud.classList.contains('hidden');
+    
+    if (isHidden) {
+        hud.classList.remove('hidden');
+        window.__bannonInputsLocked = true; // Lock physics/gameplay (Lion Tamer active)
+        
+        // Lazy load Monaco instance for V8
+        if (!editorInitialized) {
+            const loaderScript = document.createElement('script');
+            loaderScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs/loader.js';
+            loaderScript.onload = () => {
+                require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.53.0/min/vs' }});
+                require(['vs/editor/editor.main'], function() {
+                    window.monacoEditorInstance = monaco.editor.create(document.getElementById('monaco-editor-container'), {
+                        value: "// Awaiting direct structural inputs...",
+                        language: 'javascript',
+                        theme: 'vs-dark',
+                        automaticLayout: true
+                    });
+                    editorInitialized = true;
                 });
-                editorInitialized = true;
-            });
-        };
-        document.body.appendChild(loaderScript);
+            };
+            document.body.appendChild(loaderScript);
+        }
+    } else {
+        hud.classList.add('hidden');
+        window.__bannonInputsLocked = false; // Release input lock
     }
-  });
+});
 
-  document.getElementById('surgeon-close').addEventListener('click', () => {
-    document.getElementById('surgeon-panel').classList.remove('open');
-    window.__bannonInputsLocked = false; // Unlock inputs
-  });
+// Tab routing logic for the V8 device
+document.querySelectorAll('.v8-tab').forEach(tab => {
+    tab.addEventListener('click', (e) => {
+        document.querySelectorAll('.v8-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.v8-viewport').forEach(v => v.classList.add('hidden'));
+        
+        e.target.classList.add('active');
+        document.getElementById(e.target.dataset.target).classList.remove('hidden');
+    });
+});
 
-  // ── EXECUTE SWARM ──
+  // ── EXECUTE LION TAMER ──
   window.runSurgery = async function() {
       if (!window.monacoEditorInstance) return;
       

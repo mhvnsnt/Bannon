@@ -897,8 +897,10 @@ Completed the system I was mid-build on (no jumping away):
 SYSTEM DONE. NEXT SYSTEM (start fresh, finish fully): pick ONE — Zoning (waist-deep/Y-clamp +
 dive-intent thresholds) OR MDickie-full-integration OR UE-into-APK. Do NOT start two.
 
-### SYSTEM STATE: GOD WITHIN SELF-BUILDER
-* **UI State:** Live. Monaco Editor lazily instantiates on `#surgeon-toggle` click.
-* **Input Constraints:** `__bannonInputsLocked` halts all physical/gameplay logic while IDE is active.
-* **Backend:** `#runSurgery()` extracts Monaco value and routes via IPC to Node.js `/api/quable-build`.
-* **LLM Engine:** Node proxies payload to remote-local Quable GPU endpoint. Do NOT treat the God Within Builder as legacy code. It is the primary active internal IDE.
+### SYSTEM STATE: GOD MODE OS
+* **Device Designation:** V8-G.L.O.M.A.R. (God Mode Lion Tamer OS Metaconscious Apotheosis Rabbit's Foot)
+* **UI State:** Retinal holographic overlay. Neural projection layout.
+* **Core Modules:**
+  - LION TAMER: Input lock & active Monaco IDE surgeon mode.
+  - RABBIT'S FOOT: Self-healing protocol & live `BRICK_LOG.md` memory reader.
+  - M.C.A.: Metaconscious Apotheosis (Local, zero-cost Qwable-Abliterated inference telemetry).
