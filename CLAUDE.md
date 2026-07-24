@@ -27,3 +27,9 @@
 - Dynamic Blend Weights recalculate IK and physical animation profiles when UPDATE_READY fires.
 - Strict Crumple Coupling enforced: Crumple states derive exclusively from the active Poise value.
 - Seamless Transitions implemented via interpolation to prevent visual snapping during hot-reloads.
+
+## Kinetic Collision & Poise Pipeline
+- Bone-Mapped Collision registered in UBannonCollisionComponent to calculate impact velocity and kinetic mass at the exact frame of intersection.
+- Absolute Math Enforcement routes forces through DMG_SCALE = 8.0 and clamps impulses to MAX_BODY_VEL = 3.8 m/s.
+- Poise Degradation isolates structural crumple from the MAX_HP = 10000 scaling.
+- Impact Telemetry logs precise collision coordinates and forces to UE_LOG_STREAM for HUD intercept and L.I.O.N.T.A.M.E.R. analysis.
