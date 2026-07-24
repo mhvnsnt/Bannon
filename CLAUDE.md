@@ -116,7 +116,12 @@ The owner has had to correct these repeatedly. They are LAW now:
 8. Commentary box = under health bars, transparent, off the buttons (DONE). Roam ≠ forced 1v1 (DONE).
    Startup race + procedural pop (DONE). Waist-deep zoning Y-baseline (DONE). Mocap pipeline + 2K
    moveset editor + CAW front door + creation-suite router (DONE).
-### CURRENT SYSTEM IN PROGRESS: God Mode OS ⇄ Self-Builder UNIFICATION (item 2+3 above)
-Checklist: [ ] godmode/ daemon+swarm+RAG wired into the ⚕ panel · [ ] AI Studio unreal/+src work
-reachable from it · [ ] it's the God Within builder gadget (open from God Within) · [ ] local-LLM
-wrapper (no device storage) confirmed · [ ] verify panel opens + chat routes + live-apply works.
+### SYSTEM DONE: God Mode OS ⇄ Self-Builder UNIFICATION (2026-07-24)
+- ✔ window.BANNON_GODMODE = the ⚕ self-builder AS the God Mode OS (open/close/ask/systems/apply)
+- ✔ GOD MODE OS DAEMON endpoint field in the ⚕ panel (server/local-LLM wrapper, no device storage;
+  ask() routes to daemon /api/build else local Ollama/LM Studio)
+- ✔ ⚕ BUILDER button in the God Within banner (gadget reachable from God Within)
+- ✔ systems() = full-repo awareness incl. AI Studio's unreal/ C++ + src/ React + godmode/ OS (68 live modules)
+- ✔ apply(js) = live-apply edits the RUNNING game (guarded; [heal] watchdog protects source)
+NEXT SYSTEM (take ONE fully): MDickie FULL integration (all moves/env/files → all modes) OR cleaner
+models+combat from open source OR UE-into-APK wiring. Do not start two.

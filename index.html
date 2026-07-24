@@ -21734,7 +21734,22 @@ init();
       // fall back to local wrapper via the existing swarm chat if present
       try{ if(window.__surgeonAsk) return await window.__surgeonAsk(prompt); }catch(e){}
       return { note:'No God Mode OS daemon set and no local LLM reachable. Set the daemon URL in the ⚕ panel (Tailscale/Railway) or run Ollama/LM Studio.' };
-    }
+    },
+    // FULL-REPO AWARENESS — the builder brain knows the WHOLE stack, incl. everything AI Studio built
+    // (unreal/ C++ + src/ React) and the god-mode OS. This is how "AI Studio's work is IN the builder".
+    systems(){ return {
+      game:'BANNON_v150.html — the live three.js game (LEGACY nostalgia tier per owner)',
+      liveModules:Object.keys(window).filter(k=>/^BANNON_/.test(k)),
+      unreal:'unreal/Source/BannonCore — UE5 C++ (Jolt/GGPO/llama.cpp submodules, BannonPhysicsLaws, '+
+             'ragdoll/grapple/match-state/referee/crowd) = the AAA STAR engine (owner: wire into APK)',
+      src:'src/ — AI-Studio React companion (creation suite / voice manager / dashboards)',
+      godmode:'godmode/ — the God Mode OS server (EvolutionDaemon, swarm, RAG vault, Bannon.Modelfile)',
+      native:'native/include — ported C++ headers (referee, universe, physics laws)'
+    }; },
+    // LIVE-APPLY — the in-game IDE actually edits the RUNNING game. Guarded eval; the [heal] watchdog
+    // + verify_integrity guard the source, so a bad snippet can't brick the file. Returns the result.
+    apply(js){ try{ const r=(0,eval)(String(js)); try{ (window.toast||function(){})('⚕ applied'); }catch(e){} return {ok:true, result:r}; }
+      catch(e){ return {ok:false, error:String(e)}; } }
   });
   // inject a GOD MODE OS DAEMON endpoint field next to the Ollama URL (so the builder = the OS)
   try{ var _ou=document.getElementById('s-ollama-url'); if(_ou && _ou.parentElement && !document.getElementById('s-daemon-url')){
