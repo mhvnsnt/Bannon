@@ -896,3 +896,9 @@ Completed the system I was mid-build on (no jumping away):
 - ✔ GNM face integrated into CAW FACE tab + DNA
 SYSTEM DONE. NEXT SYSTEM (start fresh, finish fully): pick ONE — Zoning (waist-deep/Y-clamp +
 dive-intent thresholds) OR MDickie-full-integration OR UE-into-APK. Do NOT start two.
+
+### SYSTEM STATE: GOD WITHIN SELF-BUILDER
+* **UI State:** Live. Monaco Editor lazily instantiates on `#surgeon-toggle` click.
+* **Input Constraints:** `__bannonInputsLocked` halts all physical/gameplay logic while IDE is active.
+* **Backend:** `#runSurgery()` extracts Monaco value and routes via IPC to Node.js `/api/quable-build`.
+* **LLM Engine:** Node proxies payload to remote-local Quable GPU endpoint. Do NOT treat the God Within Builder as legacy code. It is the primary active internal IDE.
