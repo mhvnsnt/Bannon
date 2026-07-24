@@ -1,3 +1,4 @@
+import { MemoryManager } from "./server/memory_manager";
 import express from "express";
 import path from "path";
 import cors from "cors";
@@ -109,31 +110,36 @@ app.post("/api/bannon/mode/backstage", (req, res) => {
 });
 
 app.post('/api/quable-build', async (req, res) => {
-    const { prompt } = req.body;
+    const { prompt, includeContext } = req.body;
     
-    // Target the remote-local LLM endpoint (RunPod, Vast.ai, or local rig)
-    const QUABLE_ENDPOINT = process.env.QUABLE_LLM_URL || 'http://127.0.0.1:11434/api/generate';
+    // Target your free local server
+    const LOCAL_AI_ENDPOINT = process.env.QUABLE_LLM_URL || 'http://127.0.0.1:11434/api/generate';
     
     try {
-        const proxyResponse = await fetch(QUABLE_ENDPOINT, {
+        const systemContext = includeContext !== false ? await MemoryManager.getEvolvingContext() : "";
+        const fullPrompt = `${systemContext}\n\nUser Directive: ${prompt}`;
+
+        const proxyResponse = await fetch(LOCAL_AI_ENDPOINT, {
             method: 'POST',
             headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.QUABLE_API_KEY}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 model: "qwable-abliterated",
-                prompt: prompt,
-                max_tokens: 4096,
-                temperature: 0.1
+                prompt: fullPrompt,
+                stream: false,
+                options: { temperature: 0.1, num_ctx: 32000 }
             })
         });
 
         const data = await proxyResponse.json();
-        res.json({ message: "Quable execution successful", code: data.choices[0].text });
+        
+        await MemoryManager.logInteraction(prompt, data.response);
+
+        res.json({ message: "Local Qwable execution successful", code: data.response });
     } catch (error) {
-        res.status(500).json({ message: "Remote GPU unreachable", error: error.message });
+        res.status(500).json({ message: "Local AI server offline or unreachable", error: error.message });
     }
 });
 
-app.get("/api/bridge/status", (req, res) => {
+app.get("/api/bridge/status"app.get("/api/bridge/status", (req, res) => {
