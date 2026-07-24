@@ -41327,6 +41327,61 @@ console.log('%c[BANNON_CREATION_SUITE] creation-suite router — 🎨 CREATE / o
   }
 })();
 
+
+<!-- V8-GLOMAR Telemetry Bridge -->
+<script>
+(function() {
+    console.log("V8-GLOMAR: Initializing WebSocket Bridge to Node.js IPC...");
+    const wsUrl = `ws://${window.location.host}/livelink`;
+    let ws = new WebSocket(wsUrl);
+    
+    ws.onopen = () => {
+        console.log("V8-GLOMAR: Connected to C++ Telemetry Bridge.");
+    };
+    
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.event === "CPP_TELEMETRY") {
+                // Update M.C.A. telemetry UI
+                const mcaConsole = document.getElementById('mca-matrix');
+                if (mcaConsole && !mcaConsole.classList.contains('hidden')) {
+                    const textDisplay = mcaConsole.querySelector('.holo-text');
+                    if (textDisplay) {
+                         // Truncate if too long to prevent DOM lag
+                         if (textDisplay.children.length > 20) {
+                             textDisplay.removeChild(textDisplay.children[3]); 
+                         }
+                         const p = document.createElement('p');
+                         p.innerText = `[TELEMETRY] ${JSON.stringify(data.data)}`;
+                         textDisplay.appendChild(p);
+                         mcaConsole.scrollTop = mcaConsole.scrollHeight;
+                    }
+                }
+            } else if (data.event === "LIVE_LINK_HOT_RELOAD" || data.event === "LIVE_LINK_INITIAL_SYNC") {
+                 console.log("LiveLink Update:", data.data);
+            }
+        } catch (e) {
+            console.error("V8-GLOMAR Bridge Error parsing message:", e);
+        }
+    };
+    
+    ws.onclose = () => {
+        console.log("V8-GLOMAR: Telemetry Bridge Disconnected. Retrying in 3s...");
+        setTimeout(() => {
+            // Reconnect logic could go here
+        }, 3000);
+    };
+    
+    // Broadcast God Mode OS commands back through Node to C++ Engine
+    window.sendGodModeCommand = function(cmd, payload) {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'INPUT', command: cmd, payload: payload }));
+        }
+    };
+})();
+</script>
+
 </body></html>
 
 

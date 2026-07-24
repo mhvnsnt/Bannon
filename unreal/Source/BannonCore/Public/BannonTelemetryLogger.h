@@ -17,4 +17,5 @@ public:
 private:
     FString LogFilePath;
     void WriteToJsonAsync(const FString& Payload);
+    void BroadcastUdpAsync(const FString& Payload);
 };

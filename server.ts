@@ -1,3 +1,4 @@
+import dgram from "dgram";
 import { MemoryManager } from "./server/memory_manager";
 import express from "express";
 import path from "path";
@@ -185,4 +186,159 @@ app.post('/api/quable-build', async (req, res) => {
     }
 });
 
-app.get("/api/bridge/status"app.get("/api/bridge/status"app.get("/api/bridge/status", (req, res) => {
+app.get("/api/bridge/status", (req, res) => {
+  res.json({ status: "active", engineConnected: wss.clients.size > 0 });
+});
+
+// LiveLink memory storage for dynamic C++ ingestion & hot-reload
+let liveLinkConfig = {
+  superstar: null as any,
+  arena: null as any,
+  titantronDecal: null as any,
+  timestamp: new Date().toISOString()
+};
+
+import fs from "fs";
+
+app.get("/api/engine/status", (req, res) => {
+  let patchLog = "";
+  try {
+    patchLog = fs.readFileSync(path.join(process.cwd(), "PATCH_LOG.md"), "utf8");
+  } catch (e) {
+    patchLog = "No patch log found.";
+  }
+  
+  res.json({
+    status: "active",
+    version: "V159.2",
+    loadedFederations: ["Indies", "Pride_MMA", "BookLore"],
+    patchLog
+  });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok" });
+});
+
+app.get("/api/livelink/config", (req, res) => {
+  res.json(liveLinkConfig);
+});
+
+// Broadcast config updates from client to in-game Unreal instances
+app.post("/api/livelink/update", (req, res) => {
+  const { type, payload } = req.body;
+  if (type === "SYNC_SUPERSTAR_DNA") {
+    liveLinkConfig.superstar = payload;
+  } else if (type === "SYNC_ARENA") {
+    liveLinkConfig.arena = payload;
+  } else if (type === "INJECT_TITANTRON_DECAL") {
+    liveLinkConfig.titantronDecal = payload;
+  } else if (type === "SKELETAL_BONE_SCALING") {
+    (liveLinkConfig as any).skeletalBoneScaling = payload;
+    console.log("[SKELETAL_BONE_SCALING] Received calibration offsets:", payload.calibrationOffsets);
+  }
+  liveLinkConfig.timestamp = new Date().toISOString();
+
+  // Broadcast to all active LiveLink WebSocket connections
+  const messageStr = JSON.stringify({ event: "LIVE_LINK_HOT_RELOAD", data: liveLinkConfig });
+  wss.clients.forEach((client) => {
+    if (client.readyState === 1) { // WebSocket.OPEN
+      client.send(messageStr);
+    }
+  });
+
+  res.json({ success: true, message: "LiveLink hot-reload update broadcasted", config: liveLinkConfig });
+});
+
+const server = http.createServer(app);
+const wss = new WebSocketServer({ noServer: true });
+
+// Handle WebSocket upgrade for LiveLink clients
+server.on("upgrade", (request, socket, head) => {
+  const pathname = request.url ? new URL(request.url, `http://${request.headers.host}`).pathname : "";
+  if (pathname === "/livelink") {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+      wss.emit("connection", ws, request);
+    });
+  } else {
+    // Let other handlers or Vite websocket pass through
+  }
+});
+
+let liveLinkWS: any = null;
+
+wss.on("connection", (ws) => {
+  console.log("LiveLink WebSocket Client connected to Unreal hot-reloading loop.");
+  liveLinkWS = ws;
+  // Send immediate current state upon handshake
+  ws.send(JSON.stringify({ event: "LIVE_LINK_INITIAL_SYNC", data: liveLinkConfig }));
+  
+  ws.on("message", (msg) => {
+    try {
+      const data = JSON.parse(msg.toString());
+      if (data.type === 'INPUT') {
+        console.log("Bridging Input to Unreal Engine:", data);
+        if (liveLinkWS) {
+          liveLinkWS.send(JSON.stringify({ type: 'ENGINE_INPUT', ...data }));
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse LiveLink message:", e);
+    }
+    console.log("Received LiveLink message from Unreal Engine client:", msg.toString());
+  });
+
+  ws.on("close", () => {
+    liveLinkWS = null;
+  });
+});
+
+
+// IPC Bridge: UDP server to receive telemetry from C++ engine
+const udpServer = dgram.createSocket('udp4');
+udpServer.on('message', (msg, rinfo) => {
+  try {
+    const telemetryData = JSON.parse(msg.toString());
+    // Broadcast telemetry to all connected HTML UI WebSocket clients
+    wss.clients.forEach((client) => {
+      if (client.readyState === 1) { // WebSocket.OPEN
+        client.send(JSON.stringify({ event: 'CPP_TELEMETRY', data: telemetryData }));
+      }
+    });
+  } catch(e) {
+    console.error("Failed to parse UDP telemetry from C++ Engine:", e);
+  }
+});
+udpServer.on('error', (err) => {
+  console.log(`UDP server error:\n${err.stack}`);
+  udpServer.close();
+});
+udpServer.bind(4000, () => {
+  console.log("UDP IPC Bridge listening for C++ telemetry on port 4000");
+});
+async function startServer() {
+  try {
+    // await BannonMemory.initializeConstants();
+  } catch (e) {
+    console.error('Failed to initialize constants, continuing without them...', e);
+  }
+  if (process.env.NODE_ENV !== "production") {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
+    app.get("*", (req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  }
+
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on port ${PORT} with LiveLink WebSocket gateway active`);
+  });
+}
+
+startServer();
