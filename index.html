@@ -21714,6 +21714,37 @@ init();
     document.getElementById('surgeon-panel').classList.remove('open');
   });
 
+  // ── UNIFICATION: THE ⚕ SELF-BUILDER *IS* THE GOD MODE OS (owner spec). One brain: in-game IDE +
+  // chat + local-LLM/daemon wrapper (no device storage). Expose a single API + a GOD MODE OS DAEMON
+  // endpoint (the godmode/ server: EvolutionDaemon + swarm + RAG vault, reachable over Tailscale/
+  // Railway) alongside the existing Ollama/LM Studio local wrappers. This is the God Within gadget.
+  function openGM(){ try{ document.getElementById('surgeon-panel').classList.add('open'); }catch(e){} }
+  function closeGM(){ try{ document.getElementById('surgeon-panel').classList.remove('open'); }catch(e){} }
+  window.openGodMode = openGM;
+  window.BANNON_GODMODE = window.BANNON_GODMODE || {};
+  Object.assign(window.BANNON_GODMODE, {
+    open: openGM, close: closeGM,
+    // persisted GOD MODE OS daemon endpoint (server/local-LLM wrapper — uses NO owner device storage)
+    daemonURL(){ try{ return localStorage.getItem('bannon_godmode_daemon')||''; }catch(e){ return ''; } },
+    setDaemonURL(u){ try{ localStorage.setItem('bannon_godmode_daemon', u||''); }catch(e){} return u; },
+    // route a build/chat request to the daemon if configured, else the local Ollama/LM Studio
+    async ask(prompt){ const d=this.daemonURL();
+      if(d){ try{ const r=await fetch(d.replace(/\/$/,'')+'/api/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+        if(r.ok) return await r.json(); }catch(e){} }
+      // fall back to local wrapper via the existing swarm chat if present
+      try{ if(window.__surgeonAsk) return await window.__surgeonAsk(prompt); }catch(e){}
+      return { note:'No God Mode OS daemon set and no local LLM reachable. Set the daemon URL in the ⚕ panel (Tailscale/Railway) or run Ollama/LM Studio.' };
+    }
+  });
+  // inject a GOD MODE OS DAEMON endpoint field next to the Ollama URL (so the builder = the OS)
+  try{ var _ou=document.getElementById('s-ollama-url'); if(_ou && _ou.parentElement && !document.getElementById('s-daemon-url')){
+    var wrap=document.createElement('div'); wrap.style.marginTop='8px';
+    wrap.innerHTML='<div class="s-label">GOD MODE OS DAEMON (server / no device storage)</div>'+
+      '<input class="s-input" type="text" id="s-daemon-url" placeholder="http://<tailscale-or-railway>:PORT" value="'+(window.BANNON_GODMODE.daemonURL())+'">';
+    _ou.parentElement.appendChild(wrap);
+    wrap.querySelector('#s-daemon-url').addEventListener('change', function(){ window.BANNON_GODMODE.setDaemonURL(this.value.trim()); });
+  } }catch(e){}
+
   // ── TABS ──
   document.querySelectorAll('.surgeon-tab').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -40763,8 +40794,9 @@ try{ console.log('[AI-STUDIO MODULES] News/Entrances/Promos/Rules/Items/Buckles/
   border:1px solid #a855f7;border-radius:7px;cursor:pointer;}
 #gwInteract button:hover{background:#a855f7;color:#000;}
 </style>
-<div id="gwBanner">👁 GOD WITHIN — ROAM &amp; CONFRONT</div>
+<div id="gwBanner">👁 GOD WITHIN — ROAM &amp; CONFRONT <button id="gwBuilderBtn" title="God Mode OS builder gadget" style="margin-left:10px;background:linear-gradient(160deg,#7a0000,#c9a000);color:#fff;border:1px solid #ffd23f;border-radius:14px;padding:3px 10px;font:bold 11px ui-monospace;cursor:pointer;pointer-events:auto">⚕ BUILDER</button></div>
 <div id="gwInteract"><div class="gw-who"></div></div>
+<script>try{ document.getElementById('gwBuilderBtn').addEventListener('click', function(){ if(window.openGodMode) window.openGodMode(); else { var b=document.getElementById('surgeon-toggle'); if(b) b.click(); } }); }catch(e){}</script>
 <script>
 window.BANNON_GODWITHIN = (function(){
   let active=false, target=null, poll=null;
