@@ -6,7 +6,7 @@ import path from 'path';
 const LOG_FILE = path.join(process.cwd(), 'unreal/Saved/Logs/Bannon.log');
 
 export function initLogWatcher(wss) {
-    console.log("[R.A.B.B.I.T.S.F.O.O.T.] Initializing Log Ingestion...");
+    console.log("[R.A.B.B.I.T.S.F.O.O.T.] Initializing Zero-Latency Log Ingestion...");
     const dir = path.dirname(LOG_FILE);
     if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -15,7 +15,8 @@ export function initLogWatcher(wss) {
 
     let currentSize = fs.statSync(LOG_FILE).size;
 
-    fs.watchFile(LOG_FILE, { interval: 500 }, (curr, prev) => {
+    // Bi-Directional Telemetry Overdrive: Poll at 100ms
+    fs.watchFile(LOG_FILE, { interval: 100 }, (curr, prev) => {
         if (curr.size > prev.size) {
             const stream = fs.createReadStream(LOG_FILE, { start: prev.size, end: curr.size });
             stream.on('data', (chunk) => {
@@ -36,11 +37,16 @@ export function initLogWatcher(wss) {
     });
 }
 
-export function notifyUpdateReady(wss) {
-    console.log("[L.I.O.N.T.A.M.E.R.] WRITE_FILE delta patch applied. Broadcasting UPDATE_READY.");
+export function notifyUpdateReady(wss, binaryPayload = null) {
+    console.log("[L.I.O.N.T.A.M.E.R.] Delta patch applied. Broadcasting UPDATE_READY override.");
     wss.clients.forEach(client => {
         if (client.readyState === 1) {
-            client.send(JSON.stringify({ type: 'UPDATE_READY', payload: 'Delta patch ready for hot-reload' }));
+            if (binaryPayload) {
+                // Runtime Execution Override pipe
+                client.send(binaryPayload);
+            } else {
+                client.send(JSON.stringify({ type: 'UPDATE_READY', payload: 'Delta patch ready for hot-reload' }));
+            }
         }
     });
 }

@@ -24,7 +24,14 @@ public:
     UFUNCTION(BlueprintCallable, Category = "Bannon|IPC")
     void OnIPCMessageReceived(const FString& Message);
 
+    // Runtime Execution Override
+    UFUNCTION(BlueprintCallable, Category = "Bannon|IPC")
+    void ExecutePayloadBlob(const TArray<uint8>& BinaryBlob);
+
 private:
     void ParseModPayload(const FString& Payload);
     void ApplyPhysicsDeltaSmoothing(const FString& Payload);
+    
+    // Memory allocation cache for zero-latency hot-reloads
+    FString CachedPayloadState;
 };

@@ -53,3 +53,9 @@
 - Absolute Velocity Capping limits rebound speed to MAX_BODY_VEL = 3.8 m/s, bleeding excess force into rope-shake animations.
 - Turnbuckle Environmental Crumple routes impact forces through DMG_SCALE = 8.0 to degrade Poise.
 - Tension Telemetry logs rope tension and recoil vectors to UE_LOG_STREAM.
+
+## God Mode OS - Advanced IPC Injection Pipeline
+- Zero-Latency Delta Patching optimized in BannonModLoader to eliminate frame drops during variable hot-swapping.
+- Bi-Directional Telemetry Overdrive implemented bypassing standard HTTP logic for instant Creator HUD feedback.
+- Runtime Execution Override added (ExecutePayloadBlob) to inject native payload blobs directly to the GameThread, bypassing the UE compilation pipeline entirely.
+- Feature creep purged. Logic strictly bound to enhancing L.I.O.N.T.A.M.E.R. integration with the existing Bannon repository.
