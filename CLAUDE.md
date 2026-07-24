@@ -46,3 +46,10 @@
 - Pinfall Synchronization implemented by extending BannonGrappleComponent with PinfallState, locking rigs to the mat and syncing referee physical count to GameThread DeltaTime.
 - Kick-Out Probability Matrix isolates probability math strictly against MAX_HP and Stamina, excluding Poise.
 - Submission DPS Routing continuously degrades structural integrity via DMG_SCALE and logs submission DPS to UE_LOG_STREAM.
+
+## Native Rope Kinematics & Elastic Recoil
+- Environmental Physics Component (BannonEnvironmentKinematics) created to process rope tension, elastic recoil, and turnbuckle collisions.
+- Elastic Recoil Calculation dynamically calculates incoming force and reverses vectors to launch actors back into the ring.
+- Absolute Velocity Capping limits rebound speed to MAX_BODY_VEL = 3.8 m/s, bleeding excess force into rope-shake animations.
+- Turnbuckle Environmental Crumple routes impact forces through DMG_SCALE = 8.0 to degrade Poise.
+- Tension Telemetry logs rope tension and recoil vectors to UE_LOG_STREAM.
