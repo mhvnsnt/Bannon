@@ -15063,7 +15063,15 @@ function _bindFighterGltf(side, url, name, gltf, reqFighter, reqId){
   }
   try{
     const obj=gltf.scene; const bones={};
-    obj.traverse(o=>{ if(o.isBone){ var _k=(o.name||'bone').toLowerCase(), _u=_k, _i=2; while(bones[_u]){ _u=_k+'~'+_i; _i++; } bones[_u]=o; o.userData.boneKey=_u; } if(o.isMesh){o.castShadow=true;o.frustumCulled=false;} });
+    obj.traverse(o=>{ if(o.isBone){ var _k=(o.name||'bone').toLowerCase(), _u=_k, _i=2; while(bones[_u]){ _u=_k+'~'+_i; _i++; } bones[_u]=o; o.userData.boneKey=_u; }
+      if(o.isMesh){ o.castShadow=true; o.frustumCulled=false;
+        // DOUBLE-SIDE imported model materials (fixes the "torn-mesh HOLE" on open-shell attire —
+        // MAIME's tattered shirt, torn sleeves, capes, hair cards, open collars: single-sided
+        // (FrontSide) exports show a void straight through at every open/torn edge because backfaces
+        // aren't rendered. The geometry is all there; the interior faces just weren't drawn. Owner
+        // canon meshes are UNTOUCHED — this is a render-state flag only.). window.GLB_DOUBLE_SIDE=false to revert.
+        try{ if(window.GLB_DOUBLE_SIDE!==false){ var _m=o.material; if(Array.isArray(_m)) _m.forEach(mm=>{ if(mm) mm.side=THREE.DoubleSide; }); else if(_m) _m.side=THREE.DoubleSide; } }catch(_e){}
+      } });
     const mapped=[];
     const key = (url.indexOf('embedded:')===0)?url.slice(9):null;
     const useMap = (key && BONE_MAP_OVERRIDES[key]) ? BONE_MAP_OVERRIDES[key] : BONE_MAP;
