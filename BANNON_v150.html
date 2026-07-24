@@ -31955,20 +31955,23 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
             'Brutal Assassination.fbx','Breakdance Uprock To Ground.fbx','Breakdance Footwork To Freeze.fbx'
         ];
         let FILES = [...new Set([...ASSETS, ...COMBAT_CLIPS])];
-        // COMPLETE OFFLINE LIST: the banked drive_manifest.json lists every wrestling-move FBX in
-        // assets/mocap/drive/. Merging it in means ALL clips the move->clip map references actually
-        // load — in the APK / on Pages / anywhere, with no daemon. (This is why most moves fell back
-        // to the authored pose: the clips they mapped to were never in the hardcoded load list.)
-        try { const _cdnM = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
-            let mr = await fetch('assets/mocap/drive_manifest.json').catch(()=>null);
-            if (!mr || !mr.ok) mr = await fetch(_cdnM+'assets/mocap/drive_manifest.json').catch(()=>null);
-            if (mr && mr.ok) { const mj = await mr.json(); const names=(mj.files||[]).filter(n=>/\.fbx$/i.test(n));
-                FILES = [...new Set([...FILES, ...names])]; } } catch (_e) {}
-        // when the daemon serves us, ask IT for the real list (includes everything drive-sync pulled)
-        try { const lr = await fetch('/api/list-mocap-files'); if (lr.ok) { const lj = await lr.json();
-            const names = (lj.files || lj || []).map(f => (typeof f === 'string' ? f : f.name)).filter(n => /\.fbx$/i.test(n));
-            if (names.length > FILES.length) FILES = names; } } catch (_e) {}
-        console.log(`[FBX BATCH] Starting bulk import of ${FILES.length} FBX files...`);
+        // MOBILE-SAFE HARVEST (owner plays the APK on a phone): each FBX is ~2-12MB — loading all 179
+        // at once is ~1GB and WILL crash a phone. So the default load is the CURATED CORE SET only
+        // (~100 clips: locomotion + the mapped combat/taunt clips). The full drive_manifest set is
+        // loaded ONLY when explicitly requested (window.FBX_LOAD_ALL=true) or by the daemon on desktop.
+        // Individual moves lazy-load their own clip on-demand via loadClipFor() (below) when equipped.
+        const LOAD_ALL = (window.FBX_LOAD_ALL===true);
+        if (LOAD_ALL) {
+          try { const _cdnM = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+              let mr = await fetch('assets/mocap/drive_manifest.json').catch(()=>null);
+              if (!mr || !mr.ok) mr = await fetch(_cdnM+'assets/mocap/drive_manifest.json').catch(()=>null);
+              if (mr && mr.ok) { const mj = await mr.json(); const names=(mj.files||[]).filter(n=>/\.fbx$/i.test(n));
+                  FILES = [...new Set([...FILES, ...names])]; } } catch (_e) {}
+          try { const lr = await fetch('/api/list-mocap-files'); if (lr.ok) { const lj = await lr.json();
+              const names = (lj.files || lj || []).map(f => (typeof f === 'string' ? f : f.name)).filter(n => /\.fbx$/i.test(n));
+              if (names.length > FILES.length) FILES = names; } } catch (_e) {}
+        }
+        console.log(`[FBX BATCH] Importing ${FILES.length} FBX (${LOAD_ALL?'FULL set':'mobile-safe core; set FBX_LOAD_ALL=true for all 179'})...`);
         const loader = new THREE.FBXLoader();
         let loadedCount = 0;
 
@@ -32038,6 +32041,30 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
             }
         }
         console.log(`[FBX BATCH] Loaded ${loadedCount}/${ASSETS.length} FBX files into STUDIO clips and MOVEDEX.`);
+    };
+
+    // LAZY SINGLE-CLIP LOADER (mobile-safe): load ONE mocap clip on demand by basename, e.g. when a
+    // move is equipped/played whose clip isn't in the core set — instead of the 1GB full harvest.
+    // Returns the clip (cached in STUDIO.clips under both the raw basename and the UPPER_KEY).
+    window.__fbxClipInFlight = window.__fbxClipInFlight || {};
+    window.loadClipFor = async function(name){
+        if(!name) return null;
+        const base = String(name).replace(/\.fbx$/i,''); const key = base.toUpperCase().replace(/[^A-Z0-9]/g,'_');
+        try{ if(typeof STUDIO!=='undefined' && STUDIO.clips && (STUDIO.clips[base]||STUDIO.clips[key])) return STUDIO.clips[base]||STUDIO.clips[key]; }catch(e){}
+        if(typeof THREE==='undefined' || !THREE.FBXLoader) return null;
+        if(window.__fbxClipInFlight[key]) return window.__fbxClipInFlight[key];
+        window.__fbxClipInFlight[key] = (async()=>{
+          const cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+          const urls = ['assets/mocap/drive/'+encodeURIComponent(base)+'.fbx','assets/mocap/'+encodeURIComponent(base)+'.fbx',
+                        cdn+'assets/mocap/drive/'+encodeURIComponent(base)+'.fbx'];
+          for(const u of urls){ try{ const r=await fetch(u).catch(()=>null); if(!r||!r.ok) continue;
+            const buf=await r.arrayBuffer(); const obj=(new THREE.FBXLoader()).parse(buf,'');
+            if(obj.animations && obj.animations.length){ const clip=(typeof extractClipFromGLTF==='function')?extractClipFromGLTF(obj.animations[0],obj):obj.animations[0];
+              if(typeof STUDIO!=='undefined'){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=clip; STUDIO.clips[base]=clip; }
+              return clip; } }catch(e){} }
+          return null;
+        })();
+        const c = await window.__fbxClipInFlight[key]; delete window.__fbxClipInFlight[key]; return c;
     };
 
     try {
@@ -41885,6 +41912,61 @@ window.BANNON_GNM_FACE = (function(){
   return { open, close, facesFor };
 })();
 console.log('%c[GNM FACE LAB] scan-grade parametric face studio — hub tile 👤 / openGnmFace()','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_MOCAP — guaranteed-running mocap activator (the legacy BULK FBX loader IIFE is dormant —
+// it defines nothing at runtime, which is a big reason STUDIO.clips stayed empty). This top-level
+// module ALWAYS runs: it lazy-loads single clips on demand (window.loadClipFor) and auto-populates
+// STUDIO.clips with a MOBILE-SAFE curated CORE set once FBXLoader is ready + we're at a menu lull
+// (never mid-fight, never all 179 at once = ~1GB OOM). Wrestling FBX (assets/mocap/drive/) → real
+// AnimationClips → studioApplyClipPose drives moves. window.FBX_LOAD_ALL=true opts into the full set.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  // curated core: the mapped combat/taunt clips + essential locomotion (kept small for phones)
+  var CORE=['Chokeslam','DoubleSuplex','Tombstone','HammerlockDDT','JayKick','ApronJayKick',
+    'StereoSuperkick','StrongZero','ViolenceParty','Drop Kick (1)','Kip Up','Baseball Hit',
+    'Big Body Blow','Big Rib Hit','Body Jab Cross','Body Block','Brutal Assassination',
+    'Ginga Forward','Esquiva 3','Taunt2','AlternatingForearms','Idle','Jab','Boxing','Mma Kick','Hurricane Kick'];
+  window.BANNON_MOCAP_CORE = CORE;
+  function _extract(anim,obj){ try{ return (typeof extractClipFromGLTF==='function')?extractClipFromGLTF(anim,obj):anim; }catch(e){ return anim; } }
+  // LAZY single-clip loader (idempotent; caches into STUDIO.clips under raw + UPPER key)
+  window.__mcInFlight = window.__mcInFlight || {};
+  window.loadClipFor = window.loadClipFor || async function(name){
+    if(!name) return null; var base=String(name).replace(/\.fbx$/i,''); var key=base.toUpperCase().replace(/[^A-Z0-9]/g,'_');
+    try{ if(window.STUDIO && STUDIO.clips && (STUDIO.clips[base]||STUDIO.clips[key])) return STUDIO.clips[base]||STUDIO.clips[key]; }catch(e){}
+    if(typeof THREE==='undefined' || !THREE.FBXLoader) return null;
+    if(window.__mcInFlight[key]) return window.__mcInFlight[key];
+    window.__mcInFlight[key]=(async function(){
+      var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+      var urls=['assets/mocap/drive/'+encodeURIComponent(base)+'.fbx','assets/mocap/'+encodeURIComponent(base)+'.fbx',cdn+'assets/mocap/drive/'+encodeURIComponent(base)+'.fbx'];
+      for(var i=0;i<urls.length;i++){ try{ var r=await fetch(urls[i]).catch(function(){return null;}); if(!r||!r.ok) continue;
+        var buf=await r.arrayBuffer(); var obj=(new THREE.FBXLoader()).parse(buf,'');
+        if(obj.animations&&obj.animations.length){ var clip=_extract(obj.animations[0],obj);
+          if(window.STUDIO){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=clip; STUDIO.clips[base]=clip; } return clip; } }catch(e){} }
+      return null;
+    })();
+    var c=await window.__mcInFlight[key]; delete window.__mcInFlight[key]; return c;
+  };
+  // AUTO-LOAD the core set: wait for FBXLoader, stay off 'fight', load a few at a time (no OOM/jank)
+  var started=false;
+  async function loadCore(){ if(started) return; started=true;
+    var list = (window.FBX_LOAD_ALL===true)? CORE : CORE;   // FBX_LOAD_ALL handled by legacy path; core here
+    var n=0; for(var i=0;i<list.length;i++){ try{ var c=await window.loadClipFor(list[i]); if(c) n++; }catch(e){}
+      await new Promise(function(r){ setTimeout(r, 60); }); }   // breathe between parses
+    try{ console.log('%c[BANNON_MOCAP] core clips loaded: '+n+'/'+list.length,'color:#7CFC00'); }catch(e){}
+    try{ if(window.renderClipChips) window.renderClipChips(); }catch(e){}
+  }
+  function tryStart(){
+    var fighting=false; try{ fighting=(typeof gameState!=='undefined'?gameState:window.gameState)==='fight'; }catch(e){}
+    if(typeof THREE!=='undefined' && THREE.FBXLoader && !fighting){ loadCore(); return; }
+    setTimeout(tryStart, 2500);
+  }
+  window.BANNON_MOCAP_LOAD = loadCore;   // manual trigger (e.g. a MOVE FORGE button)
+  setTimeout(tryStart, 4000);            // let the page settle first
+})();
+console.log('%c[BANNON_MOCAP] mocap activator online — loadClipFor() + mobile-safe core auto-load','color:#7CFC00');
 </script>
 </body></html>
 
