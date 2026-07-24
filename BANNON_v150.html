@@ -14659,6 +14659,10 @@ function startFight(){
   if(typeof applyForgeMorphs==='function'){ try{ applyForgeMorphs(p1); applyForgeMorphs(p2); }catch(_){} }
   // Dress each fighter in their own attire so the roster isn't all in trunks.
   if(typeof applyAttire==='function'){ try{ dressFighter(p1); dressFighter(p2); }catch(_){} }
+  // NO PROCEDURAL POP (post-setup, wins over dress/restyle which re-show the segs): any fighter still
+  // waiting on its GLB keeps the procedural tube HIDDEN until _bindFighterGltf reveals the model (a
+  // failed load restores it via removeFighterModel). You no longer see the ugly tube for a beat.
+  try{ ['p1','p2','p3','p4'].forEach(function(sd){ var f=fighterFor(sd); if(f && f._charModelRequested && !f.model && f.seg && typeof setProcVisible==='function') setProcVisible(f,false); }); }catch(_){}
   comboCount=0; updateCombo();
   currentRound=1; p1Rounds=0; p2Rounds=0; roundEnding=false;
   updateRoundPips();
@@ -15087,9 +15091,13 @@ function mdickieBaseFor(charName){
 }
 window.mdickieBaseFor = mdickieBaseFor;
 function applyCharModels(){ ['p1','p2','p3','p4'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; if(f._forceProc) return;
-  if(f._altModelUrl){ f._charModelRequested=true; try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
-  if(f._mdickieBase){ var mb=mdickieBaseFor(f._mdickieBase); f._charModelRequested=true; try{ loadFighterModel(sd, mb, 'MDickie · '+f._mdickieBase); }catch(e){} return; }   // MDickie base attire (falls back to procedural if the base GLB isn't present)
-  var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ f._charModelRequested=true; try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
+  // NO PROCEDURAL POP: if a GLB is expected for this fighter, HIDE the procedural tube the moment
+  // we kick the async load — you were seeing the ugly procedural body for a beat before the model
+  // bound (_bindFighterGltf reveals the model; a FAILED load restores the procedural body).
+  var _hideProc=function(){ try{ if(f.seg) setProcVisible(f,false); }catch(e){} };
+  if(f._altModelUrl){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
+  if(f._mdickieBase){ var mb=mdickieBaseFor(f._mdickieBase); f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, mb, 'MDickie · '+f._mdickieBase); }catch(e){} return; }   // MDickie base attire (falls back to procedural if the base GLB isn't present)
+  var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
 function assignCharModel(charKey, url, name){ if(!charKey) return; charKey=charKey.toUpperCase(); try{ if(url){ CHAR_MODEL[charKey]={url:url,name:name||charKey}; } else { delete CHAR_MODEL[charKey]; } localStorage.setItem('bannonCharModels',JSON.stringify(CHAR_MODEL)); }catch(e){} }
 // Bind the model currently shown on a side to that side's CHARACTER so it persists as theirs.
 function assignCurrentModelToChar(side){ var f=fighterFor(side); if(!f) return; var ck=charModelKey(f);
@@ -16402,14 +16410,24 @@ function setupInput(){
   loadMatchState();
   // ── HOOK MENU BUTTONS TO ALSO SAVE ────────────────────────────────────────────────────────────
   // menu buttons
-  document.getElementById('btnFight').addEventListener('click', startFight);
+  // RACE FIX: NEVER start a match before the character-select screen is defined + its roster is
+  // populated. The old wiring fired startFight() directly (or as a fallback), which — when the
+  // char-select module or ROSTER_ALL hadn't loaded yet — dropped you STRAIGHT INTO A MATCH and
+  // skipped selection (or forced a back-and-retry to populate). This waits (up to ~6s) for readiness.
+  window.openSelectWhenReady = function(tries){ tries=tries||0;
+    var rosterReady=false; try{ rosterReady=(window.ROSTER_ALL && window.ROSTER_ALL().length>0); }catch(e){}
+    if(typeof window.openCharacterSelect==='function' && rosterReady){ window.openCharacterSelect(); return; }
+    if(tries>60){ if(typeof window.openCharacterSelect==='function'){ window.openCharacterSelect(); } return; }  // give up gracefully -> open anyway (no auto-match)
+    setTimeout(function(){ window.openSelectWhenReady(tries+1); }, 100);
+  };
+  document.getElementById('btnFight').addEventListener('click', function(){ window.openSelectWhenReady(); });
   // ---- PLAY MODES submenu (MDickie-style: the actual game modes, split from creation/edit) ----
   (function(){
     const pm=document.getElementById('playMenu'), mm=document.getElementById('mainMenu');
     const _w=(id,fn)=>{ const b=document.getElementById(id); if(b) b.addEventListener('click', fn); };
     _w('btnPlay', ()=>{ if(pm) pm.classList.remove('hidden'); });
     _w('pmBack',  ()=>{ if(pm) pm.classList.add('hidden'); });
-    _w('pmExhibition', ()=>{ if(pm)pm.classList.add('hidden'); if(window.openCharacterSelect) window.openCharacterSelect(); else if(typeof startFight==='function') startFight(); });
+    _w('pmExhibition', ()=>{ if(pm)pm.classList.add('hidden'); window.openSelectWhenReady(); });   // wait for select — never auto-drop into a match
     _w('pmUniverse', ()=>{ if(pm)pm.classList.add('hidden'); if(window.openUniverse) window.openUniverse(); });
     _w('pmCareer', ()=>{ if(pm)pm.classList.add('hidden'); try{ window.CAREER_ME=window.CAREER_ME||'BANNON'; }catch(e){} if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="career"]').click(); }catch(e){} } });
     _w('pmTraining', ()=>{ if(pm)pm.classList.add('hidden'); if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="training"]').click(); }catch(e){} } });
