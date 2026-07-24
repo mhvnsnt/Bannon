@@ -277,10 +277,13 @@ wss.on("connection", (ws) => {
     try {
       const data = JSON.parse(msg.toString());
       if (data.type === 'INPUT') {
-        console.log("Bridging Input to Unreal Engine:", data);
-        if (liveLinkWS) {
-          liveLinkWS.send(JSON.stringify({ type: 'ENGINE_INPUT', ...data }));
-        }
+        console.log("Bridging God Mode OS Input to C++ UDP Port 4001:", data);
+        const udpClient = dgram.createSocket('udp4');
+        const payload = Buffer.from(JSON.stringify(data));
+        udpClient.send(payload, 4001, '127.0.0.1', (err) => {
+            if (err) console.error("Error sending God Mode command to C++:", err);
+            udpClient.close();
+        });
       }
     } catch (e) {
       console.error("Failed to parse LiveLink message:", e);

@@ -905,3 +905,9 @@ dive-intent thresholds) OR MDickie-full-integration OR UE-into-APK. Do NOT start
   - OUROBOROUS ENGINE: Core environment for the system.
   - M.C.A.: (Metaconscious Apotheosis) Local, zero-cost Qwable-Abliterated inference telemetry.
   - RABBITSFOOT: (Real-time Algorithmic Build & Behavior Integrated Telemetry System / Focused On Ouroborous Tracking) Context injection, memory manager, and live `CLAUDE.md` memory reader.
+
+### NATIVE IPC BRIDGE & GOD MODE (UDP LISTENER)
+* **Telemetry Broadcast:** `UBannonTelemetryLogger` (C++) broadcasts JSON telemetry to Node.js `server.ts` via UDP port 4000.
+* **God Mode Listener:** `UBannonGodModeListener` (C++) runs a background UDP socket listener on port 4001, awaiting JSON overrides from Node.js.
+* **Routing:** `server.ts` relays UDP 4000 telemetry to `Bannon_v150.html` via WebSockets, and forwards God Mode inputs (from `window.sendGodModeCommand`) to UDP 4001 in C++.
+* **Thread Safety:** Incoming UDP God Mode overrides in C++ are parsed asynchronously and pushed to `ENamedThreads::GameThread` for safe physics alterations (`MAX_HP`, `DMG_SCALE`, `MAX_BODY_VEL`, poise/crumple states).
