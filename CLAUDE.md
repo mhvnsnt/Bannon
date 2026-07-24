@@ -33,3 +33,10 @@
 - Absolute Math Enforcement routes forces through DMG_SCALE = 8.0 and clamps impulses to MAX_BODY_VEL = 3.8 m/s.
 - Poise Degradation isolates structural crumple from the MAX_HP = 10000 scaling.
 - Impact Telemetry logs precise collision coordinates and forces to UE_LOG_STREAM for HUD intercept and L.I.O.N.T.A.M.E.R. analysis.
+
+## Native Grapple & Multi-Rig Synchronization
+- Shared State Component (BannonGrappleComponent) created to lock Attacker and Defender into synchronized grapple state.
+- Localized Physics Dampening disables inter-rig capsule collision temporarily upon grapple initiation.
+- Root Motion Lock syncs Defender's transform strictly to Attacker's root motion.
+- Constraint Failsafe triggers GRAPPLE_TENSION_EXCEEDED via UE_LOG_STREAM and breaks grapple to prevent systemic crashes.
+- Added impulse-based recoil, stretch debug mode, and anticipation frames hooks.

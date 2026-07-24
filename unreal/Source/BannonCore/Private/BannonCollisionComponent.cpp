@@ -22,6 +22,9 @@ void UBannonCollisionComponent::ProcessBoneImpact(FName HitBone, FVector ImpactL
         VelocityMagnitude = MAX_BODY_VEL;
     }
 
+    // Impulse-based recoil scales with mass and speed multipliers
+    float RecoilImpulse = BaseForce * 1.5f; 
+    
     // Scale the baseline damage strictly using DMG_SCALE = 8.0
     float BaseForce = VelocityMagnitude * KineticMass;
     float ScaledForce = BaseForce * DMG_SCALE;
