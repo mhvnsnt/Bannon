@@ -12707,17 +12707,9 @@ function playerAttack(kind){
     return;
   }
   if (p.reboundT > 0){      // springboard off the ropes during a rebound
-    // DIVE INTENT THRESHOLD (2K): a rebound dive is a COMMITMENT, not an accident. Require a
-    // deliberate signal — hold the power/MOD modifier, aim hard toward the ropes/opponent, or press
-    // UP. A bare tap during a rebound is a normal RUNNING STRIKE, not an accidental dive off the
-    // apron. window.DIVE_INTENT=false to revert to the old always-dive behavior.
-    var _up = keys['w']||keys['arrowup']||(joy.active&&joy.y<-0.45);
-    var _aimHard = (Math.abs((keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0)+(joy.active?joy.x*1.5:0))>0.6);
-    var _mod = keys['shift']||heldBtns['block']||heldBtns['mod'];
-    var _intent = (window.DIVE_INTENT===false) || _up || _aimHard || _mod || kind==='special';
-    if (_intent){ let type = (kind==='special') ? 'SPLASH' : (kind==='kick') ? 'DIVING_STOMP' : 'CROSSBODY';
-      p.reboundT = 0; p.startDive(type, true); return; }
-    // no intent -> fall through to a normal running/rebound strike (no accidental dive)
+    let type = (kind==='special') ? 'SPLASH' : (kind==='kick') ? 'DIVING_STOMP' : 'CROSSBODY';
+    p.reboundT = 0; p.startDive(type, true);
+    return;
   }
 
   // v154 FIX: read the PLAYER's actual character moveset, not a hardcoded 'BANNON' — every character
