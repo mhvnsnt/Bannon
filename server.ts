@@ -22,7 +22,7 @@ export function initLogWatcher(wss) {
             stream.on('data', (chunk) => {
                 const lines = chunk.toString().split('\n');
                 lines.forEach(line => {
-                    if (line.includes('Error:') || line.includes('Warning:') || line.includes('Exception') || line.includes('RESTORE_CORE_VARIABLES')) {
+                    if (line.includes('Error:') || line.includes('Warning:') || line.includes('Exception') || line.includes('RESTORE_CORE_VARIABLES') || line.includes('CRITICAL_PHYSICS_FAULT')) {
                         wss.clients.forEach(client => {
                             if (client.readyState === 1) {
                                 client.send(JSON.stringify({ type: 'UE_LOG_STREAM', payload: line }));

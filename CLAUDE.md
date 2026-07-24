@@ -59,3 +59,9 @@
 - Bi-Directional Telemetry Overdrive implemented bypassing standard HTTP logic for instant Creator HUD feedback.
 - Runtime Execution Override added (ExecutePayloadBlob) to inject native payload blobs directly to the GameThread, bypassing the UE compilation pipeline entirely.
 - Feature creep purged. Logic strictly bound to enhancing L.I.O.N.T.A.M.E.R. integration with the existing Bannon repository.
+
+## R.A.B.B.I.T.S.F.O.O.T. Override & NaN Sanitization
+- Memory Sanitization Component (BannonSanitizer) created and locked to the pre-physics tick to scan for NaN vectors and velocity cap breaches.
+- Pre-Frame Rollback immediately blocks execution and leverages BannonModLoader cache to instantly restore the last verified stable state.
+- Critical Fault Telemetry triggers CRITICAL_PHYSICS_FAULT flag over the WebSocket bridge.
+- L.I.O.N.T.A.M.E.R. Handoff streams exact memory addresses and stack traces to the Creator HUD for instant reinjection analysis.
