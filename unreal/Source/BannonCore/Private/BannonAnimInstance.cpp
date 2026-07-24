@@ -1,39 +1,44 @@
 #include "BannonAnimInstance.h"
+#include "Math/UnrealMathUtility.h"
+#include "Async/Async.h"
 
 UBannonAnimInstance::UBannonAnimInstance()
 {
-	CurrentPoise = 100.0f;
-	bIsCrumpled = false;
-	GGPOFrame = 0;
-	GrappleIKBridge = nullptr;
-	GGPOBridge = nullptr;
-}
-
-void UBannonAnimInstance::NativeInitializeAnimation()
-{
-	Super::NativeInitializeAnimation();
+    ActivePoise = 100.0f;
+    CrumpleBlendWeight = 0.0f;
+    IKBlendWeight = 1.0f;
+    bIsCrumpled = false;
 }
 
 void UBannonAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 {
-	Super::NativeUpdateAnimation(DeltaSeconds);
+    Super::NativeUpdateAnimation(DeltaSeconds);
 
-	// Physics Boundaries: The animation system is subordinate to the poise engine.
-	// If poise drops below 0, the character is crumpled by Jolt.
-	
-	if (GrappleIKBridge)
-	{
-		// E.g., fetch poise state from a native component or directly if the bridge exposed it
-		// For now we simulate reading the state to bind animation blending to the physics crumple state
-		// If poise is 0, we're in full Jolt physics override
-		bIsCrumpled = (CurrentPoise <= 0.0f);
-	}
+    // Strict Crumple Coupling: Crumple states derive exclusively from active Poise
+    if (ActivePoise <= POISE_CRUMPLE_THRESHOLD && !bIsCrumpled)
+    {
+        bIsCrumpled = true;
+    }
+    else if (ActivePoise > POISE_CRUMPLE_THRESHOLD && bIsCrumpled)
+    {
+        bIsCrumpled = false;
+    }
 
-	if (GGPOBridge && GGPOBridge->RollbackSession)
-	{
-		// Route the skeletal animation graph to read active frame data directly from GGPO
-		// Note: actual API call depends on ggpo bindings. 
-		// Example pseudo-sync:
-		// GGPOFrame = ggpo_get_current_frame(GGPOBridge->RollbackSession);
-	}
+    // Seamless Transition: Blend the crumple weight over time to prevent visual snapping
+    float TargetCrumpleWeight = bIsCrumpled ? 1.0f : 0.0f;
+    CrumpleBlendWeight = FMath::FInterpTo(CrumpleBlendWeight, TargetCrumpleWeight, DeltaSeconds, 5.0f);
+
+    // IK scales inversely with crumple
+    float TargetIKWeight = bIsCrumpled ? 0.0f : 1.0f;
+    IKBlendWeight = FMath::FInterpTo(IKBlendWeight, TargetIKWeight, DeltaSeconds, 5.0f);
+}
+
+void UBannonAnimInstance::RecalculateBlendWeights(float NewPoiseState)
+{
+    // Called when UPDATE_READY signal fires and Poise interpolates
+    AsyncTask(ENamedThreads::GameThread, [this, NewPoiseState]()
+    {
+        UE_LOG(LogTemp, Log, TEXT("[BannonAnimInstance] IPC UPDATE_READY Triggered: Recalculating IK & Physical Animation blends for new Poise..."));
+        ActivePoise = NewPoiseState;
+    });
 }

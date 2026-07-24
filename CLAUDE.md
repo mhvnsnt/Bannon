@@ -21,3 +21,9 @@
 - Log Stream Visualization buffers UE_LOG_STREAM.
 - Manual Override Trigger implemented to force L.I.O.N.T.A.M.E.R. rewrites via IPC.
 - Live Interpolation Tracking bound to DMG_SCALE, MAX_BODY_VEL, and Poise variables.
+
+## Procedural Crumple & IK Hot-Reload
+- UBannonAnimInstance created and bound to active Poise memory addresses via IPC listener.
+- Dynamic Blend Weights recalculate IK and physical animation profiles when UPDATE_READY fires.
+- Strict Crumple Coupling enforced: Crumple states derive exclusively from the active Poise value.
+- Seamless Transitions implemented via interpolation to prevent visual snapping during hot-reloads.

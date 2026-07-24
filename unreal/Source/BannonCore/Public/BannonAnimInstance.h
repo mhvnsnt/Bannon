@@ -2,34 +2,33 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
-#include "BannonGrappleIKBridge.h"
-#include "BannonGGPOBridge.h"
 #include "BannonAnimInstance.generated.h"
 
 UCLASS()
 class BANNONCORE_API UBannonAnimInstance : public UAnimInstance
 {
-	GENERATED_BODY()
+    GENERATED_BODY()
 
 public:
-	UBannonAnimInstance();
+    UBannonAnimInstance();
 
-	virtual void NativeInitializeAnimation() override;
-	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
+    virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Bannon|Animation")
-	float CurrentPoise;
+    UFUNCTION(BlueprintCallable, Category = "Bannon|Animation")
+    void RecalculateBlendWeights(float NewPoiseState);
 
-	UPROPERTY(BlueprintReadOnly, Category = "Bannon|Animation")
-	bool bIsCrumpled;
+protected:
+    UPROPERTY(BlueprintReadOnly, Category = "Bannon|Animation")
+    float ActivePoise;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Bannon|Animation")
-	int32 GGPOFrame;
+    UPROPERTY(BlueprintReadOnly, Category = "Bannon|Animation")
+    float CrumpleBlendWeight;
 
-	// References to our bridge modules
-	UPROPERTY(BlueprintReadWrite, Category = "Bannon|Animation")
-	UBannonGrappleIKBridge* GrappleIKBridge;
+    UPROPERTY(BlueprintReadOnly, Category = "Bannon|Animation")
+    float IKBlendWeight;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Bannon|Animation")
-	UBannonGGPOBridge* GGPOBridge;
+    UPROPERTY(BlueprintReadOnly, Category = "Bannon|Animation")
+    bool bIsCrumpled;
+
+    const float POISE_CRUMPLE_THRESHOLD = 20.0f;
 };
