@@ -41968,6 +41968,99 @@ console.log('%c[GNM FACE LAB] scan-grade parametric face studio — hub tile �
 })();
 console.log('%c[BANNON_MOCAP] mocap activator online — loadClipFor() + mobile-safe core auto-load','color:#7CFC00');
 </script>
+<script>
+// ============================================================================================
+// BANNON_MOVESET_LIB — WWE-2K-style MOVESET editor (owner spec 2026-07-24). FLOW:
+//   1. SELECT A WRESTLER to edit (roster grid) — like 2K, you pick who first.
+//   2. Their moveset opens as a CATEGORIZED LIBRARY: category tabs (STRIKES / GRAPPLES / AERIALS /
+//      TAUNTS / LOCOMOTION / SIGNATURES / FINISHERS) × POSITION groups (standing front/rear,
+//      grounded, corner, top-rope, apron, running…), driven by the 182-clip fbx_move_map.json.
+//   3. Each move row: ▶ PREVIEW (lazy-loads the real mocap via loadClipFor) + EQUIP (assigns the
+//      clip to that fighter's moveset slot; persisted). resolveGrapPos drives OUR physics under it.
+// Guaranteed-running top-level module (the legacy MOVE FORGE list was flat + non-2K).
+// ============================================================================================
+window.BANNON_MOVESET_LIB = (function(){
+  const LS='bannon_movesets_v1'; let MAP=null, panel=null, whoKey=null, tab='STRIKES';
+  const CATS=[['STRIKES','strike','#ff7a1a'],['GRAPPLES','grapple','#c084fc'],['AERIALS','dive','#4ac8ff'],
+    ['SUBMISSIONS','submission','#7CFC00'],['TAUNTS','taunt','#ffd23f'],['LOCOMOTION','locomotion','#9ad1ff'],
+    ['SIGNATURES','signature','#ff4d8a'],['FINISHERS','finisher','#ff2a2a']];
+  const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+  function saved(){ try{ return JSON.parse(localStorage.getItem(LS)||'{}'); }catch(e){ return {}; } }
+  function store(m){ try{ localStorage.setItem(LS, JSON.stringify(m)); }catch(e){} }
+  async function loadMap(){ if(MAP) return MAP;
+    const cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    for(const u of ['assets/moves/fbx_move_map.json', cdn+'assets/moves/fbx_move_map.json']){
+      try{ const r=await fetch(u); if(r.ok){ MAP=await r.json(); break; } }catch(e){} }
+    return MAP; }
+  function roster(){ try{ return (window.ROSTER_ALL?window.ROSTER_ALL():[]).map(c=>c.name); }catch(e){ return ['BANNON']; } }
+  // classify a clip into one of our category tabs (map cat -> tab; signature/finisher inferred by name)
+  function tabOf(c){ const cat=(c.cat||'').toLowerCase(), nm=(c.clip||'').toLowerCase();
+    if(/finish|tombstone|piledriver|brainbuster|strongzero/.test(nm)) return 'FINISHERS';
+    if(cat==='strike') return 'STRIKES'; if(cat==='grapple') return 'GRAPPLES';
+    if(cat==='dive'||cat==='aerial_transition') return 'AERIALS'; if(cat==='submission') return 'SUBMISSIONS';
+    if(cat==='taunt'||cat==='style_stance') return 'TAUNTS'; if(cat==='locomotion'||cat==='irish_whip') return 'LOCOMOTION';
+    return 'STRIKES'; }
+  function build(){ if(panel) return; panel=document.createElement('div');
+    panel.style.cssText='position:fixed;inset:3% 4%;z-index:100003;background:#0a0c12f8;border:1px solid #ff7a1a;border-radius:12px;color:#ffd9a8;font:12px ui-monospace,monospace;display:none;flex-direction:column;box-shadow:0 12px 44px #000d;overflow:hidden;';
+    document.body.appendChild(panel); }
+  function open(){ build(); panel.style.display='flex'; loadMap().then(()=>{ whoKey=null; render(); }); }
+  function close(){ if(panel) panel.style.display='none'; }
+  function render(){
+    if(!whoKey){ renderRosterGrid(); return; }
+    const S=saved(); const mine=S[whoKey]||{}; const clips=(MAP&&MAP.clips)||[];
+    let h='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ff7a1a55">'+
+      '<b style="color:#ff7a1a;font-size:15px;letter-spacing:2px">🥊 MOVESET · '+esc(whoKey.replace(/_/g,' '))+'</b>'+
+      '<span><button data-ms="back" style="background:#14100c;border:1px solid #543;color:#ffd9a8;padding:6px 10px;border-radius:6px;cursor:pointer">◀ WRESTLERS</button> '+
+      '<button data-ms="close" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">✕</button></span></div>';
+    // category tabs
+    h+='<div style="display:flex;gap:4px;overflow-x:auto;padding:8px 12px 0;flex:none">';
+    CATS.forEach(([id,,c])=>{ const on=id===tab; h+='<button data-cat="'+id+'" style="flex:none;background:'+(on?c+'2e':'#140b07')+';color:'+(on?'#fff':'#c98')+';border:1px solid '+(on?c:'#ff7a1a33')+';border-radius:7px 7px 0 0;padding:7px 11px;cursor:pointer;font:bold 10px ui-monospace;letter-spacing:1px">'+id+'</button>'; });
+    h+='</div>';
+    // moves in this category, grouped by POSITION
+    const inTab=clips.filter(c=>tabOf(c)===tab);
+    const byPos={}; inTab.forEach(c=>{ const p=c.pos||'OTHER'; (byPos[p]=byPos[p]||[]).push(c); });
+    h+='<div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;min-height:0;padding:8px 12px 16px">';
+    const posKeys=Object.keys(byPos).sort();
+    if(!posKeys.length) h+='<div style="opacity:.6;padding:20px 0;text-align:center">No '+tab.toLowerCase()+' clips classified.</div>';
+    posKeys.forEach(pos=>{ h+='<div style="color:#ff7a1a;font-weight:bold;letter-spacing:1px;margin:12px 0 5px;border-bottom:1px solid #ff7a1a33;padding-bottom:3px;font-size:11px">'+esc(pos.replace(/_/g,' '))+'</div>';
+      byPos[pos].forEach(c=>{ const eq=Object.values(mine).indexOf(c.clip)>=0;
+        h+='<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-bottom:1px solid #1c1622">'+
+          '<button data-prev="'+esc(c.clip)+'" style="background:#14202c;border:1px solid #4af;color:#9cf;width:30px;padding:4px 0;border-radius:5px;cursor:pointer">▶</button>'+
+          '<span style="flex:1"><b style="color:#ffe0b0">'+esc(c.clip)+'</b><br><span style="font-size:9px;color:#9a8">'+esc(c.engine||c.cat||'')+(c.style&&c.style.length?(' · '+c.style.join('/')):'')+'</span></span>'+
+          '<button data-eq="'+esc(c.clip)+'" data-pos="'+esc(pos)+'" style="background:'+(eq?'#1a3a12':'#14100c')+';border:1px solid '+(eq?'#7CFC00':'#543')+';color:'+(eq?'#7CFC00':'#ffd9a8')+';padding:4px 9px;border-radius:5px;cursor:pointer;font:bold 10px ui-monospace">'+(eq?'✔ EQUIPPED':'EQUIP')+'</button></div>'; }); });
+    h+='</div>';
+    panel.innerHTML=h; wire();
+  }
+  function renderRosterGrid(){
+    let h='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ff7a1a55">'+
+      '<b style="color:#ff7a1a;font-size:15px;letter-spacing:2px">🥊 MOVESET EDITOR — SELECT A WRESTLER</b>'+
+      '<button data-ms="close" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">✕</button></div>'+
+      '<div style="flex:1;overflow-y:auto;min-height:0;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px">';
+    roster().forEach(nm=>{ const key=String(nm).toUpperCase().replace(/[^A-Z0-9_]/g,'_');
+      h+='<button data-who="'+esc(nm)+'" style="background:linear-gradient(160deg,#1e1626,#140e1c);border:1px solid #3a2c44;border-radius:8px;padding:12px 8px;cursor:pointer;color:#fff;font:bold 11px ui-monospace">'+esc(String(nm).replace(/_/g,' '))+'</button>'; });
+    h+='</div>'; panel.innerHTML=h; wire();
+  }
+  function wire(){
+    panel.querySelectorAll('[data-ms="close"]').forEach(b=>b.onclick=close);
+    panel.querySelectorAll('[data-ms="back"]').forEach(b=>b.onclick=()=>{ whoKey=null; render(); });
+    panel.querySelectorAll('[data-who]').forEach(b=>b.onclick=()=>{ whoKey=String(b.dataset.who).toUpperCase().replace(/[^A-Z0-9_]/g,'_'); tab='STRIKES'; render(); });
+    panel.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{ tab=b.dataset.cat; render(); });
+    panel.querySelectorAll('[data-prev]').forEach(b=>b.onclick=async()=>{ b.textContent='…';
+      try{ const c=await window.loadClipFor(b.dataset.prev); b.textContent=c?'✓':'✕'; setTimeout(()=>b.textContent='▶',1200);
+        (window.toast||function(){})(c?('Loaded '+b.dataset.prev):('Clip missing: '+b.dataset.prev)); }catch(e){ b.textContent='▶'; } });
+    panel.querySelectorAll('[data-eq]').forEach(b=>b.onclick=()=>{ const S=saved(); const m=S[whoKey]=S[whoKey]||{}; const pos=b.dataset.pos, clip=b.dataset.eq;
+      if(m[pos]===clip) delete m[pos]; else m[pos]=clip; store(S); render(); });
+  }
+  window.openMovesetLib=open;
+  // hub tile
+  try{ var mv=document.getElementById('btnHubMoves'); if(mv&&mv.parentElement){ var b=document.createElement('button'); b.className='hub-tile'; b.id='btnHubMovesetLib';
+    b.innerHTML='<span class="hub-ico">📋</span><span class="hub-lbl">MOVESET</span>'; b.addEventListener('click',open); mv.parentElement.insertBefore(b, mv.nextSibling); } }catch(e){}
+  // engine read hook: a fighter's equipped clip for a position (moveset → combat)
+  window.equippedClipFor=function(charKey,pos){ try{ const m=saved()[String(charKey).toUpperCase().replace(/[^A-Z0-9_]/g,'_')]; return m?m[pos]:null; }catch(e){ return null; } };
+  return { open, close, loadMap, tabOf };
+})();
+console.log('%c[BANNON_MOVESET_LIB] 2K moveset editor — hub 📋 MOVESET / openMovesetLib()','color:#7CFC00');
+</script>
 </body></html>
 
 
