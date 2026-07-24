@@ -8,9 +8,11 @@ ABannonMatchStateMachine::ABannonMatchStateMachine() {
 
 void ABannonMatchStateMachine::TransitionToState(EMatchState NewState) {
     CurrentState = NewState;
-    
+
     switch (CurrentState) {
+        case EMatchState::PRE_MATCH_ENTRANCE:
         case EMatchState::EntranceRunning:
+        case EMatchState::POST_MATCH_VICTORY:
         case EMatchState::VictorySequence:
             LockMatchMechanics(true);
             break;
@@ -19,7 +21,6 @@ void ABannonMatchStateMachine::TransitionToState(EMatchState NewState) {
             break;
         case EMatchState::EntranceBrawl:
         case EMatchState::PostMatchBrawl:
-            // Brawl logic - physics active but bell not ringing (or already rung)
             LockMatchMechanics(false); 
             break;
         default:
@@ -33,4 +34,9 @@ void ABannonMatchStateMachine::LockMatchMechanics(bool bLock) {
     } else {
         UE_LOG(LogTemp, Log, TEXT("Match Timer and Ref Bell UNLOCKED."));
     }
+}
+
+void ABannonMatchStateMachine::OnFighterHitRingApronVolume() {
+    UE_LOG(LogTemp, Log, TEXT("Fighter hit ring apron volume. Locking physical handlers."));
+    LockMatchMechanics(true);
 }

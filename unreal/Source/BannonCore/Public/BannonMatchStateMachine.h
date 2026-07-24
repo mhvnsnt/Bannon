@@ -6,11 +6,13 @@
 UENUM(BlueprintType)
 enum class EMatchState : uint8 {
     Init,
+    PRE_MATCH_ENTRANCE,
     EntrancePreview,
     EntranceRunning,
     EntranceBrawl,
     MatchActive,
     MatchFinished,
+    POST_MATCH_VICTORY,
     VictorySequence,
     PostMatchBrawl
 };
@@ -20,13 +22,16 @@ class BANNONCORE_API ABannonMatchStateMachine : public AActor {
     GENERATED_BODY()
 public:
     ABannonMatchStateMachine();
-    
+
     UPROPERTY(BlueprintReadWrite, EditAnywhere, Category = "Match State")
     EMatchState CurrentState;
 
     UFUNCTION(BlueprintCallable, Category = "Match State")
     void TransitionToState(EMatchState NewState);
-    
+
     UFUNCTION(BlueprintCallable, Category = "Match State")
     void LockMatchMechanics(bool bLock);
+
+    UFUNCTION(BlueprintCallable, Category = "Match State")
+    void OnFighterHitRingApronVolume();
 };

@@ -311,7 +311,8 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
   background:radial-gradient(ellipse 55% 42% at 50% 48%, rgba(255,255,240,0.82) 0%, rgba(255,200,120,0.35) 38%, transparent 72%);
   transition:opacity 0.04s ease-out; }
 #bloodLayer { position:absolute; inset:0; pointer-events:none; z-index:6; }
-#hud { position:absolute; inset:0; pointer-events:none; z-index:10; padding-top:var(--safe-top); }
+#hud { position:absolute; inset:0; pointer-events:none; z-index:10; padding-top:var(--safe-top); transition: opacity 0.8s ease-in-out, transform 0.8s cubic-bezier(0.2, 0.7, 0.3, 1); }
+#hud.victory-state { opacity: 0; transform: translateY(-20px); }
 .health-wrap { position:absolute; top:calc(10px + var(--safe-top)); width:38%; max-width:420px; }
 #p1-wrap { left:3%; } #p2-wrap { right:3%; }
 .fighter-tag { display:flex; align-items:baseline; gap:8px; margin-bottom:3px; }
