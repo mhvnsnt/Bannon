@@ -783,3 +783,45 @@ NEXT-SESSION ORDER: (1) CAW front-door roster-grid + template picker, (2) Movese
   React). This batch is REAL code this time (BannonPhysicsLaws.h has genuine velocity/poise math),
   NOT cout stubs — but it's all unreal/+src/, doesn't touch the live game; where it clobbered
   BANNON_v150.html the [heal] guard auto-restored our healthy version. My branch reset to main clean.
+
+## v161h (2026-07-24) — model-hole/GNM/subtitle/roam fixes + COMBAT ROOT CAUSE FOUND
+Verified + pushed this session:
+- **GLB torn-mesh HOLE fixed for ALL fighters** (_bindFighterGltf → THREE.DoubleSide; MAIME torso void).
+- **GNM scroll fixed** (#gnmSliders min-height:0/min-width:0) + **GNM INTEGRATED into CAW FACE tab**
+  (👤 EDIT GNM HEAD, scoped to F().specName) — no longer a floating hub tile.
+- **Commentary subtitle** moved bottom:110px→top:60px (under health bars), black box REMOVED
+  (transparent + text-shadow), z-index 99999→40, pointer-events none — no longer over the buttons.
+- **Roam modes stop forcing 1v1**: while __godWithinRoam, NPC updateAI is suppressed (passive), endRound
+  no-ops (no win/loss); CHALLENGE sets target._challenged so only that NPC wakes into combat.
+
+### COMBAT "MARIONETTE/CLAYMATION" — ROOT CAUSE (measured, definitive)
+NOT limb stretch — bone lengths are rock-solid (maxStretch ~1e-7, candy-wrapper genuinely fixed).
+The puppety look is because **ZERO mocap clips ever load → every move falls back to procedural
+spring poses.** Chain, all measured in-harness:
+- 179 wrestling-move FBX ARE banked (assets/mocap/drive/: Chokeslam, Tombstone, DoubleSuplex…).
+- The STUDIO clip system IS wired: moves w/ `.clip` route through studioApplyClipPose in the
+  delivery paths (grapple stages, signatures, finishers, victims).
+- FBXLoader is loaded ONLY via a runtime CDN injector (line ~30520,
+  cdn.jsdelivr.net/.../FBXLoader.js) — there is NO local/vendored FBXLoader and NO <script src>
+  tag for it. `clipsAtBoot:0`, THREE.FBXLoader undefined in-harness.
+- **On the APK (offline / file://) the CDN injection cannot reach the network → FBXLoader never
+  loads → __FBX_READY never true → BANNON_LOAD_FBX_LIBRARY bails → STUDIO.clips stays empty →
+  procedural poses forever.** This is why the OWNER (who plays the APK) always sees marionette combat.
+THE FIX (real, but needs on-device/network verification — do NOT ship unverified):
+  1. VENDOR FBXLoader.js + fflate.min.js locally (assets/vendor/) + bundle into the APK; load from a
+     relative path with CDN fallback (same pattern as GLTFLoader). This is the APK-critical piece.
+  2. Confirm BANNON_LOAD_FBX_LIBRARY populates STUDIO.clips (179 FBX — stagger the load; it's heavy
+     on mobile, the code already defers off 'fight' state).
+  3. Map equipped moves → real clips (fbx_move_map.json is the classification; wire it so MOVESET_DB /
+     BANNON_MOVE_LIBRARY entries carry `.clip`). Only 10 lib moves currently carry a clip.
+  4. Verify studioApplyClipPose drives the GLB skeleton smoothly (blend clip pose w/ physics only on
+     impact), across many frames, on a real device — THEN ship. Open-source-first: this is Mixamo/WWE
+     mocap FBX → the exact AAA animation the owner wants; no homegrown anim needed.
+
+### UE / C++ INTEGRATION DIRECTION (owner 2026-07-24: three.js HTML = LEGACY nostalgia now)
+Primary target is AAA UE5 + C++ (unreal/). A large real AI-Studio C++ batch is already on main
+(BannonPhysicsLaws.h etc. — genuine velocity/poise/ragdoll math, JoltPhysics/GGPO/llama.cpp
+submodules). Next UE bricks: wire the native headers into a compiling BannonCore module, port the
+verlet/PD combat + MAX_BODY_VEL clamp to Chaos, bring the mocap FBX in as UE AnimSequences (the same
+clips that fix the JS marionette look), build the Creation Suite as UMG mirroring WWE 2K. The JS game
+stays as the playable legacy reference while UE becomes the star.
