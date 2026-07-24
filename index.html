@@ -13885,7 +13885,17 @@ function loop(now){
     readPlayerInput(dt);   // v117: read input on the REAL frame clock so controls stop lagging behind the slowed combat sim (SIM_PACE 0.85). AI + physics stay weighty on sdt; player intent/locomotion read crisp. Revert to sdt if you want input slowed to match.
     // v152: AI drives EVERY non-player fighter (was hardcoded fighters[1] — a CPU-controlled P1
     // stood idle forever, and multi-man needs N-fighter AI). isPlayer is the single source of truth.
-    for (const f of fighters){ if (f && !f.isPlayer && f.updateAI){ try{ f.updateAI(sdt); }catch(e){ window.__logErr&&window.__logErr('updateAI', e); } } }
+    for (const f of fighters){ if (f && !f.isPlayer && f.updateAI){
+      // ROAM MODE (God Within / Universe free-roam): NPCs stay PASSIVE — they do NOT attack, so you
+      // actually WALK THE WORLD instead of being forced into a 1v1. They wake into combat only when
+      // CHALLENGED (BANNON_GODWITHIN.challenge sets f._challenged). This is the roam fix.
+      if (window.__godWithinRoam && !f._challenged){
+        try{ if(!f.ragdoll && f.state!=='down'){ f._roamWT=(f._roamWT||0)+sdt;
+          if(f.state!=='walk' && f.state!=='idle'){ /* let reactions finish */ }
+          else { f.state='idle'; f.vx*=0.9; f.vz*=0.9; } } }catch(e){}
+        continue;
+      }
+      try{ f.updateAI(sdt); }catch(e){ window.__logErr&&window.__logErr('updateAI', e); } } }
     // v152 BODY SEPARATION (readability #1): strikes/reactions move x/z directly, so mid-combo the
     // two bodies used to drive INTO each other and stay merged — you literally could not see who was
     // doing what. move2D's push only ran while walking. This resolver runs every frame for every
@@ -13974,6 +13984,9 @@ function timeUp(){
 }
 
 function endRound(winner){
+  // ROAM MODE: no win/loss screen while free-roaming — a KO just drops the NPC, the world continues
+  // (you're exploring, not in a booked match). The match flow resumes once you CHALLENGE someone.
+  if (window.__godWithinRoam){ return; }
   if (roundEnding || gameState==='winner') return;
   roundEnding = true;
   if (roundTimerInterval) clearInterval(roundTimerInterval);
@@ -19621,28 +19634,31 @@ init();
   if(!subDiv){
     subDiv = document.createElement('div');
     subDiv.id = 'dual-announcer-sub';
+    // COMMENTARY SUBTITLE (owner spec 2026-07-24): sits UNDER the fighter health bars at the TOP —
+    // NOT over the buttons/combat/joystick. NO black box — transparent, just legible text with a
+    // strong shadow so it reads over the arena. Never intercepts input (pointer-events:none).
     subDiv.style.cssText = `
       position: absolute;
-      bottom: 110px;
+      top: calc(env(safe-area-inset-top, 0px) + 60px);
       left: 50%;
       transform: translateX(-50%);
-      width: 92%;
-      max-width: 680px;
-      background: rgba(14, 6, 6, 0.92);
-      border: 1px solid rgba(255, 110, 0, 0.45);
-      box-shadow: 0 12px 36px rgba(0,0,0,0.92), inset 0 0 16px rgba(255,10,10,0.18);
-      border-radius: 6px;
-      padding: 14px 20px;
+      width: 90%;
+      max-width: 620px;
+      background: none;
+      border: none;
+      box-shadow: none;
+      padding: 4px 10px;
       font-family: 'Share Tech Mono', monospace;
-      font-size: 14px;
+      font-size: 13.5px;
       color: #fff;
       text-align: center;
-      transition: all 0.3s ease;
+      text-shadow: 0 1px 3px #000, 0 0 8px #000, 0 0 14px rgba(0,0,0,0.9);
+      transition: opacity 0.3s ease, transform 0.3s ease;
       pointer-events: none;
       opacity: 0;
-      z-index: 99999;
+      z-index: 40;
       letter-spacing: 0.5px;
-      line-height: 1.45;
+      line-height: 1.35;
     `;
     document.body.appendChild(subDiv);
   }
@@ -40707,6 +40723,7 @@ window.BANNON_GODWITHIN = (function(){
     try{ if(typeof announce==='function') announce(line||('You size up '+nm.replace(/_/g,' ')), me); }catch(e){}
     hideInteract(); }
   function challenge(){ if(!target) return; try{ if(typeof announce==='function') announce('CHALLENGE!', nameOf(target).replace(/_/g,' ')); }catch(e){}
+    try{ target._challenged=true; }catch(e){}          // THIS npc wakes into combat; others stay passive
     window.__godWithinRoam=false; hideInteract(); }   // the fighter is already live — combat proceeds
   function wireBtns(){ const b=box(); if(!b || b.__wired) return; b.__wired=true;
     ['TALK','CHALLENGE','LEAVE'].forEach(lbl=>{ const btn=document.createElement('button'); btn.textContent=lbl;
