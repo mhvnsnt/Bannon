@@ -738,3 +738,48 @@ BINDING session memory so these don't get re-derived:
   UniRig bg batch: ECHO errored on the space, STATIC in progress — rerun --fails; bank+gate any
   *_rigged.glb it leaves in assets/models/. NEXT SESSION: 2K creation-suite parity FIRST, then
   grapple-IK realism (queue above).
+
+## OWNER DIRECTIVES (2026-07-24, BINDING — do not re-derive, do not re-ask)
+### OPEN-SOURCE FIRST (all future sessions)
+Combat / model movement / fighting quality: PULL open-source + public GitHub repos (full or the
+key parts) instead of hand-writing homegrown code. UniRig (rigging), Mixamo/AccuRIG, Jolt, GGPO,
+RTIK, mocap FBX libraries — wire the real thing. Don't burn tokens rebuilding what a repo already
+gives us. (The unreal/ side already pulls JoltPhysics/GGPO/llama.cpp as submodules — extend that
+philosophy to the live game: e.g. import FBX mocap → STUDIO clips for real move animation.)
+
+### CREATION-SUITE FLOW = WWE 2K PARITY (the current flow is WRONG — this is the target)
+The suite is "ugly, cluttered, non-functional in the WWE ways." Fix the FLOW, not just sliders:
+1. **Creation Suite MENU** (landing) → pick a mode tile: ARENA · CAW · MOVESET · CREATE-A-MOVE ·
+   ENTRANCE/VICTORY. Each opens its OWN sub-flow (+ any missing sub-parts).
+2. **CAW flow** (WWE 2K exact): entering CAW does NOT dump you into a 90-slider list with a P1/P2
+   toggle on the same screen (THAT IS THE WRONG FLOW). Instead: a ROSTER GRID — slot 1 = "CREATE
+   NEW", every slot after = in-game fighters + your saved CAWs. Pick "Create New" → a FRESH
+   TEMPLATE-MODEL PICKER (full WWE-style base templates: male/female builds, body types) → THEN the
+   edit screen. Picking an existing fighter/CAW → edit them or add an ALT ATTIRE. (v161 already has
+   the tab layout BODY/FACE/LOOK/INK/INFO/PRESET/SAVE + GNM in FACE — the missing piece is the
+   FRONT DOOR: roster-grid → create-new/template-picker vs edit-existing, before the tabs.)
+3. **MOVESET flow** (WWE 2K exact): FIRST select the wrestler to edit → THEN a real moveset LIBRARY
+   UI: categories + submenus for POSITIONS (front/back grapple, ground head/leg, corner, apron,
+   top-rope, etc.), ANIMATIONS, TAUNTS, MOVEMENT/RUN styles, HOLDS, STRIKES/ATTACKS, SIGNATURES,
+   FINISHERS. Our moveset menu is MISSING all of this structure — it needs the 2K library layout
+   with move slots per position. (BANNON_MOVE_LIBRARY / MOVESET_DB / resolveGrapPos are the data
+   backends to surface in that UI.)
+4. Study real WWE 2K menu screens for layout/inputs/screen-space before building. Fold OUR extra
+   systems (DNA, forge, GNM, jukebox) INTO these WWE layouts — never bolt them on as floating tiles.
+NEXT-SESSION ORDER: (1) CAW front-door roster-grid + template picker, (2) Moveset library UI,
+(3) Creation-suite landing menu that routes to each sub-flow, (4) open-source mocap → real move anims.
+
+## v161g (2026-07-24) — model hole fix + GNM scroll/CAW integration (verified, on main)
+- **TORN-MESH HOLE FIXED FOR ALL GLB FIGHTERS**: _bindFighterGltf (the ONE shared bind path, 7
+  callers) sets imported materials to THREE.DoubleSide. MAIME's torso void was single-sided
+  (FrontSide) backface culling showing through open/torn-shirt edges — mesh was 100% intact (47.8k
+  tris, procVisible:0). Fixes every model w/ torn attire / capes / hair cards / open collars. Canon
+  meshes untouched (render flag). window.GLB_DOUBLE_SIDE=false reverts. Verified: singleSidedMats 15→0.
+- **GNM SCROLL FIXED**: #gnmSliders needed min-height:0 + min-width:0 (flex child won't scroll
+  without them). Verified scrollable + scrollTop works, 38 sliders.
+- **GNM INTEGRATED INTO CAW**: FACE tab now has "👤 EDIT GNM HEAD" opening the GNM editor scoped to
+  the CHARACTER being edited (F().specName), not a floating hub tile. Verified opens from CAW FACE.
+- AI-STUDIO main dump audit: a large batch auto-merged to main (unreal/ C++ headers + voice/src
+  React). This batch is REAL code this time (BannonPhysicsLaws.h has genuine velocity/poise math),
+  NOT cout stubs — but it's all unreal/+src/, doesn't touch the live game; where it clobbered
+  BANNON_v150.html the [heal] guard auto-restored our healthy version. My branch reset to main clean.
