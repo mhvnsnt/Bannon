@@ -71,3 +71,19 @@
 - God Mode Validation interrogates payload for GOD_MODE_KEY, routing directly to the GameThread if validated.
 - Community Walled Garden intercepts standard payloads, stripping write access to baseline constants (MAX_HP, DMG_SCALE, MAX_BODY_VEL).
 - Hostile Payload Interception kills the thread and flags hostile mod hashes permanently upon Sandbox Violation.
+
+## v161l (2026-07-24) — ZONING SYSTEM finished (waist-deep clip + accidental dives)
+Took ONE system fully (FINISH-THE-SYSTEM rule). WWE-2K zoning:
+- **CANONICAL PER-ZONE Y** `window.ZONE_Y={RING:0,APRON:0,FLOOR:-0.85}`. THE "waist-deep in the ring"
+  clip was a height MISMATCH: the active _autoZoneFromPosition wrapper set FLOOR zoneY=-0.72 while
+  the ragdoll floor / throws / knockdowns used -0.85 (5 paths). A fighter set to FLOOR by one path
+  rendered ~13cm off from where the body/ragdoll expected → clipped through the mat. All paths now
+  read ZONE_Y.FLOOR (-0.85). base _autoZoneFromPosition + the hysteresis wrapper both unified.
+- **SMOOTHING** already existed (updateProcedural _smoothZoneY delta, lerp 8x down / 6x up) — kept it;
+  did NOT double-count (reverted a redundant applyMesh smoothing I'd added). Verified glide not snap.
+- **DIVE INTENT THRESHOLD**: rope-rebound dives were firing on any bare tap = accidental dives off the
+  apron. Now a rebound dive REQUIRES a deliberate signal — UP held, hard aim (>0.6), the power/MOD
+  modifier, or the SPECIAL button; a bare tap during a rebound is a normal running strike.
+  window.DIVE_INTENT=false reverts. Verified: bare tap → no dive, UP-held → dives.
+- Verified in-harness: FLOOR -0.85 consistent, RING/APRON 0, smoothing mid-transition (-0.109 after 1
+  frame toward -0.85), bare-tap no-dive / intent-dive. 0 pageerrors. ZONING SYSTEM DONE.

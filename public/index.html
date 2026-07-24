@@ -3667,7 +3667,7 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
       && this.state !== 'climb' && this.state !== 'perch' && this.state !== 'dive' && this.state !== 'vault' && this.state !== 'deliver' && this.state !== 'studio')
     this.faceOpponent(dt);
 
-  this.root.position.set(this.x, RING.floorY + (this.zoneY||0), this.z);
+  this.root.position.set(this.x, RING.floorY + (this.zoneY||0), this.z);   // smoothing handled by the updateProcedural _smoothZoneY delta (canonical path)
   // Reset the FULL orientation each grounded frame. Airborne flip/twist (apex stick) bakes pitch
   // into rotation.x and roll/spin into rotation.z (applyShape). Previously we only reassigned .y
   // here, so a move that DIDN'T complete a full rotation left stale pitch/roll on the root after
@@ -8352,6 +8352,10 @@ Fighter.prototype._deriveAux = function(){
   }catch(e){ window.__logErr&&window.__logErr('auxDerive',e); }
 };
 
+// CANONICAL PER-ZONE Y BASELINES (WWE-2K zoning). One source of truth so a fighter never renders
+// at a different depth depending on which code path set their zoneY — that inconsistency
+// (FLOOR was -0.72 in one path, -0.85 in five others) was THE "waist-deep in the ring" clip.
+window.ZONE_Y = window.ZONE_Y || { RING:0, APRON:0, FLOOR:-0.85 };
 // Auto-assign zone from world x/z position — called on any landing so the
 // fighter's zone reflects where they actually are, not where they were before the throw.
 Fighter.prototype._autoZoneFromPosition = function(){
@@ -8363,7 +8367,7 @@ Fighter.prototype._autoZoneFromPosition = function(){
     // inside ring boundary
     this.zone     = 'RING';
     this.apronSide = null;
-    this.zoneY     = 0;
+    this.zoneY     = ZONE_Y.RING;
   } else if (ax <= AH + APRON_W && az <= AHZ + APRON_W){
     // in the apron band
     this.zone = 'APRON';
@@ -8374,12 +8378,12 @@ Fighter.prototype._autoZoneFromPosition = function(){
     } else {
       this.apronSide = this.z >= 0 ? 'Z+' : 'Z-';
     }
-    this.zoneY = 0;
+    this.zoneY = ZONE_Y.APRON;
   } else {
     // outside — floor
     this.zone      = 'FLOOR';
     this.apronSide = null;
-    this.zoneY     = typeof FLY !== 'undefined' ? FLY : -0.72;
+    this.zoneY     = ZONE_Y.FLOOR;
   }
   this._zoneHold = 0;
 };
@@ -8945,7 +8949,7 @@ Fighter.prototype._releaseSlam = function(){
     // the victim ALWAYS lands on the floor outside the ring, regardless of attacker's zone.
     opp.grabbedBy=null; opp.grappling=false; opp.state='grabbed';
     const _outSx = Math.sign(s.placeDir)||1;
-    opp.zone = 'FLOOR'; opp.zoneY = -0.85;
+    opp.zone = 'FLOOR'; opp.zoneY = (window.ZONE_Y?ZONE_Y.FLOOR:-0.85);
     opp.x = _outSx*(ARENA_HALF+1.4); opp.z = this.z;
     if (opp._zoneClamp) opp._zoneClamp();
     opp.hp = clamp(opp.hp - s.dmg, 0, opp.maxHp);
@@ -12703,9 +12707,17 @@ function playerAttack(kind){
     return;
   }
   if (p.reboundT > 0){      // springboard off the ropes during a rebound
-    let type = (kind==='special') ? 'SPLASH' : (kind==='kick') ? 'DIVING_STOMP' : 'CROSSBODY';
-    p.reboundT = 0; p.startDive(type, true);
-    return;
+    // DIVE INTENT THRESHOLD (2K): a rebound dive is a COMMITMENT, not an accident. Require a
+    // deliberate signal — hold the power/MOD modifier, aim hard toward the ropes/opponent, or press
+    // UP. A bare tap during a rebound is a normal RUNNING STRIKE, not an accidental dive off the
+    // apron. window.DIVE_INTENT=false to revert to the old always-dive behavior.
+    var _up = keys['w']||keys['arrowup']||(joy.active&&joy.y<-0.45);
+    var _aimHard = (Math.abs((keys['d']||keys['arrowright']?1:0)-(keys['a']||keys['arrowleft']?1:0)+(joy.active?joy.x*1.5:0))>0.6);
+    var _mod = keys['shift']||heldBtns['block']||heldBtns['mod'];
+    var _intent = (window.DIVE_INTENT===false) || _up || _aimHard || _mod || kind==='special';
+    if (_intent){ let type = (kind==='special') ? 'SPLASH' : (kind==='kick') ? 'DIVING_STOMP' : 'CROSSBODY';
+      p.reboundT = 0; p.startDive(type, true); return; }
+    // no intent -> fall through to a normal running/rebound strike (no accidental dive)
   }
 
   // v154 FIX: read the PLAYER's actual character moveset, not a hardcoded 'BANNON' — every character
@@ -30337,7 +30349,9 @@ function _tryEscape(defender, by){
       this.zoneY = 0;
     } else {
       this.zone = 'FLOOR'; this.apronSide = null;
-      this.zoneY = (typeof FLY!=='undefined') ? FLY : -0.72;
+      // CANONICAL FLOOR HEIGHT: was -0.72 here but -0.85 in five other paths (ragdoll floor, throws,
+      // knockdowns) — that mismatch rendered FLOOR fighters at the wrong depth = "waist-deep" clip.
+      this.zoneY = (window.ZONE_Y ? ZONE_Y.FLOOR : ((typeof FLY!=='undefined') ? FLY : -0.85));
     }
     this._zoneHold = 0;
   };
