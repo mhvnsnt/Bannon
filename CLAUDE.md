@@ -65,3 +65,9 @@
 - Pre-Frame Rollback immediately blocks execution and leverages BannonModLoader cache to instantly restore the last verified stable state.
 - Critical Fault Telemetry triggers CRITICAL_PHYSICS_FAULT flag over the WebSocket bridge.
 - L.I.O.N.T.A.M.E.R. Handoff streams exact memory addresses and stack traces to the Creator HUD for instant reinjection analysis.
+
+## God Mode OS - Sandbox Enforcement & Payload Routing
+- Payload Segregation Router (BannonPayloadRouter) added to intercept and route incoming execution blobs.
+- God Mode Validation interrogates payload for GOD_MODE_KEY, routing directly to the GameThread if validated.
+- Community Walled Garden intercepts standard payloads, stripping write access to baseline constants (MAX_HP, DMG_SCALE, MAX_BODY_VEL).
+- Hostile Payload Interception kills the thread and flags hostile mod hashes permanently upon Sandbox Violation.
