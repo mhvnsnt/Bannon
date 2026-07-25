@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2378"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2381"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -16311,6 +16311,11 @@ function setupInput(){
           if (typeof announce === 'function') announce('referee: ONE!', attacker.opts && attacker.opts.name || 'BANNON');
         } else if (refCount === 2) {
           if (typeof announce === 'function') announce('referee: TWO!!', attacker.opts && attacker.opts.name || 'BANNON');
+          // NEAR FALL is the classic run-in beat: somebody dives in to break up the count at two.
+          // BANNON_RULES.triggerRunIn had been written and never called by anything — this is its
+          // first real trigger, and BANNON_INTERFERENCE turns the returned name into an actual body.
+          try{ if(window.BANNON_INTERFERENCE) window.BANNON_INTERFERENCE.maybe('NEAR_FALL', victim, attacker); }catch(e){}
+          try{ if(window.BANNON_RATING_CREDIT) window.BANNON_RATING_CREDIT('nearFall', 1); }catch(e){}
         } else if (refCount >= 3 && !escaped) {
           clearInterval(tick);
           meter.classList.remove('active');
@@ -37324,6 +37329,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     const mt=MT();
     if (mt==='LMS'){
       for (const f of fighters){
+        if (f._interferer) continue;                       // a run-in is not a competitor: no LMS count on them
         if (f.isDown() && f.hp<(f.maxHp||300)*0.55){
           f._lmsT=(f._lmsT||0)+0.25;
           const c=Math.floor(f._lmsT);
@@ -37340,7 +37346,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     window.__spawnBlood=function(x,y,z,c,inten){
       try{
         if (MT()==='FIRSTBLOOD' && typeof gameState!=='undefined' && gameState==='fight' && !window.__fbDone && typeof fighters!=='undefined' && fighters){
-          let bf=null,bd=1e9; for (const f of fighters){ const d=(f.x-x)*(f.x-x)+(f.z-z)*(f.z-z); if (d<bd){ bd=d; bf=f; } }
+          let bf=null,bd=1e9; for (const f of fighters){ if (f._interferer) continue; const d=(f.x-x)*(f.x-x)+(f.z-z)*(f.z-z); if (d<bd){ bd=d; bf=f; } }
           if (bf){ window.__fbDone=true; const w=bf.opponent(); bf.hp=Math.min(bf.hp, 1);
             announce('FIRST BLOOD', (typeof fname==='function'?fname(w):'')+' WINS');
             setTimeout(()=>{ bf.hp=0; declareWinner(w); }, 1200); }
@@ -40665,11 +40671,19 @@ window.BANNON_BUCKLES = (function(){
   function fname(f){ try{ return (f&&f.opts&&f.opts.name)||(f&&f.name)||''; }catch(e){ return ''; } }
 
   // whipped into the corner: set the ENGINE's corner state rather than teleporting to raw coordinates
-  function trapInCorner(fighter, targetBuckle){
-    if(!fighter||!targetBuckle) return false;
-    const p=posOf(targetBuckle);
-    fighter.x=p.x*0.96; fighter.z=p.z*0.96;                 // just inside the post, not through it
-    fighter._inCorner=targetBuckle.label; fighter._corneredT=0;
+  // `reposition:false` is how the ENGINE calls this. Brick 21's corner physics already hard-stops a
+  // fighter in the corner and owns _inCorner/_cornerPose; teleporting them again would fight it. What
+  // the engine does NOT do is exposed steel, and that payload below is the whole reason this exists.
+  function trapInCorner(fighter, targetBuckle, opts){
+    if(!fighter) return false;
+    const b=targetBuckle||nearestBuckle(fighter.x, fighter.z).buckle;
+    if(!b) return false;
+    targetBuckle=b;
+    if(!opts || opts.reposition!==false){
+      const p=posOf(targetBuckle);
+      fighter.x=p.x*0.96; fighter.z=p.z*0.96;               // just inside the post, not through it
+      fighter._inCorner=targetBuckle.label; fighter._corneredT=0;
+    }
     if(fighter.stamina!=null) fighter.stamina=Math.max(0, fighter.stamina-5);
     if(targetBuckle.exposed && fighter.hp!=null){
       // EXPOSED STEEL: real extra damage, and it lands as a lasting injury through the career model
@@ -40699,24 +40713,80 @@ window.BANNON_BUCKLES = (function(){
   function isExposed(x,z){ const n=nearestBuckle(x,z); return !!(n.buckle && n.buckle.exposed && n.dist < 1.1); }
   function resetPads(){ BUCKLES.forEach(b=>b.exposed=false); }
 
-  // climb to the top rope — REAL perch height, not 40 metres
-  function climbTurnbuckle(fighter, targetBuckle){
+  // climb — DELEGATES to the engine's real aerial system.
+  // The salvaged version set y=1.75 and state='turnbuckle_climbing', a state the engine has never
+  // heard of, alongside a full climb -> midrope -> perch -> dive machine that already exists
+  // (Fighter.startClimb + poseClimb/poseMidrope/posePerch). Wiring the salvaged version as written
+  // would have parked a fighter in a state nothing poses or ticks. So it now drives the REAL one, and
+  // `tier` picks the rope height ('mid' = second rope, anything else = top rope).
+  function climbTurnbuckle(fighter, tier){
     if(!fighter) return false;
-    const b=targetBuckle||nearestBuckle(fighter.x, fighter.z).buckle; if(!b) return false;
-    const p=posOf(b);
-    fighter.x=p.x*0.94; fighter.z=p.z*0.94;
-    fighter.y=1.75;                                          // top-rope perch, metres
-    fighter.state='turnbuckle_climbing'; fighter._perchBuckle=b.id;
-    try{ if(window.crowdReaction) window.crowdReaction(0.55); }catch(e){}
-    return true;
+    try{
+      var corner = (typeof fighter.nearestCorner==='function') ? fighter.nearestCorner() : null;
+      if(!corner){
+        var b=nearestBuckle(fighter.x, fighter.z).buckle; if(!b) return false;
+        var p=posOf(b); corner={ x:p.x*0.96, z:p.z*0.96 };
+      }
+      if(typeof fighter.startClimb!=='function') return false;
+      var ok=fighter.startClimb(corner, (tier==='mid'||tier===2)?'mid':'top');
+      if(ok){ try{ if(window.crowdReaction) window.crowdReaction(tier==='mid'?0.4:0.6); }catch(e){} }
+      return ok;
+    }catch(e){ return false; }
   }
 
   window.__buckleExposedAt = isExposed;
+
+  // ENGINE WIRE: Brick 21's corner hard-stop is what actually decides someone is IN the corner. Hook
+  // it so arriving there at speed runs trapInCorner's consequence — which, on a stripped buckle, is
+  // exposed steel: extra damage, spine trauma, and a real career injury. Without this, ripping a pad
+  // off (B) was cosmetic. Turnbuckle smashes are a named Neckbreaker feature; this is that feature.
+  try{
+    var _bTries=0;
+    (function armCorner(){
+      _bTries++;
+      try{
+        if(typeof Fighter!=='undefined' && Fighter.prototype && !Fighter.prototype.__buckleHooked){
+          var _u=Fighter.prototype.update;
+          Fighter.prototype.update=function(dt){
+            var wasIn=this._inCorner;
+            var r=_u.apply(this, arguments);
+            try{
+              if(!wasIn && this._inCorner && !this.ragdoll){
+                var spd=Math.abs(this.vx||0)+Math.abs(this.vz||0);
+                var n=nearestBuckle(this.x||0, this.z||0);
+                // only a real impact counts — walking into your own corner is not a turnbuckle smash
+                if(n.buckle && n.buckle.exposed && n.dist<1.2 && (spd>0.9 || this._whipped))
+                  trapInCorner(this, n.buckle, { reposition:false });
+              }
+            }catch(_e){}
+            return r;
+          };
+          Fighter.prototype.__buckleHooked=true;
+          return;
+        }
+      }catch(e){}
+      if(_bTries<40) setTimeout(armCorner, 1200);
+    })();
+  }catch(e){}
+
+  // PLAYER-REACHABLE CLIMB: the ZONE button already climbs; this exposes the SECOND-ROPE tier, which
+  // is where middle-rope moves come from. Shift+B goes to the second rope instead of the top.
+  try{
+    document.addEventListener('keydown', function(e){
+      if((e.key!=='b'&&e.key!=='B') || !e.shiftKey) return;
+      var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')) return;
+      try{
+        var fs=(typeof fighters!=='undefined')?fighters:[]; var p=null;
+        for(var i=0;i<fs.length;i++) if(fs[i]&&fs[i].isPlayer){ p=fs[i]; break; }
+        if(p) climbTurnbuckle(p, 'mid');
+      }catch(_e){}
+    });
+  }catch(e){}
   // PLAYER-REACHABLE: B rips the pad off the corner you are standing in. Without an input this stays a
   // library nobody can invoke — which is how it sat unused in the first place.
   try{
     document.addEventListener('keydown', function(e){
-      if(e.key!=='b' && e.key!=='B') return;
+      if((e.key!=='b' && e.key!=='B') || e.shiftKey) return;   // shift+B is the second-rope climb below
       var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')) return;
       try{
         var fs=(typeof fighters!=='undefined')?fighters:[]; var p=null;
@@ -44309,7 +44379,79 @@ console.log('%c[BANNON_SHOTCALLER] call the spot — Ultraviolence signature. ct
     for(var i=0;i<keys.length;i++) if(mp.indexOf(keys[i])>=0) return true;
     return false;
   }
-  function forPosition(pos){ return allMoves().filter(function(m){ return matchesPos(m,pos); }); }
+  function authoredFor(pos){ return allMoves().filter(function(m){ return matchesPos(m,pos); }); }
+
+  // ── DERIVED POSITIONS ───────────────────────────────────────────────────────────────────────
+  // Owner correction (2026-07-25): RUNNING and MIDDLE_ROPE looked like "0 moves — source data gap".
+  // That was me reading the library wrong, not a gap. Real wrestling games do NOT author a separate
+  // running or middle-rope library: a running move is a STANDING strike or grapple performed with
+  // momentum (the run is a modifier on the input, not a different move), and a middle-rope move is a
+  // DIVE taken from a lower height tier. MDickie does the same thing — the run and the rope height
+  // change the delivery, not the vocabulary. So we DERIVE them from the moves we already imported.
+  var RUN_RENAME = { CLOTHESLINE:'RUNNING LARIAT', 'BIG BOOT':'RUNNING BIG BOOT', 'SHOULDER BLOCK':'RUNNING SHOULDER BLOCK',
+                     'KNEE STRIKE':'RUNNING KNEE', 'BULLDOG':'RUNNING BULLDOG', 'DDT':'RUNNING DDT' };
+  function deriveRunning(){
+    // momentum applied to what you can already do from your feet: standing grapples AND every
+    // standing strike. That is the whole running vocabulary in 2K/MDickie — lariat is a clothesline
+    // with a run-up, the big boot is a boot with a run-up. Ground/corner/aerial work is excluded
+    // because you cannot arrive at it on the run.
+    var seen={};
+    var base=[].concat(authoredFor('STANDING_FRONT'), authoredFor('STANDING_REAR'),
+                       allMoves().filter(function(m){ return m && m.kind==='strike'; }))
+               .filter(function(m){
+                 if(!m || m.dive || m.sub) return false;
+                 var p=String(m.pos||m.from||'').toUpperCase();
+                 if(/GROUND|CORNER|TURNBUCKLE|TOP_ROPE|APRON/.test(p)) return false;   // can't run into these
+                 var k=String(m.name||'').toUpperCase();
+                 if(seen[k]) return false; seen[k]=1;
+                 return true;
+               });
+    return base.map(function(m){
+      var n=String(m.name||'').toUpperCase();
+      return Object.assign({}, m, {
+        name: RUN_RENAME[n] || ('RUNNING '+(m.name||'ATTACK')),
+        pos: 'RUNNING', from: 'RUNNING',
+        power: Math.round((m.power||60)*1.22),          // momentum is the whole point of running it
+        speed: Math.round((m.speed||60)*1.08),
+        momentum: true, _derivedFrom: m.name, _derived: 'RUNNING'
+      });
+    });
+  }
+  function deriveRopeTier(tier, scale){
+    // a middle/second-rope move is the SAME dive taken from lower down: less drop, less power, quicker
+    var base=allMoves().filter(function(m){
+      if(!m) return false;
+      if(m.dive) return true;
+      return matchesPos(m,'TURNBUCKLE_TOP');
+    });
+    return base.map(function(m){
+      return Object.assign({}, m, {
+        name: tier.replace(/_/g,' ')+' '+(m.name||'DIVE'),
+        pos: tier, from: tier, height: tier,
+        power: Math.round((m.power||60)*scale),
+        speed: Math.round((m.speed||60)*(2-scale)),      // shorter drop = faster to land
+        _derivedFrom: m.name, _derived: tier
+      });
+    });
+  }
+  var _derivedCache={};
+  function derived(pos){
+    if(_derivedCache[pos]) return _derivedCache[pos];
+    var out=[];
+    if(pos==='RUNNING') out=deriveRunning();
+    else if(pos==='MIDDLE_ROPE') out=deriveRopeTier('MIDDLE_ROPE', 0.82);
+    else if(pos==='APRON') out=deriveRopeTier('APRON', 0.9);
+    if(out.length) _derivedCache[pos]=out;
+    return out;
+  }
+  // authored first, derived filling the positions nobody authors — which is every game's answer
+  function forPosition(pos){
+    var a=authoredFor(pos);
+    var d=derived(pos);
+    if(!d.length) return a;
+    var seen={}; a.forEach(function(m){ seen[String(m.name).toUpperCase()]=1; });
+    return a.concat(d.filter(function(m){ return !seen[String(m.name).toUpperCase()]; }));
+  }
   function forStyle(style){
     if(!style) return allMoves();
     return allMoves().filter(function(m){ return !m.style || m.style.indexOf(style)>=0; });
@@ -44331,10 +44473,33 @@ console.log('%c[BANNON_SHOTCALLER] call the spot — Ultraviolence signature. ct
   function resolve(m){
     try{ var L=lib(); if(L&&typeof L.resolve==='function') return L.resolve(m); }catch(e){}
     if(!m) return null;
-    if(m.dive) return {kind:'dive', dive:m.dive, from:m.from};
+    if(m.dive) return {kind:'dive', dive:m.dive, from:m.from, height:m.height||m.from, power:m.power};
     if(m.sub)  return {kind:'sub', hold:m.sub, limb:m.limb};
-    if(m.kind==='strike') return {kind:'strike', from:m.from, power:m.power};
-    return {kind:'grapple', pos:m.pos||'STANDARD', mode:m.mode||'front', deliver:m.deliver||'slam', power:m.power||60};
+    if(m.kind==='strike') return {kind:'strike', from:m.from, power:m.power, momentum:!!m.momentum};
+    return {kind:'grapple', pos:m.pos||'STANDARD', mode:m.mode||'front', deliver:m.deliver||'slam',
+            power:m.power||60, momentum:!!m.momentum, height:m.height||null};
+  }
+  // THE POSITION YOU ARE ACTUALLY IN — running and rope height are STATES, not separate move lists.
+  // This is what makes the derived pools reachable: momentum while you attack IS the running position,
+  // and standing on the second rope IS the middle-rope position.
+  function positionOf(a){
+    if(!a) return 'STANDING_FRONT';
+    try{
+      // read the ENGINE's own states — startClimb('mid') really does put you on the second rope, and
+      // `running` really is the momentum flag. That is what makes the derived pools reachable in play
+      // instead of theoretical.
+      var s=a.state;
+      if(s==='midrope')                                        return 'MIDDLE_ROPE';
+      if(s==='perch'||s==='climb'||s==='dive')                 return 'TURNBUCKLE_TOP';
+      if(s==='apron'||a.zone==='APRON')                        return 'APRON';
+      if(a.running && a.zone==='RING')                         return 'RUNNING';
+      if(a._inCorner)                                          return 'CORNER_FRONT';
+      var o=(typeof a.opponent==='function')?a.opponent():null;
+      if(o && o.isDown && o.isDown())                         return 'GROUNDED_HEAD_UP';
+      if(a.grapplePos)                                        return a.grapplePos;
+      if(a.grabMode==='rear' || a.grappleMode==='rear')        return 'STANDING_REAR';
+    }catch(e){}
+    return 'STANDING_FRONT';
   }
   // fire a position-appropriate library move through the REAL grapple path
   function run(attacker, pos, style){
@@ -44351,11 +44516,15 @@ console.log('%c[BANNON_SHOTCALLER] call the spot — Ultraviolence signature. ct
   }
   function coverage(){
     var out={}, poss=Object.keys(POS_ALIAS);
-    poss.forEach(function(p){ out[p]=forPosition(p).length; });
+    poss.forEach(function(p){
+      var a=authoredFor(p).length, t=forPosition(p).length;
+      out[p]= (t===a) ? a : (a+'+'+(t-a)+' derived = '+t);
+    });
     out._total=allMoves().length;
     return out;
   }
   window.BANNON_MOVEPOOL={ pick:pick, run:run, forPosition:forPosition, forStyle:forStyle,
+                           authoredFor:authoredFor, derived:derived, positionOf:positionOf,
                            resolve:resolve, coverage:coverage, recent:function(){ return recent.slice(); } };
 
   // WIRE IT: when a grapple fires without an explicit position-specific move, draw one from the pool so
@@ -44372,8 +44541,8 @@ console.log('%c[BANNON_SHOTCALLER] call the spot — Ultraviolence signature. ct
             try{
               if(window.MOVEPOOL_VARIETY!==false && attacker && move && !move._fromPool
                  && !move.finisher && !move.signature && !move._equipped && !move.name){
-                var pos=(attacker._inCorner?'CORNER_FRONT':(attacker.grapplePos||'STANDING_FRONT'));
-                var alt=pick(pos, attacker.style, 'grapple');
+                var pos=positionOf(attacker);
+                var alt=pick(pos, attacker.style, 'grapple') || pick(pos, attacker.style);
                 if(alt){ alt=Object.assign({_fromPool:true}, alt); move=alt; }
               }
             }catch(e){}
@@ -44388,6 +44557,400 @@ console.log('%c[BANNON_SHOTCALLER] call the spot — Ultraviolence signature. ct
   })();
 })();
 console.log('%c[BANNON_MOVEPOOL] 104 MDickie moves now reachable by position — BANNON_MOVEPOOL.coverage()','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_INTERFERENCE — run-ins that put a REAL THIRD BODY in the ring.
+//
+// THE GAP: BANNON_RULES.triggerRunIn() was fully written — it reads the universe roster, scores the
+// relationship graph to pick who would plausibly run down, and logs "BAH GAWD!" — and NOTHING EVER
+// CALLED IT. Same for BANNON_RULES.MATCH_TYPES, which described DQ/countout/rope-break rules that no
+// code consulted. A run-in that only prints a line is a cutscene; MDickie's run-ins matter because a
+// third man is physically in there breaking up your pin.
+//
+// WHAT THIS DOES: triggerRunIn() picks WHO. This module makes them EXIST — spawns the fighter through
+// the same proven multi-man path (new Fighter -> dressFighter -> push into `fighters`), slides them in
+// from the floor, breaks up whatever hold or cover is live, lets OUR AI and OUR physics drive the
+// assault for a window, then walks them back out and splices them from the match.
+//
+// It is a NON-COMPETITOR: marked _interferer so the LMS count, first-blood attribution and the
+// last-one-standing win condition all skip it, and _eliminated so the legal fighters' opponent()
+// search ignores it (you get jumped — that IS the spot).
+//
+// RULES CONSEQUENCE, escalating (never a random loss out of nowhere): the first run-in the referee
+// sees is a WARNING, the second in the same match is a DISQUALIFICATION — and only in match types
+// whose BANNON_RULES.MATCH_TYPES entry actually enforces DQ. Hardcore/no-DQ types shrug it off.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+
+  var CFG = {
+    attackWindow: 9.0,     // seconds the intruder is live in the ring
+    cooldown:    35.0,     // seconds before another run-in can fire
+    perMatch:      2,      // hard cap so a match never turns into a parade
+    chance: { NEAR_FALL: 0.26, FINISH_TEASE: 0.18, MANUAL: 1.0 }
+  };
+  var st = { runs:0, lastT:-9999, active:null, warned:0, matchKey:null };
+
+  function now(){ try{ return performance.now()/1000; }catch(e){ return Date.now()/1000; } }
+  function inFight(){ try{ return typeof gameState!=='undefined' && gameState==='fight'; }catch(e){ return false; } }
+  function nm(f){ try{ return (typeof fname==='function')?fname(f):((f&&f.opts&&f.opts.name)||''); }catch(e){ return ''; } }
+  function say(t,s){ try{ if(typeof announce==='function') announce(t,s||''); }catch(e){} }
+  function ev(t,k){ try{ if(window.addEvent) window.addEvent(t, k||'interference'); }catch(e){} }
+
+  // ── RULES: give BANNON_RULES.MATCH_TYPES its first real consumer ────────────────────────────
+  var TYPE_MAP = {
+    HARDCORE:'hardcore', TLC:'hardcore', EXTREME:'hardcore', NO_DQ:'hardcore',
+    LMS:'hardcore', FIRSTBLOOD:'hardcore', ROYALE:'hardcore', STREETFIGHT:'hardcore',
+    SUBMISSION:'submission'
+  };
+  function rules(){
+    var mt=''; try{ mt=(window.MATCH_SETUP&&window.MATCH_SETUP.matchType)||''; }catch(e){}
+    var key=TYPE_MAP[String(mt).toUpperCase()]||'standard';
+    var R=window.BANNON_RULES&&window.BANNON_RULES.MATCH_TYPES;
+    return (R&&R[key]) || { dq:true, countout:true, ropeBreak:true, fallsCountAnywhere:false };
+  }
+  function refSees(){ try{ return !window.BANNON_REF || !window.BANNON_REF.isDown(); }catch(e){ return true; } }
+
+  // ── WHO runs in: BANNON_RULES.triggerRunIn is the brain (relationship-graph scored) ──────────
+  function inMatchNames(){
+    var out={}; try{ (fighters||[]).forEach(function(f){ if(f) out[nm(f)]=1; }); }catch(e){}
+    return out;
+  }
+  function pickIntruder(targetName, isAlly){
+    var name=null;
+    try{ if(window.BANNON_RULES&&window.BANNON_RULES.triggerRunIn) name=window.BANNON_RULES.triggerRunIn(targetName, !!isAlly); }catch(e){}
+    var taken=inMatchNames();
+    if(name && !taken[name]) return name;
+    // universe not loaded (exhibition) -> fall back to the live roster so a run-in still works there
+    try{
+      var pool=(window.BANNON_ROSTER||[]).map(function(r){ return r.name; }).filter(function(n){ return n && !taken[n]; });
+      if(pool.length) return pool[Math.floor(Math.random()*pool.length)];
+    }catch(e){}
+    return null;
+  }
+
+  // ── SPAWN a real body through the proven multi-man path ─────────────────────────────────────
+  function spawn(name, target){
+    if(typeof Fighter!=='function' || typeof fighters==='undefined' || !fighters) return null;
+    var o={}; try{ if(typeof fighterOptsFor==='function') o=fighterOptsFor(name)||{}; }catch(e){}
+    var f=new Fighter(false, { col:o.col, accent:o.accent, skin:o.skin, name:name, style:o.style });
+    f._lookKey=name; f.isPlayer=false;
+    f._interferer=true;                 // not a competitor: LMS / first blood / win conditions skip it
+    f._eliminated=true;                 // legal fighters' opponent() search ignores it
+    f._runInTarget=target;
+    f._runInT0=now();
+    // shadow opponent() on the instance: the intruder has ONE man he came for
+    f.opponent=function(){
+      if(this._runInTarget && this._runInTarget.hp>0) return this._runInTarget;
+      try{ return Fighter.prototype.opponent.call(this); }catch(e){ return null; }
+    };
+    // enter from the floor on the target's side of the ring, then walk in
+    var side=(target && target.x>=0)?1:-1;
+    var half=(window.RING_HALF!=null?window.RING_HALF:3.5);
+    f.x=side*(half+0.9); f.z=(target?target.z:0);
+    try{ f.zone='FLOOR'; f.zoneY=(window.ZONE_Y?window.ZONE_Y.FLOOR:-0.85); }catch(e){}
+    try{ if(f._autoZoneFromPosition) f._autoZoneFromPosition(); }catch(e){}
+    fighters.push(f);
+    try{ if(typeof dressFighter==='function') dressFighter(f); }catch(e){}
+    try{ if(typeof applyForgeMorphs==='function') applyForgeMorphs(f); }catch(e){}
+    // slide in: a short scripted approach, then OUR AI + OUR physics take the wheel
+    var steps=0, tx=(target?target.x:0)+side*-0.9, tz=(target?target.z:0);
+    var slide=setInterval(function(){
+      steps++;
+      try{
+        if(!f || !inFight() || steps>26){ clearInterval(slide); return; }
+        f.x += (tx-f.x)*0.22; f.z += (tz-f.z)*0.22;
+        if(f._autoZoneFromPosition) f._autoZoneFromPosition();
+      }catch(e){ clearInterval(slide); }
+    }, 40);
+    return f;
+  }
+
+  // ── BREAK THE HOLD: the entire point of a run-in at two ──────────────────────────────────────
+  function breakHold(){
+    try{
+      var meter=document.getElementById('subMeter');
+      if(!meter || !meter._subActive) return false;
+      if(meter._subTick) clearInterval(meter._subTick);
+      meter._subActive=false;
+      meter.classList.remove('active');
+      if(meter._cleanEscape) meter._cleanEscape();
+      try{ window.__refPin=null; }catch(e){}
+      return true;
+    }catch(e){ return false; }
+  }
+
+  // ── EXIT: walk out and splice from the match ────────────────────────────────────────────────
+  function exit(f){
+    if(!f) return;
+    try{
+      var side=(f.x>=0)?1:-1, half=(window.RING_HALF!=null?window.RING_HALF:3.5);
+      f._runInTarget=null;
+      var steps=0;
+      var out=setInterval(function(){
+        steps++;
+        try{
+          f.x += (side*(half+2.4)-f.x)*0.2;
+          if(f._autoZoneFromPosition) f._autoZoneFromPosition();
+        }catch(e){}
+        if(steps>22){
+          clearInterval(out);
+          try{
+            var i=fighters.indexOf(f);
+            if(i>=0) fighters.splice(i,1);
+            if(f.root && f.root.parent) f.root.parent.remove(f.root);
+          }catch(e){}
+          if(st.active===f) st.active=null;
+        }
+      }, 45);
+    }catch(e){ try{ var j=fighters.indexOf(f); if(j>=0) fighters.splice(j,1); }catch(_){} st.active=null; }
+  }
+
+  // ── THE RUN-IN ──────────────────────────────────────────────────────────────────────────────
+  function run(opts){
+    opts=opts||{};
+    if(!inFight()) return null;
+    if(st.active) return null;
+    if(st.runs>=CFG.perMatch) return null;
+    var target=opts.target, beneficiary=opts.beneficiary;
+    try{
+      if(!target){ target=(fighters||[]).filter(function(f){ return f && !f._interferer; })[0]; }
+      if(!beneficiary){ beneficiary=(fighters||[]).filter(function(f){ return f && !f._interferer && f!==target; })[0]; }
+    }catch(e){}
+    if(!target) return null;
+
+    // ally of the BENEFICIARY is who you'd expect to run down and save them
+    var isAlly = opts.isAlly!==false;
+    var name = pickIntruder(nm(beneficiary||target), isAlly);
+    if(!name) return null;
+
+    var f = spawn(name, target);
+    if(!f) return null;
+
+    st.active=f; st.runs++; st.lastT=now();
+    say('RUN-IN!', name.toUpperCase()+' IS IN THE RING');
+    ev(name+' hit the ring and attacked '+nm(target)+'.', 'interference');
+    if(breakHold()) say('THE COVER IS BROKEN', name.toUpperCase()+' SAVED IT');
+    try{ if(window.crowdReaction) window.crowdReaction(0.95); }catch(e){}
+    try{ if(window.BANNON_RATING_CREDIT){ window.BANNON_RATING_CREDIT('pop',2); window.BANNON_RATING_CREDIT('big',1); } }catch(e){}
+    // the man who got jumped hates him a little more for it
+    try{ if(window.BANNON_STORY&&window.BANNON_STORY.changeRel) window.BANNON_STORY.changeRel(name, nm(target), -18); }catch(e){}
+
+    // RULES: escalating consequence, only where the match type actually enforces DQ
+    var R=rules();
+    if(R.dq && refSees()){
+      st.warned++;
+      if(st.warned>=2){
+        say('DISQUALIFICATION', nm(beneficiary||target).toUpperCase()+' LOSES THE MATCH');
+        ev(nm(beneficiary||target)+' was disqualified for repeated interference.', 'rules');
+        try{ if(beneficiary){ beneficiary.hp=0; setTimeout(function(){ try{ declareWinner(target); }catch(e){} }, 900); } }catch(e){}
+      } else {
+        say('THE REFEREE WARNS THEM', 'ONE MORE AND IT IS A DQ');
+      }
+    } else if(R.dq && !refSees()){
+      say('THE REFEREE NEVER SAW IT', 'NO DQ');
+    }
+
+    setTimeout(function(){ try{ say(name.toUpperCase()+' BAILS OUT',''); exit(f); }catch(e){} }, CFG.attackWindow*1000);
+    return { name:name, fighter:f, target:nm(target) };
+  }
+
+  // ── TRIGGERS ────────────────────────────────────────────────────────────────────────────────
+  function maybe(trigger, target, attacker){
+    try{
+      if(!inFight()) return null;
+      if(st.active || st.runs>=CFG.perMatch) return null;
+      if(now()-st.lastT < CFG.cooldown) return null;
+      var p=CFG.chance[trigger]!=null?CFG.chance[trigger]:0.15;
+      // a real rivalry makes interference far more likely — that is the story doing the booking
+      try{
+        var heat=0, S=window.BANNON_STORY;
+        if(S&&S.rel) heat=Math.max(0, -S.rel(nm(target), nm(attacker)))/100;
+        p = Math.min(0.72, p*(1+heat*1.4));
+      }catch(e){}
+      if(Math.random()>p) return null;
+      return run({ target:attacker, beneficiary:target, isAlly:true });   // saving the man being pinned
+    }catch(e){ return null; }
+  }
+
+  // late-match save: a man about to be finished gets bailed out. Polls cheaply, gated hard.
+  setInterval(function(){
+    try{
+      if(!inFight() || st.active || st.runs>=CFG.perMatch) return;
+      if(now()-st.lastT < CFG.cooldown) return;
+      var live=(fighters||[]).filter(function(f){ return f && !f._interferer; });
+      if(live.length<2) return;
+      for(var i=0;i<live.length;i++){
+        var f=live[i], mx=f.maxHp||300;
+        if(f.hp>0 && f.hp/mx < 0.16){
+          maybe('FINISH_TEASE', f, live[1-i]||live[0]);
+          return;
+        }
+      }
+    }catch(e){}
+  }, 1200);
+
+  // fresh state each match, and never leave a body behind when the bell rings
+  (function armReset(){
+    var t=0;
+    (function a(){
+      t++;
+      try{
+        if(typeof window.startFight==='function' && !window.startFight.__runInReset){
+          var o=window.startFight;
+          window.startFight=function(){ st.runs=0; st.lastT=-9999; st.warned=0;
+            try{ if(st.active) exit(st.active); }catch(e){} st.active=null;
+            return o.apply(this,arguments); };
+          window.startFight.__runInReset=true;
+        }
+        if(typeof window.endMatch==='function' && !window.endMatch.__runInClean){
+          var e0=window.endMatch;
+          window.endMatch=function(){ try{ if(st.active) exit(st.active); }catch(e){} return e0.apply(this,arguments); };
+          window.endMatch.__runInClean=true;
+        }
+        if(window.startFight&&window.startFight.__runInReset&&window.endMatch&&window.endMatch.__runInClean) return;
+      }catch(e){}
+      if(t<50) setTimeout(a,1400);
+    })();
+  })();
+
+  // manual: ctrl+I, or BANNON_INTERFERENCE.run()
+  try{
+    document.addEventListener('keydown', function(e){
+      var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')) return;
+      if((e.ctrlKey||e.altKey) && (e.key==='i'||e.key==='I')) run({});
+    });
+  }catch(e){}
+
+  window.BANNON_INTERFERENCE={ run:run, maybe:maybe, rules:rules, breakHold:breakHold,
+                               state:function(){ return { runs:st.runs, warned:st.warned,
+                                 active: st.active? nm(st.active):null, cap:CFG.perMatch }; },
+                               CFG:CFG };
+})();
+console.log('%c[BANNON_INTERFERENCE] run-ins put a real third body in the ring — ctrl+I / BANNON_INTERFERENCE.run()','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_SEGMENT — the IN-RING PROMO, wired for real.
+//
+// THE GAP: BANNON_PROMOS.generateInRingPromo() existed with ZERO CALLERS. It built a promo script and
+// bumped the speaker's momentum, and nothing ever ran it — so the office/promo half of MDickie's loop
+// never reached the player.
+//
+// WHAT THIS DOES: presents the generated promo as a real segment through BANNON_CARDS, and lets the
+// player ANSWER it. The responses are the SAME five branches BANNON_STORY.choose() already resolves
+// (respect / insult / recruit / challenge / betray), so a promo genuinely swings relationships, forms
+// teams, starts feuds and triggers heel/face turns — no parallel stub logic, no new dead end.
+//
+// Hooks: opens a Universe/Career show, fires after a win (the callout), and is callable any time.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var st={ last:-9999, count:0 };
+  function now(){ try{ return performance.now()/1000; }catch(e){ return Date.now()/1000; } }
+  function keyOf(n){ return String(n||'').toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
+  function label(n){ try{ if(window.BANNON_RIGS&&window.BANNON_RIGS.displayName) return window.BANNON_RIGS.displayName(n)||n; }catch(e){} return n; }
+
+  function rosterNames(){
+    try{ if(typeof ROSTER_ALL==='function') return (ROSTER_ALL()||[]).map(function(c){ return c.name; }).filter(Boolean); }catch(e){}
+    try{ return (window.BANNON_ROSTER||[]).map(function(r){ return r.name; }).filter(Boolean); }catch(e){}
+    return [];
+  }
+
+  // THE WIRE: BANNON_PROMOS.generateInRingPromo is the generator; this is its consumer.
+  function promo(speaker, target){
+    var R=rosterNames();
+    if(!speaker) speaker=R[Math.floor(Math.random()*R.length)]||'BANNON';
+    if(!target){ var p=R.filter(function(n){ return n!==speaker; }); target=p[Math.floor(Math.random()*p.length)]||null; }
+    var script='';
+    try{
+      if(window.BANNON_PROMOS && window.BANNON_PROMOS.generateInRingPromo)
+        script=window.BANNON_PROMOS.generateInRingPromo(label(speaker), target?label(target):null);
+    }catch(e){}
+    if(!script) return null;
+    st.count++; st.last=now();
+    try{ if(window.addEvent) window.addEvent(script.split('\n')[0], 'promo'); }catch(e){}
+
+    // present it as an interactive segment — the player answers, and the answer really lands
+    var tone='wary';
+    try{ var r=window.BANNON_STORY&&window.BANNON_STORY.rel? window.BANNON_STORY.rel(keyOf(target||speaker), keyOf(speaker)) : 0;
+         tone = r>40?'friendly' : r<-40?'hostile' : 'wary'; }catch(e){}
+    var choices=[];
+    try{
+      if(window.BANNON_STORY && window.BANNON_STORY.dialogueChoices)
+        choices=window.BANNON_STORY.dialogueChoices(keyOf(target||speaker), keyOf(speaker), tone)||[];
+    }catch(e){}
+
+    var shown=false;
+    try{
+      if(window.BANNON_CARDS && window.BANNON_CARDS.dialogue && target){
+        shown=window.BANNON_CARDS.dialogue({
+          a: keyOf(target), b: keyOf(speaker),
+          aName: label(target), bName: label(speaker),
+          area: 'IN-RING PROMO', mood: script, tone: tone, choices: choices
+        });
+      }
+    }catch(e){}
+    if(!shown){
+      try{ if(window.BANNON_CARDS&&window.BANNON_CARDS.moment) window.BANNON_CARDS.moment('IN-RING PROMO', script, label(speaker)); }catch(e){}
+    }
+    return { speaker:speaker, target:target, script:script };
+  }
+
+  // ── HOOK 1: the post-match callout. A win earns you the microphone. ──────────────────────────
+  (function armWin(){
+    var t=0;
+    (function a(){
+      t++;
+      try{
+        if(typeof window.declareWinner==='function' && !window.declareWinner.__promoHooked){
+          var o=window.declareWinner;
+          window.declareWinner=function(w){
+            var r=o.apply(this,arguments);
+            try{
+              if(w && Math.random()<0.34){
+                var wn=(typeof fname==='function')?fname(w):((w.opts&&w.opts.name)||'');
+                var lo=null;
+                try{ lo=(fighters||[]).filter(function(f){ return f&&f!==w&&!f._interferer; })[0]; }catch(e){}
+                setTimeout(function(){ promo(wn, lo?((typeof fname==='function')?fname(lo):null):null); }, 2600);
+              }
+            }catch(e){}
+            return r;
+          };
+          window.declareWinner.__promoHooked=true;
+          return;
+        }
+      }catch(e){}
+      if(t<50) setTimeout(a,1400);
+    })();
+  })();
+
+  // ── HOOK 2: the show opener. Advancing a Universe/Career week opens with a promo segment. ────
+  (function armWeek(){
+    var t=0;
+    (function a(){
+      t++;
+      try{
+        var S=window.BANNON_STORY;
+        if(S && typeof S.advanceStoryWeek==='function' && !S._promoHooked){
+          var o=S.advanceStoryWeek;
+          S.advanceStoryWeek=function(){
+            var r=o.apply(this,arguments);
+            try{ if(Math.random()<0.5) setTimeout(function(){ promo(); }, 1400); }catch(e){}
+            return r;
+          };
+          S._promoHooked=true;
+          return;
+        }
+      }catch(e){}
+      if(t<50) setTimeout(a,1500);
+    })();
+  })();
+
+  window.BANNON_SEGMENT={ promo:promo, state:function(){ return { cut:st.count }; } };
+})();
+console.log('%c[BANNON_SEGMENT] in-ring promos are live and BRANCH — BANNON_SEGMENT.promo()','color:#7CFC00');
 </script>
 </body></html>
 
