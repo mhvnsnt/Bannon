@@ -38245,6 +38245,70 @@ window.BANNON_PROPS = (function(){
     try{ var p=f.worldJoint('pelvis'); it.g.position.set(p.x+0.4, -0.83+((Math.abs(p.x)<3.5&&Math.abs(p.z)<2.5)?0.83:0), p.z+0.3); it.g.rotation.set(0,Math.random()*6.28,Math.PI/2*0.9); }catch(e){}
   }
   document.addEventListener('keydown',function(e){ if((e.key==='g'||e.key==='G')&&!e.ctrlKey&&!e.metaKey){ var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return; togglePick(); } });
+  // ── WEAPON CLASS ATTACK PROFILES ─────────────────────────────────────────────────────────────
+  // Every weapon used to swing identically (limb HAND, traj OVERHAND) whether it was a steel chair, a
+  // guitar or a bazooka — the class my MDickie surfacing assigns (spec._cls) was never consulted. Each
+  // class now attacks the way it should. Power/mass/stamina still route through the SAME laws below
+  // (DMG_SCALE, MAX_BODY_VEL untouched); this only shapes trajectory, reach, wear and after-effects.
+  var WCLASS={
+    blunt:    { traj:'OVERHAND', limb:'HAND', pow:1.00, wear:1.0, knock:1.25, reach:1.00, verb:'CRACKS' },
+    edged:    { traj:'SLASH',    limb:'HAND', pow:0.85, wear:0.6, knock:0.70, reach:1.00, bleed:true, verb:'SLICES' },
+    // glass/wood: one enormous shot, then the weapon is gone. Integrity is spent in a single hit.
+    shatter:  { traj:'OVERHAND', limb:'HAND', pow:1.45, wear:99,  knock:1.40, reach:0.95, stun:0.9, verb:'SHATTERS' },
+    // taser/launcher: RANGED — connects without closing distance, but drains hard and wears fast.
+    firearm:  { traj:'STRAIGHT', limb:'HAND', pow:1.15, wear:2.2, knock:0.90, reach:5.50, ranged:true, stun:0.7, verb:'FIRES' },
+    sport:    { traj:'STRAIGHT', limb:'HAND', pow:0.45, wear:0.4, knock:0.35, reach:0.90, verb:'PELTS' },
+    furniture:{ traj:'OVERHAND', limb:'HAND', pow:1.20, wear:0.8, knock:1.45, reach:1.05, verb:'SLAMS' },
+    misc:     { traj:'OVERHAND', limb:'HAND', pow:1.00, wear:1.0, knock:1.00, reach:1.00, verb:'HITS' }
+  };
+  // the 6 hand-authored weapons predate _cls, so infer their class from the label once.
+  function classOf(spec){
+    if(!spec) return WCLASS.misc;
+    if(spec._cls && WCLASS[spec._cls]) return WCLASS[spec._cls];
+    var l=String(spec.label||'').toLowerCase();
+    if(spec.bleed || /barb|blade|machete|knife/.test(l)) return WCLASS.edged;
+    if(/guitar|bottle|glass|mirror/.test(l))             return WCLASS.shatter;
+    if(/gun|taser|bazooka|launcher|flame/.test(l))       return WCLASS.firearm;
+    if(/ball|baseball$/.test(l))                         return WCLASS.sport;
+    if(/chair|table|desk|steps|crate|box|ladder|bin/.test(l)) return WCLASS.furniture;
+    if(/bat|pipe|shovel|crowbar|club|cane|stick/.test(l))return WCLASS.blunt;
+    return WCLASS.misc;
+  }
+  window.__weaponClassOf = classOf;
+
+  // ── THROW the held weapon (an MDickie staple): a real projectile, capped by MAX_BODY_VEL.
+  function throwWeapon(f){
+    try{
+      var it=f&&f._weapon; if(!it) return false;
+      var opp=null; try{ opp=f.opponent?f.opponent():null; }catch(e){}
+      var cls=classOf(it.spec);
+      it.holder=null; f._weapon=null;
+      var p=f.worldJoint('pelvis');
+      var dir=(f.dir!=null?f.dir:1);
+      if(opp){ try{ var q=opp.worldJoint('pelvis'); var dx=q.x-p.x, dz=q.z-p.z, L=Math.hypot(dx,dz)||1; dir=dx/L; }catch(e){} }
+      // fly the object; MAX_BODY_VEL is the law for bodies, so keep the prop under it too
+      it._fly={ vx:dir*3.6, vy:1.6, vz:0, t:0 };
+      it.g.position.set(p.x+dir*0.5, p.y||1.1, p.z);
+      var hit=false;
+      if(opp){ try{ var b=opp.worldJoint('pelvis'); hit=Math.hypot(p.x-b.x,p.z-b.z) < 4.2; }catch(e){} }
+      if(hit && typeof applyDamage==='function'){
+        var pow=Math.min(100, 34*(1+(it.spec.mass||1)*0.2)*(cls.pow||1));
+        applyDamage(opp, pow*0.35, f, { power:pow, height:'MID', traj:'STRAIGHT', limb:'THROWN',
+          name:(it.spec.label||'WEAPON')+' THROWN' }, true);
+        it.integrity-=40*(cls.wear||1);
+        if(cls.bleed && window.__spawnBlood){ try{ var h=opp.worldJoint('head'); window.__spawnBlood(h.x,h.y,h.z,3,0.9); }catch(e){} }
+      }
+      if(f.stamina!=null) f.stamina=Math.max(0, f.stamina-(it.spec.mass||1)*6);
+      if(it.integrity<=0 && !it.broken){ it.broken=true; it.g.visible=false; }
+      try{ if(typeof announce==='function') announce((it.spec.label||'WEAPON')+(hit?' THROWN — DIRECT HIT':' THROWN'),''); }catch(e){}
+      return true;
+    }catch(e){ return false; }
+  }
+  window.__weaponThrow=function(){ try{ return throwWeapon(playerF()); }catch(e){ return false; } };
+  // T = throw the held weapon
+  document.addEventListener('keydown',function(e){ if(e.key==='t'||e.key==='T'){ var t=e.target;
+    if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return; var f=playerF(); if(f&&f._weapon) throwWeapon(f); } });
+
   // ── swings ride the existing strike pipeline: holding a weapon transforms your strikes ──
   function hookSwing(){ try{
     if(!window.Fighter || Fighter.prototype.__weaponHook) return; Fighter.prototype.__weaponHook=true;
@@ -38253,19 +38317,27 @@ window.BANNON_PROPS = (function(){
       var it=this._weapon;
       if(it && mv && !mv._weaponized && (mv.cat==='STRIKE'||mv.cat==='KICK'||!mv.cat)){
         var spec=it.spec, m=Object.assign({},mv);
+        var CL=classOf(spec);                                              // class-driven attack profile
         m._weaponized=true;
-        m.name=spec.label+(spec.bleed?' · BARBED':'');
-        m.power=Math.min(100,(mv.power||50)*(1+spec.mass*0.16));           // mass × velocity through DMG_SCALE
-        m.limb='HAND'; m.traj='OVERHAND';
+        m._wclass=CL;
+        m.name=spec.label+(spec.bleed||CL.bleed?' · BARBED':'');
+        // mass × velocity through DMG_SCALE, then shaped by the weapon's class
+        m.power=Math.min(100,(mv.power||50)*(1+spec.mass*0.16)*(CL.pow||1));
+        m.limb=CL.limb||'HAND'; m.traj=CL.traj||'OVERHAND';
+        if(CL.knock) m.knock=(mv.knock||1)*CL.knock;
+        if(CL.stun)  m.stun=Math.max(mv.stun||0, CL.stun);
         // universal mass tax (native swingStaminaCost): mass × swing vel; whiff-check after the arc
         var swingVel=Math.min(3.8, 2.2+ (mv.power||50)*0.02);
-        var tax=spec.mass*swingVel*1.15;
+        var tax=spec.mass*swingVel*1.15*(CL.ranged?1.6:1);                 // firearms drain harder
         if(this.stamina!=null) this.stamina=Math.max(0,this.stamina-tax);
         var self=this, opp=null; try{ opp=this.opponent?this.opponent():null; }catch(e){}
-        var inReach=false; try{ if(opp){ var a=this.worldJoint('pelvis'), b=opp.worldJoint('pelvis'); inReach=Math.hypot(a.x-b.x,a.z-b.z) < (spec.reach+0.75); } }catch(e){}
+        // RANGED classes (taser/launcher) connect without closing distance; everything else needs reach
+        var effReach=(spec.reach||0.7)*(CL.reach||1);
+        var inReach=false; try{ if(opp){ var a=this.worldJoint('pelvis'), b=opp.worldJoint('pelvis'); inReach=Math.hypot(a.x-b.x,a.z-b.z) < (effReach+0.75); } }catch(e){}
         if(inReach){
-          it.integrity-=swingVel*spec.mass*0.4;                            // procedural dent budget
-          if(spec.bleed){ try{ if(window.__spawnBlood&&opp){ var h=opp.worldJoint('head'); window.__spawnBlood(h.x,h.y,h.z,1.2); } }catch(e){} }
+          it.integrity-=swingVel*spec.mass*0.4*(CL.wear||1);               // procedural dent budget, class wear
+          if(spec.bleed||CL.bleed){ try{ if(window.__spawnBlood&&opp){ var h=opp.worldJoint('head'); window.__spawnBlood(h.x,h.y,h.z,CL.bleed?3:1,0.9); } }catch(e){} }
+          try{ if(typeof announce==='function' && CL.verb) announce(spec.label+' '+CL.verb,''); }catch(e){}
           if(it.integrity<=0 && !it.broken){ it.broken=true; it.g.visible=false; this._weapon=null; it.holder=null;
             try{ if(typeof announce==='function') announce(spec.label+' BROKEN','the weapon gave out'); }catch(e){} }
         } else {

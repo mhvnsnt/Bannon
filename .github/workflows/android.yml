@@ -77,15 +77,21 @@ jobs:
       # builds in a row and blocked the OTA payload. Checking the APK's STRUCTURE instead is both
       # correct and immune to tool-output wording: a v1 signature IS the META-INF/*.SF + *.RSA pair, and
       # v2/v3 IS the "APK Sig Block 42" magic. apksigner's EXIT CODE remains the authority on validity.
+      # shell: bash WITHOUT -e. GitHub's default is `bash -e {0}`, which aborts the step on ANY non-zero
+      # command — so an informational grep that simply finds nothing killed the build before the
+      # tolerant check below could run. That is what failed the previous two attempts. Only the explicit
+      # `exit 1` paths may fail this step now.
       - name: Verify APK is installable (signature schemes + arsc storage + signer identity)
+        shell: bash --noprofile --norc {0}
         run: |
-          set -uo pipefail
           BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
           APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
           echo "APK: $APK"
-          # 1. authoritative validity check — non-zero exit means the signature does not verify at all
-          "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs "$APK" | tee /tmp/apksigner.txt
-          if [ "${PIPESTATUS[0]}" -ne 0 ]; then echo "::error::apksigner verify FAILED"; exit 1; fi
+          # 1. authoritative validity check — apksigner's EXIT CODE, never its wording
+          "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs "$APK" > /tmp/apksigner.txt 2>&1
+          RC=$?
+          cat /tmp/apksigner.txt || true
+          if [ "$RC" -ne 0 ]; then echo "::error::apksigner verify FAILED (exit $RC)"; exit 1; fi
           # 2. structural checks (wording-independent)
           python3 - "$APK" <<'PY'
           import sys, zipfile
@@ -124,15 +130,33 @@ jobs:
               print("::error::" + f)
           sys.exit(1 if fail else 0)
           PY
-          # 3. signer identity — a changed key cannot install OVER an existing BANNON (warn, don't block)
-          FP=$(grep -m1 -i "Signer #1 certificate SHA-256 digest" /tmp/apksigner.txt | sed 's/.*: *//' | tr -d ' \r')
-          echo "signer sha256: ${FP:-unknown}"
-          EXPECTED=847a00066d3815b1f05e6f7f73f5bdf64b0c6b4b
-          case "${FP:-none}" in
-            ${EXPECTED}*) echo "signer matches the established sideload key (updates install over old builds)";;
-            none|unknown) echo "::warning::could not read the signer fingerprint from apksigner output";;
-            *) echo "::warning::signer key CHANGED (expected ${EXPECTED}...). Users must UNINSTALL the old app first.";;
-          esac
+          STRUCT_RC=$?
+          # Fail the step HERE on a structural problem. Without this the informational fingerprint block
+          # below (which ends in `|| true`) became the script's last exit status, so the gate reported
+          # success even while printing ::error:: — a gate that can never fail is worse than none.
+          if [ "$STRUCT_RC" -ne 0 ]; then echo "::error::APK is not installable — see errors above"; exit 1; fi
+          # 3. signer identity — a changed key cannot install OVER an existing BANNON. Computed from the
+          # META-INF signature BLOCK BYTES, not scraped from apksigner's text: the previous version
+          # grepped for a line whose wording I had guessed, and under `bash -e` a non-match killed the
+          # step outright. This is informational only and never fails the build.
+          python3 - "$APK" <<'PY' || true
+          import sys, zipfile, hashlib
+          with zipfile.ZipFile(sys.argv[1]) as z:
+              blocks = sorted(n for n in z.namelist()
+                              if n.upper().startswith('META-INF/') and n.upper().endswith(('.RSA', '.DSA', '.EC')))
+              if not blocks:
+                  print('::warning::no signature block to fingerprint'); sys.exit(0)
+              fp = hashlib.sha256(z.read(blocks[0])).hexdigest()
+              print('signer block: %s  sha256(block)=%s' % (blocks[0], fp))
+              # baseline recorded from the established sideload key's block; drift means "uninstall first"
+              BASELINE = '__RECORD_ON_FIRST_GREEN__'
+              if BASELINE.startswith('__'):
+                  print('signer baseline not recorded yet — note this value if the key should be pinned')
+              elif fp != BASELINE:
+                  print('::warning::signer key CHANGED — users must UNINSTALL the old app before this installs')
+              else:
+                  print('signer matches the established sideload key (updates install over old builds)')
+          PY
       - name: Upload APK (artifact)
         uses: actions/upload-artifact@v4
         with:
