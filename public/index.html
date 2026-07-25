@@ -252,6 +252,33 @@ NEVER rename existing functions or variables.
 <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
 <title>BANNON v151 (combat-freeze fix: angle-wrap infinite loop)</title>
 
+<!-- ════════════════════════════════════════════════════════════════════════════════════════════
+  BANNON OTA — COLD-LAUNCH AUTO-APPLY. Runs FIRST, before three.js + the 42k-line engine, so a
+  downloaded update replaces the page with ZERO double-init. Same file:// origin across the swap =>
+  every save (CAW/DNA, movesets, chosen models in localStorage) survives. window.BANNON_BUILD is the
+  build number CI stamps into dist/BANNON.html (the file the app fetches); the raw source ships the
+  placeholder which parses to 0. The network half (download + cache + "update ready" toast) lives in
+  the guaranteed-running BANNON_OTA module at the end of the file.
+════════════════════════════════════════════════════════════════════════════════════════════ -->
+<script>
+window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+(function(){
+  try{
+    var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
+    if(b > (window.BANNON_BUILD||0)){
+      var h = localStorage.getItem('BANNON_OTA_H');
+      // sanity-gate the cached HTML so a truncated download can never brick the app: big, carries the
+      // build hook, closes cleanly. Anything off -> drop it and boot the bundled build normally.
+      if(h && h.length>800000 && h.indexOf('BANNON_BUILD')>-1 && /<\/html>\s*$/i.test(h)){
+        document.open(); document.write(h); document.close();   // swaps the document in-place, same origin
+        return;                                                  // the fresh doc's own scripts take over
+      }
+      try{ localStorage.removeItem('BANNON_OTA_H'); localStorage.removeItem('BANNON_OTA_B'); }catch(_e){}
+    }
+  }catch(e){ /* any failure -> just boot the bundled build */ }
+})();
+</script>
+
 <!-- THREE.js loaded SYNCHRONOUSLY before inline script: no race condition -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>if(typeof THREE==='undefined'){document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"><\/script>');}</script>
@@ -42336,6 +42363,88 @@ window.BANNON_VENUES=(function(){
   return { open, close, list:()=>({ arenas:baseArenas(), mdickie:mdickieLocs() }) };
 })();
 console.log('%c[BANNON_VENUES] MDickie venue picker — STAGE option / openVenuePicker()','color:#7CFC00');
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_OTA — over-the-air auto-update (the network half; the cold-launch auto-apply bootstrap is
+// at the top of <head>). The installed APK bundles the game HTML frozen at build time, so a plain
+// WebView never sees repo pushes — this makes updates land like a real Android game:
+//   1. on launch (app only) fetch dist/version.json from the repo,
+//   2. if a newer CONTENT build exists, download dist/BANNON.html, sanity-check + cache it, and show a
+//      game-style "UPDATE READY" toast; APPLY (or the next cold launch) swaps it in-place — same
+//      file:// origin so all saves persist. No reinstall, no app-store, no manual re-download.
+//   3. if the NATIVE apk build is behind a required minimum (native code changed), show a separate
+//      "reinstall APK" notice with a direct download — the one case a WebView genuinely can't hot-patch.
+// Gated to the app (file:// or the BannonNative bridge); on the hosted website the browser already
+// serves the latest file, so OTA stays dormant there.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var RAW  = 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+  var VJSON = RAW+'dist/version.json', HTMLU = RAW+'dist/BANNON.html', APKU = RAW+'dist/BANNON.apk';
+  var isApp = (location.protocol==='file:') || !!(window.BannonNative);
+  if(!isApp) return;                                   // website already gets the newest file
+  var nativeBuild = 0; try{ if(window.BannonNative && window.BannonNative.getApkBuild) nativeBuild = window.BannonNative.getApkBuild()|0; }catch(e){}
+
+  function toast(msg, actLabel, act, tone){
+    try{
+      var id='bannonOtaToast'; var old=document.getElementById(id); if(old) old.remove();
+      var d=document.createElement('div'); d.id=id;
+      d.style.cssText='position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:2147483000;'+
+        'background:linear-gradient(180deg,#141821,#0a0d13);color:#ffe9c0;border:1px solid '+(tone==='apk'?'#c0653a':'#d8a24a')+';'+
+        'border-radius:14px;padding:12px 14px;box-shadow:0 8px 30px rgba(0,0,0,.6);font:600 14px/1.35 system-ui,Segoe UI,Roboto,sans-serif;'+
+        'display:flex;align-items:center;gap:12px;max-width:92vw;';
+      var t=document.createElement('span'); t.textContent=msg; t.style.cssText='flex:1;';
+      var btn=document.createElement('button'); btn.textContent=actLabel;
+      btn.style.cssText='background:'+(tone==='apk'?'#c0653a':'#d8a24a')+';color:#101010;border:0;border-radius:10px;padding:9px 14px;font-weight:800;letter-spacing:.5px;';
+      btn.onclick=function(){ try{ act(); }catch(e){} };
+      var x=document.createElement('button'); x.textContent='✕';
+      x.style.cssText='background:transparent;color:#9aa4b2;border:0;font-size:16px;padding:4px 6px;';
+      x.onclick=function(){ d.remove(); };
+      d.appendChild(t); d.appendChild(btn); d.appendChild(x);
+      (document.body||document.documentElement).appendChild(d);
+    }catch(e){}
+  }
+
+  function apply(html){
+    try{
+      // cache for the cold-apply bootstrap, then reload so it swaps pre-init (no double boot); if the
+      // HTML is too big for localStorage, swap it straight from memory instead.
+      localStorage.setItem('BANNON_OTA_H', html); localStorage.setItem('BANNON_OTA_B', String(window.__OTA_NEXT__||0));
+      location.reload();
+    }catch(e){
+      try{ document.open(); document.write(html); document.close(); }catch(_e){}
+    }
+  }
+
+  var applied=false;
+  async function check(){
+    if(applied) return;
+    try{
+      var r=await fetch(VJSON+'?t='+Date.now(),{cache:'no-store'}); if(!r||!r.ok) return;
+      var v=await r.json(); var cur=window.BANNON_BUILD||0;
+      // NATIVE apk update (can't be hot-patched — needs a reinstall)
+      if(v.apkMin && nativeBuild && nativeBuild < (v.apkMin|0)){
+        toast('New app version available (native update)','DOWNLOAD APK',function(){
+          if(window.BannonNative && window.BannonNative.openUrl) window.BannonNative.openUrl(APKU); else window.open(APKU,'_blank');
+        },'apk');
+      }
+      var remote=(v.build|0);
+      if(remote<=cur) return;                        // content already newest
+      var hr=await fetch(HTMLU+'?t='+Date.now(),{cache:'no-store'}); if(!hr||!hr.ok) return;
+      var h=await hr.text();
+      if(h.length<800000 || h.indexOf('BANNON_BUILD')<0 || !/<\/html>\s*$/i.test(h)) return;   // sanity gate
+      window.__OTA_NEXT__=remote; applied=true;
+      toast('Update v'+remote+' ready — new moves, models & fixes','APPLY',function(){ apply(h); });
+    }catch(e){}
+  }
+  // check a few seconds after boot (let the match menu settle), then hourly while the app stays open
+  setTimeout(check, 6000);
+  setInterval(check, 60*60*1000);
+  window.BANNON_OTA_CHECK = check;   // manual "check for updates" hook (settings button can call this)
+})();
+console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot-swaps dist/BANNON.html','color:#7CFC00');
 </script>
 </body></html>
 

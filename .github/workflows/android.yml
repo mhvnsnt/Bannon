@@ -22,11 +22,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Stamp OTA build number into the game HTML
+        run: |
+          # BUILD = commit count (same scale as the APK versionCode). Stamp it into __BANNON_BUILD__ so
+          # the running game knows its own content build; the bundled copy AND the OTA-served copy carry
+          # the SAME number => no update loop after a hot-swap.
+          BUILD=$(git rev-list --count HEAD)
+          echo "BANNON_BUILD=$BUILD" >> "$GITHUB_ENV"
+          sed "s/__BANNON_BUILD__/$BUILD/g" BANNON_v150.html > BANNON_v150.stamped.html
+          echo "stamped build $BUILD"
+
       - name: Bundle the game + manifest/icons + local assets into the app
         run: |
           A=android/app/src/main/assets
           mkdir -p $A/assets/icons $A/assets/moves $A/assets/audio $A/assets/mocap
-          cp BANNON_v150.html $A/index.html
+          cp BANNON_v150.stamped.html $A/index.html
           cp manifest.json    $A/manifest.json || true
           cp assets/icons/icon-192.png assets/icons/icon-512.png assets/icons/apple-touch-icon.png $A/assets/icons/ || true
           # move library / MDickie moves / fbx map — the game fetch()es these at runtime; without them
@@ -64,15 +74,26 @@ jobs:
       # Keep the in-repo APK current: on a push to main, commit the freshly built APK to dist/BANNON.apk
       # so the game app upgrades along with the game/repo. dist/ is NOT in the trigger paths, so this
       # commit does not re-trigger the workflow (no loop); [skip ci] belt-and-suspenders.
-      - name: Publish APK to dist/ (main only)
+      - name: Publish APK + OTA payload to dist/ (main only)
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         run: |
           mkdir -p dist
           cp android/app/build/outputs/apk/release/app-release*.apk dist/BANNON.apk
+          # OTA content: the STAMPED game HTML the installed app fetches + hot-swaps (same build number
+          # the bundle carries, so no loop).
+          cp BANNON_v150.stamped.html dist/BANNON.html
+          BUILD=$(git rev-list --count HEAD)
+          # apkMin = the versionCode of the last commit that touched NATIVE code — an installed APK older
+          # than this is missing native changes a WebView can't hot-patch, so the app nudges a reinstall.
+          NATIVE_SHA=$(git log -1 --format=%H -- android/app/src/main/java android/app/build.gradle android/app/src/main/AndroidManifest.xml)
+          APK_MIN=$(git rev-list --count "$NATIVE_SHA")
+          printf '{"build":%s,"apkMin":%s,"apk":"BANNON.apk","html":"BANNON.html","ts":"%s","commit":"%s"}\n' \
+            "$BUILD" "$APK_MIN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${GITHUB_SHA::7}" > dist/version.json
+          echo "version.json: build=$BUILD apkMin=$APK_MIN"
           git config user.name  "bannon-ci"
           git config user.email "ci@bannon.local"
-          git add dist/BANNON.apk
-          if git diff --cached --quiet; then echo "APK unchanged"; else
-            git commit -m "ci: rebuild dist/BANNON.apk from ${GITHUB_SHA::7} [skip ci]"
+          git add dist/BANNON.apk dist/BANNON.html dist/version.json
+          if git diff --cached --quiet; then echo "dist unchanged"; else
+            git commit -m "ci: rebuild dist/BANNON.apk + OTA payload from ${GITHUB_SHA::7} [skip ci]"
             git push
           fi

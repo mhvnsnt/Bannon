@@ -1,9 +1,12 @@
 package com.bannon.game;
 
 import android.annotation.SuppressLint;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -45,6 +48,11 @@ public class MainActivity extends AppCompatActivity {
         web.setWebChromeClient(new WebChromeClient());   // lets WebGL/console behave like a browser
         WebView.setWebContentsDebuggingEnabled(true);
 
+        // BannonNative bridge — lets the OTA updater (BANNON_v150.html) read the TRUE installed apk
+        // build (survives content hot-swaps, unlike an HTML constant) and open the APK download when a
+        // native reinstall is genuinely needed.
+        web.addJavascriptInterface(new NativeBridge(), "BannonNative");
+
         // load the bundled game; models stream from the CDN fallback baked into the page
         web.loadUrl("file:///android_asset/index.html");
 
@@ -72,5 +80,26 @@ public class MainActivity extends AppCompatActivity {
     public void onBackPressed() {
         if (web != null && web.canGoBack()) web.goBack();
         else super.onBackPressed();
+    }
+
+    /** JS bridge exposed as window.BannonNative for the in-game OTA updater. */
+    public class NativeBridge {
+        /** The installed APK's versionCode (git commit count at build) — the real native build, which
+         *  a hot-swapped HTML build cannot spoof. Used to decide when a native reinstall is required. */
+        @JavascriptInterface
+        public int getApkBuild() {
+            try {
+                return getPackageManager().getPackageInfo(getPackageName(), 0).versionCode;
+            } catch (Exception e) { return 0; }
+        }
+
+        /** Open a URL (the APK download) in the system browser / installer. */
+        @JavascriptInterface
+        public void openUrl(String url) {
+            try {
+                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+            } catch (Exception e) { /* no-op */ }
+        }
     }
 }
