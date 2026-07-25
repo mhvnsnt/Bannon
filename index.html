@@ -42699,6 +42699,244 @@ console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot
 })();
 console.log('%c[BANNON_MDICKIE] MDickie props+vehicles surfacing online — BANNON_MDICKIE.stats()','color:#7CFC00');
 </script>
+
+<script>
+// ============================================================================================
+// BANNON_TRAVEL — MDickie's GAME STRUCTURE: you WALK to where you're going. This is the missing
+// half of the MDickie integration. All the places already existed (10 hub zones + 96 MDickie
+// locations injected by BANNON_WORLD), but the ONLY way to reach them was a menu button that cycled
+// window.CURRENT_ENV — no doors, no walking, no sense of a connected world.
+//
+// What this adds, MDickie's way but proprietary:
+//   1. WORLD GRAPH — hub zones wired into real adjacencies (arena -> backstage -> parking -> streets
+//      -> hotel/office/hospital/prison/gym), with the 96 MDickie locations reachable from STREETS.
+//   2. WALK-IN EXITS — a lit doorway per adjacency, placed on the map edge. Walk your fighter into it
+//      and you travel. A contextual chip names the destination (tap works too, for phones).
+//   3. TRANSITION CARDS — the MDickie between-places graphic card: destination name, flavour line and
+//      a procedurally drawn plate (no external art, so it works offline in the APK).
+//   4. ARRIVAL MOMENTS — walking into the promoter's office / trainer's room / locker room fires a real
+//      dialogue or news beat through the EXISTING BANNON_DIALOGUE + BANNON_NEWS systems, so places
+//      have a reason to exist instead of being empty rooms.
+// Everything is gated on roam/God-Within (never mid-match), and each exit is one lightweight mesh.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+
+  // ── 1. the world graph. Bidirectional; only ids that actually exist in ENVS get wired.
+  var GRAPH={
+    ARENA:     ['BACKSTAGE'],
+    BACKSTAGE: ['ARENA','PARKING','GYM','OFFICE','HOSPITAL'],
+    PARKING:   ['BACKSTAGE','STREETS'],
+    STREETS:   ['PARKING','HOTEL','CITY','JAIL','PRISON'],
+    CITY:      ['STREETS'],
+    HOTEL:     ['STREETS'],
+    JAIL:      ['STREETS','PRISON'],
+    PRISON:    ['STREETS','JAIL'],
+    GYM:       ['BACKSTAGE'],
+    OFFICE:    ['BACKSTAGE'],
+    HOSPITAL:  ['BACKSTAGE']
+  };
+  // flavour shown on the transition card — proprietary lines, not MDickie's text
+  var FLAVOUR={
+    ARENA:'The lights. The noise. Where it all gets settled.',
+    BACKSTAGE:'Concrete corridors. Everyone hears everything.',
+    PARKING:'Where the arguments finish what the ring started.',
+    STREETS:'Neon and bad decisions.',
+    CITY:'The city does not care who you are.',
+    HOTEL:'Cheap carpet, expensive grudges.',
+    JAIL:'Hard time. Harder company.',
+    PRISON:'The yard runs on its own rules.',
+    GYM:'Iron does not lie to you.',
+    OFFICE:'Politics with a desk in the way.',
+    HOSPITAL:'The bill for everything you have done.'
+  };
+  var ARRIVAL={ OFFICE:'office', HOSPITAL:'trainers_room', BACKSTAGE:'locker_room', PARKING:'parking_lot', GYM:'catering' };
+
+  var st={ exits:[], chip:null, card:null, travelling:false, lastEnv:null, cool:0 };
+
+  function ENV(){ return window.BANNON_ENVIRONMENTS||null; }
+  function envById(id){ try{ return (ENV()&&ENV().ENVS||[]).find(function(e){ return e.id===id; })||null; }catch(e){ return null; } }
+  function envName(id){ var e=envById(id); return (e&&e.name)||String(id).replace(/^LOC_/,'').replace(/_/g,' '); }
+  function roaming(){ // travel only makes sense out of a match
+    try{ if(window.__godWithinRoam) return true; }catch(e){}
+    try{ var gs=(typeof gameState!=='undefined')?gameState:window.gameState; if(gs && gs!=='fight') return false; }catch(e){}
+    return !!(window.CURRENT_ENV && window.CURRENT_ENV!=='ARENA');
+  }
+  function playerF(){ try{ var fs=(typeof fighters!=='undefined')?fighters:[]; for(var i=0;i<fs.length;i++) if(fs[i]&&fs[i].isPlayer) return fs[i]; return fs[0]||null; }catch(e){ return null; } }
+
+  // ── 2. build the walk-in exits for whatever env we are standing in
+  function clearExits(){
+    st.exits.forEach(function(x){ try{ if(x.mesh&&x.mesh.parent) x.mesh.parent.remove(x.mesh); }catch(e){} });
+    st.exits=[];
+  }
+  function allLocs(){ try{ return (ENV()&&ENV().ENVS||[]).filter(function(e){ return /^LOC_/.test(e.id); }); }catch(e){ return []; } }
+  function destinationsFor(id){
+    // MDickie LOCATIONS are injected by BANNON_WORLD and are NOT in GRAPH. Without this branch they
+    // return zero exits and the player is STRANDED there with no way back — always give them the road
+    // back to STREETS first, plus a couple of neighbouring venues so the world feels continuous.
+    if(/^LOC_/.test(id)){
+      var out=envById('STREETS')?['STREETS']:[];
+      var locs=allLocs();
+      for(var k=0;k<2 && locs.length;k++){
+        var c=locs[Math.floor(Math.random()*locs.length)].id;
+        if(c!==id && out.indexOf(c)<0) out.push(c);
+      }
+      return out;
+    }
+    var list=(GRAPH[id]||[]).filter(function(d){ return !!envById(d); });
+    var seen={}, hubs=[];
+    list.forEach(function(d){ if(d!==id && !seen[d]){ seen[d]=1; hubs.push(d); } });
+    // STREETS is the gateway to the whole MDickie location set. RESERVE slots for locations instead of
+    // appending them — appended, the hub list filled the cap and only ~1 venue ever survived the slice.
+    if(id==='STREETS'){
+      var locs2=allLocs(), picks=[];
+      for(var i=0;i<2 && locs2.length;i++){
+        var p=locs2[Math.floor(Math.random()*locs2.length)].id;
+        if(p!==id && picks.indexOf(p)<0 && !seen[p]) picks.push(p);
+      }
+      return hubs.slice(0,4).concat(picks);
+    }
+    return hubs.slice(0,6);
+  }
+  function buildExits(){
+    if(typeof THREE==='undefined' || typeof arenaGroup==='undefined' || !arenaGroup) return;
+    clearExits();
+    var here=window.CURRENT_ENV; if(!here) return;
+    var dests=destinationsFor(here); if(!dests.length) return;
+    var R=17;                                     // exits sit on the edge of the roam floor
+    dests.forEach(function(dest,i){
+      var a=(i/dests.length)*Math.PI*2 + 0.3;
+      var x=Math.cos(a)*R, z=Math.sin(a)*R;
+      var g=new THREE.Group();
+      // a doorway: lit frame + a soft glowing panel you can see from across the map
+      var frameMat=new THREE.MeshStandardMaterial({ color:0x1a1c22, roughness:0.7, metalness:0.3 });
+      var jambL=new THREE.Mesh(new THREE.BoxGeometry(0.22,2.6,0.22), frameMat);
+      var jambR=jambL.clone(); jambL.position.set(-0.85,1.3,0); jambR.position.set(0.85,1.3,0);
+      var lintel=new THREE.Mesh(new THREE.BoxGeometry(1.95,0.22,0.22), frameMat); lintel.position.set(0,2.6,0);
+      var glow=new THREE.Mesh(new THREE.PlaneGeometry(1.7,2.5),
+        new THREE.MeshBasicMaterial({ color:0xffd23f, transparent:true, opacity:0.16, side:THREE.DoubleSide }));
+      glow.position.set(0,1.28,0);
+      g.add(jambL); g.add(jambR); g.add(lintel); g.add(glow);
+      g.position.set(x, -0.85, z);
+      g.lookAt(0, g.position.y+1.2, 0);            // face the middle of the room
+      g.traverse(function(o){ if(o.isMesh){ o.castShadow=false; o.frustumCulled=true; } });
+      arenaGroup.add(g);
+      st.exits.push({ dest:dest, mesh:g, x:x, z:z, glow:glow });
+    });
+    try{ console.log('%c[BANNON_TRAVEL] '+here+' -> '+dests.join(', '),'color:#7CFC00'); }catch(e){}
+  }
+
+  // ── 3. the transition card (procedural plate; no external art so it works offline)
+  function showCard(destId, then){
+    var name=String(envName(destId)).toUpperCase(), flav=FLAVOUR[destId]||'Somewhere else entirely.';
+    try{
+      if(!st.card){
+        var d=document.createElement('div'); d.id='bannonTravelCard';
+        d.style.cssText='position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;'+
+          'background:radial-gradient(ellipse at 50% 45%,#141821 0%,#05070b 70%);opacity:0;transition:opacity .28s;pointer-events:none;';
+        d.innerHTML='<div style="text-align:center;max-width:82vw">'+
+          '<div id="btcRule" style="height:2px;background:linear-gradient(90deg,transparent,#d8a24a,transparent);margin:0 auto 18px;width:66%"></div>'+
+          '<div id="btcName" style="font:800 27px/1.1 ui-monospace,monospace;letter-spacing:5px;color:#ffe9c0;text-shadow:0 3px 18px #000"></div>'+
+          '<div id="btcFlav" style="font:italic 13px/1.5 ui-monospace,monospace;color:#9aa4b2;margin-top:12px"></div>'+
+          '<div style="height:2px;background:linear-gradient(90deg,transparent,#d8a24a,transparent);margin:18px auto 0;width:40%"></div>'+
+          '</div>';
+        document.body.appendChild(d); st.card=d;
+      }
+      st.card.querySelector('#btcName').textContent=name;
+      st.card.querySelector('#btcFlav').textContent=flav;
+      st.card.style.opacity='1';
+    }catch(e){}
+    setTimeout(function(){
+      try{ if(then) then(); }catch(e){}
+      setTimeout(function(){ try{ if(st.card) st.card.style.opacity='0'; }catch(e){} }, 420);
+    }, 620);
+  }
+
+  // ── 4. arrival moment: a real dialogue/news beat through the systems that already exist
+  function arrivalMoment(destId){
+    var areaId=ARRIVAL[destId]; if(!areaId) return;
+    try{
+      var me=playerF(); var myName=(me&&me.opts&&me.opts.name)||(me&&me.name)||'BANNON';
+      var L=window.BANNON_LIFE||window.BANNON_UNIVERSE_LIFE||null;
+      if(L && typeof L.meeting==='function'){
+        var roster=(window.ROSTER_ALL?window.ROSTER_ALL():[]).map(function(c){ return c.name; });
+        var other=roster.length?roster[Math.floor(Math.random()*roster.length)]:'STAFF';
+        var m=L.meeting(myName, other, areaId);
+        if(m && window.addEvent) window.addEvent(m.area+': '+m.aName+' and '+m.bName+' talk — '+m.tone+'.', 'dialogue');
+        return;
+      }
+      // no meeting system reachable -> a news beat, which BANNON_NEWS does provide
+      if(window.BANNON_NEWS && typeof window.BANNON_NEWS.generate==='function'){
+        var n=window.BANNON_NEWS.generate(myName);
+        if(n && window.addEvent) window.addEvent(String(n.text||n), 'news');
+      }
+    }catch(e){}
+  }
+
+  // ── travel
+  function travelTo(destId){
+    if(st.travelling || !envById(destId)) return false;
+    st.travelling=true; chip(null);
+    showCard(destId, function(){
+      try{
+        window.CURRENT_ENV=destId;
+        if(window.buildArena) buildArena();
+        // put the fighter back in the middle of the new room, not on top of the exit they walked into
+        var me=playerF(); if(me){ me.x=0; me.z=0; if(me.vx!=null) me.vx=0; if(me.vz!=null) me.vz=0; }
+        var an=document.getElementById('arenaName'); if(an) an.textContent=String(envName(destId)).toUpperCase();
+        if(window.addEvent) window.addEvent('Travelled to '+envName(destId)+'.', 'travel');
+        buildExits();
+        arrivalMoment(destId);
+      }catch(e){}
+      st.travelling=false; st.cool=1.2;      // brief grace so you don't instantly re-enter a doorway
+    });
+    return true;
+  }
+
+  function chip(txt, onTap){
+    try{
+      if(!st.chip){
+        var c=document.createElement('div'); c.id='bannonTravelChip';
+        c.style.cssText='position:fixed;left:50%;bottom:196px;transform:translateX(-50%);z-index:70;display:none;'+
+          'background:rgba(10,12,16,.9);color:#ffd23f;border:1px solid #ffd23f;border-radius:9px;padding:7px 14px;'+
+          'font:bold 12px ui-monospace,monospace;cursor:pointer;letter-spacing:1px';
+        c.addEventListener('click', function(){ if(st.chipTap) st.chipTap(); });
+        c.addEventListener('touchstart', function(e){ e.preventDefault(); if(st.chipTap) st.chipTap(); }, {passive:false});
+        document.body.appendChild(c); st.chip=c;
+      }
+      st.chipTap=onTap||null;
+      if(txt){ st.chip.textContent=txt; st.chip.style.display='block'; } else st.chip.style.display='none';
+    }catch(e){}
+  }
+
+  // ── per-frame proximity: walk into a doorway to use it
+  var last=performance.now();
+  setInterval(function(){
+    var now=performance.now(), dt=Math.min(0.25,(now-last)/1000); last=now;
+    if(st.cool>0) st.cool-=dt;
+    try{
+      if(!roaming()){ if(st.exits.length) clearExits(); chip(null); st.lastEnv=null; return; }
+      if(window.CURRENT_ENV!==st.lastEnv){ st.lastEnv=window.CURRENT_ENV; buildExits(); }
+      if(st.travelling || st.cool>0) return;
+      var me=playerF(); if(!me || !st.exits.length){ chip(null); return; }
+      var best=null, bd=3.2;
+      for(var i=0;i<st.exits.length;i++){
+        var x=st.exits[i]; var d=Math.hypot((me.x||0)-x.x, (me.z||0)-x.z);
+        if(x.glow) x.glow.material.opacity = d<3.2 ? 0.34 : 0.16;   // doorway lights up as you approach
+        if(d<bd){ bd=d; best=st.exits[i]; }
+      }
+      if(best){
+        chip('▶ '+String(envName(best.dest)).toUpperCase(), function(){ travelTo(best.dest); });
+        if(bd<1.25) travelTo(best.dest);            // actually WALKED into it — MDickie behaviour
+      } else chip(null);
+    }catch(e){}
+  }, 90);
+
+  window.BANNON_TRAVEL={ graph:GRAPH, travelTo:travelTo, exits:function(){ return st.exits.map(function(e){ return e.dest; }); },
+    rebuild:buildExits, destinations:destinationsFor, card:showCard };
+})();
+console.log('%c[BANNON_TRAVEL] walk-to-travel online — doorways, transition cards, arrival moments','color:#7CFC00');
+</script>
 </body></html>
 
 
