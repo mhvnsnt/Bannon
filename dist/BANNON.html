@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2381"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2385"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -15166,16 +15166,12 @@ const CHAR_MODEL_DEFAULTS = {
   WRECK_PATTERSON:{url:'assets/models/WRECK_PATTERSON.glb',name:'WRECK PATTERSON'},
   AARON_RUBEN:{url:'assets/models/AARON_RUBEN.glb',name:'AARON RUBEN'},
 
-  // v160 UNIRIG PIPELINE PASS — All remaining models mapped for the UniRig pipeline
-  GHOST:{url:'assets/models/GHOST.glb',name:'GHOST'},
-  PHANTOM:{url:'assets/models/PHANTOM.glb',name:'PHANTOM'},
-  DEMON_X:{url:'assets/models/DEMON_X.glb',name:'DEMON X'},
-  LUNA_VEGA:{url:'assets/models/LUNA_VEGA.glb',name:'LUNA VEGA'},
-  SAMI_Z:{url:'assets/models/SAMI_Z.glb',name:'SAMI Z'},
-  JAXON_RYKER:{url:'assets/models/JAXON_RYKER.glb',name:'JAXON RYKER'},
-  BIG_BULL:{url:'assets/models/BIG_BULL.glb',name:'BIG BULL'},
-  COSMIC_DUST:{url:'assets/models/COSMIC_DUST.glb',name:'COSMIC DUST'},
-  // End of UniRig pipeline additions
+  // REMOVED 2026-07-25 — the "v160 UNIRIG PIPELINE PASS" block wired eight entries (GHOST, PHANTOM,
+  // DEMON_X, LUNA_VEGA, SAMI_Z, JAXON_RYKER, BIG_BULL, COSMIC_DUST) that were DOUBLY dead: no GLB was
+  // ever produced for any of them, AND none of them is a character in any registry (_addChar,
+  // OPPONENTS, BANNON_ROSTER, CHAR_META). charModelFor() is keyed on a fighter's NAME, so nothing
+  // could ever ask for them. They read as eight finished models and were eight lines of text.
+  // scripts/model_wiring_audit.cjs --gate now blocks this class from coming back.
 
 };
 let CHAR_MODEL = (function(){ try{ var r=localStorage.getItem('bannonCharModels'); if(r) return JSON.parse(r); }catch(e){} return {}; })();
@@ -15206,17 +15202,37 @@ window.MDICKIE_MAP = Object.assign({
   COMMENTATOR_MARKS:'SUIT', RING_ANNOUNCER:'SUIT', REFEREE:'REFEREE',
   COMMENTARY_VOICE_A:'SUIT', COMMENTARY_VOICE_B:'SUIT'
 }, window.MDICKIE_MAP||{});
+// REAL FILES for each base body. assets/models/mdickie_bases/ does not exist and never did, so every
+// fighter routed through _mdickieBase resolved to a URL that 404s, failed the CDN retry too, and
+// silently popped back to the procedural body — the archetype-base path did nothing at all. These are
+// bodies that ARE in the repo, matched by build, so the fallback now actually lands on a wrestler.
+window.MDICKIE_BASE_FILES = Object.assign({
+  POWERHOUSE:      'assets/models/TITAN.glb',
+  BRAWLER:         'assets/models/BRUTUS.glb',
+  TECHNICIAN:      'assets/models/CIPHER_rigged.glb',
+  CRUISER:         'assets/models/VIPER.glb',
+  LUCHADOR:        'assets/models/EL_TORO_DE_ORO.glb',
+  FEMALE:          'assets/models/TYNESHIA.glb',
+  FEMALE_ATHLETIC: 'assets/models/ONYX_skinned.glb',
+  SUIT:            'assets/models/STAN_COMBS_gear.glb',
+  REFEREE:         'assets/models/STAN_COMBS_gear.glb'
+}, window.MDICKIE_BASE_FILES||{});
+function mdickieBaseUrl(base){
+  if(window.MDICKIE_BASE_FILES[base]) return window.MDICKIE_BASE_FILES[base];
+  return window.MDICKIE_BASE_DIR + base + '.glb';        // if the base dir is ever populated, it wins
+}
 function mdickieBaseFor(charName){
   var k=String(charName||'').toUpperCase().replace(/[^A-Z0-9]/g,'_');
-  if(window.MDICKIE_MAP[k]) return window.MDICKIE_BASE_DIR + window.MDICKIE_MAP[k] + '.glb';
+  if(window.MDICKIE_MAP[k]) return mdickieBaseUrl(window.MDICKIE_MAP[k]);
   var meta=(window.CHAR_META&&window.CHAR_META[k])||{};
   var body=(window.CHAR_BODY&&window.CHAR_BODY[k])||{};
   var base;
   if((body.fem||0) >= 0.5) base = (meta.archetype==='highFlyer'||meta.archetype==='technician') ? 'FEMALE_ATHLETIC' : 'FEMALE';
   else base = ({powerhouse:'POWERHOUSE', brawler:'BRAWLER', technician:'TECHNICIAN', striker:'BRAWLER',
                 highFlyer:'CRUISER', enigma:'TECHNICIAN', freeAgent:'BRAWLER'})[meta.archetype||'freeAgent'] || 'BRAWLER';
-  return window.MDICKIE_BASE_DIR + base + '.glb';
+  return mdickieBaseUrl(base);
 }
+window.mdickieBaseUrl = mdickieBaseUrl;
 window.mdickieBaseFor = mdickieBaseFor;
 function applyCharModels(){ ['p1','p2','p3','p4'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; if(f._forceProc) return;
   // NO PROCEDURAL POP: if a GLB is expected for this fighter, HIDE the procedural tube the moment
