@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2364"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2366"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -43534,6 +43534,105 @@ console.log('%c[BANNON_TRAUMA] match damage -> lasting career injuries (endMatch
     needsReupload:needsReupload, report:report, SEED:SEED };
 })();
 console.log('%c[BANNON_RIGS] character-rig registry — proprietary names, re-upload audit (BANNON_RIGS.report())','color:#7CFC00');
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_EVENTBUS + MDickie legacy wiring — two orphaned systems connected.
+//
+// 1. window.addEvent DID NOT EXIST. `addEvent` is defined only as a LOCAL inside BANNON_STORY and
+//    exported as BANNON_STORY.addEvent. Meanwhile 37 call sites across the engine call
+//    `window.addEvent(...)`, nearly all behind `if (window.addEvent)` — so every one of them was a
+//    silent no-op. Entrances, pyro, weapon shatters, run-ins, environmental hazards, travel and the
+//    new injury reports were all writing to nothing, and the Universe/Career event feed never saw
+//    them. Bridging it is one assignment and lights up all 37.
+//
+// 2. BANNON_MDICKIE_LEGACY_MODULE exports triggerCourt / triggerMeeting / postMatchAftermath — the
+//    Hard Time court, backstage promoter meetings, and the post-match dirt sheet. All three are real
+//    implementations with ZERO callers, the same pattern as BANNON_CAREER.injure(). Wired here:
+//      * postMatchAftermath -> every match end, presented as a dirt-sheet card
+//      * triggerMeeting     -> walking into the promoter's office (a promoter offer + XP)
+//      * triggerCourt       -> consequences for weapon carnage, MDickie's actual escalation
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+
+  // ── 1. the event bus bridge
+  (function bridge(){
+    var tries=0;
+    (function arm(){
+      tries++;
+      try{
+        if(typeof window.addEvent!=='function' && window.BANNON_STORY && typeof window.BANNON_STORY.addEvent==='function'){
+          window.addEvent=function(text,type){
+            try{ return window.BANNON_STORY.addEvent(String(text), type||'news'); }catch(e){ return null; }
+          };
+          try{ console.log('%c[BANNON_EVENTBUS] window.addEvent bridged to BANNON_STORY — 37 call sites live','color:#7CFC00'); }catch(e){}
+          return;
+        }
+        if(typeof window.addEvent==='function') return;   // someone else defined it; leave it alone
+      }catch(e){}
+      if(tries<60) setTimeout(arm, 1000);
+    })();
+  })();
+
+  // ── 2. MDickie legacy features, given real triggers
+  var LEG=function(){ return window.BANNON_MDICKIE_LEGACY_MODULE||null; };
+
+  // post-match dirt sheet on every match end (alongside BANNON_TRAUMA's medical report)
+  (function hookAftermath(){
+    var tries=0;
+    (function arm(){
+      tries++;
+      try{
+        if(typeof window.endMatch==='function' && !window.endMatch.__aftermathHooked){
+          var orig=window.endMatch;
+          window.endMatch=function(winner){
+            var r=orig.apply(this,arguments);
+            try{
+              var L=LEG(); if(!L) return r;
+              var w=null,l=null;
+              try{ var fs=(typeof fighters!=='undefined')?fighters:[];
+                w=(winner&&(winner.opts&&winner.opts.name||winner.name))||null;
+                for(var i=0;i<fs.length;i++){ var n=(fs[i].opts&&fs[i].opts.name)||fs[i].name; if(n&&n!==w){ l=n; break; } }
+              }catch(e){}
+              if(w&&l){
+                L.postMatchAftermath(w,l);
+                if(window.BANNON_CARDS&&window.BANNON_CARDS.news){
+                  window.BANNON_CARDS.news([L.generateNewsHeadline(w,l,window.CURRENT_ENV||'THE ARENA')],'BANNON DIRT SHEET');
+                }
+                // WEAPON CARNAGE -> CHARGES. MDickie escalates out of the ring; heavy weapon damage in a
+                // street/prison/parking setting draws the court instead of a fine.
+                try{
+                  var env=String(window.CURRENT_ENV||'ARENA');
+                  var broke=0; try{ (window.BANNON_WEAPONS&&window.BANNON_WEAPONS.items||[]).forEach(function(it){ if(it.broken) broke++; }); }catch(e){}
+                  if(broke>=2 && /STREETS|PRISON|PARKING|JAIL|CITY/.test(env) && Math.random()<0.5){
+                    L.triggerCourt(w, broke+' counts of assault with a weapon in '+env.toLowerCase());
+                  }
+                }catch(e){}
+              }
+            }catch(e){}
+            return r;
+          };
+          window.endMatch.__aftermathHooked=true;
+          return;
+        }
+      }catch(e){}
+      if(tries<60) setTimeout(arm, 1200);
+    })();
+  })();
+
+  // promoter meeting when you walk into the office (BANNON_TRAVEL fires arrival moments there)
+  window.BANNON_OFFICE_MEETING=function(name){
+    try{ var L=LEG(); if(L&&L.triggerMeeting){ L.triggerMeeting(name||'BANNON'); return true; } }catch(e){}
+    return false;
+  };
+  window.BANNON_COURT=function(name,charge){
+    try{ var L=LEG(); if(L&&L.triggerCourt){ L.triggerCourt(name||'BANNON', charge||'conduct unbecoming'); return true; } }catch(e){}
+    return false;
+  };
+})();
+console.log('%c[BANNON_EVENTBUS] event bridge + MDickie court/meeting/aftermath wired','color:#7CFC00');
 </script>
 </body></html>
 
