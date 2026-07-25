@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2375"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2378"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -10517,6 +10517,18 @@ function applyDamage(opp, dmg, attacker, move, forceDown){
   // never reacted to anything; now that it is real, drive it from actual impact force — a jab is nothing,
   // a slam brings them up. Scaled off the same shakeImpact the camera punch uses.
   try{ if(window.crowdReaction){ var _pop=Math.min(1,(shakeImpact||0)/150); if(_pop>0.25) window.crowdReaction(_pop); } }catch(e){}
+  // ORGANIC MATCH RATING: the match rates itself from what you DO. Move variety is the biggest driver,
+  // big impacts and crowd pops add on top, and damage traded both ways measures how competitive it was.
+  // No spot calling required — calling spots only amplifies a match that is already good.
+  try{
+    if(window.BANNON_RATING_MOVE && move && move.name) window.BANNON_RATING_MOVE(move.name);
+    if(window.BANNON_RATING_CREDIT){
+      if((shakeImpact||0) > 90) window.BANNON_RATING_CREDIT('big', 1);
+      if((shakeImpact||0) > 150) window.BANNON_RATING_CREDIT('pop', 1);
+    }
+    if(window.BANNON_SHOTCALLER && window.BANNON_SHOTCALLER.trackDamage)
+      window.BANNON_SHOTCALLER.trackDamage(!!(attacker&&attacker.isPlayer), dmg);
+  }catch(e){}
   // Trigger dynamic commentary & crowd surge & synthesized impact audio
   if (window.ANNOUNCER && window.ANNOUNCER.enabled) {
     let tKey = 'punch';
@@ -43961,9 +43973,18 @@ console.log('%c[BANNON_IMPACT] kinetic impacts + lift overexertion (Neckbreaker/
 (function(){
   if(typeof window==='undefined') return;
 
-  var st={ flow:0, tier:0, lastHitT:0, chain:0, best:0, broken:0 };
-  // the beat: a strike landing between EARLY and LATE after the previous one is ON BEAT.
-  var BEAT_EARLY=0.16, BEAT_LATE=0.62, LAPSE=1.10;      // seconds
+  var st={ flow:0, tier:0, lastHitT:0, chain:0, best:0, broken:0, cadence:'' };
+  // THREE VALID CADENCES, not one correct rhythm (owner: "what if I want to mash a fast combo, or do a
+  // certain rhythm combo?"). Mashing is a STYLE, not a mistake — it just pays differently. Fast hands
+  // chip quickly with a smaller ceiling; measured timing pays the most per hit; heavy deliberate shots
+  // pay big per hit but build the chain slowly. Nothing here punishes you to zero for playing your way.
+  var LAPSE=1.10;                                        // beyond this the chain simply lapses
+  var CADENCE=[
+    { id:'FLURRY', max:0.17, gain:0.55, mult:1.15, label:'FLURRY' },   // fast hands: many hits, lower ceiling
+    { id:'FLOW',   max:0.62, gain:1.00, mult:1.45, label:'IN THE POCKET' }, // measured: the sweet spot
+    { id:'POWER',  max:LAPSE,gain:0.80, mult:1.38, label:'HEAVY HANDS' }    // deliberate: fewer, meatier
+  ];
+  function cadenceFor(dt){ for(var i=0;i<CADENCE.length;i++) if(dt<=CADENCE[i].max) return CADENCE[i]; return null; }
   var TIERS=[
     { at:0,  mult:1.00, label:'' },
     { at:3,  mult:1.08, label:'RHYTHM' },
@@ -43990,37 +44011,38 @@ console.log('%c[BANNON_IMPACT] kinetic impacts + lift overexertion (Neckbreaker/
   function land(attacker){
     var t=now(), ws=windowScale(attacker);
     var dt=t-(st.lastHitT||0);
-    var early=BEAT_EARLY/Math.max(0.5,ws), late=BEAT_LATE*Math.max(0.5,ws);
-    var onBeat=false;
+    var cad=null;
     if(st.lastHitT===0 || dt>LAPSE*Math.max(0.6,ws)){
-      st.flow=1; st.chain=1;                      // fresh opening strike
-    } else if(dt<early){
-      st.flow=0; st.chain=1; st.broken++;          // MASHED — rhythm broken on purpose
-      try{ if(typeof announce==='function' && st.tier>=2) announce('RHYTHM BROKEN','too eager'); }catch(e){}
-    } else if(dt<=late){
-      st.flow++; st.chain++; onBeat=true;          // ON BEAT
+      st.flow=1; st.chain=1; cad=CADENCE[1];       // fresh opening strike
     } else {
-      st.flow=Math.max(1, st.flow-1); st.chain++;  // late but connected: flow bleeds
+      // scale the windows by the character's own read (technician vs bruiser), then bank flow at the
+      // rate that cadence earns. EVERY cadence gains — mashing is slower to build, never punished.
+      cad=cadenceFor(dt/Math.max(0.5,ws)) || CADENCE[2];
+      st.flow += cad.gain; st.chain++;
     }
+    st.cadence=cad.id;
     st.lastHitT=t;
     if(st.flow>st.best) st.best=st.flow;
     var tr=tierOf(st.flow);
-    if(tr.at && tierOf(st.flow-1).at!==tr.at){
-      try{ if(typeof announce==='function') announce(tr.label, st.flow+' STRIKE FLOW'); }catch(e){}
+    // the CEILING is what differs: a flurry tops out lower than measured timing, so both are viable
+    var mult=Math.min(tr.mult, cad.mult);
+    if(tr.at && tierOf(st.flow-cad.gain).at!==tr.at){
+      try{ if(typeof announce==='function') announce(cad.label, Math.round(st.flow)+' CHAIN'); }catch(e){}
       try{ if(window.crowdReaction) window.crowdReaction(Math.min(1, 0.35+st.flow*0.045)); }catch(e){}
     }
     st.tier=TIERS.indexOf(tr);
-    return { onBeat:onBeat, flow:st.flow, tier:st.tier, mult:tr.mult, label:tr.label };
+    return { cadence:cad.id, flow:st.flow, tier:st.tier, mult:mult, label:cad.label };
   }
   // taking a hit costs you the flow — pressure is losable
   function takeHit(){ if(st.flow>2){ try{ if(typeof announce==='function') announce('FLOW BROKEN',''); }catch(e){} } st.flow=0; st.chain=0; st.tier=0; st.lastHitT=0; }
-  function multiplier(){ return tierOf(st.flow).mult; }
-  function state(){ return { flow:st.flow, chain:st.chain, tier:st.tier, best:st.best, broken:st.broken,
-                             label:tierOf(st.flow).label, mult:tierOf(st.flow).mult }; }
+  function capOf(){ for(var i=0;i<CADENCE.length;i++) if(CADENCE[i].id===st.cadence) return CADENCE[i].mult; return 1.45; }
+  function multiplier(){ return Math.min(tierOf(st.flow).mult, capOf()); }
+  function state(){ return { flow:+st.flow.toFixed(2), chain:st.chain, tier:st.tier, best:+st.best.toFixed(2),
+                             cadence:st.cadence, label:tierOf(st.flow).label, mult:multiplier() }; }
   function reset(){ st.flow=0; st.chain=0; st.tier=0; st.lastHitT=0; }
 
   window.BANNON_FLOW={ land:land, takeHit:takeHit, multiplier:multiplier, state:state, reset:reset,
-                       TIERS:TIERS, beat:{early:BEAT_EARLY,late:BEAT_LATE,lapse:LAPSE} };
+                       TIERS:TIERS, CADENCE:CADENCE, lapse:LAPSE };
 
   // hook the damage path: attacker's flow builds, victim's flow dies, and flow scales the hit
   (function hook(){
@@ -44163,13 +44185,54 @@ console.log('%c[BANNON_FLOW] Arkham-lineage rhythm combat (Ultraviolence dev her
   // HIGH_SPOT / ROPE_RUN / TABLE_SPOT / NEAR_FALL are announced by their own systems
   window.__spotHit=function(kind){ return land(kind); };
 
-  function rating(){ return Math.round(st.rating); }
+  // ── ORGANIC RATING (owner: "not doing it should not do nothing" — MDickie and WWE do NOT gate rating
+  // behind spot calling). The match rates itself from what you actually DO: variety of moves, big
+  // impacts, near falls, reversals, crowd reactions, and a competitive back-and-forth. Calling spots is
+  // a BONUS layer that amplifies a good match — never the only way to earn one.
+  var org={ moves:{}, bigHits:0, nearFalls:0, reversals:0, pops:0, dmgA:0, dmgB:0, t0:0 };
+  function credit(kind, amount){
+    try{
+      var a=+amount||1;
+      if(kind==='move'){ /* handled by variety() */ }
+      else if(kind==='big')      { org.bigHits+=a;   bump(0.9*a); }
+      else if(kind==='nearFall') { org.nearFalls+=a; bump(2.2*a); }
+      else if(kind==='reversal') { org.reversals+=a; bump(1.4*a); }
+      else if(kind==='pop')      { org.pops+=a;      bump(0.5*a); }
+    }catch(e){}
+  }
+  function bump(n){ st.rating=Math.max(0, Math.min(100, st.rating+n)); }
+  function useMove(name){
+    if(!name) return;
+    if(!org.moves[name]){ org.moves[name]=1; bump(0.8); }   // NEW move = variety, the biggest organic driver
+    else { org.moves[name]++; if(org.moves[name]>4) bump(-0.35); }   // leaning on one move gets stale
+  }
+  function variety(){ return Object.keys(org.moves).length; }
+  // competitive matches rate higher than squashes — measured from damage traded both ways
+  function competitiveness(){
+    var a=org.dmgA, b=org.dmgB, tot=a+b;
+    if(tot<50) return 0;
+    var bal=1-Math.abs(a-b)/tot;                        // 1 = even, 0 = one-sided
+    return bal;
+  }
+  function trackDamage(isPlayer, dmg){ if(isPlayer) org.dmgA+=(+dmg||0); else org.dmgB+=(+dmg||0); }
+  window.BANNON_RATING_CREDIT=credit;
+  window.BANNON_RATING_MOVE=useMove;
+
+  function rating(){
+    // organic base + the competitiveness bonus, with called spots layered ON TOP (already in st.rating)
+    var comp=competitiveness()*8;
+    return Math.round(Math.max(0, Math.min(100, st.rating + comp)));
+  }
   function state(){ return { rating:rating(), called:st.called?st.called.id:null,
                              remaining: st.called? Math.max(0,+(st.called.window-(now()-st.t0)).toFixed(1)) : 0,
-                             hit:st.hit, missed:st.missed, log:st.log.slice(-8) }; }
-  function reset(){ st.rating=50; st.called=null; st.hit=0; st.missed=0; st.log=[]; chip(null); }
+                             hit:st.hit, missed:st.missed, log:st.log.slice(-8),
+                             organic:{ variety:variety(), bigHits:org.bigHits, nearFalls:org.nearFalls,
+                                       reversals:org.reversals, competitive:+competitiveness().toFixed(2) } }; }
+  function reset(){ st.rating=50; st.called=null; st.hit=0; st.missed=0; st.log=[]; chip(null);
+    org={ moves:{}, bigHits:0, nearFalls:0, reversals:0, pops:0, dmgA:0, dmgB:0, t0:0 }; }
 
-  window.BANNON_SHOTCALLER={ SPOTS:SPOTS, call:call, land:land, miss:miss, rating:rating, state:state, reset:reset };
+  window.BANNON_SHOTCALLER={ SPOTS:SPOTS, call:call, land:land, miss:miss, rating:rating, state:state, reset:reset,
+    credit:credit, useMove:useMove, trackDamage:trackDamage, variety:variety };
 
   // keyboard: 1-7 call a spot (only out of menus)
   try{
@@ -44194,6 +44257,137 @@ console.log('%c[BANNON_FLOW] Arkham-lineage rhythm combat (Ultraviolence dev her
   })();
 })();
 console.log('%c[BANNON_SHOTCALLER] call the spot — Ultraviolence signature. ctrl+1..7 / BANNON_SHOTCALLER.call()','color:#7CFC00');
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_MOVEPOOL — make the MDickie library actually REACHABLE in a match.
+//
+// THE GAP: BANNON_MOVE_LIBRARY loads 75 MDickie Wrestling-Empire moves + 14 Buckles.bb corner/top-rope
+// moves + 15 Ground.bb mat holds into its pools, and exposes forPosition()/forStyle() to query them.
+// Both have EXACTLY TWO references each in the whole file: their definition and their export. ZERO
+// CALLERS. So 104 imported moves sat in a bucket nothing ever read, and matches drew from the same
+// small hardcoded set every time — which is the "repetitive" half of the owner's complaint, and the
+// reason the MDickie import never felt present in play.
+//
+// WHAT THIS DOES: a variety-aware selector over the WHOLE library, keyed by the position you are
+// actually in, filtered by fighting style, with recent-move memory so a match stops repeating itself.
+// Everything it returns is routed through resolve() -> execGrappleMove -> OUR physics, so these are
+// MDickie's vocabulary on BANNON's engine, never MDickie's canned arcade behaviour.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var recent=[], RECENT_MAX=8;
+
+  function lib(){ return window.BANNON_MOVE_LIBRARY||null; }
+  function allMoves(){
+    try{ var L=lib(); if(!L) return [];
+      if(typeof L.all==='function') return L.all()||[];
+      if(L.raw) return [].concat(L.raw.grapples||[], L.raw.strikes||[]);
+    }catch(e){}
+    return [];
+  }
+  // moves valid from a position. The library's own forPosition matches m.from or m.pos; broadened here
+  // with sensible aliases so CORNER/TOP_ROPE/GROUNDED variants all resolve.
+  var POS_ALIAS={
+    CORNER_FRONT:['CORNER','CORNER_FRONT','TURNBUCKLE','BUCKLE'],
+    CORNER_BACK:['CORNER','CORNER_BACK','TURNBUCKLE'],
+    TURNBUCKLE_TOP:['TOP_ROPE','TURNBUCKLE_TOP','TOP','TURNBUCKLE'],
+    GROUNDED_HEAD_UP:['GROUND','GROUNDED','GROUNDED_HEAD_UP','HEAD'],
+    GROUNDED_HEAD_DOWN:['GROUND','GROUNDED','GROUNDED_HEAD_DOWN'],
+    GROUNDED_LEG:['GROUND','GROUNDED','GROUNDED_LEG','LEGS'],
+    GROUNDED_SIDE:['GROUND','GROUNDED','GROUNDED_SIDE'],
+    STANDING_FRONT:['STANDING','STANDING_FRONT','FRONT','STANDARD'],
+    STANDING_REAR:['STANDING_REAR','REAR','BEHIND'],
+    APRON:['APRON'], MIDDLE_ROPE:['MIDDLE_ROPE','SECOND_ROPE'], RUNNING:['RUNNING','RUN']
+  };
+  function matchesPos(m, pos){
+    if(!m) return false;
+    var keys=POS_ALIAS[pos]||[pos];
+    var mp=String(m.pos||m.from||'').toUpperCase();
+    if(!mp) return false;
+    for(var i=0;i<keys.length;i++) if(mp.indexOf(keys[i])>=0) return true;
+    return false;
+  }
+  function forPosition(pos){ return allMoves().filter(function(m){ return matchesPos(m,pos); }); }
+  function forStyle(style){
+    if(!style) return allMoves();
+    return allMoves().filter(function(m){ return !m.style || m.style.indexOf(style)>=0; });
+  }
+
+  // pick a move for this position/style, avoiding what we just used so matches vary
+  function pick(pos, style, kind){
+    var pool=forPosition(pos);
+    if(kind) pool=pool.filter(function(m){ return (m.kind===kind) || (kind==='grapple' && !m.kind && !m.dive && !m.sub); });
+    if(style) { var s=pool.filter(function(m){ return !m.style || m.style.indexOf(style)>=0; }); if(s.length) pool=s; }
+    if(!pool.length) return null;
+    var fresh=pool.filter(function(m){ return recent.indexOf(m.name)<0; });
+    var use=fresh.length?fresh:pool;                     // everything used recently -> allow repeats again
+    var m=use[Math.floor(Math.random()*use.length)];
+    if(m){ recent.push(m.name); if(recent.length>RECENT_MAX) recent.shift(); }
+    return m;
+  }
+  // resolve a library move into what the engine should run
+  function resolve(m){
+    try{ var L=lib(); if(L&&typeof L.resolve==='function') return L.resolve(m); }catch(e){}
+    if(!m) return null;
+    if(m.dive) return {kind:'dive', dive:m.dive, from:m.from};
+    if(m.sub)  return {kind:'sub', hold:m.sub, limb:m.limb};
+    if(m.kind==='strike') return {kind:'strike', from:m.from, power:m.power};
+    return {kind:'grapple', pos:m.pos||'STANDARD', mode:m.mode||'front', deliver:m.deliver||'slam', power:m.power||60};
+  }
+  // fire a position-appropriate library move through the REAL grapple path
+  function run(attacker, pos, style){
+    try{
+      var m=pick(pos, style, 'grapple') || pick(pos, style);
+      if(!m) return false;
+      if(typeof window.execGrappleMove==='function'){
+        var ok=window.execGrappleMove(attacker, m, m.deliver||'slam');
+        if(ok && typeof announce==='function') announce(m.name, pos.replace(/_/g,' '));
+        return ok;
+      }
+    }catch(e){}
+    return false;
+  }
+  function coverage(){
+    var out={}, poss=Object.keys(POS_ALIAS);
+    poss.forEach(function(p){ out[p]=forPosition(p).length; });
+    out._total=allMoves().length;
+    return out;
+  }
+  window.BANNON_MOVEPOOL={ pick:pick, run:run, forPosition:forPosition, forStyle:forStyle,
+                           resolve:resolve, coverage:coverage, recent:function(){ return recent.slice(); } };
+
+  // WIRE IT: when a grapple fires without an explicit position-specific move, draw one from the pool so
+  // the MDickie vocabulary actually appears. Guarded so an explicitly chosen move (a finisher, a
+  // signature, a player-equipped move) is NEVER overridden.
+  (function hook(){
+    var tries=0;
+    (function arm(){
+      tries++;
+      try{
+        if(typeof window.execGrappleMove==='function' && !window.execGrappleMove.__poolHooked){
+          var orig=window.execGrappleMove;
+          window.execGrappleMove=function(attacker, move, deliverFallback){
+            try{
+              if(window.MOVEPOOL_VARIETY!==false && attacker && move && !move._fromPool
+                 && !move.finisher && !move.signature && !move._equipped && !move.name){
+                var pos=(attacker._inCorner?'CORNER_FRONT':(attacker.grapplePos||'STANDING_FRONT'));
+                var alt=pick(pos, attacker.style, 'grapple');
+                if(alt){ alt=Object.assign({_fromPool:true}, alt); move=alt; }
+              }
+            }catch(e){}
+            return orig.call(this, attacker, move, deliverFallback);
+          };
+          window.execGrappleMove.__poolHooked=true;
+          return;
+        }
+      }catch(e){}
+      if(tries<60) setTimeout(arm, 900);
+    })();
+  })();
+})();
+console.log('%c[BANNON_MOVEPOOL] 104 MDickie moves now reachable by position — BANNON_MOVEPOOL.coverage()','color:#7CFC00');
 </script>
 </body></html>
 
