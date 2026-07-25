@@ -142,9 +142,22 @@ The owner has had to correct these repeatedly. They are LAW now:
   then re-rig, so UniRig sees one clean body.
   ATTEMPT 1 (2026-07-25 05:46) FAILED: jasongzy/UniRig returned a DEGENERATE 9-joint rig (no full
   arms/legs) under queue load; batch_rerig's own >=16-joint gate rejected + deleted it rather than
-  banking a false success. Retried. IF UniRig keeps degrading, the fallback is a weight TRANSFER from
-  BANNON_rigged.glb (same character, 28 joints, proven p95 0.068) onto the stripped heavyweight mesh,
-  gated the same way. Do NOT promote the 16-joint skin.cjs version either way.
+  banking a false success. Attempt 2 also stalled on the queue.
+### ✔ RESOLVED (2026-07-25 06:12) — WEIGHT TRANSFER beat UniRig, no service needed
+- New tool **tools/model_diag/transfer_weights.cjs**: copies a PROVEN rig onto a badly-weighted mesh.
+  Source BANNON_rigged.glb (same character, 28-joint UniRig) -> target the satellite-stripped
+  Heavyweight. Centre-aligns both in bind space (matches bbox centre in X/Z, matches FEET in Y,
+  rescales height), then for each target vertex blends the K=6 nearest source vertices' joint
+  influences by inverse distance, keeps the top 4, renormalises. Uniform spatial hash makes it
+  tractable (brute force would be 16k x 146k = 2.4B distance tests). Carries target geometry +
+  texture, source skeleton + joints + inverseBindMatrices.
+- **RESULT: p95 0.3131 FAIL -> 0.0284 PASS** (11x better), and BETTER than the reference
+  BANNON_rigged itself (0.0682 WEAK). Mean nearest-source distance 2.06cm = good correspondence.
+- Visually confirmed in the snapshotter: legs/boots/knee pads/hands all clean; the earlier render had
+  shredded, fanning leg geometry. PROMOTED to assets/models/BANNON_muscular_skinned.glb and re-gated
+  AFTER banking (PASS, 28 joints).
+- LESSON: when a hosted rig service degrades, transfer from a model that already passes. Reusable for
+  any future FAIL model that has a good sibling rig.
 - ✔ skinqa GATE RESTORED — tools/model_diag/test.html was missing, so the gate errored "THREE is not
   defined" on every model and things could only be judged by screenshot, which MODEL_QA.md forbids
   ("never promote on a screenshot; promote on the number"). Rebuilt + vendored three r128; verified it
