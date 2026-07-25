@@ -132,6 +132,21 @@ The owner has had to correct these repeatedly. They are LAW now:
   Result 2.6MB→1.56MB, one clean textured body, verified in the headless snapshotter.
 - ✔ Scanned all 57 character GLBs for the same artifact — muscular was the ONLY satellite case
   (wrestler_base is a 284-vert proxy, false positive). Tool banked for future Tripo drop-ins.
+- ⏳ OPEN (owner reported bad deformation on the stripped Heavyweight, 2026-07-25): stripping removed
+  the satellites but PRESERVED the original bad weights. skinqa (restored, see below) measures
+  BANNON_muscular_skinned.glb at **p95 0.3131 = catastrophic FAIL** (threshold 0.12) on 16 skin.cjs
+  joints — worse than any model in the documented FAIL set, confirming the report objectively.
+  Fix in flight: UniRig re-rig of the STRIPPED body (batch_rerig SRC key BANNON_HEAVYWEIGHT) to
+  replace skin.cjs weights with a 28-joint skeleton + smooth cross-attention weights. Promote ONLY
+  if skinqa beats 0.3131 (target ≈ BANNON_rigged's 0.068). Order matters: strip satellites FIRST,
+  then re-rig, so UniRig sees one clean body.
+- ✔ skinqa GATE RESTORED — tools/model_diag/test.html was missing, so the gate errored "THREE is not
+  defined" on every model and things could only be judged by screenshot, which MODEL_QA.md forbids
+  ("never promote on a screenshot; promote on the number"). Rebuilt + vendored three r128; verified it
+  reproduces the doc's figure exactly (BANNON_rigged 0.0682 vs documented 0.068).
+- NOTE: BANNON.glb is a 15-mesh RIGID named-parts model (no skin at all) = literal action figure; the
+  game already defaults BANNON to BANNON_rigged.glb (28-joint skinned), which is correct. Don't
+  "promote" BANNON.glb.
 - ✔ Combat pipeline verified REAL end-to-end (not marionette): FBXLoader+fflate vendored (offline),
   182 mapped clips all resolve to local FBX, loadClipFor local-first, studioApplyClipPose drives the
   GLB skeleton by bone name (clipBones) + soft-tissue jiggle + morphs. Fixed 2 phantom warm-load
@@ -150,5 +165,22 @@ The owner has had to correct these repeatedly. They are LAW now:
 - ONE-TIME: owner must install THIS new APK once (it carries the OTA updater); every update after is
   automatic. (Their current APK has no OTA code baked in, so it can't self-fetch until replaced once.)
 
-NEXT SYSTEM (take ONE fully): MDickie FULL integration (all moves/env/files → all modes) OR
-per-character story modes / God Within open-world OR UE-into-APK wiring. Do not start two.
+### SYSTEM DONE: MDickie FULL surfacing — props + vehicles (2026-07-25)
+BANNON_WORLD parsed venues.json into 96 locations / 179 props / 28 vehicles but only LOCATIONS were
+ever consumed; props + vehicles were dead data. All 271 objects now have a real consumer:
+- ✔ CLASSIFY by name → physics class (edged/blunt/shatter/firearm/sport/furniture/wearable/nature/misc)
+  with derived mass/reach/integrity/bleed in the SAME units as the owner's 6 authored weapons.
+  ABSOLUTE MATH UNTOUCHED: DMG_SCALE 8.0 / MAX_BODY_VEL 3.8 stay engine-side.
+- ✔ WEAPONIZE 34 carryables into BANNON_WEAPONS.db + its live item list → real pickup/swing/stamina
+  tax/break through the EXISTING weapon laws (Cricket Bat, Bazooka, Taser, Guitar...).
+- ✔ DRESS every roamable MDickie location with decor + parked vehicles + loose weapons from its OWN
+  source game (HT3 props in HT3 locations, IL in IL) → Universe/Career/booking/God Within roam read as
+  inhabited. Seeded per location (same every visit), phone-capped 14 decor/3 vehicles/10 weapons.
+- ✔ WEARABLES: 64 headwear/mask/shoe props attach to the GLB head/foot BONE (rides mocap) with
+  procedural-joint fallback, one per slot, wearOn()/unwear() exposed for the creation suite.
+- ✔ window.BANNON_MDICKIE {classify,catalog,weaponize,spawnWeapon,dress,stats,redress,wearables,
+  wearOn,unwear} — reachable from the ⚕ God Mode OS.
+
+NEXT SYSTEM (take ONE fully): per-character story modes (MK/Tekken-style) + God Within open-world OR
+UE-into-APK wiring OR the MDickie MOVE/animation half (moveset→all modes). Do not start two.
+FIRST, though: land the Heavyweight deformation fix above (re-rig + skinqa gate) — it is OPEN.
