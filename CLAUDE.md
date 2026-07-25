@@ -140,6 +140,11 @@ The owner has had to correct these repeatedly. They are LAW now:
   replace skin.cjs weights with a 28-joint skeleton + smooth cross-attention weights. Promote ONLY
   if skinqa beats 0.3131 (target ≈ BANNON_rigged's 0.068). Order matters: strip satellites FIRST,
   then re-rig, so UniRig sees one clean body.
+  ATTEMPT 1 (2026-07-25 05:46) FAILED: jasongzy/UniRig returned a DEGENERATE 9-joint rig (no full
+  arms/legs) under queue load; batch_rerig's own >=16-joint gate rejected + deleted it rather than
+  banking a false success. Retried. IF UniRig keeps degrading, the fallback is a weight TRANSFER from
+  BANNON_rigged.glb (same character, 28 joints, proven p95 0.068) onto the stripped heavyweight mesh,
+  gated the same way. Do NOT promote the 16-joint skin.cjs version either way.
 - ✔ skinqa GATE RESTORED — tools/model_diag/test.html was missing, so the gate errored "THREE is not
   defined" on every model and things could only be judged by screenshot, which MODEL_QA.md forbids
   ("never promote on a screenshot; promote on the number"). Rebuilt + vendored three r128; verified it
