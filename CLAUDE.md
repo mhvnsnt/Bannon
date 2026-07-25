@@ -123,5 +123,32 @@ The owner has had to correct these repeatedly. They are LAW now:
 - ✔ ⚕ BUILDER button in the God Within banner (gadget reachable from God Within)
 - ✔ systems() = full-repo awareness incl. AI Studio's unreal/ C++ + src/ React + godmode/ OS (68 live modules)
 - ✔ apply(js) = live-apply edits the RUNNING game (guarded; [heal] watchdog protects source)
-NEXT SYSTEM (take ONE fully): MDickie FULL integration (all moves/env/files → all modes) OR cleaner
-models+combat from open source OR UE-into-APK wiring. Do not start two.
+### SYSTEM DONE: cleaner MODELS + COMBAT from open source (2026-07-25)
+- ✔ BANNON attire mislabel fixed: the "BANNON_muscular" GLB is the FAT body → labeled HEAVYWEIGHT;
+  the DEFAULT lean BANNON.glb is the true MUSCULAR build and stays default (owner LAW).
+- ✔ Mini-model + bust satellites STRIPPED from the Heavyweight GLB. New banked tool
+  tools/model_diag/strip_satellites.cjs: welds Tripo's non-welded verts, union-find components, keeps
+  the LARGEST (the body), drops stray islands — PRESERVES skin/skeleton/IBM + embedded texture.
+  Result 2.6MB→1.56MB, one clean textured body, verified in the headless snapshotter.
+- ✔ Scanned all 57 character GLBs for the same artifact — muscular was the ONLY satellite case
+  (wrestler_base is a 284-vert proxy, false positive). Tool banked for future Tripo drop-ins.
+- ✔ Combat pipeline verified REAL end-to-end (not marionette): FBXLoader+fflate vendored (offline),
+  182 mapped clips all resolve to local FBX, loadClipFor local-first, studioApplyClipPose drives the
+  GLB skeleton by bone name (clipBones) + soft-tissue jiggle + morphs. Fixed 2 phantom warm-load
+  clips (Jab/Mma Kick had no FBX) → 26/26 core combat clips now warm-load at menu lull.
+### SYSTEM DONE: OTA auto-update — updates hit the phone without a reinstall (2026-07-25)
+- The installed WebView APK bundled the game HTML frozen at build → repo pushes never reached the
+  phone. Now it updates like a real Android game:
+- ✔ Early <head> bootstrap (window.BANNON_BUILD + cold-launch auto-apply): pre-init document.write
+  swap of a cached newer build, SAME file:// origin so saves persist; sanity-gated (can't brick).
+- ✔ BANNON_OTA end-of-file module: fetches dist/version.json, downloads dist/BANNON.html, caches +
+  "UPDATE READY — APPLY" toast; hourly recheck; gated to app (file:// or BannonNative), dormant on web.
+- ✔ Native-reinstall notice when installed versionCode < version.json.apkMin (native code changed).
+- ✔ MainActivity BannonNative bridge: getApkBuild() (unspoofable true versionCode) + openUrl().
+- ✔ android.yml stamps __BANNON_BUILD__=commit-count, bundles stamped HTML, publishes dist/BANNON.html
+  + dist/version.json (build + apkMin) each main push. Verified headless: swap applies, saves survive.
+- ONE-TIME: owner must install THIS new APK once (it carries the OTA updater); every update after is
+  automatic. (Their current APK has no OTA code baked in, so it can't self-fetch until replaced once.)
+
+NEXT SYSTEM (take ONE fully): MDickie FULL integration (all moves/env/files → all modes) OR
+per-character story modes / God Within open-world OR UE-into-APK wiring. Do not start two.
