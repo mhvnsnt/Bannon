@@ -1,6 +1,10 @@
 node_modules/
 dist/*
 !dist/BANNON.apk
+# OTA payload the installed app fetches to self-update (published by android.yml on each main push).
+# These MUST be tracked or the phone can never see a new build.
+!dist/BANNON.html
+!dist/version.json
 fight_history.json
 move_fitness.json
 move_fitness.json.transitions

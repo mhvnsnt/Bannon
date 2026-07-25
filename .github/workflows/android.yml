@@ -20,7 +20,11 @@ jobs:
   build-apk:
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth: 0 — the OTA build number is `git rev-list --count HEAD`, which returns 1 on the
+      # default shallow clone (so every build would look like build 1 and updates would never land).
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Stamp OTA build number into the game HTML
         run: |
