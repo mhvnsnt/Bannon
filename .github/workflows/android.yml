@@ -64,10 +64,42 @@ jobs:
         with:
           gradle-version: '8.7'
       - run: BANNON_VERSION_CODE=$(git rev-list --count HEAD) gradle -p android assembleRelease --no-daemon
-      - name: Verify APK Signature
+      # INSTALLABILITY GATE. Every "cannot install / package couldn't be parsed" report so far traced to
+      # one of these three, all silent at build time — so each is now a hard failure, not a warning:
+      #   1. v1 (JAR) signature missing. AGP drops v1 automatically in some configs, and many OEM
+      #      installers reject a v2-only APK with "problem parsing the package". Git history shows a
+      #      whole run of NO_V1_SIG builds that shipped exactly that way.
+      #   2. resources.arsc COMPRESSED. Android 11+ refuses to install it, reported as a parse failure.
+      #   3. a stale/desynced signer key, which makes the APK uninstallable OVER an existing install.
+      - name: Verify APK is installable (signature schemes + arsc storage + signer identity)
         run: |
+          set -euo pipefail
           BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
-          $BUILD_TOOLS_DIR/apksigner verify --verbose android/app/build/outputs/apk/release/*.apk
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          OUT=$($BUILD_TOOLS_DIR/apksigner verify --verbose --print-certs "$APK")
+          echo "$OUT"
+          echo "$OUT" | grep -q "JAR signing (APK Signature Scheme v1): true" \
+            || { echo "::error::v1 JAR signature MISSING — OEM installers will report 'problem parsing the package'"; exit 1; }
+          echo "$OUT" | grep -q "APK Signature Scheme v2: true" \
+            || { echo "::error::v2 signature missing"; exit 1; }
+          # resources.arsc must be STORED (uncompressed) or Android 11+ rejects the install
+          python3 - "$APK" <<'PY'
+          import sys, zipfile
+          with zipfile.ZipFile(sys.argv[1]) as z:
+              info = z.getinfo('resources.arsc')
+              if info.compress_type != zipfile.ZIP_STORED:
+                  print("::error::resources.arsc is COMPRESSED — Android 11+ will refuse to install it")
+                  sys.exit(1)
+              print("resources.arsc: STORED (ok)")
+          PY
+          # signer fingerprint must stay stable, or the APK cannot install over an existing BANNON
+          FP=$(echo "$OUT" | grep -m1 "Signer #1 certificate SHA-256 digest:" | sed 's/.*: //')
+          echo "signer sha256: $FP"
+          EXPECTED=847a00066d3815b1f05e6f7f73f5bdf64b0c6b4b
+          case "$FP" in
+            ${EXPECTED}*) echo "signer matches the established sideload key (updates will install over old builds)";;
+            *) echo "::warning::signer key CHANGED (expected ${EXPECTED}...). Users must UNINSTALL the old app before this one installs.";;
+          esac
       - name: Upload APK (artifact)
         uses: actions/upload-artifact@v4
         with:
