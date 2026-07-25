@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2370"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2372"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -7920,6 +7920,18 @@ window.execGrappleMove = function(attacker, move, deliverFallback){
     attacker.craneLift = 0; attacker.grappleStage = 3; attacker.stateTime = 0; attacker._liftMinT = 0;
     setTimeout(()=>{ try{ if(attacker.grappling && attacker.grappleStage>=3) attacker.grappleDeliver('spike', 0); }catch(_){}}, 130);
   } else {
+    // OVEREXERTION GATE (Neckbreaker): a gassed man taking on a heavy load can simply lose it. Driven by
+    // stamina vs the victim's build, not a dice roll — fresh lifts anyone, gassed lifts no one.
+    try{
+      if(window.BANNON_LIFT_CHECK && !window.BANNON_LIFT_CHECK(attacker, attacker.grabTarget)){
+        // the lift collapses: release the hold and let both men reset instead of a weightless carry
+        attacker.grappleStage = 0; attacker.grappling = false;
+        if(attacker.grabTarget && attacker.grabTarget.grabbedBy===attacker) attacker.grabTarget.grabbedBy=null;
+        attacker.grabTarget = null; attacker.state='idle'; attacker.stateTime=0;
+        if(attacker.stamina!=null) attacker.stamina=Math.max(0, attacker.stamina-30);   // the failed effort still costs
+        return false;
+      }
+    }catch(e){}
     // CARRY: lift to the position's hold, let it read, then deliver.
     attacker.craneLift = (GP && GP.lift0) || 0.5; attacker.grappleStage = 2; attacker.stateTime = 0;
     const ld = (GP && GP.liftDur!=null) ? GP.liftDur : 0.7; attacker._liftMinT = ld;
@@ -43736,6 +43748,150 @@ console.log('%c[BANNON_EVENTBUS] event bridge + MDickie court/meeting/aftermath 
   };
 })();
 console.log('%c[BANNON] refreshMoveLibrary defined — custom moves now appear without reopening the panel','color:#7CFC00');
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_IMPACT — KINETIC IMPACT MODEL. "No two impacts the same."
+//
+// NORTH STARS (owner, 2026-07-25) — researched this session:
+//   * NECKBREAKER: VISCERAL PRO WRESTLING (Steve Masson) — an active-ragdoll engine where "the active
+//     physics system affects every grapple, slam and strike leaving no two impacts the same", and where
+//     you either power through a lift with extra strength or feel the OVEREXERTION as you struggle.
+//   * ULTRAVIOLENCE PRO WRESTLING (Gackdaw, ex-Arkham dev) — high spots, COMBO systems, deathmatch
+//     logistics, create-a-weapon.
+//   * Open-source active-ragdoll practice: PD controllers hold posture after impact, IK + interpolation
+//     blend animation<->ragdoll. BANNON's Spring3 already IS that PD layer, and bannon_rig supplies the
+//     gains — so the architecture was right and the VARIANCE was what was missing.
+//
+// THE PROBLEM THIS FIXES: damage arrived at applyDamage() as a number derived from move.power TABLES,
+// with body-part routing from categorical move.height/traj/limb. Nothing read the actual motion. A
+// flat-footed jab and a full-speed running lariat resolved through the same canned arithmetic, which is
+// precisely why hits read as puppets clacking together instead of bodies colliding.
+//
+// WHAT IT DOES: at the moment of contact it measures REAL kinematics that already exist in the engine —
+// the striking limb's joint velocity (Spring3 integrates true per-joint velocity), the attacker's closing
+// speed, their mass build, their fatigue, and whether the victim was moving INTO the shot or rolling away
+// from it — and derives one multiplier that scales damage, hit-stop, ragdoll impulse, camera punch and
+// the crowd pop together. Same input, different motion, different hit. Every time.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+
+  // striking limb -> the joint whose velocity actually carries the blow
+  var LIMB_JOINT={
+    HAND:'haR', RIGHT_HAND:'haR', LEFT_HAND:'haL', FIST:'haR',
+    FOOT:'ftR', RIGHT_FOOT:'ftR', LEFT_FOOT:'ftL', KICK:'ftR',
+    KNEE:'knR', ELBOW:'elR', HEAD:'head', SHOULDER:'shR', THROWN:'haR'
+  };
+  function jointFor(move){
+    var l=String((move&&move.limb)||'').toUpperCase().replace(/[^A-Z_]/g,'');
+    if(LIMB_JOINT[l]) return LIMB_JOINT[l];
+    if(/LEFT/.test(l)) return /FOOT|KICK/.test(l)?'ftL':'haL';
+    if(/FOOT|KICK/.test(l)) return 'ftR';
+    return 'haR';
+  }
+  function speedOf(f, key){
+    try{ var j=f&&f.J&&f.J[key]; if(!j||!j.vel) return 0;
+      return Math.hypot(j.vel.x||0, j.vel.y||0, j.vel.z||0); }catch(e){ return 0; }
+  }
+  function massFactor(f){
+    // heavier build carries more through the shot. BBODY musc/fat are the authored body dials.
+    try{ var b=(f&&f.body)||(window.BBODY||null); if(!b) return 1;
+      var musc=+b.musc||0.6, fat=+b.fat||0.2;
+      return 0.88 + musc*0.26 + fat*0.14;          // ~0.9 .. 1.28
+    }catch(e){ return 1; }
+  }
+  function fatigueFactor(f){
+    try{ if(!f||f.stamina==null) return 1;
+      var r=Math.max(0, Math.min(1, f.stamina/(f.maxStamina||440)));
+      return 0.62 + r*0.38;                        // gassed shots genuinely land softer
+    }catch(e){ return 1; }
+  }
+  // was the victim coming INTO it (counter) or going away (rolling with it)?
+  function closingFactor(att, vic){
+    try{
+      if(!att||!vic) return 1;
+      var dx=(vic.x||0)-(att.x||0);
+      var dir=dx>=0?1:-1;                          // unit vector attacker -> victim, along x
+      var vvx=(vic.vx!=null?vic.vx:0);
+      var closing=-vvx*dir;                        // >0 = victim advancing into the strike
+      return Math.max(0.78, Math.min(1.30, 1 + closing*0.55));
+    }catch(e){ return 1; }
+  }
+
+  function kinetic(att, vic, move){
+    var jk=jointFor(move);
+    var limbV=speedOf(att, jk);                    // m/s of the actual striking joint
+    // a committed strike is ~4-7 on this scale; a lazy poke is <2. Normalise around 3.
+    var vN=Math.max(0.55, Math.min(1.85, 0.55 + limbV/3.2));
+    var m=massFactor(att), fa=fatigueFactor(att), cl=closingFactor(att,vic);
+    var mult=vN*m*fa*cl;
+    // keep the envelope sane so tuning stays predictable and nothing one-shots
+    mult=Math.max(0.55, Math.min(2.05, mult));
+    return { mult:mult, limbJoint:jk, limbVel:+limbV.toFixed(3), vN:+vN.toFixed(3),
+             mass:+m.toFixed(3), fatigue:+fa.toFixed(3), closing:+cl.toFixed(3) };
+  }
+  window.BANNON_IMPACT={ kinetic:kinetic, jointFor:jointFor, enabled:true, last:null };
+
+  // wrap applyDamage so EVERY impact is scaled by what the bodies were actually doing
+  (function hook(){
+    var tries=0;
+    (function arm(){
+      tries++;
+      try{
+        if(typeof window.applyDamage==='function' && !window.applyDamage.__kineticHooked){
+          var orig=window.applyDamage;
+          window.applyDamage=function(opp, dmg, attacker, move, forceDown){
+            var K=null;
+            try{
+              if(window.BANNON_IMPACT.enabled && attacker && move){
+                K=kinetic(attacker, opp, move);
+                dmg = dmg * K.mult;
+                window.BANNON_IMPACT.last=K;
+                if(opp) opp._lastImpactK=K;
+                // the VISUAL side scales with the same number, so a big hit looks big:
+                // hit-stop, camera punch and crowd pop all read from it.
+                try{
+                  var boost=(K.mult-1);
+                  if(typeof window.__camPunch==='number') window.__camPunch=Math.max(window.__camPunch, 0.45+boost*0.5);
+                  if(opp && opp.hitKick && boost>0.15) opp.hitKick.mag=(opp.hitKick.mag||0.07)*(1+boost*0.8);
+                  if(window.crowdReaction && K.mult>1.35) window.crowdReaction(Math.min(1,(K.mult-1)*0.9));
+                }catch(e){}
+              }
+            }catch(e){}
+            return orig.call(this, opp, dmg, attacker, move, forceDown);
+          };
+          window.applyDamage.__kineticHooked=true;
+          try{ console.log('%c[BANNON_IMPACT] kinetic impact model live — damage/hit-stop/camera/crowd scale with real limb velocity','color:#7CFC00'); }catch(e){}
+          return;
+        }
+      }catch(e){}
+      if(tries<60) setTimeout(arm, 800);
+    })();
+  })();
+
+  // ── OVEREXERTION ON LIFTS (Neckbreaker's "power through, or struggle"). The hoist already slows with
+  // fatigue; this adds the honest failure case — a gassed man trying to lift a heavy one CAN lose it.
+  window.BANNON_LIFT_CHECK=function(attacker, victim){
+    try{
+      if(!attacker||!victim) return true;
+      var r=(attacker.stamina!=null)?Math.max(0,Math.min(1,attacker.stamina/(attacker.maxStamina||440))):1;
+      var load=massFactor(victim);                  // how heavy they are to hold (~1.03 light .. ~1.20 heavy)
+      // CURVE MATTERS. My first pass (0.35 + r*0.85) made a FRESH man fail to lift a heavyweight, which
+      // defeats the entire point of a powerhouse. Tuned so: fresh lifts ANYONE, half-gassed still handles
+      // a light opponent but loses a heavyweight, fully gassed loses anyone. That is the Neckbreaker
+      // "power through it or feel the overexertion" curve, driven by stamina rather than a dice roll.
+      var capacity=0.92+r*0.42;                     // fresh 1.34, half 1.13, gassed ~0.96
+      if(capacity >= load) return true;
+      // failed: he loses the load. Not random — a direct consequence of fatigue vs weight.
+      try{ if(typeof announce==='function') announce('LOST THE LIFT','the weight won'); }catch(e){}
+      try{ if(window.addEvent) window.addEvent('The lift collapses under the weight.','physics'); }catch(e){}
+      return false;
+    }catch(e){ return true; }
+  };
+})();
+console.log('%c[BANNON_IMPACT] kinetic impacts + lift overexertion (Neckbreaker/Ultraviolence north stars)','color:#7CFC00');
 </script>
 </body></html>
 
