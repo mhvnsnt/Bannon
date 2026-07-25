@@ -200,3 +200,37 @@ jobs:
             sleep $((i*2))
           done
           echo "::error::could not publish OTA payload after 5 attempts"; exit 1
+
+      # RELIABLE INSTALL PATH. Downloading the APK from a raw blob URL is where "can't parse / won't
+      # install" comes from on phones: mobile browsers frequently mangle raw content (wrong MIME, a
+      # renamed .zip/.txt, or a truncated body), and Android then rejects a file that is perfectly valid
+      # on the server. A GitHub RELEASE ASSET is the standard sideload path — correct content type,
+      # resumable, and it lands as BANNON.apk every time.
+      - name: Publish APK as a GitHub Release asset (reliable phone install)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        shell: bash --noprofile --norc {0}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BUILD=$(git rev-list --count HEAD)
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          cp "$APK" /tmp/BANNON.apk
+          TAG="build-$BUILD"
+          API="https://api.github.com/repos/${GITHUB_REPOSITORY}"
+          # create the release (ignore "already exists"), then upload the asset
+          curl -sS -X POST "$API/releases" \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            -d "{\"tag_name\":\"$TAG\",\"name\":\"BANNON build $BUILD\",\"body\":\"Sideload build $BUILD. Install this APK once; later content updates download themselves.\",\"draft\":false,\"prerelease\":false}" \
+            -o /tmp/rel.json
+          ID=$(python3 -c "import json;print(json.load(open('/tmp/rel.json')).get('id',''))" 2>/dev/null)
+          if [ -z "$ID" ]; then
+            ID=$(curl -sS "$API/releases/tags/$TAG" -H "Authorization: Bearer $GH_TOKEN" \
+                 | python3 -c "import json,sys;print(json.load(sys.stdin).get('id',''))" 2>/dev/null)
+          fi
+          if [ -z "$ID" ]; then echo "::warning::could not create or find release $TAG"; exit 0; fi
+          curl -sS -X POST "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/$ID/assets?name=BANNON.apk" \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/vnd.android.package-archive" \
+            --data-binary @/tmp/BANNON.apk -o /tmp/asset.json
+          URL=$(python3 -c "import json;print(json.load(open('/tmp/asset.json')).get('browser_download_url',''))" 2>/dev/null)
+          echo "release asset: ${URL:-upload failed}"
+          echo "latest install link: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/BANNON.apk"
