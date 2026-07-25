@@ -16166,6 +16166,7 @@ function setupInput(){
         if (meter._cleanEscape) meter._cleanEscape();
         if (typeof announce === 'function') announce('ROPE BREAK', 'the referee breaks the hold');
         try{ if(window.crowdReaction) window.crowdReaction(0.65); }catch(e){}
+        try{ if(window.__spotRopeBreak) window.__spotRopeBreak(); }catch(e){}   // resolves a called SUBMISSION TEASE
         return;
       }
       const holdElapsed = (meter._subT0 = meter._subT0 || _now, (_now - meter._subT0) / 1000);
@@ -38427,6 +38428,7 @@ window.BANNON_PROPS = (function(){
           it.integrity-=swingVel*spec.mass*0.4*(CL.wear||1);               // procedural dent budget, class wear
           if(spec.bleed||CL.bleed){ try{ if(window.__spawnBlood&&opp){ var h=opp.worldJoint('head'); window.__spawnBlood(h.x,h.y,h.z,CL.bleed?3:1,0.9); } }catch(e){} }
           try{ if(typeof announce==='function' && CL.verb) announce(spec.label+' '+CL.verb,''); }catch(e){}
+          try{ if(window.__spotWeaponUsed) window.__spotWeaponUsed(); }catch(e){}   // resolves a called WEAPON SPOT
           if(it.integrity<=0 && !it.broken){ it.broken=true; it.g.visible=false; this._weapon=null; it.holder=null;
             try{ if(typeof announce==='function') announce(spec.label+' BROKEN','the weapon gave out'); }catch(e){} }
         } else {
@@ -43931,6 +43933,267 @@ console.log('%c[BANNON] refreshMoveLibrary defined — custom moves now appear w
   };
 })();
 console.log('%c[BANNON_IMPACT] kinetic impacts + lift overexertion (Neckbreaker/Ultraviolence north stars)','color:#7CFC00');
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_FLOW — RHYTHM COMBAT (the depth layer MDickie never had)
+//
+// The owner's own diagnosis of why MDickie gets boring: "the combat is repetitive even though it's
+// dynamic and unpredictable — it's limited and canned, no physics, arcade-like." WWE by contrast has
+// "depth to gameplay and controls and play styles". Ultraviolence is built by an ex-ARKHAM developer,
+// and Arkham's combat is famous for exactly one thing: FREEFLOW. Timing, not mashing.
+//
+// WHAT WAS THERE: comboCount++ with a 1400ms timeout and a counter on screen. That is a SCORE, not a
+// system. It rewards mashing as much as timing, so every exchange plays identically — which is the
+// "canned" feeling, in the input layer this time rather than the damage layer.
+//
+// WHAT THIS ADDS:
+//   * AN ON-BEAT WINDOW. Land the next strike inside the sweet spot and you are ON BEAT: flow builds.
+//     Mash too early and you BREAK RHYTHM — the hit still lands but flow resets. Wait too long and the
+//     chain simply lapses. Skill now separates a flurry from a button-mash.
+//   * FLOW TIERS with real consequences (speed + damage + named callouts), feeding the kinetic impact
+//     model so rhythm compounds with physics instead of living in a separate arcade number.
+//   * TAKING A HIT BREAKS FLOW. Defence matters, so pressure is a resource you can lose.
+//   * PER-CHARACTER FEEL via the existing counterWindow stat (Marquis 1.35 reads the beat easily,
+//     Bannon 0.75 has to earn it) — so play styles differ, which is the WWE half of the ask.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+
+  var st={ flow:0, tier:0, lastHitT:0, chain:0, best:0, broken:0 };
+  // the beat: a strike landing between EARLY and LATE after the previous one is ON BEAT.
+  var BEAT_EARLY=0.16, BEAT_LATE=0.62, LAPSE=1.10;      // seconds
+  var TIERS=[
+    { at:0,  mult:1.00, label:'' },
+    { at:3,  mult:1.08, label:'RHYTHM' },
+    { at:6,  mult:1.18, label:'FLOW' },
+    { at:10, mult:1.30, label:'IN THE POCKET' },
+    { at:15, mult:1.45, label:'UNTOUCHABLE' }
+  ];
+  function windowScale(f){
+    // a technician's beat window is wider; a bruiser's is tighter. Reuses the EXISTING per-character
+    // counterWindow stat rather than inventing a parallel one.
+    try{
+      var S=window.GUARD_STYLES||null; var k=f&&(f.style||((f.opts&&f.opts.name)||f.name));
+      if(S&&k&&S[k]&&S[k].counterWindow) return S[k].counterWindow;
+      var T=window.FIGHT_STYLES||null;
+      if(T&&k&&T[k]&&T[k].counterWindow) return T[k].counterWindow;
+    }catch(e){}
+    return 1;
+  }
+  function tierOf(flow){ var t=TIERS[0]; for(var i=0;i<TIERS.length;i++) if(flow>=TIERS[i].at) t=TIERS[i]; return t; }
+
+  function now(){ return (typeof performance!=='undefined'?performance.now():Date.now())/1000; }
+
+  // called on every landed strike by the attacker
+  function land(attacker){
+    var t=now(), ws=windowScale(attacker);
+    var dt=t-(st.lastHitT||0);
+    var early=BEAT_EARLY/Math.max(0.5,ws), late=BEAT_LATE*Math.max(0.5,ws);
+    var onBeat=false;
+    if(st.lastHitT===0 || dt>LAPSE*Math.max(0.6,ws)){
+      st.flow=1; st.chain=1;                      // fresh opening strike
+    } else if(dt<early){
+      st.flow=0; st.chain=1; st.broken++;          // MASHED — rhythm broken on purpose
+      try{ if(typeof announce==='function' && st.tier>=2) announce('RHYTHM BROKEN','too eager'); }catch(e){}
+    } else if(dt<=late){
+      st.flow++; st.chain++; onBeat=true;          // ON BEAT
+    } else {
+      st.flow=Math.max(1, st.flow-1); st.chain++;  // late but connected: flow bleeds
+    }
+    st.lastHitT=t;
+    if(st.flow>st.best) st.best=st.flow;
+    var tr=tierOf(st.flow);
+    if(tr.at && tierOf(st.flow-1).at!==tr.at){
+      try{ if(typeof announce==='function') announce(tr.label, st.flow+' STRIKE FLOW'); }catch(e){}
+      try{ if(window.crowdReaction) window.crowdReaction(Math.min(1, 0.35+st.flow*0.045)); }catch(e){}
+    }
+    st.tier=TIERS.indexOf(tr);
+    return { onBeat:onBeat, flow:st.flow, tier:st.tier, mult:tr.mult, label:tr.label };
+  }
+  // taking a hit costs you the flow — pressure is losable
+  function takeHit(){ if(st.flow>2){ try{ if(typeof announce==='function') announce('FLOW BROKEN',''); }catch(e){} } st.flow=0; st.chain=0; st.tier=0; st.lastHitT=0; }
+  function multiplier(){ return tierOf(st.flow).mult; }
+  function state(){ return { flow:st.flow, chain:st.chain, tier:st.tier, best:st.best, broken:st.broken,
+                             label:tierOf(st.flow).label, mult:tierOf(st.flow).mult }; }
+  function reset(){ st.flow=0; st.chain=0; st.tier=0; st.lastHitT=0; }
+
+  window.BANNON_FLOW={ land:land, takeHit:takeHit, multiplier:multiplier, state:state, reset:reset,
+                       TIERS:TIERS, beat:{early:BEAT_EARLY,late:BEAT_LATE,lapse:LAPSE} };
+
+  // hook the damage path: attacker's flow builds, victim's flow dies, and flow scales the hit
+  (function hook(){
+    var tries=0;
+    (function arm(){
+      tries++;
+      try{
+        if(typeof window.applyDamage==='function' && !window.applyDamage.__flowHooked){
+          var orig=window.applyDamage;
+          window.applyDamage=function(opp, dmg, attacker, move, forceDown){
+            var f=null;
+            try{
+              if(attacker && move && (move.cat==='STRIKE'||move.cat==='KICK'||!move.cat)){
+                f=land(attacker);
+                dmg=dmg*(f.mult||1);               // rhythm compounds with the kinetic multiplier
+              }
+              if(opp) takeHit();                   // whoever just got hit loses their own flow
+            }catch(e){}
+            return orig.call(this, opp, dmg, attacker, move, forceDown);
+          };
+          window.applyDamage.__flowHooked=true;
+          try{ console.log('%c[BANNON_FLOW] rhythm combat live — on-beat windows, flow tiers, flow-breaks','color:#7CFC00'); }catch(e){}
+          return;
+        }
+      }catch(e){}
+      if(tries<60) setTimeout(arm, 800);
+    })();
+  })();
+  // fresh flow each match
+  (function armReset(){
+    var t=0;
+    (function a(){ t++;
+      if(typeof window.startFight==='function' && !window.startFight.__flowReset){
+        var o=window.startFight;
+        window.startFight=function(){ try{ reset(); }catch(e){} return o.apply(this,arguments); };
+        window.startFight.__flowReset=true; return;
+      }
+      if(t<40) setTimeout(a,1500);
+    })();
+  })();
+})();
+console.log('%c[BANNON_FLOW] Arkham-lineage rhythm combat (Ultraviolence dev heritage) — BANNON_FLOW.state()','color:#7CFC00');
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_SHOTCALLER — CALL THE SPOT. Ultraviolence Pro Wrestling's signature mechanic, and the thing
+// that separates a WRESTLING game from a fighting game: you are not just hitting someone, you are
+// WORKING A MATCH. Nothing like it existed in BANNON.
+//
+// Wrestlers call spots to each other in the ring. Here you CALL one, then have a window to actually
+// deliver it. Hit it and the match rating and the crowd go up; blow it and you botch in front of
+// everybody and the rating drops. That gives the sandbox a SCORE to play against — which is the thing
+// the owner says MDickie lacks ("fun and free, but gets boring"): freedom with nothing to chase.
+//
+// Deliberately built on events the engine ALREADY emits (dives, rope rebounds, weapon breaks, near
+// falls, submissions) rather than inventing a parallel state machine — a called spot is detected by
+// the same thing that makes it happen.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+
+  var SPOTS=[
+    { id:'ROPE_RUN',   label:'ROPE RUN',        window:7,  pay:6,  fail:-3, hint:'hit the ropes and connect off the rebound' },
+    { id:'HIGH_SPOT',  label:'HIGH SPOT',       window:10, pay:14, fail:-7, hint:'go up and dive' },
+    { id:'TABLE_SPOT', label:'TABLE SPOT',      window:14, pay:18, fail:-9, hint:'put someone through a table' },
+    { id:'NEAR_FALL',  label:'NEAR FALL',       window:10, pay:10, fail:-4, hint:'get a two-count the crowd believes' },
+    { id:'SUB_TEASE',  label:'SUBMISSION TEASE',window:12, pay:9,  fail:-4, hint:'lock one in and make them reach the ropes' },
+    { id:'WEAPON',     label:'WEAPON SPOT',     window:12, pay:11, fail:-5, hint:'bring in a weapon and use it' },
+    { id:'COMEBACK',   label:'COMEBACK',        window:9,  pay:12, fail:-5, hint:'string together a flow of strikes' }
+  ];
+  var st={ rating:50, called:null, t0:0, hit:0, missed:0, log:[] };
+
+  function now(){ return (typeof performance!=='undefined'?performance.now():Date.now())/1000; }
+  function byId(id){ for(var i=0;i<SPOTS.length;i++) if(SPOTS[i].id===id) return SPOTS[i]; return null; }
+
+  function call(id){
+    var s=byId(id); if(!s) return false;
+    st.called=s; st.t0=now();
+    try{ if(typeof announce==='function') announce('CALLING THE SPOT', s.label); }catch(e){}
+    try{ if(window.addEvent) window.addEvent('Spot called: '+s.label+' — '+s.hint,'spot'); }catch(e){}
+    chip(s.label+'  ·  '+s.hint);
+    return true;
+  }
+  function land(kind){
+    // a spot only counts while its own call is live and inside the window
+    if(!st.called) return false;
+    if(st.called.id!==kind) return false;
+    var dt=now()-st.t0;
+    if(dt>st.called.window){ miss('too late'); return false; }
+    var s=st.called;
+    st.rating=Math.max(0, Math.min(100, st.rating+s.pay));
+    st.hit++; st.log.push({spot:s.id, ok:true, t:+dt.toFixed(1)});
+    st.called=null; chip(null);
+    try{ if(typeof announce==='function') announce(s.label+' — NAILED IT','match rating '+Math.round(st.rating)); }catch(e){}
+    try{ if(window.crowdReaction) window.crowdReaction(Math.min(1, 0.5+s.pay/24)); }catch(e){}
+    try{ if(window.addEvent) window.addEvent('They hit the '+s.label+' clean. The crowd is up.','spot'); }catch(e){}
+    return true;
+  }
+  function miss(why){
+    if(!st.called) return false;
+    var s=st.called;
+    st.rating=Math.max(0, Math.min(100, st.rating+s.fail));
+    st.missed++; st.log.push({spot:s.id, ok:false, why:why||'blown'});
+    st.called=null; chip(null);
+    try{ if(typeof announce==='function') announce('BOTCHED — '+s.label, why||''); }catch(e){}
+    try{ if(window.addEvent) window.addEvent('The '+s.label+' falls apart ('+(why||'blown')+'). The crowd sits on their hands.','spot'); }catch(e){}
+    return true;
+  }
+  function tick(){ if(st.called && (now()-st.t0)>st.called.window) miss('never came'); }
+  setInterval(tick, 500);
+
+  var chipEl=null;
+  function chip(txt){
+    try{
+      if(!chipEl){
+        chipEl=document.createElement('div'); chipEl.id='bannonSpotChip';
+        chipEl.style.cssText='position:fixed;left:50%;top:96px;transform:translateX(-50%);z-index:65;display:none;'+
+          'background:rgba(10,12,16,.86);color:#7CFC00;border:1px solid #7CFC00;border-radius:9px;padding:6px 13px;'+
+          'font:bold 11px ui-monospace,monospace;letter-spacing:1px;pointer-events:none;text-shadow:0 2px 8px #000';
+        document.body.appendChild(chipEl);
+      }
+      if(txt){ chipEl.textContent='CALLED: '+txt; chipEl.style.display='block'; } else chipEl.style.display='none';
+    }catch(e){}
+  }
+
+  // ── DETECTION off events the engine already produces ───────────────────────────────────────
+  // COMEBACK resolves off the flow system: a real strike flurry IS the comeback.
+  setInterval(function(){
+    try{
+      if(st.called && st.called.id==='COMEBACK' && window.BANNON_FLOW){
+        if((window.BANNON_FLOW.state().flow||0) >= 6) land('COMEBACK');
+      }
+    }catch(e){}
+  }, 300);
+  // WEAPON spot: any weapon actually picked up and swung while the spot is live
+  window.__spotWeaponUsed=function(){ land('WEAPON'); };
+  // SUB_TEASE: a rope break during a hold is exactly the tease landing
+  window.__spotRopeBreak=function(){ land('SUB_TEASE'); };
+  // HIGH_SPOT / ROPE_RUN / TABLE_SPOT / NEAR_FALL are announced by their own systems
+  window.__spotHit=function(kind){ return land(kind); };
+
+  function rating(){ return Math.round(st.rating); }
+  function state(){ return { rating:rating(), called:st.called?st.called.id:null,
+                             remaining: st.called? Math.max(0,+(st.called.window-(now()-st.t0)).toFixed(1)) : 0,
+                             hit:st.hit, missed:st.missed, log:st.log.slice(-8) }; }
+  function reset(){ st.rating=50; st.called=null; st.hit=0; st.missed=0; st.log=[]; chip(null); }
+
+  window.BANNON_SHOTCALLER={ SPOTS:SPOTS, call:call, land:land, miss:miss, rating:rating, state:state, reset:reset };
+
+  // keyboard: 1-7 call a spot (only out of menus)
+  try{
+    document.addEventListener('keydown', function(e){
+      var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')) return;
+      var n=parseInt(e.key,10);
+      if(n>=1 && n<=SPOTS.length && (e.ctrlKey||e.altKey)) call(SPOTS[n-1].id);   // ctrl/alt+N so plain 1-7 stay free
+    });
+  }catch(e){}
+
+  // fresh rating each match
+  (function armReset(){
+    var t=0;
+    (function a(){ t++;
+      if(typeof window.startFight==='function' && !window.startFight.__spotReset){
+        var o=window.startFight;
+        window.startFight=function(){ try{ reset(); }catch(e){} return o.apply(this,arguments); };
+        window.startFight.__spotReset=true; return;
+      }
+      if(t<40) setTimeout(a,1500);
+    })();
+  })();
+})();
+console.log('%c[BANNON_SHOTCALLER] call the spot — Ultraviolence signature. ctrl+1..7 / BANNON_SHOTCALLER.call()','color:#7CFC00');
 </script>
 </body></html>
 
