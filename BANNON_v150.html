@@ -12961,6 +12961,13 @@ function playerAttack(kind){
       const _cs = _backExposed ? CORNER_B[kind] : CORNER_S[kind];
       const cm=Object.assign({ style:p.style||'BRAWLER', follow:'CHAIN NEXT', _corner:true, _cornerBack:_backExposed }, _cs);
       cm.power=Math.round(cm.power*1.10);   // nowhere to retreat
+      // EXPOSED STEEL: if the pad has been ripped off THIS corner, the same strike lands far harder and
+      // is called as such. BANNON_BUCKLES built this and nothing used it (and its coords were unusable).
+      try{ if(window.__buckleExposedAt && window.__buckleExposedAt(opp.x, opp.z)){
+        cm.power=Math.round(cm.power*1.45); cm.name=(cm.name||'CORNER')+' · EXPOSED STEEL';
+        if(typeof announce==='function') announce('INTO THE EXPOSED STEEL','');
+        if(window.crowdReaction) window.crowdReaction(0.8);
+      } }catch(e){}
       p.startAttack(cm); return;
     }
   }
@@ -40621,73 +40628,105 @@ window.BANNON_LEGACY = (function(){
 <script>
 /* ===== AI-Studio module: BANNON_BUCKLES (salvaged from rescue branch) ===== */
 window.BANNON_BUCKLES = (function(){
+  // TURNBUCKLES — rebuilt 2026-07-25. The original was written in Blitz3D units: buckles at +/-100 and
+  // climbTurnbuckle setting y = 40 (forty METRES up) while our ring is roughly +/-3.5m. Nothing called
+  // any of it, which was lucky — wiring it as written would have flung fighters off the map. Same
+  // coordinate-scale bug as BANNON_RULES.checkRopeBreak. Now in real ring metres and keyed to the
+  // engine's own _inCorner detection.
+  // Neckbreaker names turnbuckle smashes as a core feature, so this is a north-star gap being closed.
+  function halfX(){ return (typeof ARENA_HALF!=='undefined')?ARENA_HALF:3.5; }
+  function halfZ(){ return (typeof ARENA_HALF_Z!=='undefined')?ARENA_HALF_Z:3.5; }
   const BUCKLES = [
-    { id: 0, x: -100, z: -100, exposed: false },
-    { id: 1, x: 100, z: -100, exposed: false },
-    { id: 2, x: -100, z: 100, exposed: false },
-    { id: 3, x: 100, z: 100, exposed: false }
+    { id:0, sx:-1, sz:-1, exposed:false, label:'LB' },
+    { id:1, sx: 1, sz:-1, exposed:false, label:'RB' },
+    { id:2, sx:-1, sz: 1, exposed:false, label:'LF' },
+    { id:3, sx: 1, sz: 1, exposed:false, label:'RF' }
   ];
-  
-  // Find the nearest buckle to a given position
-  function nearestBuckle(x, z) {
-    let best = null, bd = 999999;
-    BUCKLES.forEach(b => {
-      const d = Math.hypot(b.x - x, b.z - z);
-      if(d < bd) { bd = d; best = b; }
-    });
-    return { buckle: best, dist: bd };
+  function posOf(b){ return { x:b.sx*halfX(), z:b.sz*halfZ() }; }
+  function nearestBuckle(x, z){
+    let best=null, bd=1e9;
+    BUCKLES.forEach(b=>{ const p=posOf(b); const d=Math.hypot(p.x-x, p.z-z); if(d<bd){ bd=d; best=b; } });
+    return { buckle:best, dist:bd, pos:best?posOf(best):null };
   }
+  function fname(f){ try{ return (f&&f.opts&&f.opts.name)||(f&&f.name)||''; }catch(e){ return ''; } }
 
-  // Corner trapped state (whipped into the corner)
-  function trapInCorner(fighter, targetBuckle) {
-    if(!fighter || !targetBuckle) return;
-    fighter.x = targetBuckle.x;
-    fighter.z = targetBuckle.z;
-    fighter.state = 'corner_trapped';
-    fighter.stamina = Math.max(0, (fighter.stamina||100) - 5);
-    
-    // Extra damage if exposed - hook into BANNON_LEGACY Aftermath injury persistence
-    if(targetBuckle.exposed && fighter.hp) {
-      fighter.hp = Math.max(0, fighter.hp - 12);
-      if(window.BANNON_UNIVERSE && window.BANNON_UNIVERSE.get) {
-         let u = window.BANNON_UNIVERSE.get();
-         if (u && u.fighters && u.fighters[fighter.name]) {
-             // exposed-buckle damage translates to week-to-week injury persistence
-             u.fighters[fighter.name].injuredWeeks = (u.fighters[fighter.name].injuredWeeks || 0) + 2; 
-             if (!u.events) u.events = [];
-             u.events.unshift({type: 'injury', text: fighter.name + " suffered back trauma from an exposed turnbuckle! Out for 2 weeks."});
-             if (window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(u);
-         }
-      }
+  // whipped into the corner: set the ENGINE's corner state rather than teleporting to raw coordinates
+  function trapInCorner(fighter, targetBuckle){
+    if(!fighter||!targetBuckle) return false;
+    const p=posOf(targetBuckle);
+    fighter.x=p.x*0.96; fighter.z=p.z*0.96;                 // just inside the post, not through it
+    fighter._inCorner=targetBuckle.label; fighter._corneredT=0;
+    if(fighter.stamina!=null) fighter.stamina=Math.max(0, fighter.stamina-5);
+    if(targetBuckle.exposed && fighter.hp!=null){
+      // EXPOSED STEEL: real extra damage, and it lands as a lasting injury through the career model
+      const bonus=14;
+      fighter.hp=Math.max(0, fighter.hp-bonus);
+      if(fighter.parts) fighter.parts.spine=Math.min(100,(fighter.parts.spine||0)+22);
+      try{ if(window.BANNON_CAREER&&window.BANNON_CAREER.injure)
+        window.BANNON_CAREER.injure(fname(fighter), {part:'back', severity:2, cause:'exposed turnbuckle'}); }catch(e){}
+      try{ if(window.addEvent) window.addEvent(fname(fighter)+' is sent back-first into EXPOSED STEEL!','hazard'); }catch(e){}
+      try{ if(window.crowdReaction) window.crowdReaction(0.85); }catch(e){}
+      try{ if(typeof announce==='function') announce('EXPOSED TURNBUCKLE', fname(fighter)); }catch(e){}
     }
     return true;
   }
 
-  // Remove the turnbuckle pad (heel tactic)
-  function exposeTurnbuckle(fighter, targetBuckle) {
-    if(!targetBuckle || targetBuckle.exposed) return false;
-    targetBuckle.exposed = true;
-    if(window.BANNON_STORY && window.BANNON_STORY.adjustAttitude) window.BANNON_STORY.adjustAttitude(fighter.name, -5);
+  // strip the pad (heel tactic) — the referee is not watching forever
+  function exposeTurnbuckle(fighter, targetBuckle){
+    const b=targetBuckle||nearestBuckle(fighter?fighter.x:0, fighter?fighter.z:0).buckle;
+    if(!b || b.exposed) return false;
+    b.exposed=true;
+    try{ if(window.BANNON_STORY&&window.BANNON_STORY.adjustAttitude) window.BANNON_STORY.adjustAttitude(fname(fighter), -5); }catch(e){}
+    try{ if(window.addEvent) window.addEvent(fname(fighter)+' rips the pad off the turnbuckle — exposed steel!','heel'); }catch(e){}
+    try{ if(typeof announce==='function') announce('PAD RIPPED OFF','exposed steel'); }catch(e){}
+    try{ if(window.crowdReaction) window.crowdReaction(0.6); }catch(e){}
+    return true;
+  }
+  function isExposed(x,z){ const n=nearestBuckle(x,z); return !!(n.buckle && n.buckle.exposed && n.dist < 1.1); }
+  function resetPads(){ BUCKLES.forEach(b=>b.exposed=false); }
+
+  // climb to the top rope — REAL perch height, not 40 metres
+  function climbTurnbuckle(fighter, targetBuckle){
+    if(!fighter) return false;
+    const b=targetBuckle||nearestBuckle(fighter.x, fighter.z).buckle; if(!b) return false;
+    const p=posOf(b);
+    fighter.x=p.x*0.94; fighter.z=p.z*0.94;
+    fighter.y=1.75;                                          // top-rope perch, metres
+    fighter.state='turnbuckle_climbing'; fighter._perchBuckle=b.id;
+    try{ if(window.crowdReaction) window.crowdReaction(0.55); }catch(e){}
     return true;
   }
 
-  // High risk aerial move setup
-  function climbTurnbuckle(fighter, targetBuckle) {
-    if(!fighter || !targetBuckle) return;
-    fighter.x = targetBuckle.x;
-    fighter.z = targetBuckle.z;
-    fighter.y = 40; // Elevated Y position
-    fighter.state = 'turnbuckle_climbing';
-    return true;
-  }
-
-  return {
-    BUCKLES,
-    nearestBuckle,
-    trapInCorner,
-    exposeTurnbuckle,
-    climbTurnbuckle
-  };
+  window.__buckleExposedAt = isExposed;
+  // PLAYER-REACHABLE: B rips the pad off the corner you are standing in. Without an input this stays a
+  // library nobody can invoke — which is how it sat unused in the first place.
+  try{
+    document.addEventListener('keydown', function(e){
+      if(e.key!=='b' && e.key!=='B') return;
+      var t=e.target; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA')) return;
+      try{
+        var fs=(typeof fighters!=='undefined')?fighters:[]; var p=null;
+        for(var i=0;i<fs.length;i++) if(fs[i]&&fs[i].isPlayer){ p=fs[i]; break; }
+        if(!p) return;
+        var n=nearestBuckle(p.x||0, p.z||0);
+        if(n.buckle && n.dist<1.4) exposeTurnbuckle(p, n.buckle);
+      }catch(_e){}
+    });
+  }catch(e){}
+  // fresh pads every match — an exposed corner should not persist into the next one
+  try{
+    var _tries=0;
+    (function armReset(){
+      _tries++;
+      if(typeof window.startFight==='function' && !window.startFight.__padReset){
+        var _o=window.startFight;
+        window.startFight=function(){ try{ resetPads(); }catch(_e){} return _o.apply(this,arguments); };
+        window.startFight.__padReset=true; return;
+      }
+      if(_tries<40) setTimeout(armReset, 1500);
+    })();
+  }catch(e){}
+  return { BUCKLES, nearestBuckle, trapInCorner, exposeTurnbuckle, climbTurnbuckle, isExposed, resetPads, posOf };
 })();
 
 /* ===== AI-Studio module: BANNON_EDITOR (salvaged from rescue branch) ===== */

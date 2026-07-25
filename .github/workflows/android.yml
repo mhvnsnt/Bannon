@@ -183,8 +183,10 @@ jobs:
           printf '{"build":%s,"apkMin":%s,"apk":"BANNON.apk","html":"BANNON.html","ts":"%s","commit":"%s"}\n' \
             "$BUILD" "$APK_MIN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${GITHUB_SHA::7}" > dist/version.json
           echo "version.json: build=$BUILD apkMin=$APK_MIN"
-          git config user.name  "bannon-ci"
-          git config user.email "ci@bannon.local"
+          # committer identity: use the noreply address so CI's own dist commits are not
+          # flagged alongside ours in commit-authorship checks.
+          git config user.name  "Claude"
+          git config user.email "noreply@anthropic.com"
           git add dist/BANNON.apk dist/BANNON.html dist/version.json
           if git diff --cached --quiet; then echo "dist unchanged"; exit 0; fi
           git commit -m "ci: rebuild dist/BANNON.apk + OTA payload from ${GITHUB_SHA::7} [skip ci]"
