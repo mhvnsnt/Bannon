@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2360"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2362"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -42143,7 +42143,16 @@ window.BANNON_MOVESET_LIB = (function(){
     ['LOCOMOTION','locomotion','#9ad1ff'],['SIGNATURES','signature','#ff4d8a'],['FINISHERS','finisher','#ff2a2a']];
   // TAG-TEAM detection: a clip with 2+ skeletons (assisted/double/stereo/tag combos) — WWE has a
   // dedicated tag moveset section. Named-pattern here (the FBX skeleton count confirms it at load).
-  const TAG_RX=/assisted|double\s|doublesuplex|stereo|tag\s|tagsuperkick|2[-\s]?man|combo|wishbone/i;
+  // TAG detection is a NAME heuristic (the FBX skeleton count is the real confirmation), so it must be
+  // conservative: wrongly EXCLUDING a move loses it from every moveset, which is worse than wrongly
+  // including one. A bare /double\s/ was too greedy — it swallowed "Double Leg Takedown", "Double
+  // Underhook" and friends, which are ordinary one-opponent moves. That silently emptied GROUNDED_LEG.
+  // (bare /combo/ was a false positive too — it flagged "Combo Punch", a solo strike combination and
+  // one of the core warm-load clips, as a tag-team move. Dropped for the same reason.)
+  const TAG_RX=/assisted|doublesuplex|double\s*team|stereo|tag\s|tagsuperkick|2[-\s]?man|wishbone/i;
+  // "- Victim" clips are the RECEIVING half of a move. They belong in the library (the victim side needs
+  // them) but must never be auto-picked as a fighter's own offence.
+  const VICTIM_RX=/victim/i;
   const esc=s=>String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
   function saved(){ try{ return JSON.parse(localStorage.getItem(LS)||'{}'); }catch(e){ return {}; } }
   function store(m){ try{ localStorage.setItem(LS, JSON.stringify(m)); }catch(e){} }
@@ -42165,8 +42174,53 @@ window.BANNON_MOVESET_LIB = (function(){
   // every fighter plays real mocap by DEFAULT (equippedClipFor falls back to this when nothing is
   // manually equipped). Built once from the map. This is the "map all 182 clips -> slots" auto-wire.
   let _defaults=null;
-  function defaults(){ if(_defaults) return _defaults; _defaults={}; try{ const clips=(MAP&&MAP.clips)||[];
-    clips.forEach(c=>{ if(c.pos && !TAG_RX.test((c.clip||'')) && !_defaults[c.pos]) _defaults[c.pos]=c.clip; }); }catch(e){} return _defaults; }
+  // COMBAT-FIRST default pick: the old version took the FIRST clip found for a position, which could
+  // hand a combat slot a taunt or a locomotion cycle. Prefer a real offensive clip when one exists.
+  const COMBAT_CAT=/^(strike|grapple|dive|submission|aerial_transition|irish_whip)$/i;
+  function defaults(){ if(_defaults) return _defaults; _defaults={};
+    try{ const clips=(MAP&&MAP.clips)||[];
+      const usable=clips.filter(c=>c.pos && c.cat!=='character_rig'
+        && !TAG_RX.test(c.clip||'') && !VICTIM_RX.test(c.clip||''));
+      usable.forEach(c=>{ if(COMBAT_CAT.test(c.cat||'') && !_defaults[c.pos]) _defaults[c.pos]=c.clip; });
+      usable.forEach(c=>{ if(!_defaults[c.pos]) _defaults[c.pos]=c.clip; });      // then anything
+    }catch(e){}
+    return _defaults; }
+
+  // POSITION COHERENCE. 7 of the 20 WWE-2K positions have ZERO clips in the 182-clip library
+  // (GROUNDED_HEAD_DOWN, CORNER_BACK, ROPE_REBOUND, CORNER_TO_GROUND, TREE_OF_WOE, DIVE_TO_FLOOR,
+  // APRON_TO_RING) — so equipping or previewing them was impossible and combat silently fell back to
+  // procedural there. Each now resolves down a chain of MECHANICALLY compatible positions, so every
+  // position in the editor plays real mocap. Aliases are the last resort: a real clip always wins.
+  const POS_ALIAS={
+    GROUNDED_HEAD_DOWN: ['GROUNDED_HEAD_UP','GROUNDED_SIDE'],
+    CORNER_BACK:        ['CORNER_FRONT','STANDING_REAR','STANDING_FRONT'],
+    ROPE_REBOUND:       ['RUNNING','IRISH_WHIP','STANDING_FRONT'],
+    CORNER_TO_GROUND:   ['CORNER_FRONT','GROUNDED_HEAD_UP'],
+    TREE_OF_WOE:        ['CORNER_FRONT','GROUNDED_HEAD_UP'],
+    DIVE_TO_FLOOR:      ['SPRINGBOARD','TURNBUCKLE_TOP','MIDDLE_ROPE'],
+    APRON_TO_RING:      ['APRON','STANDING_FRONT'],
+    // GROUNDED_LEG's only two clips are "- Victim" receiving animations, so it has no offence of its
+    // own — fall back to the other ground positions rather than animating procedurally.
+    GROUNDED_LEG:       ['GROUNDED_SIDE','GROUNDED_HEAD_UP']
+  };
+  function resolvePos(pos){                     // pos -> the position whose clip we should actually use
+    const d=defaults();
+    if(d[pos]) return pos;
+    const chain=POS_ALIAS[pos]||[];
+    for(const alt of chain){ if(d[alt]) return alt; }
+    return null;
+  }
+  // auditable: which positions play real mocap, directly or via alias
+  function coverage(){
+    const out={}; const d=defaults();
+    try{
+      const P=(MAP&&MAP.positions)||{};
+      const all=[].concat(P.primary||[],P.secondary||[],P.tertiary||[]);
+      all.forEach(p=>{ const r=resolvePos(p);
+        out[p]= !r ? 'NONE' : (r===p ? 'direct' : ('alias -> '+r)); });
+    }catch(e){}
+    return out;
+  }
   function build(){ if(panel) return; panel=document.createElement('div');
     panel.style.cssText='position:fixed;inset:3% 4%;z-index:100003;background:#0a0c12f8;border:1px solid #ff7a1a;border-radius:12px;color:#ffd9a8;font:12px ui-monospace,monospace;display:none;flex-direction:column;box-shadow:0 12px 44px #000d;overflow:hidden;';
     document.body.appendChild(panel); }
@@ -42226,8 +42280,15 @@ window.BANNON_MOVESET_LIB = (function(){
   // moveset -> combat read hook: MANUAL equip wins, else the auto-mapped DEFAULT for that position
   // (every one of the 158 positioned clips drives combat by default; manual equips override per char).
   window.equippedClipFor=function(charKey,pos){ try{ const m=saved()[String(charKey).toUpperCase().replace(/[^A-Z0-9_]/g,'_')];
-    if(m && m[pos]) return m[pos]; const d=defaults(); return (d&&d[pos])||null; }catch(e){ return null; } };
+    if(m && m[pos]) return m[pos];                       // a manual equip always wins
+    const d=defaults();
+    if(d && d[pos]) return d[pos];                       // then this position's own default
+    const alt=resolvePos(pos);                           // then a mechanically compatible position,
+    return (alt && d[alt]) || null;                      // so no position is left animating procedurally
+  }catch(e){ return null; } };
   window.movesetDefaults=defaults;
+  window.movesetCoverage=coverage;
+  window.movesetResolvePos=resolvePos;
   // preload the map at boot so defaults() is ready for combat before the editor is ever opened
   try{ loadMap(); }catch(e){}
   return { open, close, loadMap, tabOf };
@@ -43335,6 +43396,111 @@ console.log('%c[BANNON_CARDS] news/graphic cards + interactive office dialogue m
     lastSettlement:function(){ return _settled; } };
 })();
 console.log('%c[BANNON_TRAUMA] match damage -> lasting career injuries (endMatch hooked); GORE_DISMEMBER opt-in','color:#7CFC00');
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_RIGS — the character-rig library: KEEP the source rigs, retexture and RENAME them into our
+// own universe. Owner's call (2026-07-25): "we keep the models, retexture them, and rename them — I
+// have a Chris Jericho based character called Judas Messiah and want to keep all those, and they have
+// animations attached."
+//
+// The 182-clip move map contains 24 entries tagged cat:'character_rig'. They are NOT positional moves
+// (which is why they polluted the moveset editor as unclassified junk) — they are BODIES, with their own
+// skeletons and in some cases embedded animation. This registry treats them as what they are:
+//   * an ALIAS layer, so every rig displays under its proprietary BANNON name, never the source
+//     filename. The source string stays only as an internal lookup key.
+//   * a HEALTH audit, because 7 of the 24 source files are 0 bytes — including the Jericho-based rig
+//     the owner wants as JUDAS MESSIAH. Those need re-uploading; the registry says so plainly instead
+//     of pretending the model is present.
+//   * rename() so the owner can name any rig in-game, persisted.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var LS='bannon_rig_alias_v1';
+
+  // Seeded proprietary names. Source key -> our character. The owner can change any of these in-game;
+  // saved names win over these defaults.
+  var SEED={
+    CHRIS_JERICHO:      'JUDAS MESSIAH',
+    ANDRADE_EL_IDOLO:   'EL IDOLO NEGRO',
+    ANDRADE_MASK:       'EL IDOLO NEGRO (MASKED)',
+    BRIAN_CAGE:         'THE MACHINE',
+    PUMPKINHULK_L_SHAW: 'HOLLOW HARVEST',
+    PALADIN_J_NORDSTROM:'PALADIN',
+    LOLA_B_STYPEREK:    'LOLA VENOM',
+    STRONGZERO:         'STRONG ZERO',
+    NOFUTURE:           'NO FUTURE',
+    DEFENDER:           'THE DEFENDER',
+    ARMADA:             'ARMADA',
+    BASH:               'BASH',
+    WBTC:               'WBTC',
+    AU:                 'AU',
+    CENTER_BLOCK:       'CENTER BLOCK'
+  };
+  // rigs that are known-empty on disk (0 bytes) — audited 2026-07-25. Surfaced so the owner can
+  // re-upload rather than wonder why a model never appears.
+  var KNOWN_EMPTY={ ARMADA:1, BASH:1, BRIAN_CAGE:1, CHRIS_JERICHO:1, WBTC:1, X_BOT:1, ARCEE_G1:1 };
+
+  function key(src){ return String(src||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,''); }
+  function savedNames(){ try{ return JSON.parse(localStorage.getItem(LS)||'{}'); }catch(e){ return {}; } }
+  function store(m){ try{ localStorage.setItem(LS, JSON.stringify(m)); }catch(e){} }
+
+  function displayName(src){
+    var k=key(src), s=savedNames();
+    if(s[k]) return s[k];
+    if(SEED[k]) return SEED[k];
+    // no alias yet: present the source as a neutral placeholder, never as a real person's name
+    return 'UNNAMED RIG ' + k.replace(/_/g,' ');
+  }
+  function rename(src, name){
+    var k=key(src); if(!k||!name) return false;
+    var s=savedNames(); s[k]=String(name).toUpperCase().slice(0,40); store(s); return true;
+  }
+  function needsReupload(src){ return !!KNOWN_EMPTY[key(src)]; }
+
+  // the rig list, taken from the move map's character_rig entries
+  function list(){
+    var out=[];
+    try{
+      var MAP=window.__fbxMoveMap||null;
+      if(!MAP && window.BANNON_MOVESET_LIB && window.BANNON_MOVESET_LIB.loadMap){
+        // loadMap is async; callers can await ready() below. Use whatever is cached.
+      }
+      var clips=(MAP&&MAP.clips)||[];
+      clips.forEach(function(c){
+        if((c.cat||'')!=='character_rig') return;
+        out.push({ src:c.clip, key:key(c.clip), name:displayName(c.clip),
+                   file:'assets/mocap/drive/'+c.clip+'.fbx', empty:needsReupload(c.clip) });
+      });
+    }catch(e){}
+    return out;
+  }
+  // make the map available to list() once the moveset library has fetched it
+  (function cacheMap(){
+    var tries=0;
+    (function arm(){
+      tries++;
+      try{
+        if(window.BANNON_MOVESET_LIB && window.BANNON_MOVESET_LIB.loadMap){
+          window.BANNON_MOVESET_LIB.loadMap().then(function(m){ if(m) window.__fbxMoveMap=m; }).catch(function(){});
+          return;
+        }
+      }catch(e){}
+      if(tries<40) setTimeout(arm, 1500);
+    })();
+  })();
+
+  function report(){
+    var l=list();
+    return { total:l.length, usable:l.filter(function(r){ return !r.empty; }).length,
+             needReupload:l.filter(function(r){ return r.empty; }).map(function(r){ return r.name+' ('+r.src+')'; }) };
+  }
+
+  window.BANNON_RIGS={ list:list, displayName:displayName, rename:rename,
+    needsReupload:needsReupload, report:report, SEED:SEED };
+})();
+console.log('%c[BANNON_RIGS] character-rig registry — proprietary names, re-upload audit (BANNON_RIGS.report())','color:#7CFC00');
 </script>
 </body></html>
 
