@@ -67,3 +67,11 @@ add_test(NAME universe COMMAND test_universe)
 add_executable(test_anim_bridge tests/test_anim_bridge.cpp)
 target_link_libraries(test_anim_bridge bannon_core)
 add_test(NAME anim_bridge COMMAND test_anim_bridge)
+
+# UE ragdoll bridge: pins every native symbol UBannonRagdollComponent.cpp depends on (JOINT_COUNT,
+# joint enum order, PD gains kp900/kd60, JOINT_PARENT hierarchy) and the metres->centimetres
+# conversion of the MAX_BODY_VEL law (3.8 m/s -> 380 cm/s). UE itself can't compile in CI, but this
+# catches the half that CAN: a native rename or retuned gain that would silently desync the UE build.
+add_executable(test_ue_ragdoll_bridge tests/test_ue_ragdoll_bridge.cpp)
+target_link_libraries(test_ue_ragdoll_bridge bannon_core)
+add_test(NAME ue_ragdoll_bridge COMMAND test_ue_ragdoll_bridge)

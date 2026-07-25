@@ -36,13 +36,21 @@ void UBannonPhysicalAnimation::ApplyHitReaction(FName BoneName, FVector StrikeVe
 
 void UBannonPhysicalAnimation::ConfigureBannonPhysicsAsset(const FName& BoneName, const FBannonPhysicsProfile& Profile)
 {
-	// Hooks into the Unreal skeletal physical animation data
+	// Hooks into the Unreal skeletal physical animation data.
+	// FIELD NAMES: FPhysicalAnimationData only has BodyName, bIsLocalSimulation, OrientationStrength,
+	// AngularVelocityStrength, PositionStrength, VelocityStrength, MaxLinearForce, MaxAngularForce.
+	// This previously assigned bIsLocalSpaceSimulation / JointStrength / SkeletalMeshComponentBudget and
+	// called ApplyPhysicalAnimationData() — none of which exist, so the module could not compile.
+	// Angular terms drive orientation, linear terms drive position: the same PD split as bannon_rig.
 	FPhysicalAnimationData Data;
-	Data.bIsLocalSpaceSimulation = true;
-	Data.JointStrength = Profile.AngularStrength;
+	Data.BodyName = BoneName;
+	Data.bIsLocalSimulation = true;
+	Data.OrientationStrength = Profile.AngularStrength;
+	Data.AngularVelocityStrength = Profile.AngularDamping;
 	Data.PositionStrength = Profile.LinearStrength;
 	Data.VelocityStrength = Profile.LinearDamping;
-	Data.SkeletalMeshComponentBudget = 1000.0f;
+	Data.MaxLinearForce = 0.0f;    // 0 = unlimited; UBannonRagdollComponent's MAX_BODY_VEL cap bounds motion
+	Data.MaxAngularForce = 0.0f;
 
-	ApplyPhysicalAnimationData(BoneName, Data);
+	ApplyPhysicalAnimationSettings(BoneName, Data);
 }
