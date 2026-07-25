@@ -97,7 +97,17 @@ jobs:
           git config user.name  "bannon-ci"
           git config user.email "ci@bannon.local"
           git add dist/BANNON.apk dist/BANNON.html dist/version.json
-          if git diff --cached --quiet; then echo "dist unchanged"; else
-            git commit -m "ci: rebuild dist/BANNON.apk + OTA payload from ${GITHUB_SHA::7} [skip ci]"
-            git push
-          fi
+          if git diff --cached --quiet; then echo "dist unchanged"; exit 0; fi
+          git commit -m "ci: rebuild dist/BANNON.apk + OTA payload from ${GITHUB_SHA::7} [skip ci]"
+          # PUSH RACE: this job checked out an older sha, so main has usually moved on by the time the
+          # APK finishes building — a bare push is rejected non-fast-forward and the OTA payload never
+          # lands (exactly how the first two OTA builds failed). Rebase onto the current main and retry;
+          # dist/ is ours alone so the rebase can't conflict with game-source commits.
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then echo "published (attempt $i)"; exit 0; fi
+            echo "push rejected — rebasing onto origin/main (attempt $i)"
+            git fetch origin main || true
+            git rebase origin/main || { git rebase --abort || true; sleep $((i*3)); continue; }
+            sleep $((i*2))
+          done
+          echo "::error::could not publish OTA payload after 5 attempts"; exit 1

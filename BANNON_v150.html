@@ -42446,6 +42446,259 @@ console.log('%c[BANNON_VENUES] MDickie venue picker — STAGE option / openVenue
 })();
 console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot-swaps dist/BANNON.html','color:#7CFC00');
 </script>
+
+<script>
+// ============================================================================================
+// BANNON_MDICKIE — FULL MDickie surfacing (props + vehicles), the dead half of the world data.
+// BANNON_WORLD already loads venues.json and classifies 96 locations / 179 props / 28 vehicles, but
+// only LOCATIONS were ever consumed (as roam environments + the STAGE picker). The props and vehicles
+// were parsed and then dropped on the floor — never spawned, never usable. Owner law #5: every move,
+// environment, model and VEHICLE from the MDickie set belongs in our proprietary universe.
+// This module:
+//   1. CLASSIFIES every prop by name into a physics class (melee / blunt / edged / firearm / sport /
+//      furniture / wearable / nature / misc) with derived mass, reach and integrity.
+//   2. WEAPONIZES the carryable classes — registers them into BANNON_WEAPONS.db and pushes real items
+//      into its live item list, so they pick up, swing, tax stamina and break through the EXISTING
+//      weapon laws. No new damage math: DMG_SCALE / MAX_BODY_VEL stay untouched engine-side.
+//   3. DRESSES every roamable MDickie location with props + parked vehicles from the SAME source game
+//      (Hard Time III props in HT3 locations, Infinite Lives props in IL locations) so Universe /
+//      Career / booking / God Within roam spaces feel inhabited instead of empty floors.
+//   4. Exposes window.BANNON_MDICKIE for the creation suite + God Mode OS (⚕) to query and spawn.
+// Deterministic (seeded per location, so a place looks the same every visit) and phone-capped.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var BASE='assets/models/env/mdickie/world/';
+  var MAX_DRESS=14, MAX_VEH=3, MAX_WEAPONIZED=10;   // phone-safe caps
+
+  // ── physics classes by name. mass kg / reach m / integrity — same units the owner's 6 weapons use.
+  var CLASSES=[
+    { re:/barbed|barb_wire|barbwire/i,                        cls:'edged',    mass:1.5, reach:0.88, integrity:70,  bleed:true },
+    { re:/machete|knife|axe|hatchet|sword|shank|scissors/i,   cls:'edged',    mass:1.2, reach:0.70, integrity:80,  bleed:true },
+    { re:/bat|club|crowbar|pipe|wrench|hammer|mallet|cane|stick|broom|shovel|spade|rake|pitchfork/i,
+                                                              cls:'blunt',    mass:1.6, reach:0.92, integrity:100 },
+    { re:/guitar|bottle|vase|lamp|mirror/i,                   cls:'shatter',  mass:1.0, reach:0.70, integrity:25 },
+    { re:/gun|rifle|pistol|bazooka|launcher|taser|flame|thrower|uzi|shotgun/i,
+                                                              cls:'firearm',  mass:2.4, reach:0.55, integrity:140 },
+    { re:/ball|basketball|baseball|football|tennis|cricket|bowling|puck/i,
+                                                              cls:'sport',    mass:0.5, reach:0.40, integrity:40 },
+    { re:/chair|table|desk|bench|stool|couch|armchair|sofa|bed|cabinet|locker|shelf|crate|barrel|box|cardboard|bin|trash/i,
+                                                              cls:'furniture',mass:4.0, reach:0.95, integrity:180 },
+    { re:/headwear|hat|cap|mask|helmet|shoe|boot|glove|shirt|jacket|glasses/i,
+                                                              cls:'wearable', mass:0.2, reach:0.30, integrity:15 },
+    { re:/spruce|birch|tree|xmax|bush|plant|flower|rock|stone/i,cls:'nature',  mass:0,   reach:0,    integrity:0 }
+  ];
+  // classes a fighter can actually pick up and swing
+  var CARRY={ edged:1, blunt:1, shatter:1, firearm:1, sport:1 };
+
+  function classify(name){
+    for(var i=0;i<CLASSES.length;i++){ if(CLASSES[i].re.test(name)) return CLASSES[i]; }
+    return { cls:'misc', mass:1.2, reach:0.6, integrity:60 };
+  }
+  function keyFor(name){ return 'MD_'+String(name).toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_|_$/g,''); }
+  function labelFor(name){ return String(name).replace(/_/g,' ').toUpperCase(); }
+  // deterministic PRNG so a location is dressed identically every visit (no reshuffle per load)
+  function seedOf(s){ var h=2166136261; for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*16777619)>>>0; } return h; }
+  function rngFrom(seed){ var x=seed||1; return function(){ x^=x<<13; x>>>=0; x^=x>>17; x^=x<<5; x>>>=0; return x/4294967296; }; }
+
+  function world(){ return window.BANNON_WORLD || null; }
+  function allProps(){ try{ return world()?world().list('prop')||[]:[]; }catch(e){ return []; } }
+  function allVehicles(){ try{ return world()?world().list('vehicle')||[]:[]; }catch(e){ return []; } }
+
+  var _catalog=null;
+  function catalog(){
+    if(_catalog) return _catalog;
+    _catalog={ carry:[], decor:[], wear:[], vehicles:allVehicles() };
+    allProps().forEach(function(p){
+      var c=classify(p.name); var e={ name:p.name, file:p.file, game:p._game, cls:c.cls,
+        mass:c.mass, reach:c.reach, integrity:c.integrity, bleed:!!c.bleed, key:keyFor(p.name) };
+      if(CARRY[c.cls]) _catalog.carry.push(e);
+      else if(c.cls==='wearable') _catalog.wear.push(e);
+      else _catalog.decor.push(e);
+    });
+    return _catalog;
+  }
+
+  // ── 2. WEAPONIZE: register carryable MDickie props as real weapons in the existing weapon system.
+  var _weaponized=false;
+  function weaponize(){
+    var WP=window.BANNON_WEAPONS; if(!WP||!WP.db||_weaponized) return 0;
+    var c=catalog(), n=0;
+    c.carry.forEach(function(e){
+      if(WP.db[e.key]) return;
+      WP.db[e.key]={ url:BASE+e.file, label:labelFor(e.name), mass:e.mass, reach:e.reach,
+                     integrity:e.integrity, bleed:e.bleed, _md:true, _cls:e.cls };
+      n++;
+    });
+    _weaponized=true;
+    try{ console.log('%c[BANNON_MDICKIE] '+n+' MDickie props registered as weapons (edged/blunt/shatter/firearm/sport)','color:#7CFC00'); }catch(e){}
+    return n;
+  }
+
+  // spawn a weaponized MDickie prop as a LIVE pickup item in the running match/roam
+  function spawnWeapon(key, x, z){
+    var WP=window.BANNON_WEAPONS; if(!WP||!WP.db) return false;
+    var spec=WP.db[key]; if(!spec) return false;
+    if(typeof THREE==='undefined' || !THREE.GLTFLoader || typeof scene==='undefined') return false;
+    var put=function(gltf){ try{
+      var obj=gltf.scene; obj.traverse(function(o){ if(o.isMesh) o.castShadow=true; });
+      var box=new THREE.Box3().setFromObject(obj), size=new THREE.Vector3(); box.getSize(size);
+      var span=Math.max(size.x,size.y,size.z)||1; obj.scale.setScalar(((spec.reach||0.7)+0.35)/span);
+      box.setFromObject(obj); var ctr=new THREE.Vector3(); box.getCenter(ctr);
+      var g=new THREE.Group(); g.add(obj);
+      obj.position.set(-ctr.x, -box.min.y, -ctr.z);
+      g.position.set(x, -0.83, z); scene.add(g);
+      WP.items.push({ key:key, spec:spec, g:g, holder:null, integrity:spec.integrity||100, broken:false, home:[x,z] });
+    }catch(e){} };
+    var L=new THREE.GLTFLoader();
+    L.load(spec.url, put, undefined, function(){
+      var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+      L.load(cdn+spec.url, put, undefined, function(){});
+    });
+    return true;
+  }
+
+  // ── 3. DRESS a location: scatter decor + park vehicles from the SAME source game.
+  var _dressed={};
+  function dress(locName, game){
+    if(typeof THREE==='undefined' || !THREE.GLTFLoader) return 0;
+    if(typeof arenaGroup==='undefined' || !arenaGroup) return 0;
+    var tag=(game||'')+':'+(locName||'');
+    if(_dressed[tag]) return 0;                     // one dressing per env build
+    _dressed[tag]=true;
+    var c=catalog(), rnd=rngFrom(seedOf(tag)||7);
+    var decor=c.decor.filter(function(e){ return !game || e.game===game; });
+    var vehs =c.vehicles.filter(function(v){ return !game || v._game===game; });
+    var carry=c.carry.filter(function(e){ return !game || e.game===game; });
+    if(!decor.length && !vehs.length) return 0;
+    var placed=0;
+    // ring of placement slots around the roam space, avoiding the middle where fighters spawn
+    function slot(){ var a=rnd()*Math.PI*2, r=9+rnd()*13; return [Math.cos(a)*r, Math.sin(a)*r]; }
+    function add(url, pos, scaleTo){
+      var put=function(gltf){ try{
+        var g=gltf.scene.clone(true);
+        var bb=new THREE.Box3().setFromObject(g), sz=new THREE.Vector3(); bb.getSize(sz);
+        var span=Math.max(sz.x,sz.z)||1; if(scaleTo) g.scale.setScalar(scaleTo/span);
+        bb.setFromObject(g);
+        g.position.set(pos[0]-((bb.min.x+bb.max.x)/2), -bb.min.y, pos[1]-((bb.min.z+bb.max.z)/2));
+        g.rotation.y=rnd()*Math.PI*2;
+        g.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; o.frustumCulled=true; } });
+        arenaGroup.add(g);
+      }catch(e){} };
+      var L=new THREE.GLTFLoader();
+      L.load(url, put, undefined, function(){
+        var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+        L.load(cdn+url, put, undefined, function(){});
+      });
+    }
+    // decor scatter
+    for(var i=0;i<Math.min(MAX_DRESS,decor.length);i++){
+      var e=decor[Math.floor(rnd()*decor.length)];
+      add(BASE+e.file, slot(), e.cls==='nature'?3.2:1.6); placed++;
+    }
+    // parked vehicles (bigger, pushed further out so they read as street furniture)
+    for(var v=0;v<Math.min(MAX_VEH,vehs.length);v++){
+      var vh=vehs[Math.floor(rnd()*vehs.length)];
+      var a=rnd()*Math.PI*2, r=16+rnd()*8;
+      add(BASE+vh.file, [Math.cos(a)*r, Math.sin(a)*r], 4.4); placed++;
+    }
+    // a few real, pickup-able weapons lying around so roam has usable arms
+    weaponize();
+    for(var w=0;w<Math.min(MAX_WEAPONIZED,carry.length);w++){
+      var cw=carry[Math.floor(rnd()*carry.length)];
+      var aa=rnd()*Math.PI*2, rr=5+rnd()*7;
+      spawnWeapon(cw.key, Math.cos(aa)*rr, Math.sin(aa)*rr); placed++;
+    }
+    try{ console.log('%c[BANNON_MDICKIE] dressed '+tag+' — '+placed+' objects (decor+vehicles+weapons)','color:#7CFC00'); }catch(e){}
+    return placed;
+  }
+
+  // hook environment builds: after a roam location is built, dress it with its own game's objects
+  function hookEnvironments(){
+    var ENV=window.BANNON_ENVIRONMENTS; if(!ENV||ENV._mdHooked) return false;
+    var orig=ENV.buildCurrent; if(typeof orig!=='function') return false;
+    ENV.buildCurrent=function(){
+      var r=orig.apply(this,arguments);
+      try{
+        var id=window.CURRENT_ENV||''; if(id&&id!=='ARENA'){
+          var env=(ENV.ENVS||[]).find(function(e){ return e.id===id; });
+          // LOC_* envs are the MDickie locations BANNON_WORLD injected; their glb path carries the game
+          var game=null, nm=id;
+          if(env&&env.glb){ var m=env.glb.match(/world\/(ht3|il)\//); if(m) game=m[1]; nm=env.name||id; }
+          dress(nm, game);
+        }
+      }catch(e){}
+      return r;
+    };
+    ENV._mdHooked=true;
+    return true;
+  }
+
+  // ── 4. WEARABLES: the 64 headwear/mask/shoe props are attire, not scenery. Attach one to a fighter's
+  // head (or feet) so the creation suite can equip MDickie headwear on any character. Attaches to the
+  // GLB bone when the fighter has a real skeleton, else to the procedural head joint — same dual path
+  // the engine uses everywhere else, so it rides the animation instead of floating.
+  function wearables(){ return catalog().wear.map(function(e){ return { name:e.name, label:labelFor(e.name), key:e.key, game:e.game }; }); }
+  function wearOn(fighter, name){
+    if(!fighter || typeof THREE==='undefined' || !THREE.GLTFLoader) return false;
+    var e=catalog().wear.filter(function(w){ return w.name===name || w.key===name || w.key===keyFor(name); })[0];
+    if(!e) return false;
+    var footwear=/shoe|boot/i.test(e.name);
+    var put=function(gltf){ try{
+      var g=gltf.scene;
+      var bb=new THREE.Box3().setFromObject(g), sz=new THREE.Vector3(); bb.getSize(sz);
+      var span=Math.max(sz.x,sz.y,sz.z)||1;
+      g.scale.setScalar((footwear?0.26:0.30)/span);
+      bb.setFromObject(g); var ctr=new THREE.Vector3(); bb.getCenter(ctr);
+      g.position.set(-ctr.x, footwear?-bb.min.y:(-bb.min.y*0.2), -ctr.z);
+      g.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
+      // prefer the real GLB bone so it follows mocap; fall back to the procedural joint group
+      var host=null;
+      try{ var bn=fighter.model&&fighter.model.userData&&fighter.model.userData.boneByName;
+        if(bn) host = footwear ? (bn['mixamorig:LeftFoot']||bn.LeftFoot||null) : (bn['mixamorig:Head']||bn.Head||null); }catch(_e){}
+      if(!host){ try{ host = footwear ? (fighter.J&&fighter.J.foL&&fighter.J.foL.parent) : (fighter.seg&&fighter.seg.head); }catch(_e){} }
+      if(!host){ try{ host = fighter.group||fighter.root||null; }catch(_e){} }
+      if(!host) return;
+      // one item per slot — drop whatever we attached before
+      fighter._mdWorn = fighter._mdWorn || {};
+      var slot=footwear?'feet':'head';
+      if(fighter._mdWorn[slot] && fighter._mdWorn[slot].parent) fighter._mdWorn[slot].parent.remove(fighter._mdWorn[slot]);
+      host.add(g); fighter._mdWorn[slot]=g;
+    }catch(_e){} };
+    var url=BASE+e.file, L=new THREE.GLTFLoader();
+    L.load(url, put, undefined, function(){
+      var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+      L.load(cdn+url, put, undefined, function(){});
+    });
+    return true;
+  }
+  function unwear(fighter, slot){
+    try{ var w=fighter&&fighter._mdWorn&&fighter._mdWorn[slot];
+      if(w&&w.parent){ w.parent.remove(w); fighter._mdWorn[slot]=null; return true; } }catch(e){}
+    return false;
+  }
+
+  function stats(){ var c=catalog();
+    return { carryable:c.carry.length, decor:c.decor.length, wearable:c.wear.length, vehicles:c.vehicles.length,
+             weaponized:_weaponized, dressed:Object.keys(_dressed) }; }
+
+  window.BANNON_MDICKIE={ classify:classify, catalog:catalog, weaponize:weaponize,
+    spawnWeapon:spawnWeapon, dress:dress, stats:stats, redress:function(){ _dressed={}; },
+    wearables:wearables, wearOn:wearOn, unwear:unwear };
+
+  // wait for BANNON_WORLD's venues.json fetch + the environments module, then arm
+  var tries=0;
+  (function arm(){
+    tries++;
+    var ready=(allProps().length>0);
+    if(ready){ weaponize(); hookEnvironments();
+      try{ console.log('%c[BANNON_MDICKIE] surfaced '+JSON.stringify(stats()),'color:#7CFC00'); }catch(e){}
+      return; }
+    if(tries<40) setTimeout(arm, 1500);
+  })();
+})();
+console.log('%c[BANNON_MDICKIE] MDickie props+vehicles surfacing online — BANNON_MDICKIE.stats()','color:#7CFC00');
+</script>
 </body></html>
 
 
