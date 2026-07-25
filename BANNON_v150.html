@@ -6383,8 +6383,9 @@ window.CHAR_ALTS = {
 window.CHAR_ALT_MODELS = {
   // BANNON body-type alt attire (SAME character). LABEL FIX (owner): the "BANNON_muscular" GLB is
   // actually the FAT/heavier body — labeled HEAVYWEIGHT. The DEFAULT BANNON.glb (lean) is the true
-  // MUSCULAR build, so it stays the default. (The fat GLB's mini+bust artifact is being re-rigged
-  // clean via UniRig; when BANNON_MUSCULAR_rigged.glb lands + passes skinqa, swap the url here.)
+  // MUSCULAR build, so it stays the default. The floating mini-model + bust satellites Tripo baked
+  // into the GLB were STRIPPED (tools/model_diag/strip_satellites.cjs keeps the largest welded
+  // component, preserving the 16-bone skin + texture); this now loads the clean single body.
   BANNON:          [ {id:'BANNON_HEAVYWEIGHT',label:'Heavyweight',url:'assets/models/BANNON_muscular_skinned.glb'} ],
   CAIN_ELIAS:      [ {id:'CAIN_ELIAS_ring',label:'Ring Gear',url:'assets/models/CAIN_ELIAS_ring.glb'}, {id:'CAIN_ELIAS_snakeskin',label:'Snakeskin',url:'assets/models/CAIN_ELIAS_snakeskin.glb'}, {id:'CAIN_ELIAS_godwithin',label:'God Within',url:'assets/models/CAIN_ELIAS_godwithin.glb'} ],
   CIPHER:          [ {id:'CIPHER_minion',label:'Minion',url:'assets/models/CIPHER_minion.glb'}, {id:'CIPHER_feral',label:'Feral',url:'assets/models/CIPHER_feral.glb'} ],
