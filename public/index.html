@@ -43084,6 +43084,186 @@ console.log('%c[BANNON_TRAVEL] walk-to-travel online — doorways, transition ca
 })();
 console.log('%c[BANNON_CARDS] news/graphic cards + interactive office dialogue moments online','color:#7CFC00');
 </script>
+
+<script>
+// ============================================================================================
+// BANNON_TRAUMA — MDickie's INJURY CONTRACT: what happens in the match STAYS on the character.
+//
+// THE GAP THIS CLOSES: two complete systems existed and were never connected.
+//   * In-match, every fighter tracks per-part damage 0..100 in f.parts {head,ribL,ribR,armL,armR,
+//     legL,legR,spine} and already sells it (clutching, limping, motor degradation).
+//   * Out of match, BANNON_CAREER.injure(name,{part,severity,cause}) is a full persistent-injury
+//     model — severity 1..3, 2/8/18 week recovery, physical/morale hits, news, weekly healing.
+// But injure() had ZERO CALLERS. You could dismantle a man's leg for twenty minutes and he walked out
+// with nothing. In MDickie the damage follows you, which is the whole reason careers feel like careers.
+//
+//   settle(fighters)      — at match end, convert per-part damage into REAL career injuries, rolled
+//                           against each fighter's durability. Called automatically from endMatch.
+//   carryIn(f, name)      — entering a match with an unhealed injury PRE-DAMAGES that part, so an
+//                           injured wrestler is genuinely compromised (and targetable).
+//   severeTrauma(f, part) — the limb gives out: motor collapse on that limb + blood.
+//   dismember(f, part)    — the gore layer. OFF by default (window.GORE_DISMEMBER) because the rig's
+//                           standing rule is that limbs must never visibly separate; when enabled it
+//                           collapses the limb's bone scale (works on skinned GLB and procedural).
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+
+  // engine part -> career injury label (BANNON_CAREER.PARTS vocabulary) + the bone that carries it
+  var MAP={
+    head:  { career:'head (concussion)', bone:'mixamorig:Head',        seg:'head'    },
+    spine: { career:'back',              bone:'mixamorig:Spine1',      seg:'abdomen' },
+    ribL:  { career:'ribs',              bone:'mixamorig:Spine',       seg:'chest'   },
+    ribR:  { career:'ribs',              bone:'mixamorig:Spine',       seg:'chest'   },
+    armL:  { career:'arm',               bone:'mixamorig:LeftArm',     seg:'armL'    },
+    armR:  { career:'arm',               bone:'mixamorig:RightArm',    seg:'armR'    },
+    legL:  { career:'knee',              bone:'mixamorig:LeftUpLeg',   seg:'legL'    },
+    legR:  { career:'knee',              bone:'mixamorig:RightUpLeg',  seg:'legR'    }
+  };
+  // damage 0..100 -> severity 1..3. Durability (55..94) shifts the bar: a tough man eats more.
+  function severityOf(dmg, durability){
+    var d=(durability==null?70:durability), adj=(d-70)*0.35;      // +/- ~8 points of slack
+    if(dmg >= 86+adj) return 3;
+    if(dmg >= 66+adj) return 2;
+    if(dmg >= 46+adj) return 1;
+    return 0;
+  }
+  function nameOf(f){ try{ return String((f&&f.opts&&f.opts.name)||(f&&f.name)||''); }catch(e){ return ''; } }
+  function careerFighter(nm){ try{ var u=window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get&&window.BANNON_UNIVERSE.get();
+    return (u&&u.fighters&&u.fighters[nm])||null; }catch(e){ return null; } }
+
+  // ── match end -> lasting injuries
+  var _settled=null;
+  function settle(list){
+    var out=[];
+    try{
+      var fs=list||((typeof fighters!=='undefined')?fighters:[]);
+      var CAR=window.BANNON_CAREER;
+      if(!CAR || typeof CAR.injure!=='function') return out;
+      for(var i=0;i<fs.length;i++){
+        var f=fs[i]; if(!f||!f.parts) continue;
+        var nm=nameOf(f); if(!nm) continue;
+        var cf=careerFighter(nm);
+        var dur=(cf&&cf.durability!=null)?cf.durability:70;
+        // worst part only: one match should not hand out eight injuries at once
+        var worstKey=null, worstDmg=0;
+        for(var k in f.parts){ var d=+f.parts[k]||0; if(d>worstDmg){ worstDmg=d; worstKey=k; } }
+        if(!worstKey) continue;
+        var sev=severityOf(worstDmg, dur);
+        if(sev<=0) continue;
+        var m=MAP[worstKey]||{ career:'arm' };
+        var rec=CAR.injure(nm, { part:m.career, severity:sev, cause:'match damage ('+worstKey+' '+Math.round(worstDmg)+')' });
+        if(rec) out.push({ fighter:nm, part:m.career, severity:sev, from:worstKey, damage:Math.round(worstDmg) });
+      }
+      if(out.length && window.BANNON_CARDS && window.BANNON_CARDS.news){
+        var heads=out.map(function(r){ return r.fighter.replace(/_/g,' ')+' left with a '+r.part+' injury ('+
+          ['','minor','moderate','major'][r.severity]+').'; });
+        window.BANNON_CARDS.news(heads, 'MEDICAL REPORT');
+      }
+      _settled=out;
+    }catch(e){}
+    return out;
+  }
+
+  // ── entering a match already hurt: pre-damage that part so the injury MATTERS
+  function carryIn(f, nm){
+    try{
+      nm=nm||nameOf(f); if(!f||!nm) return false;
+      var cf=careerFighter(nm); if(!cf || !(cf.injuries||[]).length) return false;
+      if(!f.parts) f.parts={ head:0,ribL:0,ribR:0,armL:0,armR:0,legL:0,legR:0,spine:0 };
+      var applied=0;
+      cf.injuries.forEach(function(inj, idx){
+        // Career labels are SIDELESS ('knee', 'arm', 'ribs') while the engine tracks left and right
+        // separately. Applying the label to every matching part crippled BOTH legs from one knee
+        // injury — so pick ONE side, deterministically, and keep it stable for that injury record.
+        var cands=[]; for(var k in MAP){ if(MAP[k].career===inj.part) cands.push(k); }
+        if(!cands.length) return;
+        var pick=cands[0];
+        if(cands.length>1){
+          var s=0, sig=String(nm)+String(inj.part)+String(inj.weeksLeft||0)+idx;
+          for(var c=0;c<sig.length;c++){ s=(s*31+sig.charCodeAt(c))>>>0; }
+          pick=cands[s%cands.length];
+        }
+        var pre=Math.min(55, inj.severity*18);          // major -> 54, minor -> 18. Never start finished.
+        if((f.parts[pick]||0) < pre){ f.parts[pick]=pre; applied++; }
+      });
+      if(applied && window.addEvent) window.addEvent(nm.replace(/_/g,' ')+' enters carrying an injury.','injury');
+      return applied>0;
+    }catch(e){ return false; }
+  }
+
+  // ── the limb gives out (no gore): motor collapse on that limb + a blood hit
+  function severeTrauma(f, partKey){
+    try{
+      if(!f) return false;
+      var m=MAP[partKey]; if(!m) return false;
+      if(f.parts) f.parts[partKey]=Math.max(f.parts[partKey]||0, 92);
+      f._traumaLimb=f._traumaLimb||{}; f._traumaLimb[partKey]=1;      // read by the sell/AI layers
+      var x=f.x||0, z=f.z||0;
+      if(typeof window.__spawnBlood==='function') window.__spawnBlood(x, 1.0, z, 6, 0.9);
+      if(window.addEvent) window.addEvent(nameOf(f).replace(/_/g,' ')+"'s "+m.career+' gives out.','injury');
+      return true;
+    }catch(e){ return false; }
+  }
+
+  // ── GORE LAYER (opt-in). The engine's standing rule is that limbs must NEVER visibly separate, so
+  // this stays off unless the owner turns it on. Enabled, it collapses the limb's bone scale — which
+  // reads as a removed limb on a skinned GLB and on the procedural body alike.
+  function dismember(f, partKey){
+    if(window.GORE_DISMEMBER!==true) return false;
+    try{
+      var m=MAP[partKey]; if(!f||!m) return false;
+      severeTrauma(f, partKey);
+      f._dismembered=f._dismembered||{}; f._dismembered[partKey]=1;
+      // skinned GLB: collapse the bone (boneOverrides.sc is applied in the model update path)
+      if(f.model){
+        if(!f.model.userData.boneOverrides) f.model.userData.boneOverrides={};
+        var ov=f.model.userData.boneOverrides;
+        ov[m.bone]=Object.assign({}, ov[m.bone]||{}, { sc:0.02 });
+      }
+      // procedural body: hide the segment outright
+      try{ if(f.seg && m.seg && f.seg[m.seg]) f.seg[m.seg].visible=false; }catch(e){}
+      if(typeof window.__spawnBlood==='function') window.__spawnBlood(f.x||0, 1.1, f.z||0, 14, 1.0);
+      if(window.addEvent) window.addEvent(nameOf(f).replace(/_/g,' ')+' LOST THE '+String(m.career).toUpperCase()+'.','injury');
+      return true;
+    }catch(e){ return false; }
+  }
+  function restore(f){   // undo the gore layer (new match / heal)
+    try{
+      if(!f) return false;
+      f._dismembered=null; f._traumaLimb=null;
+      if(f.model&&f.model.userData&&f.model.userData.boneOverrides){
+        for(var k in MAP){ var b=MAP[k].bone; if(f.model.userData.boneOverrides[b]) delete f.model.userData.boneOverrides[b].sc; }
+      }
+      try{ for(var k2 in MAP){ var s=MAP[k2].seg; if(f.seg&&f.seg[s]) f.seg[s].visible=true; } }catch(e){}
+      return true;
+    }catch(e){ return false; }
+  }
+
+  // ── hook endMatch so settling is automatic, not something a caller has to remember (which is
+  // exactly how injure() ended up with zero callers in the first place).
+  (function hookEnd(){
+    var tries=0;
+    (function arm(){
+      tries++;
+      try{
+        if(typeof window.endMatch==='function' && !window.endMatch.__traumaHooked){
+          var orig=window.endMatch;
+          window.endMatch=function(){ var r=orig.apply(this,arguments); try{ settle(); }catch(e){} return r; };
+          window.endMatch.__traumaHooked=true;
+          return;
+        }
+      }catch(e){}
+      if(tries<40) setTimeout(arm, 1500);
+    })();
+  })();
+
+  window.BANNON_TRAUMA={ settle:settle, carryIn:carryIn, severeTrauma:severeTrauma,
+    dismember:dismember, restore:restore, severityOf:severityOf, map:MAP,
+    lastSettlement:function(){ return _settled; } };
+})();
+console.log('%c[BANNON_TRAUMA] match damage -> lasting career injuries (endMatch hooked); GORE_DISMEMBER opt-in','color:#7CFC00');
+</script>
 </body></html>
 
 
