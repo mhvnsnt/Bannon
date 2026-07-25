@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2366"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2368"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -42567,11 +42567,24 @@ console.log('%c[BANNON_VENUES] MDickie venue picker — STAGE option / openVenue
       }
       var remote=(v.build|0);
       if(remote<=cur) return;                        // content already newest
+      // NATIVE OWNS UPDATES when the bridge is present: MainActivity downloads into filesDir (no 5MB
+      // localStorage ceiling) and loads the newest build on launch. Nothing to ask, nothing to cache.
+      if(window.BannonNative && window.BannonNative.getApkBuild){ return; }
+      // NEVER NAG. The old build asked "APPLY / not now" on EVERY launch, because caching a 2.7MB page in
+      // localStorage exceeds the WebView quota: the write threw, the swap lasted only that session, and
+      // the next launch booted the stale bundle and asked again. Remember the build we already handled so
+      // a failure can prompt at most once, and prefer applying silently.
+      var handled=0; try{ handled=parseInt(localStorage.getItem('BANNON_OTA_SEEN')||'0',10)||0; }catch(e){}
+      if(handled>=remote) return;
       var hr=await fetch(HTMLU+'?t='+Date.now(),{cache:'no-store'}); if(!hr||!hr.ok) return;
       var h=await hr.text();
       if(h.length<800000 || h.indexOf('BANNON_BUILD')<0 || !/<\/html>\s*$/i.test(h)) return;   // sanity gate
       window.__OTA_NEXT__=remote; applied=true;
-      toast('Update v'+remote+' ready — new moves, models & fixes','APPLY',function(){ apply(h); });
+      try{ localStorage.setItem('BANNON_OTA_SEEN', String(remote)); }catch(e){}
+      // silent auto-apply when we are not mid-match; a real game updates itself
+      var fighting=false; try{ fighting=((typeof gameState!=='undefined')?gameState:window.gameState)==='fight'; }catch(e){}
+      if(!fighting){ apply(h); return; }
+      toast('Update v'+remote+' will apply after this match','OK',function(){ apply(h); });
     }catch(e){}
   }
   // check a few seconds after boot (let the match menu settle), then hourly while the app stays open
