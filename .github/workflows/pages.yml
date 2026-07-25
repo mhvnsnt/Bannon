@@ -1,0 +1,47 @@
+name: Deploy playable game to GitHub Pages
+# Serves BANNON_v150.html as a real website (https://mhvnsnt.github.io/Bannon/) so the owner can
+# PLAY without downloading the HTML. Why this matters: a downloaded file:// page gets a fresh origin
+# every open, so localStorage (CAW/DNA saves, equipped movesets, chosen models) never persists, and
+# it has no assets/ folder beside it. A hosted URL = one stable origin (saves persist) + the model
+# CDN fallback (raw.githubusercontent / main) streams the GLBs. three.js already loads from its CDN.
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'BANNON_v150.html', '.github/workflows/pages.yml' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble site (HTML only; models stream from the repo CDN fallback)
+        run: |
+          mkdir -p _site _site/assets/icons
+          cp BANNON_v150.html _site/index.html
+          # PWA: manifest + icons beside index.html so the game installs as an app (Add to Home Screen).
+          cp manifest.json _site/manifest.json
+          cp assets/icons/icon-192.png assets/icons/icon-512.png assets/icons/apple-touch-icon.png _site/assets/icons/ || true
+          # a tiny landing note (optional) — the game is the index.
+          printf 'User-agent: *\nAllow: /\n' > _site/robots.txt
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

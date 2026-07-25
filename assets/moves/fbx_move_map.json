@@ -1,0 +1,1698 @@
+{
+ "_note": "FBX/Drive clip -> WWE-2K move library map. 182 mocap clips (assets/mocap/(drive/)) classified to category + WWE-2K POSITION (primary/secondary/tertiary incl. GROUND_TO_STANDING_WAKEUP + CORNER_TO_GROUND) + engine target. Loaded via BANNON_LOAD_FBX_LIBRARY->STUDIO.clips; moveset editor equips a clip as the ANIMATION BASE, resolveGrapPos drives OUR physics. character_rig = a character skeleton/rig (Andrade/Cage/Jericho/etc.) — NOT skipped: a potential playable character to retexture + import, and it carries bundled animations to harvest into the library.",
+ "_dualPurpose": "WWE-2K impact-taunt contract: entries with dualPurpose:true are BOTH a taunt (default engine, e.g. STANCE/TAUNT/DODGE — crowd/momentum, no contact) AND a real strike when an opponent is in range. altKind='strike' + altEngine (STRIKE_KICK / STRIKE_PUNCH) routes the same clip through the OUR-physics strike path (registerHit power/knockback, poise) instead of the taunt path. Covers capoeira (Ginga/Esquiva/Capoeira), breakdance spinaroony family (Breakdance Footwork/Freezes), and showman impact-taunts (RapidChestBeating/Tau_ButtSlap/ViolenceParty). Engine picks strike-mode when opp within STRIKE range at trigger, else taunt-mode.",
+ "positions": {
+  "primary": [
+   "STANDING_FRONT",
+   "STANDING_REAR",
+   "GROUNDED_HEAD_UP",
+   "GROUNDED_HEAD_DOWN",
+   "GROUNDED_LEG",
+   "GROUNDED_SIDE",
+   "CORNER_FRONT",
+   "CORNER_BACK",
+   "TURNBUCKLE_TOP",
+   "APRON"
+  ],
+  "secondary": [
+   "ROPE_REBOUND",
+   "SPRINGBOARD",
+   "MIDDLE_ROPE",
+   "RUNNING",
+   "IRISH_WHIP"
+  ],
+  "tertiary": [
+   "CORNER_TO_GROUND",
+   "TREE_OF_WOE",
+   "GROUND_TO_STANDING_WAKEUP",
+   "DIVE_TO_FLOOR",
+   "APRON_TO_RING"
+  ]
+ },
+ "counts": {
+  "locomotion": 30,
+  "strike": 18,
+  "character_rig": 24,
+  "grapple": 26,
+  "dive": 2,
+  "weapon": 1,
+  "reaction": 8,
+  "aerial_transition": 5,
+  "style_stance": 21,
+  "getup": 6,
+  "rope_transition": 3,
+  "submission": 5,
+  "knockdown": 8,
+  "taunt": 11,
+  "defense": 6,
+  "irish_whip": 4,
+  "misc": 4
+ },
+ "clips": [
+  {
+   "clip": "Action Idle To Standing Idle",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "AlternatingForearms",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_PUNCH",
+   "style": [
+    "striker",
+    "brawler"
+   ]
+  },
+  {
+   "clip": "Andrade_El_Idolo",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Andrade_Mask",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "ApronJayKick",
+   "cat": "strike",
+   "pos": "APRON",
+   "engine": "STRIKE_KICK",
+   "style": [
+    "striker"
+   ]
+  },
+  {
+   "clip": "Armada",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "AssistedCutter",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "VERTICAL_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "AssistedDivSenton",
+   "cat": "dive",
+   "pos": "TURNBUCKLE_TOP",
+   "engine": "DIVING_LEG_DROP",
+   "style": [
+    "highFlyer"
+   ]
+  },
+  {
+   "clip": "AssistedReverseGoozleChop",
+   "cat": "grapple",
+   "pos": "STANDING_REAR",
+   "engine": "CHOKESLAM",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Au",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Baseball Hit",
+   "cat": "weapon",
+   "pos": "STANDING_FRONT",
+   "engine": "WEAPON_STRIKE",
+   "style": [
+    "hardcore"
+   ]
+  },
+  {
+   "clip": "Bash",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Big Body Blow",
+   "cat": "reaction",
+   "pos": "STANDING_FRONT",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Big Jump",
+   "cat": "aerial_transition",
+   "pos": "SPRINGBOARD",
+   "engine": "VAULT",
+   "style": [
+    "highFlyer",
+    "lucha"
+   ]
+  },
+  {
+   "clip": "Big Rib Hit",
+   "cat": "reaction",
+   "pos": "STANDING_FRONT",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Body Block",
+   "cat": "reaction",
+   "pos": "STANDING_FRONT",
+   "engine": "BLOCK",
+   "style": []
+  },
+  {
+   "clip": "Body Jab Cross",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_PUNCH",
+   "style": [
+    "striker",
+    "brawler"
+   ]
+  },
+  {
+   "clip": "Box Idle",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Boxing",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "mma",
+    "striker"
+   ]
+  },
+  {
+   "clip": "Boxing (1)",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "mma",
+    "striker"
+   ]
+  },
+  {
+   "clip": "Boxing (2)",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "mma",
+    "striker"
+   ]
+  },
+  {
+   "clip": "Boxing (3)",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "mma",
+    "striker"
+   ]
+  },
+  {
+   "clip": "Boxing (4)",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "mma",
+    "striker"
+   ]
+  },
+  {
+   "clip": "Boxing (5)",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "mma",
+    "striker"
+   ]
+  },
+  {
+   "clip": "Braced Hang Hop Up",
+   "cat": "aerial_transition",
+   "pos": "SPRINGBOARD",
+   "engine": "VAULT",
+   "style": [
+    "highFlyer",
+    "lucha"
+   ]
+  },
+  {
+   "clip": "BrainBuster",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "BRAINBUSTER",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Breakdance Footwork 3",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK",
+   "note": "spinaroony-family breakdance taunt that doubles as a spinning legsweep (WWE-2K impact-taunt)"
+  },
+  {
+   "clip": "Breakdance Footwork 3 (1)",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK",
+   "note": "spinaroony-family breakdance taunt / spinning legsweep impact-taunt"
+  },
+  {
+   "clip": "Breakdance Footwork To Freeze",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK",
+   "note": "breakdance footwork into freeze — taunt or spin-through low kick"
+  },
+  {
+   "clip": "Breakdance Freezes",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK",
+   "note": "breakdance freeze taunt / handstand-leg-drop impact-taunt"
+  },
+  {
+   "clip": "Breakdance Ready",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Breakdance Uprock To Ground",
+   "cat": "getup",
+   "pos": "GROUND_TO_STANDING_WAKEUP",
+   "engine": "WAKEUP",
+   "style": []
+  },
+  {
+   "clip": "Brian_Cage",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Brooklyn Uprock",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Brutal Assassination",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "VERTICAL_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "BuckleBombEnzugiri",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "VERTICAL_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Can Can",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Capoeira",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "lucha",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
+  },
+  {
+   "clip": "Capoeira (1)",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "lucha",
+    "striker"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
+  },
+  {
+   "clip": "Cartwheel",
+   "cat": "aerial_transition",
+   "pos": "SPRINGBOARD",
+   "engine": "VAULT",
+   "style": [
+    "highFlyer",
+    "lucha"
+   ]
+  },
+  {
+   "clip": "CemeteryDrive",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "CROSS_POWERBOMB",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Center Block",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Ch06_nonPBR",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Ch24_nonPBR",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Ch44_nonPBR",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Chokeslam",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "CHOKESLAM",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Chris_Jericho",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Climbing A Rope",
+   "cat": "rope_transition",
+   "pos": "MIDDLE_ROPE",
+   "engine": "ROPE",
+   "style": [
+    "highFlyer"
+   ]
+  },
+  {
+   "clip": "Climbing A Rope (1)",
+   "cat": "rope_transition",
+   "pos": "MIDDLE_ROPE",
+   "engine": "ROPE",
+   "style": [
+    "highFlyer"
+   ]
+  },
+  {
+   "clip": "Climbing Up Wall",
+   "cat": "rope_transition",
+   "pos": "MIDDLE_ROPE",
+   "engine": "ROPE",
+   "style": [
+    "highFlyer"
+   ]
+  },
+  {
+   "clip": "CodeRed",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "VERTICAL_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Combo Punch",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_PUNCH",
+   "style": [
+    "striker",
+    "brawler"
+   ]
+  },
+  {
+   "clip": "Corkscrew Evade",
+   "cat": "dive",
+   "pos": "TURNBUCKLE_TOP",
+   "engine": "SWANTON",
+   "style": [
+    "highFlyer"
+   ]
+  },
+  {
+   "clip": "Corkscrew Kip Up",
+   "cat": "getup",
+   "pos": "GROUND_TO_STANDING_WAKEUP",
+   "engine": "WAKEUP",
+   "style": [
+    "highFlyer",
+    "lucha"
+   ]
+  },
+  {
+   "clip": "Cross Jumps",
+   "cat": "aerial_transition",
+   "pos": "SPRINGBOARD",
+   "engine": "VAULT",
+   "style": [
+    "highFlyer",
+    "lucha"
+   ]
+  },
+  {
+   "clip": "CrotchChop",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_PUNCH",
+   "style": [
+    "striker",
+    "brawler"
+   ]
+  },
+  {
+   "clip": "Crouch Idle 02 Looking Around",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Crouch Torch Walk Right",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Crouch Walk Forward",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "CrucifixPin",
+   "cat": "submission",
+   "pos": "GROUNDED_SIDE",
+   "engine": "SUBMISSION",
+   "style": [
+    "technical",
+    "mma"
+   ]
+  },
+  {
+   "clip": "DDT",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "DDT",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Dancing",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Dancing (1)",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Dancing (2)",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Dancing Running Man",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Dancing Twerk",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Death From Back Headshot",
+   "cat": "knockdown",
+   "pos": "GROUNDED_HEAD_UP",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Defeat",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Defender",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Double Leg Takedown - Victim",
+   "cat": "submission",
+   "pos": "GROUNDED_LEG",
+   "engine": "SUBMISSION",
+   "style": [
+    "technical",
+    "mma"
+   ]
+  },
+  {
+   "clip": "Double Leg Takedown - Victim (1)",
+   "cat": "submission",
+   "pos": "GROUNDED_LEG",
+   "engine": "SUBMISSION",
+   "style": [
+    "technical",
+    "mma"
+   ]
+  },
+  {
+   "clip": "DoubleSuplex",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "VERTICAL_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "DragonScrew",
+   "cat": "submission",
+   "pos": "GROUNDED_SIDE",
+   "engine": "SUBMISSION",
+   "style": [
+    "technical",
+    "mma"
+   ]
+  },
+  {
+   "clip": "Drop Kick",
+   "cat": "strike",
+   "pos": "RUNNING",
+   "engine": "STRIKE_KICK",
+   "style": [
+    "striker"
+   ]
+  },
+  {
+   "clip": "Drop Kick (1)",
+   "cat": "strike",
+   "pos": "RUNNING",
+   "engine": "STRIKE_KICK",
+   "style": [
+    "striker"
+   ]
+  },
+  {
+   "clip": "Drunk Idle Variation",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Drunk Run Forward",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Drunk Walk",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Dwarf Walk",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Dying Backwards",
+   "cat": "knockdown",
+   "pos": "GROUNDED_HEAD_UP",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Esquiva 3",
+   "cat": "defense",
+   "pos": "STANDING_FRONT",
+   "engine": "DODGE",
+   "style": [
+    "striker",
+    "lucha"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
+  },
+  {
+   "clip": "Esquiva 4",
+   "cat": "defense",
+   "pos": "STANDING_FRONT",
+   "engine": "DODGE",
+   "style": [
+    "striker",
+    "lucha"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
+  },
+  {
+   "clip": "Esquiva 4 (1)",
+   "cat": "defense",
+   "pos": "STANDING_FRONT",
+   "engine": "DODGE",
+   "style": [
+    "striker",
+    "lucha"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
+  },
+  {
+   "clip": "FaceGouge",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_PUNCH",
+   "style": [
+    "striker",
+    "brawler"
+   ]
+  },
+  {
+   "clip": "Fall B Loop",
+   "cat": "knockdown",
+   "pos": "GROUNDED_HEAD_UP",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Falling Flat Impact",
+   "cat": "knockdown",
+   "pos": "GROUNDED_HEAD_UP",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Falling Forward Death",
+   "cat": "knockdown",
+   "pos": "GROUNDED_HEAD_UP",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Fatality",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "VERTICAL_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "FenceM-Kick",
+   "cat": "irish_whip",
+   "pos": "IRISH_WHIP",
+   "engine": "WHIP",
+   "style": [
+    "brawler"
+   ]
+  },
+  {
+   "clip": "FenceThrow",
+   "cat": "irish_whip",
+   "pos": "IRISH_WHIP",
+   "engine": "WHIP",
+   "style": [
+    "brawler"
+   ]
+  },
+  {
+   "clip": "FenceThrow_002",
+   "cat": "irish_whip",
+   "pos": "IRISH_WHIP",
+   "engine": "WHIP",
+   "style": [
+    "brawler"
+   ]
+  },
+  {
+   "clip": "Fin_F10",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "GermanSuplex",
+   "cat": "grapple",
+   "pos": "STANDING_REAR",
+   "engine": "BACK_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Giantswing",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "VERTICAL_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Ginga Backward",
+   "cat": "defense",
+   "pos": "STANDING_FRONT",
+   "engine": "DODGE",
+   "style": [
+    "striker",
+    "lucha"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
+  },
+  {
+   "clip": "Ginga Forward",
+   "cat": "defense",
+   "pos": "STANDING_FRONT",
+   "engine": "DODGE",
+   "style": [
+    "striker",
+    "lucha"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
+  },
+  {
+   "clip": "Ginga Sideways 2",
+   "cat": "defense",
+   "pos": "STANDING_FRONT",
+   "engine": "DODGE",
+   "style": [
+    "striker",
+    "lucha"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_KICK"
+  },
+  {
+   "clip": "HammerThrow",
+   "cat": "irish_whip",
+   "pos": "IRISH_WHIP",
+   "engine": "WHIP",
+   "style": [
+    "brawler"
+   ]
+  },
+  {
+   "clip": "HammerlockDDT",
+   "cat": "grapple",
+   "pos": "STANDING_REAR",
+   "engine": "DDT",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Heavy Weapon Swing",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "VERTICAL_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Hit On Side Of Head",
+   "cat": "reaction",
+   "pos": "STANDING_FRONT",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Hit On The Back",
+   "cat": "reaction",
+   "pos": "STANDING_FRONT",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Hit Reaction",
+   "cat": "reaction",
+   "pos": "STANDING_FRONT",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Hit To Body",
+   "cat": "reaction",
+   "pos": "STANDING_FRONT",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "Hit To Head",
+   "cat": "reaction",
+   "pos": "STANDING_FRONT",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "House Dancing",
+   "cat": "style_stance",
+   "pos": "LOCOMOTION",
+   "engine": "STANCE",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Hurricane Kick",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_KICK",
+   "style": [
+    "striker"
+   ]
+  },
+  {
+   "clip": "HurricaneRana",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_KICK",
+   "style": [
+    "striker"
+   ]
+  },
+  {
+   "clip": "Idle",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Illegal Elbow Punch",
+   "cat": "strike",
+   "pos": "CORNER_FRONT",
+   "engine": "STRIKE_PUNCH",
+   "style": [
+    "striker",
+    "brawler"
+   ]
+  },
+  {
+   "clip": "Illegal Elbow Punch (1)",
+   "cat": "strike",
+   "pos": "CORNER_FRONT",
+   "engine": "STRIKE_PUNCH",
+   "style": [
+    "striker",
+    "brawler"
+   ]
+  },
+  {
+   "clip": "Illegal Elbow Punch (2)",
+   "cat": "strike",
+   "pos": "CORNER_FRONT",
+   "engine": "STRIKE_PUNCH",
+   "style": [
+    "striker",
+    "brawler"
+   ]
+  },
+  {
+   "clip": "Illegal Knee",
+   "cat": "misc",
+   "pos": "STANDING_FRONT",
+   "engine": null,
+   "style": []
+  },
+  {
+   "clip": "Injured Hurting Idle",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Injured Jog",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Injured Run Backwards Right Turn",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "Injured Turn Right",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "JayKick",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_KICK",
+   "style": [
+    "striker"
+   ]
+  },
+  {
+   "clip": "Kip Up",
+   "cat": "getup",
+   "pos": "GROUND_TO_STANDING_WAKEUP",
+   "engine": "WAKEUP",
+   "style": [
+    "highFlyer",
+    "lucha"
+   ]
+  },
+  {
+   "clip": "Lola B Styperek",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "NeckBreaker",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "REVERSE_DDT",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "NoFuture",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "OvreheadPress",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "GORILLA_PRESS",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Paladin J Nordstrom",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "PopUpGermanSuplex",
+   "cat": "grapple",
+   "pos": "STANDING_REAR",
+   "engine": "BACK_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "PowerbombWhip",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "POWERBOMB",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Pumpkinhulk L Shaw",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Queshada 2",
+   "cat": "misc",
+   "pos": "STANDING_FRONT",
+   "engine": null,
+   "style": []
+  },
+  {
+   "clip": "RainTrigger",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "RapidChestBeating",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_PUNCH"
+  },
+  {
+   "clip": "ReverseGoozleDivFootStomp",
+   "cat": "grapple",
+   "pos": "STANDING_REAR",
+   "engine": "CHOKESLAM",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "SchoolBoySuperkick",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_KICK",
+   "style": [
+    "striker"
+   ]
+  },
+  {
+   "clip": "SharpShooter",
+   "cat": "submission",
+   "pos": "GROUNDED_SIDE",
+   "engine": "SUBMISSION",
+   "style": [
+    "technical",
+    "mma"
+   ]
+  },
+  {
+   "clip": "ShelbyIKRig arreglado",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "ShoulderBag",
+   "cat": "strike",
+   "pos": "RUNNING",
+   "engine": "STRIKE_RUN",
+   "style": [
+    "powerhouse",
+    "brawler"
+   ]
+  },
+  {
+   "clip": "SnapPiledrivers",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "CROSS_POWERBOMB",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "SpinTortureRackBomb",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "GORILLA_PRESS",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "SpinningArmsSpread",
+   "cat": "misc",
+   "pos": "STANDING_FRONT",
+   "engine": null,
+   "style": []
+  },
+  {
+   "clip": "StereoSuperkick",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_KICK",
+   "style": [
+    "striker"
+   ]
+  },
+  {
+   "clip": "StrongZero",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Suplex",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "VERTICAL_SUPLEX",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "TableImpact",
+   "cat": "misc",
+   "pos": "STANDING_FRONT",
+   "engine": null,
+   "style": []
+  },
+  {
+   "clip": "TagSuperkick",
+   "cat": "strike",
+   "pos": "STANDING_FRONT",
+   "engine": "STRIKE_KICK",
+   "style": [
+    "striker"
+   ]
+  },
+  {
+   "clip": "Tau_ButtSlap",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_PUNCH"
+  },
+  {
+   "clip": "Tau_Diva",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Tau_GameOver",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Tau_GeneralFemale",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Tau_HEADCRACK",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "GORILLA_PRESS",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "Taunt",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Taunt2",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Taunt_KofiKingston",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ]
+  },
+  {
+   "clip": "Tombstone",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "CROSS_POWERBOMB",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "VerticalBrainBuster",
+   "cat": "grapple",
+   "pos": "STANDING_FRONT",
+   "engine": "BRAINBUSTER",
+   "style": [
+    "powerhouse",
+    "technical"
+   ]
+  },
+  {
+   "clip": "ViolenceParty",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
+   "style": [
+    "showman"
+   ],
+   "dualPurpose": true,
+   "altKind": "strike",
+   "altEngine": "STRIKE_PUNCH"
+  },
+  {
+   "clip": "WBTC",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "X Bot",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Y Bot",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "Zombie Dying",
+   "cat": "knockdown",
+   "pos": "GROUNDED_HEAD_UP",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "arcee G1",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "cover to stand",
+   "cat": "getup",
+   "pos": "GROUND_TO_STANDING_WAKEUP",
+   "engine": "WAKEUP",
+   "style": []
+  },
+  {
+   "clip": "cover to stand (2)",
+   "cat": "getup",
+   "pos": "GROUND_TO_STANDING_WAKEUP",
+   "engine": "WAKEUP",
+   "style": []
+  },
+  {
+   "clip": "crouched sneaking left",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "crouched sneaking right",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "falling idle",
+   "cat": "knockdown",
+   "pos": "GROUNDED_HEAD_UP",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "falling to roll",
+   "cat": "getup",
+   "pos": "GROUND_TO_STANDING_WAKEUP",
+   "engine": "WAKEUP",
+   "style": []
+  },
+  {
+   "clip": "hard landing",
+   "cat": "knockdown",
+   "pos": "GROUNDED_HEAD_UP",
+   "engine": "SELL",
+   "style": []
+  },
+  {
+   "clip": "idle",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "idle (2)",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "idle (3)",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "idle (4)",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "idle (5)",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "jumping up",
+   "cat": "aerial_transition",
+   "pos": "SPRINGBOARD",
+   "engine": "VAULT",
+   "style": [
+    "highFlyer",
+    "lucha"
+   ]
+  },
+  {
+   "clip": "left cover sneak",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "left turn",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "passive_marker_man",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": true,
+   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+  },
+  {
+   "clip": "right cover sneak",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "right turn",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "run to stop",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "running",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "stand to cover",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "stand to cover (2)",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  },
+  {
+   "clip": "walking",
+   "cat": "locomotion",
+   "pos": "LOCOMOTION",
+   "engine": "LOCO",
+   "style": []
+  }
+ ],
+ "_physics": "Every move clip carries BANNON physics: engine key -> resolveGrapPos/DIVE_TYPES/SUBMISSION/STRIKE path -> MAX_BODY_VEL-clamped verlet+PD solver. dualPurpose clips fire altKind (impact) when triggered as an attack, or play as a taunt otherwise (WWE-2K impact-taunt model)."
+}

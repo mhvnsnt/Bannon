@@ -1,0 +1,54 @@
+{
+  "_note": "BANNON UNIVERSE PROPRIETARY DIALOGUE - EXPANSION PACK 1 (CIPHER, VIPER, BRUTUS)",
+  "system": "Career Mode / Backstage Politics / Promos",
+  "mapped_interactions": [
+    {
+      "character": "cipher",
+      "trigger": "PRE_MATCH_LOCKER_ROOM",
+      "legacy_baseline": "I'm ready for my match tonight.",
+      "bannon_adaptation": "It's time... yes, yes, the lights are on. But the shadows... he lives in the shadows! He sees you taping your wrists. You think that tape holds you together? No no no... the cuts! The cuts! We are getting stronger and stronger and stronger!"
+    },
+    {
+      "character": "cipher",
+      "trigger": "TAG_TEAM_BETRAYAL",
+      "legacy_baseline": "I'm tired of carrying you. We're done.",
+      "bannon_adaptation": "You thought we were friends? You thought he liked you?! He hates you! You're dead weight! A sacrifice! The rain is coming, and it washes the weak away! He knows! He knows!"
+    },
+    {
+      "character": "cipher",
+      "trigger": "INJURY_TAUNT",
+      "legacy_baseline": "I'm going to hurt your arm.",
+      "bannon_adaptation": "The bone... it's fragile! Like glass! Snap snap snap! He wants it to snap! And when it breaks, we bleed! Stronger and stronger and stronger!"
+    },
+    {
+      "character": "cipher",
+      "trigger": "RIVALRY_START",
+      "legacy_baseline": "I don't like you. We are going to fight.",
+      "bannon_adaptation": "You keep staring at me! Why are you staring?! He sees you looking! He knows what's in your head! You can't run from it! We are the consequence!"
+    },
+    {
+      "character": "viper",
+      "trigger": "PRE_MATCH_LOCKER_ROOM",
+      "legacy_baseline": "I'm ready for my match tonight.",
+      "bannon_adaptation": "I've dissected your last three matches. You drop your left hand when you breathe heavy. I won't need ten minutes to end this."
+    },
+    {
+      "character": "viper",
+      "trigger": "INJURY_TAUNT",
+      "legacy_baseline": "I'm going to hurt your arm.",
+      "bannon_adaptation": "I see the tape on your shoulder. It won't hold. I'm going to dismantle it at the joint."
+    },
+    {
+      "character": "brutus",
+      "trigger": "PRE_MATCH_LOCKER_ROOM",
+      "legacy_baseline": "I'm ready for my match tonight.",
+      "bannon_adaptation": "Get out of my face before I put you through this concrete wall. We settle this in the center of the ring. No running."
+    },
+    {
+      "character": "brutus",
+      "trigger": "INJURY_TAUNT",
+      "legacy_baseline": "I'm going to hurt your arm.",
+      "bannon_adaptation": "I'm gonna grab that arm and pull until something tears. You better learn to tap fast."
+    }
+  ]
+}

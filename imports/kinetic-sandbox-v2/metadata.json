@@ -1,0 +1,8 @@
+{
+  "name": "Remix: Remix: Kinetic Sandbox",
+  "description": "A responsive 3D WebGL physics playground demonstrating soft-body mesh deformation and hard-body collision concepts using vertex-level manipulation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,78 @@
+name: Build Android APK (WebView game)
+
+# Compiles the BANNON web game into a real installable .apk — no Unreal build needed. The game HTML is
+# bundled into the app's assets at build time; AAA models stream from the repo CDN. Download the APK from
+# this run's Artifacts on your phone and install it (allow "install unknown apps" once). See
+# docs/MOBILE_INSTALL.md. Trigger it from the Actions tab (Run workflow) or on a push to the android app.
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'android/**'
+      - 'BANNON_v150.html'
+      - '.github/workflows/android.yml'
+
+permissions:
+  contents: write   # so the built APK can be committed back to dist/ on main
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bundle the game + manifest/icons + local assets into the app
+        run: |
+          A=android/app/src/main/assets
+          mkdir -p $A/assets/icons $A/assets/moves $A/assets/audio $A/assets/mocap
+          cp BANNON_v150.html $A/index.html
+          cp manifest.json    $A/manifest.json || true
+          cp assets/icons/icon-192.png assets/icons/icon-512.png assets/icons/apple-touch-icon.png $A/assets/icons/ || true
+          # move library / MDickie moves / fbx map — the game fetch()es these at runtime; without them
+          # the moveset + story data silently 404 inside the APK.
+          cp assets/moves/*.json $A/assets/moves/ 2>/dev/null || true
+          # mocap manifest (tiny) so BANNON_LOAD_FBX_LIBRARY knows the full clip list offline; the FBX
+          # themselves stay CDN-streamed (too big to bundle).
+          cp assets/mocap/*.json $A/assets/mocap/ 2>/dev/null || true
+          echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build release APK (stable-signed, auto-incrementing versionCode)
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+      - run: BANNON_VERSION_CODE=$(git rev-list --count HEAD) gradle -p android assembleRelease --no-daemon
+      - name: Verify APK Signature
+        run: |
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          $BUILD_TOOLS_DIR/apksigner verify --verbose android/app/build/outputs/apk/release/*.apk
+      - name: Upload APK (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BANNON-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      # Keep the in-repo APK current: on a push to main, commit the freshly built APK to dist/BANNON.apk
+      # so the game app upgrades along with the game/repo. dist/ is NOT in the trigger paths, so this
+      # commit does not re-trigger the workflow (no loop); [skip ci] belt-and-suspenders.
+      - name: Publish APK to dist/ (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release*.apk dist/BANNON.apk
+          git config user.name  "bannon-ci"
+          git config user.email "ci@bannon.local"
+          git add dist/BANNON.apk
+          if git diff --cached --quiet; then echo "APK unchanged"; else
+            git commit -m "ci: rebuild dist/BANNON.apk from ${GITHUB_SHA::7} [skip ci]"
+            git push
+          fi

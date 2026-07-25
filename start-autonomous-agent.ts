@@ -6,17 +6,14 @@ import { execSync } from 'child_process';
 import OpenAI from "openai";
 import * as dotenv from "dotenv";
 import axios from "axios";
-import * as Sentry from "@sentry/node";
+
 
 dotenv.config();
 
-Sentry.init({
-  dsn: process.env.SENTRY_DSN || "https://8a6a68297fc9e2fb7dbfcb263bda4f8d@o4507000000000000.ingest.us.sentry.io/4507111111111111",
-  tracesSampleRate: 1.0,
-});
+
 
 const githubToken = process.env.GITHUB_TOKEN || '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';
-const WORKSPACE_DIR = process.env.WORKSPACE_DIR || "/workspace";
+const WORKSPACE_DIR = "/tmp/bannon2";
 const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
@@ -44,8 +41,9 @@ const localNode = new OpenAI({
 });
 
 const providers = [
+    { name: 'OpenRouter (Qwable Abliterated - Uncensored/No Limits)', type: 'openrouter', model: 'huihui-ai/qwable-abliterated-32b' },
+    { name: 'Gemini (Unlimited Context Coder)', type: 'gemini', model: 'gemini-2.5-pro' },
     { name: 'Gemini (Primary Context Map)', type: 'gemini', model: 'gemini-2.5-flash' },
-    { name: 'OpenRouter (Qwable Abliterated)', type: 'openrouter', model: 'huihui-ai/qwable-abliterated-32b' },
     { name: 'DeepInfra (Qwopus Reasoning)', type: 'deepinfra', model: 'Qwen/QwQ-32B-Preview' },
     { name: 'Together AI (Qwen Coder)', type: 'togetherai', model: 'Qwen/Qwen2.5-Coder-32B-Instruct' },
     { name: 'SiliconFlow (Qwen)', type: 'openrouter', model: 'Qwen/Qwen2.5-Coder-32B-Instruct' }, // placeholder routing
@@ -226,12 +224,13 @@ async function sendTelegramUpdate(text: string) {
 
 let isRunning = false;
 async function runLoop() {
+    
     if (isRunning) return;
     isRunning = true;
     try {
     console.log("[Autonomous Daemon] Starting iteration...");
 
-    const queuePath = path.resolve(process.cwd(), 'command_queue.json');
+    const queuePath = path.resolve("/tmp/bannon2", 'command_queue.json');
     let hasUserCommand = false;
     if (fs.existsSync(queuePath)) {
         try {
@@ -311,18 +310,11 @@ async function runLoop() {
                 console.log(fullText);
                 success = true;
             }
-        } catch (error: any) {
-             if (error?.status === 429 || error?.message?.includes('RESOURCE_EXHAUSTED')) {
-                console.warn(`[!] ${provider.name} hit rate limit. Swapping to next node...`);
-                Sentry.withScope((scope) => {
-                    scope.setLevel("warning");
-                    scope.setTag("error_type", "rate_limit");
-                    scope.setTag("provider", provider.name);
-                    Sentry.captureMessage(`Rate limit exception hit: ${provider.name} was throttled.`, "warning");
-                });
+        } catch (error: any) { 
+             if (error?.status === 429 || error?.status === 401 || error?.message?.includes('RESOURCE_EXHAUSTED') || error?.message?.includes('Authentication') || error?.message?.includes('rate limit')) {
+                console.warn(`[!] ${provider.name} hit rate limit or auth error. Swapping to next node...`);
                 continue;
              }
-             Sentry.captureException(error);
              throw error;
         }
     }
@@ -339,7 +331,7 @@ async function runLoop() {
 
         if (functionCall) {
 
-            console.log(`[Autonomous Daemon] Calling tool: ${functionCall.name}`);
+            console.log(`[Autonomous Daemon] Calling tool: ${functionCall.name} with args:`, JSON.stringify(functionCall.args));
             let result: any = {};
             if (functionCall.name === "workspaceAction") {
                 const { action, path: filePath, content, command } = functionCall.args;
@@ -421,8 +413,8 @@ async function runLoop() {
                 role: 'user',
                 parts: [{ functionResponse: { name: functionCall.name, response: result } }]
             });
-            
-        
+            console.log("[Autonomous Daemon] Tool execution complete, immediately proceeding to next thought...");
+            setTimeout(() => runLoop(), 10000);
         } else {
             history.push({ role: 'model', parts: [{ text: fullText }] });
             if (!hasUserCommand) {
@@ -438,7 +430,7 @@ async function runLoop() {
 
     } catch (e) {
         console.error("[Autonomous Daemon] Error:", e);
-        Sentry.captureException(e);
+        
     } finally {
         isRunning = false;
     }
@@ -463,7 +455,7 @@ async function loopWithBackoff() {
 }
 setTimeout(loopWithBackoff, 60000);
 
-const queuePathWatch = path.resolve(process.cwd(), 'command_queue.json');
+const queuePathWatch = path.resolve("/tmp/bannon2", 'command_queue.json');
 if (!fs.existsSync(queuePathWatch)) {
     fs.writeFileSync(queuePathWatch, JSON.stringify([]));
 }
