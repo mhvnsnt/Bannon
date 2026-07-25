@@ -9412,6 +9412,24 @@ Fighter.prototype.poseGrab = function(dt){
     const _bias = 0.10*_hf;
     const dipY = -Math.abs(phi)*0.06 - br*0.20;
     const lean = phi*0.30;
+    // ===== REAL SPINAL BEND ON THE FORKLIFT (owner ask 2026-07-25) =====================
+    // The stick up/down must FLEX THE SPINE, not tilt a plank. Previously pelvis/chest/head were all
+    // offset the SAME direction proportionally (-0.4 / -0.9 / -1.3 x lean), so the whole torso hinged
+    // rigidly at the hips — a board pivoting, with the pelvis contributing nothing.
+    // An actual hoist is an S-CURVE: the hips drive UNDER the load one way while the thorax extends the
+    // other, and the neck counter-rotates so the gaze stays level instead of whipping past the arc.
+    // Signing pelvis OPPOSITE to chest is precisely what reads as a spine rather than a plank.
+    //   craneLift +1 (stick UP)   = arch BACK  -> hips forward, thorax back, front line lengthens
+    //   craneLift -1 (stick DOWN) = bend FORWARD -> hips back, thorax forward, torso compresses
+    const _spineK  = (window.SPINE_BEND!=null?window.SPINE_BEND:1);   // 0 restores the old plank
+    const _hipCtr  =  lean * 0.42 * _spineK;      // pelvis counter-shifts UNDER the load
+    const _lumbar  = -lean * 0.55 * _spineK;      // lower spine starts the curve
+    const _thorax  = -lean * 1.05 * _spineK;      // upper spine carries most of the flexion
+    const _neckCtr =  lean * 0.30 * _spineK;      // neck counters so the head tracks the arc, not past it
+    // scaled by _spineK too, so SPINE_BEND=0 is a COMPLETE escape hatch back to the old behaviour
+    const _extY    =  Math.max(0,  lean) * 0.035 * _spineK; // arching back lengthens the front line: chest rises
+    const _flexY   = -Math.max(0, -lean) * 0.030 * _spineK; // bending forward compresses it: chest sinks
+    let _spineDone = false;
     const gp = this.grapplePos || 'STANDARD';
 
     if (gp==='POWERBOMB' || gp==='CROSS_POWERBOMB'){
@@ -9456,14 +9474,29 @@ Fighter.prototype.poseGrab = function(dt){
       this.J.knL.set(0.10 - br*0.18, 0.44 + dipY, 0.15);
       this.J.knR.set(0.10 - br*0.18, 0.44 + dipY, -0.15);
     } else {
-      // DEFAULT: generic arch carry (German/standard)
-      this.J.pelvis.set(-lean*0.4 - _bias + _sw, 0.90 + dipY, _swZ*0.4);
-      this.J.chest.set(-lean*0.9 - _bias*1.4 + _sw*1.3, 1.28 + dipY*1.2, _swZ);
-      this.J.head.set(-lean*1.3 - _bias*1.2 + _sw*1.6, 1.62 + dipY*1.2, _swZ*1.2);
-      this.J.shL.set(0.06 - lean*0.6, 1.34, 0.20);
-      this.J.shR.set(0.06 - lean*0.6, 1.34, -0.20);
+      // DEFAULT: generic arch carry (German/standard) — driven by the SPINAL CHAIN above, so the
+      // pelvis drives under the load while the thorax extends the other way (an S-curve, not a plank).
+      this.J.pelvis.set(_hipCtr - _bias + _sw, 0.90 + dipY, _swZ*0.4);
+      this.J.chest.set(_thorax + _lumbar*0.35 - _bias*1.4 + _sw*1.3, 1.28 + dipY*1.2 + _extY + _flexY, _swZ);
+      this.J.head.set(_thorax*1.18 + _neckCtr - _bias*1.2 + _sw*1.6, 1.62 + dipY*1.2 + (_extY+_flexY)*1.1, _swZ*1.2);
+      // shoulders ride the thorax, not the raw lean, so the shoulder line stays square to the chest
+      this.J.shL.set(0.06 + _thorax*0.55, 1.34, 0.20);
+      this.J.shR.set(0.06 + _thorax*0.55, 1.34, -0.20);
+      _spineDone = true;
       this.J.knL.set(0.10 - br*0.18, 0.44 + dipY + Math.max(0, Math.sin(this.carryStep||0)*0.10), 0.15);
       this.J.knR.set(0.10 - br*0.18, 0.44 + dipY + Math.max(0, -Math.sin(this.carryStep||0)*0.10), -0.15);
+    }
+
+    // SHARED SPINE PASS: the per-move carries above (powerbomb, gorilla press, electric chair, ...) each
+    // hand-author their torso and none of them counter-shift the pelvis either, so they hinged as planks
+    // too. Rather than rewrite every pose, add the two terms that actually make a spine read — the hip
+    // counterweight and the neck counter — on top of whatever that move authored. Skipped for the generic
+    // branch, which already applied the full chain.
+    if(!_spineDone && _spineK>0){
+      this.J.pelvis.x += _hipCtr*0.75;
+      this.J.chest.x  += _lumbar*0.30;
+      this.J.chest.y  += (_extY + _flexY)*0.7;
+      this.J.head.x   += _neckCtr*0.85;
     }
 
     if(!this._gripOpp(opp, gType)){
