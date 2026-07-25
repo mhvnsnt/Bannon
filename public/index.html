@@ -41117,40 +41117,9 @@ window.BANNON_ITEMS = (function(){
   };
 })();
 
-window.BANNON_NEWS = (function(){
-  const NEWS_TEMPLATES = [
-    { type: 'injury', text: "[FIGHTER] is reportedly taking time off to heal nagging injuries." },
-    { type: 'heat', text: "Backstage heat continues to build around [FIGHTER] after recent comments." },
-    { type: 'contract', text: "Rumors indicate [FIGHTER] is in contract negotiations with management." },
-    { type: 'push', text: "Management is extremely high on [FIGHTER], expect a major push soon." },
-    { type: 'debut', text: "A mysterious new talent has been spotted at the training facility." }
-  ];
-
-  function generateHeadline(fighterName) {
-    let tpl = NEWS_TEMPLATES[Math.floor(Math.random() * NEWS_TEMPLATES.length)];
-    let headline = tpl.text.replace("[FIGHTER]", fighterName || "A top star");
-    return headline;
-  }
-  
-  function generateWeeklyNews(universe) {
-    if(!universe || !universe.fighters) return [];
-    const roster = Object.keys(universe.fighters);
-    if(!roster.length) return [];
-    
-    const count = Math.floor(Math.random() * 3) + 1;
-    const headlines = [];
-    for(let i=0; i<count; i++) {
-        const target = roster[Math.floor(Math.random() * roster.length)];
-        headlines.push(generateHeadline(target));
-    }
-    return headlines;
-  }
-
-  return {
-    generateHeadline,
-    generateWeeklyNews
-  };
-})();
+// NOTE: a byte-identical second copy of BANNON_NEWS lived here and silently overwrote the one
+// defined above (~line 40746). Removed — one definition, one source of truth. Its API is
+// generateHeadline(name) / generateWeeklyNews(universe); BANNON_CARDS presents them as cards.
 
 window.BANNON_ENTRANCES = (function(){
   function startEntrance(fighter) {
@@ -42852,23 +42821,37 @@ console.log('%c[BANNON_MDICKIE] MDickie props+vehicles surfacing online — BANN
     }, 620);
   }
 
-  // ── 4. arrival moment: a real dialogue/news beat through the systems that already exist
+  // ── 4. arrival moment: a real, INTERACTIVE dialogue/news beat.
+  // BUG FIX (self-inflicted, previous commit): this called window.BANNON_LIFE.meeting() and
+  // BANNON_NEWS.generate() — NEITHER EXISTS. meeting()/choose()/addEvent live on window.BANNON_STORY,
+  // and the news API is generateHeadline(). Both branches were dead code, so arrival moments never
+  // fired at all. Verified against the real module exports this time.
   function arrivalMoment(destId){
     var areaId=ARRIVAL[destId]; if(!areaId) return;
     try{
       var me=playerF(); var myName=(me&&me.opts&&me.opts.name)||(me&&me.name)||'BANNON';
-      var L=window.BANNON_LIFE||window.BANNON_UNIVERSE_LIFE||null;
-      if(L && typeof L.meeting==='function'){
-        var roster=(window.ROSTER_ALL?window.ROSTER_ALL():[]).map(function(c){ return c.name; });
-        var other=roster.length?roster[Math.floor(Math.random()*roster.length)]:'STAFF';
-        var m=L.meeting(myName, other, areaId);
-        if(m && window.addEvent) window.addEvent(m.area+': '+m.aName+' and '+m.bName+' talk — '+m.tone+'.', 'dialogue');
-        return;
+      var S=window.BANNON_STORY;
+      if(S && typeof S.meeting==='function'){
+        var roster=[]; try{ roster=(window.ROSTER_ALL?window.ROSTER_ALL():[]).map(function(c){ return c.name; }); }catch(e){}
+        var other=null;
+        for(var t=0;t<8 && roster.length;t++){ var pick=roster[Math.floor(Math.random()*roster.length)];
+          if(String(pick).toUpperCase()!==String(myName).toUpperCase()){ other=pick; break; } }
+        if(other){
+          var m=S.meeting(myName, other, areaId);
+          if(m){
+            if(window.BANNON_CARDS && window.BANNON_CARDS.dialogue) window.BANNON_CARDS.dialogue(m);
+            else if(S.addEvent) S.addEvent(m.area+': '+m.aName+' and '+m.bName+' talk — '+m.tone+'.','dialogue');
+            return;
+          }
+        }
       }
-      // no meeting system reachable -> a news beat, which BANNON_NEWS does provide
-      if(window.BANNON_NEWS && typeof window.BANNON_NEWS.generate==='function'){
-        var n=window.BANNON_NEWS.generate(myName);
-        if(n && window.addEvent) window.addEvent(String(n.text||n), 'news');
+      // fallback: a news beat. Real API is generateHeadline(name) -> string.
+      if(window.BANNON_NEWS && typeof window.BANNON_NEWS.generateHeadline==='function'){
+        var head=window.BANNON_NEWS.generateHeadline(myName);
+        if(head){
+          if(window.BANNON_CARDS && window.BANNON_CARDS.news) window.BANNON_CARDS.news([head], envName(destId));
+          else if(S && S.addEvent) S.addEvent(String(head),'news');
+        }
       }
     }catch(e){}
   }
@@ -42936,6 +42919,170 @@ console.log('%c[BANNON_MDICKIE] MDickie props+vehicles surfacing online — BANN
     rebuild:buildExits, destinations:destinationsFor, card:showCard };
 })();
 console.log('%c[BANNON_TRAVEL] walk-to-travel online — doorways, transition cards, arrival moments','color:#7CFC00');
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_CARDS — the MDickie presentation layer: NEWS / GRAPHIC cards and OFFICE DIALOGUE MOMENTS as
+// actual on-screen scenes. MDickie punctuates play with full-screen text-and-image beats (headlines
+// between shows, a conversation when you walk into an office). We had the DATA for all of it —
+// BANNON_STORY.meeting()/dialogueChoices()/choose() with real consequences, BANNON_NEWS headlines —
+// but no way to SEE any of it: results were pushed into an event log the player never opens.
+//
+//   news(headlines, place)  -> a stacked headline card (the between-shows beat)
+//   dialogue(meeting)       -> an INTERACTIVE scene: the other wrestler, the mood, the branching
+//                              choices from dialogueChoices(), and the real outcome from choose()
+//                              (relationship swing / team formed / feud born / heel-face turn).
+//   moment(title, body)     -> a generic story beat card.
+// All plates are drawn with CSS gradients + an SVG-free procedural motif, so nothing needs art files
+// and it all works offline inside the APK. One node, reused; nothing renders when idle.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var root=null, onClose=null;
+
+  function ensure(){
+    if(root) return root;
+    root=document.createElement('div'); root.id='bannonCardLayer';
+    root.style.cssText='position:fixed;inset:0;z-index:2147482500;display:none;align-items:center;justify-content:center;'+
+      'background:rgba(3,5,8,.86);backdrop-filter:blur(3px);padding:16px;font:12px ui-monospace,monospace;';
+    root.addEventListener('click', function(e){ if(e.target===root) hide(); });
+    document.body.appendChild(root);
+    return root;
+  }
+  function hide(){ try{ if(root) root.style.display='none'; var f=onClose; onClose=null; if(f) f(); }catch(e){} }
+  function esc(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }); }
+
+  // a procedural "photo" plate — deterministic per subject so the same wrestler/place keeps its look
+  function plate(seedStr, h){
+    var s=0; for(var i=0;i<String(seedStr).length;i++){ s=(s*31+String(seedStr).charCodeAt(i))>>>0; }
+    var hue=s%360, hue2=(hue+48)%360;
+    return '<div style="height:'+(h||96)+'px;border-radius:8px;overflow:hidden;position:relative;'+
+      'background:linear-gradient(135deg,hsl('+hue+',42%,22%) 0%,hsl('+hue2+',38%,11%) 100%)">'+
+      '<div style="position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 2px,transparent 2px 9px)"></div>'+
+      '<div style="position:absolute;left:0;right:0;bottom:0;height:40%;background:linear-gradient(transparent,rgba(0,0,0,.6))"></div>'+
+      '</div>';
+  }
+  function shell(inner, accent){
+    var a=accent||'#d8a24a';
+    return '<div style="width:min(560px,94vw);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;'+
+      'background:linear-gradient(180deg,#141821,#0a0d13);border:1px solid '+a+';border-radius:14px;'+
+      'box-shadow:0 18px 60px rgba(0,0,0,.7);color:#ffe9c0;padding:16px 16px 14px">'+inner+'</div>';
+  }
+  function btn(label, accent){
+    return 'background:'+(accent||'#d8a24a')+';color:#101010;border:0;border-radius:9px;padding:10px 14px;'+
+      'font:800 11px ui-monospace,monospace;letter-spacing:1px;cursor:pointer;width:100%;text-align:left';
+  }
+
+  // ── NEWS / GRAPHIC CARD ────────────────────────────────────────────────────────────────────
+  function news(headlines, place){
+    ensure(); var list=[].concat(headlines||[]).filter(Boolean); if(!list.length) return false;
+    var h='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">'+
+      '<b style="font-size:13px;letter-spacing:3px;color:#d8a24a">THE WEEK IN WRESTLING</b>'+
+      '<span style="font-size:9px;color:#7d8895">'+esc(place||'')+'</span></div>';
+    list.forEach(function(t,i){
+      h+='<div style="margin-bottom:12px">'+plate('news'+i+String(t), 74)+
+         '<div style="margin-top:7px;font:600 12px/1.45 ui-monospace,monospace;color:#ffe9c0">'+esc(t)+'</div></div>';
+    });
+    h+='<button data-card="close" style="'+btn()+';text-align:center;margin-top:4px">CONTINUE</button>';
+    root.innerHTML=shell(h); root.style.display='flex'; wire();
+    // still record it in the story log so Universe/Career keep their history
+    try{ if(window.BANNON_STORY&&window.BANNON_STORY.addEvent) list.forEach(function(t){ window.BANNON_STORY.addEvent(String(t),'news'); }); }catch(e){}
+    return true;
+  }
+
+  // ── OFFICE / BACKSTAGE DIALOGUE MOMENT (interactive, real consequences) ─────────────────────
+  function dialogue(m){
+    ensure(); if(!m) return false;
+    var choices=(m.choices||[]);
+    var toneCol = m.tone==='hostile' ? '#c0653a' : m.tone==='friendly' ? '#7CFC00' : '#d8a24a';
+    var h='<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px">'+
+      '<b style="font-size:13px;letter-spacing:2px;color:'+toneCol+'">'+esc(m.area||'BACKSTAGE')+'</b>'+
+      '<span style="font-size:9px;color:#7d8895">'+esc(m.mood||'')+'</span></div>'+
+      plate(String(m.b||m.bName||'x'), 86)+
+      '<div style="margin:9px 0 12px;font:600 12px/1.5 ui-monospace,monospace">'+
+        esc(m.bName||m.b)+' is here. <span style="color:#9aa4b2">The air is '+esc(m.tone||'wary')+'.</span></div>';
+    if(!choices.length){
+      h+='<button data-card="close" style="'+btn()+';text-align:center">LEAVE</button>';
+    } else {
+      choices.forEach(function(c,i){
+        h+='<div style="margin-bottom:7px"><button data-choice="'+esc(c.id)+'" style="'+btn(toneCol)+'">'+
+           esc(c.text)+'<div style="font-weight:400;opacity:.72;margin-top:3px;font-size:10px">'+esc(c.line||'')+'</div>'+
+           '</button></div>';
+      });
+      h+='<button data-card="close" style="background:none;border:1px solid #3a3f4a;color:#9aa4b2;border-radius:9px;'+
+         'padding:9px;width:100%;font:700 10px ui-monospace;letter-spacing:1px;cursor:pointer;margin-top:2px">WALK AWAY</button>';
+    }
+    root.innerHTML=shell(h, toneCol); root.style.display='flex';
+    wire(function(choiceId){
+      // resolve through the REAL branch logic — relationship swings, teams, feuds, turns
+      var res=null;
+      try{ if(window.BANNON_STORY&&window.BANNON_STORY.choose) res=window.BANNON_STORY.choose(m.a, m.b, choiceId); }catch(e){}
+      var txt=(res&&res.text)||'The moment passes.';
+      var extra=[];
+      if(res){ if(res.team) extra.push('A TEAM IS FORMED'); if(res.feud) extra.push('A FEUD IS BORN');
+               if(res.turn) extra.push('ALIGNMENT TURN: '+String(res.turn).toUpperCase());
+               if(typeof res.rel==='number') extra.push('RELATIONSHIP NOW '+res.rel); }
+      moment(m.area||'BACKSTAGE', txt, extra.join('  ·  '), toneCol);
+    });
+    return true;
+  }
+
+  // ── generic story beat card ─────────────────────────────────────────────────────────────────
+  function moment(title, body, footer, accent){
+    ensure();
+    var h='<b style="font-size:12px;letter-spacing:3px;color:'+(accent||'#d8a24a')+'">'+esc(title||'')+'</b>'+
+      '<div style="margin:11px 0 0">'+plate(String(title)+String(body), 66)+'</div>'+
+      '<div style="margin:10px 0 12px;font:600 12px/1.5 ui-monospace,monospace">'+esc(body||'')+'</div>'+
+      (footer?'<div style="font:700 10px ui-monospace;letter-spacing:1px;color:'+(accent||'#d8a24a')+';margin-bottom:12px">'+esc(footer)+'</div>':'')+
+      '<button data-card="close" style="'+btn(accent)+';text-align:center">CONTINUE</button>';
+    root.innerHTML=shell(h, accent); root.style.display='flex'; wire();
+    return true;
+  }
+
+  function wire(onChoice){
+    try{
+      root.querySelectorAll('[data-card="close"]').forEach(function(b){ b.onclick=hide; });
+      root.querySelectorAll('[data-choice]').forEach(function(b){
+        b.onclick=function(){ var id=b.getAttribute('data-choice'); if(onChoice) onChoice(id); else hide(); };
+      });
+    }catch(e){}
+  }
+
+  // WEEKLY NEWS HOOK: Universe/Career advance a week -> present the headlines as a card instead of
+  // burying them in a log nobody opens. Wraps BANNON_STORY.advanceStoryWeek if it is present.
+  (function hookWeek(){
+    var tries=0;
+    (function arm(){
+      tries++;
+      try{
+        var S=window.BANNON_STORY;
+        if(S && typeof S.advanceStoryWeek==='function' && !S._cardsHooked){
+          var orig=S.advanceStoryWeek;
+          S.advanceStoryWeek=function(){
+            var r=orig.apply(this,arguments);
+            try{
+              var heads=[];
+              if(window.BANNON_NEWS && window.BANNON_NEWS.generateHeadline){
+                var roster=[]; try{ roster=(window.ROSTER_ALL?window.ROSTER_ALL():[]).map(function(c){ return c.name; }); }catch(e){}
+                var n=1+Math.floor(Math.random()*2);
+                for(var i=0;i<n;i++){ heads.push(window.BANNON_NEWS.generateHeadline(roster.length?roster[Math.floor(Math.random()*roster.length)]:null)); }
+              }
+              if(heads.length) news(heads, 'WEEK '+((S.state&&S.state().week)||''));
+            }catch(e){}
+            return r;
+          };
+          S._cardsHooked=true;
+          return;
+        }
+      }catch(e){}
+      if(tries<40) setTimeout(arm, 1500);
+    })();
+  })();
+
+  window.BANNON_CARDS={ news:news, dialogue:dialogue, moment:moment, close:hide };
+})();
+console.log('%c[BANNON_CARDS] news/graphic cards + interactive office dialogue moments online','color:#7CFC00');
 </script>
 </body></html>
 
