@@ -10501,6 +10501,10 @@ function applyDamage(opp, dmg, attacker, move, forceDown){
   window.__camPunch = Math.max(window.__camPunch || 0, 0.45 + (shakeImpact / 200));
   
   spawnDamageNumber(hx, hy, opp.z, dmg);
+  // CROWD POPS ON THE BIG ONES. crowdReaction() existed as a call with no implementation, so the crowd
+  // never reacted to anything; now that it is real, drive it from actual impact force — a jab is nothing,
+  // a slam brings them up. Scaled off the same shakeImpact the camera punch uses.
+  try{ if(window.crowdReaction){ var _pop=Math.min(1,(shakeImpact||0)/150); if(_pop>0.25) window.crowdReaction(_pop); } }catch(e){}
   // Trigger dynamic commentary & crowd surge & synthesized impact audio
   if (window.ANNOUNCER && window.ANNOUNCER.enabled) {
     let tKey = 'punch';
@@ -12225,9 +12229,29 @@ function switchArena(key){
 
 
 const _cullFrus=new THREE.Frustum(), _cullM4=new THREE.Matrix4(), _cullSph=new THREE.Sphere();
+// CROWD REACTION — window.crowdReaction() was CALLED by the match code but NEVER DEFINED, so the
+// crowd never responded to anything: a rope break, a big slam, a near-fall all left them idly bobbing.
+// Defined here next to the bob it drives. `intensity` 0..1 sets a hype level that decays; the bob
+// amplifies with it (they come out of their seats), and the announcer/impact audio is nudged if present.
+window.__crowdHype = 0;
+window.crowdReaction = function(intensity){
+  try{
+    var i = Math.max(0, Math.min(1, +intensity || 0));
+    window.__crowdHype = Math.max(window.__crowdHype || 0, i);
+    if (window.ANNOUNCER && window.ANNOUNCER.enabled && window.ANNOUNCER.triggerImpact && i > 0.6){
+      try{ window.ANNOUNCER.triggerImpact('slam', 3.0 + i*3, null); }catch(e){}
+    }
+  }catch(e){}
+  return window.__crowdHype;
+};
 function updateArenaAnim(t){
+  // hype bleeds off over ~1.5s so a pop reads as a surge, not a permanent state
+  if (window.__crowdHype > 0) window.__crowdHype = Math.max(0, window.__crowdHype - 0.011);
+  const _hype = window.__crowdHype || 0;
+  const _amp = 0.08 * (1 + _hype * 2.4);      // out of their seats on a big moment
+  const _spd = 1 + _hype * 1.6;               // and faster
   for (const c of crowdMeshes){
-    c.mesh.position.y = c.base + Math.sin(t*c.sp + c.ph)*0.08;
+    c.mesh.position.y = c.base + Math.sin(t*c.sp*_spd + c.ph)*_amp;
   }
   // v152 instanced-crowd bob: write translation-Y straight into each instance matrix
   // (column-major element 13) — a few hundred float writes, no Matrix4 recompose.
@@ -12247,7 +12271,9 @@ function updateArenaAnim(t){
       }
     } }catch(e){ for (const im of (window.__crowdIMs||[])) im.__vis=true; }
     for (const m of M){
-      const dy=Math.sin(t*m.sp + m.ph)*0.08;
+      // same hype surge as the prop crowd above — this is the INSTANCED crowd (the visible thousands),
+      // so without it a reaction would only move a few dozen background props.
+      const dy=Math.sin(t*m.sp*_spd + m.ph)*_amp;
       for (const p of m.parts){ if (p.im.__vis!==false) p.im.instanceMatrix.array[p.i*16+13]=p.baseY+dy; }
     }
     for (const im of window.__crowdIMs){ if (im.__vis!==false) im.instanceMatrix.needsUpdate=true; }
@@ -16112,6 +16138,17 @@ function setupInput(){
       const _dt = Math.min(0.1, (_now - (meter._subLastT || _now)) / 1000);
       meter._subLastT = _now;
       if (type !== 'PIN') subStep(_dt || 0.02);                // torque only on holds, not covers
+      // ROPE BREAK: a hold (not a cover) dies the moment either man reaches the ropes. BANNON_RULES
+      // implemented this and nothing ever called it — so ropes meant nothing during a submission.
+      if (type !== 'PIN' && !escaped && window.__bannonRopeBreak && window.__bannonRopeBreak(victim, attacker)){
+        clearInterval(tick);
+        meter.classList.remove('active');
+        meter._subActive = false;
+        if (meter._cleanEscape) meter._cleanEscape();
+        if (typeof announce === 'function') announce('ROPE BREAK', 'the referee breaks the hold');
+        try{ if(window.crowdReaction) window.crowdReaction(0.65); }catch(e){}
+        return;
+      }
       const holdElapsed = (meter._subT0 = meter._subT0 || _now, (_now - meter._subT0) / 1000);
       if ((subTapped || holdElapsed >= 4.4) && !escaped){
         // hold resolved — but a hold that never built real strain doesn't "land" on a clock:
@@ -40704,17 +40741,32 @@ window.BANNON_RULES = (function(){
   };
   
   // Rule checking per frame (MDickie checkRules loop)
+  // ROPE BREAK — a fighter in a hold who reaches the ropes forces the referee to break it.
+  // This was DOUBLY dead: it had zero callers, AND its thresholds (>180 units from centre) came from a
+  // different coordinate scale entirely. Our ring is roughly +/-3.5 METRES, so `d > 180` could never be
+  // true even if something had called it. Wiring it without fixing the units would still have done
+  // nothing. Now measured per-axis against the real ring half-width, with a rope-reach margin, and
+  // actually called from the submission hold tick below.
+  function ropeReach(){ return 0.5; }                       // how close to the ropes counts as "reaching"
+  function ringHalfX(){ return (window.RING_HALF!=null?window.RING_HALF:(typeof ARENA_HALF!=='undefined'?ARENA_HALF:3.5)); }
+  function ringHalfZ(){ return (window.RING_HALF!=null?window.RING_HALF:(typeof ARENA_HALF_Z!=='undefined'?ARENA_HALF_Z:3.5)); }
+  function atRopes(f){
+    if(!f) return false;
+    var hx=ringHalfX()-ropeReach(), hz=ringHalfZ()-ropeReach();
+    return Math.abs(f.x||0) >= hx || Math.abs(f.z||0) >= hz;
+  }
   function checkRopeBreak(fighter1, fighter2) {
-    if(!fighter1 || !fighter2) return false;
-    // If either fighter is touching the bounds (approx 200 distance from center)
-    const d1 = Math.hypot(fighter1.x, fighter1.z);
-    const d2 = Math.hypot(fighter2.x, fighter2.z);
-    if(d1 > 180 || d2 > 180) {
+    if(!fighter1 && !fighter2) return false;
+    // EITHER man reaching the ropes breaks the hold — the man in it, or the man applying it being
+    // dragged into them.
+    if(atRopes(fighter1) || atRopes(fighter2)) {
       if(window.addEvent) window.addEvent("ROPE BREAK! The referee calls off the hold.", 'rules');
-      return true; // Rope break triggered
+      return true;
     }
     return false;
   }
+  window.__bannonAtRopes = atRopes;
+  window.__bannonRopeBreak = checkRopeBreak;
   
   // Run-in / Interference (Interference.bb)
   function triggerRunIn(targetFighterName, isAlly) {
@@ -43024,6 +43076,9 @@ console.log('%c[BANNON_MDICKIE] MDickie props+vehicles surfacing online — BANN
           }
         }
       }
+      // the promoter's office also fires the MDickie promoter offer (BANNON_OFFICE_MEETING wraps
+      // BANNON_MDICKIE_LEGACY_MODULE.triggerMeeting, which had no callers of its own)
+      try{ if(destId==='OFFICE' && window.BANNON_OFFICE_MEETING) window.BANNON_OFFICE_MEETING(myName); }catch(e){}
       // fallback: a news beat. Real API is generateHeadline(name) -> string.
       if(window.BANNON_NEWS && typeof window.BANNON_NEWS.generateHeadline==='function'){
         var head=window.BANNON_NEWS.generateHeadline(myName);
@@ -43646,6 +43701,41 @@ console.log('%c[BANNON_RIGS] character-rig registry — proprietary names, re-up
   };
 })();
 console.log('%c[BANNON_EVENTBUS] event bridge + MDickie court/meeting/aftermath wired','color:#7CFC00');
+</script>
+
+<script>
+// ============================================================================================
+// refreshMoveLibrary — the LAST "call into the void" found by scripts/orphan_audit.cjs.
+// Creating a custom move calls window.refreshMoveLibrary() to update an open library, but nothing ever
+// defined it, so a newly created move never appeared until you closed and reopened the panel.
+// Defined against the panels that actually exist, re-rendering whichever one is on screen.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined' || typeof window.refreshMoveLibrary==='function') return;
+  window.refreshMoveLibrary=function(){
+    var did=0;
+    // the 2K moveset editor: re-open on the same wrestler to rebuild its list in place
+    try{
+      var p=document.getElementById('bannonMovesetPanel');
+      if(window.BANNON_MOVESET_LIB && window.BANNON_MOVESET_LIB.open){
+        // only if a moveset panel is actually visible — never yank a panel open on the player
+        var vis=false;
+        try{ document.querySelectorAll('div').forEach(function(d){
+          if(d.style && d.style.display==='flex' && /MOVESET/.test(d.textContent||'')) vis=true; }); }catch(e){}
+        if(vis){ window.BANNON_MOVESET_LIB.open(); did++; }
+      }
+    }catch(e){}
+    // the legacy MOVE FORGE / move-library list, if it exposes a renderer
+    try{
+      var L=window.BANNON_MOVE_LIBRARY;
+      if(L){ if(typeof L.render==='function'){ L.render(); did++; }
+             else if(typeof L.refresh==='function'){ L.refresh(); did++; } }
+    }catch(e){}
+    try{ if(typeof window.renderClipChips==='function'){ window.renderClipChips(); did++; } }catch(e){}
+    return did;
+  };
+})();
+console.log('%c[BANNON] refreshMoveLibrary defined — custom moves now appear without reopening the panel','color:#7CFC00');
 </script>
 </body></html>
 
