@@ -1,0 +1,10 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>skinqa harness</title></head>
+<body>
+<!-- Headless page for tools/model_diag/skinqa.cjs. Its only job is to expose the THREE + GLTFLoader
+     globals the gate's page.evaluate() uses; all measurement lives in skinqa.cjs. Vendored (no CDN) so
+     the gate runs offline and pins three r128 — the same build the game ships. -->
+<script src="vendor/three.min.js"></script>
+<script src="vendor/GLTFLoader.js"></script>
+<script>window.__SKINQA_READY = (typeof THREE !== 'undefined') && !!THREE.GLTFLoader;</script>
+</body></html>

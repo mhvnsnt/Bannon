@@ -61,6 +61,11 @@ def _ordered_spaces():
 
 # KEY -> source mesh to feed UniRig (the current banked model; UniRig ignores any existing weights)
 SRC = {
+    # HEAVYWEIGHT (the fat BANNON body). Feed the SATELLITE-STRIPPED file: strip_satellites.cjs already
+    # removed the baked mini-model + bust, so UniRig rigs ONE clean body. Its current 16-joint skin.cjs
+    # weights are the smear/bad-deformation cause (docs/MODEL_QA.md) — UniRig replaces them with a real
+    # 28-joint skeleton + smooth cross-attention weights.
+    "BANNON_HEAVYWEIGHT": "BANNON_muscular_skinned.glb",
     "BANNON_MUSCULAR": "BANNON_muscular.glb",  # clean Tripo source -> re-rig to strip fragmentation
     "CIPHER": "CIPHER.glb", "ECHO": "ECHO.glb", "STATIC": "STATIC.glb",
     "CODY": "CODY_gear_skinned.glb", "CAIN_ELIAS": "CAIN_ELIAS_gear.glb",
