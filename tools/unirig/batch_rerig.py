@@ -61,6 +61,7 @@ def _ordered_spaces():
 
 # KEY -> source mesh to feed UniRig (the current banked model; UniRig ignores any existing weights)
 SRC = {
+    "BANNON_MUSCULAR": "BANNON_muscular.glb",  # clean Tripo source -> re-rig to strip fragmentation
     "CIPHER": "CIPHER.glb", "ECHO": "ECHO.glb", "STATIC": "STATIC.glb",
     "CODY": "CODY_gear_skinned.glb", "CAIN_ELIAS": "CAIN_ELIAS_gear.glb",
     "STICKUP": "STICKUP.glb", "ONYX": "ONYX_skinned.glb",

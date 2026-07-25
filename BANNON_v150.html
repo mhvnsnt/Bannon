@@ -6371,6 +6371,7 @@ window.CHAR_BODY = {
 // keeping their own moves (canon: Bannon can wear the "Maime" unhinged alter-ego
 // look). Maime also remains a standalone selectable character with his own moves.
 window.CHAR_ALTS = {
+  // Muscular is a GLB attire (see CHAR_ALT_MODELS.BANNON) — kept out of here so it's not double-listed.
   BANNON: [ { id:'MAIME', label:'Maime · Unhinged' } ],
   // Stick-Up's civilian/human persona — the man (Andrew Curtis) beneath the government "Cyborg Stick-Up"
   // weapon. Same fighter, unmasked human look (canon: Book 2 origin before the Cyborg Project).
@@ -6380,6 +6381,10 @@ window.CHAR_ALTS = {
 // selectable looks. Picking one loads that GLB (real 3D attire), not a procedural recolor. id = the
 // model basename under assets/models/, label = the display name.
 window.CHAR_ALT_MODELS = {
+  // BANNON Muscular = an ALT ATTIRE of BANNON (same character), not a separate roster entry. Loads
+  // the rigged GLB. (The mini+bust artifact in the source is being re-rigged clean via UniRig; when
+  // BANNON_MUSCULAR_rigged.glb lands + passes skinqa, swap the url here.)
+  BANNON:          [ {id:'BANNON_MUSCULAR',label:'Muscular',url:'assets/models/BANNON_muscular_skinned.glb'} ],
   CAIN_ELIAS:      [ {id:'CAIN_ELIAS_ring',label:'Ring Gear',url:'assets/models/CAIN_ELIAS_ring.glb'}, {id:'CAIN_ELIAS_snakeskin',label:'Snakeskin',url:'assets/models/CAIN_ELIAS_snakeskin.glb'}, {id:'CAIN_ELIAS_godwithin',label:'God Within',url:'assets/models/CAIN_ELIAS_godwithin.glb'} ],
   CIPHER:          [ {id:'CIPHER_minion',label:'Minion',url:'assets/models/CIPHER_minion.glb'}, {id:'CIPHER_feral',label:'Feral',url:'assets/models/CIPHER_feral.glb'} ],
   CODY:            [ {id:'CODY_sober',label:'Sober',url:'assets/models/CODY_sober.glb'}, {id:'CODY_stressed',label:'Stressed',url:'assets/models/CODY_stressed.glb'} ],
