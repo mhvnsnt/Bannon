@@ -4508,6 +4508,11 @@ Fighter.prototype.poseAttack = function(dt){
     var _eq=_pos?window.equippedClipFor(_ck,_pos):null;
     if(_eq) m.clip=_eq;
   }catch(_e){} }
+  // COMBAT TABLE -> MOCAP. The move_clip_map only ever decorated the MOVE LIBRARY; the combat tables
+  // these strikes come from (FIRE JAB, LEO CROSS, SCORPIO HOOK…) shared ZERO names with it, so no
+  // strike in the game ever carried a clip and studioApplyClipPose was measured at 0 calls across a
+  // full match. combat_clip_map.json maps them by limb/trajectory/style; this stamps it on.
+  if (m && !m.clip && m.name && window.__combatClipFor){ try{ var _cc=window.__combatClipFor(m.name); if(_cc) m.clip=_cc; }catch(_e){} }
   // LAZY-LOAD a mapped clip that isn't in STUDIO yet (the #1 reason mapped moves fell back to
   // procedural: the clip was named on the move but never loaded). Next rep plays the real mocap.
   if (m && m.clip && window.loadClipFor && typeof STUDIO!=='undefined' && !(STUDIO.clips&&(STUDIO.clips[m.clip]))){ try{ window.loadClipFor(m.clip); }catch(_e){} }
@@ -17341,12 +17346,24 @@ init();
   const LABELS = {pelvis:'PELVIS',chest:'CHEST',head:'HEAD',shL:'SHLDR L',haL:'HAND L',
                   shR:'SHLDR R',haR:'HAND R',hipL:'HIP L',ftL:'FOOT L',hipR:'HIP R',ftR:'FOOT R'};
   const MIRROR = {shL:'shR',haL:'haR',shR:'shL',haR:'haL',hipL:'hipR',ftL:'ftR',hipR:'hipL',ftR:'ftL'};
+  // extractClipFromGLTF only writes a mocap joint into a frame when NEUTRAL has an entry for it
+  // (`if(j && NEUTRAL[j])`). This table was the ORIGINAL 11 IK joints, so even a correctly mapped
+  // elbow or knee was silently discarded at bake time — which is why fixing MOCAP_BONE_MAP alone
+  // changed nothing and the limbs stayed rigid. The added rest positions come from REST, the live
+  // source of truth for the skeleton, so a baked frame starts from the body's real pose.
   const NEUTRAL = {
     pelvis:[0,0.90,0], chest:[0.06,1.28,0], head:[0.05,1.64,0],
     shL:[0.02,1.34,0.21], haL:[0.30,1.34,0.12],
     shR:[0.02,1.34,-0.21], haR:[0.26,1.42,-0.10],
     hipL:[0,0.82,0.13], ftL:[0.05,0.05,0.15],
-    hipR:[0,0.82,-0.13], ftR:[0.05,0.05,-0.15]
+    hipR:[0,0.82,-0.13], ftR:[0.05,0.05,-0.15],
+    // ELBOWS AND KNEES — the two joints that carry a strike, absent until now (REST values)
+    elL:[0.14,1.024,0.232],  elR:[0.14,0.968,-0.232],
+    knL:[0.04,0.46,0.16],    knR:[0.04,0.46,-0.16],
+    // shoulder girdle + spine column, so a capture's torso rotation reaches the body instead of
+    // collapsing onto one 'chest' joint
+    clavL:[0.02,1.33,0.13],  clavR:[0.02,1.33,-0.13],
+    spineLow:[0,1.04,0],     spineMid:[0.03,1.20,0]
   };
   const clone     = (p)=>{const o={}; for(const j in p) o[j]=p[j].slice(); return o;};
   const cloneKeys = (ks)=>ks.map(k=>({t:k.t, pose:clone(k.pose)}));
@@ -17417,12 +17434,22 @@ init();
 
   // Mixamo/standard-bipedal -> Bannon J11 joint name map.
   // Mixamo prefixes bones with "mixamorig" — we strip that before matching.
+  // THE ELBOWS AND KNEES WERE NOT MAPPED. Mixamo's naming is anatomically offset by one link and the
+  // original table read it literally: "LeftForeArm" is the FOREARM, i.e. the bone driven by the ELBOW
+  // — it was mapped to the hand. "LeftLeg" is the SHIN, driven by the KNEE — it was mapped to the hip.
+  // So elL/elR/knL/knR received nothing from any capture. Measured: applying a real 52-bone Mixamo
+  // clip moved the hand 0.096, the foot 0.112 and the head 0.164, and the elbow and knee EXACTLY 0.
+  // Every punch played with a rigid arm and every kick with a rigid leg, which is the whole of the
+  // "looks like action figures" read — the captures were fine, two lines of this table were not.
+  //
+  // Mixamo chain, correctly: Arm = upper arm (shoulder) -> ForeArm = elbow -> Hand = wrist.
+  //                          UpLeg = thigh (hip)        -> Leg     = knee  -> Foot = ankle.
   const MOCAP_BONE_MAP = {
-    hips:'pelvis', spine2:'chest', neck:'head', head:'head',
-    leftshoulder:'shL', leftarm:'shL', leftforearm:'haL', lefthand:'haL',
-    rightshoulder:'shR', rightarm:'shR', rightforearm:'haR', righthand:'haR',
-    leftupleg:'hipL', leftleg:'hipL', leftfoot:'ftL', lefttoebase:'ftL',
-    rightupleg:'hipR', rightleg:'hipR', rightfoot:'ftR', righttoebase:'ftR'
+    hips:'pelvis', spine:'spineLow', spine1:'spineMid', spine2:'chest', neck:'head', head:'head',
+    leftshoulder:'clavL', leftarm:'shL', leftforearm:'elL', lefthand:'haL',
+    rightshoulder:'clavR', rightarm:'shR', rightforearm:'elR', righthand:'haR',
+    leftupleg:'hipL', leftleg:'knL', leftfoot:'ftL', lefttoebase:'ftL',
+    rightupleg:'hipR', rightleg:'knR', rightfoot:'ftR', righttoebase:'ftR'
   };
   function _mocapKey(rawName){
     return String(rawName||'').replace(/^mixamorig/i,'').toLowerCase();
@@ -44967,6 +44994,119 @@ console.log('%c[BANNON_INTERFERENCE] run-ins put a real third body in the ring �
   window.BANNON_SEGMENT={ promo:promo, state:function(){ return { cut:st.count }; } };
 })();
 console.log('%c[BANNON_SEGMENT] in-ring promos are live and BRANCH — BANNON_SEGMENT.promo()','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_COMBAT_MOCAP — make the mocap library actually drive COMBAT.
+//
+// THE BUG. There are two move vocabularies in this game and only one of them was ever connected to
+// animation. The MOVE LIBRARY (bannon_move_library + the MDickie imports) was mapped to clips by
+// tools/mocap/auto_map_moves.cjs. The COMBAT TABLES — FIRE JAB, LEO CROSS, SCORPIO HOOK, SAG KNEE,
+// the ~140 moves that actually fire when you press a button — were never mapped to anything. The
+// two name sets overlap by EXACTLY ZERO entries. So every strike thrown in a match had no clip,
+// studioApplyClipPose was never reached, and 202 mocap captures sat on disk while combat ran on
+// procedural springs alone. Measured in the headless harness: 0 calls across a 25-second match.
+// That is the "animations aren't working / looks like action figures" report, and it was never a
+// rigging or a model problem.
+//
+// SECOND HALF OF THE BUG, just as fatal: clips were requested at the exact moment the move fired
+// (`if not in STUDIO.clips -> kick an async load`), and then read from STUDIO.clips one line later.
+// The fetch+parse of a multi-MB FBX takes far longer than the move does, so the FIRST use of any
+// move was ALWAYS un-animated — and because the move pool deliberately avoids repeats for variety,
+// nearly every move in a match is a first use. Loading on demand was the same as never loading.
+//
+// THE FIX: stamp the mapping onto the live move objects, and PREFETCH. All 140 mapped combat moves
+// resolve to only 35 distinct captures, so the whole combat set is a small, bounded prefetch that
+// runs once at a menu lull with real concurrency instead of one clip at a time.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var MAP=null, byName={}, distinct=[], loaded=0, prefetched=false;
+
+  function norm(n){ return String(n||'').toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
+
+  // THE STAMP. Called from the strike/grapple pose path for any move with no clip of its own.
+  window.__combatClipFor=function(name){
+    if(!MAP) return null;
+    var d=byName[norm(name)];
+    return d?d.clip:null;
+  };
+
+  function ingest(j){
+    MAP=(j&&j.map)||{};
+    var seen={};
+    for(var k in MAP){
+      byName[norm(k)]=MAP[k];
+      var c=MAP[k].clip;
+      if(c && !seen[c]){ seen[c]=1; distinct.push(c); }
+    }
+    try{ console.log('%c[BANNON_COMBAT_MOCAP] '+Object.keys(MAP).length+' combat moves mapped to '+distinct.length+' captures','color:#7CFC00'); }catch(e){}
+  }
+
+  function load(){
+    var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    return fetch('assets/moves/combat_clip_map.json')
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .catch(function(){ return fetch(cdn+'assets/moves/combat_clip_map.json').then(function(r){ return r.json(); }); })
+      .then(ingest).catch(function(){});
+  }
+
+  // PREFETCH with bounded concurrency. Serial loading measured ~4 s per clip in the harness, so the
+  // old one-at-a-time core warm-load got through 10 of 26 in forty seconds. Four at a time gets the
+  // whole combat set resident in a fraction of that, and the cap keeps a phone from parsing four
+  // multi-MB FBX files' worth of buffers at once.
+  var CONCURRENCY=4;
+  function prefetch(){
+    // DO NOT LATCH BEFORE WE CAN ACTUALLY LOAD. loadClipFor returns null instantly when FBXLoader
+    // is not ready yet, so an early call would "complete" in a second having loaded nothing and
+    // then block every later attempt. Measured exactly that: prefetch reported done in 1.5 s with
+    // 3 of 35 resident. Only latch once the loader exists.
+    if(prefetched || !distinct.length) return Promise.resolve(0);
+    if(typeof window.loadClipFor!=='function' || typeof THREE==='undefined' || !THREE.FBXLoader) return Promise.resolve(0);
+    prefetched=true;
+    var i=0;
+    function worker(){
+      if(i>=distinct.length) return Promise.resolve();
+      var name=distinct[i++];
+      return Promise.resolve(window.loadClipFor(name))
+        .then(function(c){ if(c) loaded++; })
+        .catch(function(){})
+        .then(worker);
+    }
+    var lanes=[]; for(var w=0;w<CONCURRENCY;w++) lanes.push(worker());
+    return Promise.all(lanes).then(function(){
+      try{ console.log('%c[BANNON_COMBAT_MOCAP] prefetched '+loaded+'/'+distinct.length+' combat captures','color:#7CFC00'); }catch(e){}
+      return loaded;
+    });
+  }
+  window.BANNON_PREFETCH_COMBAT=prefetch;
+
+  // Wait for FBXLoader, and stay OFF the fight — parsing a stack of FBX mid-match is a hitch. A
+  // match that starts before the prefetch finishes still works: the stamp is already on the moves,
+  // and loadClipFor keeps filling in behind it.
+  function arm(tries){
+    tries=tries||0;
+    var fighting=false; try{ fighting=(typeof gameState!=='undefined'?gameState:window.gameState)==='fight'; }catch(e){}
+    if(typeof THREE!=='undefined' && THREE.FBXLoader && MAP && !fighting){ prefetch(); return; }
+    if(tries<80) setTimeout(function(){ arm(tries+1); }, 2000);
+  }
+
+  load().then(function(){ setTimeout(function(){ arm(0); }, 2500); });
+
+  window.BANNON_COMBAT_MOCAP={
+    clipFor:function(n){ return window.__combatClipFor(n); },
+    prefetch:prefetch,
+    // coverage() is the number to check when combat looks procedural again: mapped moves vs how
+    // many of their captures are actually resident in STUDIO.clips right now.
+    coverage:function(){
+      var res=0;
+      try{ for(var i=0;i<distinct.length;i++){ var c=distinct[i];
+        if(window.STUDIO&&STUDIO.clips&&(STUDIO.clips[c]||STUDIO.clips[norm(c)])) res++; } }catch(e){}
+      return { moves: MAP?Object.keys(MAP).length:0, captures: distinct.length, resident: res };
+    }
+  };
+})();
+console.log('%c[BANNON_COMBAT_MOCAP] combat moves wired to real mocap — BANNON_COMBAT_MOCAP.coverage()','color:#7CFC00');
 </script>
 </body></html>
 
