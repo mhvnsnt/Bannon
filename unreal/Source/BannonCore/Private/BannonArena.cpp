@@ -6,6 +6,7 @@
 
 THIRD_PARTY_INCLUDES_START
 #include "bannon_universe.h"
+#include "bannon_arena.h"
 THIRD_PARTY_INCLUDES_END
 
 ABannonArena::ABannonArena()
@@ -66,4 +67,81 @@ bool ABannonArena::TableImpact(float VictimMassKg, float DownVelY, float& OutPoi
 	bannon::TableImpact r = bannon::tableImpact(VictimMassKg, DownVelY / BannonBridge::UE_M);
 	OutPoiseShock = r.poiseShock; OutSpineDamage = r.spineDamage;
 	return r.shattered;
+}
+
+// ── CONTAINMENT ─────────────────────────────────────────────────────────────────────────────────
+// bannon_arena.h has always carried the ring/open containment law and NOTHING in Unreal called it.
+// UE bodies therefore had no boundary at all: no ropes, no rebound, no stage edge — a whipped body
+// just kept travelling. The native law is the same one the web build runs, so wiring it here is what
+// makes an Irish whip rebound in UE instead of leaving the building.
+
+bannon::Arena ABannonArena::MakeNativeArena() const
+{
+	bannon::Arena A;
+	A.mode = (Mode == EBannonArenaMode::Open) ? bannon::OPEN
+	       : (Mode == EBannonArenaMode::Ring6) ? bannon::RING_6 : bannon::RING_4;
+	// UE is cm + Z-up; the law is m + Y-up. Convert the DIMENSIONS on the seam too, not just the
+	// vectors — feeding 350 (cm) into a law expecting metres is exactly how a ring ends up 350 m wide.
+	A.floorY      = DeckHeight / BannonBridge::UE_M;
+	A.halfSize    = RingHalfExtent / BannonBridge::UE_M;
+	A.openHalf    = OpenHalfExtent / BannonBridge::UE_M;
+	A.ropeY       = RopeHeight / BannonBridge::UE_M;
+	A.restitution = Restitution;
+	return A;
+}
+
+bool ABannonArena::Contain(FVector& Pos, FVector& Vel) const
+{
+	const bannon::Arena A = MakeNativeArena();
+
+	// into the ring's own local frame first: the law is written around origin, and an arena actor
+	// placed anywhere but 0,0 would otherwise contain bodies against the wrong walls.
+	const FVector Origin = GetActorLocation();
+	bannon::Vec3 P = BannonBridge::ToNative(Pos - Origin);
+	bannon::Vec3 V = BannonBridge::ToNative(Vel);
+
+	const bool bHit = A.contain(P, V);
+
+	Pos = BannonBridge::ToUE(P) + Origin;
+	Vel = BannonBridge::ToUE(V);
+	return bHit;
+}
+
+bool ABannonArena::IsOutsideRing(FVector Pos) const
+{
+	if (Mode == EBannonArenaMode::Open)
+	{
+		return false;
+	}
+	const FVector L = Pos - GetActorLocation();
+	return FMath::Abs(L.X) > RingHalfExtent || FMath::Abs(L.Y) > RingHalfExtent;
+}
+
+FVector ABannonArena::GetPostLocation(int32 PostIndex) const
+{
+	// corners in the same order the Posts array is built: (+,+) (-,+) (+,-) (-,-)
+	static const int32 SX[4] = {  1, -1,  1, -1 };
+	static const int32 SY[4] = {  1,  1, -1, -1 };
+	const int32 i = FMath::Clamp(PostIndex, 0, 3);
+	return GetActorLocation() + FVector(SX[i] * RingHalfExtent, SY[i] * RingHalfExtent, DeckHeight);
+}
+
+int32 ABannonArena::NearestPost(FVector Pos, float& OutDistance) const
+{
+	OutDistance = TNumericLimits<float>::Max();
+	if (Mode == EBannonArenaMode::Open)
+	{
+		return -1;
+	}
+	int32 Best = -1;
+	for (int32 i = 0; i < 4; ++i)
+	{
+		const float D = FVector::Dist2D(GetPostLocation(i), Pos);
+		if (D < OutDistance)
+		{
+			OutDistance = D;
+			Best = i;
+		}
+	}
+	return Best;
 }

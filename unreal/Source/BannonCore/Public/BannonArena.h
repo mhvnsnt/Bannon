@@ -7,6 +7,11 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+
+THIRD_PARTY_INCLUDES_START
+#include "bannon_arena.h"
+THIRD_PARTY_INCLUDES_END
+
 #include "BannonArena.generated.h"
 
 class UStaticMeshComponent;
@@ -14,6 +19,14 @@ class UStaticMeshComponent;
 // ring theme — mirrors the web engine's arenaIdx (0 fire / 1 cold / 2 void).
 UENUM(BlueprintType)
 enum class EBannonRingTheme : uint8 { Fire, Cold, Void };
+
+// Which containment law the arena runs. Wrestling is a BOUNDED ring — the ropes push bodies back in,
+// which is what makes rope-running and the rebound exist at all. God Within is an OPEN stage with a
+// soft outer wall and free traversal. bannon_arena.h has carried both since it was written and
+// nothing in Unreal ever called it, so UE bodies had no ring boundary of any kind: no ropes, no
+// rebound, no stage edge. Every body simply kept going.
+UENUM(BlueprintType)
+enum class EBannonArenaMode : uint8 { Ring4, Ring6, Open };
 
 // EXACT ring palette carried over from the Three.js ring (BANNON_v150.html buildArena) so the upgraded
 // high-fidelity ring reads identical — same accent, deck, post, mat, pad colors, per the owner's ask to
@@ -74,4 +87,36 @@ public:
 	// TLC table under a falling body: shatter past 350N -> big poise shock + localized spine damage.
 	UFUNCTION(BlueprintCallable, Category="Bannon|Arena")
 	bool TableImpact(float VictimMassKg, float DownVelY, float& OutPoiseShock, float& OutSpineDamage) const;
+
+	// ── CONTAINMENT (bannon_arena.h) ─────────────────────────────────────────────────────────
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Arena") EBannonArenaMode Mode = EBannonArenaMode::Ring4;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Arena") float RopeHeight = 120.f;   // cm, top rope
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Arena") float OpenHalfExtent = 3000.f; // cm, God Within stage
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Arena") float Restitution = 0.35f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Bannon|Arena") float DeckHeight = 0.f;     // cm, mat plane
+
+	// Clamp a body to the environment and rebound it. Returns true if it HIT a bound, which is the
+	// signal a rope-run rebound / stage-edge slam should key off. In/out by reference so the caller
+	// writes the corrected transform straight back onto the body.
+	UFUNCTION(BlueprintCallable, Category="Bannon|Arena")
+	bool Contain(UPARAM(ref) FVector& Pos, UPARAM(ref) FVector& Vel) const;
+
+	// Is this position outside the ring footprint (i.e. on the apron/floor)? Ring modes only; an
+	// open stage has no outside.
+	UFUNCTION(BlueprintPure, Category="Bannon|Arena")
+	bool IsOutsideRing(FVector Pos) const;
+
+	// World position of a corner post, 0..3. Corner order matches the Posts array.
+	UFUNCTION(BlueprintPure, Category="Bannon|Arena")
+	FVector GetPostLocation(int32 PostIndex) const;
+
+	// Nearest corner post to a position, with the distance out. -1 if there are no posts (open stage).
+	UFUNCTION(BlueprintPure, Category="Bannon|Arena")
+	int32 NearestPost(FVector Pos, float& OutDistance) const;
+
+private:
+	// build the native arena from the actor's own properties, so the UE ring dimensions and the law
+	// that contains bodies can never disagree — the class of bug that put BANNON_BUCKLES at +/-100
+	// units in a +/-3.5 metre ring.
+	bannon::Arena MakeNativeArena() const;
 };
