@@ -42486,12 +42486,36 @@ window.BANNON_MOVESET_LIB = (function(){
   // COMBAT-FIRST default pick: the old version took the FIRST clip found for a position, which could
   // hand a combat slot a taunt or a locomotion cycle. Prefer a real offensive clip when one exists.
   const COMBAT_CAT=/^(strike|grapple|dive|submission|aerial_transition|irish_whip)$/i;
+  // A position must never take a clip whose CATEGORY contradicts what that position is for. The
+  // fallback pass ("then anything") used to grab whatever sorted first, and the results shipped:
+  // GROUNDED_HEAD_UP defaulted to "Death From Back Headshot" (a man dying, played as your offence),
+  // TAUNT to "Defeat", MIDDLE_ROPE to "Climbing A Rope", GROUND_TO_STANDING_WAKEUP to "Breakdance
+  // Uprock To Ground" — which goes TO the ground for a get-up. The new Move Set screen made these
+  // visible; this stops them being chosen.
+  const POS_REJECT_CAT = {
+    GROUNDED_HEAD_UP:['knockdown','getup'], GROUNDED_HEAD_DOWN:['knockdown','getup'],
+    GROUNDED_SIDE:['knockdown','getup'],    GROUNDED_LEG:['knockdown','getup'],
+    STANDING_FRONT:['knockdown','getup'],   STANDING_REAR:['knockdown','getup'],
+    CORNER_FRONT:['knockdown','getup'],     RUNNING:['knockdown','getup'],
+    MIDDLE_ROPE:['rope_transition','knockdown'], TURNBUCKLE_TOP:['rope_transition','knockdown','defense'],
+    SPRINGBOARD:['rope_transition','knockdown'], TAUNT:['knockdown'],
+    GROUND_TO_STANDING_WAKEUP:['knockdown']
+  };
+  // Among otherwise-equal candidates, an obviously-named clip wins. "Taunt" beats "Defeat" for TAUNT;
+  // "Kip Up" beats "Breakdance Uprock To Ground" for a get-up.
+  const NAME_BAD = /(death|dying|defeat|zombie|victim|falling|fall b|hard landing|to ground|evade|climbing)/i;
   function defaults(){ if(_defaults) return _defaults; _defaults={};
     try{ const clips=(MAP&&MAP.clips)||[];
       const usable=clips.filter(c=>c.pos && c.cat!=='character_rig'
         && !TAG_RX.test(c.clip||'') && !VICTIM_RX.test(c.clip||''));
-      usable.forEach(c=>{ if(COMBAT_CAT.test(c.cat||'') && !_defaults[c.pos]) _defaults[c.pos]=c.clip; });
-      usable.forEach(c=>{ if(!_defaults[c.pos]) _defaults[c.pos]=c.clip; });      // then anything
+      const ok=(c)=>{ const rej=POS_REJECT_CAT[c.pos]; return !(rej && rej.indexOf(String(c.cat||''))>=0); };
+      const clean=(c)=>!NAME_BAD.test(c.clip||'');
+      // best first: right category, sensible name -> right category -> allowed category, sensible
+      // name -> allowed category. A position with nothing allowed stays procedural, which is honest.
+      usable.forEach(c=>{ if(ok(c) && clean(c) && COMBAT_CAT.test(c.cat||'') && !_defaults[c.pos]) _defaults[c.pos]=c.clip; });
+      usable.forEach(c=>{ if(ok(c) && COMBAT_CAT.test(c.cat||'') && !_defaults[c.pos]) _defaults[c.pos]=c.clip; });
+      usable.forEach(c=>{ if(ok(c) && clean(c) && !_defaults[c.pos]) _defaults[c.pos]=c.clip; });
+      usable.forEach(c=>{ if(ok(c) && !_defaults[c.pos]) _defaults[c.pos]=c.clip; });
     }catch(e){}
     return _defaults; }
 
@@ -42501,6 +42525,13 @@ window.BANNON_MOVESET_LIB = (function(){
   // procedural there. Each now resolves down a chain of MECHANICALLY compatible positions, so every
   // position in the editor plays real mocap. Aliases are the last resort: a real clip always wins.
   const POS_ALIAS={
+    // Rejecting the semantically-wrong defaults left two positions with nothing, which is honest but
+    // leaves them procedural. They borrow from a mechanically compatible position instead: the
+    // library has no solo top-rope or grounded-offence capture (the only ones are "Assisted"/tag or
+    // knockdown reels), so a mid-rope move takes the top-rope/springboard aerial and grounded
+    // offence takes a standing strike — which is what standing over someone and hitting down IS.
+    MIDDLE_ROPE:        ['TURNBUCKLE_TOP','SPRINGBOARD','STANDING_FRONT'],
+    GROUNDED_HEAD_UP:   ['GROUNDED_SIDE','STANDING_FRONT'],
     GROUNDED_HEAD_DOWN: ['GROUNDED_HEAD_UP','GROUNDED_SIDE'],
     CORNER_BACK:        ['CORNER_FRONT','STANDING_REAR','STANDING_FRONT'],
     ROPE_REBOUND:       ['RUNNING','IRISH_WHIP','STANDING_FRONT'],
@@ -45153,6 +45184,204 @@ console.log('%c[BANNON_SEGMENT] in-ring promos are live and BRANCH — BANNON_SE
   };
 })();
 console.log('%c[BANNON_COMBAT_MOCAP] combat moves wired to real mocap — BANNON_COMBAT_MOCAP.coverage()','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_MOVESET_SLOTS — the WWE-2K "Move Set" screen: POSITIONS FIRST.
+//
+// BANNON_MOVESET_LIB already does the hard half correctly — per-character equips keyed by POSITION,
+// auto-mapped defaults, an alias chain so no position animates procedurally, and combat already
+// reads it through equippedClipFor(). What it does NOT give you is the screen 2K actually ships:
+// you browse by CATEGORY (strikes / grapples / aerials), so you can see every clip in the game but
+// you can never answer the one question a moveset editor exists to answer — "what do I do from
+// standing front, and what happens if I change it?"
+//
+// This is that screen. Every position the engine can put you in, listed as a SLOT, showing the move
+// bound to it, where that binding came from (your equip, the auto-map default, or an alias to a
+// compatible position), and the animation that will actually play. Swapping a slot writes to the
+// SAME bannon_movesets_v1 storage and the SAME equippedClipFor contract, so it is purely additive:
+// the category browser keeps working, and combat picks the change up on the next move with no
+// reload — the pose path reads equippedClipFor per strike.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var LS='bannon_movesets_v1', panel=null, who=null, filter='';
+
+  // The engine's real positions, grouped the way 2K groups them. Order matters — this is the
+  // reading order of a moveset screen, from the most-used slot to the most situational.
+  var GROUPS=[
+    ['STANDING',   ['STANDING_FRONT','STANDING_REAR','IRISH_WHIP']],
+    ['RUNNING',    ['RUNNING','SPRINGBOARD']],
+    ['CORNER',     ['CORNER_FRONT','CORNER_BACK','TURNBUCKLE_TOP','MIDDLE_ROPE']],
+    ['GROUNDED',   ['GROUNDED_HEAD_UP','GROUNDED_HEAD_DOWN','GROUNDED_LEG','GROUNDED_SIDE','GROUND_TO_STANDING_WAKEUP']],
+    ['RINGSIDE',   ['APRON']],
+    ['PERFORMANCE',['TAUNT','LOCOMOTION']]
+  ];
+  var LABEL={ STANDING_FRONT:'Standing · Front', STANDING_REAR:'Standing · Behind', IRISH_WHIP:'Irish Whip',
+    RUNNING:'Running', SPRINGBOARD:'Springboard', CORNER_FRONT:'Corner · Facing', CORNER_BACK:'Corner · Back To',
+    TURNBUCKLE_TOP:'Top Rope', MIDDLE_ROPE:'Second Rope', GROUNDED_HEAD_UP:'Grounded · Head',
+    GROUNDED_HEAD_DOWN:'Grounded · Face Down', GROUNDED_LEG:'Grounded · Legs', GROUNDED_SIDE:'Grounded · Side',
+    GROUND_TO_STANDING_WAKEUP:'Get-Up', APRON:'Apron', TAUNT:'Taunt', LOCOMOTION:'Movement' };
+
+  function esc(s){ return String(s==null?'':s).replace(/[<>&]/g,function(c){ return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c]; }); }
+  function saved(){ try{ return JSON.parse(localStorage.getItem(LS)||'{}'); }catch(e){ return {}; } }
+  function store(o){ try{ localStorage.setItem(LS, JSON.stringify(o)); }catch(e){} }
+  function key(n){ return String(n||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_'); }
+  function roster(){
+    try{ if(typeof ROSTER_ALL==='function') return (ROSTER_ALL()||[]).map(function(c){ return c.name; }).filter(Boolean); }catch(e){}
+    try{ return (window.BANNON_ROSTER||[]).map(function(r){ return r.name; }); }catch(e){ return ['BANNON']; }
+  }
+
+  // every clip the game can play at a position — the auto-map's own list, so this screen can never
+  // offer something loadClipFor will fail on
+  function clipsAt(pos){
+    var out=[];
+    try{
+      var M=window.__fbxMoveMap||null;
+      var clips=(M&&M.clips)||[];
+      out=clips.filter(function(c){ return c.pos===pos; }).map(function(c){ return c.clip; });
+    }catch(e){}
+    return out;
+  }
+
+  // WHERE a slot's animation comes from — the thing the category browser could never show you
+  function binding(charKey, pos){
+    var s=saved()[charKey]||{};
+    if(s[pos]) return { clip:s[pos], via:'equipped' };
+    var d=null; try{ d=window.movesetDefaults?window.movesetDefaults():null; }catch(e){}
+    if(d && d[pos]) return { clip:d[pos], via:'default' };
+    var alt=null; try{ alt=window.movesetResolvePos?window.movesetResolvePos(pos):null; }catch(e){}
+    if(alt && d && d[alt]) return { clip:d[alt], via:'alias · '+alt };
+    return { clip:null, via:'procedural' };
+  }
+
+  function build(){
+    if(panel) return;
+    panel=document.createElement('div');
+    panel.style.cssText='position:fixed;inset:3% 4%;z-index:100004;background:#0a0c12f8;border:1px solid #ff7a1a;'+
+      'border-radius:12px;color:#ffd9a8;font:12px var(--f-ui);display:none;flex-direction:column;box-shadow:0 12px 44px #000d;overflow:hidden;';
+    document.body.appendChild(panel);
+  }
+  function open(name){ build(); who = name ? key(name) : who; panel.style.display='flex'; render(); }
+  function close(){ if(panel) panel.style.display='none'; }
+
+  function render(){
+    if(!who){ return renderPicker(); }
+    var s=saved()[who]||{}, equipped=Object.keys(s).length;
+    var h='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ff7a1a55">'+
+      '<b style="font-family:var(--f-display);font-size:19px;letter-spacing:2px;color:#ff7a1a">'+esc(who.replace(/_/g,' '))+
+      ' <span style="font:400 10px var(--f-mono);color:#9a8">MOVE SET · '+equipped+' custom</span></b>'+
+      '<div><button data-s="back" style="background:none;border:1px solid #ff7a1a55;color:#ffd9a8;border-radius:7px;padding:5px 10px;cursor:pointer;font:700 10px var(--f-ui);margin-right:6px">ROSTER</button>'+
+      '<button data-s="close" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">&#10005;</button></div></div>'+
+      '<div style="flex:1;overflow-y:auto;min-height:0;padding:12px">';
+
+    GROUPS.forEach(function(g){
+      h+='<div style="color:#4ac8ff;letter-spacing:2px;font:700 10px var(--f-ui);margin:10px 0 6px">'+g[0]+'</div>';
+      g[1].forEach(function(pos){
+        var b=binding(who,pos);
+        var col = b.via==='equipped' ? '#7CFC00' : b.via==='default' ? '#ffd9a8' : b.via==='procedural' ? '#c0653a' : '#9aa4b2';
+        var choices=clipsAt(pos);
+        h+='<div style="display:flex;align-items:center;gap:8px;padding:7px 9px;margin-bottom:4px;background:#11151d;border:1px solid #ffffff10;border-radius:8px">'+
+           '<div style="flex:0 0 168px;font:600 11px var(--f-ui);color:#ffe0b0">'+esc(LABEL[pos]||pos)+'</div>'+
+           '<div style="flex:1;min-width:0"><div style="font:600 11px var(--f-mono);color:'+col+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+
+              esc(b.clip||'— no capture, procedural —')+'</div>'+
+              '<div style="font:400 9px var(--f-ui);color:#7d8895">'+esc(b.via)+'</div></div>';
+        if(choices.length){
+          h+='<select data-slot="'+pos+'" style="flex:0 0 172px;background:#0a0c12;color:#ffd9a8;border:1px solid #ff7a1a55;border-radius:6px;padding:5px;font:11px var(--f-mono)">'+
+             '<option value="">(use default)</option>'+
+             choices.map(function(c){ return '<option value="'+esc(c)+'"'+(s[pos]===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+'</select>';
+        } else {
+          h+='<span style="flex:0 0 172px;font:400 10px var(--f-ui);color:#7d8895;text-align:center">no capture at this position</span>';
+        }
+        h+='<button data-play="'+esc(b.clip||'')+'" '+(b.clip?'':'disabled')+
+           ' style="flex:0 0 34px;background:#1b2432;border:1px solid #4ac8ff55;color:#cfe8ff;border-radius:6px;padding:5px;cursor:pointer;font:11px var(--f-ui)">&#9654;</button>'+
+           '</div>';
+      });
+    });
+    h+='</div><div style="padding:9px 14px;border-top:1px solid #ff7a1a33;font:400 10px var(--f-ui);color:#7d8895">'+
+       'Green = your equip · cream = auto-mapped default · grey = borrowed from a compatible position · orange = no capture. '+
+       'Changes apply to the next move thrown — no reload.</div>';
+    panel.innerHTML=h;
+    wire();
+  }
+
+  function renderPicker(){
+    var R=roster().filter(function(n){ return !filter || n.toUpperCase().indexOf(filter.toUpperCase())>=0; });
+    var h='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ff7a1a55">'+
+      '<b style="font-family:var(--f-display);font-size:19px;letter-spacing:2px;color:#ff7a1a">MOVE SET &#183; PICK A WRESTLER</b>'+
+      '<button data-s="close" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">&#10005;</button></div>'+
+      '<div style="padding:10px 14px 0"><input data-s="find" placeholder="filter roster" value="'+esc(filter)+'" '+
+      'style="width:100%;background:#0a0c12;border:1px solid #ff7a1a55;border-radius:7px;color:#ffd9a8;padding:7px 9px;font:12px var(--f-ui)"></div>'+
+      '<div style="flex:1;overflow-y:auto;min-height:0;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px">';
+    R.forEach(function(n){
+      var eq=Object.keys(saved()[key(n)]||{}).length;
+      h+='<button data-who="'+esc(n)+'" style="background:linear-gradient(160deg,#1a1008,#0e0a06);border:1px solid #ff7a1a44;border-radius:8px;padding:12px 8px;cursor:pointer;color:#ffe0b0;font:700 11px var(--f-ui);text-align:left">'+
+         esc(n)+(eq?'<div style="font:400 9px var(--f-mono);color:#7CFC00">'+eq+' custom</div>':'<div style="font:400 9px var(--f-mono);color:#7d8895">default set</div>')+'</button>';
+    });
+    h+='</div>';
+    panel.innerHTML=h; wire();
+  }
+
+  function wire(){
+    try{
+      panel.querySelectorAll('[data-s="close"]').forEach(function(b){ b.onclick=close; });
+      panel.querySelectorAll('[data-s="back"]').forEach(function(b){ b.onclick=function(){ who=null; render(); }; });
+      panel.querySelectorAll('[data-who]').forEach(function(b){ b.onclick=function(){ who=key(b.dataset.who); render(); }; });
+      var f=panel.querySelector('[data-s="find"]');
+      if(f) f.oninput=function(){ filter=f.value; var at=f.selectionStart; render();
+        var g=panel.querySelector('[data-s="find"]'); if(g){ g.focus(); try{ g.setSelectionRange(at,at); }catch(e){} } };
+      panel.querySelectorAll('[data-slot]').forEach(function(sel){
+        sel.onchange=function(){
+          var S=saved(); var m=S[who]=S[who]||{};
+          if(sel.value) m[sel.dataset.slot]=sel.value; else delete m[sel.dataset.slot];
+          store(S);
+          // preload so the very next move plays it instead of falling back for one rep
+          try{ if(sel.value && window.loadClipFor) window.loadClipFor(sel.value); }catch(e){}
+          render();
+        };
+      });
+      panel.querySelectorAll('[data-play]').forEach(function(b){
+        b.onclick=async function(){ var n=b.getAttribute('data-play'); if(!n) return;
+          b.textContent='…';
+          try{ var c=await window.loadClipFor(n);
+            if(c && typeof fighters!=='undefined' && fighters && fighters[0] && window.studioApplyClipPose){
+              // play it on the live fighter so PREVIEW means preview, not "downloaded ok"
+              var f=fighters[0], t=0;
+              var iv=setInterval(function(){ t+=0.04; if(t>=1){ clearInterval(iv); return; }
+                try{ window.studioApplyClipPose(f, c, t); }catch(e){ clearInterval(iv); } }, 40);
+            }
+            b.textContent=c?'✓':'✕'; }catch(e){ b.textContent='✕'; }
+          setTimeout(function(){ b.textContent='▶'; },1400);
+        };
+      });
+    }catch(e){}
+  }
+
+  window.BANNON_MOVESET_SLOTS={ open:open, close:close, binding:binding,
+    // auditable: what every position resolves to for a character, and how
+    audit:function(name){ var k=key(name||'BANNON'), out={};
+      GROUPS.forEach(function(g){ g[1].forEach(function(p){ var b=binding(k,p); out[p]=b.via+(b.clip?(' · '+b.clip):''); }); });
+      return out; } };
+  window.openMovesetSlots=open;
+
+  // hub tile next to the existing MOVESET browser — this is the 2K "Move Set" screen, that is the
+  // clip library; both belong, they answer different questions.
+  (function tile(){
+    var t=0;
+    (function a(){ t++;
+      try{ var host=document.getElementById('btnHubMovesetLib')||document.getElementById('btnHubMoves');
+        if(host && host.parentElement && !document.getElementById('btnHubMovesetSlots')){
+          var b=document.createElement('button'); b.className='hub-tile'; b.id='btnHubMovesetSlots';
+          b.innerHTML='<span class="hub-ico">🤼</span><span class="hub-lbl">MOVE SET</span>';
+          b.addEventListener('click', function(){ open(); });
+          host.parentElement.insertBefore(b, host.nextSibling);
+          return;
+        } }catch(e){}
+      if(t<50) setTimeout(a,1200);
+    })();
+  })();
+})();
+console.log('%c[BANNON_MOVESET_SLOTS] 2K Move Set screen — positions first. openMovesetSlots()','color:#7CFC00');
 </script>
 </body></html>
 
