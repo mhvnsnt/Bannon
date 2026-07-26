@@ -28,3 +28,16 @@ assets/models/*_rigged.glb.raw.glb
 assets/mdickie_extracted/*.apk
 assets/mdickie_extracted/raw/
 __pycache__/
+
+# DISC IMAGE staging — raw third-party disc contents, same rule as the MDickie APK workspace:
+# the extractor's output is reference material, never committed. Nor are the images themselves,
+# nor any key file. See tools/iso/README.md.
+/iso_staging/
+assets/iso_extracted/
+*.iso
+*.gcm
+*.wbfs
+*.cso
+*.cue
+tools/iso/*.key
+tools/iso/*key*.bin
