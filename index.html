@@ -45209,6 +45209,17 @@ console.log('%c[BANNON_COMBAT_MOCAP] combat moves wired to real mocap — BANNON
 
   // The engine's real positions, grouped the way 2K groups them. Order matters — this is the
   // reading order of a moveset screen, from the most-used slot to the most situational.
+  // The full WWE-2K structure lives in assets/moves/moveset_schema.json (16 categories, 200 slots,
+  // 350 assignable moves). It is fetched at open; GROUPS below stays as the fallback so the screen
+  // still works if the schema can't be reached.
+  var SCHEMA=null, cat=null;
+  function loadSchema(){
+    if(SCHEMA) return Promise.resolve(SCHEMA);
+    var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    return fetch('assets/moves/moveset_schema.json').then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .catch(function(){ return fetch(cdn+'assets/moves/moveset_schema.json').then(function(r){ return r.json(); }); })
+      .then(function(j){ SCHEMA=j; return j; }).catch(function(){ return null; });
+  }
   var GROUPS=[
     ['STANDING',   ['STANDING_FRONT','STANDING_REAR','IRISH_WHIP']],
     ['RUNNING',    ['RUNNING','SPRINGBOARD']],
@@ -45262,11 +45273,13 @@ console.log('%c[BANNON_COMBAT_MOCAP] combat moves wired to real mocap — BANNON
       'border-radius:12px;color:#ffd9a8;font:12px var(--f-ui);display:none;flex-direction:column;box-shadow:0 12px 44px #000d;overflow:hidden;';
     document.body.appendChild(panel);
   }
-  function open(name){ build(); who = name ? key(name) : who; panel.style.display='flex'; render(); }
+  function open(name){ build(); who = name ? key(name) : who; panel.style.display='flex';
+    render(); loadSchema().then(function(){ if(panel && panel.style.display!=='none') render(); }); }
   function close(){ if(panel) panel.style.display='none'; }
 
   function render(){
     if(!who){ return renderPicker(); }
+    if(SCHEMA && SCHEMA.cats) return renderSchema();
     var s=saved()[who]||{}, equipped=Object.keys(s).length;
     var h='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ff7a1a55">'+
       '<b style="font-family:var(--f-display);font-size:19px;letter-spacing:2px;color:#ff7a1a">'+esc(who.replace(/_/g,' '))+
@@ -45322,6 +45335,80 @@ console.log('%c[BANNON_COMBAT_MOCAP] combat moves wired to real mocap — BANNON
     panel.innerHTML=h; wire();
   }
 
+  // ── SCHEMA-DRIVEN MOVE SET (the real 2K layout) ───────────────────────────────────────────
+  function renderSchema(){
+    var cats=SCHEMA.cats;
+    if(!cat) cat=cats[0].id;
+    var C=cats.filter(function(c){ return c.id===cat; })[0]||cats[0];
+    var eq=saved()[who]||{};
+    var picks=0; cats.forEach(function(c){ c.groups.forEach(function(g){ g.slots.forEach(function(sl){ picks+=sl.pick; }); }); });
+
+    var h='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ff7a1a55">'+
+      '<b style="font-family:var(--f-display);font-size:19px;letter-spacing:2px;color:#ff7a1a">'+esc(who.replace(/_/g,' '))+
+      ' <span style="font:400 10px var(--f-mono);color:#9a8">MOVE SET &#183; '+cats.length+' categories &#183; '+SCHEMA.slots+' slots &#183; '+picks+' assignable</span></b>'+
+      '<div><button data-s="back" style="background:none;border:1px solid #ff7a1a55;color:#ffd9a8;border-radius:7px;padding:5px 10px;cursor:pointer;font:700 10px var(--f-ui);margin-right:6px">ROSTER</button>'+
+      '<button data-s="close" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">&#10005;</button></div></div>'+
+      '<div style="flex:1;display:flex;min-height:0">'+
+      '<div style="flex:0 0 172px;overflow-y:auto;border-right:1px solid #ff7a1a33;padding:8px">';
+    cats.forEach(function(c){
+      var on=c.id===cat;
+      h+='<button data-cat="'+c.id+'" style="display:block;width:100%;text-align:left;margin-bottom:3px;background:'+(on?'#2a1408':'none')+
+         ';border:1px solid '+(on?'#ff7a1a':'#ffffff12')+';border-radius:7px;padding:8px 9px;cursor:pointer;color:'+(on?'#ffd9a8':'#9aa4b2')+
+         ';font:700 10px var(--f-ui);letter-spacing:1px">'+esc(c.label)+'</button>';
+    });
+    h+='</div><div style="flex:1;overflow-y:auto;min-height:0;padding:12px">';
+
+    C.groups.forEach(function(g){
+      h+='<div style="color:#4ac8ff;letter-spacing:2px;font:700 10px var(--f-ui);margin:10px 0 6px">'+esc(g.label)+'</div>';
+      g.slots.forEach(function(sl){
+        if(C.id==='BASES') return h+=basesRow(sl);
+        var b=binding(who, sl.pos||'STANDING_FRONT');
+        var cur=eq[sl.id];
+        var col = cur ? '#7CFC00' : b.clip ? '#ffd9a8' : '#c0653a';
+        var choices=sl.pos?clipsAt(sl.pos):[];
+        h+='<div style="display:flex;align-items:center;gap:8px;padding:6px 9px;margin-bottom:3px;background:#11151d;border:1px solid #ffffff10;border-radius:8px">'+
+           '<div style="flex:0 0 190px"><div style="font:600 11px var(--f-ui);color:#ffe0b0">'+esc(sl.label)+
+             (sl.pick>1?' <span style="color:#7d8895;font:400 9px var(--f-mono)">&#215;'+sl.pick+'</span>':'')+'</div>'+
+             '<div style="font:400 9px var(--f-mono);color:#7d8895">'+esc(sl.kind)+(sl.pos?' &#183; '+esc(sl.pos):'')+'</div></div>'+
+           '<div style="flex:1;min-width:0;font:600 11px var(--f-mono);color:'+col+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+
+             esc(cur || b.clip || '&#8212; procedural &#8212;')+'</div>';
+        if(choices.length){
+          h+='<select data-sslot="'+sl.id+'" style="flex:0 0 168px;background:#0a0c12;color:#ffd9a8;border:1px solid #ff7a1a55;border-radius:6px;padding:4px;font:10px var(--f-mono)">'+
+             '<option value="">(default)</option>'+choices.map(function(c){ return '<option value="'+esc(c)+'"'+(cur===c?' selected':'')+'>'+esc(c)+'</option>'; }).join('')+'</select>';
+        } else { h+='<span style="flex:0 0 168px;font:400 9px var(--f-ui);color:#7d8895;text-align:center">no capture yet</span>'; }
+        // AI settings exist on every regular move, never on signatures or finishers — 2K's own rule
+        h+= sl.ai ? '<button data-ai="'+sl.id+'" title="AI Priority / Repetition / Timing" style="flex:0 0 30px;background:#1b2432;border:1px solid #c084fc55;color:#d9c2ff;border-radius:6px;padding:4px;cursor:pointer;font:10px var(--f-ui)">AI</button>'
+                  : '<span style="flex:0 0 30px"></span>';
+        h+='</div>';
+      });
+    });
+    h+='</div></div>';
+    panel.innerHTML=h; wire();
+  }
+
+  // BASES rows are pickers over stance/gait, not clips — this is the old SmackDown layer, and it
+  // drives BANNON_BASES which modifies the live pose immediately.
+  function basesRow(sl){
+    var B=window.BANNON_BASES; if(!B) return '';
+    var isStance = sl.kind==='stance', isGait = sl.kind==='locomotion';
+    if(!isStance && !isGait){
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 9px;margin-bottom:3px;background:#11151d;border:1px solid #ffffff10;border-radius:8px">'+
+        '<div style="flex:0 0 190px;font:600 11px var(--f-ui);color:#ffe0b0">'+esc(sl.label)+'</div>'+
+        '<div style="flex:1;font:400 10px var(--f-ui);color:#7d8895">movement slot &#183; '+esc(sl.pos||'')+'</div></div>';
+    }
+    var TB = isStance ? B.STANCES : B.GAITS;
+    var live=null; try{ live=B.of((fighters||[]).filter(function(f){ return key((f.opts&&f.opts.name))===who; })[0]); }catch(e){}
+    var curK = live ? (isStance?live.sK:live.gK) : 'NEUTRAL';
+    var h='<div style="display:flex;align-items:center;gap:8px;padding:6px 9px;margin-bottom:3px;background:#11151d;border:1px solid #ffffff10;border-radius:8px">'+
+      '<div style="flex:0 0 190px;font:600 11px var(--f-ui);color:#ffe0b0">'+esc(sl.label)+'</div>'+
+      '<div style="flex:1;min-width:0;font:600 11px var(--f-mono);color:#7CFC00;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+
+        esc((TB[curK]&&TB[curK].label)||curK)+'</div>'+
+      '<select data-base="'+(isStance?'stance':'gait')+'" style="flex:0 0 168px;background:#0a0c12;color:#ffd9a8;border:1px solid #ff7a1a55;border-radius:6px;padding:4px;font:10px var(--f-mono)">';
+    Object.keys(TB).forEach(function(k){ h+='<option value="'+k+'"'+(k===curK?' selected':'')+'>'+esc(k)+'</option>'; });
+    h+='</select><span style="flex:0 0 30px"></span></div>';
+    return h;
+  }
+
   function wire(){
     try{
       panel.querySelectorAll('[data-s="close"]').forEach(function(b){ b.onclick=close; });
@@ -45338,6 +45425,28 @@ console.log('%c[BANNON_COMBAT_MOCAP] combat moves wired to real mocap — BANNON
           // preload so the very next move plays it instead of falling back for one rep
           try{ if(sel.value && window.loadClipFor) window.loadClipFor(sel.value); }catch(e){}
           render();
+        };
+      });
+      panel.querySelectorAll('[data-cat]').forEach(function(b){ b.onclick=function(){ cat=b.dataset.cat; render(); }; });
+      panel.querySelectorAll('[data-sslot]').forEach(function(sel){
+        sel.onchange=function(){ var S=saved(); var m=S[who]=S[who]||{};
+          if(sel.value) m[sel.dataset.sslot]=sel.value; else delete m[sel.dataset.sslot];
+          store(S); try{ if(sel.value && window.loadClipFor) window.loadClipFor(sel.value); }catch(e){} render(); };
+      });
+      panel.querySelectorAll('[data-base]').forEach(function(sel){
+        sel.onchange=function(){ try{
+          window.BANNON_BASES.set(who, sel.dataset.base==='stance'?sel.value:null, sel.dataset.base==='gait'?sel.value:null);
+        }catch(e){} render(); };
+      });
+      panel.querySelectorAll('[data-ai]').forEach(function(b){
+        b.onclick=function(){ var A=(SCHEMA&&SCHEMA.ai)||{};
+          var S=saved(); var m=S[who]=S[who]||{}; var akey='_ai_'+b.dataset.ai;
+          var cur=m[akey]||{priority:'Average',repetition:'Default',timing:'Any'};
+          // cycle priority on click — a full popup is more UI than this screen needs to be useful,
+          // and the value is stored in the same per-character record the moves are.
+          var list=A.priority||['Average']; var i=(list.indexOf(cur.priority)+1)%list.length;
+          cur.priority=list[i]; m[akey]=cur; store(S);
+          (window.toast||function(){})(b.dataset.ai+' AI priority: '+cur.priority);
         };
       });
       panel.querySelectorAll('[data-play]').forEach(function(b){
@@ -45382,6 +45491,203 @@ console.log('%c[BANNON_COMBAT_MOCAP] combat moves wired to real mocap — BANNON
   })();
 })();
 console.log('%c[BANNON_MOVESET_SLOTS] 2K Move Set screen — positions first. openMovesetSlots()','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_BASES — fighting stance + per-character locomotion, the old SmackDown "Bases" layer.
+//
+// The owner is right that the PS2-era games made every wrestler feel distinct before a punch was
+// thrown, purely through how they STOOD, WALKED, RAN and got in the ring — and that 2K flattened it
+// into one shared stance and one shared walk. BANNON had the same flatness: every fighter ran
+// poseGuard() with identical numbers, so a 150kg powerhouse idled exactly like a cruiserweight.
+//
+// This is a MODIFIER layer, not a replacement. poseGuard still does the anatomy, breathing, fatigue
+// squirm and limp; this rides on top and shifts the numbers that carry personality — stance width,
+// crouch depth, guard height, lean, bounce, hand carriage, stride length and cadence. So it composes
+// with everything already there instead of fighting it, and setting a fighter's base to NEUTRAL
+// gives back exactly the old behaviour.
+//
+// A base is picked per character from the moveset editor (BASES category) and otherwise DERIVED from
+// their archetype/style, so all 120 characters get a distinct read with no authoring.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  if(typeof Fighter==='undefined' || !Fighter.prototype.poseGuard) { /* armed below on retry */ }
+
+  // ── STANCES. Numbers are deltas applied to the joints poseGuard already set. ────────────────
+  //  width  : how far apart the feet plant (m offset per side)
+  //  crouch : pelvis drop (m) — power guys sit low, flyers stand tall
+  //  guard  : hand height offset (m) — boxers high, brawlers low and loose
+  //  lean   : forward torso lean (m of chest x) — pressure fighters crowd forward
+  //  bounce : idle bob amplitude multiplier — light-footed vs planted
+  //  sway   : lateral weight-shift amplitude
+  //  bladed : how side-on the stance is (shoulder z spread multiplier)
+  var STANCES = {
+    NEUTRAL:    { width:0,     crouch:0,     guard:0,     lean:0,     bounce:1.0, sway:1.0, bladed:1.00, label:'Neutral' },
+    BOXER:      { width:0.02,  crouch:0.03,  guard:0.09,  lean:0.03,  bounce:1.35,sway:1.2, bladed:1.18, label:'Boxer · high guard, light feet' },
+    BRAWLER:    { width:0.05,  crouch:0.05,  guard:-0.06, lean:0.06,  bounce:0.8, sway:0.9, bladed:0.92, label:'Brawler · wide, hands low' },
+    POWERHOUSE: { width:0.08,  crouch:0.07,  guard:-0.04, lean:0.02,  bounce:0.55,sway:0.7, bladed:0.85, label:'Powerhouse · planted, heavy' },
+    TECHNICIAN: { width:0.03,  crouch:0.06,  guard:0.02,  lean:0.07,  bounce:0.95,sway:1.0, bladed:1.05, label:'Technician · low, hands ready to tie up' },
+    LUCHADOR:   { width:-0.01, crouch:-0.02, guard:0.04,  lean:0.01,  bounce:1.5, sway:1.35,bladed:1.10, label:'Luchador · tall, bouncing' },
+    CRUISER:    { width:0.00,  crouch:0.00,  guard:0.05,  lean:0.02,  bounce:1.45,sway:1.25,bladed:1.12, label:'High-Flyer · on the balls of the feet' },
+    KARATE:     { width:0.04,  crouch:0.04,  guard:0.06,  lean:-0.02, bounce:1.1, sway:0.85,bladed:1.35, label:'Karate · bladed, side-on' },
+    CAPOEIRA:   { width:0.06,  crouch:0.08,  guard:0.00,  lean:0.00,  bounce:1.8, sway:1.6, bladed:1.00, label:'Capoeira · ginga, never still' },
+    SHOOT:      { width:0.04,  crouch:0.09,  guard:0.03,  lean:0.09,  bounce:0.9, sway:0.95,bladed:1.00, label:'Shoot · level-change crouch' },
+    SHOWMAN:    { width:0.03,  crouch:-0.01, guard:-0.02, lean:-0.03, bounce:1.2, sway:1.4, bladed:0.95, label:'Showman · chest out, playing to them' },
+    MONSTER:    { width:0.10,  crouch:0.02,  guard:-0.10, lean:0.05,  bounce:0.4, sway:0.55,bladed:0.80, label:'Monster · arms hanging, barely moves' }
+  };
+
+  // ── LOCOMOTION. stride = step length, cadence = step rate, lift = knee lift, roll = hip sway ──
+  var GAITS = {
+    NEUTRAL:   { stride:1.00, cadence:1.00, lift:1.00, roll:1.00, lean:0.00, label:'Neutral' },
+    HEAVY:     { stride:1.18, cadence:0.72, lift:0.85, roll:1.35, lean:0.02, label:'Heavy · long slow strides, shoulders roll' },
+    PROWL:     { stride:0.88, cadence:1.05, lift:0.95, roll:0.85, lean:0.05, label:'Prowl · stalking, low and forward' },
+    BOUNCE:    { stride:0.92, cadence:1.35, lift:1.30, roll:0.90, lean:0.00, label:'Bounce · quick light steps' },
+    SWAGGER:   { stride:1.05, cadence:0.88, lift:0.90, roll:1.55, lean:-0.03,label:'Swagger · cocky, big hip roll' },
+    STALK:     { stride:1.10, cadence:0.65, lift:0.75, roll:1.10, lean:0.04, label:'Stalk · deliberate, menacing' },
+    SCRAMBLE:  { stride:0.80, cadence:1.5,  lift:1.25, roll:0.80, lean:0.06, label:'Scramble · busy, always moving' },
+    LIMP_HEAVY:{ stride:0.85, cadence:0.80, lift:0.70, roll:1.20, lean:0.03, label:'Lumbering' }
+  };
+
+  // Derive a base from what we already know about a character, so nobody has to author 120 of them.
+  var BY_ARCHETYPE = {
+    powerhouse:['POWERHOUSE','HEAVY'], brawler:['BRAWLER','STALK'], technician:['TECHNICIAN','PROWL'],
+    striker:['BOXER','BOUNCE'], highFlyer:['CRUISER','BOUNCE'], enigma:['MONSTER','STALK'],
+    freeAgent:['BRAWLER','PROWL'], showman:['SHOWMAN','SWAGGER'], hardcore:['BRAWLER','STALK'],
+    lucha:['LUCHADOR','BOUNCE'], mma:['SHOOT','PROWL'], oldSchool:['TECHNICIAN','STALK']
+  };
+  var BY_STYLE = {
+    BOXING:['BOXER','BOUNCE'], 'MUAY THAI':['BOXER','PROWL'], KARATE:['KARATE','PROWL'],
+    CAPOEIRA:['CAPOEIRA','SCRAMBLE'], MMA:['SHOOT','PROWL'], STREET:['BRAWLER','SWAGGER'],
+    POWER:['POWERHOUSE','HEAVY'], TECHNICAL:['TECHNICIAN','PROWL'], LUCHA:['LUCHADOR','BOUNCE'],
+    BRAWLER:['BRAWLER','STALK'], SHOWMAN:['SHOWMAN','SWAGGER']
+  };
+
+  var LS='bannon_bases_v1';
+  function saved(){ try{ return JSON.parse(localStorage.getItem(LS)||'{}'); }catch(e){ return {}; } }
+  function store(o){ try{ localStorage.setItem(LS, JSON.stringify(o)); }catch(e){} }
+  function key(n){ return String(n||'').toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
+
+  function baseFor(f){
+    if(!f) return { stance:STANCES.NEUTRAL, gait:GAITS.NEUTRAL, sK:'NEUTRAL', gK:'NEUTRAL' };
+    if(f._baseCache) return f._baseCache;
+    var k=key((f.opts&&f.opts.name)||f.specName||'');
+    var s=saved()[k]||{};
+    var sK=s.stance, gK=s.gait;
+    if(!sK || !gK){
+      // derive: explicit style first, then archetype, then a mass-based fallback so even an
+      // unknown character reads differently from the next one
+      var pair=null;
+      try{ var st=String((f.opts&&f.opts.style)||f.style||'').toUpperCase();
+        for(var sk in BY_STYLE){ if(st.indexOf(sk)>=0){ pair=BY_STYLE[sk]; break; } } }catch(e){}
+      if(!pair){ try{ var meta=(window.CHAR_META&&window.CHAR_META[k])||{}; pair=BY_ARCHETYPE[meta.archetype]; }catch(e){} }
+      if(!pair){ var m=1; try{ m=(f.strikeMass?f.strikeMass():1); }catch(e){}
+        pair = m>1.18 ? ['POWERHOUSE','HEAVY'] : m<0.9 ? ['CRUISER','BOUNCE'] : ['BRAWLER','PROWL']; }
+      sK=sK||pair[0]; gK=gK||pair[1];
+    }
+    var out={ stance:STANCES[sK]||STANCES.NEUTRAL, gait:GAITS[gK]||GAITS.NEUTRAL, sK:sK, gK:gK };
+    f._baseCache=out;
+    return out;
+  }
+
+  function J(f,n){ return f && f.J && f.J[n] ? f.J[n] : null; }
+  function nudge(j,x,y,z){ if(!j||!j.tgt) return; if(x) j.tgt.x+=x; if(y) j.tgt.y+=y; if(z) j.tgt.z+=z; }
+
+  // ── THE MODIFIER. Runs AFTER poseGuard so it shifts a fully-formed pose. ────────────────────
+  function applyBase(f, dt, walking){
+    if(window.BANNON_BASES_OFF===true) return;
+    var B=baseFor(f); var S=B.stance, G=B.gait;
+    var t=f.stateTime||0;
+
+    // STANCE: width, crouch, guard height, lean, blading
+    nudge(J(f,'ftL'), 0,0,  S.width);  nudge(J(f,'ftR'), 0,0, -S.width);
+    nudge(J(f,'knL'), 0,-S.crouch*0.5, S.width*0.6); nudge(J(f,'knR'), 0,-S.crouch*0.5, -S.width*0.6);
+    nudge(J(f,'hipL'),0,-S.crouch, S.width*0.35); nudge(J(f,'hipR'),0,-S.crouch,-S.width*0.35);
+    nudge(J(f,'pelvis'), 0, -S.crouch, 0);
+    nudge(J(f,'haL'), S.lean, S.guard, 0); nudge(J(f,'haR'), S.lean, S.guard, 0);
+    nudge(J(f,'elL'), S.lean*0.6, S.guard*0.5, 0); nudge(J(f,'elR'), S.lean*0.6, S.guard*0.5, 0);
+    nudge(J(f,'chest'), S.lean, -S.crouch*0.4, 0);
+    nudge(J(f,'spineMid'), S.lean*0.6, -S.crouch*0.5, 0);
+    nudge(J(f,'head'), S.lean*0.5, -S.crouch*0.3, 0);
+    // blading: widen/narrow the shoulder line so a karate stance reads side-on
+    if(S.bladed!==1){ var shL=J(f,'shL'), shR=J(f,'shR');
+      if(shL&&shL.tgt) shL.tgt.z*=S.bladed; if(shR&&shR.tgt) shR.tgt.z*=S.bladed; }
+
+    // IDLE LIFE: the bob and weight-shift that make a stance read as a person, not a statue
+    if(!walking){
+      var bob=Math.sin(t*2.4)*0.012*S.bounce;
+      var sway=Math.sin(t*1.15)*0.016*S.sway;
+      nudge(J(f,'pelvis'), sway*0.6, bob, 0);
+      nudge(J(f,'chest'),  sway*0.4, bob*0.8, sway*0.5);
+      nudge(J(f,'head'),   sway*0.3, bob*0.6, sway*0.7);
+      nudge(J(f,'haL'), 0, bob*1.2, sway*0.4); nudge(J(f,'haR'), 0, bob*1.2, -sway*0.4);
+    } else {
+      // GAIT: stride length, knee lift and hip roll, all phase-locked to the walk the engine drives
+      var ph=(f.walkPhase||t*4);
+      var swing=Math.sin(ph), opp=Math.sin(ph+Math.PI);
+      nudge(J(f,'ftL'), swing*0.05*(G.stride-1), Math.max(0,swing)*0.04*(G.lift-1), 0);
+      nudge(J(f,'ftR'), opp  *0.05*(G.stride-1), Math.max(0,opp)  *0.04*(G.lift-1), 0);
+      nudge(J(f,'knL'), swing*0.03*(G.stride-1), Math.max(0,swing)*0.05*(G.lift-1), 0);
+      nudge(J(f,'knR'), opp  *0.03*(G.stride-1), Math.max(0,opp)  *0.05*(G.lift-1), 0);
+      var roll=Math.sin(ph)*0.02*(G.roll-1);
+      nudge(J(f,'pelvis'), 0, 0, roll);
+      nudge(J(f,'chest'),  G.lean, 0, -roll*0.8);       // counter-rotation through the torso
+      nudge(J(f,'haL'), 0,0, -roll*1.4); nudge(J(f,'haR'), 0,0, -roll*1.4);
+      f._gaitCadence=G.cadence;                          // read by the walk-phase advance below
+    }
+  }
+
+  // ── ARM: wrap poseGuard, and scale walk cadence so a heavy man's steps are genuinely slower ──
+  function arm(tries){
+    tries=tries||0;
+    try{
+      if(typeof Fighter!=='undefined' && Fighter.prototype.poseGuard && !Fighter.prototype.__basesHooked){
+        var _g=Fighter.prototype.poseGuard;
+        Fighter.prototype.poseGuard=function(dt, walking){
+          var r=_g.call(this, dt, walking);
+          try{ applyBase(this, dt, walking); }catch(e){}
+          return r;
+        };
+        // cadence: the engine advances walkPhase; scale that advance per gait so stride RATE differs,
+        // not just stride shape. Without this every gait walks at the same tempo.
+        var _u=Fighter.prototype.update;
+        Fighter.prototype.update=function(dt){
+          var before=this.walkPhase;
+          var r=_u.apply(this, arguments);
+          try{ var c=this._gaitCadence;
+            if(c && c!==1 && typeof before==='number' && typeof this.walkPhase==='number'){
+              this.walkPhase = before + (this.walkPhase-before)*c;
+            } }catch(e){}
+          return r;
+        };
+        Fighter.prototype.__basesHooked=true;
+        return;
+      }
+    }catch(e){}
+    if(tries<60) setTimeout(function(){ arm(tries+1); }, 900);
+  }
+  arm(0);
+
+  window.BANNON_BASES={
+    STANCES:STANCES, GAITS:GAITS,
+    of:function(f){ return baseFor(f); },
+    // set a character's base from the moveset editor; clears the per-fighter cache so it takes
+    // effect on the very next frame rather than the next match
+    set:function(name, stance, gait){
+      var S=saved(), k=key(name); S[k]=S[k]||{};
+      if(stance) S[k].stance=stance; if(gait) S[k].gait=gait;
+      store(S);
+      try{ (fighters||[]).forEach(function(f){ if(key((f.opts&&f.opts.name))===k) f._baseCache=null; }); }catch(e){}
+      return S[k];
+    },
+    clear:function(name){ var S=saved(); delete S[key(name)]; store(S);
+      try{ (fighters||[]).forEach(function(f){ f._baseCache=null; }); }catch(e){} },
+    // auditable: what every fighter in the match is currently standing and moving like
+    live:function(){ var out=[]; try{ (fighters||[]).forEach(function(f){ var b=baseFor(f);
+      out.push(((f.opts&&f.opts.name)||'?')+': '+b.sK+' / '+b.gK); }); }catch(e){} return out; }
+  };
+})();
+console.log('%c[BANNON_BASES] per-character stance + locomotion — BANNON_BASES.live()','color:#7CFC00');
 </script>
 </body></html>
 
