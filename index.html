@@ -4535,7 +4535,36 @@ Fighter.prototype.poseAttack = function(dt){
   else reach = lerp(1.0, 0, smoothstep((p-0.55)/0.45));                // recover
 
   // hit registration mid-strike
-  if (p >= 0.42 && p <= 0.58 && !this.hitLanded) {
+  // MULTI-HIT. A WWE strong strike / strike-grapple is ONE animation containing SEVERAL contacts —
+  // overhand right, then a forearm, then the clinch lands — not a combo string of separate presses.
+  // The engine only ever knew how to land one hit per move, at a fixed 0.42-0.58 window, so any move
+  // like that could only ever register its first contact. `m.hits[]` gives each contact its own
+  // phase, limb and power; moves without it take the original single-hit path untouched.
+  // Recover the contact list by NAME as well as off the object. Something between startAttack and
+  // here shallow-copies a STRIKE move without carrying hits[] — STO (a GRAPPLE) and SWANTON (a DIVE)
+  // both kept theirs while STRONG STRIKE COMBO arrived stripped and fell to the single-hit path,
+  // landing 1 contact where 3 were authored. Looking the move up by name makes that unloseable.
+  var _hits = (m && m.hits && m.hits.length) ? m.hits
+            : (m && m.name && window.__authoredHits && window.__authoredHits[m.name]) || null;
+  if (_hits && _hits.length) {
+    if (!this._hitFlags || this._hitFlags.__move !== m) this._hitFlags = { __move: m };
+    for (var _hi = 0; _hi < _hits.length; _hi++) {
+      var _h = _hits[_hi];
+      if (p >= _h.t && p <= _h.t + 0.10 && !this._hitFlags[_hi]) {
+        this._hitFlags[_hi] = true;
+        this.hitLanded = true;                       // keep the legacy flag honest for other systems
+        // each contact registers as its own hit with its own limb and power, so BANNON_IMPACT's
+        // kinetic model reads the right limb velocity for THAT beat rather than the move's average
+        var _sub = Object.assign({}, m, { limb: _h.limb || m.limb, power: _h.power || m.power, _hitIndex: _hi });
+        try{ if(window.PHYS_STRIKE && window.RK_BODY && window.BPHYS && window.BPHYS.physStrike) window.BPHYS.physStrike(this, _sub); }catch(e){}
+        registerHit(this, _sub);
+        // a strike that ENDS IN a clinch does not recover to guard — it hands off to the grapple
+        if (_h.type === 'grapple' && m.endsIn === 'CLINCH') {
+          try{ this._pendingClinch = true; }catch(e){}
+        }
+      }
+    }
+  } else if (p >= 0.42 && p <= 0.58 && !this.hitLanded) {
     this.hitLanded = true;
     if(window.PHYS_STRIKE && window.RK_BODY && window.BPHYS && window.BPHYS.physStrike) window.BPHYS.physStrike(this, m);
     registerHit(this, m);
@@ -28643,8 +28672,29 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
     else if(p < 0.58) reach = lerp(wd, 1.0, smoothstep((p-0.35)/0.23));   // EXPLODE through
     else              reach = lerp(1.0, 0, smoothstep((p-0.58)/0.42));     // recover
 
-    // Hit registration window
-    if(p >= 0.44 && p <= 0.60 && !this.hitLanded){
+    // Hit registration window.
+    // THERE ARE TWO poseAttack IMPLEMENTATIONS. This heavy-strike one is defined later and wins for
+    // power strikes, so multi-hit had to be taught here as well — patching only the first left
+    // STRONG STRIKE COMBO landing 1 contact of its 3 while STO (a grapple) and SWANTON (a dive),
+    // which route through the other, both worked. Measured _hitFlags null every frame with a single
+    // hit at p=0.45, which is this window, not the other one.
+    var _mh = (mv && mv.hits && mv.hits.length) ? mv.hits
+            : (mv && mv.name && window.__authoredHits && window.__authoredHits[mv.name]) || null;
+    if (_mh && _mh.length) {
+      if (!this._hitFlags || this._hitFlags.__move !== mv) this._hitFlags = { __move: mv };
+      for (var _hi2 = 0; _hi2 < _mh.length; _hi2++) {
+        var _h2 = _mh[_hi2];
+        if (p >= _h2.t && p <= _h2.t + 0.10 && !this._hitFlags[_hi2]) {
+          this._hitFlags[_hi2] = true;
+          this.hitLanded = true;
+          var _s2 = Object.assign({}, mv, { limb:_h2.limb||mv.limb, power:_h2.power||mv.power, _hitIndex:_hi2 });
+          try{ if(window.PHYS_STRIKE && window.RK_BODY && window.BPHYS && window.BPHYS.physStrike) window.BPHYS.physStrike(this, _s2); }catch(e){}
+          registerHit(this, _s2);
+          this['_strikeImpact'+(isLeft?'L':'R')] = 0.9;
+          if (_h2.type === 'grapple' && mv.endsIn === 'CLINCH') { try{ this._pendingClinch = true; }catch(e){} }
+        }
+      }
+    } else if(p >= 0.44 && p <= 0.60 && !this.hitLanded){
       this.hitLanded = true;
       if(window.PHYS_STRIKE && window.RK_BODY && window.BPHYS && window.BPHYS.physStrike) window.BPHYS.physStrike(this, mv);
       registerHit(this, mv);
@@ -45814,6 +45864,12 @@ console.log('%c[BANNON_BASES] per-character stance + locomotion — BANNON_BASES
   function advance(attacker, requested, opts){
     opts=opts||{};
     if(window.COMBO_OFF===true) return requested;
+    // A MOVE THAT IS ALREADY A COMBO MUST NOT BE SWAPPED OUT. A WWE strong strike / strike-grapple
+    // is one animation containing several contacts — it IS the combo. The chain system exists for
+    // the other case, stringing separate moves together per press. Left unguarded this replaced
+    // STRONG STRIKE COMBO with a plain cross and STO with a hook, stripping their hits[] on the way,
+    // so neither could ever land more than one contact. Measured: 1 contact where 3 were authored.
+    if(requested && (requested.hits || requested.signature || requested.finisher)){ reset(); return requested; }
     var t=now();
     if(!live()){ st.link=0; st.chainId++; usedThisChain={}; }
 
@@ -46033,6 +46089,107 @@ console.log('%c[BANNON_COMBO] combo chains + enders + grapple chains — BANNON_
   };
 })();
 console.log('%c[BANNON_PROCGEN] pose-math clips online — BANNON_PROCGEN.count()','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_AUTHORED — the moves hand-keyed from the owner's video reference.
+//
+// Three moves, banked with their reference contact sheets in docs/reference/:
+//   STRONG STRIKE COMBO   overhand right -> forearm -> drive into a clinch, ONE motion, 3 contacts
+//   STO                   arm across the chest, reap the leg, ride him down
+//   SWANTON BOMB          gather, launch, tuck, full front rotation, land back-first
+//
+// THE CORRECTION THEY CARRY: a WWE strong strike combo is not a combo STRING. It is one animation
+// with several contact frames, and a strike-based grapple ENDS in the clinch instead of recovering
+// to guard. BANNON_COMBO chains separate moves per press — that system is also real and stays. This
+// is the one that was missing.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var DATA=null;
+
+  function ingest(j){
+    DATA=j||{};
+    try{
+      if(window.STUDIO){
+        STUDIO.clips=STUDIO.clips||{};
+        var n=0;
+        for(var k in (DATA.clips||{})){ STUDIO.clips[k]=DATA.clips[k]; n++; }
+        console.log('%c[BANNON_AUTHORED] '+n+' reference clips registered','color:#7CFC00');
+      }
+      // put the moves into the live combat tables so they are throwable, not just previewable
+      // publish name -> hits so poseAttack can recover the contact list even if an intermediate
+      // copies the move object without it
+      window.__authoredHits=window.__authoredHits||{};
+      (DATA.moves||[]).forEach(function(m){ if(m && m.name && m.hits) window.__authoredHits[m.name]=m.hits; });
+      var added=0;
+      (DATA.moves||[]).forEach(function(m){
+        try{
+          if(typeof customMoves!=='undefined' && customMoves && !customMoves.some(function(x){ return x.name===m.name; })){
+            customMoves.push(Object.assign({}, m)); added++;
+          }
+        }catch(e){}
+      });
+      if(added) console.log('%c[BANNON_AUTHORED] '+added+' moves added to the combat tables','color:#7CFC00');
+    }catch(e){}
+  }
+
+  function load(){
+    var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    return fetch('assets/moves/authored_clips.json').then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .catch(function(){ return fetch(cdn+'assets/moves/authored_clips.json').then(function(r){ return r.json(); }); })
+      .then(ingest).catch(function(){});
+  }
+  load();
+
+  // ── the CLINCH hand-off. A strike-grapple that lands its last contact should leave the two men
+  // tied up, which is what makes it a grapple rather than a long punch.
+  (function armClinch(tries){
+    tries=tries||0;
+    try{
+      if(typeof Fighter!=='undefined' && Fighter.prototype.update && !Fighter.prototype.__clinchHooked){
+        var _u=Fighter.prototype.update;
+        Fighter.prototype.update=function(dt){
+          var r=_u.apply(this, arguments);
+          try{
+            if(this._pendingClinch){
+              this._pendingClinch=false;
+              var o=(typeof this.opponent==='function')?this.opponent():null;
+              // hand off through the engine's OWN grapple entry so everything downstream (the
+              // struggle, the escape, weight checks) behaves exactly as a normal tie-up
+              if(o && !o.isDown() && !this.ragdoll && typeof this.startGrapple==='function'){
+                this.startGrapple(o);
+              } else if(o && typeof window.execGrappleMove==='function'){
+                window.execGrappleMove(this, { name:'CLINCH', pos:'STANDING_FRONT', power:20 }, 'hold');
+              }
+            }
+          }catch(e){}
+          return r;
+        };
+        Fighter.prototype.__clinchHooked=true;
+        return;
+      }
+    }catch(e){}
+    if(tries<60) setTimeout(function(){ armClinch(tries+1); }, 900);
+  })(0);
+
+  window.BANNON_AUTHORED={
+    moves:function(){ return (DATA&&DATA.moves)||[]; },
+    clips:function(){ return Object.keys((DATA&&DATA.clips)||{}); },
+    // throw one on the player, for checking it without hunting for the input
+    play:function(name){
+      try{
+        var m=((DATA&&DATA.moves)||[]).filter(function(x){ return x.name===name; })[0];
+        if(!m) return 'no such move';
+        var f=(fighters||[]).filter(function(x){ return x.isPlayer; })[0]||(fighters||[])[0];
+        if(!f) return 'no fighter';
+        f.startAttack(Object.assign({}, m));
+        return 'threw '+name+' ('+m.hits.length+' contacts)';
+      }catch(e){ return 'err '+e.message; }
+    }
+  };
+})();
+console.log('%c[BANNON_AUTHORED] reference moves live — BANNON_AUTHORED.play("STRONG STRIKE COMBO")','color:#7CFC00');
 </script>
 </body></html>
 
