@@ -46,7 +46,8 @@
   "taunt": 11,
   "defense": 6,
   "irish_whip": 4,
-  "misc": 4
+  "misc": 4,
+  "total": 183
  },
  "clips": [
   {
@@ -1692,6 +1693,16 @@
    "pos": "LOCOMOTION",
    "engine": "LOCO",
    "style": []
+  },
+  {
+   "clip": "crash_dummy",
+   "cat": "character_rig",
+   "pos": null,
+   "engine": null,
+   "style": [],
+   "usable": false,
+   "_src": "assets/mocap/crash_dummy.glb",
+   "_fmt": "glb"
   }
  ],
  "_physics": "Every move clip carries BANNON physics: engine key -> resolveGrapPos/DIVE_TYPES/SUBMISSION/STRIKE path -> MAX_BODY_VEL-clamped verlet+PD solver. dualPurpose clips fire altKind (impact) when triggered as an attack, or play as a taunt otherwise (WWE-2K impact-taunt model)."
