@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2415"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2418"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -41294,14 +41294,42 @@ window.BANNON_GODWITHIN = (function(){
   function hideInteract(){ const b=box(); if(b) b.style.display='none'; target=null; }
   function tick(){ if(!active) return; if(typeof gameState!=='undefined' && gameState!=='fight'){ return; }
     const f=nearestNPC(); if(f && f!==target) showInteract(f); else if(!f && target) hideInteract(); }
+  // WHERE GOD WITHIN BEGINS. It used to drop you straight into the ARENA, mid-match — you entered an
+  // open-world roam mode already standing in a wrestling ring, which is the wrong frame entirely.
+  // MDickie's games start you somewhere you LIVE: a hotel room, a house, a cell. You walk out of it
+  // into the world. This picks a home location the same way — an MDickie interior if one is loaded,
+  // else a built-in indoor env — and only ever falls back to the arena if there is nothing else.
+  var HOME_RX = /HOTEL|HOUSE|APARTMENT|ROOM|HOME|MOTEL|BEDROOM|TRAILER|FLAT|LODGE/i;
+  function homeEnv(){
+    try{
+      var E=(window.BANNON_ENVIRONMENTS&&window.BANNON_ENVIRONMENTS.ENVS)||[];
+      var loc=E.filter(function(e){ return HOME_RX.test(String(e.id)+' '+String(e.name||'')); })[0];
+      if(loc) return loc.id;
+      // no dwelling in the loaded world — any indoor MDickie interior beats standing in a ring
+      var inside=E.filter(function(e){ return /LOC_/.test(String(e.id)) &&
+        /OFFICE|BACKSTAGE|GYM|BAR|STORE|SHOP|CLUB|HALL|LOBBY/i.test(String(e.id)+' '+String(e.name||'')); })[0];
+      if(inside) return inside.id;
+      if(E.some(function(e){ return e.id==='BACKSTAGE'; })) return 'BACKSTAGE';
+    }catch(e){}
+    return null;
+  }
   function start(){
-    // enter the world: spawn the player persona + a roster rival in the arena, roam freely
+    // enter the world at HOME, not in the ring — spawn the persona, roam out from there
     try{ const roster=(typeof BANNON_ROSTER!=='undefined'&&BANNON_ROSTER.length)?BANNON_ROSTER:null;
       const me='BANNON'; let foe='VIPER'; try{ const U=window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get&&window.BANNON_UNIVERSE.get();
         if(U){ const rv=(window.BANNON_UNIVERSE.rivalsOf?window.BANNON_UNIVERSE.rivalsOf(U,me):[])||[]; if(rv[0]) foe=rv[0]; } }catch(e){}
       window.MATCH_SETUP={p1Name:me,p2Name:foe,p1Control:'YOU',p2Control:'AI',type:'ONEVONE'};
       window.__godWithinRoam=true;
+      // set the environment BEFORE the world builds, or buildArena puts you in the ring
+      var home=homeEnv();
+      if(home){ window.CURRENT_ENV=home; window.__godWithinHome=home; }
       if(typeof startFight==='function') startFight();
+      // buildArena reads CURRENT_ENV; if the world was already built, rebuild it into the home
+      try{ if(home && window.BANNON_ENVIRONMENTS && window.BANNON_ENVIRONMENTS.buildCurrent) window.BANNON_ENVIRONMENTS.buildCurrent(); }catch(e){}
+      try{ if(typeof announce==='function'){
+        var lbl=String(home||'').replace(/^LOC_/,'').replace(/_/g,' ') || 'somewhere quiet';
+        announce('THE GOD WITHIN', 'you wake up in '+lbl.toLowerCase());
+      } }catch(e){}
     }catch(e){}
     active=true; const b=banner(); if(b) b.style.display='block';
     if(poll) clearInterval(poll); poll=setInterval(tick, 400);
@@ -46190,6 +46218,74 @@ console.log('%c[BANNON_PROCGEN] pose-math clips online — BANNON_PROCGEN.count(
   };
 })();
 console.log('%c[BANNON_AUTHORED] reference moves live — BANNON_AUTHORED.play("STRONG STRIKE COMBO")','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_VARIANTS — Swanton Bomb 1/2/3, Powerbomb 1/2/3, Snap Suplex, Butterfly DDT, and the rest.
+//
+// WWE 2K does not have "a powerbomb", it has a powerbomb FAMILY, and every release ADDS to that
+// library rather than swapping what is there. BANNON had 1 powerbomb, 3 suplexes, 1 DDT and zero
+// swantons or shooting stars.
+//
+// ADDITIVE IS THE RULE. Nothing here overwrites an existing move or clip — a name already present
+// is skipped, so hand-authored moves (the STRONG STRIKE COMBO / STO / SWANTON BOMB keyed from the
+// owner's video) and any real motion capture keep their place and the variants stack around them.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var DATA=null, addedMoves=0, addedClips=0, skipped=0;
+
+  function ingest(j){
+    DATA=j||{};
+    try{
+      if(window.STUDIO){
+        STUDIO.clips=STUDIO.clips||{};
+        for(var k in (DATA.clips||{})){
+          if(STUDIO.clips[k]){ skipped++; continue; }      // never replace an existing clip
+          STUDIO.clips[k]=DATA.clips[k]; addedClips++;
+        }
+      }
+      var have={};
+      try{ (typeof customMoves!=='undefined'&&customMoves||[]).forEach(function(m){ if(m&&m.name) have[m.name.toUpperCase()]=1; }); }catch(e){}
+      (DATA.moves_list||[]).forEach(function(m){
+        if(!m||!m.name) return;
+        if(have[m.name.toUpperCase()]){ skipped++; return; }   // never replace an existing move
+        try{ if(typeof customMoves!=='undefined'&&customMoves){ customMoves.push(Object.assign({},m)); addedMoves++; } }catch(e){}
+        // multi-hit contact lists have to be reachable by name, same as the authored moves
+        try{ if(m.hits){ window.__authoredHits=window.__authoredHits||{}; window.__authoredHits[m.name]=m.hits; } }catch(e){}
+      });
+      console.log('%c[BANNON_VARIANTS] +'+addedMoves+' moves, +'+addedClips+' clips across '+
+                  (DATA.families||0)+' families ('+skipped+' skipped, already present)','color:#7CFC00');
+    }catch(e){}
+  }
+
+  function load(){
+    var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    return fetch('assets/moves/move_variants.json').then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .catch(function(){ return fetch(cdn+'assets/moves/move_variants.json').then(function(r){ return r.json(); }); })
+      .then(ingest).catch(function(){});
+  }
+  load();
+
+  window.BANNON_VARIANTS={
+    // every variant of a family, so the moveset editor can offer "pick your powerbomb"
+    family:function(f){ try{ return (DATA.moves_list||[]).filter(function(m){
+      return String(m.family||'').toUpperCase()===String(f||'').toUpperCase(); }).map(function(m){ return m.name; }); }catch(e){ return []; } },
+    families:function(){ var o={}; try{ (DATA.moves_list||[]).forEach(function(m){ o[m.family]=(o[m.family]||0)+1; }); }catch(e){} return o; },
+    stats:function(){ return { moves:addedMoves, clips:addedClips, skipped:skipped }; },
+    play:function(name){
+      try{
+        var m=(DATA.moves_list||[]).filter(function(x){ return x.name===name; })[0];
+        if(!m) return 'no such variant';
+        var f=(fighters||[]).filter(function(x){ return x.isPlayer; })[0]||(fighters||[])[0];
+        if(!f) return 'no fighter';
+        f.startAttack(Object.assign({}, m));
+        return 'threw '+name;
+      }catch(e){ return 'err '+e.message; }
+    }
+  };
+})();
+console.log('%c[BANNON_VARIANTS] move families online — BANNON_VARIANTS.families()','color:#7CFC00');
 </script>
 </body></html>
 
