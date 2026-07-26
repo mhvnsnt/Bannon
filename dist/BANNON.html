@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2407"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2410"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -45942,6 +45942,97 @@ console.log('%c[BANNON_BASES] per-character stance + locomotion — BANNON_BASES
                         ENDERS:ENDERS, CFG:CFG };
 })();
 console.log('%c[BANNON_COMBO] combo chains + enders + grapple chains — BANNON_COMBO.state()','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_PROCGEN — procedural clips for the slots that have no motion capture.
+//
+// MDickie shipped hundreds of moves with ZERO mocap because his animation is pose math in game
+// code, not data in an asset file. That route costs no downloads, no licences and no gigabytes, and
+// it is the same thing Overgrowth does for its whole combat system: a few authored key poses per
+// move, with physics and IK filling every frame between them.
+//
+// BANNON was already built for it and nobody had used it that way:
+//   * STUDIO clips are ALREADY a keyed-pose format, so a synthesised clip is indistinguishable
+//     from a baked capture to studioApplyClipPose.
+//   * Fighter._twoBoneIK already solves elbows and knees analytically, so a key only has to say
+//     where the HAND or FOOT goes.
+//   * Spring3 (critically-damped PD per joint) already supplies the in-betweens, so they are
+//     physical rather than linearly interpolated — and they absorb impact, which is the whole
+//     Neckbreaker "no two impacts the same" principle applied to animation itself.
+//
+// 88 slots, 228 KB. The same coverage as capture would be roughly 35 MB of FBX.
+//
+// A REAL CAPTURE ALWAYS WINS. These register under PROC_<slot> and are only consulted when the
+// slot's position has no capture, so dropping a CC0 pack in later silently upgrades them.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var MAP=null, loaded=0;
+
+  function ingest(j){
+    MAP=(j&&j.map)||{};
+    try{
+      if(!window.STUDIO) return;
+      STUDIO.clips=STUDIO.clips||{};
+      for(var k in MAP){
+        // never overwrite a real capture that happens to share a key
+        if(!STUDIO.clips[k]){ STUDIO.clips[k]={ keys:MAP[k].keys, dur:MAP[k].dur }; loaded++; }
+      }
+      console.log('%c[BANNON_PROCGEN] '+loaded+' procedural clips registered (slots with no capture)','color:#7CFC00');
+    }catch(e){}
+  }
+
+  function load(){
+    var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    return fetch('assets/moves/procedural_clips.json')
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .catch(function(){ return fetch(cdn+'assets/moves/procedural_clips.json').then(function(r){ return r.json(); }); })
+      .then(ingest).catch(function(){});
+  }
+
+  // THE FALLBACK CHAIN, in priority order:
+  //   1. what the player equipped in the moveset editor
+  //   2. the auto-mapped capture for that position
+  //   3. a compatible position's capture (the alias chain)
+  //   4. this slot's procedural clip   <- new, and why nothing animates as a T-pose any more
+  function clipForSlot(slotId){
+    try{ if(MAP && MAP['PROC_'+slotId]) return 'PROC_'+slotId; }catch(e){}
+    return null;
+  }
+
+  // extend equippedClipFor rather than replacing it, so the existing priority order is untouched
+  (function arm(tries){
+    tries=tries||0;
+    try{
+      if(typeof window.equippedClipFor==='function' && !window.equippedClipFor.__procHooked){
+        var _e=window.equippedClipFor;
+        window.equippedClipFor=function(charKey,pos){
+          var r=_e.apply(this,arguments);
+          if(r) return r;                                   // capture or equip won — leave it
+          try{
+            if(MAP){ for(var k in MAP){ if(MAP[k]._pos===pos) return k; } }   // else a procedural one
+          }catch(e){}
+          return null;
+        };
+        window.equippedClipFor.__procHooked=true;
+        return;
+      }
+    }catch(e){}
+    if(tries<60) setTimeout(function(){ arm(tries+1); }, 900);
+  })(0);
+
+  load();
+
+  window.BANNON_PROCGEN={
+    clipForSlot:clipForSlot,
+    count:function(){ return MAP?Object.keys(MAP).length:0; },
+    registered:function(){ return loaded; },
+    // auditable: every slot that is animating procedurally rather than from capture
+    list:function(){ var o=[]; try{ for(var k in MAP) o.push(MAP[k]._slot+'  '+MAP[k]._kind+'  '+(MAP[k]._pos||'')); }catch(e){} return o; }
+  };
+})();
+console.log('%c[BANNON_PROCGEN] pose-math clips online — BANNON_PROCGEN.count()','color:#7CFC00');
 </script>
 </body></html>
 
