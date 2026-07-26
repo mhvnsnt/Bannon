@@ -567,17 +567,25 @@ def do_variants(keys, family, args):
             mean_d, peak_d = divergence(base, v)
             dt = abs((v.get('dur') or 0) - (base.get('dur') or 0))
             distinct = (mean_d >= args.min_diff) or (peak_d >= args.min_diff * 3) or (dt >= 0.30)
-            if not distinct and not args.keep_all:
-                print('    %-32s SAME  mean %.3f peak %.3f dt %.2fs — not a new move'
+            # OWNER LAW (2026-07-26): a variant is CONTENT and content is not mine to throw away.
+            # I dropped 24 of these on my own judgement and the owner was right to call it — "snap
+            # version of moves are fine u should not have deleted those, those are variations, u should
+            # ask before u delete stuff like that". So a low-divergence variant is now BANKED AND
+            # FLAGGED, never discarded. The number rides along so it can be judged by a human, and
+            # --only-distinct is opt-in for anyone who wants the old filtering.
+            if not distinct and args.only_distinct:
+                print('    %-32s LOW DIVERGENCE mean %.3f peak %.3f dt %.2fs — skipped (--only-distinct)'
                       % (nk, mean_d, peak_d, dt))
                 skipped_same += 1
                 continue
+            flag = '' if distinct else '   [low divergence — kept, flagged]'
             n = write_clip(nk, v, {'derivedFrom': key, 'variant': suf.upper(),
                                    'via': 'harvest/variants', 'diffMean': round(mean_d, 4),
-                                   'diffPeak': round(peak_d, 4), 'durDelta': round(dt, 3)})
+                                   'diffPeak': round(peak_d, 4), 'durDelta': round(dt, 3),
+                                   'distinct': bool(distinct)})
             made += 1
-            print('    %-32s %.2fs  mean %.3f peak %.3f dt %.2fs  %.0f KB'
-                  % (nk, v['dur'], mean_d, peak_d, dt, n / 1024))
+            print('    %-32s %.2fs  mean %.3f peak %.3f dt %.2fs  %.0f KB%s'
+                  % (nk, v['dur'], mean_d, peak_d, dt, n / 1024, flag))
     print('\n%d variant(s) kept as distinct moves, %d dropped as visually identical' % (made, skipped_same))
     if made:
         print('divergence is measured at the same ABSOLUTE time, not the same phase — a retimed')
@@ -707,9 +715,15 @@ def main():
     ap.add_argument('--keys', type=int, default=28)
     ap.add_argument('--stride', type=int, default=1, help='read every Nth frame (faster, coarser)')
     ap.add_argument('--force', action='store_true')
+    ap.add_argument('--include-static', action='store_true',
+                    help='also derive from clips shorter than --min-len (bind poses / rig files)')
     ap.add_argument('--min-diff', type=float, default=0.06,
                     help='keep a variant only if it diverges this far from its base (body-height units)')
-    ap.add_argument('--keep-all', action='store_true', help='bank every variant, even identical ones')
+    ap.add_argument('--only-distinct', action='store_true',
+                    help='OPT-IN filtering: skip variants that read identical to their base. Off by '
+                         'default — a variant is content, and content does not get thrown away on a '
+                         'tool\'s judgement.')
+    ap.add_argument('--keep-all', action='store_true', help='(default behaviour; kept for scripts)')
     args = ap.parse_args()
 
     if args.plan:
@@ -738,12 +752,15 @@ def main():
                 d = c.get('dur') if c else 0
             if (d or 0) < MIN_DUR:
                 thin.append(k)
-                continue
+                if not args.include_static:
+                    continue
             keys.append(k)
         print('%d original clip(s) with real motion (>= %.2fs)' % (len(keys), MIN_DUR))
         if thin:
-            print('%d skipped as static/rig files (under %.2fs): %s%s'
+            print('%d clip(s) are under %.2fs — bind poses or rig files: %s%s'
                   % (len(thin), MIN_DUR, ', '.join(thin[:6]), ' ...' if len(thin) > 6 else ''))
+            print('  %s  (--include-static to derive from them anyway)'
+                  % ('INCLUDED' if args.include_static else 'not derived from by default'))
         return do_variants(keys, fam, args)
 
     if args.variants:

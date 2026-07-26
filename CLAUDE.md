@@ -325,3 +325,32 @@ uncompressed 2048² PNGs on a folding table.
 - skinqa before -> after: TRIPLE_XXX_suit 0.0439 PASS -> 0.0493 PASS (156,569 -> 95,115 verts),
   CIPHER_rigged 0.0271 -> 0.0281 PASS, VIPER 0.0449 -> 0.0440 PASS (better), EDWIN_KENNEDY and
   HALL_NIGHTER 0.0638 / 0.0613 WEAK both unchanged (already WEAK, not caused by this). No verdict moved.
+
+## OWNER LAW ADDED 2026-07-26 — DO NOT DELETE GENERATED CONTENT
+Owner: "snap version of moves are fine u should not have deleted those, those are variations, u should
+ask before u delete stuff like that". He was right. I dropped 24 derived variants on my own judgement
+because they scored low on a divergence metric I had just written. A variant is CONTENT.
+- harvest.py now BANKS AND FLAGS low-divergence variants instead of discarding them. The divergence
+  number rides along in the manifest so a human can judge it. `--only-distinct` is opt-in for anyone
+  who wants filtering; it is never the default.
+- All 728 variants restored (98 flagged low-divergence, all kept). 104 captured bases.
+- Applies generally: never delete or prune generated assets, clips, models or variants without asking.
+
+### SYSTEM DONE: TEXT -> MOTION generation on CPU (2026-07-26)
+Owner: "We need to get momask, motiongpt, and mdm setup up any wired into our mocap".
+- **tools/mocap/setup_motion_models.sh** — one command. Clones the three repos (codeload.github.com
+  403s through this proxy but `git clone` works), fetches MoMask's 188 MB HumanML3D weights from Drive
+  (gdown here has no --fuzzy — pass the bare file id), installs CPU-ONLY torch (using
+  --extra-index-url pulls 3 GB of CUDA libs onto a GPU-less box and fills the disk; that happened).
+- **tools/mocap/text_to_clip.py** — a sentence in, a playable clip out. MoMask is the default because
+  its authors state the demo runs on CPU with no GPU. VERIFIED: 196 frames generated from
+  "a person picks up an opponent and slams them down forcefully", converted to 28 keys / **17 bones**
+  — more than the 14 video capture yields, because SMPL ships the spine chain and collars MediaPipe
+  has to guess at.
+- THE INTEGRATION IS BACKEND-AGNOSTIC: all three models emit HumanML3D 22-joint SMPL motion, so
+  smpl_points() + video_to_clip's retarget is the whole adapter. A better model plugs in behind it.
+- Two shims, both written down: numpy 2 removed np.float/np.int/np.bool which all this 2023 code uses;
+  and CLIP's torchvision import is stubbed because MoMask only needs the TEXT encoder.
+- LENGTH: the length estimator's argmax saturated at its 196-frame maximum (9.8 s) for every prompt
+  tried. `--frames N` states a length, and output is auto-trimmed to the moving span by the same
+  motion-energy test harvest.py segments video with. Measured: 60 -> 47 frames, 2.35 s for a kip-up.
