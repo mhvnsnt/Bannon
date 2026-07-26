@@ -12464,10 +12464,58 @@ try{ window.FREECAM=FREECAM; window.freecamEnter=freecamEnter; window.freecamExi
   cv.addEventListener('wheel',function(e){ if(!FREECAM.on) return; e.preventDefault(); FREECAM.dist=Math.max(0.6,Math.min(16,FREECAM.dist*(1+(e.deltaY>0?0.1:-0.1)))); },{passive:false});
   var fb=document.getElementById('freecamBtn'); if(fb) fb.addEventListener('click',freecamToggle);
 })();
+// ══ FREE-ROAM FOLLOW CAM ═══════════════════════════════════════════════════════════════════════
+// THE BUG THE OWNER SAW ("the camera is appearing outside of bounds and not following character"):
+// the match camera frames the MIDPOINT of fighters[0] and fighters[1]. That is right for a 1v1 and
+// completely wrong for roaming — BANNON_LIFE populates the world by pushing real bodies into
+// `fighters`, so fighters[1] became whatever passer-by happened to spawn, possibly at the far edge of
+// the location. The camera dutifully framed the midpoint between you and a stranger, which puts it
+// out past the boundary looking at nothing.
+//
+// A roam camera has ONE subject. This is MDickie's: a fixed three-quarter view that follows the player
+// and only the player, pulls back a little when they run, and never asks where anyone else is.
+// It is the default whenever a roam mode is live; CAM_CFG.mode='broadcast' still overrides by hand.
+function roamSubject(){
+  try{
+    var fs=(typeof fighters!=='undefined')?fighters:window.fighters; if(!fs||!fs.length) return null;
+    for(var i=0;i<fs.length;i++){ if(fs[i] && fs[i].isPlayer && !fs[i]._lifeNpc) return fs[i]; }
+    for(var k=0;k<fs.length;k++){ if(fs[k] && !fs[k]._lifeNpc && !fs[k]._interferer) return fs[k]; }
+    return fs[0]||null;
+  }catch(e){ return null; }
+}
+function inRoam(){
+  try{ return !!(window.__godWithinRoam || window.__universeRoam); }catch(e){ return false; }
+}
+function updateRoamCamera(dt){
+  var f=roamSubject(); if(!f) return false;
+  var spd=0; try{ spd=Math.hypot(f.vx||0, f.vz||0); }catch(e){}
+  // pull back with speed so a run reads, and lift a little so you can see the ground you are crossing
+  var dist=(window.ROAM_CAM_DIST!=null?window.ROAM_CAM_DIST:5.4) + Math.min(2.2, spd*0.55);
+  var high=(window.ROAM_CAM_HEIGHT!=null?window.ROAM_CAM_HEIGHT:2.35) + Math.min(0.5, spd*0.12) + CAM_CFG.height;
+  // A FIXED three-quarter heading, not one glued to the player's facing. A yaw that chases facing
+  // spins the whole world every time you turn around, which is nauseating and is not what MDickie
+  // does — his camera holds its angle and lets you move within it.
+  var ang=(window.ROAM_CAM_ANGLE!=null?window.ROAM_CAM_ANGLE:(Math.PI*0.5 - 0.42));
+  var floor=(typeof RING!=='undefined'&&RING.floorY!=null)?RING.floorY:0;
+  var ox=f.x + Math.cos(ang)*dist, oz=f.z + Math.sin(ang)*dist;
+  camPos.lerp(V3(ox, floor+high, oz), clamp(dt*3.2, 0, 1));
+  // look slightly AHEAD of travel so you see where you are going, not where you have been
+  var lead=Math.min(1.4, spd*0.42);
+  var lx=f.x + (spd>0.05 ? (f.vx/Math.max(spd,1e-4))*lead : 0);
+  var lz=f.z + (spd>0.05 ? (f.vz/Math.max(spd,1e-4))*lead : 0);
+  camLook.lerp(V3(lx, floor+1.05+CAM_CFG.height, lz), clamp(dt*4.0, 0, 1));
+  var sx=0, sy=0;
+  if (camShake>0.001){ sx=(Math.random()-0.5)*camShake; sy=(Math.random()-0.5)*camShake; camShake*=0.85; }
+  camera.position.set(camPos.x+sx, camPos.y+sy, camPos.z);
+  camera.lookAt(camLook);
+  return true;
+}
 function updateCamera(dt){
   if(FREECAM.on){ applyFreeCam(); return; }
   if (!fighters.length) return;
-  const a=fighters[0], b=fighters[1];
+  // roam owns the camera in roam, unless the player has explicitly asked for broadcast
+  if (inRoam() && window.ROAM_CAM!==false && CAM_CFG.mode!=='broadcast_forced'){ if(updateRoamCamera(dt)) return; }
+  const a=fighters[0], b=fighters[1]||fighters[0];   // alone in the world is a legal state now
   const midX=(a.x+b.x)/2, midZ=(a.z+b.z)/2;
   const sep=Math.hypot(a.x-b.x, a.z-b.z);
   const portrait = window.innerHeight > window.innerWidth;
@@ -15542,7 +15590,14 @@ function updateFighterModel(f){
   // (attack/grab/hurt/ragdoll) and for chunk-rigged/procedural models. This makes standing/moving LOOK
   // CORRECT now; a proper idle/locomotion clip layers on next.
   const _skinnedGLB = m.userData.mapped && !m.userData.autoRig;
-  const _calm = !(f.ragdoll || f.state==='attack' || f.state==='grab' || f.state==='grabbed' ||
+  // MOVING IS NOT CALM (window.GLB_LOCOMOTION, default on). A fighter with locomotion intent or real
+  // ground speed gets the retarget, so the walk cycle the engine is already computing actually
+  // reaches the skeleton instead of being thrown away.
+  var _spd = 0;
+  try{ _spd = Math.hypot(f.vx||0, f.vz||0); }catch(_e){}
+  var _locomoting = (window.GLB_LOCOMOTION!==false) &&
+                    (Math.abs(f.wantMove||0) > 0.05 || _spd > 0.12 || f.running || f.state==='running');
+  const _calm = !_locomoting && !(f.ragdoll || f.state==='attack' || f.state==='grab' || f.state==='grabbed' ||
                   f.state==='deliver' || f.state==='hurt' || f.state==='stumble' || f.state==='down' ||
                   f.state==='getup' || f.state==='dive' || f.state==='falling');
   const _nativePose = (window.GLB_NATIVE_POSE!==false && _skinnedGLB && _calm);  // hold the model's own perfect pose (no retarget mangling) while standing/idling/walking
@@ -15638,7 +15693,18 @@ function updateFighterModel(f){
     if(_ov)for(var _k1 in _ov)_keys[_k1]=1; if(_cb)for(var _k2 in _cb)_keys[_k2]=1;
     for(var _bn in _keys){ var _b=_bb[_bn]; if(!_b) continue; var _o=(_ov&&_ov[_bn])||{}, _c=(_cb&&_cb[_bn])||{};
       var _eu=new THREE.Euler((_o.rx||0)+(_c.rx||0),(_o.ry||0)+(_c.ry||0),(_o.rz||0)+(_c.rz||0),'XYZ'); var _qq=new THREE.Quaternion().setFromEuler(_eu);
-      if(_rt && _ms && _ms.has(_b)){ _b.quaternion.multiply(_qq); } else if(_b.userData.restQuat){ _b.quaternion.copy(_b.userData.restQuat).multiply(_qq); } else { _b.quaternion.setFromEuler(_eu); }
+      // CLIP AUTHORITY. This used to be `_b.quaternion.multiply(_qq)` for any bone the physics
+      // retarget also drives — so a mocap clip was COMPOUNDED on top of the procedural aim and the
+      // two fought. Measured 51 degrees off rest on elR mid-clip; on screen that is a marionette
+      // swinging its limbs at nothing. A clip is an authority: where it drives a bone, it replaces
+      // the procedural aim (rest * clip) instead of stacking on it. Manual boneOverrides with NO clip
+      // on the same bone keep the old additive behaviour, because those are authored offsets and are
+      // meant to layer.
+      var _clipDrives = !!(_c && (_c.rx||_c.ry||_c.rz));
+      if(_clipDrives && _b.userData.restQuat){ _b.quaternion.copy(_b.userData.restQuat).multiply(_qq); }
+      else if(_rt && _ms && _ms.has(_b)){ _b.quaternion.multiply(_qq); }
+      else if(_b.userData.restQuat){ _b.quaternion.copy(_b.userData.restQuat).multiply(_qq); }
+      else { _b.quaternion.setFromEuler(_eu); }
       var _tx=(_o.tx||0)+(_c.tx||0), _ty=(_o.ty||0)+(_c.ty||0), _tz=(_o.tz||0)+(_c.tz||0); if(_tx||_ty||_tz||_b.userData._hadT){ if(_b.userData.restPos==null)_b.userData.restPos=_b.position.clone(); var _rp=_b.userData.restPos; _b.position.set(_rp.x+_tx,_rp.y+_ty,_rp.z+_tz); _b.userData._hadT=!!(_tx||_ty||_tz); }
       var _s=((_o.sc==null?1:_o.sc))*((_c.sc==null?1:_c.sc));
       var _sx=_s*((_o.sx==null?1:_o.sx))*((_c.sx==null?1:_c.sx)), _sy=_s*((_o.sy==null?1:_o.sy))*((_c.sy==null?1:_c.sy)), _sz=_s*((_o.sz==null?1:_o.sz))*((_c.sz==null?1:_c.sz));
@@ -32419,25 +32485,82 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     // move is equipped/played whose clip isn't in the core set — instead of the 1GB full harvest.
     // Returns the clip (cached in STUDIO.clips under both the raw basename and the UPPER_KEY).
     window.__fbxClipInFlight = window.__fbxClipInFlight || {};
+    // ══ THE FREEZE LIVED HERE ══════════════════════════════════════════════════════════════════
+    // This used to do fetch -> arrayBuffer -> `new THREE.FBXLoader().parse(buf,'')`, SYNCHRONOUSLY,
+    // on the render thread — and poseAttack() calls it when a strike needs a clip that is not
+    // resident. So throwing a punch mid-match kicked off a multi-megabyte FBX parse in the middle of
+    // a frame. A V8 CPU profile of a live match was almost entirely FBXLoader and fflate (genFace,
+    // genBuffers, getFloat64Array, parseNode, generateRotationTrack, inflate). Measured frames:
+    // median 543 ms, worst 3766 ms. That is the freezing, exactly.
+    //
+    // There was a second half to it that is worse: 76 of the mocap files in the repo are Git LFS
+    // POINTERS with no data in them — 130 bytes of text — and they include the locomotion set and
+    // core combat moves the tables map to (Suplex, NeckBreaker, GermanSuplex, HurricaneRana, walking,
+    // idle, running). Those fetched fine, parsed as garbage, threw, and the move played un-animated.
+    //
+    // Clips are now BAKED AHEAD OF TIME to the engine's own compact format
+    // (tools/mocap/bake_clips.cjs, and tools/mocap/video_to_clip.py for anything captured from video)
+    // and loaded as small JSON. JSON.parse of a 45 KB clip is sub-millisecond. No FBX at match time,
+    // ever — window.ALLOW_RUNTIME_FBX=true re-enables it for authoring work only.
     window.loadClipFor = async function(name){
         if(!name) return null;
         const base = String(name).replace(/\.fbx$/i,''); const key = base.toUpperCase().replace(/[^A-Z0-9]/g,'_');
         try{ if(typeof STUDIO!=='undefined' && STUDIO.clips && (STUDIO.clips[base]||STUDIO.clips[key])) return STUDIO.clips[base]||STUDIO.clips[key]; }catch(e){}
-        if(typeof THREE==='undefined' || !THREE.FBXLoader) return null;
         if(window.__fbxClipInFlight[key]) return window.__fbxClipInFlight[key];
         window.__fbxClipInFlight[key] = (async()=>{
           const cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
-          const urls = ['assets/mocap/drive/'+encodeURIComponent(base)+'.fbx','assets/mocap/'+encodeURIComponent(base)+'.fbx',
-                        cdn+'assets/mocap/drive/'+encodeURIComponent(base)+'.fbx'];
-          for(const u of urls){ try{ const r=await fetch(u).catch(()=>null); if(!r||!r.ok) continue;
-            const buf=await r.arrayBuffer(); const obj=(new THREE.FBXLoader()).parse(buf,'');
-            if(obj.animations && obj.animations.length){ const clip=(typeof extractClipFromGLTF==='function')?extractClipFromGLTF(obj.animations[0],obj):obj.animations[0];
-              if(typeof STUDIO!=='undefined'){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=clip; STUDIO.clips[base]=clip; }
-              return clip; } }catch(e){} }
+          // 1. the baked clip — this is the path that should always win
+          const jsonUrls = ['assets/moves/clips/'+key+'.json', cdn+'assets/moves/clips/'+key+'.json'];
+          for(const u of jsonUrls){
+            try{
+              const r=await fetch(u).catch(()=>null); if(!r||!r.ok) continue;
+              const clip=await r.json();
+              if(clip && clip.keys && clip.keys.length){
+                if(typeof STUDIO!=='undefined'){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=clip; STUDIO.clips[base]=clip; }
+                return clip;
+              }
+            }catch(e){}
+          }
+          // 2. raw FBX, for authoring only. Off by default because this is what froze the game.
+          if(window.ALLOW_RUNTIME_FBX===true && typeof THREE!=='undefined' && THREE.FBXLoader){
+            const urls = ['assets/mocap/drive/'+encodeURIComponent(base)+'.fbx','assets/mocap/'+encodeURIComponent(base)+'.fbx',
+                          cdn+'assets/mocap/drive/'+encodeURIComponent(base)+'.fbx'];
+            for(const u of urls){ try{ const r=await fetch(u).catch(()=>null); if(!r||!r.ok) continue;
+              const buf=await r.arrayBuffer();
+              // an LFS pointer is ~130 bytes of ASCII starting "version https://git-lfs" — parsing it
+              // throws deep inside FBXLoader, so recognise it and say so instead
+              if(buf.byteLength<4096){ const head=new TextDecoder().decode(new Uint8Array(buf).slice(0,32));
+                if(head.indexOf('version https://git-lfs')===0){ console.warn('[clip] '+base+'.fbx is an LFS pointer, not data'); continue; } }
+              const obj=(new THREE.FBXLoader()).parse(buf,'');
+              if(obj.animations && obj.animations.length){ const clip=(typeof extractClipFromGLTF==='function')?extractClipFromGLTF(obj.animations[0],obj):obj.animations[0];
+                if(typeof STUDIO!=='undefined'){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=clip; STUDIO.clips[base]=clip; }
+                return clip; } }catch(e){} }
+          }
           return null;
         })();
         const c = await window.__fbxClipInFlight[key]; delete window.__fbxClipInFlight[key]; return c;
     };
+
+    // ══ ONE FETCH AT BOOT for the whole core set ═══════════════════════════════════════════════
+    // core.json holds every locomotion + core combat clip inlined. One request, parsed once, off the
+    // critical path — so the first strike of the first match is already animated instead of kicking
+    // off a load. Failure here is silent and harmless: loadClipFor still fetches individual clips.
+    window.__coreClipsReady = (async function(){
+      try{
+        const cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+        for(const u of ['assets/moves/clips/core.json', cdn+'assets/moves/clips/core.json']){
+          const r = await fetch(u).catch(()=>null); if(!r||!r.ok) continue;
+          const all = await r.json();
+          if(typeof STUDIO==='undefined') return 0;
+          STUDIO.clips = STUDIO.clips || {};
+          let n=0;
+          for(const k in all){ if(!STUDIO.clips[k]){ STUDIO.clips[k]=all[k]; n++; } }
+          console.log('%c[clips] '+n+' baked clips resident — no FBX parse at match time','color:#7CFC00');
+          return n;
+        }
+      }catch(e){}
+      return 0;
+    })();
 
     try {
         if (window.MANIFESTO) window.MANIFESTO.register({
@@ -42539,12 +42662,25 @@ console.log('%c[GNM FACE LAB] scan-grade parametric face studio — hub tile �
   window.loadClipFor = window.loadClipFor || async function(name){
     if(!name) return null; var base=String(name).replace(/\.fbx$/i,''); var key=base.toUpperCase().replace(/[^A-Z0-9]/g,'_');
     try{ if(window.STUDIO && STUDIO.clips && (STUDIO.clips[base]||STUDIO.clips[key])) return STUDIO.clips[base]||STUDIO.clips[key]; }catch(e){}
-    if(typeof THREE==='undefined' || !THREE.FBXLoader) return null;
     if(window.__mcInFlight[key]) return window.__mcInFlight[key];
     window.__mcInFlight[key]=(async function(){
       var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
       var enc=encodeURIComponent(base);
-      // FBX first (what we already ship), then BVH — the format every free/CC0 mocap set uses.
+      // BAKED CLIP FIRST — same rule as the primary loader. This is the SECOND FBX parse site, and it
+      // is the one loadCore() drives at boot: 26 captures, parsed synchronously, on the main thread.
+      // A CPU profile still showed FBXLoader and fflate dominating after the primary loader was fixed,
+      // because this one had not been.
+      var jsonUrls=['assets/moves/clips/'+key+'.json', cdn+'assets/moves/clips/'+key+'.json'];
+      for(var ji=0;ji<jsonUrls.length;ji++){
+        try{ var jr=await fetch(jsonUrls[ji]).catch(function(){return null;}); if(!jr||!jr.ok) continue;
+          var jc=await jr.json();
+          if(jc && jc.keys && jc.keys.length){
+            if(window.STUDIO){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=jc; STUDIO.clips[base]=jc; }
+            return jc; }
+        }catch(e){}
+      }
+      if(typeof THREE==='undefined' || (!THREE.FBXLoader && !THREE.BVHLoader)) return null;
+      if(window.ALLOW_RUNTIME_FBX!==true) return null;   // authoring only; this is what froze the game
       var urls=['assets/mocap/drive/'+enc+'.fbx','assets/mocap/'+enc+'.fbx',
                 'assets/mocap/open/'+enc+'.bvh','assets/mocap/'+enc+'.bvh',
                 cdn+'assets/mocap/drive/'+enc+'.fbx', cdn+'assets/mocap/open/'+enc+'.bvh'];
