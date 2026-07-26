@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2421"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2424"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -15312,7 +15312,11 @@ function applyCharModels(){ ['p1','p2','p3','p4'].forEach(function(sd){ var f=fi
   // NO PROCEDURAL POP: if a GLB is expected for this fighter, HIDE the procedural tube the moment
   // we kick the async load — you were seeing the ugly procedural body for a beat before the model
   // bound (_bindFighterGltf reveals the model; a FAILED load restores the procedural body).
-  var _hideProc=function(){ try{ if(f.seg) setProcVisible(f,false); }catch(e){} };
+  // DO NOT HIDE THE BODY UNTIL THE MODEL IS ACTUALLY HERE. This used to hide the procedural body the
+  // moment the async load was KICKED. Measured: the GLB bound 64 SECONDS after the bell while
+  // competing with 248 MB of other boot fetches — so you stood in the ring as literally nothing for
+  // a minute. Hiding on BIND (in _bindFighterGltf) is the correct moment; until then you see a body.
+  var _hideProc=function(){ /* deferred to bind — see PROC_HIDE_ON_BIND */ };
   if(f._altModelUrl){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
   if(f._mdickieBase){ var mb=mdickieBaseFor(f._mdickieBase); f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, mb, 'MDickie · '+f._mdickieBase); }catch(e){} return; }   // MDickie base attire (falls back to procedural if the base GLB isn't present)
   var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
@@ -15329,6 +15333,10 @@ function applyModelChoice(side, url, name){
   loadFighterModel(side, url, name);
 }
 function _bindFighterGltf(side, url, name, gltf, reqFighter, reqId){
+  // PROC_HIDE_ON_BIND — hide the placeholder body only now that the real model exists. applyCharModels
+  // used to hide it the instant the async load was KICKED; measured 64 s between that and the model
+  // binding, so the fighter was invisible in the ring for a minute.
+  try{ if(reqFighter && reqFighter.seg && typeof setProcVisible==='function') setProcVisible(reqFighter,false); }catch(e){}
   const f=fighterFor(side); if(!f) return;
   // STALE-LOAD GUARD (kills the orphan-clone bug): a GLB fetch/parse is async, so rapid character-select
   // taps or a startFight() rebuild can leave an EARLIER load resolving after a newer one already bound.
@@ -38446,8 +38454,25 @@ window.BANNON_PROPS = (function(){
                ['STEEL_STEPS',6.4,0,4.2], ['ANNOUNCE_DESK',0,0,-5.4], ['WOOD_CRATE',5.6,0,-4.2], ['CARDBOARD_BOX',-6.4,0,-4.4] ];
   var W={ items:[], spawned:false, chip:null };
   var MAXSTAM=(typeof MAX_STAMINA!=='undefined')?MAX_STAMINA:440;
-  function loadItem(key,x,y,z){
+  // PER-ASSET BUDGET. Some banked props are absurdly heavy for what they are — table.glb is 27 MB and
+  // steel_chair.glb 26 MB, which is a re-export problem, not a runtime one. Until they are decimated,
+  // a weapon over the budget loads ONLY when something actually asks for it in play, never as scenery,
+  // so a phone is not spending 50 MB on furniture before the first punch. window.ASSET_BUDGET_MB
+  // raises the ceiling if you want everything eagerly.
+  var HEAVY_MB = (window.ASSET_BUDGET_MB!=null?window.ASSET_BUDGET_MB:8);
+  var HEAVY = { 'table.glb':26.9, 'steel_chair.glb':25.7, 'barbwire_bat.glb':13.9, 'ladder.glb':11.3 };
+  function overBudget(url){ try{ var f=String(url).split('/').pop(); return (HEAVY[f]||0) > HEAVY_MB; }catch(e){ return false; } }
+  window.__assetOverBudget = overBudget;
+  function loadItem(key,x,y,z,opts){
     var spec=DB[key]; if(!spec) return;
+    // SCENERY DOES NOT GET TO SPEND 26 MB. An over-budget prop loads only when something actually
+    // asks for it in play (opts.demand), never as ambient dressing. Measured: table + steel chair +
+    // barbwire bat + ladder were 76 MB on the wire at boot, competing with the fighter models.
+    try{ if(overBudget(spec.url) && !(opts&&opts.demand)){
+      if(window.__ASSET_SKIPPED==null) window.__ASSET_SKIPPED=[];
+      window.__ASSET_SKIPPED.push(String(spec.url).split('/').pop());
+      return;
+    } }catch(e){}
     try{
       var loader=new THREE.GLTFLoader();
       loader.load(spec.url, function(gltf){
@@ -38471,7 +38496,10 @@ window.BANNON_PROPS = (function(){
     }catch(e){}
   }
   function spawnAll(){ if(W.spawned || typeof scene==='undefined' || typeof THREE==='undefined' || !THREE.GLTFLoader) return;
-    W.spawned=true; SPAWNS.forEach(function(s){ loadItem(s[0],s[1],s[2],s[3]); }); }
+    // TLC props are the POINT of a TLC match, so when a match type actually wants them they load
+  // regardless of the scenery budget — demand:true. The budget only ever stops them being ambient
+  // furniture nobody asked for.
+  W.spawned=true; SPAWNS.forEach(function(s){ loadItem(s[0],s[1],s[2],s[3],{demand:true}); }); }
   function playerF(){ try{ var fs=(typeof fighters!=='undefined')?fighters:[]; for(var i=0;i<fs.length;i++) if(fs[i]&&fs[i].isPlayer) return fs[i]; return fs[0]||null; }catch(e){ return null; } }
   function nearestItem(f,maxD){ var p; try{ p=f.worldJoint('pelvis'); }catch(e){ return null; }
     var best=null,bd=maxD; W.items.forEach(function(it){ if(it.holder||it.broken||it.spec.prop) return;
@@ -42537,7 +42565,17 @@ console.log('%c[GNM FACE LAB] scan-grade parametric face studio — hub tile �
     setTimeout(tryStart, 2500);
   }
   window.BANNON_MOCAP_LOAD = loadCore;   // manual trigger (e.g. a MOVE FORGE button)
-  setTimeout(tryStart, 4000);            // let the page settle first
+  // WAIT FOR THE MODELS. This fired 4 s after load and went straight for 26 FBX captures while the
+  // fighter GLBs were still downloading — measured 248 MB in flight at boot and a model that bound
+  // 64 s after the bell. Mocap is useless before you can see the wrestler, so it now waits until the
+  // fighters actually have their models, then loads on idle.
+  function modelsReady(){ try{ var F=(typeof fighters!=='undefined'&&fighters)||[];
+    return F.length>0 && F.slice(0,2).every(function(f){ return !f || f.model || f._forceProc || !f._charModelRequested; }); }catch(e){ return false; } }
+  function whenIdle(fn){ try{ if(window.requestIdleCallback) return requestIdleCallback(fn,{timeout:8000}); }catch(e){} setTimeout(fn,1200); }
+  (function gate(t){ t=t||0;
+    if(modelsReady()){ whenIdle(tryStart); return; }
+    if(t<120) setTimeout(function(){ gate(t+1); }, 1500); else whenIdle(tryStart);
+  })(0);
 })();
 console.log('%c[BANNON_MOCAP] mocap activator online — loadClipFor() + mobile-safe core auto-load','color:#7CFC00');
 </script>
@@ -43187,7 +43225,15 @@ console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot
           // LOC_* envs are the MDickie locations BANNON_WORLD injected; their glb path carries the game
           var game=null, nm=id;
           if(env&&env.glb){ var m=env.glb.match(/world\/(ht3|il)\//); if(m) game=m[1]; nm=env.name||id; }
-          dress(nm, game);
+          // BUDGETED + DEFERRED. dress() places 14 decor + 3 vehicles + 10 weapons per location, and
+          // some of those GLBs are enormous (table 27 MB, steel chair 26 MB, barbwire bat 14 MB).
+          // Firing it inside buildCurrent put ~75 MB of scenery on the wire against the fighter
+          // models. The venue itself must land first; furniture can arrive late and nobody minds.
+          (function(){
+            var go=function(){ try{ dress(nm, game); }catch(e){} };
+            try{ if(window.requestIdleCallback) return requestIdleCallback(go,{timeout:12000}); }catch(e){}
+            setTimeout(go, 3500);
+          })();
         }
       }catch(e){}
       return r;
@@ -45275,7 +45321,15 @@ console.log('%c[BANNON_SEGMENT] in-ring promos are live and BRANCH — BANNON_SE
     if(tries<80) setTimeout(function(){ arm(tries+1); }, 2000);
   }
 
-  load().then(function(){ setTimeout(function(){ arm(0); }, 2500); });
+  // same gate for the combat-capture prefetch: models first, then idle.
+  load().then(function(){
+    (function gate(t){ t=t||0;
+      var ready=false; try{ var F=(typeof fighters!=='undefined'&&fighters)||[];
+        ready=F.length>0 && F.slice(0,2).every(function(f){ return !f || f.model || f._forceProc || !f._charModelRequested; }); }catch(e){}
+      if(ready){ try{ if(window.requestIdleCallback){ requestIdleCallback(function(){ arm(0); },{timeout:9000}); return; } }catch(e){} setTimeout(function(){ arm(0); },1500); return; }
+      if(t<120) setTimeout(function(){ gate(t+1); }, 1500); else setTimeout(function(){ arm(0); }, 2000);
+    })(0);
+  });
 
   window.BANNON_COMBAT_MOCAP={
     clipFor:function(n){ return window.__combatClipFor(n); },
