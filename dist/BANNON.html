@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2390"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2395"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -41550,8 +41550,19 @@ window.BANNON_ENVIRONMENTS = (function(){
   }
 
   function buildCurrent() {
-    if (typeof arenaGroup !== 'undefined' && arenaGroup) scene.remove(arenaGroup);
-    window.arenaGroup = new THREE.Group();
+    // `arenaGroup` is a top-level `let` (line ~11562), NOT a window property — the same trap as
+    // `let fighters`. Assigning window.arenaGroup created a SEPARATE, empty object while every
+    // `arenaGroup.add(...)` below still resolved to the lexical binding. So this function removed
+    // the old arena from the scene and then immediately put THAT SAME OLD GROUP BACK, contents and
+    // all, and built the venue into it. Nothing was ever cleared: pick an MDickie venue and you got
+    // the venue geometry stacked inside the wrestling ring, and every further venue piled on top.
+    // Measured: window.arenaGroup held 0 meshes after a venue load while the fetch returned 200.
+    if (arenaGroup) {
+      scene.remove(arenaGroup);
+      try{ if(typeof disposeObject3D==='function') disposeObject3D(arenaGroup); }catch(e){}   // don't leak the old venue's GPU buffers
+    }
+    arenaGroup = new THREE.Group();          // the LEXICAL binding — what every add() below targets
+    window.arenaGroup = arenaGroup;          // keep the window alias pointing at the real group
     scene.add(arenaGroup);
     
     const env = ENVS.find(e => e.id === window.CURRENT_ENV);
