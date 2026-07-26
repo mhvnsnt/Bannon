@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2424"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2428"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -41364,7 +41364,11 @@ window.BANNON_GODWITHIN = (function(){
     try{ if(window.BANNON_STORY && window.BANNON_STORY.log) window.BANNON_STORY.log('Entered the God Within.'); }catch(e){}
     return true;
   }
-  function stop(){ active=false; if(poll){clearInterval(poll);poll=null;} hideInteract(); const b=banner(); if(b) b.style.display='none'; window.__godWithinRoam=false; }
+  function stop(){ active=false; if(poll){clearInterval(poll);poll=null;} hideInteract(); const b=banner(); if(b) b.style.display='none'; window.__godWithinRoam=false;
+    // the world stops when you leave it — otherwise the clock keeps running, needs keep draining
+    // and you come back to a starved man three days later for no reason you were shown.
+    try{ if(window.BANNON_LIFE&&window.BANNON_LIFE.stop) window.BANNON_LIFE.stop(); }catch(e){}
+    try{ if(window.BANNON_LIFE_UI) window.BANNON_LIFE_UI.close(); }catch(e){} }
   function talk(){ if(!target) return; const nm=nameOf(target); const me='BANNON';
     let line='...'; try{ if(window.BANNON_PROMOS && window.BANNON_PROMOS.line) line=window.BANNON_PROMOS.line(me,nm); }catch(e){}
     try{ if(window.BANNON_STORY && window.BANNON_STORY.changeRel) window.BANNON_STORY.changeRel(me,nm,+4); }catch(e){}
@@ -41873,14 +41877,27 @@ window.BANNON_RPG = (function(){
   return { SKILL_TREE, QUEST_CHAIN, getPlayerRPG, grantXP, checkQuestObjective };
 })();
 
-// Expand God Within Roam Menu to allow changing environments
+// THIS PATCH USED TO BUILD THE WORLD TWICE, and it undid the "start at home" fix on the way past.
+// It hard-set CURRENT_ENV='BACKSTAGE' and called buildArena() — a full environment build, GLB fetch
+// and all — and THEN called the original start(), which sets CURRENT_ENV to the chosen home location
+// and rebuilds. Two complete world builds, back to back, every time you entered God Within, with the
+// first one thrown away. It is also why the mode felt like it dropped you backstage no matter what.
+// The home-location choice belongs to BANNON_GODWITHIN.start(); this wrapper's only job now is to
+// hand off to BANNON_LIFE, which decides where you actually wake up (home / a cell you have not
+// finished / a hospital bed) and starts the clock.
 if (window.BANNON_GODWITHIN) {
   const _origStart = window.BANNON_GODWITHIN.start;
   window.BANNON_GODWITHIN.start = function() {
-    window.CURRENT_ENV = 'BACKSTAGE';
-    if(typeof buildArena === 'function') buildArena();
-    if (_origStart) _origStart();
-    if(window.addEvent) window.addEvent("Entered the Backstage Hub. Roam freely.", 'godwithin');
+    const r = _origStart ? _origStart() : true;
+    try{
+      if(window.BANNON_LIFE){
+        const at = window.BANNON_LIFE.start({ me: (window.CAREER_ME || 'BANNON') });
+        // BANNON_LIFE may put you somewhere the roam start did not (an unserved sentence outranks
+        // going home), so let it move you rather than fighting it for the environment.
+        if(at && at !== window.CURRENT_ENV) window.BANNON_LIFE.goTo(at, { mins:0 });
+      }
+    }catch(e){}
+    return r;
   };
 }
 </script>
@@ -43160,6 +43177,8 @@ console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot
 
   // ── 3. DRESS a location: scatter decor + park vehicles from the SAME source game.
   var _dressed={};
+  var _placedAt={};
+  function dressedAt(locName){ return (_placedAt[String(locName||'')]||[]).slice(); }
   function dress(locName, game){
     if(typeof THREE==='undefined' || !THREE.GLTFLoader) return 0;
     if(typeof arenaGroup==='undefined' || !arenaGroup) return 0;
@@ -43172,6 +43191,13 @@ console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot
     var carry=c.carry.filter(function(e){ return !game || e.game===game; });
     if(!decor.length && !vehs.length) return 0;
     var placed=0;
+    // WHAT WENT IN HERE. dress() used to place furniture and vehicles and keep no record, so nothing
+    // downstream could ask "what is in this room?" — BANNON_LIFE had to infer a sleeping surface from
+    // the room's ROLE, which is why sleeping was wrongly restricted to four dwellings. It now keeps a
+    // manifest per location, and anything that needs to know what is physically here can read it.
+    var manifest=[];
+    _placedAt[tag]=manifest;
+    _placedAt[String(locName||'')]=manifest;         // reachable by bare location name too
     // ring of placement slots around the roam space, avoiding the middle where fighters spawn
     function slot(){ var a=rnd()*Math.PI*2, r=9+rnd()*13; return [Math.cos(a)*r, Math.sin(a)*r]; }
     function add(url, pos, scaleTo){
@@ -43195,12 +43221,14 @@ console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot
     for(var i=0;i<Math.min(MAX_DRESS,decor.length);i++){
       var e=decor[Math.floor(rnd()*decor.length)];
       add(BASE+e.file, slot(), e.cls==='nature'?3.2:1.6); placed++;
+      manifest.push({ name:e.name, cls:e.cls, kind:'decor' });
     }
     // parked vehicles (bigger, pushed further out so they read as street furniture)
     for(var v=0;v<Math.min(MAX_VEH,vehs.length);v++){
       var vh=vehs[Math.floor(rnd()*vehs.length)];
       var a=rnd()*Math.PI*2, r=16+rnd()*8;
       add(BASE+vh.file, [Math.cos(a)*r, Math.sin(a)*r], 4.4); placed++;
+      manifest.push({ name:vh.name||vh.file, cls:'vehicle', kind:'vehicle' });
     }
     // a few real, pickup-able weapons lying around so roam has usable arms
     weaponize();
@@ -43291,7 +43319,8 @@ console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot
              weaponized:_weaponized, dressed:Object.keys(_dressed) }; }
 
   window.BANNON_MDICKIE={ classify:classify, catalog:catalog, weaponize:weaponize,
-    spawnWeapon:spawnWeapon, dress:dress, stats:stats, redress:function(){ _dressed={}; },
+    spawnWeapon:spawnWeapon, dress:dress, dressedAt:dressedAt, stats:stats,
+    redress:function(){ _dressed={}; _placedAt={}; },
     wearables:wearables, wearOn:wearOn, unwear:unwear };
 
   // wait for BANNON_WORLD's venues.json fetch + the environments module, then arm
@@ -46491,6 +46520,1143 @@ console.log('%c[BANNON_VARIANTS] move families online — BANNON_VARIANTS.famili
 })();
 console.log('%c[BANNON_LEGAL] court has a door — BANNON_LEGAL.heat("BANNON") / .docket()','color:#7CFC00');
 </script>
+<script>
+// ============================================================================================
+// BANNON_LIFE — the world loop God Within and Universe were missing.
+//
+// THE OWNER'S WORDS: "the god within and universe modes are not working fully like his game and
+// universe... the game feels incomplete because of these things."
+//
+// He is right, and this is the specific reason. Every PIECE existed and nothing JOINED them:
+//   * 127 MDickie world GLBs are loaded and roamable — Court, Prison, Prison_Hall, Prison_Yard,
+//     Police_Yard, Cafeteria, Classroom, Library, Workshop, Store_Food/Clothes/Hardware/Sports/Tech,
+//     Airport, Bus, Subway, Suburbs, Rooftop, Theatre. The art for a whole LIFE is sitting there.
+//   * God Within was three buttons on the nearest body: TALK / BRAWL / LEAVE. You stood in one
+//     location forever. There was no way to LEAVE a location.
+//   * Universe had a real weekly calendar, titles, contracts, aging and injuries — all of it behind
+//     a menu. You never went anywhere. You pressed SIM.
+//   * BANNON_LEGAL could file charges and open a court. Nothing could get you arrested.
+//   * The whole 46k-line file contained ZERO references to money, hunger, energy or a clock.
+//
+// MDickie's games are one engine wearing different clothes, and what that engine has is: TIME that
+// passes, NEEDS that punish you, MONEY you have to earn, PLACES you WALK between, PEOPLE who are
+// somewhere for their own reasons, and CONSEQUENCES that outlive the fight. That is the whole feel.
+// None of it was here. This is that engine, on top of what we already have.
+//
+// SEVEN THINGS, all wired to existing modules rather than reinvented:
+//   CLOCK        game minutes, days, day-parts. Real time-of-day, and it only runs while you are
+//                actually in the world — a paused game is not a passing day.
+//   NEEDS        energy / hunger / mood, decayed per game-hour, with teeth: no energy caps your
+//                stamina, starving takes HP, and both feed the fight you are about to have.
+//   WALLET       money in, money out. Match purses pay it, food and gear and bail take from it.
+//   PLACES       a graph built FROM the environments actually loaded, role-classified by name
+//                (HOME/FOOD/SHOP/GYM/JOB/JAIL/COURT/HOSPITAL/ARENA/TRANSIT/STREET), with exits.
+//   TRAVEL       PHYSICAL exits. Walk to the edge of a location and you are in the next one. This is
+//                the single thing that turns a set of rooms into a world, and it is how MDickie
+//                does it — you walk off the side of the screen.
+//   PEOPLE       every roster fighter has a home, a job and a schedule, and is somewhere specific at
+//                any hour. Arrive where they are and they are THERE, spawned as real bodies through
+//                the same proven path BANNON_INTERFERENCE uses.
+//   CONSEQUENCE  hit someone in front of witnesses -> police -> BANNON_LEGAL -> court -> a sentence
+//                you serve in the Prison location on this clock. Get emptied out in the street ->
+//                hospital and days lost. Miss a booked show -> the promotion fines you.
+//
+// AND IT MAKES UNIVERSE A PLACE. u.card's weekly match becomes a real APPOINTMENT: a day, a time
+// and a venue. Travel there before the bell and the match starts for real, with your needs and your
+// injuries carried in. That is the difference between a calendar and a career.
+//
+// Persisted under one versioned key so a life survives a reload, which is the other half of why
+// MDickie's worlds feel real.
+// ============================================================================================
+window.BANNON_LIFE = (function(){
+  var KEY = 'bannon_life_v1';
+
+  // ── TIME ──────────────────────────────────────────────────────────────────────────────────────
+  // A game day is 24 game-hours. MIN_PER_SEC=2 makes a day 12 real minutes, which is close to
+  // MDickie's pace: long enough that a day has shape, short enough that you see several.
+  var MIN_PER_SEC = 2;
+  var DAY = 24 * 60;
+  var PARTS = [
+    { id:'NIGHT',     from:0,    to:5*60,  label:'small hours' },
+    { id:'MORNING',   from:5*60, to:11*60, label:'morning' },
+    { id:'MIDDAY',    from:11*60,to:15*60, label:'midday' },
+    { id:'AFTERNOON', from:15*60,to:19*60, label:'afternoon' },
+    { id:'EVENING',   from:19*60,to:22*60, label:'evening' },
+    { id:'LATE',      from:22*60,to:DAY,   label:'late night' }
+  ];
+  function partOf(min){ for(var i=0;i<PARTS.length;i++){ if(min>=PARTS[i].from && min<PARTS[i].to) return PARTS[i]; } return PARTS[0]; }
+  function hhmm(min){ var h=Math.floor(min/60)%24, m=Math.floor(min%60);
+    var ap=h<12?'am':'pm', h12=(h%12)||12; return h12+':'+(m<10?'0':'')+m+ap; }
+
+  // ── STATE ─────────────────────────────────────────────────────────────────────────────────────
+  function fresh(){
+    return {
+      v:1, day:1, min:7*60,            // you wake at 7am on day 1
+      me:'BANNON',
+      needs:{ energy:88, hunger:70, mood:62 },
+      money:240,
+      place:null,                       // resolved on first start()
+      npc:{},                           // name -> { home, work, place, rel }
+      jail:{ days:0, servedToday:false },
+      hospital:{ days:0 },
+      diary:[],                         // appointments: { day, min, kind, place, a, b, title, done }
+      log:[],
+      stats:{ daysLived:0, fightsWon:0, fightsLost:0, arrests:0, earned:0, spent:0, shifts:0 }
+    };
+  }
+  var S = null;
+  function load(){ try{ var s=localStorage.getItem(KEY); if(s){ var o=JSON.parse(s); if(o&&o.v===1) return o; } }catch(e){} return fresh(); }
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} return S; }
+  function reset(){ S=fresh(); save(); return S; }
+  function get(){ if(!S) S=load(); return S; }
+
+  function note(txt, kind){
+    var g=get();
+    g.log.unshift({ d:g.day, t:hhmm(g.min), txt:String(txt) });
+    if(g.log.length>120) g.log.length=120;
+    try{ if(window.addEvent) window.addEvent(txt, kind||'life'); }catch(e){}
+  }
+  function say(a,b){ try{ if(typeof announce==='function') announce(a, b||''); }catch(e){} }
+
+  // ── PLACES ────────────────────────────────────────────────────────────────────────────────────
+  // Roles are DERIVED from the environment's own id/name, so every MDickie location that gets loaded
+  // — now or later — lands in the world with a purpose instead of being an empty backdrop. Order
+  // matters: the first pattern that matches wins, so HOSPITAL beats the generic STORE-ish words.
+  var ROLE_RX = [
+    ['HOME',     /HOTEL|MOTEL|HOUSE|APARTMENT|BEDROOM|TRAILER|FLAT|LODGE|DORM|HOME\b/i],
+    ['JAIL',     /PRISON|JAIL|CELL|SUPERMAX|LOCKUP|BLOCK_(NORTH|SOUTH|EAST|WEST)/i],
+    ['COURT',    /COURT|TRIAL|JUDGE|TRIBUNAL/i],
+    ['POLICE',   /POLICE|PRECINCT|COP|SHERIFF/i],
+    ['HOSPITAL', /HOSPITAL|WARD|CLINIC|INFIRMARY|MEDICAL|GENERAL\b/i],
+    ['FOOD',     /CAFETERIA|CANTEEN|DINER|RESTAURANT|BAR\b|CAFE|STORE_FOOD|FOOD|KITCHEN|MESS/i],
+    ['GYM',      /GYM|TRAINING|DOJO|WEIGHT|FITNESS|WORKOUT/i],
+    ['SHOP',     /STORE|SHOP|MALL|MARKET|PAWN|OUTLET/i],
+    ['JOB',      /WORKSHOP|FACTORY|WAREHOUSE|YARD\b|OFFICE|SCHOOL|CLASSROOM|LIBRARY|CONSTRUCTION|DOCK|LAUNDRY/i],
+    ['ARENA',    /ARENA|STADIUM|THEATRE|THEATER|CINEMA|COLISEUM|DOME|RING\b/i],
+    ['TRANSIT',  /AIRPORT|BUS\b|SUBWAY|STATION|TRAIN|JUNCTION|PLANE|TERMINAL/i],
+    ['STREET',   /STREET|BLOCK|SUBURB|CITY|ROOFTOP|ALLEY|PARK|COURT_BASKETBALL|BASKETBALL|STRIP|LOT|PARKING/i]
+  ];
+  function roleOf(id, name){
+    var s = String(id||'')+' '+String(name||'');
+    for(var i=0;i<ROLE_RX.length;i++){ if(ROLE_RX[i][1].test(s)) return ROLE_RX[i][0]; }
+    return 'STREET';
+  }
+
+  var _places = null;   // [{ id, name, role, exits:[id...] }]
+  function envs(){ try{ return (window.BANNON_ENVIRONMENTS&&window.BANNON_ENVIRONMENTS.ENVS)||[]; }catch(e){ return []; } }
+
+  // The exit graph. Real cities are not fully connected and a fully connected graph is a menu with
+  // extra steps, so: every place links to the TRANSIT hubs (that is what transit is for), and to its
+  // near neighbours in the list — MDickie's locations arrive already grouped by area, so adjacency in
+  // the source order is a genuine spatial hint rather than an arbitrary one. HOME always reaches the
+  // street, and JAIL only ever reaches COURT and the police yard, because that is the point of jail.
+  function buildPlaces(){
+    var E=envs(), out=[], byId={};
+    E.forEach(function(e){
+      var role=roleOf(e.id, e.name);
+      var p={ id:e.id, name:e.name||String(e.id).replace(/^LOC_/,'').replace(/_/g,' '), role:role, exits:[] };
+      out.push(p); byId[p.id]=p;
+    });
+    if(!out.length) return (_places=[]);
+    var transit=out.filter(function(p){ return p.role==='TRANSIT'; }).map(function(p){ return p.id; });
+    var streets=out.filter(function(p){ return p.role==='STREET'; }).map(function(p){ return p.id; });
+    var hubs = transit.length?transit : streets.slice(0,3);
+    function link(a,b){ if(!a||!b||a===b) return; var p=byId[a]; if(p && p.exits.indexOf(b)<0) p.exits.push(b); }
+    out.forEach(function(p,i){
+      if(p.role==='JAIL'){
+        out.forEach(function(q){ if(q.role==='COURT'||q.role==='POLICE'||q.role==='JAIL') link(p.id,q.id); });
+        return;                                   // you do not walk out of prison to the shops
+      }
+      hubs.forEach(function(h){ link(p.id,h); link(h,p.id); });
+      link(p.id, (out[i-1]||{}).id); link(p.id, (out[i+1]||{}).id);
+      if(p.role==='HOME') streets.slice(0,2).forEach(function(s){ link(p.id,s); link(s,p.id); });
+    });
+    // never strand anyone: a place with no way out gets one
+    out.forEach(function(p){ if(!p.exits.length && hubs[0]) p.exits.push(hubs[0]); });
+    return (_places=out);
+  }
+  function places(){ return _places || buildPlaces(); }
+  function place(id){ var L=places(); for(var i=0;i<L.length;i++){ if(L[i].id===id) return L[i]; } return null; }
+  function byRole(role){ return places().filter(function(p){ return p.role===role; }); }
+  function firstRole(){ // firstRole('HOME','HOTEL',...) -> the first place matching any listed role
+    for(var i=0;i<arguments.length;i++){ var r=byRole(arguments[i]); if(r.length) return r[0]; }
+    return null;
+  }
+  function here(){ var g=get(); return place(g.place) || firstRole('HOME','STREET','ARENA') || places()[0] || null; }
+
+  // ── NEEDS ─────────────────────────────────────────────────────────────────────────────────────
+  // Per game-hour drain. These are the rates that make a day feel like a day: you can go about
+  // sixteen hours before energy is a problem, which is why sleep is a decision and not a chore.
+  var DRAIN = { energy:4.2, hunger:5.0, mood:1.4 };
+  function needs(){ return get().needs; }
+  function bump(k, v){ var n=needs(); n[k]=Math.max(0, Math.min(100, (n[k]||0)+v)); return n[k]; }
+
+  function drain(hours){
+    var n=needs();
+    n.energy = Math.max(0, n.energy - DRAIN.energy*hours);
+    n.hunger = Math.max(0, n.hunger - DRAIN.hunger*hours);
+    // mood follows the body: rested and fed lifts it, empty drags it down
+    var body=(n.energy+n.hunger)/2;
+    n.mood = Math.max(0, Math.min(100, n.mood + (body>55 ? 0.5 : -DRAIN.mood)*hours));
+    // TEETH. An empty tank is not a yellow bar, it costs you.
+    if(n.hunger<=0) hurtPlayer(2.5*hours, 'starving');
+    if(n.energy<=0) hurtPlayer(1.0*hours, 'exhausted');
+    applyToFighter();
+  }
+
+  function me(){
+    var fs=null; try{ fs=(typeof fighters!=='undefined')?fighters:window.fighters; }catch(e){}
+    if(!fs||!fs.length) return null;
+    for(var i=0;i<fs.length;i++){ if(fs[i] && fs[i].isPlayer) return fs[i]; }
+    return fs[0]||null;
+  }
+  function hurtPlayer(dmg, why){
+    var f=me(); if(!f) return;
+    try{ f.hp=Math.max(0,(f.hp||0)-dmg); }catch(e){}
+    if(why && Math.random()<0.25) note('You are '+why+'.', 'life');
+  }
+  // NEEDS REACH THE FIGHT. This is what stops them being a HUD decoration: your stamina ceiling and
+  // your damage are what your body can actually give today. It is the same idea as BANNON_CAREER's
+  // `physical`, applied to the live fighter instead of the sim.
+  function applyToFighter(){
+    var f=me(); if(!f) return; var n=needs();
+    var cond = (n.energy*0.55 + n.hunger*0.30 + n.mood*0.15)/100;   // 0..1
+    try{
+      f._lifeCond = cond;
+      // maxStamina is read in 22 places (regen clamp, exhaustion factor, lactic pose decay, the
+      // strike multiplier at ~2140). Capping it is therefore a REAL effect on how the fighter moves,
+      // not a number in a HUD. The untouched value is stashed once so this never compounds.
+      if(f.maxStamina!=null){
+        if(f._lifeBaseMaxStam==null) f._lifeBaseMaxStam=f.maxStamina;
+        f.maxStamina = Math.round(f._lifeBaseMaxStam * Math.max(0.40, cond));
+        if(f.stamina>f.maxStamina) f.stamina=f.maxStamina;
+      }
+      f._lifeDmgMul = 0.72 + 0.38*cond;      // consumed in the applyDamage wrap below
+    }catch(e){}
+  }
+
+  // ── WALLET ────────────────────────────────────────────────────────────────────────────────────
+  function money(){ return get().money; }
+  function earn(amt, why){ var g=get(); amt=Math.round(amt); g.money+=amt; g.stats.earned+=amt;
+    note('+$'+amt+(why?' — '+why:''), 'money'); save(); return g.money; }
+  function spend(amt, why){ var g=get(); amt=Math.round(amt); if(g.money<amt) return false;
+    g.money-=amt; g.stats.spent+=amt; note('-$'+amt+(why?' — '+why:''), 'money'); save(); return true; }
+
+  // ── PEOPLE ────────────────────────────────────────────────────────────────────────────────────
+  // Everyone gets a home, a job and a routine, seeded off their NAME so the world is the same world
+  // every time you load it. Then they are somewhere for their own reasons, which is the whole
+  // difference between an NPC and a prop.
+  function hash(s){ s=String(s); var h=0; for(var i=0;i<s.length;i++) h=((h<<5)-h+s.charCodeAt(i))|0; return Math.abs(h); }
+  function roster(){
+    try{ if(window.ROSTER_ALL) return window.ROSTER_ALL().map(function(r){ return r.name; }).filter(Boolean); }catch(e){}
+    try{ return (window.BANNON_ROSTER||[]).map(function(r){ return r.name; }).filter(Boolean); }catch(e){}
+    return [];
+  }
+  function seedPeople(){
+    var g=get(), L=places(); if(!L.length) return;
+    var homes=byRole('HOME'), jobs=byRole('JOB').concat(byRole('GYM')), streets=byRole('STREET');
+    var pick=function(arr,h){ return arr.length? arr[h%arr.length] : (L[h%L.length]); };
+    roster().forEach(function(nm){
+      if(g.npc[nm]) return;
+      var h=hash(nm);
+      g.npc[nm]={ home:pick(homes.length?homes:streets, h).id, work:pick(jobs.length?jobs:streets, h>>3).id,
+                  place:null, rel:0 };
+    });
+    save();
+  }
+  // Where a person is at this hour. Wrestlers are not office workers: they are out at night, in the
+  // gym in the afternoon, and asleep through the small hours like everyone else.
+  // WHY THIS IS NOT JUST hash(name) % list.length.
+  // The first version derived BOTH the decision ("do I go to the gym this afternoon?") and the choice
+  // ("which gym?") from low bits of the same hash. Those two are then perfectly correlated: everyone
+  // who went to a gym had the same parity, so they all picked the SAME gym. Measured: 64 of 120 people
+  // in one room, out of 8 occupied locations. A mixing step per salt makes the decision and the choice
+  // independent, which is the whole fix.
+  function mix(str, salt){
+    var x = (hash(str) ^ ((salt|0) * 2654435761)) >>> 0;
+    x = Math.imul(x ^ (x >>> 15), 2246822507) >>> 0;
+    x = Math.imul(x ^ (x >>> 13), 3266489909) >>> 0;
+    return (x ^ (x >>> 16)) >>> 0;
+  }
+  // Pools are deliberately WIDER than the strict role. There are only 2 GYM and 3 FOOD locations in the
+  // loaded world, and pretending 120 people share two gyms is worse than admitting people also train in
+  // the street and eat at a shop counter — both of which are true of MDickie's worlds anyway.
+  function poolIds(){
+    var out=[];
+    for(var i=0;i<arguments.length;i++){ byRole(arguments[i]).forEach(function(p){ out.push(p.id); }); }
+    return out;
+  }
+  function haunts(nm, n){
+    if(n._h2) return n._h2;
+    var pick=function(ids, salt, fb){ return ids.length? ids[mix(nm,salt)%ids.length] : fb; };
+    n._h2 = {
+      gym:  pick(poolIds('GYM','STREET'), 31, n.work),
+      food: pick(poolIds('FOOD','SHOP'),  57, n.home),
+      hang: pick(poolIds('STREET','TRANSIT'), 83, n.home),
+      hang2:pick(poolIds('STREET','FOOD'), 109, n.home)
+    };
+    return n._h2;
+  }
+  function whereIs(nm){
+    var g=get(), n=g.npc[nm]; if(!n) return null;
+    var part=partOf(g.min).id;
+    var H=haunts(nm, n);
+    // the decision uses its OWN mixed stream (salt varies with the day so routines drift), the choice
+    // used a different one above — that independence is what stops the roster piling into one room
+    var d=mix(nm, 7000+g.day);
+    if(part==='NIGHT') return n.home;
+    if(part==='MORNING')   return (d%3===0)? n.work : n.home;
+    if(part==='MIDDAY')    return (d%5===0)? H.food : n.work;
+    if(part==='AFTERNOON') return ((d>>>3)%2===0)? n.work : H.gym;
+    if(part==='EVENING')   return ((d>>>5)%3===0)? H.food : H.hang;
+    return ((d>>>7)%2===0)? H.hang2 : n.home;
+  }
+  function whoIsHere(){
+    var g=get(), out=[];
+    Object.keys(g.npc).forEach(function(nm){ if(nm===g.me) return; if(whereIs(nm)===g.place) out.push(nm); });
+    return out;
+  }
+
+  // ── POPULATION: real bodies, through the path that is already proven ──────────────────────────
+  // BANNON_INTERFERENCE spawns a third man mid-match with new Fighter -> dressFighter -> push into
+  // `fighters`. Same path here, so a person in the street is the same kind of object as a person in a
+  // match and can be hit by the same physics. Capped hard, because this runs on a phone.
+  // Raised from 3 because the asset pass capped every fighter at 60k triangles and cut the roster's
+  // geometry 42% — a crowd is affordable now in a way it was not. Three bodies in a street reads as
+  // an empty set; six reads as a place people are in. window.LIFE_MAX_BODIES overrides on a weak phone.
+  var MAX_BODIES = (window.LIFE_MAX_BODIES!=null? window.LIFE_MAX_BODIES : 6);
+  function populate(){
+    if(typeof Fighter!=='function') return 0;
+    var fs=null; try{ fs=(typeof fighters!=='undefined')?fighters:window.fighters; }catch(e){}
+    if(!fs) return 0;
+    var g=get(), want=whoIsHere(), have={}, spawned=0;
+    fs.forEach(function(f){ try{ have[(f.opts&&f.opts.name)||f.name]=f; }catch(e){} });
+    // despawn the residents of somewhere else — they are not here any more
+    for(var i=fs.length-1;i>=0;i--){
+      var f=fs[i]; if(!f || f.isPlayer || !f._lifeNpc) continue;
+      var nm=(f.opts&&f.opts.name)||f.name;
+      if(want.indexOf(nm)<0){ removeBody(fs, i); }
+    }
+    var live=fs.filter(function(f){ return f && f._lifeNpc; }).length;
+    for(var k=0;k<want.length && live+spawned<MAX_BODIES;k++){
+      var nm2=want[k]; if(have[nm2]) continue;
+      if(spawnBody(nm2, fs)) spawned++;
+    }
+    return spawned;
+  }
+  function spawnBody(name, fs){
+    try{
+      var o={}; try{ if(typeof fighterOptsFor==='function') o=fighterOptsFor(name)||{}; }catch(e){}
+      var f=new Fighter(false, { col:o.col, accent:o.accent, skin:o.skin, name:name, style:o.style });
+      f._lookKey=name; f.isPlayer=false;
+      f._lifeNpc=true;
+      f._interferer=true;        // a passer-by is not a competitor: win conditions and LMS skip them
+      f._eliminated=true;        // and the legal fighters' opponent() search ignores them until provoked
+      var a=Math.random()*Math.PI*2, r=6+Math.random()*10;
+      f.x=Math.cos(a)*r; f.z=Math.sin(a)*r;
+      try{ if(f._autoZoneFromPosition) f._autoZoneFromPosition(); }catch(e){}
+      fs.push(f);
+      try{ if(typeof dressFighter==='function') dressFighter(f); }catch(e){}
+      try{ if(typeof applyForgeMorphs==='function') applyForgeMorphs(f); }catch(e){}
+      try{ if(typeof applyCharModels==='function') applyCharModels(); }catch(e){}
+      return f;
+    }catch(e){ return null; }
+  }
+  function removeBody(fs, i){
+    var f=fs[i]; if(!f) return;
+    try{ if(typeof scene!=='undefined'){ if(f.root) scene.remove(f.root); if(f.shadow) scene.remove(f.shadow); if(f.model) scene.remove(f.model); } }catch(e){}
+    fs.splice(i,1);
+  }
+
+  // ── TRAVEL: the exits are PHYSICAL ────────────────────────────────────────────────────────────
+  // The roam clamp is +/-45 (Fighter.prototype._zoneClamp is patched for free roam). Past EDGE the
+  // world offers the way out that lies in that direction, and you take it by continuing to walk —
+  // exactly how you leave a screen in Hard Time. No fast-travel menu, because a fast-travel menu is
+  // the thing that made this feel like a set of backdrops.
+  var EDGE = 34, LEAVE = 41;
+  function exitsOf(id){ var p=place(id); return p?p.exits.slice():[]; }
+  function exitForDirection(f){
+    var ex=exitsOf(get().place); if(!ex.length) return null;
+    // four compass slots so each edge of a location is a different door, deterministic per place
+    var slot;
+    if(Math.abs(f.x)>Math.abs(f.z)) slot = f.x>0?0:1; else slot = f.z>0?2:3;
+    return ex[slot % ex.length];
+  }
+  var _autoLock=0;                     // guards the EDGE-WALK only (see exitPrompt), never explicit travel
+  function goTo(id, opts){
+    opts=opts||{};
+    var p=place(id); if(!p) return false;
+    var g=get();
+    if(g.place===id) return false;     // already here; nothing to do and no time to spend
+    var mins = opts.mins!=null ? opts.mins : (p.role==='TRANSIT'?45:25);
+    g.place=id;
+    advance(mins);                                        // travel takes real time off the clock
+    try{ window.CURRENT_ENV=id; }catch(e){}
+    try{ if(window.BANNON_ENVIRONMENTS&&window.BANNON_ENVIRONMENTS.buildCurrent) window.BANNON_ENVIRONMENTS.buildCurrent(); }catch(e){}
+    // put the player just inside the new place rather than on top of the exit they walked out of
+    var f=me(); if(f){ try{ f.x=0; f.z=8; if(f._autoZoneFromPosition) f._autoZoneFromPosition(); }catch(e){} }
+    try{ if(window.BANNON_MDICKIE&&window.BANNON_MDICKIE.dress) window.BANNON_MDICKIE.dress(p.name); }catch(e){}
+    populate();
+    say(p.name.toUpperCase(), hhmm(g.min)+' — day '+g.day);
+    note('Travelled to '+p.name+'.', 'life');
+    save(); hud();
+    _autoLock = (typeof performance!=='undefined'? performance.now()/1000 : Date.now()/1000) + 1.2;
+    return true;
+  }
+
+  // ── CONSEQUENCE ───────────────────────────────────────────────────────────────────────────────
+  // Hitting someone in the world is not a match. It is an assault, and whether it costs you depends
+  // on where you are and who saw it — the yard shrugs, the shopping street does not. Heat goes into
+  // BANNON_LEGAL, which already knows how to file charges and open a court; what was missing was any
+  // way for LIVE PLAY to reach it.
+  var TOLERANT = { JAIL:1, STREET:0.35, ARENA:0 };     // multiplier on how much trouble you are in
+  function witnessed(){
+    var p=here(); if(!p) return 0;
+    var mul = TOLERANT[p.role]!=null ? TOLERANT[p.role] : 1;
+    return mul * (1 + whoIsHere().length*0.35);
+  }
+  function reportAssault(victimName){
+    var g=get(), p=here(); if(!p) return;
+    if(p.role==='ARENA') return;                         // in the ring it is the job
+    var w=witnessed(); if(w<=0) return;
+    try{
+      if(window.BANNON_LEGAL && window.BANNON_LEGAL.accrue){
+        // OUTSIDE_RING is BANNON_LEGAL's own charge for an affray away from the ring — reusing its
+        // vocabulary instead of inventing a parallel one keeps one docket, not two.
+        for(var i=0;i<Math.max(1,Math.round(w));i++) window.BANNON_LEGAL.accrue(g.me,'OUTSIDE_RING','in '+p.name);
+      }
+    }catch(e){}
+    if(Math.random() < 0.22*w && p.role!=='JAIL') arrest('affray in '+p.name);
+  }
+  // opts.bail:false forces the sentence branch. Not a cheat hatch — the bail coin flip makes the
+  // consequence chain untestable, and an untested consequence chain is how you ship one that never
+  // actually puts anyone inside.
+  function arrest(why, opts){
+    opts=opts||{};
+    var g=get();
+    g.stats.arrests++;
+    var bail=(opts.bail===false)?0:Math.min(g.money, 60+Math.floor(Math.random()*140));
+    say('ARRESTED', why);
+    note('Arrested — '+why+'.', 'legal');
+    // court FIRST if there is a courthouse in this world; the sentence is what puts you inside
+    var court=firstRole('COURT');
+    var sentence = 1 + Math.floor(Math.random()*3);
+    try{ if(window.BANNON_LEGAL && window.BANNON_LEGAL.file) window.BANNON_LEGAL.file(g.me, why); }catch(e){}
+    if(bail>0 && opts.bail!==false && Math.random()<0.45){
+      spend(bail, 'bail'); note('Bailed out for $'+bail+'. The charge stands.', 'legal');
+      save(); return;
+    }
+    g.jail.days = (g.jail.days||0) + sentence;
+    var cell = firstRole('JAIL');
+    if(court) goTo(court.id, { mins:90 });
+    if(cell) goTo(cell.id, { mins:60 });
+    note('Sentenced to '+sentence+' day'+(sentence>1?'s':'')+'.', 'legal');
+    save();
+  }
+  function hospitalise(){
+    var g=get(), h=firstRole('HOSPITAL');
+    g.hospital.days = (g.hospital.days||0) + 1 + Math.floor(Math.random()*2);
+    say('YOU WENT DOWN', 'somebody called it in');
+    note('Taken to hospital.', 'life');
+    var bill=Math.min(g.money, 90); if(bill>0) spend(bill, 'medical');
+    if(h) goTo(h.id, { mins:120 });
+    var f=me(); if(f){ try{ f.hp=Math.max(f.hp, (f.maxHp||10000)*0.45); }catch(e){} }
+    bump('energy', 25); save();
+  }
+
+  // ── THINGS TO DO ──────────────────────────────────────────────────────────────────────────────
+  // Every one of these costs TIME, which is what makes them decisions. A day only holds so much.
+  // ── SLEEP IS A SURFACE, NOT A LOCATION ────────────────────────────────────────────────────────
+  // Owner correction, and he is right: in MDickie's games you lie down on WHATEVER IS THERE — the
+  // ground, a bench, a chair, the roof of a car, a soda machine, a table, a medical bed, an actual bed —
+  // and the surface decides how well you sleep. My first version gated sleep on the room's role, which
+  // made four dwellings the only places in a 65-location world you could rest. Wrong model entirely.
+  //
+  // quality: how much of an hour's rest you actually get. warm: indoors/enclosed (no exposure penalty).
+  // risk: chance per night of something happening to a man asleep in the open.
+  var SURFACES = [
+    { key:'BED',      label:'a bed',                quality:1.00, warm:true,  risk:0.00, rx:/\bbed\b|bunk|mattress|cot/i },
+    { key:'MEDBED',   label:'a medical bed',        quality:0.98, warm:true,  risk:0.00, rx:/medical|hospital|gurney|stretcher/i },
+    { key:'SOFA',     label:'a couch',              quality:0.90, warm:true,  risk:0.02, rx:/couch|sofa|armchair|recliner/i },
+    { key:'BENCH',    label:'a bench',              quality:0.68, warm:false, risk:0.16, rx:/bench|pew|seat/i },
+    { key:'CHAIR',    label:'a chair',              quality:0.55, warm:false, risk:0.12, rx:/chair|stool/i },
+    { key:'TABLE',    label:'a table top',          quality:0.52, warm:false, risk:0.14, rx:/table|desk|counter/i },
+    { key:'CAR',      label:'the back of a car',    quality:0.62, warm:true,  risk:0.08, rx:/vehicle|car|van|truck|bus|taxi|limo/i },
+    { key:'MACHINE',  label:'a soda machine',       quality:0.40, warm:false, risk:0.18, rx:/machine|vending|fridge|freezer|cabinet|locker/i },
+    { key:'CRATE',    label:'a stack of crates',    quality:0.42, warm:false, risk:0.18, rx:/crate|barrel|box|cardboard|bin|pallet/i },
+    { key:'GROUND',   label:'the bare floor',       quality:0.30, warm:false, risk:0.22, rx:null }   // always available
+  ];
+  function surfaceByKey(k){ for(var i=0;i<SURFACES.length;i++){ if(SURFACES[i].key===k) return SURFACES[i]; } return null; }
+
+  // What you can actually lie on HERE: the room's own furniture (from the dressing manifest the world
+  // really placed), plus what the location type guarantees, plus the floor — which is everywhere.
+  function surfacesHere(){
+    var p=here(); if(!p) return [surfaceByKey('GROUND')];
+    var found={}, out=[];
+    function addKey(k){ if(k && !found[k]){ var s=surfaceByKey(k); if(s){ found[k]=1; out.push(s); } } }
+    // 1. a bed where a bed obviously is
+    if(p.role==='HOME') addKey('BED');
+    if(p.role==='JAIL') addKey('BED');                    // a bunk, and the law counts it as one
+    if(p.role==='HOSPITAL') addKey('MEDBED');
+    // 2. whatever the MDickie dressing actually put in this location — this is the real answer, and it
+    // is why dress() now keeps a manifest instead of forgetting what it placed.
+    try{
+      var man=(window.BANNON_MDICKIE&&window.BANNON_MDICKIE.dressedAt)? window.BANNON_MDICKIE.dressedAt(p.name) : [];
+      man.forEach(function(it){
+        var nm=String(it.name||'')+' '+String(it.cls||'');
+        for(var i=0;i<SURFACES.length;i++){ var S=SURFACES[i]; if(S.rx && S.rx.test(nm)){ addKey(S.key); break; } }
+      });
+    }catch(e){}
+    // 3. what a place of this kind reliably has even before the dressing loads
+    if(p.role==='FOOD'){ addKey('TABLE'); addKey('CHAIR'); addKey('MACHINE'); }
+    if(p.role==='JOB'||p.role==='SHOP'){ addKey('CRATE'); addKey('CHAIR'); addKey('MACHINE'); }
+    if(p.role==='TRANSIT'){ addKey('BENCH'); addKey('CAR'); }
+    if(p.role==='STREET'){ addKey('BENCH'); addKey('CAR'); }
+    if(p.role==='ARENA'){ addKey('BENCH'); addKey('TABLE'); }
+    if(p.role==='COURT'||p.role==='POLICE'){ addKey('BENCH'); }
+    addKey('GROUND');                                     // you can always sleep on the floor
+    out.sort(function(a,b){ return b.quality-a.quality; });
+    return out;
+  }
+
+  // Sleeping rough in the open has consequences, which is the other half of why MDickie's sleep is a
+  // decision: you wake up robbed, or you wake up in a cell.
+  function roughNight(S, hours){
+    var p=here(); if(!p) return;
+    var exposed = !S.warm && (p.role==='STREET'||p.role==='TRANSIT'||p.role==='ARENA');
+    var chance = S.risk * (hours/8) * (exposed? 1.6 : 1.0);
+    if(Math.random() >= chance) return;
+    var g=get();
+    if(p.role==='STREET' && Math.random()<0.35){
+      note('Picked up for vagrancy while you slept.', 'legal');
+      arrest('vagrancy in '+p.name);
+      return;
+    }
+    var take=Math.min(g.money, 20+Math.floor(Math.random()*90));
+    if(take>0){ spend(take, 'robbed in your sleep'); say('YOU WERE ROLLED', 'somebody went through your pockets'); }
+    else { bump('mood', -8); note('A bad night. Nobody left you alone.', 'life'); }
+    if(exposed){ bump('mood', -5); hurtPlayer(30, 'stiff and cold'); }
+  }
+
+  // sleep(hours, surfaceKey). No surface named = the best thing available here, which is what a person
+  // would actually do. An explicit key lets the UI (and a modder) choose to kip on the floor.
+  function sleep(hours, surfaceKey){
+    hours = hours!=null?hours:8;
+    var avail=surfacesHere();
+    var S = surfaceKey ? (avail.filter(function(x){ return x.key===surfaceKey; })[0]) : avail[0];
+    if(!S){ note('Nothing here to lie on.', 'life'); return false; }
+    advance(hours*60, { sleeping:true });
+    // quality scales what the hours are WORTH. Eight hours on a floor is not eight hours in a bed.
+    var q=S.quality;
+    bump('energy', hours*11*q);
+    bump('mood',   hours*1.6*q - (q<0.5? hours*0.5 : 0));
+    bump('hunger', -hours*2.2);
+    var f=me(); if(f){ try{ f.hp=Math.min(f.maxHp||10000, (f.hp||0)+(f.maxHp||10000)*0.05*hours*q); }catch(e){} }
+    note('Slept '+hours+'h on '+S.label+'.', 'life');
+    roughNight(S, hours);
+    save(); hud(); return true;
+  }
+  var MEALS = [ ['a hot meal', 18, 42], ['something out of a packet', 7, 20], ['a proper sit-down', 34, 62] ];
+  function eat(which){
+    var p=here();
+    if(!p || (p.role!=='FOOD' && p.role!=='HOME')){ note('Nothing to eat here.', 'life'); return false; }
+    if(p.role==='FOOD' && !isOpen(p)){ note(p.name+' is shut at this hour.', 'life'); return false; }
+    var m=MEALS[Math.max(0,Math.min(MEALS.length-1, which||0))];
+    if(!spend(m[1], m[0])) { note('You cannot afford '+m[0]+'.', 'money'); return false; }
+    advance(25); bump('hunger', m[2]); bump('mood', 4);
+    note('Ate '+m[0]+'.', 'life'); save(); hud(); return true;
+  }
+  // A shift is MDickie's job loop: hours in, money out, and it costs you the day. Pay scales with
+  // the place — the yard pays worse than an office, and the gym pays nothing because you are the one
+  // getting something out of it.
+  var WAGE = { JOB:14, SHOP:11, GYM:0, HOSPITAL:16, ARENA:22 };
+  // Trading hours. HOSPITAL and JAIL are 24h because they have to be; everything else is shut in the
+  // small hours and late at night, so a plan that ignores the clock costs you the walk.
+  var CLOSED_PARTS = { NIGHT:1, LATE:1 };
+  function isOpen(p, partId){
+    if(!p) return false;
+    if(p.role==='HOSPITAL'||p.role==='JAIL'||p.role==='HOME'||p.role==='STREET'||p.role==='TRANSIT') return true;
+    return !CLOSED_PARTS[partId || partOf(get().min).id];
+  }
+  function work(hours){
+    hours=hours!=null?hours:4;
+    var p=here(); if(!p) return false;
+    var w=WAGE[p.role];
+    if(w==null){ note('No work going at '+p.name+'.', 'life'); return false; }
+    if(!isOpen(p)){ note(p.name+' is shut at this hour.', 'life'); return false; }
+    if(needs().energy<12){ note('You are too far gone to work a shift.', 'life'); return false; }
+    advance(hours*60);
+    bump('energy', -hours*6.5); bump('hunger', -hours*4); bump('mood', -hours*0.8);
+    if(w>0) earn(w*hours, 'a '+hours+'h shift at '+p.name);
+    get().stats.shifts++;
+    note('Worked '+hours+'h at '+p.name+'.', 'life'); save(); hud(); return true;
+  }
+  // The gym is the one place where spending the day BUYS something permanent: it feeds the career
+  // sim's physical condition, so training in the world makes you better in the ring.
+  function train(hours){
+    hours=hours!=null?hours:2;
+    var p=here(); if(!p || p.role!=='GYM'){ note('No gym here.', 'life'); return false; }
+    if(!isOpen(p)){ note(p.name+' is locked up at this hour.', 'life'); return false; }
+    if(needs().energy<20){ note('Nothing left in the tank to train on.', 'life'); return false; }
+    advance(hours*60);
+    bump('energy', -hours*9); bump('hunger', -hours*5); bump('mood', hours*3);
+    try{
+      var U=window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get&&window.BANNON_UNIVERSE.get();
+      var g=get(); var f=U&&U.fighters&&U.fighters[g.me];
+      if(f){ f.physical=Math.min(100,(f.physical!=null?f.physical:100)+hours*1.2);
+             f.morale=Math.min(100,(f.morale||60)+hours); window.BANNON_UNIVERSE.save&&window.BANNON_UNIVERSE.save(U); }
+    }catch(e){}
+    try{ if(window.BANNON_RPG&&window.BANNON_RPG.grantXP) window.BANNON_RPG.grantXP(get().me, 40*hours); }catch(e){}
+    note('Trained '+hours+'h.', 'life'); save(); hud(); return true;
+  }
+  // Shops sell what the surfacing pass already classified. BANNON_MDICKIE.classify gave 271 MDickie
+  // objects a physics class and a mass; the carryables became BANNON_WEAPONS entries. Buying one here
+  // is the same object with the same laws, so a shop is a real supply line into a fight.
+  function stock(){
+    var p=here(); if(!p || p.role!=='SHOP') return [];
+    if(!isOpen(p)) return [];                       // shutters down; nothing on the shelves at 3am
+    try{
+      var db=(window.BANNON_WEAPONS&&window.BANNON_WEAPONS.db)||null;
+      if(!db) return [];
+      var keys=Object.keys(db), h=hash(p.id+get().day), out=[];
+      for(var i=0;i<keys.length && out.length<6;i++){
+        var k=keys[(h+i*7)%keys.length], it=db[k];
+        if(!it) continue;
+        var price = Math.max(8, Math.round(((it.mass||4)*6 + (it.reach||1)*18)));
+        out.push({ key:k, name:it.label||k, price:price });
+      }
+      return out;
+    }catch(e){ return []; }
+  }
+  function buy(key){
+    var p=here(); if(!p || p.role!=='SHOP') return false;
+    var it=stock().filter(function(s){ return s.key===key; })[0]; if(!it) return false;
+    if(!spend(it.price, it.name)) { note('Not enough for the '+it.name+'.', 'money'); return false; }
+    advance(15);
+    try{ if(window.BANNON_MDICKIE&&window.BANNON_MDICKIE.spawnWeapon) window.BANNON_MDICKIE.spawnWeapon(key, 0, 2); }catch(e){}
+    note('Bought a '+it.name+'.', 'life'); save(); hud(); return true;
+  }
+
+  // ── UNIVERSE AS A PLACE: the card becomes a diary ─────────────────────────────────────────────
+  // BANNON_UNIVERSE already books a dated weekly card. It was only ever readable in a menu. Here it
+  // becomes an appointment with a TIME and a VENUE that you have to physically be at — which is the
+  // difference between pressing SIM and having a career.
+  function syncDiary(){
+    var g=get();
+    try{
+      var U=window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get&&window.BANNON_UNIVERSE.get();
+      if(!U||!U.card) return 0;
+      var venue=firstRole('ARENA'); if(!venue) return 0;
+      var added=0;
+      U.card.forEach(function(m,i){
+        if(!m || (m.a!==g.me && m.b!==g.me)) return;                  // only YOUR bookings
+        var exists=g.diary.some(function(d){ return d.kind==='SHOW' && d.week===U.week && d.a===m.a && d.b===m.b; });
+        if(exists) return;
+        g.diary.push({ kind:'SHOW', week:U.week, day:g.day+1, min:20*60, place:venue.id,
+                       a:m.a, b:m.b, title:m.title||null, done:false });
+        added++;
+      });
+      if(added){ note(added+' booking'+(added>1?'s':'')+' on the card — check the diary.', 'career'); save(); }
+      return added;
+    }catch(e){ return 0; }
+  }
+  function nextAppointment(){
+    var g=get(), best=null;
+    g.diary.forEach(function(d){ if(d.done) return;
+      var at=d.day*DAY+d.min, now=g.day*DAY+g.min;
+      if(at<now-180) return;                                         // long gone
+      if(!best || at < best.day*DAY+best.min) best=d; });
+    return best;
+  }
+  function checkAppointments(){
+    var g=get(), nowT=g.day*DAY+g.min;
+    g.diary.forEach(function(d){
+      if(d.done) return;
+      var at=d.day*DAY+d.min;
+      if(nowT >= at && nowT <= at+45 && g.place===d.place){
+        d.done=true; save();
+        note('Bell time. '+String(d.a).replace(/_/g,' ')+' vs '+String(d.b).replace(/_/g,' ')+'.', 'career');
+        startBookedMatch(d);
+      } else if(nowT > at+45){
+        d.done=true; d.missed=true;
+        try{ var U0=window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get&&window.BANNON_UNIVERSE.get();
+             if(U0&&U0.card) U0.card.forEach(function(m){ if(m && m.a===d.a && m.b===d.b) m._done=1; }); }catch(e){}
+        var fine=Math.min(g.money, 120);
+        if(fine>0) spend(fine, 'no-show fine');
+        try{ var U=window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get&&window.BANNON_UNIVERSE.get();
+             if(U&&U.fighters&&U.fighters[g.me]){ U.fighters[g.me].momentum=Math.max(-10,(U.fighters[g.me].momentum||0)-3);
+               U.news&&U.news.unshift('W'+U.week+': '+String(g.me).replace(/_/g,' ')+' no-showed a booked match.');
+               window.BANNON_UNIVERSE.save&&window.BANNON_UNIVERSE.save(U); } }catch(e){}
+        say('YOU MISSED THE SHOW', 'the promotion noticed');
+        note('Missed a booked match. Fined $'+fine+'.', 'career');
+        save();
+      }
+    });
+  }
+  var _inShow = null;
+  function startBookedMatch(d){
+    var g=get();
+    try{
+      // Stop the universe sim from resolving this one on paper. advanceWeek() sims every card entry
+      // that is not _done, so a match you are about to WRESTLE has to be claimed first or it gets
+      // decided twice — once by you and once by the simulator.
+      var U=window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get&&window.BANNON_UNIVERSE.get();
+      if(U&&U.card) U.card.forEach(function(m){ if(m && m.a===d.a && m.b===d.b) m._done=1; });
+      if(U&&window.BANNON_UNIVERSE.save) window.BANNON_UNIVERSE.save(U);
+    }catch(e){}
+    try{
+      // carry the life you have actually been living into the bell
+      window.MATCH_SETUP={ p1Name:g.me, p2Name:(d.a===g.me?d.b:d.a), p1Control:'YOU', p2Control:'AI', type:'ONEVONE' };
+      var back=g.place;
+      window.__godWithinRoam=false;
+      window.CURRENT_ENV='ARENA';
+      if(typeof startFight==='function') startFight();
+      applyToFighter();
+      _inShow={ d:d, back:back, t0:(typeof performance!=='undefined'?performance.now()/1000:Date.now()/1000) };
+      say('MATCH TIME', (d.title? d.title+' — ':'')+String(d.a).replace(/_/g,' ')+' vs '+String(d.b).replace(/_/g,' '));
+    }catch(e){}
+  }
+  // THE WAY BACK. A show you wrestled has to end and put you back in the world with a purse, or the
+  // diary is a one-way door. Watched rather than callback-driven because the match can end through
+  // any of pin / submission / countout / DQ, and every one of those already sets a fighter's hp to 0.
+  function watchShow(){
+    if(!_inShow) return;
+    var t=(typeof performance!=='undefined'?performance.now()/1000:Date.now()/1000);
+    var fs=null; try{ fs=(typeof fighters!=='undefined')?fighters:window.fighters; }catch(e){}
+    var live=(fs||[]).filter(function(f){ return f && !f._interferer && !f._lifeNpc; });
+    var over = live.length>=2 && live.some(function(f){ return (f.hp||0)<=0; });
+    var bailed = (typeof gameState!=='undefined' && gameState!=='fight');
+    if(t-_inShow.t0 < 4) return;                      // give the bell a moment
+    if(!over && !bailed) return;
+    var g=get(), d=_inShow.d, back=_inShow.back; _inShow=null;
+    var mine=live.filter(function(f){ return f.isPlayer; })[0];
+    var won = mine ? (mine.hp||0)>0 : false;
+    var purse = (d.title? 900 : 380) + Math.round(Math.random()*160);
+    if(!won) purse=Math.round(purse*0.45);
+    earn(purse, (won?'win':'loss')+' purse'+(d.title?' — '+d.title:''));
+    g.stats[won?'fightsWon':'fightsLost']++;
+    bump('energy', -22); bump('hunger', -14); bump('mood', won? 14 : -10);
+    // the result belongs to the career sim too, so a match you actually wrestled counts
+    try{
+      var U=window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.get&&window.BANNON_UNIVERSE.get();
+      var other=(d.a===g.me?d.b:d.a);
+      if(U&&window.BANNON_UNIVERSE.applyResult){
+        window.BANNON_UNIVERSE.applyResult(U, d, won?g.me:other, won?other:g.me);
+        window.BANNON_UNIVERSE.save&&window.BANNON_UNIVERSE.save(U);
+      }
+    }catch(e){}
+    try{ if(window.BANNON_RPG&&window.BANNON_RPG.grantXP) window.BANNON_RPG.grantXP(g.me, won?350:120); }catch(e){}
+    note((won?'Won':'Lost')+' the booked match. $'+purse+'.', 'career');
+    // back out of the arena into the world you left
+    window.__godWithinRoam=true;
+    if(back) goTo(back, { mins:40 });
+    save(); hud();
+  }
+
+  // ── THE CLOCK, and what happens when it turns over ────────────────────────────────────────────
+  function advance(mins, opts){
+    opts=opts||{};
+    var g=get(); if(mins<=0) return;
+    var hours=mins/60;
+    if(!opts.sleeping) drain(hours); else { drain(hours*0.25); }      // you still burn while asleep, slower
+    g.min += mins;
+    while(g.min >= DAY){ g.min -= DAY; newDay(); }
+    checkAppointments();
+    save();
+  }
+  function newDay(){
+    var g=get();
+    g.day++; g.stats.daysLived++;
+    // JAIL: a sentence is served by DAYS PASSING, so time inside is time you did not spend on your
+    // career. Walk out when it is done.
+    if(g.jail.days>0){
+      g.jail.days--;
+      note('Another day inside. '+g.jail.days+' to go.', 'legal');
+      if(g.jail.days<=0){
+        var out=firstRole('STREET','TRANSIT','HOME');
+        note('Released.', 'legal'); say('RELEASED', 'day '+g.day);
+        if(out) goTo(out.id, { mins:60 });
+      }
+    }
+    if(g.hospital.days>0){
+      g.hospital.days--;
+      bump('energy', 30); bump('mood', 6);
+      if(g.hospital.days<=0){
+        var home=firstRole('HOME','STREET');
+        note('Discharged.', 'life'); if(home) goTo(home.id, { mins:45 });
+      }
+    }
+    // a week of days rolls the promotion's week over, so the career sim and the world share one calendar
+    if(g.day%7===0){
+      try{ if(window.BANNON_UNIVERSE&&window.BANNON_UNIVERSE.advanceWeek) window.BANNON_UNIVERSE.advanceWeek(); }catch(e){}
+      try{ if(window.BANNON_CAREER&&window.BANNON_CAREER.ageWeek) window.BANNON_CAREER.ageWeek(); }catch(e){}
+    }
+    syncDiary();
+    note('Day '+g.day+'.', 'life');
+    save();
+  }
+
+  // ── HUD ───────────────────────────────────────────────────────────────────────────────────────
+  function hudEl(){
+    var el=document.getElementById('lifeHud');
+    if(el) return el;
+    el=document.createElement('div'); el.id='lifeHud';
+    el.style.cssText='position:fixed;left:8px;top:calc(var(--safe-top,0px) + 52px);z-index:9250;'+
+      'display:none;flex-direction:column;gap:2px;padding:6px 9px;border-radius:10px;'+
+      'background:rgba(8,9,12,0.72);border:1px solid rgba(255,210,63,0.35);'+
+      'font:600 10px/1.35 var(--f-mono,ui-monospace,monospace);color:#e8e2d4;pointer-events:none;'+
+      'backdrop-filter:blur(4px);min-width:132px';
+    document.body.appendChild(el);
+    return el;
+  }
+  function bar(label, v, col){
+    var w=Math.max(0,Math.min(100,Math.round(v)));
+    return '<div style="display:flex;align-items:center;gap:4px">'+
+      '<span style="width:30px;opacity:.7">'+label+'</span>'+
+      '<span style="flex:1;height:4px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;display:inline-block">'+
+      '<i style="display:block;height:100%;width:'+w+'%;background:'+col+'"></i></span></div>';
+  }
+  function hud(){
+    var g=get(), el=hudEl();
+    if(!g.place || !isLive()){ el.style.display='none'; return; }
+    var p=here(), n=g.needs, ap=nextAppointment();
+    var line = p? p.name.toUpperCase() : '';
+    el.innerHTML =
+      '<div style="color:#ffd23f;letter-spacing:.5px">DAY '+g.day+' · '+hhmm(g.min)+'</div>'+
+      '<div style="opacity:.55;font-size:9px;font-style:italic">'+partOf(g.min).label+'</div>'+
+      '<div style="opacity:.85;font-size:9px">'+line+' <span style="opacity:.5">'+(p?p.role.toLowerCase():'')+'</span></div>'+
+      '<div style="color:#7CFC00">$'+g.money+'</div>'+
+      bar('NRG', n.energy, '#5ec8ff')+bar('FED', n.hunger, '#ffb35e')+bar('MOOD', n.mood, '#c9a3ff')+
+      (g.jail.days>0? '<div style="color:#ff6b6b;font-size:9px">INSIDE — '+g.jail.days+'d</div>':'')+
+      (ap? '<div style="color:#ffd23f;font-size:9px">'+(ap.kind==='SHOW'?'SHOW':'DUE')+' d'+ap.day+' '+hhmm(ap.min)+'</div>':'');
+    el.style.display='flex';
+  }
+
+  // ── EXIT PROMPT ───────────────────────────────────────────────────────────────────────────────
+  function exitEl(){
+    var el=document.getElementById('lifeExit');
+    if(el) return el;
+    el=document.createElement('div'); el.id='lifeExit';
+    el.style.cssText='position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--safe-bot,0px) + 96px);'+
+      'z-index:9260;display:none;padding:6px 14px;border-radius:14px;background:rgba(8,9,12,0.8);'+
+      'border:1px solid #ffd23f;color:#ffd23f;font:bold 11px var(--f-mono,ui-monospace,monospace);'+
+      'letter-spacing:.6px;pointer-events:none';
+    document.body.appendChild(el);
+    return el;
+  }
+  function exitPrompt(){
+    var el=exitEl(), f=me(), g=get();
+    var t=(typeof performance!=='undefined'? performance.now()/1000 : Date.now()/1000);
+    if(!f || !isLive() || t<_autoLock){ el.style.display='none'; return; }
+    var d=Math.max(Math.abs(f.x), Math.abs(f.z));
+    if(d < EDGE){ el.style.display='none'; return; }
+    var id=exitForDirection(f); if(!id){ el.style.display='none'; return; }
+    var p=place(id);
+    el.textContent='→ '+(p?p.name.toUpperCase():id)+'   keep walking';
+    el.style.display='block';
+    if(d >= LEAVE) goTo(id);
+  }
+
+  // ── ASSAULT DETECTION: one hook, on the damage the engine already deals ───────────────────────
+  // Rather than a parallel combat system, watch the SAME applyDamage every strike goes through. If a
+  // hit lands in the world (not in a match) and the player threw it, that is an assault with
+  // witnesses. This is the only patch this module makes to combat.
+  function armAssaultHook(tries){
+    tries=tries||0;
+    try{
+      if(typeof window.applyDamage==='function' && !window.applyDamage.__lifeHooked){
+        var orig=window.applyDamage;
+        var wrapped=function(victim, dmg, attacker, move, forceDown){
+          // A body that has not eaten or slept hits softer. This is the ONLY consumer of
+          // _lifeDmgMul, and it is here rather than in the fighter because applyDamage is the single
+          // funnel every strike in the game already goes through.
+          try{ if(attacker && attacker.isPlayer && attacker._lifeDmgMul) dmg = dmg * attacker._lifeDmgMul; }catch(e){}
+          var r=orig.call(this, victim, dmg, attacker, move, forceDown);
+          try{
+            if(isLive() && attacker && attacker.isPlayer && victim && victim!==attacker){
+              var g=get(), nm=(victim.opts&&victim.opts.name)||victim.name||'';
+              var n=g.npc[nm]; if(n){ n.rel=Math.max(-100,(n.rel||0)-8); }
+              victim._eliminated=false;              // you started it; he is allowed to fight back
+              if(!victim._lifeProvoked){ victim._lifeProvoked=true; reportAssault(nm); }
+              if(victim.hp<=0){ g.stats.fightsWon++; save(); }
+            }
+            if(isLive() && victim && victim.isPlayer && victim.hp<=0 && !get().hospital.days){
+              hospitalise();
+            }
+          }catch(e){}
+          return r;
+        };
+        wrapped.__lifeHooked=true;
+        window.applyDamage=wrapped;
+        return true;
+      }
+    }catch(e){}
+    if(tries<60) setTimeout(function(){ armAssaultHook(tries+1); }, 900);
+    return false;
+  }
+
+  // ── LIVE? ─────────────────────────────────────────────────────────────────────────────────────
+  // The world only ticks while you are IN it. A menu is not a passing day, and a booked match is
+  // time inside the ring, not time in the street.
+  function isLive(){
+    try{
+      if(typeof gameState!=='undefined' && gameState!=='fight') return false;
+      if(!window.__godWithinRoam && !window.__universeRoam) return false;
+      return !!get().place;
+    }catch(e){ return false; }
+  }
+
+  // ── TICK ──────────────────────────────────────────────────────────────────────────────────────
+  var _last=0, _poll=null, _popT=0;
+  function tick(){
+    var t = (typeof performance!=='undefined'? performance.now()/1000 : Date.now()/1000);
+    if(!_last) _last=t;
+    var dt=Math.min(2.0, t-_last); _last=t;
+    watchShow();                       // runs even while the world clock is paused for the bell
+    if(!isLive()){ hud(); exitEl().style.display='none'; return; }
+    advance(dt*MIN_PER_SEC);
+    exitPrompt();
+    hud();
+    if(t-_popT > 12){ _popT=t; populate(); }
+  }
+
+  // ── ENTRY ─────────────────────────────────────────────────────────────────────────────────────
+  function start(opts){
+    opts=opts||{};
+    var g=get();
+    buildPlaces(); seedPeople();
+    if(opts.me) g.me=opts.me;
+    if(!g.place){
+      var home=firstRole('HOME') || firstRole('STREET') || places()[0];
+      g.place = home? home.id : null;
+    }
+    // a sentence you have not served keeps you where you were put
+    if(g.jail.days>0){ var cell=firstRole('JAIL'); if(cell) g.place=cell.id; }
+    else if(g.hospital.days>0){ var h=firstRole('HOSPITAL'); if(h) g.place=h.id; }
+    save();
+    syncDiary();
+    applyToFighter();
+    if(_poll) clearInterval(_poll);
+    _poll=setInterval(tick, 250);
+    armAssaultHook();
+    var p=here();
+    say('DAY '+g.day+' — '+hhmm(g.min), p? ('you are in '+p.name.toLowerCase()) : '');
+    note('Woke up in '+(p?p.name:'nowhere')+'.', 'life');
+    hud();
+    return g.place;
+  }
+  function stop(){ if(_poll){ clearInterval(_poll); _poll=null; } try{ hudEl().style.display='none'; exitEl().style.display='none'; }catch(e){} }
+
+  // ── PUBLIC ────────────────────────────────────────────────────────────────────────────────────
+  return {
+    start:start, stop:stop, tick:tick, save:save, reset:reset, get:get,
+    // time
+    clock:function(){ var g=get(); return { day:g.day, min:g.min, time:hhmm(g.min), part:partOf(g.min).id, label:partOf(g.min).label }; },
+    advance:advance,
+    // world
+    places:places, place:place, here:here, byRole:byRole, exits:exitsOf, goTo:goTo,
+    // people
+    people:function(){ return get().npc; }, whoIsHere:whoIsHere, whereIs:whereIs, populate:populate,
+    // needs + money
+    needs:needs, money:money, earn:earn, spend:spend,
+    // doing things
+    sleep:sleep, eat:eat, work:work, train:train, stock:stock, buy:buy, isOpen:isOpen,
+    surfaces:surfacesHere, SURFACES:SURFACES,
+    // career
+    diary:function(){ return get().diary.slice(); }, syncDiary:syncDiary, nextAppointment:nextAppointment,
+    // consequence
+    arrest:arrest, hospitalise:hospitalise, reportAssault:reportAssault,
+    log:function(){ return get().log.slice(0,40); },
+    stats:function(){ return get().stats; },
+    hud:hud
+  };
+})();
+console.log('%c[BANNON_LIFE] the world has a clock, needs, money, exits and consequences — BANNON_LIFE.clock() / .here() / .whoIsHere()','color:#7CFC00');
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_LIFE_UI — the actions the world affords you, in the place you are standing.
+//
+// BANNON_LIFE has sleep / eat / work / train / buy / travel and a diary. Without a way to reach them
+// from inside the world they are an API, which is the same dead-end as every other "built with no
+// caller" thing in this file. This is the door.
+//
+// It is PLACE-AWARE on purpose, which is the MDickie feel: there is no master menu of verbs. You
+// find out what a location is FOR by being in it. The cafeteria offers food, the gym offers training,
+// the workshop offers a shift, home offers a bed, the shop offers what it has in stock today, and
+// every exit that leads out of here is listed as a real destination.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var L=function(){ return window.BANNON_LIFE; };
+  var open=false;
+
+  function el(){
+    var d=document.getElementById('lifeActs');
+    if(d) return d;
+    d=document.createElement('div'); d.id='lifeActs';
+    d.style.cssText='position:fixed;right:8px;top:calc(var(--safe-top,0px) + 52px);z-index:9255;'+
+      'display:none;flex-direction:column;gap:3px;padding:8px;border-radius:12px;max-width:44vw;'+
+      'background:rgba(8,9,12,0.86);border:1px solid rgba(255,210,63,0.4);backdrop-filter:blur(5px);'+
+      'font:600 10px/1.3 var(--f-mono,ui-monospace,monospace);color:#e8e2d4;max-height:62vh;overflow:auto';
+    document.body.appendChild(d);
+    return d;
+  }
+  function btn(label, fn, tone){
+    var b=document.createElement('button');
+    b.textContent=label;
+    b.style.cssText='display:block;width:100%;text-align:left;padding:5px 8px;border-radius:7px;cursor:pointer;'+
+      'background:'+(tone||'rgba(255,255,255,.07)')+';border:1px solid rgba(255,255,255,.14);'+
+      'color:#f2ecdd;font:600 10px var(--f-mono,ui-monospace,monospace);letter-spacing:.3px';
+    b.onclick=function(ev){ ev.stopPropagation(); try{ fn(); }catch(e){} render(); };
+    return b;
+  }
+  function head(t){
+    var h=document.createElement('div');
+    h.textContent=t;
+    h.style.cssText='color:#ffd23f;font:bold 9px var(--f-mono,ui-monospace,monospace);letter-spacing:1px;margin:4px 0 1px;opacity:.85';
+    return h;
+  }
+
+  function render(){
+    var A=L(); var d=el();
+    if(!A || !open){ d.style.display='none'; return; }
+    var p=A.here(); if(!p){ d.style.display='none'; return; }
+    var g=A.get(), c=A.clock();
+    d.innerHTML='';
+    var top=document.createElement('div');
+    top.style.cssText='color:#ffd23f;font:bold 11px var(--f-mono,ui-monospace,monospace);letter-spacing:.5px;margin-bottom:2px';
+    top.textContent=p.name.toUpperCase();
+    d.appendChild(top);
+    var sub=document.createElement('div');
+    sub.style.cssText='font-size:9px;opacity:.62;margin-bottom:3px';
+    sub.textContent=p.role.toLowerCase()+' · '+c.label+' · '+c.time+' · day '+c.day+' · $'+A.money();
+    d.appendChild(sub);
+
+    if(g.jail.days>0){
+      var j=document.createElement('div');
+      j.style.cssText='color:#ff7b7b;font-size:9px;margin:2px 0';
+      j.textContent='SERVING '+g.jail.days+' MORE DAY'+(g.jail.days>1?'S':'');
+      d.appendChild(j);
+    }
+
+    // ── what this place is for ────────────────────────────────────────────────────────────────
+    var shut = !A.isOpen(p, c.part);
+    d.appendChild(head(shut? 'HERE — CLOSED ('+c.label+')' : 'HERE'));
+    var any=false;
+    // SLEEP IS EVERY SURFACE THAT IS ACTUALLY HERE. Owner correction: in MDickie's games you lie down
+    // on the ground, a bench, a chair, a car, a soda machine, a table, a bed — and the surface decides
+    // the quality. So the panel lists what this room really has, with what it is worth, instead of two
+    // buttons that only appeared in a dwelling.
+    var surf=A.surfaces();
+    if(surf.length){
+      d.appendChild(head('LIE DOWN'));
+      surf.slice(0,5).forEach(function(S){
+        var pct=Math.round(S.quality*100);
+        var warn=(!S.warm && S.risk>0.12)? ' ⚠' : '';
+        d.appendChild(btn('SLEEP 8h — '+S.label+'  ('+pct+'%)'+warn, function(){ A.sleep(8, S.key); }));
+      });
+      d.appendChild(btn('NAP 3h — '+surf[0].label, function(){ A.sleep(3, surf[0].key); }));
+      var rq=document.createElement('div');
+      rq.style.cssText='font-size:8px;opacity:.45;margin-top:2px';
+      rq.textContent='⚠ = sleeping rough. you can be rolled or picked up.';
+      if(surf.some(function(S){ return !S.warm && S.risk>0.12; })) d.appendChild(rq);
+      any=true;
+    }
+    if(p.role==='FOOD'||p.role==='HOME'){
+      d.appendChild(btn('EAT — $18',  function(){ A.eat(0); })); any=true;
+      d.appendChild(btn('SNACK — $7', function(){ A.eat(1); }));
+      if(p.role==='FOOD' && !shut) d.appendChild(btn('SIT DOWN — $34', function(){ A.eat(2); }));
+    }
+    if(p.role==='GYM' && !shut){
+      d.appendChild(btn('TRAIN 2h', function(){ A.train(2); })); any=true;
+      d.appendChild(btn('TRAIN 4h', function(){ A.train(4); }));
+    }
+    if((p.role==='JOB'||p.role==='SHOP'||p.role==='HOSPITAL'||p.role==='ARENA') && !shut){
+      d.appendChild(btn('WORK 4h', function(){ A.work(4); })); any=true;
+      d.appendChild(btn('WORK 8h', function(){ A.work(8); }));
+    }
+    if(p.role==='SHOP'){
+      var st=A.stock();
+      if(st.length){
+        d.appendChild(head('IN STOCK TODAY'));
+        st.forEach(function(it){ d.appendChild(btn(it.name+' — $'+it.price, function(){ A.buy(it.key); })); });
+        any=true;
+      }
+    }
+    if(!any){
+      var n=document.createElement('div');
+      n.style.cssText='font-size:9px;opacity:.5';
+      n.textContent=shut? 'shut until morning — nothing to do but move on' : 'nothing to do but move on';
+      d.appendChild(n);
+    }
+
+    // ── who is here ───────────────────────────────────────────────────────────────────────────
+    var who=A.whoIsHere();
+    if(who.length){
+      d.appendChild(head('HERE NOW'));
+      var w=document.createElement('div');
+      w.style.cssText='font-size:9px;opacity:.8;line-height:1.5';
+      w.textContent=who.slice(0,6).map(function(n){ return String(n).replace(/_/g,' '); }).join(', ')+
+        (who.length>6? ' +'+(who.length-6):'');
+      d.appendChild(w);
+    }
+
+    // ── the diary ─────────────────────────────────────────────────────────────────────────────
+    var ap=A.nextAppointment();
+    if(ap){
+      d.appendChild(head('DIARY'));
+      var pl=A.place(ap.place);
+      var ab=document.createElement('div');
+      ab.style.cssText='font-size:9px;color:#ffd23f;line-height:1.45';
+      ab.textContent=(ap.kind==='SHOW'?'MATCH':'DUE')+' — day '+ap.day+', '+
+        (Math.floor(ap.min/60)%12||12)+(ap.min%60?':'+('0'+(ap.min%60)).slice(-2):'')+(ap.min<720?'am':'pm')+
+        (pl? ' @ '+pl.name : '');
+      d.appendChild(ab);
+      if(pl && pl.id!==p.id) d.appendChild(btn('→ GO TO '+pl.name.toUpperCase(), function(){ A.goTo(pl.id); }, 'rgba(255,210,63,.18)'));
+    }
+
+    // ── the ways out ──────────────────────────────────────────────────────────────────────────
+    var ex=A.exits(p.id);
+    if(ex.length){
+      d.appendChild(head('WAYS OUT'));
+      ex.slice(0,6).forEach(function(id){
+        var q=A.place(id); if(!q) return;
+        d.appendChild(btn('→ '+q.name+'  ('+q.role.toLowerCase()+')', function(){ A.goTo(id); }));
+      });
+      var hint=document.createElement('div');
+      hint.style.cssText='font-size:8px;opacity:.45;margin-top:3px';
+      hint.textContent='or just walk to the edge';
+      d.appendChild(hint);
+    }
+    d.style.display='flex';
+  }
+
+  // The toggle lives in the God Within banner next to the ⚕ BUILDER button, because that banner is
+  // already the mode's furniture and a second floating button on a phone screen is one too many.
+  function mount(tries){
+    tries=tries||0;
+    var bar=document.getElementById('gwBanner');
+    if(!bar){ if(tries<80) setTimeout(function(){ mount(tries+1); }, 700); return; }
+    if(document.getElementById('lifeActsBtn')) return;
+    var b=document.createElement('button');
+    b.id='lifeActsBtn'; b.textContent='☰ LIFE'; b.title='what you can do here';
+    b.style.cssText='margin-left:6px;background:linear-gradient(160deg,#123,#1b3d2a);color:#bfe9c6;'+
+      'border:1px solid #6fd08c;border-radius:14px;padding:3px 10px;cursor:pointer;pointer-events:auto;'+
+      'font:bold 11px var(--f-mono,ui-monospace,monospace)';
+    b.onclick=function(ev){ ev.stopPropagation(); open=!open; render(); };
+    bar.appendChild(b);
+    setInterval(function(){ if(open) render(); }, 1500);
+  }
+  mount();
+
+  window.BANNON_LIFE_UI={ open:function(){ open=true; render(); }, close:function(){ open=false; render(); },
+                          toggle:function(){ open=!open; render(); }, render:render, isOpen:function(){ return open; } };
+})();
+console.log('%c[BANNON_LIFE_UI] ☰ LIFE in the God Within banner — place-aware actions, diary, exits','color:#7CFC00');
+</script>
+
 </body></html>
 
 
