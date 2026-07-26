@@ -291,6 +291,11 @@ window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10
      CDN fallback only if the relative file is missing (web build served from a different root). -->
 <script src="assets/vendor/fflate.min.js"></script>
 <script src="assets/vendor/FBXLoader.js"></script>
+<!-- BVHLoader — BVH is the format essentially every FREE/CC0 mocap library ships in (CMU, Truebones
+     free packs, 100STYLE, most open sets). The game could only ever load FBX, so none of it was
+     usable no matter how much was downloaded. With this, any .bvh dropped into assets/mocap/ is
+     loadable by the same loadClipFor() path and gets auto-mapped like everything else. -->
+<script src="assets/vendor/BVHLoader.js"></script>
 <script>
 (function(){ if(typeof THREE!=='undefined' && THREE.FBXLoader){ window.__FBX_READY=true; return; }
   // relative copy missing (served from elsewhere) — try the repo CDN then jsdelivr
@@ -17487,7 +17492,16 @@ init();
     rightupleg:'hipR', rightleg:'knR', rightfoot:'ftR', righttoebase:'ftR'
   };
   function _mocapKey(rawName){
-    return String(rawName||'').replace(/^mixamorig/i,'').toLowerCase();
+    // Track names differ by loader and BOTH have to resolve to the same joint:
+    //   FBX / glTF : "mixamorigLeftForeArm"
+    //   BVH        : ".bones[LeftForeArm]"   <- THREE.BVHLoader's format
+    // Without unwrapping the .bones[...] form, every BVH bone missed the map, the pose fell back to
+    // NEUTRAL, and a loaded clip LOOKED like it animated (joints snapped to the neutral values)
+    // while carrying none of the capture's motion. That is a very convincing false positive.
+    var n = String(rawName||'');
+    var m = n.match(/\.?bones\[([^\]]+)\]/);
+    if(m) n = m[1];
+    return n.replace(/^mixamorig/i,'').replace(/[:_\s]/g,'').toLowerCase();
   }
   function mapExternalBone(rawName){
     return MOCAP_BONE_MAP[_mocapKey(rawName)] || null;
@@ -42406,10 +42420,25 @@ console.log('%c[GNM FACE LAB] scan-grade parametric face studio — hub tile �
     if(window.__mcInFlight[key]) return window.__mcInFlight[key];
     window.__mcInFlight[key]=(async function(){
       var cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
-      var urls=['assets/mocap/drive/'+encodeURIComponent(base)+'.fbx','assets/mocap/'+encodeURIComponent(base)+'.fbx',cdn+'assets/mocap/drive/'+encodeURIComponent(base)+'.fbx'];
+      var enc=encodeURIComponent(base);
+      // FBX first (what we already ship), then BVH — the format every free/CC0 mocap set uses.
+      var urls=['assets/mocap/drive/'+enc+'.fbx','assets/mocap/'+enc+'.fbx',
+                'assets/mocap/open/'+enc+'.bvh','assets/mocap/'+enc+'.bvh',
+                cdn+'assets/mocap/drive/'+enc+'.fbx', cdn+'assets/mocap/open/'+enc+'.bvh'];
       for(var i=0;i<urls.length;i++){ try{ var r=await fetch(urls[i]).catch(function(){return null;}); if(!r||!r.ok) continue;
-        var buf=await r.arrayBuffer(); var obj=(new THREE.FBXLoader()).parse(buf,'');
-        if(obj.animations&&obj.animations.length){ var clip=_extract(obj.animations[0],obj);
+        var anim=null, host=null;
+        if(/\.bvh$/i.test(urls[i])){
+          if(!THREE.BVHLoader) continue;
+          var txt=await r.text(); var res=(new THREE.BVHLoader()).parse(txt);
+          // BVH gives a real THREE.AnimationClip plus its skeleton; the existing baker handles it
+          // unchanged, and CMU/Truebones bone names (Hips/LeftForeArm/LeftLeg) already match
+          // MOCAP_BONE_MAP once the mixamorig prefix strip is a no-op.
+          if(res&&res.clip){ anim=res.clip; host={skeleton:res.skeleton}; }
+        } else {
+          var buf=await r.arrayBuffer(); var obj=(new THREE.FBXLoader()).parse(buf,'');
+          if(obj.animations&&obj.animations.length){ anim=obj.animations[0]; host=obj; }
+        }
+        if(anim){ var clip=_extract(anim,host);
           if(window.STUDIO){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=clip; STUDIO.clips[base]=clip; } return clip; } }catch(e){} }
       return null;
     })();
@@ -45688,6 +45717,231 @@ console.log('%c[BANNON_MOVESET_SLOTS] 2K Move Set screen — positions first. op
   };
 })();
 console.log('%c[BANNON_BASES] per-character stance + locomotion — BANNON_BASES.live()','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_COMBO — combo chains, combo enders and grapple chains (WWE-2K26 shape).
+//
+// 2K's combo system: repeated LIGHT attacks walk a chain, each link a different strike, and a
+// different button during the chain fires an ENDER — square / cross / circle giving three ender
+// families of escalating commitment. Grapples chain the same way: a light grapple can transition
+// into another rather than always resolving.
+//
+// OWNER LAW THIS RESPECTS: mashing is a style, not a mistake. BANNON_FLOW already established that
+// FLURRY / IN THE POCKET / HEAVY HANDS are all valid cadences. So a combo is NOT a timing test —
+// there is no "you missed the window" punishment. Holding the chain just keeps escalating the link;
+// dropping it costs you nothing you had. The reward is that later links hit harder and read better,
+// which is a reason to chain rather than a penalty for not chaining.
+//
+// It composes with what already exists instead of replacing it: the chain picks WHICH move
+// startAttack() receives, and everything downstream — BANNON_IMPACT's kinetic damage, the mocap
+// clip stamp, hit-stop, the crowd pop — runs unchanged.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+
+  var CFG = {
+    linkWindow: 1.15,   // seconds after a landed strike that the NEXT press continues the chain
+    maxLink:    5,      // chain depth before it resolves on its own
+    gain:       0.07,   // damage bonus per link (link 4 = +21%) — a reason to chain, not a demand
+    enderBonus: 0.34,   // an ender is the payoff hit
+    grappleMax: 3       // grapple transitions before the hold must resolve
+  };
+
+  var st = { link:0, lastT:-9999, lastLimb:null, lastSide:null, chainId:0, gLink:0, gLastT:-9999 };
+  function now(){ try{ return performance.now()/1000; }catch(e){ return Date.now()/1000; } }
+  function live(){ return (now() - st.lastT) <= CFG.linkWindow && st.link > 0; }
+
+  // ── THE CHAIN. Each link prefers a DIFFERENT limb from the last, which is what makes a combo
+  // read as a combination rather than the same punch four times. Falls back to whatever the move
+  // tables actually contain, so it never asks for a move that does not exist.
+  function pool(kind){
+    var out=[];
+    try{
+      var libs=[];
+      if(typeof customMoves!=='undefined' && customMoves) libs=libs.concat(customMoves);
+      try{ if(window.BANNON_MOVESET_LIB && window.movesetDefaults) {} }catch(e){}
+      out=libs.filter(function(m){
+        if(!m || !m.name) return false;
+        var c=String(m.cat||'').toUpperCase();
+        if(kind==='light')  return (c==='STRIKE'||c==='KICK') && (m.power||60) <= 62;
+        if(kind==='heavy')  return (c==='STRIKE'||c==='KICK') && (m.power||60) >  62;
+        if(kind==='ender')  return (c==='STRIKE'||c==='KICK') && (m.power||60) >= 70;
+        return true;
+      });
+    }catch(e){}
+    return out;
+  }
+
+  // pick the next link. A real combination ALTERNATES SIDES — jab, right cross, left hook — so
+  // avoiding only the previous limb is not enough: it happily produced LEFT JAB / LEFT KICK /
+  // LEFT HOOK / LEFT JAB, four different limbs that are all the same hand and read as flailing.
+  // Side alternation is the primary filter, unused-move the secondary.
+  var usedThisChain = {};
+  function sideOf(m){ var l=String((m&&m.limb)||'').toUpperCase();
+    return l.indexOf('LEFT')>=0 ? 'L' : l.indexOf('RIGHT')>=0 ? 'R' : ''; }
+  function nextLink(kind){
+    var P=pool(kind); if(!P.length) return null;
+    var want = st.lastSide==='L' ? 'R' : st.lastSide==='R' ? 'L' : null;
+    function pick(list){ return list.length ? list[Math.floor(Math.random()*list.length)] : null; }
+    var tiers=[
+      P.filter(function(m){ return !usedThisChain[m.name] && m.limb!==st.lastLimb && (!want || sideOf(m)===want); }),
+      P.filter(function(m){ return m.limb!==st.lastLimb && (!want || sideOf(m)===want); }),
+      P.filter(function(m){ return !usedThisChain[m.name] && m.limb!==st.lastLimb; }),
+      P.filter(function(m){ return m.limb!==st.lastLimb; }),
+      P
+    ];
+    for(var i=0;i<tiers.length;i++){ var r=pick(tiers[i]); if(r) return r; }
+    return null;
+  }
+
+  // ── ENDERS. Three families, exactly 2K's square / cross / circle split, by commitment. ────────
+  var ENDERS = {
+    SQUARE: { label:'quick ender',  power:1.00, kind:'light' },   // fast, safe, keeps you standing
+    CROSS:  { label:'power ender',  power:1.22, kind:'heavy' },   // real commitment
+    CIRCLE: { label:'grapple ender',power:1.35, kind:'grapple' }  // ends the chain in a throw
+  };
+
+  function equippedEnder(fighterName, fam){
+    try{
+      var S=JSON.parse(localStorage.getItem('bannon_movesets_v1')||'{}');
+      var m=S[String(fighterName||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_')]||{};
+      return m[{SQUARE:'ST_F_ENDER_SQ',CROSS:'ST_F_ENDER_X',CIRCLE:'ST_F_ENDER_O'}[fam]]||null;
+    }catch(e){ return null; }
+  }
+
+  // ── PUBLIC: advance the chain and return the move that should actually be thrown ─────────────
+  function advance(attacker, requested, opts){
+    opts=opts||{};
+    if(window.COMBO_OFF===true) return requested;
+    var t=now();
+    if(!live()){ st.link=0; st.chainId++; usedThisChain={}; }
+
+    var isEnder = !!opts.ender;
+    var mv = requested;
+
+    if(isEnder && st.link>0){
+      var fam=ENDERS[opts.ender]||ENDERS.SQUARE;
+      var alt=nextLink(fam.kind==='grapple'?'ender':fam.kind);
+      if(alt) mv=Object.assign({}, alt);
+      mv=mv?Object.assign({}, mv):mv;
+      if(mv){
+        var eq=equippedEnder((attacker&&attacker.opts&&attacker.opts.name), opts.ender);
+        if(eq) mv.clip=eq;                                   // the moveset editor's ender wins
+        mv._comboEnder=opts.ender;
+        mv.power=Math.round((mv.power||60)*(1+CFG.enderBonus)*fam.power);
+        mv.name=(mv.name||'ENDER');
+      }
+      try{ if(typeof announce==='function') announce(fam.label.toUpperCase(), 'combo x'+st.link); }catch(e){}
+      try{ if(window.BANNON_RATING_CREDIT) window.BANNON_RATING_CREDIT('big',1); }catch(e){}
+      reset();
+      return mv;
+    }
+
+    // ordinary link
+    if(st.link>0 && st.link<CFG.maxLink){
+      var nx=nextLink(opts.heavy?'heavy':'light');
+      if(nx) mv=Object.assign({}, nx);
+    }
+    if(mv){
+      mv=Object.assign({}, mv);
+      mv._comboLink=st.link+1;
+      // escalate: later links land harder. This is the CARROT — never a stick for not chaining.
+      mv.power=Math.round((mv.power||60)*(1+CFG.gain*st.link));
+      st.lastLimb=mv.limb||null;
+      st.lastSide=sideOf(mv)||st.lastSide;
+      usedThisChain[mv.name]=1;
+    }
+    st.link=Math.min(CFG.maxLink, st.link+1);
+    st.lastT=t;
+    if(st.link>=2){ try{ if(window.__comboChip) window.__comboChip(st.link); }catch(e){} }
+    if(st.link>=CFG.maxLink) reset();
+    return mv;
+  }
+
+  // ── GRAPPLE CHAINS: a light grapple can transition into another instead of always resolving ──
+  function grappleChain(attacker, requested){
+    if(window.COMBO_OFF===true) return requested;
+    var t=now();
+    if(t-st.gLastT > 2.2) st.gLink=0;
+    st.gLastT=t;
+    st.gLink++;
+    var mv=requested?Object.assign({}, requested):requested;
+    if(mv){
+      mv._grappleLink=st.gLink;
+      // each transition tightens the hold: more damage, but the defender's escape window widens too,
+      // so chaining a grapple is a real risk/reward rather than free damage.
+      mv.power=Math.round((mv.power||60)*(1+0.12*(st.gLink-1)));
+      mv._escapeBonus=0.10*(st.gLink-1);
+      if(st.gLink>=CFG.grappleMax){ mv._mustResolve=true; st.gLink=0; }
+    }
+    return mv;
+  }
+
+  function reset(){ st.link=0; st.lastLimb=null; st.lastSide=null; usedThisChain={}; st.chainId++; }
+  function state(){ return { link:st.link, live:live(), grappleLink:st.gLink,
+                             sinceLast:+(now()-st.lastT).toFixed(2) }; }
+
+  // ── WIRE: startAttack is the single entry point every strike goes through ────────────────────
+  (function arm(tries){
+    tries=tries||0;
+    try{
+      if(typeof Fighter!=='undefined' && Fighter.prototype.startAttack && !Fighter.prototype.__comboHooked){
+        var _sa=Fighter.prototype.startAttack;
+        Fighter.prototype.startAttack=function(move){
+          var m=move;
+          try{
+            if(this.isPlayer && move && !move.finisher && !move.signature){
+              var heavy=(move.power||60)>62;
+              var ender=null;
+              // an ender is signalled by the move the input layer already chose: a grapple-follow
+              // during a live chain is CIRCLE, a heavy is CROSS, otherwise SQUARE.
+              if(live()){
+                if(String(move.follow||'').toUpperCase()==='GRAPPLE') ender='CIRCLE';
+                else if(heavy) ender='CROSS';
+              }
+              m=advance(this, move, { heavy:heavy, ender:ender }) || move;
+            }
+          }catch(e){}
+          return _sa.call(this, m);
+        };
+        Fighter.prototype.__comboHooked=true;
+      }
+      // grapple chains ride execGrappleMove the same way
+      if(typeof window.execGrappleMove==='function' && !window.execGrappleMove.__comboHooked){
+        var _eg=window.execGrappleMove;
+        window.execGrappleMove=function(attacker, move, deliverFallback){
+          var m=move;
+          try{ if(attacker && attacker.isPlayer) m=grappleChain(attacker, move)||move; }catch(e){}
+          return _eg.call(this, attacker, m, deliverFallback);
+        };
+        window.execGrappleMove.__comboHooked=true;
+      }
+      if(Fighter.prototype.__comboHooked && window.execGrappleMove && window.execGrappleMove.__comboHooked) return;
+    }catch(e){}
+    if(tries<60) setTimeout(function(){ arm(tries+1); }, 900);
+  })(0);
+
+  // a small on-screen counter so a chain is legible while you are throwing it
+  (function chip(){
+    var el=null, hide=0;
+    window.__comboChip=function(n){
+      try{
+        if(!el){ el=document.createElement('div');
+          el.style.cssText='position:fixed;left:50%;top:16%;transform:translateX(-50%);z-index:99000;'+
+            'font:700 26px var(--f-display);letter-spacing:3px;color:#ffd23f;text-shadow:0 2px 12px #000;pointer-events:none;opacity:0;transition:opacity .12s';
+          document.body.appendChild(el); }
+        el.textContent='COMBO  x'+n;
+        el.style.opacity='1'; clearTimeout(hide);
+        hide=setTimeout(function(){ if(el) el.style.opacity='0'; }, 900);
+      }catch(e){}
+    };
+  })();
+
+  window.BANNON_COMBO={ advance:advance, grappleChain:grappleChain, reset:reset, state:state,
+                        ENDERS:ENDERS, CFG:CFG };
+})();
+console.log('%c[BANNON_COMBO] combo chains + enders + grapple chains — BANNON_COMBO.state()','color:#7CFC00');
 </script>
 </body></html>
 
