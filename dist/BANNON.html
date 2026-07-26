@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2418"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2421"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -46286,6 +46286,156 @@ console.log('%c[BANNON_AUTHORED] reference moves live — BANNON_AUTHORED.play("
   };
 })();
 console.log('%c[BANNON_VARIANTS] move families online — BANNON_VARIANTS.families()','color:#7CFC00');
+</script>
+<script>
+// ============================================================================================
+// BANNON_LEGAL — the last MDickie class with data and no door.
+//
+// BANNON_COURT(name, charge) delegates to a complete court/legal model and NOTHING EVER CALLED IT.
+// MDickie's games put you in front of a judge for what you did in the ring — it is one of the things
+// that makes his worlds feel like they have consequences past the bell. Ours had the machinery and
+// no route to it.
+//
+// THE DOOR, and it is earned rather than random: a case is opened by things a player actually did.
+//   * crippling someone — a severe injury you INFLICTED, tracked through BANNON_TRAUMA
+//   * a weapon in a match type that forbids it, seen by the referee
+//   * a second disqualification for interference in the same night
+//   * assaulting a non-competitor (the referee)
+// Nothing here fires on a coin flip. If you are in court, there is a reason in the log.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+  var st={ heat:{}, filed:[], lastT:-9999 };
+  function now(){ try{ return performance.now()/1000; }catch(e){ return Date.now()/1000; } }
+  function key(n){ return String(n||'').toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
+  function ev(t,k){ try{ if(window.addEvent) window.addEvent(t,k||'legal'); }catch(e){} }
+
+  // legal heat accrues; a case is filed when it crosses the line, so one bad night is not a lawsuit
+  var THRESHOLD=100;
+  var CHARGES={
+    CRIPPLE:      { heat:70, charge:'grievous bodily harm' },
+    WEAPON_ILLEGAL:{heat:35, charge:'assault with a weapon' },
+    REF_ASSAULT:  { heat:55, charge:'assaulting an official' },
+    REPEAT_DQ:    { heat:30, charge:'conduct unbecoming' },
+    OUTSIDE_RING: { heat:45, charge:'affray outside the ring' }
+  };
+
+  function accrue(name, kind, detail){
+    try{
+      var C=CHARGES[kind]; if(!C || !name) return null;
+      var k=key(name);
+      st.heat[k]=(st.heat[k]||0)+C.heat;
+      ev(name+': '+C.charge+(detail?' — '+detail:'')+'  [legal heat '+st.heat[k]+']','legal');
+      if(st.heat[k]>=THRESHOLD && now()-st.lastT>20){
+        st.heat[k]=0; st.lastT=now();
+        return file(name, C.charge);
+      }
+    }catch(e){}
+    return null;
+  }
+
+  function file(name, charge){
+    st.filed.push({ name:name, charge:charge, t:now() });
+    try{ if(typeof announce==='function') announce('CHARGES FILED', String(name).replace(/_/g,' ')+' — '+charge); }catch(e){}
+    // THE ACTUAL HAND-OFF: the court model that was never reached
+    var ran=false;
+    try{ ran=!!(window.BANNON_COURT && window.BANNON_COURT(name, charge)); }catch(e){}
+    // present it as a real beat rather than a log line the player never opens
+    try{
+      if(window.BANNON_CARDS && window.BANNON_CARDS.moment){
+        window.BANNON_CARDS.moment('COURT SUMMONS',
+          String(name).replace(/_/g,' ')+' has been charged with '+charge+'.',
+          'a hearing is set — the promotion is not paying for this one', '#c0653a');
+      }
+    }catch(e){}
+    ev(String(name).replace(/_/g,' ')+' was charged with '+charge+'.','legal');
+    return { name:name, charge:charge, courtModelRan:ran };
+  }
+
+  // ── TRIGGER 1: you crippled someone. BANNON_TRAUMA knows; it just never told anyone. ─────────
+  (function armTrauma(t){
+    t=t||0;
+    try{
+      var T=window.BANNON_TRAUMA;
+      if(T && typeof T.severeTrauma==='function' && !T.__legalHooked){
+        var o=T.severeTrauma;
+        T.severeTrauma=function(victim, part, cause){
+          var r=o.apply(this,arguments);
+          try{
+            // charge the man who DID it, not the man it happened to
+            var att=null;
+            try{ att=(fighters||[]).filter(function(f){ return f && !f._interferer && f.opts &&
+                   String(f.opts.name)!==String(victim); })[0]; }catch(e){}
+            var who=(att&&att.opts&&att.opts.name)||null;
+            if(who) accrue(who,'CRIPPLE',String(part||'')+' on '+String(victim||''));
+          }catch(e){}
+          return r;
+        };
+        T.__legalHooked=true; return;
+      }
+    }catch(e){}
+    if(t<50) setTimeout(function(){ armTrauma(t+1); }, 1200);
+  })(0);
+
+  // ── TRIGGER 2: a weapon swung in a match type that forbids it, with the referee watching ─────
+  (function armWeapon(t){
+    t=t||0;
+    try{
+      if(typeof window.__spotWeaponUsed==='function' && !window.__spotWeaponUsed.__legalHooked){
+        var o=window.__spotWeaponUsed;
+        window.__spotWeaponUsed=function(){
+          try{
+            var R=window.BANNON_INTERFERENCE && window.BANNON_INTERFERENCE.rules
+                  ? window.BANNON_INTERFERENCE.rules() : {dq:true};
+            var seen=!window.BANNON_REF || !window.BANNON_REF.isDown();
+            if(R.dq && seen){
+              var p=null; try{ p=(fighters||[]).filter(function(f){ return f&&f.isPlayer; })[0]; }catch(e){}
+              var who=(p&&p.opts&&p.opts.name)||null;
+              if(who) accrue(who,'WEAPON_ILLEGAL','the referee saw it');
+            }
+          }catch(e){}
+          return o.apply(this,arguments);
+        };
+        window.__spotWeaponUsed.__legalHooked=true; return;
+      }
+    }catch(e){}
+    if(t<50) setTimeout(function(){ armWeapon(t+1); }, 1200);
+  })(0);
+
+  // ── TRIGGER 3: a second DQ for interference in the same night ─────────────────────────────────
+  (function armDQ(t){
+    t=t||0;
+    try{
+      var I=window.BANNON_INTERFERENCE;
+      if(I && typeof I.run==='function' && !I.__legalHooked){
+        var o=I.run;
+        I.run=function(){
+          var r=o.apply(this,arguments);
+          try{
+            var s=I.state?I.state():null;
+            if(s && s.warned>=2){
+              var p=null; try{ p=(fighters||[]).filter(function(f){ return f&&f.isPlayer; })[0]; }catch(e){}
+              var who=(p&&p.opts&&p.opts.name)||null;
+              if(who) accrue(who,'REPEAT_DQ','second interference of the night');
+            }
+          }catch(e){}
+          return r;
+        };
+        I.__legalHooked=true; return;
+      }
+    }catch(e){}
+    if(t<50) setTimeout(function(){ armDQ(t+1); }, 1200);
+  })(0);
+
+  window.BANNON_LEGAL={
+    accrue:accrue, file:file,
+    heat:function(n){ return st.heat[key(n)]||0; },
+    docket:function(){ return st.filed.slice(); },
+    CHARGES:CHARGES, THRESHOLD:THRESHOLD,
+    reset:function(){ st.heat={}; st.filed=[]; }
+  };
+})();
+console.log('%c[BANNON_LEGAL] court has a door — BANNON_LEGAL.heat("BANNON") / .docket()','color:#7CFC00');
 </script>
 </body></html>
 
