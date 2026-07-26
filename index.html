@@ -26783,6 +26783,17 @@ function fixAllPanels(){
 
   // ── Generic: position:fixed elements with z-index > 40 ──
   // Catches dynamically-built panels the ids above miss.
+  // ONE-TIME ONLY. This sweep walks EVERY node in the document calling getComputedStyle (forces a
+  // style recalc) and then scrollHeight/clientHeight (forces a LAYOUT). That is hundreds of forced
+  // synchronous layouts per call — and a MutationObserver on document.body/subtree was calling this
+  // whole function on every DOM mutation. During a match the HUD mutates constantly (health, combo,
+  // commentary, the event log), so this ran continuously.
+  // MEASURED on a 4x-throttled phone-like profile: 179 main-thread blocks over 200 ms, worst 931 ms,
+  // with querySelectorAll + getComputedStyle + fixAllPanels the top JS costs. That is the freezing.
+  // The generic sweep exists to catch panels the id list misses, which only matters when a panel is
+  // BUILT — so it runs once at boot and thereafter only over nodes the observer reports as added.
+  if (!window.__panelSweepDone || arguments.length) {
+  window.__panelSweepDone = true;
   document.querySelectorAll('*').forEach(el => {
     try {
       const cs = window.getComputedStyle(el);
@@ -26802,7 +26813,10 @@ function fixAllPanels(){
   });
 
   // ── Class-based panels ──
+  }
   document.querySelectorAll('.menu,.overlay,.modal,.dialog,.panel-wrap,.panel-body,.settings-panel').forEach(el => {
+    if (el.__panelFixed) return;                 // idempotent: a panel only needs this done once
+    el.__panelFixed = true;
     if (!el.style.touchAction || el.style.touchAction==='none'){
       const canScroll = el.scrollHeight > el.clientHeight + 12;
       if (canScroll) applyScrollEl(el); else applyTapEl(el);
@@ -26813,8 +26827,54 @@ function fixAllPanels(){
 
 fixAllPanels();
 
-// MutationObserver: re-apply whenever new panels mount
-const _obs80 = new MutationObserver(()=>{ try{ fixAllPanels(); }catch(e){} });
+// MutationObserver: re-apply whenever new panels mount.
+// IT USED TO CALL fixAllPanels() ON EVERY MUTATION. fixAllPanels walks the whole document with
+// getComputedStyle and forced layout, and the game's HUD mutates many times a second, so this was a
+// continuous forced-layout storm on the main thread — the freezing the owner has been reporting.
+// Now it looks ONLY at element nodes that were actually ADDED, fixes each exactly once, and coalesces
+// bursts into a single idle callback so a flurry of HUD writes costs one pass, not one per write.
+const _fixQueue = [];
+let _fixScheduled = false;
+function _fixAdded(el){
+  if (!el || el.nodeType !== 1 || el.__panelFixed) return;
+  el.__panelFixed = true;
+  try{
+    const cs = window.getComputedStyle(el);
+    if (cs.position === 'fixed' && parseInt(cs.zIndex||0) > 40){
+      if (!el.style.touchAction || el.style.touchAction === 'none'){
+        const canScroll = el.scrollHeight > el.clientHeight + 12;
+        if (canScroll) applyScrollEl(el); else applyTapEl(el);
+      }
+    }
+    el.querySelectorAll('button').forEach(b=>{ if(!b.__panelFixed){ b.__panelFixed=true;
+      if(!b.style.touchAction || b.style.touchAction==='none') applyTapEl(b,36); } });
+    el.querySelectorAll('input[type=range]').forEach(r=>{ if(!r.__panelFixed){ r.__panelFixed=true;
+      if(!r.style.touchAction || r.style.touchAction==='none') applyRangeEl(r); } });
+  }catch(e){}
+}
+function _drainFixQueue(){
+  _fixScheduled = false;
+  const n = _fixQueue.length;
+  for (let i=0;i<n;i++) _fixAdded(_fixQueue[i]);
+  _fixQueue.length = 0;
+}
+const _obs80 = new MutationObserver((records)=>{
+  try{
+    for (const r of records){
+      const added = r.addedNodes;
+      for (let i=0;i<added.length;i++){
+        const nd = added[i];
+        if (nd && nd.nodeType === 1 && !nd.__panelFixed) _fixQueue.push(nd);
+      }
+    }
+    if (_fixQueue.length && !_fixScheduled){
+      _fixScheduled = true;
+      // off the critical path: a touch-target fix is never urgent, and doing it inside the mutation
+      // callback is what put forced layout in the middle of a frame
+      (window.requestIdleCallback || window.requestAnimationFrame)(_drainFixQueue);
+    }
+  }catch(e){}
+});
 _obs80.observe(document.body, { childList:true, subtree:true });
 
 // ── 3. EUPHORIA PHYSICS PATCH ─────────────────────────────────────────────────

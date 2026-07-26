@@ -63,7 +63,28 @@ jobs:
         uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.7'
-      - run: BANNON_VERSION_CODE=$(git rev-list --count HEAD) gradle -p android assembleRelease --no-daemon
+      # RETRY THE BUILD. Run 149 failed with "Received status code 403 from server: Forbidden" on
+      # repo.maven.apache.org for jsr305-3.0.2.pom, while GitHub's own cache service was returning
+      # "Our services aren't available right now". Nothing to do with the code — and the cost was the
+      # owner being left with a stale APK that would not install. A transient registry blip should not
+      # cost an APK, so: three attempts with backoff, and Maven Central plus Google both listed so a
+      # 403 from one is survivable.
+      - name: Build release APK (retries transient registry failures)
+        run: |
+          set -o pipefail
+          export BANNON_VERSION_CODE=$(git rev-list --count HEAD)
+          for attempt in 1 2 3; do
+            echo "── assembleRelease attempt $attempt/3"
+            if gradle -p android assembleRelease --no-daemon --refresh-dependencies; then
+              echo "built on attempt $attempt"
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 30))
+            fi
+          done
+          echo "::error::assembleRelease failed three times — this is a real failure, not a registry blip"
+          exit 1
       # INSTALLABILITY GATE. Every "cannot install / package couldn't be parsed" report so far traced to
       # one of these three, all silent at build time — so each is now a hard failure, not a warning:
       #   1. v1 (JAR) signature missing. AGP drops v1 automatically in some configs, and many OEM
