@@ -202,3 +202,56 @@ ever consumed; props + vehicles were dead data. All 271 objects now have a real 
 NEXT SYSTEM (take ONE fully): per-character story modes (MK/Tekken-style) + God Within open-world OR
 UE-into-APK wiring OR the MDickie MOVE/animation half (moveset→all modes). Do not start two.
 FIRST, though: land the Heavyweight deformation fix above (re-rig + skinqa gate) — it is OPEN.
+
+### SYSTEM DONE: MOCAP ACTUALLY DRIVES COMBAT (2026-07-26) — the "looks like action figures" fix
+Owner reported animations not working / models unrealistic. It was NEVER the models or the rigs.
+MEASURED in the headless harness: `studioApplyClipPose` called **0 times** in a 25-second match.
+Three independent bugs, each sufficient alone:
+1. **Two disjoint move vocabularies.** The MOVE LIBRARY (MDickie imports) was clip-mapped by
+   auto_map_moves.cjs; the COMBAT TABLES in the HTML (FIRE JAB / LEO CROSS / SCORPIO HOOK / SAG KNEE
+   — the moves that fire on a button press) were mapped to NOTHING, and the two name sets overlap by
+   EXACTLY ZERO. New **tools/mocap/map_combat_moves.cjs** maps them by limb/trajectory/height/style
+   (never by name — no capture is called "SCORPIO HOOK"): 137/140 moves -> 35 distinct captures, with
+   a reuse penalty so variants spread. Output assets/moves/combat_clip_map.json.
+2. **Clips were fetched at the instant they were needed.** Async FBX parse takes seconds, the move
+   takes a fraction of one, and the move pool avoids repeats — so nearly every move was a first use
+   and played un-animated. **BANNON_COMBAT_MOCAP** stamps `.clip` on live move objects via
+   `window.__combatClipFor` AND prefetches all 35 captures at a menu lull, concurrency 4.
+3. **THE ELBOWS AND KNEES WERE NEVER MAPPED** — this is the action-figure look. Mixamo naming is
+   offset by one link and MOCAP_BONE_MAP read it literally: `LeftForeArm` (the ELBOW's bone) -> haL
+   (hand), `LeftLeg` (the shin, the KNEE's bone) -> hipL. elL/elR/knL/knR got nothing from any
+   capture. **Fixing the table alone did nothing** — extractClipFromGLTF only writes a joint when
+   `NEUTRAL[j]` exists, and NEUTRAL was the original 11 IK joints. BOTH had to change; NEUTRAL now
+   carries elbows, knees, clavicles and spineLow/spineMid from REST.
+   MEASURED before -> after on one 52-bone capture: elR **0 -> 0.582**, knR **0 -> 0.456**,
+   clavR 0.569, spineMid 0.099 (haR/ftR/chest unchanged). Elbow+knee are now the biggest movers in a
+   strike, which is correct. poseCalls 0 -> 123 over ten driven strikes.
+LESSON: when animation "doesn't work", measure the CALL COUNT of the pose applier before touching a
+model. Three cheap probes found this; no amount of re-rigging would have.
+
+### SYSTEM DONE: run-ins / promos / turnbuckles / derived positions (2026-07-26)
+- **BANNON_INTERFERENCE** — triggerRunIn had zero callers and only printed a line. Now spawns a REAL
+  third fighter (multi-man path), breaks the live cover, our AI+physics drive the assault, walks out
+  and splices from `fighters`. `_interferer` so LMS/first-blood/win conditions skip it. BANNON_RULES
+  .MATCH_TYPES gets its first consumer: ref WARNS on the 1st offence, DQs on the 2nd, DQ-enforcing
+  match types only. Triggers: the count reaching TWO, a man under 16% HP, ctrl+I.
+- **BANNON_SEGMENT** — generateInRingPromo had zero callers. Now a real segment through BANNON_CARDS
+  that the player ANSWERS through the same 5 branches BANNON_STORY.choose already resolves.
+- **Turnbuckles** — climbTurnbuckle set `state='turnbuckle_climbing'`, a state the engine has never
+  heard of, next to a complete climb/midrope/perch/dive machine. Now delegates to Fighter.startClimb
+  ('mid' = second rope, shift+B). trapInCorner no longer fights Brick 21 for position; the corner
+  hard-stop calls it with reposition:false so EXPOSED STEEL actually lands.
+- **RUNNING / MIDDLE_ROPE are DERIVED, not authored** (owner correction, and he was right): a running
+  move is a standing strike/grapple with momentum; a middle-rope move is a dive from a lower tier.
+  RUNNING 1->11, MIDDLE_ROPE 1->20, APRON 1->20. positionOf() reads the ENGINE's real states
+  (midrope/perch/running/apron), which is what makes them reachable in play.
+- **scripts/model_wiring_audit.cjs [--gate]** — every wired model must resolve to a real file for a
+  real character. Removed 8 phantom entries (GHOST/PHANTOM/DEMON_X/LUNA_VEGA/SAMI_Z/JAXON_RYKER/
+  BIG_BULL/COSMIC_DUST: no GLB, and no such character in ANY registry). `mdickie_bases/` never
+  existed, so every archetype fallback 404'd to procedural — now resolves to real bodies.
+- **UE arena/crowd/referee** — referee's RefState was a function-local `static` shared by every ref
+  and never reset; now per-actor + ResetForMatch. Added LoS-gated real-time count, positioning with
+  perpendicular whip avoidance, CheckBump. bannon_arena.h had NEVER been called from UE (no ropes, no
+  rebound, no stage edge) — Contain() wires it with the cm->m conversion on the seam. Crowd split
+  into fast Excitement vs slow Investment + per-section spatial heat.
+  native/tests/test_ue_arena_crowd_ref.cpp, 31 assertions, 11/11 ctest suites pass.
