@@ -18,9 +18,24 @@ const DRY = process.argv.includes('--dry');
 
 const DEST = (name) => {
   const n = name.toLowerCase();
-  if (n.endsWith('.fbx')) return path.join(ROOT, 'assets/mocap/drive', name);
+  if (n.endsWith('.fbx') || n.endsWith('.bvh')) return path.join(ROOT, 'assets/mocap/drive', name);
   if (n.endsWith('.zip')) return path.join(ROOT, 'imports/incoming', name);
+  // DISC IMAGES and REFERENCE VIDEO land in gitignored staging. A disc is 1-8 GB and never belongs in
+  // the repo; it is raw third-party material that gets EXTRACTED (tools/iso/iso_extract.py) and then
+  // only the derived, proprietary output is kept. Same rule as the MDickie APK workspace.
+  if (/\.(iso|gcm|wbfs|cso|nkit|rvz|bin|cue|img)$/.test(n)) return path.join(ROOT, 'iso_staging', name);
+  if (/\.(mp4|mov|m4v|webm|avi|mkv)$/.test(n)) return path.join(ROOT, 'mocap_video', name);
   return path.join(ROOT, 'assets/models/incoming', name);
+};
+// what to DO with a file once it has landed — printed as the next command rather than run blind,
+// because extracting a disc and harvesting a video are both long jobs the owner may want to time
+const NEXT_STEP = (dest) => {
+  const n = dest.toLowerCase();
+  if (/\.(iso|gcm|wbfs|cso|nkit|rvz|bin|cue|img)$/.test(n))
+    return 'python3 tools/iso/iso_extract.py "' + dest + '" --list';
+  if (/\.(mp4|mov|m4v|webm|avi|mkv)$/.test(n))
+    return 'python3 tools/mocap/harvest.py "' + dest + '" --segment';
+  return null;
 };
 
 function fetchText(url) {
@@ -101,6 +116,8 @@ function main() {
         skipped++;
       } else {
         console.log(`[drive-sync] synced ${name} -> ${path.relative(ROOT, dest)} (${sz} bytes)`);
+        const step = NEXT_STEP(dest);
+        if (step) console.log(`[drive-sync]   next:  ${step}`);
         manifest[name] = { id, ok: true, size: sz, local: path.relative(ROOT, dest), at: new Date().toISOString() };
         synced++;
       }

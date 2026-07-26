@@ -32509,6 +32509,8 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
         if(window.__fbxClipInFlight[key]) return window.__fbxClipInFlight[key];
         window.__fbxClipInFlight[key] = (async()=>{
           const cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+          // 0. a VARIANT is derived from its base, not fetched — no request, no stored file
+          if(window.__deriveVariant){ const dv=await window.__deriveVariant(key); if(dv) return dv; }
           // 1. the baked clip — this is the path that should always win
           const jsonUrls = ['assets/moves/clips/'+key+'.json', cdn+'assets/moves/clips/'+key+'.json'];
           for(const u of jsonUrls){
@@ -42670,6 +42672,8 @@ console.log('%c[GNM FACE LAB] scan-grade parametric face studio — hub tile �
       // is the one loadCore() drives at boot: 26 captures, parsed synchronously, on the main thread.
       // A CPU profile still showed FBXLoader and fflate dominating after the primary loader was fixed,
       // because this one had not been.
+      // a VARIANT is derived from its base — no request, no stored file
+      if(window.__deriveVariant){ try{ var dvv=await window.__deriveVariant(key); if(dvv) return dvv; }catch(e){} }
       var jsonUrls=['assets/moves/clips/'+key+'.json', cdn+'assets/moves/clips/'+key+'.json'];
       for(var ji=0;ji<jsonUrls.length;ji++){
         try{ var jr=await fetch(jsonUrls[ji]).catch(function(){return null;}); if(!jr||!jr.ok) continue;
@@ -47792,6 +47796,188 @@ console.log('%c[BANNON_LIFE] the world has a clock, needs, money, exits and cons
 })();
 console.log('%c[BANNON_LIFE_UI] ☰ LIFE in the God Within banner — place-aware actions, diary, exits','color:#7CFC00');
 </script>
+
+<script>
+// ============================================================================================
+// BANNON_MOVE_VARIANTS — the derived variants as REAL, SELECTABLE MOVES.
+//
+// Owner: "No, we do want variants too, especially if they actually look different."
+// Both halves of that matter. So:
+//
+//   THEY ARE REAL MOVES. Each entry in assets/moves/variant_manifest.json becomes an addressable
+//   move with its own name, its own clip, and its own slot in the move library — pickable in the
+//   moveset editor, drawable by the AI, bindable to a button. Not an internal flag on another move.
+//
+//   AND THEY EARNED IT. Every one was measured against its base by sampling both at the same
+//   ABSOLUTE TIME (not the same phase — a retimed variant has an identical pose path and would read
+//   as a duplicate under phase alignment, while on screen it is already finishing as the base is
+//   still winding up). 69 candidates were DROPPED for reading identical; these 321 diverged.
+//   The divergence numbers travel with each move, so nothing here is taken on trust.
+//
+// The clip body is DERIVED, not downloaded: window.__deriveVariant reproduces it from the base with
+// the same math tools/mocap/harvest.py used offline, so a 49 KB manifest replaces 72 MB of JSON that
+// would have said exactly the same thing. Zero bytes on the wire, zero FBX, no extra request.
+// ============================================================================================
+(function(){
+  if(typeof window==='undefined') return;
+
+// WHERE THIS LIVES, AND WHY IT MOVED.
+// It was first placed next to the primary loadClipFor, which turns out to be in a script block that
+// NEVER EXECUTES — window.BANNON_LOAD_FBX_LIBRARY, __fbxClipInFlight and __coreClipsReady are all
+// undefined in a running page, and two of those are original code, not mine. So that whole loader is
+// dead and the live one is BANNON_MOCAP's. Found it by probing for the symbols instead of assuming the
+// edit had taken. End-of-file modules are the proven-running location in this file, so it lives here.
+// ══ VARIANTS ARE MATH, NOT FILES ═══════════════════════════════════════════════════════════
+// tools/mocap/harvest.py can derive MIRROR / SNAP / SLOW / KNEELING / SITOUT / HARD / DELAYED from
+// one capture. Writing those out tripled the clip library to 116 MB for zero new information — a
+// mirrored clip is the original with X negated, and a "snap" is the original on a different timing
+// curve. So the SAME derivations live here and run on demand: we ship ~26 MB of bases and get the
+// families for free. Identical recipes to the tool, deliberately, so an offline-derived clip and a
+// runtime-derived one are the same clip.
+var _MIRJ = { shL:'shR', elL:'elR', haL:'haR', hipL:'hipR', knL:'knR', ftL:'ftR', clavL:'clavR' };
+(function(){ var add={}; for(var k in _MIRJ) add[_MIRJ[k]]=k; for(var k2 in add) _MIRJ[k2]=add[k2]; })();
+function _mirBone(n){ return n.indexOf('Left')>=0 ? n.replace('Left','Right')
+                          : (n.indexOf('Right')>=0 ? n.replace('Right','Left') : n); }
+function _varMirror(c){
+  var out={dur:c.dur, keys:[]};
+  for(var i=0;i<c.keys.length;i++){ var k=c.keys[i], nk={t:k.t};
+    if(k.pose){ var p={}; for(var j in k.pose){ var v=k.pose[j]; p[_MIRJ[j]||j]=[-v[0], v[1], v[2]]; } nk.pose=p; }
+    if(k.bones){ var b={}; for(var bn in k.bones){ var r=k.bones[bn], m={};
+      for(var f in r) m[f]=r[f];
+      if(m.ry!=null) m.ry=-m.ry; if(m.rz!=null) m.rz=-m.rz; if(m.tx!=null) m.tx=-m.tx;
+      b[_mirBone(bn)]=m; } nk.bones=b; }
+    out.keys.push(nk); }
+  return out;
+}
+function _varRetime(c, pow, durScale){
+  var n=c.keys.length, dur=c.dur*durScale, out={dur:dur, keys:[]};
+  for(var i=0;i<n;i++){
+    var u=(n>1)?(i/(n-1)):0, src=Math.max(0,Math.min(1,Math.pow(u,pow)))*(n-1);
+    var i0=Math.floor(src), i1=Math.min(n-1,i0+1), a=src-i0, k0=c.keys[i0], k1=c.keys[i1];
+    var nk={t:u*dur};
+    if(k0.pose){ var p={}; for(var j in k0.pose){ var v=k0.pose[j], w=(k1.pose&&k1.pose[j])||v;
+      p[j]=[v[0]*(1-a)+w[0]*a, v[1]*(1-a)+w[1]*a, v[2]*(1-a)+w[2]*a]; } nk.pose=p; }
+    if(k0.bones){ var b={}; for(var bn in k0.bones){ var r=k0.bones[bn], sr=(k1.bones&&k1.bones[bn])||r, m={};
+      ['rx','ry','rz','tx','ty','tz'].forEach(function(f){ if(r[f]!=null||sr[f]!=null) m[f]=(r[f]||0)*(1-a)+(sr[f]||0)*a; });
+      if(Object.keys(m).length) b[bn]=m; } nk.bones=b; }
+    out.keys.push(nk);
+  }
+  return out;
+}
+function _varAmp(c, sc){
+  var out={dur:c.dur, keys:[]};
+  for(var i=0;i<c.keys.length;i++){ var k=c.keys[i], nk={t:k.t};
+    if(k.pose){ var p={}; for(var j in k.pose){ var v=k.pose[j]; p[j]=[v[0], v[1]*sc, v[2]]; } nk.pose=p; }
+    if(k.bones){ var b={}; for(var bn in k.bones){ var r=k.bones[bn], m={};
+      for(var f in r) m[f]=(f==='rx'||f==='ry'||f==='rz')? r[f]*sc : r[f];
+      b[bn]=m; } nk.bones=b; }
+    out.keys.push(nk); }
+  return out;
+}
+window.BANNON_CLIP_VARIANTS = {
+  MIRROR:   function(c){ return _varMirror(c); },
+  SNAP:     function(c){ return _varRetime(c, 2.2, 0.72); },
+  SLOW:     function(c){ return _varRetime(c, 0.75, 1.35); },
+  KNEELING: function(c){ return _varAmp(c, 0.62); },
+  SITOUT:   function(c){ return _varAmp(_varRetime(c, 1.4, 0.9), 0.80); },
+  HARD:     function(c){ return _varAmp(_varRetime(c, 2.6, 0.62), 1.12); },
+  DELAYED:  function(c){ return _varRetime(c, 3.0, 1.5); }
+};
+// KEY_VARIANT resolves by deriving from KEY. Tried before any network fetch, so a variant costs
+// one small transform and no request at all when its base is already resident.
+window.__deriveVariant = async function(key){
+  try{
+    var m = String(key).match(/^(.+)_(MIRROR|SNAP|SLOW|KNEELING|SITOUT|HARD|DELAYED)$/);
+    if(!m) return null;
+    var baseKey=m[1], kind=m[2], fn=window.BANNON_CLIP_VARIANTS[kind];
+    if(!fn) return null;
+    var base=null;
+    try{ base=(STUDIO.clips&&(STUDIO.clips[baseKey]))||null; }catch(e){}
+    if(!base) base=await window.loadClipFor(baseKey);
+    if(!base || !base.keys || !base.keys.length) return null;
+    // a static rig file is not a capture; deriving a "snap" of a bind pose is 90 KB of nothing
+    if((base.dur||0) < 0.2) return null;
+    var v=fn(base);
+    if(typeof STUDIO!=='undefined'){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=v; }
+    return v;
+  }catch(e){ return null; }
+};
+
+
+  var ST={ manifest:null, added:0, byBase:{} };
+
+  // A variant's display name follows how wrestling actually names them, not the internal suffix.
+  var LABEL = { MIRROR:'(Reversed)', SNAP:'Snap', KNEELING:'Kneeling', SITOUT:'Sit-Out',
+                HARD:'Hard', SLOW:'Delayed', DELAYED:'Delayed' };
+  function pretty(baseName, kind){
+    // lower-case FIRST: the keys are SHOUTED (POWERBOMB_SITOUT), and title-casing an already-upper
+    // string is a no-op, so "POWERBOMB (Reversed)" was leaking into the move list
+    var b = String(baseName).replace(/_/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+    b = b.replace(/\b\w/g, function(c){ return c.toUpperCase(); });
+    if(kind==='MIRROR') return b + ' (Reversed)';
+    return (LABEL[kind]||kind) + ' ' + b;
+  }
+
+  function register(){
+    var M=ST.manifest; if(!M) return 0;
+    var lib = window.BANNON_MOVE_LIBRARY;
+    var n=0;
+    for(var key in M){
+      var e=M[key]; if(!e || !e.base) continue;
+      (ST.byBase[e.base]=ST.byBase[e.base]||[]).push(key);
+      // ADDITIVE, always. Owner law: variants go ON TOP of the existing moves, they never replace one.
+      var name = pretty(e.base, e.kind);
+      var move = {
+        name: name,
+        clip: key,                    // loadClipFor derives this from e.base — no file, no fetch
+        _variantOf: e.base,
+        _variantKind: e.kind,
+        _diffMean: e.diffMean,
+        _diffPeak: e.diffPeak,
+        dur: e.dur,
+        // a retime changes the RHYTHM, so the engine's timing hooks need to know
+        speed: (e.durDelta && e.dur) ? 1 : 1
+      };
+      try{
+        if(lib && typeof lib.add==='function'){ lib.add(move); n++; continue; }
+        if(lib && lib.moves && lib.moves.push){ lib.moves.push(move); n++; continue; }
+      }catch(err){}
+      // no library to push into yet — keep them addressable regardless
+      (window.__variantMoves=window.__variantMoves||[]).push(move); n++;
+    }
+    ST.added=n;
+    return n;
+  }
+
+  function load(){
+    var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    var urls=['assets/moves/variant_manifest.json', cdn+'assets/moves/variant_manifest.json'];
+    (function next(i){
+      if(i>=urls.length) return;
+      fetch(urls[i]).then(function(r){ return r.ok? r.json() : Promise.reject(); })
+        .then(function(j){
+          ST.manifest=j;
+          var n=register();
+          console.log('%c[BANNON_MOVE_VARIANTS] '+n+' derived variants are real selectable moves '+
+            '(clips derived on demand — 49 KB manifest, not 72 MB of JSON)','color:#7CFC00');
+        })
+        .catch(function(){ next(i+1); });
+    })(0);
+  }
+  load();
+
+  window.BANNON_MOVE_VARIANTS = {
+    manifest:function(){ return ST.manifest; },
+    count:function(){ return ST.added; },
+    of:function(base){ return (ST.byBase[String(base).toUpperCase()]||[]).slice(); },
+    label:pretty,
+    // resolve a variant to a playable clip, deriving it if it is not resident
+    clip:function(key){ return window.loadClipFor ? window.loadClipFor(key) : null; },
+    reload:load
+  };
+})();
+</script>
+
 
 </body></html>
 

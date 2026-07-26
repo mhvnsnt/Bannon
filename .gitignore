@@ -41,3 +41,8 @@ assets/iso_extracted/
 *.cue
 tools/iso/*.key
 tools/iso/*key*.bin
+
+# disc images + reference video dropped via drive_sync — raw third-party material, extracted then
+# discarded. Only derived proprietary output is ever committed.
+/iso_staging/
+/mocap_video/
