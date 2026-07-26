@@ -130,6 +130,63 @@ CLIPS.BANNON_SWANTON = { dur: 1.45, keys: [
                      haL:[0.14,-0.58,0.28], haR:[0.14,-0.58,-0.28] }) }
 ]};
 
+
+// ── 4. TWIST OF FATE (Matt-Hardy style) ─────────────────────────────────────────────────────────
+// Reference ref_twist_of_fate.png: he takes the head in both hands, TURNS his back through the hold
+// spinning the opponent with him, then drops straight down driving the face into the mat. The spin
+// is what separates it from a plain front DDT — the rotation carries the opponent round.
+CLIPS.BANNON_TWIST_OF_FATE = { dur: 1.10, keys: [
+  { t:0.00, pose:P({ haL:[0.16,0.10,0.04], haR:[0.16,0.10,-0.04] }) },
+  // both hands to the head
+  { t:0.16, pose:P({ haL:[0.28,0.22,0.10], haR:[0.28,0.22,-0.10], elL:[0.22,0.18,0.08], elR:[0.22,0.18,-0.08],
+                     chest:[0.12,0.02,0], pelvis:[0.08,-0.02,0], ftL:[0.12,0,0] }) },
+  // the TURN — he rotates under, hips lead, shoulders follow, the opponent comes round with him
+  { t:0.34, pose:P({ haL:[0.22,0.20,0.24], haR:[0.22,0.20,0.04], chest:[0.08,0.01,0.20],
+                     spineMid:[0.06,0,0.16], pelvis:[0.06,-0.03,0.22], head:[0.06,0.02,0.14],
+                     ftL:[0.10,0,0.14], ftR:[0.04,0,0.10] }) },
+  { t:0.50, pose:P({ haL:[0.14,0.14,0.30], haR:[0.14,0.14,0.10], chest:[0.02,-0.06,0.28],
+                     pelvis:[0.02,-0.08,0.30], head:[0,-0.02,0.20], knL:[0.04,-0.10,0.10] }) },
+  // DROP — straight down, no arc, the face goes into the mat
+  { t:0.70, pose:P({ haL:[0.08,-0.26,0.26], haR:[0.08,-0.26,0.08], chest:[0,-0.46,0.20],
+                     spineMid:[0,-0.40,0.17], head:[0,-0.56,0.14], pelvis:[0,-0.44,0.20],
+                     knL:[0.02,-0.32,0.10], knR:[0.02,-0.32,0.02] }) },
+  { t:0.86, pose:P({ haL:[0.06,-0.42,0.22], haR:[0.06,-0.42,0.06], chest:[0,-0.60,0.16],
+                     head:[0,-0.72,0.10], pelvis:[0,-0.56,0.16] }) },
+  { t:1.00, pose:P({ chest:[0,-0.58,0.15], head:[0,-0.70,0.10], pelvis:[0,-0.54,0.15] }) }
+]};
+
+// ── 5. SWANTON 450 ──────────────────────────────────────────────────────────────────────────────
+// Reference ref_swanton_450.png: a swanton launch that keeps rotating past the swanton's stop —
+// through a 450 — and lands chest/front-first on a prone opponent rather than back-first. More
+// rotation, later extension, and the attacker takes more of the landing.
+CLIPS.BANNON_SWANTON_450 = { dur: 1.62, keys: [
+  { t:0.00, pose:P({ pelvis:[0,-0.10,0], knL:[0.04,-0.10,0], knR:[0.04,-0.10,0] }) },
+  { t:0.12, pose:P({ pelvis:[0,-0.26,0], knL:[0.12,-0.22,0], knR:[0.12,-0.22,0],
+                     haL:[-0.14,0.12,0.12], haR:[-0.14,0.12,-0.12], chest:[0.10,-0.16,0] }) },
+  { t:0.26, pose:P({ pelvis:[0.06,0.34,0], chest:[0.08,0.30,0], head:[0.08,0.32,0],
+                     haL:[0.04,0.50,0.16], haR:[0.04,0.50,-0.16],
+                     ftL:[-0.14,0.28,0], ftR:[-0.14,0.24,0] }) },
+  // tuck HARDER than a swanton — this is what buys the extra rotation
+  { t:0.40, pose:P({ pelvis:[0.12,0.58,0], chest:[0.28,0.44,0], head:[0.36,0.20,0],
+                     knL:[0.38,0.50,0.06], knR:[0.38,0.50,-0.06], ftL:[0.34,0.28,0.06], ftR:[0.34,0.28,-0.06],
+                     haL:[0.34,0.28,0.14], haR:[0.34,0.28,-0.14] }) },
+  { t:0.52, pose:P({ pelvis:[0.18,0.66,0], chest:[0.24,0.60,0], head:[0.18,0.34,0],
+                     knL:[0.28,0.96,0.06], knR:[0.28,0.96,-0.06], ftL:[0.20,1.12,0.06], ftR:[0.20,1.12,-0.06] }) },
+  // past vertical and still going — the 450's extra quarter
+  { t:0.64, pose:P({ pelvis:[0.24,0.58,0], chest:[0.14,0.66,0], head:[0.10,0.52,0],
+                     knL:[0.44,0.72,0.06], knR:[0.44,0.72,-0.06], ftL:[0.54,0.86,0.06], ftR:[0.54,0.86,-0.06] }) },
+  { t:0.76, pose:P({ pelvis:[0.28,0.34,0], chest:[0.30,0.22,0], head:[0.30,0.10,0],
+                     knL:[0.50,0.34,0.08], knR:[0.50,0.34,-0.08], ftL:[0.58,0.16,0.08], ftR:[0.58,0.16,-0.08],
+                     haL:[0.30,0.18,0.22], haR:[0.30,0.18,-0.22] }) },
+  // IMPACT — chest/front first across the prone body, arms spread
+  { t:0.90, pose:P({ pelvis:[0.22,-0.60,0], chest:[0.30,-0.62,0], spineMid:[0.27,-0.60,0],
+                     head:[0.34,-0.58,0], knL:[0.44,-0.44,0.10], knR:[0.44,-0.44,-0.10],
+                     ftL:[0.52,-0.04,0.12], ftR:[0.52,-0.04,-0.12],
+                     haL:[0.22,-0.62,0.32], haR:[0.22,-0.62,-0.32] }) },
+  { t:1.00, pose:P({ pelvis:[0.20,-0.58,0], chest:[0.28,-0.60,0], head:[0.32,-0.56,0],
+                     haL:[0.20,-0.60,0.30], haR:[0.20,-0.60,-0.30] }) }
+]};
+
 // ── the MOVE records: multi-hit timing, and what each contact is ────────────────────────────────
 const MOVES = [
   { name:'STRONG STRIKE COMBO', cat:'STRIKE', limb:'RIGHT CROSS', traj:'OVERHAND', height:'HIGH',
@@ -146,6 +203,18 @@ const MOVES = [
     hits:[ { t:0.32, limb:'FOREARM', power:30, type:'strike' },
            { t:0.80, limb:'BODY',    power:82, type:'slam'  } ],
     endsIn:'GROUNDED' },
+  { name:'TWIST OF FATE', cat:'GRAPPLE', limb:'BODY', traj:'SPINNING', height:'HIGH',
+    power:96, speed:62, style:'TECHNICAL', follow:'KNOCKDOWN', range:'SHORT',
+    clip:'BANNON_TWIST_OF_FATE', tag:['cutter','spin','signature-feel'],
+    hits:[ { t:0.16, limb:'FOREARM', power:22, type:'strike' },
+           { t:0.70, limb:'BODY',    power:96, type:'slam'  } ],
+    endsIn:'GROUNDED' },
+  { name:'SWANTON 450', cat:'DIVE', limb:'BODY', traj:'FLYING', height:'HIGH',
+    power:118, speed:36, style:'HIGH FLYER', follow:'KNOCKDOWN', range:'LONG',
+    clip:'BANNON_SWANTON_450', tag:['dive','top-rope','450','signature-feel','sell'],
+    hits:[ { t:0.90, limb:'BODY', power:118, type:'slam' } ],
+    // more rotation means a worse landing for the man throwing it
+    sell:0.42, endsIn:'GROUNDED' },
   { name:'SWANTON BOMB', cat:'DIVE', limb:'BODY', traj:'FLYING', height:'HIGH',
     power:108, speed:40, style:'HIGH FLYER', follow:'KNOCKDOWN', range:'LONG',
     clip:'BANNON_SWANTON', tag:['dive','top-rope','signature-feel','sell'],
