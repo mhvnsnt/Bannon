@@ -28,7 +28,7 @@ const MODULES = [
   'BANNON_MOCAP', 'BANNON_MOVESET_LIB', 'BANNON_CAW_FRONT', 'BANNON_CREATION_SUITE',
   'BANNON_VENUES', 'BANNON_MDICKIE', 'BANNON_TRAVEL', 'BANNON_CARDS', 'BANNON_TRAUMA',
   'BANNON_RIGS', 'BANNON_IMPACT', 'BANNON_FLOW', 'BANNON_SHOTCALLER', 'BANNON_MOVEPOOL',
-  'BANNON_INTERFERENCE', 'BANNON_SEGMENT', 'BANNON_COMBAT_MOCAP', 'BANNON_MOVESET_SLOTS', 'BANNON_BASES', 'BANNON_COMBO', 'BANNON_PROCGEN', 'BANNON_AUTHORED', 'BANNON_VARIANTS', 'BANNON_LEGAL'
+  'BANNON_INTERFERENCE', 'BANNON_SEGMENT', 'BANNON_COMBAT_MOCAP', 'BANNON_MOVESET_SLOTS', 'BANNON_BASES', 'BANNON_COMBO', 'BANNON_PROCGEN', 'BANNON_AUTHORED', 'BANNON_VARIANTS', 'BANNON_LEGAL', 'BANNON_LIFE', 'BANNON_LIFE_UI'
 ];
 
 function stubContext() {
@@ -73,8 +73,14 @@ for (const name of MODULES) {
   // find the module's own <script> block: the marker appears inside it
   const idx = src.indexOf(name);
   if (idx < 0) { console.log('  SKIP ' + name + ' (not present)'); continue; }
-  // use the LAST script block that declares it, so we get the definition not a reference
-  let defIdx = src.lastIndexOf('window.' + name, src.length);
+  // Find the block that ASSIGNS the module, not one that merely mentions it. A plain
+  // lastIndexOf('window.' + name) is wrong two ways: it matches references (BANNON_GODWITHIN's patch
+  // does `if(window.BANNON_LIFE)`), and it matches LONGER NAMES BY PREFIX — `window.BANNON_LIFE_UI`
+  // contains `window.BANNON_LIFE`, so BANNON_LIFE was graded against the UI's script block and
+  // reported "ran but did not define itself" while being perfectly fine.
+  const assign = new RegExp('window\\.' + name + '\\s*=(?!=)', 'g');
+  let defIdx = -1, m;
+  while ((m = assign.exec(src)) !== null) defIdx = m.index;   // last real assignment wins
   if (defIdx < 0) defIdx = idx;
   const start = src.lastIndexOf('<script>', defIdx);
   const end = src.indexOf('</script>', defIdx);

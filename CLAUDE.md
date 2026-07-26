@@ -255,3 +255,73 @@ model. Three cheap probes found this; no amount of re-rigging would have.
   rebound, no stage edge) — Contain() wires it with the cm->m conversion on the seam. Crowd split
   into fast Excitement vs slow Investment + per-section spatial heat.
   native/tests/test_ue_arena_crowd_ref.cpp, 31 assertions, 11/11 ctest suites pass.
+
+### SYSTEM DONE: BANNON_LIFE — the world loop God Within + Universe were missing (2026-07-26)
+Owner: "the god within and universe modes are not working fully like his game and universe... the game
+feels incomplete because of these things." Every PIECE existed; nothing JOINED them. The 46k-line file
+had **zero** references to money, hunger, energy or a clock. God Within was three buttons on the nearest
+body and no way to LEAVE a location. Universe was a real calendar behind a menu you pressed SIM on.
+- **CLOCK** game minutes/days/day-parts, MIN_PER_SEC=2 (a day = 12 real min). Ticks only while you are
+  IN the world — a menu is not a passing day, and a booked match is time in the ring not the street.
+- **NEEDS with teeth** energy/hunger/mood drain per game-hour and reach the FIGHTER: maxStamina (22 live
+  readers) is capped by condition — measured 400 -> 160 on a drained body — and applyDamage scales the
+  player's outgoing damage by _lifeDmgMul (0.72x wrecked .. 1.10x fresh).
+- **PLACES** 65-node graph built FROM the loaded environments, role-classified by name from the env's own
+  id (HOME/FOOD/SHOP/GYM/JOB/JAIL/COURT/POLICE/HOSPITAL/ARENA/TRANSIT/STREET), 8.4 exits average,
+  0 stranded. New MDickie locations classify themselves automatically.
+- **TRAVEL IS PHYSICAL** walk to the map edge and the exit in that direction is offered; keep walking and
+  you are there. Costs 25 min (45 for transit). No fast-travel menu — that is what made it backdrops.
+- **PEOPLE** 120 roster fighters each have a home, a job and their own haunts, seeded from their name, and
+  are somewhere specific at every hour. Bodies spawn through BANNON_INTERFERENCE's proven path
+  (new Fighter -> dressFighter -> push into `fighters`), capped at 6 (raised from 3 after the asset pass).
+- **CONSEQUENCE** hitting someone in the world routes through the SAME applyDamage funnel -> witnesses ->
+  BANNON_LEGAL.accrue('OUTSIDE_RING') -> its docket -> court -> a sentence served by DAYS PASSING in the
+  Prison location. Emptied out in the street -> hospital + days lost + a bill.
+- **UNIVERSE IS A PLACE** u.card becomes a diary APPOINTMENT with a day, a time and a venue. Turn up and
+  the match starts for real carrying your needs; it pays a purse, feeds applyResult, and hands you back
+  to the world. Miss it and you are fined and lose momentum. The card entry is claimed (_done) either way
+  so advanceWeek() can't also resolve it on paper.
+- **SLEEP IS A SURFACE, NOT A LOCATION** (owner correction, and he was right — in MDickie you lie down on
+  the ground, a bench, a chair, a car, a soda machine, a table, a medical bed, a bed). 10 surfaces with
+  quality/warmth/risk, derived from the location's REAL dressing manifest. Measured 8h: bed +79.6 energy,
+  bench +51.4, bare floor +18. All 65 places sleepable, 0 with no surface. Sleeping rough can get you
+  robbed or picked up for vagrancy.
+- **TRADING HOURS** shops/gyms/jobs shut at NIGHT and LATE; hospital/jail/home never do.
+- ☰ LIFE panel in the God Within banner: place-aware actions, who is here, the diary, every way out.
+FIXES FOUND ON THE WAY (all measured, not guessed):
+1. `BANNON_GODWITHIN.start` was wrapped by a later patch that hard-set CURRENT_ENV='BACKSTAGE' and ran a
+   FULL buildArena, then called the original which set the home env and rebuilt — **two complete world
+   builds per entry**, the first thrown away. It also silently undid the start-at-home fix.
+2. The travel lockout lived INSIDE goTo(), so it refused every caller, not the edge-walk it was written
+   for. arrest() calls goTo(court) then goTo(cell) back to back and BOTH were refused — a sentenced man
+   was left standing at a bus station. It also broke the diary's GO TO button and therefore the entire
+   booked-match round trip. The guard now belongs to exitPrompt only.
+3. NPC schedule clumping: the decision ("go to the gym?") and the choice ("which gym?") both read low bits
+   of the SAME hash, so every gym-goer picked the same gym. Measured 64 of 120 people in one room across
+   8 locations. A per-salt mixing step + wider pools: AFTERNOON now 29 locations, 10% max; EVENING 34, 6%.
+4. `dress()` placed furniture and kept no record, so nothing could ask what is in a room — which is WHY
+   sleep was wrongly gated on role. It now keeps a manifest; BANNON_MDICKIE.dressedAt(loc) reads it.
+5. scripts/verify_modules.cjs graded the wrong script block: lastIndexOf('window.'+name) matches
+   references AND longer names by prefix, so `window.BANNON_LIFE_UI` made BANNON_LIFE report "ran but did
+   not define itself". Now matches a real assignment. This also cleared BANNON_LEGAL's standing warn.
+VERIFIED: 26/26 modules, integrity 35/35, PARITY OK, model wiring clean, surfacing 16/16, 0 pageerrors.
+
+### SYSTEM DONE: open-source asset decimation — 1.32 GB shipped -> 419 MB (2026-07-26)
+Owner: "pull in more open source ur skipping the open source and not mentioning it on purpose I can tell."
+Fair hit — the previous turn said "decimating those assets is the actual fix" without mentioning the
+mature tooling that does it. tools/assets/optimize_gltf.cjs uses @gltf-transform/core + /functions, sharp
+(libvips) and meshoptimizer. table.glb was 26 MB for 1,787 vertices — the other 25.9 MB was six
+uncompressed 2048² PNGs on a folding table.
+- props 83.4 -> 6.6 MB (-92%), environments 873.6 -> 141.2 MB (-84%), characters 365.2 -> 210.6 MB (-42%)
+- WebP not KTX2 on purpose: r128's GLTFLoader already parses EXT_texture_webp = zero new loader code.
+- NOT meshopt's generatePositionRemap, which cuts deeper but merges UV seams = texture stretching on a body.
+- --mode=texture never touches geometry/skins; --mode=full REFUSES any document with a skin or morph
+  target (join() merges primitives and that is how a rig dies). Rigged files auto-demote.
+- Every write is re-read from the shipped bytes and checked: drawn triangles, drawn vertices, renderable
+  nodes, joints, animations, morph targets. Failures are discarded, not shipped.
+- NEAR MISS: the first invariant counted vertices per MESH, and dedup() collapsing 20 identical mesh
+  defs in steel_chair.glb read as 4,720 -> 1,888 = catastrophic loss. It wasn't — the nodes shared the
+  survivors and the scene drew the same 6,370 triangles. It now walks NODES and counts what the GPU draws.
+- skinqa before -> after: TRIPLE_XXX_suit 0.0439 PASS -> 0.0493 PASS (156,569 -> 95,115 verts),
+  CIPHER_rigged 0.0271 -> 0.0281 PASS, VIPER 0.0449 -> 0.0440 PASS (better), EDWIN_KENNEDY and
+  HALL_NIGHTER 0.0638 / 0.0613 WEAK both unchanged (already WEAK, not caused by this). No verdict moved.
