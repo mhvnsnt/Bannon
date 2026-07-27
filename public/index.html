@@ -53689,8 +53689,9 @@ window.__deriveVariant = async function(key){
     // left mislabelled in Cipher's run rotation where it would fire on MOD+run.
     CIPHER_FERAL_RUN:         { label:'Feral Run (all fours)',  kind:'locomotion', cover:0.81 },
     CIPHER_FERAL_RUN_2:       { label:'Feral Run (scramble)',   kind:'locomotion', cover:0.80 },
-    UNIDENTIFIED_OUTDOOR_DIVE:{ label:'Unidentified (outdoor dive onto a kneeling man)',
-                                kind:'dive', cover:0.91, pendingId:true },
+    // TIGER FEINT KICK (the 619). I read the frames wrong twice -- first calling it a feral run,
+    // then a leaping cutter. It is a 619. Wired to the rope position, not as a generic dive.
+    TIGER_FEINT_KICK:         { label:'Tiger Feint Kick (619)', kind:'rope',   cover:0.91 },
     FALCON_ARROW_STANDING:    { label:'Falcon Arrow',           kind:'grapple',    cover:0.84 },
     FALCON_ARROW_GROUNDED:    { label:'Falcon Arrow (grounded)',kind:'grapple',    cover:0.78 },
     PUMPHANDLE_GERMAN_DOUBLE: { label:'Double Pumphandle German',kind:'grapple',   cover:0.38 },
@@ -53700,7 +53701,7 @@ window.__deriveVariant = async function(key){
   var PAIRS = {
     CIPHER_FERAL_RUN:         'CIPHER_FERAL_RUN__RECV',
     CIPHER_FERAL_RUN_2:       'CIPHER_FERAL_RUN_2__RECV',
-    UNIDENTIFIED_OUTDOOR_DIVE:'UNIDENTIFIED_OUTDOOR_DIVE__RECV',
+    TIGER_FEINT_KICK:         'TIGER_FEINT_KICK__RECV',
     FALCON_ARROW_STANDING:    'FALCON_ARROW_STANDING__RECV',
     FALCON_ARROW_GROUNDED:    'FALCON_ARROW_GROUNDED__RECV',
     PUMPHANDLE_GERMAN_DOUBLE: 'PUMPHANDLE_GERMAN_DOUBLE__RECV',
@@ -53774,6 +53775,27 @@ window.__deriveVariant = async function(key){
     if(!pool.length) return null;
     _feralI = (_feralI + 1) % pool.length;
     return pool[_feralI];
+  }
+
+  // ── 2b. THE 619 NEEDS A MAN ON THE ROPES ──────────────────────────────────────────────────────
+  // A tiger feint kick is only a tiger feint kick if the receiver is hung over the middle rope; fired
+  // at a man standing in the centre it is a spin into empty air. The engine already tracks a
+  // 'midrope' state and knows where the ropes are, so the gate is the position, not a new flag.
+  function ropeReady(victim){
+    if(!victim) return false;
+    try{
+      if(victim.state === 'midrope' || victim._draped) return true;
+      var hx = (typeof ARENA_HALF !== 'undefined') ? ARENA_HALF : 3.2;
+      var hz = (typeof ARENA_HALF_Z !== 'undefined') ? ARENA_HALF_Z : 2.2;
+      var atRope = Math.abs(Math.abs(victim.x) - hx) < 0.55 || Math.abs(Math.abs(victim.z) - hz) < 0.55;
+      var low = (victim.state === 'down' || victim.state === 'groggy' || (victim.hp||100) < 55);
+      return atRope && low;
+    }catch(e){ return false; }
+  }
+  function tigerFeintFor(attacker){
+    if(!have('TIGER_FEINT_KICK')) return null;
+    var v = attacker && (attacker.grappleTarget || (attacker.opponent && attacker.opponent()));
+    return ropeReady(v) ? 'TIGER_FEINT_KICK' : null;
   }
 
   // ── 3. THE RECEIVER, DRIVEN IN STEP ───────────────────────────────────────────────────────────
@@ -53852,7 +53874,7 @@ window.__deriveVariant = async function(key){
   window.BANNON_OWNER_MOVES = {
     CAPTURES: CAPTURES, PAIRS: PAIRS,
     arm: arm, warm: warmAll, receiverOf: function(k){ return PAIRS[k] || null; },
-    feralFor: feralFor, drive: driveReceiver,
+    feralFor: feralFor, tigerFeintFor: tigerFeintFor, ropeReady: ropeReady, drive: driveReceiver,
     stats: function(){ return { armed:ST.armed, captures:Object.keys(CAPTURES).length,
       pairs:ST.pairs, receiverPoses:ST.applied, feralRuns:ST.feral,
       resident:Object.keys(CAPTURES).filter(have).length,

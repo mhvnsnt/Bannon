@@ -10416,34 +10416,6 @@
   "lowCoverage": false,
   "roleBy": "inversion (head below hip)"
  },
- "UNIDENTIFIED_OUTDOOR_DIVE": {
-  "file": "UNIDENTIFIED_OUTDOOR_DIVE.json",
-  "bytes": 47066,
-  "dur": 4.2167,
-  "keys": 28,
-  "bones": 14,
-  "src": "1718f9d3-23e5f85d56a50cd5e7feff8cb0da08043.mp4",
-  "via": "video_to_clip/mediapipe/two-body",
-  "role": "attacker",
-  "coverage": "116/127",
-  "coverFrac": 0.913,
-  "lowCoverage": false,
-  "roleBy": "inversion (head below hip) (swapped by hand)"
- },
- "UNIDENTIFIED_OUTDOOR_DIVE__RECV": {
-  "file": "UNIDENTIFIED_OUTDOOR_DIVE__RECV.json",
-  "bytes": 46958,
-  "dur": 4.1832,
-  "keys": 28,
-  "bones": 14,
-  "src": "1718f9d3-23e5f85d56a50cd5e7feff8cb0da08043.mp4",
-  "via": "video_to_clip/mediapipe/two-body",
-  "role": "receiver",
-  "coverage": "24/127",
-  "coverFrac": 0.189,
-  "lowCoverage": true,
-  "roleBy": "inversion (head below hip) (swapped by hand)"
- },
  "CIPHER_FERAL_RUN": {
   "file": "CIPHER_FERAL_RUN.json",
   "bytes": 47090,
@@ -10499,5 +10471,33 @@
   "coverFrac": 0.311,
   "lowCoverage": true,
   "roleBy": "travel (who closed the distance) (swapped by hand)"
+ },
+ "TIGER_FEINT_KICK": {
+  "file": "TIGER_FEINT_KICK.json",
+  "bytes": 47066,
+  "dur": 4.2167,
+  "keys": 28,
+  "bones": 14,
+  "src": "1718f9d3-23e5f85d56a50cd5e7feff8cb0da08043.mp4",
+  "via": "video_to_clip/mediapipe/two-body",
+  "role": "attacker",
+  "coverage": "116/127",
+  "coverFrac": 0.913,
+  "lowCoverage": false,
+  "roleBy": "inversion (head below hip) (swapped by hand)"
+ },
+ "TIGER_FEINT_KICK__RECV": {
+  "file": "TIGER_FEINT_KICK__RECV.json",
+  "bytes": 46958,
+  "dur": 4.1832,
+  "keys": 28,
+  "bones": 14,
+  "src": "1718f9d3-23e5f85d56a50cd5e7feff8cb0da08043.mp4",
+  "via": "video_to_clip/mediapipe/two-body",
+  "role": "receiver",
+  "coverage": "24/127",
+  "coverFrac": 0.189,
+  "lowCoverage": true,
+  "roleBy": "inversion (head below hip) (swapped by hand)"
  }
 }
