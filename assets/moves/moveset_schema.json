@@ -1484,196 +1484,1547 @@
    "label": "Comeback",
    "tier": "major",
    "trigger": "hp<25%",
-   "effect": "Scripted comeback sequence; hitting all beats grants a finisher"
+   "effect": "Runs this fighter's own comeback chain; landing every beat refills momentum and grants a finisher",
+   "dq": false,
+   "variants": [
+    {
+     "id": "CB_IRONHIDE",
+     "label": "Ironhide",
+     "beats": [
+      "absorb",
+      "absorb",
+      "strike",
+      "strike",
+      "strike",
+      "whip",
+      "rebound_boot"
+     ],
+     "note": "shrugs the shots off, three heavy hands, whip and a boot on the return"
+    },
+    {
+     "id": "CB_TIDE",
+     "label": "The Turning Tide",
+     "beats": [
+      "absorb",
+      "absorb",
+      "roar",
+      "strike",
+      "strike",
+      "slam"
+     ],
+     "note": "eats two more than he should have, then the crowd does the rest"
+    },
+    {
+     "id": "CB_QUAKE",
+     "label": "Groundquake",
+     "beats": [
+      "shoulder_block",
+      "shoulder_block",
+      "running_splash",
+      "sidewalk_slam"
+     ],
+     "note": "runs straight through him twice and then lands on him"
+    },
+    {
+     "id": "CB_SLAMPARTY",
+     "label": "Slam Party",
+     "beats": [
+      "bodyslam",
+      "bodyslam",
+      "bodyslam",
+      "elbow_drop"
+     ],
+     "note": "slams him three times and drops the elbow like it is 1987"
+    },
+    {
+     "id": "CB_SUPLEXRUN",
+     "label": "Suplex Run",
+     "beats": [
+      "german",
+      "german",
+      "german",
+      "release_german"
+     ],
+     "note": "germans until the mat gives out"
+    },
+    {
+     "id": "CB_LARIATRUN",
+     "label": "Lariat Run",
+     "beats": [
+      "clothesline",
+      "clothesline",
+      "whip",
+      "running_lariat",
+      "slam"
+     ],
+     "note": "three clotheslines and something to finish it"
+    },
+    {
+     "id": "CB_LASTSTAND",
+     "label": "Last Stand",
+     "beats": [
+      "absorb",
+      "absorb",
+      "absorb",
+      "stand_up",
+      "strike",
+      "strike"
+     ],
+     "note": "takes everything, refuses to go down, and that is the whole comeback"
+    },
+    {
+     "id": "CB_RISEN",
+     "label": "Risen",
+     "beats": [
+      "sit_up",
+      "stalk",
+      "grapple",
+      "strike",
+      "signature_setup"
+     ],
+     "note": "sits straight up out of nothing and walks him down"
+    },
+    {
+     "id": "CB_DAMNED",
+     "label": "Comeback of the Damned",
+     "beats": [
+      "sit_up",
+      "stare",
+      "throat_grab",
+      "chokeslam_setup"
+     ],
+     "note": "gets up wrong, and takes him by the throat"
+    },
+    {
+     "id": "CB_HOLLOW",
+     "label": "Hollow",
+     "beats": [
+      "absorb",
+      "laugh",
+      "headbutt",
+      "headbutt",
+      "strike"
+     ],
+     "note": "laughs at it, then headbutts him until one of them stops"
+    },
+    {
+     "id": "CB_QUICKSILVER",
+     "label": "Quicksilver",
+     "beats": [
+      "duck",
+      "leapfrog",
+      "headscissors",
+      "springboard",
+      "senton"
+     ],
+     "note": "ducks under, takes the head, goes up and comes down"
+    },
+    {
+     "id": "CB_CARTWHEEL",
+     "label": "Cartwheel",
+     "beats": [
+      "handspring",
+      "back_elbow",
+      "dropkick",
+      "springboard",
+      "crossbody"
+     ],
+     "note": "handsprings out of the corner and never touches the mat properly again"
+    },
+    {
+     "id": "CB_ROPERALLY",
+     "label": "Rope Rally",
+     "beats": [
+      "whip",
+      "rebound",
+      "rebound",
+      "rebound",
+      "flying_forearm"
+     ],
+     "note": "uses the ropes three times before he lets anything land"
+    },
+    {
+     "id": "CB_KICKRUSH",
+     "label": "Kick Rush",
+     "beats": [
+      "roundhouse",
+      "roundhouse",
+      "spin_kick",
+      "enziguri"
+     ],
+     "note": "nothing but legs, and each one is faster than the last"
+    },
+    {
+     "id": "CB_CLOCKWORK",
+     "label": "Clockwork",
+     "beats": [
+      "counter",
+      "strike",
+      "strike",
+      "elbow",
+      "forearm_finish"
+     ],
+     "note": "a corner reversal into a rapid combination and the forearm"
+    },
+    {
+     "id": "CB_DETONATE",
+     "label": "Detonate",
+     "beats": [
+      "forearm_flurry",
+      "dropkick",
+      "whip",
+      "corner_clothesline",
+      "pop_up"
+     ],
+     "note": "a flurry that will not stop until the corner explodes"
+    },
+    {
+     "id": "CB_TENPUNCH",
+     "label": "Ten and Counting",
+     "beats": [
+      "corner_mount",
+      "punch",
+      "punch",
+      "punch",
+      "punch",
+      "bite"
+     ],
+     "note": "up on the buckles with the whole building counting"
+    },
+    {
+     "id": "CB_MACHINEGUN",
+     "label": "Machine Gun",
+     "beats": [
+      "chop",
+      "chop",
+      "chop",
+      "chop",
+      "whip",
+      "back_elbow"
+     ],
+     "note": "chops him from one corner to the other"
+    },
+    {
+     "id": "CB_HEADBUTTRUN",
+     "label": "Rhythm",
+     "beats": [
+      "jab",
+      "jab",
+      "jab",
+      "shuffle",
+      "right_hand"
+     ],
+     "note": "the jab, the jab, the jab, the little dance, and the right hand"
+    },
+    {
+     "id": "CB_SLEDGE",
+     "label": "Sledgehammer",
+     "beats": [
+      "block",
+      "clothesline",
+      "atomic_drop",
+      "knee_drop",
+      "basement_dropkick"
+     ],
+     "note": "grinding, joint by joint, straight down the middle"
+    },
+    {
+     "id": "CB_RALLY",
+     "label": "The Rally",
+     "beats": [
+      "takedown",
+      "mounted_punches",
+      "stomp",
+      "stomp",
+      "whip",
+      "clothesline"
+     ],
+     "note": "takes him down and stomps a hole in him"
+    },
+    {
+     "id": "CB_THREEFOLD",
+     "label": "Threefold",
+     "beats": [
+      "suplex",
+      "suplex",
+      "suplex",
+      "pin_setup"
+     ],
+     "note": "three rolling suplexes without ever letting go"
+    },
+    {
+     "id": "CB_CHAINRALLY",
+     "label": "Chain Rally",
+     "beats": [
+      "takedown",
+      "transition",
+      "transition",
+      "submission_setup"
+     ],
+     "note": "takes him down and keeps taking positions until there is a hold on"
+    },
+    {
+     "id": "CB_SNAKEBITE",
+     "label": "Snake Bite",
+     "beats": [
+      "powerslam",
+      "backbreaker",
+      "rope_ddt",
+      "stalk"
+     ],
+     "note": "the same four things, in the same order, every time — and it always works"
+    },
+    {
+     "id": "CB_JOINTWORK",
+     "label": "Joint Work",
+     "beats": [
+      "leg_kick",
+      "leg_kick",
+      "takedown",
+      "leg_lock_setup"
+     ],
+     "note": "takes the leg out from under him and stays there"
+    },
+    {
+     "id": "CB_MERCY",
+     "label": "No Mercy Left",
+     "beats": [
+      "low_blow",
+      "eye_rake",
+      "strike",
+      "weapon_grab",
+      "strike"
+     ],
+     "note": "a comeback for someone who was never going to do it clean"
+    },
+    {
+     "id": "CB_DESPERATE",
+     "label": "Desperation",
+     "beats": [
+      "thumb_eye",
+      "hair_pull",
+      "choke",
+      "rope_choke",
+      "strike"
+     ],
+     "note": "everything the official cannot be looking at"
+    },
+    {
+     "id": "CB_STEEL",
+     "label": "Steel Comeback",
+     "beats": [
+      "weapon_grab",
+      "weapon_strike",
+      "weapon_strike",
+      "buckle_ram"
+     ],
+     "note": "goes under the ring and comes back a different man"
+    },
+    {
+     "id": "CB_CROWDCALL",
+     "label": "Crowd Call",
+     "beats": [
+      "taunt",
+      "absorb",
+      "strike",
+      "taunt",
+      "strike",
+      "signature_setup"
+     ],
+     "note": "plays the room between every blow"
+    },
+    {
+     "id": "CB_ENCORE",
+     "label": "Encore",
+     "beats": [
+      "pose",
+      "strike",
+      "pose",
+      "strike",
+      "pose",
+      "finisher_setup"
+     ],
+     "note": "insufferable, and it works"
+    }
+   ]
   },
   {
-   "id": "PB_SECOND",
+   "id": "PB_SECOND_WIND",
    "label": "Second Wind",
    "tier": "major",
-   "trigger": "stamina<15%",
-   "effect": "Full stamina restore, +20% recovery rate for 30s"
+   "trigger": "stamina<15% or grounded",
+   "effect": "Stamina restored, momentum maxed, and the fighter comes straight back up",
+   "dq": false,
+   "variants": [
+    {
+     "id": "SW_KIP",
+     "label": "Kip-Up",
+     "note": "snaps to his feet from flat on his back",
+     "req": "agility"
+    },
+    {
+     "id": "SW_NIPUP",
+     "label": "Nip-Up",
+     "note": "a tighter, faster version off the shoulders",
+     "req": "agility"
+    },
+    {
+     "id": "SW_SITUP",
+     "label": "Dead Sit-Up",
+     "note": "sits bolt upright without using his hands",
+     "req": "resilience"
+    },
+    {
+     "id": "SW_HANDSPRING",
+     "label": "Handspring",
+     "note": "kicks over onto his hands and lands on his feet",
+     "req": "aerial"
+    },
+    {
+     "id": "SW_ROAR",
+     "label": "Second Breath",
+     "note": "hauls himself up on the ropes and screams",
+     "req": "any"
+    },
+    {
+     "id": "SW_ZOMBIE",
+     "label": "Not Finished",
+     "note": "rises in one slow unbroken motion, no stagger",
+     "req": "resilience"
+    },
+    {
+     "id": "SW_ROLL",
+     "label": "Roll & Rise",
+     "note": "rolls through and comes up already moving",
+     "req": "agility"
+    }
+   ]
   },
   {
-   "id": "PB_IRON",
-   "label": "Iron Will",
+   "id": "PB_FREEZE",
+   "label": "Freeze",
    "tier": "major",
-   "trigger": "pinned at 2",
-   "effect": "Guaranteed single kick-out at the two count"
+   "trigger": "standing, face to face",
+   "effect": "Theatre that locks the opponent in a dazed loop long enough to line up a free shot",
+   "dq": false,
+   "variants": [
+    {
+     "id": "FZ_SHAKE",
+     "label": "The Shakes",
+     "hold": 2.6,
+     "mom": 22,
+     "note": "fists shaking, finger levelled at him, feeding off the noise"
+    },
+    {
+     "id": "FZ_SITUP",
+     "label": "The Sit-Up",
+     "hold": 3,
+     "mom": 26,
+     "note": "rises from the dead mid-beating and simply looks at him"
+    },
+    {
+     "id": "FZ_STARE",
+     "label": "Dead Stare",
+     "hold": 2.8,
+     "mom": 18,
+     "note": "stops moving entirely and stares — the crowd does the rest"
+    },
+    {
+     "id": "FZ_NOSELL",
+     "label": "Nothing",
+     "hold": 2.4,
+     "mom": 20,
+     "note": "takes the shot square and does not move an inch"
+    },
+    {
+     "id": "FZ_HEADTILT",
+     "label": "The Tilt",
+     "hold": 2.6,
+     "mom": 22,
+     "note": "cracks his neck to one side and keeps coming"
+    },
+    {
+     "id": "FZ_STANDUP",
+     "label": "Straight Up",
+     "hold": 3.2,
+     "mom": 28,
+     "note": "rises from prone in one motion without using his hands"
+    },
+    {
+     "id": "FZ_LAUGH",
+     "label": "The Laugh",
+     "hold": 2.4,
+     "mom": 24,
+     "note": "laughs in his face while blood runs"
+    },
+    {
+     "id": "FZ_BECKON",
+     "label": "Bring It",
+     "hold": 2,
+     "mom": 16,
+     "note": "a slow hand, palm up — asks for the next one"
+    },
+    {
+     "id": "FZ_CHEST",
+     "label": "Chest Beat",
+     "hold": 2.2,
+     "mom": 20,
+     "note": "beats his own chest and invites the shot"
+    },
+    {
+     "id": "FZ_SLAP",
+     "label": "Wake Up",
+     "hold": 2,
+     "mom": 18,
+     "note": "slaps his own face hard, twice"
+    },
+    {
+     "id": "FZ_NOD",
+     "label": "The Nod",
+     "hold": 1.8,
+     "mom": 14,
+     "note": "one slow nod, and then violence"
+    },
+    {
+     "id": "FZ_WHISPER",
+     "label": "The Whisper",
+     "hold": 2.6,
+     "mom": 22,
+     "note": "leans in and says something only he hears"
+    },
+    {
+     "id": "FZ_GRIN",
+     "label": "Red Smile",
+     "hold": 2.4,
+     "mom": 24,
+     "note": "smiles through his own blood"
+    },
+    {
+     "id": "FZ_KISS",
+     "label": "Blow the Kiss",
+     "hold": 1.8,
+     "mom": 16,
+     "note": "insulting, and effective"
+    },
+    {
+     "id": "FZ_CHOP",
+     "label": "Cut-Throat",
+     "hold": 2,
+     "mom": 20,
+     "note": "draws a thumb across the throat and names the ending"
+    },
+    {
+     "id": "FZ_UNHINGED",
+     "label": "Unhinged",
+     "hold": 3,
+     "mom": 26,
+     "note": "eyes roll back, head tilts, something else is driving"
+    },
+    {
+     "id": "FZ_CROSS",
+     "label": "Benediction",
+     "hold": 3,
+     "mom": 24,
+     "note": "arms out, head back, waits to be hit"
+    },
+    {
+     "id": "FZ_KNEEL",
+     "label": "The Kneel",
+     "hold": 2.8,
+     "mom": 22,
+     "note": "drops to one knee, arms wide, offers it up"
+    },
+    {
+     "id": "FZ_MASK",
+     "label": "Behind the Mask",
+     "hold": 2.6,
+     "mom": 20,
+     "note": "slowly removes and re-seats the mask"
+    },
+    {
+     "id": "FZ_TONGUE",
+     "label": "Feral",
+     "hold": 2.4,
+     "mom": 22,
+     "note": "tongue out, breathing wrong, no longer a wrestler"
+    },
+    {
+     "id": "FZ_LEVITATE",
+     "label": "Ascension",
+     "hold": 3.4,
+     "mom": 30,
+     "note": "comes up off the mat far too smoothly"
+    },
+    {
+     "id": "FZ_CALL",
+     "label": "Calling It",
+     "hold": 2.2,
+     "mom": 20,
+     "note": "points at the mat and names the finish out loud"
+    },
+    {
+     "id": "FZ_SALUTE",
+     "label": "The Salute",
+     "hold": 2,
+     "mom": 16,
+     "note": "stands straight and salutes the hard camera"
+    },
+    {
+     "id": "FZ_CONDUCT",
+     "label": "Conductor",
+     "hold": 2.8,
+     "mom": 28,
+     "note": "orchestrates the building like a choir"
+    },
+    {
+     "id": "FZ_POSE",
+     "label": "The Pose",
+     "hold": 2.2,
+     "mom": 22,
+     "note": "hits the pose mid-beating because he knows"
+    },
+    {
+     "id": "FZ_GUITAR",
+     "label": "Air Guitar",
+     "hold": 2,
+     "mom": 24,
+     "note": "plays a solo nobody asked for"
+    },
+    {
+     "id": "FZ_TAPE",
+     "label": "Tearing the Tape",
+     "hold": 2.6,
+     "mom": 18,
+     "note": "rips the wrist tape off with his teeth"
+    },
+    {
+     "id": "FZ_VEST",
+     "label": "Losing the Vest",
+     "hold": 2.4,
+     "mom": 20,
+     "note": "takes the jacket off, which is never good news"
+    },
+    {
+     "id": "FZ_SNAP",
+     "label": "Snap",
+     "hold": 1.6,
+     "mom": 14,
+     "note": "one finger snap and the room goes quiet"
+    }
+   ]
   },
   {
-   "id": "PB_RESOLVE",
-   "label": "Resolve",
+   "id": "PB_MIST",
+   "label": "Poison Mist",
    "tier": "major",
-   "trigger": "poise<20%",
-   "effect": "Poise shield: next 3 knockdowns become staggers"
+   "trigger": "standing, close",
+   "effect": "Blinds the opponent for several seconds; everything lands clean while they cannot see",
+   "dq": true,
+   "variants": [
+    {
+     "id": "MIST_GREEN",
+     "label": "Green Mist",
+     "colour": 3129162,
+     "blind": 5,
+     "extra": "burns — damage over time"
+    },
+    {
+     "id": "MIST_RED",
+     "label": "Red Mist",
+     "colour": 12852001,
+     "blind": 4.5,
+     "extra": "draws blood from the eyes"
+    },
+    {
+     "id": "MIST_BLACK",
+     "label": "Black Mist",
+     "colour": 1315866,
+     "blind": 7,
+     "extra": "total blackout, worst DQ odds"
+    },
+    {
+     "id": "MIST_BLUE",
+     "label": "Blue Mist",
+     "colour": 3108799,
+     "blind": 3.5,
+     "extra": "shorter, but slows them badly"
+    },
+    {
+     "id": "MIST_GOLD",
+     "label": "Gold Mist",
+     "colour": 13938487,
+     "blind": 4,
+     "extra": "drains their momentum into yours"
+    },
+    {
+     "id": "MIST_VIOLET",
+     "label": "Violet Mist",
+     "colour": 8011711,
+     "blind": 4,
+     "extra": "scrambles their reversal timing"
+    },
+    {
+     "id": "MIST_WHITE",
+     "label": "White Mist",
+     "colour": 15263984,
+     "blind": 3,
+     "extra": "a smokescreen — breaks their lock-on"
+    }
+   ]
   },
   {
-   "id": "PB_ADRENALINE",
-   "label": "Adrenaline",
+   "id": "PB_RESILIENCY",
+   "label": "Resiliency",
    "tier": "major",
-   "trigger": "hp<40%",
-   "effect": "Speed +35% and reversal window doubled for 20s"
+   "trigger": "pinned or in a submission",
+   "effect": "Escapes a pinfall, a submission or any minigame instantly, with no prompt",
+   "dq": false,
+   "variants": [
+    {
+     "id": "RS_SHOULDER",
+     "label": "Shoulder Up",
+     "note": "the shoulder comes up at the last possible instant"
+    },
+    {
+     "id": "RS_FOOT",
+     "label": "Foot on the Rope",
+     "note": "gets the boot onto the bottom rope"
+    },
+    {
+     "id": "RS_POWEROUT",
+     "label": "Power Out",
+     "note": "simply stands up with them still holding on"
+    },
+    {
+     "id": "RS_REFUSAL",
+     "label": "Refusal",
+     "note": "shakes the head, will not go down, breaks the grip"
+    }
+   ]
   },
   {
-   "id": "PB_BAD_INT",
-   "label": "Bad Intentions",
+   "id": "PB_SPIRIT",
+   "label": "Spirit Breaker",
    "tier": "major",
-   "trigger": "momentum full",
-   "effect": "Next impact does double damage and forces a bleed roll"
+   "trigger": "standing, face to face",
+   "effect": "Locks the opponent into a broken state — no signature or finisher, and their next two reversals fail",
+   "dq": false,
+   "variants": [
+    {
+     "id": "SB_HEADBUTTS",
+     "label": "Nine Headbutts",
+     "note": "until one of you stops"
+    },
+    {
+     "id": "SB_SLAPS",
+     "label": "Open Hand",
+     "note": "slaps, not punches, and that is the point"
+    },
+    {
+     "id": "SB_CHOPS",
+     "label": "The Wall",
+     "note": "chops him into the corner and does not stop"
+    },
+    {
+     "id": "SB_STOMPS",
+     "label": "Ten Count",
+     "note": "corner stomps counted out loud by the building"
+    }
+   ]
   },
   {
-   "id": "PB_UNDEAD",
-   "label": "Dead Man Rising",
+   "id": "PB_BLACKOUT",
+   "label": "Blackout",
    "tier": "major",
-   "trigger": "knocked down",
-   "effect": "Instant zombie sit-up get-up, opponent freezes 1.2s"
+   "trigger": "in the ring, one on one",
+   "effect": "The lights go out for two seconds and you come back up behind them",
+   "dq": false,
+   "variants": [
+    {
+     "id": "BO_DARK",
+     "label": "Lights Out",
+     "note": "total dark, then you are behind him"
+    },
+    {
+     "id": "BO_STROBE",
+     "label": "Strobe",
+     "note": "a stutter of light — he loses you for a beat"
+    },
+    {
+     "id": "BO_RED",
+     "label": "Red Light",
+     "note": "the arena goes red and the crowd noise drops out"
+    },
+    {
+     "id": "BO_SMOKE",
+     "label": "Smoke",
+     "note": "the entrance fires and you are gone from where you were"
+    }
+   ]
   },
   {
-   "id": "PB_LOW_BLOW",
-   "label": "Cheap Shot",
+   "id": "PB_RUNIN",
+   "label": "Run-In",
+   "tier": "major",
+   "trigger": "grounded or on the ropes",
+   "effect": "Brings an ally down to distract the official or take your opponent off his feet",
+   "dq": false,
+   "variants": [
+    {
+     "id": "RI_ALLY",
+     "label": "The Ally",
+     "note": "a stablemate hits the ring and takes him down"
+    },
+    {
+     "id": "RI_DISTRACT",
+     "label": "The Distraction",
+     "note": "draws the official away instead of touching anyone"
+    },
+    {
+     "id": "RI_MANAGER",
+     "label": "The Manager",
+     "note": "your second gets involved and pays for it"
+    },
+    {
+     "id": "RI_DEBT",
+     "label": "A Debt Called",
+     "note": "someone with no obvious reason to help you, helps you"
+    }
+   ]
+  },
+  {
+   "id": "PB_THIEF",
+   "label": "Move Thief",
+   "tier": "major",
+   "trigger": "in position for their finisher",
+   "effect": "Performs your opponent's own signature or finisher against them",
+   "dq": false,
+   "variants": [
+    {
+     "id": "MT_EXACT",
+     "label": "Perfect Copy",
+     "note": "their move, executed better than they do it"
+    },
+    {
+     "id": "MT_MOCK",
+     "label": "Mockery",
+     "note": "their taunt first, then their move"
+    },
+    {
+     "id": "MT_UGLY",
+     "label": "Ugly Copy",
+     "note": "clumsier, uglier, and it hurts more"
+    }
+   ]
+  },
+  {
+   "id": "PB_FIREBALL",
+   "label": "Fireball",
+   "tier": "major",
+   "trigger": "standing, close",
+   "effect": "Fire to the face. Enormous damage, enormous consequences",
+   "dq": true,
+   "variants": [
+    {
+     "id": "FB_FLASH",
+     "label": "Flash Paper",
+     "note": "a bright hot flash and it is over"
+    },
+    {
+     "id": "FB_LIGHTER",
+     "label": "Zippo",
+     "note": "crude, slow, and everybody sees it coming"
+    }
+   ]
+  },
+  {
+   "id": "PB_PUNCH",
+   "label": "Power of the Punch",
+   "tier": "major",
+   "trigger": "standing",
+   "effect": "A single loaded punch that puts them straight on the mat",
+   "dq": true,
+   "variants": [
+    {
+     "id": "PP_KNUX",
+     "label": "Brass",
+     "note": "knuckles out of the trunks"
+    },
+    {
+     "id": "PP_TAPE",
+     "label": "Loaded Tape",
+     "note": "something wrapped under the hand tape"
+    },
+    {
+     "id": "PP_CAST",
+     "label": "The Cast",
+     "note": "a protective cast that stopped being protective"
+    },
+    {
+     "id": "PP_CLEAN",
+     "label": "Just the Hand",
+     "note": "nothing loaded at all — he just hits that hard"
+    }
+   ]
+  },
+  {
+   "id": "PB_REFBUMP",
+   "label": "Ref Bump",
    "tier": "major",
    "trigger": "manual",
-   "effect": "Instant low blow; DQ risk scales with referee line-of-sight"
+   "effect": "Takes the official off his feet: nothing counts and nothing is illegal until he is back",
+   "dq": false,
+   "variants": [
+    {
+     "id": "RB_ACCIDENT",
+     "label": "An Accident",
+     "note": "genuinely looks like one"
+    },
+    {
+     "id": "RB_DELIBERATE",
+     "label": "On Purpose",
+     "note": "nobody is pretending"
+    }
+   ]
   },
   {
-   "id": "PB_WEAPON",
-   "label": "Under the Ring",
+   "id": "PB_SIPHON",
+   "label": "Soul Siphon",
    "tier": "major",
-   "trigger": "ringside",
-   "effect": "Pull a random weapon from under the ring instantly"
+   "trigger": "opponent has momentum",
+   "effect": "Drains the opponent's momentum directly into yours",
+   "dq": false,
+   "variants": [
+    {
+     "id": "SS_DRAIN",
+     "label": "The Drain",
+     "note": "a hand on the throat and the meter moves"
+    },
+    {
+     "id": "SS_FEED",
+     "label": "Feeding",
+     "note": "takes damage on purpose and grows from it"
+    },
+    {
+     "id": "SS_MARK",
+     "label": "The Mark",
+     "note": "leaves something on them that keeps taking"
+    }
+   ]
   },
   {
-   "id": "PB_MANAGER",
-   "label": "Outside Interference",
+   "id": "PB_POWDER",
+   "label": "Powder",
    "tier": "major",
-   "trigger": "manager alive",
-   "effect": "Manager distracts the referee for 6 seconds"
+   "trigger": "standing, close",
+   "effect": "A handful to the eyes — cheaper than mist and harder for the official to spot",
+   "dq": true,
+   "variants": [
+    {
+     "id": "PW_CHALK",
+     "label": "Chalk",
+     "note": "straight off the turnbuckle pad"
+    },
+    {
+     "id": "PW_SALT",
+     "label": "Salt",
+     "note": "from a pouch in the trunks"
+    },
+    {
+     "id": "PW_ASH",
+     "label": "Ash",
+     "note": "and it stains"
+    }
+   ]
   },
   {
-   "id": "PB_TIGHTS",
-   "label": "Handful of Tights",
-   "tier": "major",
-   "trigger": "pin active",
-   "effect": "Adds a hidden count to the current pin if the ref cannot see"
+   "id": "PB_IRONJAW",
+   "label": "Iron Jaw",
+   "tier": "minor",
+   "trigger": "after a heavy hit",
+   "effect": "Snaps out of the dazed state instead of eating the long stun",
+   "dq": false,
+   "variants": []
   },
   {
-   "id": "PB_ROPE",
-   "label": "Rope Break Master",
-   "tier": "major",
-   "trigger": "in submission",
-   "effect": "Auto-reach the nearest rope from any ground submission"
+   "id": "PB_RAGE",
+   "label": "Rage",
+   "tier": "minor",
+   "trigger": "hp<50%",
+   "effect": "Damage output climbs as health falls",
+   "dq": false,
+   "variants": []
   },
   {
-   "id": "PB_STEAL",
-   "label": "Steal the Finish",
-   "tier": "major",
-   "trigger": "opp finisher",
-   "effect": "Reverse the opponent's finisher into your own"
+   "id": "PB_FORTIFY",
+   "label": "Fortify",
+   "tier": "minor",
+   "trigger": "always",
+   "effect": "Incoming damage reduced; knockdowns become staggers more often",
+   "dq": false,
+   "variants": []
+  },
+  {
+   "id": "PB_BEAST",
+   "label": "Beast",
+   "tier": "minor",
+   "trigger": "always",
+   "effect": "Higher weight-class lift ceiling and carry stamina",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_ENDURE",
    "label": "Endurance",
    "tier": "minor",
    "trigger": "always",
-   "effect": "Stamina drains 20% slower"
+   "effect": "Stamina drains 20% slower",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_THICK",
    "label": "Thick Skin",
    "tier": "minor",
    "trigger": "always",
-   "effect": "Incoming strike damage -15%"
+   "effect": "Incoming strike damage -15%",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_HEAVY_HAND",
    "label": "Heavy Hands",
    "tier": "minor",
    "trigger": "always",
-   "effect": "Strike damage +12%"
+   "effect": "Strike damage +12%",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_QUICK",
    "label": "Quick Recovery",
    "tier": "minor",
    "trigger": "grounded",
-   "effect": "Get-up 30% faster"
+   "effect": "Get-up 30% faster",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_SLIPPERY",
    "label": "Slippery",
    "tier": "minor",
-   "trigger": "in grapple",
-   "effect": "Grapple escape window +40%"
+   "trigger": "in a grapple",
+   "effect": "Grapple escape window +40%",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_TECHNICAL",
    "label": "Technical Precision",
    "tier": "minor",
-   "trigger": "chain",
-   "effect": "Chain-wrestling transitions cost no stamina"
+   "trigger": "chain wrestling",
+   "effect": "Chain transitions cost no stamina",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_HIGH_RISK",
    "label": "High Risk",
    "tier": "minor",
    "trigger": "diving",
-   "effect": "Dive damage +25%, self-damage on miss +25%"
+   "effect": "Dive damage +25%, self-damage on a miss +25%",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_OPPORTUNIST",
    "label": "Opportunist",
    "tier": "minor",
-   "trigger": "opp stunned",
-   "effect": "Roll-up pins get +1 second of count"
+   "trigger": "opponent stunned",
+   "effect": "Roll-up pins get an extra second of count",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_CROWD",
    "label": "Crowd Favourite",
    "tier": "minor",
    "trigger": "crowd hot",
-   "effect": "Momentum gain +30% while the crowd is hot"
+   "effect": "Momentum gain +30% while the crowd is with you",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_HATED",
    "label": "Most Hated",
    "tier": "minor",
-   "trigger": "crowd cold",
-   "effect": "Momentum gain +30% while the crowd is hostile"
+   "trigger": "crowd hostile",
+   "effect": "Momentum gain +30% while the crowd is against you",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_BLEEDER",
    "label": "Bleeder",
    "tier": "minor",
    "trigger": "always",
-   "effect": "Bleeds early, and gains momentum while bleeding"
+   "effect": "Bleeds early, and gains momentum while bleeding",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_HARDWAY",
    "label": "Hard Way",
    "tier": "minor",
    "trigger": "bleeding",
-   "effect": "Damage output +20% while bleeding"
+   "effect": "Damage output +20% while bleeding",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_SUB_HUNTER",
    "label": "Submission Hunter",
    "tier": "minor",
    "trigger": "always",
-   "effect": "Submission damage +20%, opponent escape -15%"
+   "effect": "Submission damage +20%, opponent escape -15%",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_RING_IQ",
    "label": "Ring IQ",
    "tier": "minor",
    "trigger": "always",
-   "effect": "Reversal timing window +25%"
+   "effect": "Reversal timing window +25%",
+   "dq": false,
+   "variants": []
   },
   {
    "id": "PB_DIRTY",
    "label": "Dirty Player",
    "tier": "minor",
-   "trigger": "ref distracted",
-   "effect": "Illegal moves do full damage with no DQ accrual"
+   "trigger": "referee distracted",
+   "effect": "Illegal moves do full damage with no DQ accrual",
+   "dq": false,
+   "variants": []
+  },
+  {
+   "id": "PB_BULLY",
+   "label": "Bully",
+   "tier": "minor",
+   "trigger": "opponent below 40% hp",
+   "effect": "Damage climbs against a hurt opponent",
+   "dq": false,
+   "variants": []
+  },
+  {
+   "id": "PB_PAPARAZZI",
+   "label": "Paparazzi",
+   "tier": "minor",
+   "trigger": "always",
+   "effect": "Match rating and momentum both climb faster on big spots",
+   "dq": false,
+   "variants": []
+  },
+  {
+   "id": "PB_ROPE",
+   "label": "Rope Break Master",
+   "tier": "minor",
+   "trigger": "in a submission",
+   "effect": "Auto-reach the nearest rope from any ground submission",
+   "dq": false,
+   "variants": []
+  }
+ ],
+ "comebacks": [
+  {
+   "id": "CB_IRONHIDE",
+   "label": "Ironhide",
+   "arch": "power",
+   "beats": [
+    "absorb",
+    "absorb",
+    "strike",
+    "strike",
+    "strike",
+    "whip",
+    "rebound_boot"
+   ],
+   "note": "shrugs the shots off, three heavy hands, whip and a boot on the return"
+  },
+  {
+   "id": "CB_TIDE",
+   "label": "The Turning Tide",
+   "arch": "power",
+   "beats": [
+    "absorb",
+    "absorb",
+    "roar",
+    "strike",
+    "strike",
+    "slam"
+   ],
+   "note": "eats two more than he should have, then the crowd does the rest"
+  },
+  {
+   "id": "CB_QUAKE",
+   "label": "Groundquake",
+   "arch": "power",
+   "beats": [
+    "shoulder_block",
+    "shoulder_block",
+    "running_splash",
+    "sidewalk_slam"
+   ],
+   "note": "runs straight through him twice and then lands on him"
+  },
+  {
+   "id": "CB_SLAMPARTY",
+   "label": "Slam Party",
+   "arch": "power",
+   "beats": [
+    "bodyslam",
+    "bodyslam",
+    "bodyslam",
+    "elbow_drop"
+   ],
+   "note": "slams him three times and drops the elbow like it is 1987"
+  },
+  {
+   "id": "CB_SUPLEXRUN",
+   "label": "Suplex Run",
+   "arch": "power",
+   "beats": [
+    "german",
+    "german",
+    "german",
+    "release_german"
+   ],
+   "note": "germans until the mat gives out"
+  },
+  {
+   "id": "CB_LARIATRUN",
+   "label": "Lariat Run",
+   "arch": "power",
+   "beats": [
+    "clothesline",
+    "clothesline",
+    "whip",
+    "running_lariat",
+    "slam"
+   ],
+   "note": "three clotheslines and something to finish it"
+  },
+  {
+   "id": "CB_LASTSTAND",
+   "label": "Last Stand",
+   "arch": "power",
+   "beats": [
+    "absorb",
+    "absorb",
+    "absorb",
+    "stand_up",
+    "strike",
+    "strike"
+   ],
+   "note": "takes everything, refuses to go down, and that is the whole comeback"
+  },
+  {
+   "id": "CB_RISEN",
+   "label": "Risen",
+   "arch": "undead",
+   "beats": [
+    "sit_up",
+    "stalk",
+    "grapple",
+    "strike",
+    "signature_setup"
+   ],
+   "note": "sits straight up out of nothing and walks him down"
+  },
+  {
+   "id": "CB_DAMNED",
+   "label": "Comeback of the Damned",
+   "arch": "undead",
+   "beats": [
+    "sit_up",
+    "stare",
+    "throat_grab",
+    "chokeslam_setup"
+   ],
+   "note": "gets up wrong, and takes him by the throat"
+  },
+  {
+   "id": "CB_HOLLOW",
+   "label": "Hollow",
+   "arch": "undead",
+   "beats": [
+    "absorb",
+    "laugh",
+    "headbutt",
+    "headbutt",
+    "strike"
+   ],
+   "note": "laughs at it, then headbutts him until one of them stops"
+  },
+  {
+   "id": "CB_QUICKSILVER",
+   "label": "Quicksilver",
+   "arch": "aerial",
+   "beats": [
+    "duck",
+    "leapfrog",
+    "headscissors",
+    "springboard",
+    "senton"
+   ],
+   "note": "ducks under, takes the head, goes up and comes down"
+  },
+  {
+   "id": "CB_CARTWHEEL",
+   "label": "Cartwheel",
+   "arch": "aerial",
+   "beats": [
+    "handspring",
+    "back_elbow",
+    "dropkick",
+    "springboard",
+    "crossbody"
+   ],
+   "note": "handsprings out of the corner and never touches the mat properly again"
+  },
+  {
+   "id": "CB_ROPERALLY",
+   "label": "Rope Rally",
+   "arch": "aerial",
+   "beats": [
+    "whip",
+    "rebound",
+    "rebound",
+    "rebound",
+    "flying_forearm"
+   ],
+   "note": "uses the ropes three times before he lets anything land"
+  },
+  {
+   "id": "CB_KICKRUSH",
+   "label": "Kick Rush",
+   "arch": "aerial",
+   "beats": [
+    "roundhouse",
+    "roundhouse",
+    "spin_kick",
+    "enziguri"
+   ],
+   "note": "nothing but legs, and each one is faster than the last"
+  },
+  {
+   "id": "CB_CLOCKWORK",
+   "label": "Clockwork",
+   "arch": "strike",
+   "beats": [
+    "counter",
+    "strike",
+    "strike",
+    "elbow",
+    "forearm_finish"
+   ],
+   "note": "a corner reversal into a rapid combination and the forearm"
+  },
+  {
+   "id": "CB_DETONATE",
+   "label": "Detonate",
+   "arch": "strike",
+   "beats": [
+    "forearm_flurry",
+    "dropkick",
+    "whip",
+    "corner_clothesline",
+    "pop_up"
+   ],
+   "note": "a flurry that will not stop until the corner explodes"
+  },
+  {
+   "id": "CB_TENPUNCH",
+   "label": "Ten and Counting",
+   "arch": "strike",
+   "beats": [
+    "corner_mount",
+    "punch",
+    "punch",
+    "punch",
+    "punch",
+    "bite"
+   ],
+   "note": "up on the buckles with the whole building counting"
+  },
+  {
+   "id": "CB_MACHINEGUN",
+   "label": "Machine Gun",
+   "arch": "strike",
+   "beats": [
+    "chop",
+    "chop",
+    "chop",
+    "chop",
+    "whip",
+    "back_elbow"
+   ],
+   "note": "chops him from one corner to the other"
+  },
+  {
+   "id": "CB_HEADBUTTRUN",
+   "label": "Rhythm",
+   "arch": "strike",
+   "beats": [
+    "jab",
+    "jab",
+    "jab",
+    "shuffle",
+    "right_hand"
+   ],
+   "note": "the jab, the jab, the jab, the little dance, and the right hand"
+  },
+  {
+   "id": "CB_SLEDGE",
+   "label": "Sledgehammer",
+   "arch": "strike",
+   "beats": [
+    "block",
+    "clothesline",
+    "atomic_drop",
+    "knee_drop",
+    "basement_dropkick"
+   ],
+   "note": "grinding, joint by joint, straight down the middle"
+  },
+  {
+   "id": "CB_RALLY",
+   "label": "The Rally",
+   "arch": "strike",
+   "beats": [
+    "takedown",
+    "mounted_punches",
+    "stomp",
+    "stomp",
+    "whip",
+    "clothesline"
+   ],
+   "note": "takes him down and stomps a hole in him"
+  },
+  {
+   "id": "CB_THREEFOLD",
+   "label": "Threefold",
+   "arch": "tech",
+   "beats": [
+    "suplex",
+    "suplex",
+    "suplex",
+    "pin_setup"
+   ],
+   "note": "three rolling suplexes without ever letting go"
+  },
+  {
+   "id": "CB_CHAINRALLY",
+   "label": "Chain Rally",
+   "arch": "tech",
+   "beats": [
+    "takedown",
+    "transition",
+    "transition",
+    "submission_setup"
+   ],
+   "note": "takes him down and keeps taking positions until there is a hold on"
+  },
+  {
+   "id": "CB_SNAKEBITE",
+   "label": "Snake Bite",
+   "arch": "tech",
+   "beats": [
+    "powerslam",
+    "backbreaker",
+    "rope_ddt",
+    "stalk"
+   ],
+   "note": "the same four things, in the same order, every time — and it always works"
+  },
+  {
+   "id": "CB_JOINTWORK",
+   "label": "Joint Work",
+   "arch": "tech",
+   "beats": [
+    "leg_kick",
+    "leg_kick",
+    "takedown",
+    "leg_lock_setup"
+   ],
+   "note": "takes the leg out from under him and stays there"
+  },
+  {
+   "id": "CB_MERCY",
+   "label": "No Mercy Left",
+   "arch": "dirty",
+   "beats": [
+    "low_blow",
+    "eye_rake",
+    "strike",
+    "weapon_grab",
+    "strike"
+   ],
+   "note": "a comeback for someone who was never going to do it clean"
+  },
+  {
+   "id": "CB_DESPERATE",
+   "label": "Desperation",
+   "arch": "dirty",
+   "beats": [
+    "thumb_eye",
+    "hair_pull",
+    "choke",
+    "rope_choke",
+    "strike"
+   ],
+   "note": "everything the official cannot be looking at"
+  },
+  {
+   "id": "CB_STEEL",
+   "label": "Steel Comeback",
+   "arch": "dirty",
+   "beats": [
+    "weapon_grab",
+    "weapon_strike",
+    "weapon_strike",
+    "buckle_ram"
+   ],
+   "note": "goes under the ring and comes back a different man"
+  },
+  {
+   "id": "CB_CROWDCALL",
+   "label": "Crowd Call",
+   "arch": "show",
+   "beats": [
+    "taunt",
+    "absorb",
+    "strike",
+    "taunt",
+    "strike",
+    "signature_setup"
+   ],
+   "note": "plays the room between every blow"
+  },
+  {
+   "id": "CB_ENCORE",
+   "label": "Encore",
+   "arch": "show",
+   "beats": [
+    "pose",
+    "strike",
+    "pose",
+    "strike",
+    "pose",
+    "finisher_setup"
+   ],
+   "note": "insufferable, and it works"
   }
  ],
  "modifiers": {

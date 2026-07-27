@@ -50315,6 +50315,365 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script>
+// ============================================================================
+// BANNON_PAYBACKS — 36 paybacks, 63 distinct performances, and an actual runtime.
+//
+// Before this, paybacks were SIX STRINGS on the VS screen. You picked one and the game did nothing
+// with it, ever — `var PAYBACKS = ['Comeback','Second Wind (stamina surge)', ...]` was read to draw
+// a label and never referenced again. A dead system with a UI.
+//
+// Owner: "we need uniqueness to those like mist colors for poison mist, kip up styles, comeback
+// styles, what the comeback, the freezes". So every payback carries VARIANTS and the variant is the
+// character: a Green Mist burns and a Black Mist blacks you out for seven seconds; one man's Freeze
+// is shaking fists and another's is sitting bolt upright mid-beating; a Comeback is a NAMED CHAIN
+// OF BEATS assembled from move slots the engine already runs, not a hardcoded cutscene.
+//
+// ACTIVATION: hold MOD and press SPECIAL with a full meter (the pad equivalent of 2K's RT+Y), or
+// BANNON_PAYBACKS.fire(). Minor paybacks are always on and need no input.
+// ============================================================================
+(function(){
+  'use strict';
+  var CAT = null, ST = { fired:{}, active:null, log:[] };
+
+  function load(){
+    var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    var urls = ['assets/moves/moveset_schema.json', cdn + 'assets/moves/moveset_schema.json'];
+    (function next(i){
+      if (i >= urls.length) return;
+      fetch(urls[i]).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        .then(function(j){
+          CAT = j;
+          var v = (j.paybacks || []).reduce(function(a, p){ return a + (p.variants ? p.variants.length : 0); }, 0);
+          console.log('%c[BANNON_PAYBACKS] ' + (j.paybacks || []).length + ' paybacks armed, ' + v +
+            ' distinct performances (' + (j.comebacks || []).length + ' comeback chains)','color:#7CFC00');
+        }).catch(function(){ next(i + 1); });
+    })(0);
+  }
+  load();
+
+  function all(){ return (CAT && CAT.paybacks) || []; }
+  function byId(id){ var L = all(); for (var i = 0; i < L.length; i++) if (L[i].id === id) return L[i]; return null; }
+  function variantOf(pb, vid){
+    if (!pb || !pb.variants || !pb.variants.length) return null;
+    for (var i = 0; i < pb.variants.length; i++) if (pb.variants[i].id === vid) return pb.variants[i];
+    return pb.variants[0];
+  }
+  function ckey(f){ try{ return String((f.opts && f.opts.name) || (f.who && f.who()) || 'BANNON').toUpperCase().replace(/[^A-Z0-9]/g,'_'); }catch(e){ return 'BANNON'; } }
+
+  // WHAT DOES THIS FIGHTER CARRY? Player equip first, then the generated roster default.
+  function loadoutOf(f){
+    var k = ckey(f), m = {};
+    try{ m = (JSON.parse(localStorage.getItem('bannon_moveset_slots') || '{}'))[k] || {}; }catch(e){}
+    var d = null;
+    try{ d = window.BANNON_ROSTER_MOVESETS && window.BANNON_ROSTER_MOVESETS.defaultsFor(k); }catch(e){}
+    return {
+      major:  m._pbMajor  || (d && d._pbMajor)  || null,
+      minor:  m._pbMinor  || (d && d._pbMinor)  || null,
+      majorV: m._pbMajorV || (d && d._pbMajorV) || null
+    };
+  }
+  function say(t, who){ try{ if (typeof announce === 'function') announce(t, who || ''); }catch(e){} }
+  function shake(v){ try{ if (typeof camShake !== 'undefined') camShake = Math.max(camShake || 0, v); }catch(e){} }
+
+  // ---- the effects. Each one does a real thing to real state. ------------------------------------
+  var FX = {
+    PB_COMEBACK: function(a, o, v){
+      // the chain is DATA — each beat is a slot kind the engine already executes. A beat that the
+      // fighter cannot perform is skipped rather than stalling the sequence.
+      var beats = (v && v.beats) || ['strike','strike','whip','rebound_boot'];
+      say((v && v.label ? v.label.toUpperCase() : 'COMEBACK') + '!', (a.who && a.who()) || '');
+      a._comeback = { beats: beats.slice(), i: 0, t: 0, variant: v && v.id };
+      try{ a.momentum = 100; a.stamina = a.maxStamina || 100; }catch(e){}
+      try{ a._finBank = (a._finBank || 0) + 1; }catch(e){}
+      shake(0.35);
+      // drive the beats on a timer so each one reads as a separate blow
+      // EVERY BEAT IS CLASSIFIED, not pattern-matched. The first cut used regexes and quietly missed
+      // half the vocabulary — `chop`, `whip`, `stomp`, `takedown` and `suplex` all matched nothing,
+      // so a Machine Gun comeback played six beats and did ZERO damage. Measured: hpDrop 0.
+      var HURT = {
+        strike:34, punch:30, jab:24, chop:30, elbow:40, back_elbow:40, forearm:38, forearm_finish:52,
+        forearm_flurry:46, clothesline:48, running_lariat:58, corner_clothesline:52, right_hand:50,
+        dropkick:42, basement_dropkick:38, boot:52, rebound_boot:58, roundhouse:48, spin_kick:46,
+        enziguri:50, knee:40, knee_drop:38, headbutt:44, stomp:26, bite:22, shoulder_block:44,
+        slam:56, bodyslam:50, sidewalk_slam:54, elbow_drop:44, senton:52, crossbody:46, splash:50,
+        running_splash:54, flying_forearm:52, suplex:54, german:56, release_german:60,
+        powerslam:56, backbreaker:50, atomic_drop:44, rope_ddt:58, headscissors:40, takedown:36,
+        mounted_punches:40, low_blow:46, eye_rake:20, thumb_eye:20, hair_pull:14, choke:26,
+        rope_choke:30, weapon_strike:62, buckle_ram:48, chokeslam_setup:0, signature_setup:0,
+        finisher_setup:0, submission_setup:0, leg_lock_setup:0, pin_setup:0, leg_kick:32
+      };
+      var SELF = /absorb|block|stand_up|sit_up|pop_up|roar|stalk|stare|laugh|taunt|pose|shuffle|counter|duck|leapfrog|handspring|springboard|corner_mount|transition|weapon_grab|whip|rebound/;
+      var i = 0;
+      var iv = setInterval(function(){
+        if (!a || (a.hp || 0) <= 0 || i >= beats.length){ clearInterval(iv); if (a) a._comeback = null; return; }
+        var b = beats[i++];
+        if (a._comeback) a._comeback.i = i;
+        try{
+          var dmg = HURT[b];
+          if (dmg > 0 && o){
+            // route through the real damage funnel so selling, bleeding, trauma and the crowd all
+            // react exactly as they would to a normal blow
+            var mv = { power: dmg, limb: /kick|boot|knee|stomp|dropkick|enziguri|roundhouse/.test(b) ? 'RIGHT KICK' : 'RIGHT CROSS',
+                       cat: /slam|suplex|german|takedown|powerslam|backbreaker|ddt|headscissors/.test(b) ? 'GRAPPLE' : 'STRIKE',
+                       traj:'STRAIGHT', height:'HIGH', speed:70, _comebackBeat:b };
+            if (typeof applyDamage === 'function') applyDamage(o, dmg * ((window.DMG_SCALE || 8) / 8) * 0.55, a, mv, /slam|suplex|german|boot|lariat/.test(b));
+            o.state = /slam|suplex|german|boot|lariat|splash|senton/.test(b) ? 'down' : 'stagger';
+            o.stateTime = 0;
+            shake(0.14 + Math.min(0.22, dmg / 260));
+          } else if (SELF.test(b)){
+            if (/absorb|block/.test(b)){ a.state = 'block'; a.stateTime = 0; }
+            else if (/sit_up|pop_up|stand_up|roar/.test(b)){ a.state = 'idle'; a.stateTime = 0; shake(0.2); }
+            else if (/whip|rebound/.test(b) && o){ o.state = 'walk'; o.running = true; o.runCharge = 1;
+              o.vx = ((o.x || 0) < 0 ? -1 : 1) * 6.5; o.reboundT = 0.55; }
+            else if (/counter|duck|leapfrog/.test(b) && o){ o.state = 'stagger'; o.stateTime = 0; }
+            a.momentum = Math.min(100, (a.momentum || 0) + 4);
+          }
+        }catch(e){}
+      }, 420);
+    },
+    PB_SECOND_WIND: function(a, o, v){
+      say((v && v.label ? v.label.toUpperCase() : 'SECOND WIND') + '!', (a.who && a.who()) || '');
+      try{
+        a.stamina = a.maxStamina || 100; a.momentum = Math.max(a.momentum || 0, 85);
+        a.hp = Math.min(a.maxHp || 10000, (a.hp || 0) + (a.maxHp || 10000) * 0.18);
+        a.ragdoll = false; a.state = 'idle'; a.stateTime = 0; a._pinBy = null;
+        // the VARIANT decides how he gets up — the kip, the sit-up, the handspring
+        a._getupStyle = (v && v.id) || 'SW_ROAR';
+      }catch(e){}
+      shake(0.28);
+    },
+    PB_FREEZE: function(a, o, v){
+      say((v && v.label ? v.label.toUpperCase() : 'FREEZE'), (a.who && a.who()) || '');
+      if (!o) return;
+      try{
+        o.state = 'stun'; o.stateTime = 0; o._frozen = 2.6; o.vx = 0; o.vz = 0;
+        a._freezePose = (v && v.id) || 'FZ_STARE'; a._freezeT = 2.6;
+        a.momentum = Math.min(100, (a.momentum || 0) + 22);   // the crowd feeds him
+      }catch(e){}
+      shake(0.22);
+    },
+    PB_MIST: function(a, o, v){
+      var col = (v && v.colour) || 0x2fbf4a, blind = (v && v.blind) || 4.5;
+      say((v && v.label ? v.label.toUpperCase() : 'MIST') + '!', (a.who && a.who()) || '');
+      if (!o) return;
+      try{
+        o._blind = blind; o._blindColour = col; o.state = 'stun'; o.stateTime = 0;
+        // the COLOUR is not cosmetic — each one does something different
+        if (v && /GREEN/.test(v.id)) o._burn = 4;
+        if (v && /RED/.test(v.id) && window.BANNON_TRAUMA && o.bleed !== undefined) o.bleed = 1;
+        if (v && /BLUE/.test(v.id)) o._slowT = 6;
+        if (v && /GOLD/.test(v.id)){ var take = Math.min(40, o.momentum || 0); o.momentum -= take; a.momentum = Math.min(100, (a.momentum || 0) + take); }
+        if (v && /VIOLET/.test(v.id)) o._revScramble = 6;
+        if (v && /WHITE/.test(v.id)) o._noLock = 5;
+      }catch(e){}
+      mistBurst(o, col);
+      riskDQ(a, 'MIST');
+      shake(0.2);
+    },
+    PB_RESILIENCY: function(a, o, v){
+      say((v && v.label ? v.label.toUpperCase() : 'RESILIENCY') + '!', (a.who && a.who()) || '');
+      try{
+        var m = document.getElementById('subMeter');
+        if (m && m._subActive){ m._subActive = false; m.classList.remove('active'); if (m._cleanEscape) m._cleanEscape(); }
+        a.state = 'stagger'; a.stateTime = 0; a._pinBy = null;
+        if (o){ o.state = 'idle'; o._pinTarget = null; }
+        window.__refPin = null;
+      }catch(e){}
+      shake(0.3);
+    },
+    PB_SPIRIT: function(a, o, v){
+      say('SPIRIT BREAKER — ' + ((v && v.label) || ''), (a.who && a.who()) || '');
+      if (!o) return;
+      try{ o._noSignature = 14; o._reversalsBlocked = 2; o.state = 'stun'; o.stateTime = 0; o.momentum = Math.max(0, (o.momentum || 0) - 35); }catch(e){}
+      shake(0.26);
+    },
+    PB_BLACKOUT: function(a, o, v){
+      say('BLACKOUT', (a.who && a.who()) || '');
+      try{
+        var saved = [];
+        if (typeof scene !== 'undefined') scene.traverse(function(n){ if (n.isLight){ saved.push([n, n.intensity]); n.intensity *= (v && /RED/.test(v.id)) ? 0.35 : 0.04; } });
+        setTimeout(function(){ saved.forEach(function(p){ p[0].intensity = p[1]; }); }, 2000);
+        if (o){ // come back up behind them
+          var fx = Math.cos(o.facing || 0), fz = -Math.sin(o.facing || 0);
+          a.x = (o.x || 0) - fx * 0.75; a.z = (o.z || 0) - fz * 0.75;
+          a.facing = o.facing || 0;
+        }
+      }catch(e){}
+    },
+    PB_RUNIN: function(a, o, v){
+      say('SOMEBODY IS COMING DOWN', (a.who && a.who()) || '');
+      try{ if (window.BANNON_INTERFERENCE) window.BANNON_INTERFERENCE.maybe('PAYBACK', o, a); }catch(e){}
+    },
+    PB_THIEF: function(a, o, v){
+      say('MOVE THIEF — ' + ((v && v.label) || ''), (a.who && a.who()) || '');
+      try{
+        var k = o && ckey(o);
+        var theirs = k && window.BANNON_ROSTER_MOVESETS && window.BANNON_ROSTER_MOVESETS.slot(k, 'FIN_RING');
+        if (theirs){ a._stolenFinisher = Array.isArray(theirs) ? theirs[0] : theirs; say('HE IS USING HIS OWN MOVE', ''); }
+        a.momentum = 100;
+      }catch(e){}
+    },
+    PB_FIREBALL: function(a, o, v){
+      say('FIREBALL!', (a.who && a.who()) || '');
+      if (o){ try{ if (window.applyDamage) window.applyDamage(o, 140 * (window.DMG_SCALE || 8) / 8, a, { power:120, limb:'HEADBUTT', cat:'STRIKE' }, true);
+        o._blind = 6; o._blindColour = 0xff6a10; o._burn = 8; }catch(e){} }
+      mistBurst(o, 0xff6a10); riskDQ(a, 'FIREBALL', 0.9); shake(0.55);
+    },
+    PB_PUNCH: function(a, o, v){
+      say(((v && v.label) || 'LOADED PUNCH').toUpperCase() + '!', (a.who && a.who()) || '');
+      if (o){ try{ if (window.applyDamage) window.applyDamage(o, 105 * (window.DMG_SCALE || 8) / 8, a, { power:110, limb:'RIGHT CROSS', cat:'STRIKE' }, true); }catch(e){} }
+      if (v && !/CLEAN/.test(v.id)) riskDQ(a, 'LOADED');
+      shake(0.42);
+    },
+    PB_REFBUMP: function(a, o, v){
+      say('THE REFEREE IS DOWN', (a.who && a.who()) || '');
+      try{ if (window.BANNON_REF && window.BANNON_REF.state) window.BANNON_REF.state.down = 9; }catch(e){}
+      shake(0.3);
+    },
+    PB_SIPHON: function(a, o, v){
+      say('SOUL SIPHON', (a.who && a.who()) || '');
+      if (!o) return;
+      try{ var t = Math.min(60, o.momentum || 0); o.momentum -= t; a.momentum = Math.min(100, (a.momentum || 0) + t);
+        o.stamina = Math.max(0, (o.stamina || 0) - 30); }catch(e){}
+    },
+    PB_POWDER: function(a, o, v){
+      say(((v && v.label) || 'POWDER').toUpperCase(), (a.who && a.who()) || '');
+      if (o){ try{ o._blind = 3.2; o._blindColour = 0xefe6d0; o.state = 'stun'; o.stateTime = 0; }catch(e){} }
+      mistBurst(o, 0xefe6d0); riskDQ(a, 'POWDER', 0.35); shake(0.14);
+    }
+  };
+
+  // A DQ risk is the referee's LINE OF SIGHT, not a dice roll in a vacuum — the whole point of
+  // bumping him first is that it stops mattering.
+  function riskDQ(a, what, base){
+    try{
+      var seen = !window.BANNON_REF || window.BANNON_REF.canCount(a);
+      var rules = window.BANNON_PINS && window.BANNON_PINS.rules();
+      if (rules && rules.dq === false) return;
+      if (!seen) return;
+      if (Math.random() < (base == null ? 0.55 : base)){
+        say('THE REFEREE SAW IT', 'disqualification called');
+        if (window.BANNON_RULES && window.BANNON_RULES.accrue) window.BANNON_RULES.accrue(what, a);
+      }
+    }catch(e){}
+  }
+
+  // the mist / powder / fire burst, in the variant's own colour
+  function mistBurst(o, colour){
+    try{
+      if (!o || typeof THREE === 'undefined' || typeof scene === 'undefined') return;
+      var g = new THREE.Group();
+      for (var i = 0; i < 26; i++){
+        var m = new THREE.Mesh(new THREE.SphereGeometry(0.035 + Math.random() * 0.05, 5, 4),
+          new THREE.MeshBasicMaterial({ color: colour, transparent:true, opacity:0.85 }));
+        m.position.set((Math.random()-0.5)*0.4, 1.45 + (Math.random()-0.5)*0.28, (Math.random()-0.5)*0.4);
+        m.userData.v = { x:(Math.random()-0.5)*1.4, y:(Math.random()-0.2)*0.7, z:(Math.random()-0.5)*1.4 };
+        g.add(m);
+      }
+      g.position.set(o.x || 0, (o.zoneY || 0), o.z || 0);
+      scene.add(g);
+      var t = 0, iv = setInterval(function(){
+        t += 0.05;
+        g.children.forEach(function(m){
+          m.position.x += m.userData.v.x * 0.05; m.position.y += m.userData.v.y * 0.05; m.position.z += m.userData.v.z * 0.05;
+          m.material.opacity = Math.max(0, 0.85 - t * 0.55);
+        });
+        if (t > 1.6){ clearInterval(iv); try{ scene.remove(g); }catch(e){} }
+      }, 50);
+    }catch(e){}
+  }
+
+  // ---- fire ---------------------------------------------------------------------------------------
+  function fire(a){
+    a = a || (typeof fighters !== 'undefined' && fighters[0]);
+    if (!a) return false;
+    var k = ckey(a);
+    if (ST.fired[k]) { say('ALREADY USED', 'one major payback a match'); return false; }
+    var lo = loadoutOf(a);
+    if (!lo.major){ return false; }
+    var pb = byId(lo.major);
+    if (!pb || pb.tier !== 'major') return false;
+    if ((a.momentum || 0) < 55){ say('NOT ENOUGH MOMENTUM', ''); return false; }
+    var o = a.opponent && a.opponent();
+    var v = variantOf(pb, lo.majorV);
+    ST.fired[k] = true;
+    ST.active = { pb: pb.id, variant: v && v.id, at: Date.now(), by: k };
+    ST.log.push(ST.active);
+    try{ a.momentum = 0; }catch(e){}
+    var fn = FX[pb.id];
+    if (fn) fn(a, o, v); else say(pb.label.toUpperCase(), (a.who && a.who()) || '');
+    return true;
+  }
+
+  // MOD + SPECIAL with a full meter — the pad equivalent of the trigger-plus-face-button activation.
+  document.addEventListener('keydown', function(e){
+    try{
+      if ((e.key || '').toLowerCase() !== 'p') return;
+      if (/input|textarea/i.test((e.target && e.target.tagName) || '')) return;
+      if (typeof gameState !== 'undefined' && gameState !== 'fight') return;
+      fire();
+    }catch(err){}
+  });
+  (function armBtn(n){
+    try{
+      var b = document.getElementById('btnSpecial') || document.getElementById('btnFinisher');
+      if (b && !b.__pb){
+        b.__pb = true;
+        b.addEventListener('mousedown', function(){ try{ if (window.heldBtns && window.heldBtns.mod) fire(); }catch(e){} }, true);
+        b.addEventListener('touchstart', function(){ try{ if (window.heldBtns && window.heldBtns.mod) fire(); }catch(e){} }, { capture:true, passive:true });
+        return;
+      }
+    }catch(e){}
+    if (n < 60) setTimeout(function(){ armBtn(n + 1); }, 500);
+  })(0);
+
+  // ---- minor paybacks are ALWAYS ON, so they are a per-frame read, not an activation -------------
+  setInterval(function(){
+    try{
+      if (typeof gameState !== 'undefined' && gameState !== 'fight') return;
+      if (typeof fighters === 'undefined' || !fighters) return;
+      for (var i = 0; i < fighters.length; i++){
+        var f = fighters[i]; if (!f) continue;
+        var lo = loadoutOf(f); if (!lo.minor) continue;
+        f._pbMinorActive = lo.minor;
+        // the handful that need a continuous nudge rather than a hook elsewhere
+        if (lo.minor === 'PB_ENDURE') f._stamMul = 0.8;
+        else if (lo.minor === 'PB_RAGE') f._dmgMul = 1 + 0.4 * (1 - Math.max(0, Math.min(1, (f.hp||0)/(f.maxHp||10000))));
+        else if (lo.minor === 'PB_BULLY'){ var o = f.opponent && f.opponent();
+          f._dmgMul = (o && (o.hp||0) < (o.maxHp||10000) * 0.4) ? 1.3 : 1; }
+        else if (lo.minor === 'PB_HARDWAY') f._dmgMul = f.bleeding ? 1.2 : 1;
+        // decay the timed states the majors set
+        if (f._frozen > 0) f._frozen -= 0.05;
+        if (f._blind  > 0) f._blind  -= 0.05;
+        if (f._noSignature > 0) f._noSignature -= 0.05;
+        if (f._slowT > 0){ f._slowT -= 0.05; f._spdMul = 0.6; } else if (f._spdMul === 0.6) f._spdMul = 1;
+      }
+    }catch(e){}
+  }, 50);
+
+  window.BANNON_PAYBACKS = {
+    all: all, byId: byId, comebacks: function(){ return (CAT && CAT.comebacks) || []; },
+    variantsOf: function(id){ var p = byId(id); return (p && p.variants) || []; },
+    loadoutOf: loadoutOf, fire: fire,
+    active: function(){ return ST.active; },
+    log: function(){ return ST.log.slice(); },
+    reset: function(){ ST.fired = {}; ST.active = null; },
+    stats: function(){
+      var L = all();
+      return { paybacks:L.length, major:L.filter(function(p){return p.tier==='major';}).length,
+               minor:L.filter(function(p){return p.tier==='minor';}).length,
+               variants:L.reduce(function(a,p){return a+(p.variants?p.variants.length:0);},0),
+               withRuntime:Object.keys(FX).length,
+               mistColours:(byId('PB_MIST')||{variants:[]}).variants.length,
+               freezeStyles:(byId('PB_FREEZE')||{variants:[]}).variants.length,
+               kipUpStyles:(byId('PB_SECOND_WIND')||{variants:[]}).variants.length,
+               comebackChains:((CAT&&CAT.comebacks)||[]).length };
+    }
+  };
+})();
+</script>
+
 </body></html>
 
 

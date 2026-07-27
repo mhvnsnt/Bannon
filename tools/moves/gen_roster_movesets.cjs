@@ -331,10 +331,78 @@ for (const key of names){
   // SIGNATURE TAUNT — showmanship decides how many they carry, the seed decides which
   rec._taunts = Math.max(1, Math.round(1 + style.bias.sho * 0.45));
   // paybacks: one major and one minor, chosen by what the fighter is
+  // PAYBACKS, AND THE VARIANT IS THE CHARACTER. Picking a random major off a flat list gave a
+  // luchador the Fireball and a technician Soul Siphon. A payback has to fit the man, and then the
+  // VARIANT has to fit him too — which of the seven mists, which of the twenty-nine freezes, which
+  // of the thirty comeback chains. That is the whole of what the owner asked for.
   const majors = (schema.paybacks || []).filter(p => p.tier === 'major');
   const minors = (schema.paybacks || []).filter(p => p.tier === 'minor');
-  if (majors.length) rec._pbMajor = majors[Math.floor(rnd() * majors.length)].id;
-  if (minors.length) rec._pbMinor = minors[Math.floor(rnd() * minors.length)].id;
+  const dirty  = /cheat|dirty|crook|steal|thief|coward|heel|prison|street|hardcore|garbage/i
+                   .test((meta.label||'') + (meta.bio||'') + style.id);
+  const eerie  = /UNDEAD|OCCULT|CULT|MONSTER|FERAL|TRICKSTER/.test(style.id);
+  const showy  = B.sho >= 7;
+  // which majors is this fighter even plausible for?
+  const majorFit = majors.filter(p => {
+    if (p.id === 'PB_FIREBALL' || p.id === 'PB_POWDER' || p.id === 'PB_PUNCH' || p.id === 'PB_REFBUMP') return dirty;
+    if (p.id === 'PB_MIST')    return dirty || eerie;
+    if (p.id === 'PB_SIPHON')  return eerie;
+    if (p.id === 'PB_BLACKOUT')return eerie || showy;
+    if (p.id === 'PB_THIEF')   return B.tec >= 7 || /TRICK|CHEAT|PRODIGY/.test(style.id);
+    if (p.id === 'PB_SPIRIT')  return B.str >= 7 || B.pow >= 8;
+    if (p.id === 'PB_RUNIN')   return dirty || /CULT|SHOWMAN|ENTERTAINER/.test(style.id);
+    return true;                                   // Comeback / Second Wind / Resiliency suit anyone
+  });
+  const majPool = majorFit.length ? majorFit : majors;
+  const maj = majPool[Math.floor(rnd() * majPool.length)];
+  if (maj){
+    rec._pbMajor = maj.id;
+    // now the PERFORMANCE. Comeback chains match the fighter's archetype, freezes match his temper,
+    // mists and kip-ups match what his body can actually do.
+    let vs = (maj.variants || []).slice();
+    if (maj.id === 'PB_COMEBACK'){
+      const want = eerie ? 'undead' : dirty ? 'dirty' : showy ? 'show'
+                 : B.air >= 7 ? 'aerial' : B.tec >= 8 ? 'tech'
+                 : B.pow >= 8 ? 'power' : 'strike';
+      const chains = (schema.comebacks || []);
+      const fit = chains.filter(c => c.arch === want);
+      const chosen = (fit.length ? fit : chains)[Math.floor(rnd() * (fit.length ? fit.length : chains.length))];
+      if (chosen) rec._pbMajorV = chosen.id;
+    } else if (maj.id === 'PB_SECOND_WIND'){
+      const ok = vs.filter(v => v.req === 'any'
+        || (v.req === 'agility'    && B.spd >= 7)
+        || (v.req === 'aerial'     && B.air >= 7)
+        || (v.req === 'resilience' && B.res >= 8));
+      const pick2 = (ok.length ? ok : vs);
+      rec._pbMajorV = pick2[Math.floor(rnd() * pick2.length)].id;
+    } else if (maj.id === 'PB_FREEZE'){
+      // a shooter does not do an air-guitar freeze, and a showman does not do a benediction
+      const tag = eerie ? /UNHINGED|CROSS|KNEEL|MASK|TONGUE|LEVITATE|SITUP|GRIN/
+                : showy ? /CALL|SALUTE|CONDUCT|POSE|GUITAR|KISS|SNAP|BECKON/
+                : dirty ? /LAUGH|WHISPER|CHOP|GRIN|SLAP|KISS/
+                : B.res >= 8 ? /NOSELL|SHAKE|HEADTILT|STANDUP|STARE|CHEST|TAPE|VEST/
+                : /STARE|NOD|BECKON|TAPE|SLAP|CHEST/;
+      const ok = vs.filter(v => tag.test(v.id));
+      const pick3 = (ok.length ? ok : vs);
+      rec._pbMajorV = pick3[Math.floor(rnd() * pick3.length)].id;
+    } else if (vs.length){
+      rec._pbMajorV = vs[Math.floor(rnd() * vs.length)].id;
+    }
+  }
+  // minors follow the body: a giant does not get Slippery, a cruiserweight does not get Beast
+  const minorFit = minors.filter(p => {
+    if (p.id === 'PB_BEAST')     return B.pow >= 8;
+    if (p.id === 'PB_HIGH_RISK') return B.air >= 6;
+    if (p.id === 'PB_SUB_HUNTER')return B.sub >= 7;
+    if (p.id === 'PB_SLIPPERY')  return B.spd >= 6;
+    if (p.id === 'PB_TECHNICAL') return B.tec >= 7;
+    if (p.id === 'PB_DIRTY' || p.id === 'PB_BULLY') return dirty;
+    if (p.id === 'PB_HATED')     return dirty || eerie;
+    if (p.id === 'PB_CROWD' || p.id === 'PB_PAPARAZZI') return showy;
+    if (p.id === 'PB_RAGE' || p.id === 'PB_FORTIFY') return B.res >= 7;
+    return true;
+  });
+  const mpool = minorFit.length ? minorFit : minors;
+  rec._pbMinor = mpool[Math.floor(rnd() * mpool.length)].id;
 
   rec._ownedConditional = ownedBase; rec._skippedConditional = skippedBase;
   out[key] = rec;
@@ -381,5 +449,12 @@ if (!WHO){
     return gk.map(function(g){ return out[k][g] ? 1 : 0; }).join('') + out[k]._stance + out[k]._gait;
   }));
   console.log('get-up signatures : ' + sigs.size + ' distinct across the roster');
+  var majs = {}, vars_ = {};
+  Object.keys(out).forEach(function(k){ majs[out[k]._pbMajor] = (majs[out[k]._pbMajor]||0)+1;
+    if (out[k]._pbMajorV) vars_[out[k]._pbMajorV] = 1; });
+  console.log('payback spread    : ' + Object.keys(majs).length + ' distinct majors, ' +
+    Object.keys(vars_).length + ' distinct performances in use across the roster');
+  console.log('  ' + Object.keys(majs).sort(function(a,b){return majs[b]-majs[a];})
+    .slice(0,8).map(function(k){ return k.replace('PB_','')+' x'+majs[k]; }).join(', '));
 }
 if (!WHO) console.log('wrote assets/moves/roster_movesets.json');

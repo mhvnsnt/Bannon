@@ -859,38 +859,266 @@ const STYLES = [
   FS('SPECIALIST',   'Weapon Specialist',     [6,6,6,7,6,2,3,8], ['weapon_grapple','weapon_strike'],'STREET','PROWL')
 ];
 
-// PAYBACKS — 2K's ability system, proprietary names. Owner asked for these laid out. Two tiers:
-// MINOR fires on a threshold and is cheap, MAJOR is once-a-match and swings the finish.
-const PB = (id, label, tier, trigger, effect) => ({ id, label, tier, trigger, effect });
+// ============================================================================================
+// PAYBACKS — the full 2K26-parity set, and the thing 2K does NOT do: every one has VARIANTS, so
+// two wrestlers who both carry Poison Mist are not the same wrestler.
+//
+// Owner: "we need uniqueness to those like mist colors for poison mist, kip up styles, comeback
+// styles, what the comeback, the freezes".
+//
+// He is right that the mechanic is only half of it. In 2K, Poison Mist is Poison Mist. Here a mist
+// carries a COLOUR and the colour changes what it does; a Freeze is a specific piece of theatre
+// that belongs to that character; a Comeback is a NAMED CHAIN OF BEATS assembled from move slots
+// the engine can already execute, not a hardcoded cutscene. Same mechanic, their performance.
+//
+// NAMES ARE OURS. The mechanics are standard wrestling-game vocabulary; the names, colours and
+// sequences are BANNON's.
+//
+//   tier      major = once a match, swings the finish; minor = always on, no meter
+//   dq        does the official seeing it risk a disqualification
+//   variants  the per-character performances — a fighter carries exactly ONE
+// ============================================================================================
+const PB = (id, label, tier, trigger, effect, o) => Object.assign(
+  { id, label, tier, trigger, effect, dq:false, variants:[] }, o || {});
+
+// A comeback is a chain of BEATS. Each beat maps to a slot kind the engine already runs, so the
+// sequence is assembled from the move system instead of being a cutscene. Drop a beat, lose it.
+const COMEBACKS = [
+  // POWER / NO-SELL — he stops feeling it and walks through you
+  { id:'CB_IRONHIDE',   label:'Ironhide',          arch:'power',  beats:['absorb','absorb','strike','strike','strike','whip','rebound_boot'],
+    note:'shrugs the shots off, three heavy hands, whip and a boot on the return' },
+  { id:'CB_TIDE',       label:'The Turning Tide',  arch:'power',  beats:['absorb','absorb','roar','strike','strike','slam'],
+    note:'eats two more than he should have, then the crowd does the rest' },
+  { id:'CB_QUAKE',      label:'Groundquake',       arch:'power',  beats:['shoulder_block','shoulder_block','running_splash','sidewalk_slam'],
+    note:'runs straight through him twice and then lands on him' },
+  { id:'CB_SLAMPARTY',  label:'Slam Party',        arch:'power',  beats:['bodyslam','bodyslam','bodyslam','elbow_drop'],
+    note:'slams him three times and drops the elbow like it is 1987' },
+  { id:'CB_SUPLEXRUN',  label:'Suplex Run',        arch:'power',  beats:['german','german','german','release_german'],
+    note:'germans until the mat gives out' },
+  { id:'CB_LARIATRUN',  label:'Lariat Run',        arch:'power',  beats:['clothesline','clothesline','whip','running_lariat','slam'],
+    note:'three clotheslines and something to finish it' },
+  { id:'CB_LASTSTAND',  label:'Last Stand',        arch:'power',  beats:['absorb','absorb','absorb','stand_up','strike','strike'],
+    note:'takes everything, refuses to go down, and that is the whole comeback' },
+
+  // SUPERNATURAL / UNKILLABLE
+  { id:'CB_RISEN',      label:'Risen',             arch:'undead', beats:['sit_up','stalk','grapple','strike','signature_setup'],
+    note:'sits straight up out of nothing and walks him down' },
+  { id:'CB_DAMNED',     label:'Comeback of the Damned', arch:'undead', beats:['sit_up','stare','throat_grab','chokeslam_setup'],
+    note:'gets up wrong, and takes him by the throat' },
+  { id:'CB_HOLLOW',     label:'Hollow',            arch:'undead', beats:['absorb','laugh','headbutt','headbutt','strike'],
+    note:'laughs at it, then headbutts him until one of them stops' },
+
+  // SPEED / AERIAL
+  { id:'CB_QUICKSILVER',label:'Quicksilver',       arch:'aerial', beats:['duck','leapfrog','headscissors','springboard','senton'],
+    note:'ducks under, takes the head, goes up and comes down' },
+  { id:'CB_CARTWHEEL',  label:'Cartwheel',         arch:'aerial', beats:['handspring','back_elbow','dropkick','springboard','crossbody'],
+    note:'handsprings out of the corner and never touches the mat properly again' },
+  { id:'CB_ROPERALLY',  label:'Rope Rally',        arch:'aerial', beats:['whip','rebound','rebound','rebound','flying_forearm'],
+    note:'uses the ropes three times before he lets anything land' },
+  { id:'CB_KICKRUSH',   label:'Kick Rush',         arch:'aerial', beats:['roundhouse','roundhouse','spin_kick','enziguri'],
+    note:'nothing but legs, and each one is faster than the last' },
+
+  // STRIKER / COMBINATION
+  { id:'CB_CLOCKWORK',  label:'Clockwork',         arch:'strike', beats:['counter','strike','strike','elbow','forearm_finish'],
+    note:'a corner reversal into a rapid combination and the forearm' },
+  { id:'CB_DETONATE',   label:'Detonate',          arch:'strike', beats:['forearm_flurry','dropkick','whip','corner_clothesline','pop_up'],
+    note:'a flurry that will not stop until the corner explodes' },
+  { id:'CB_TENPUNCH',   label:'Ten and Counting',  arch:'strike', beats:['corner_mount','punch','punch','punch','punch','bite'],
+    note:'up on the buckles with the whole building counting' },
+  { id:'CB_MACHINEGUN', label:'Machine Gun',       arch:'strike', beats:['chop','chop','chop','chop','whip','back_elbow'],
+    note:'chops him from one corner to the other' },
+  { id:'CB_HEADBUTTRUN',label:'Rhythm',            arch:'strike', beats:['jab','jab','jab','shuffle','right_hand'],
+    note:'the jab, the jab, the jab, the little dance, and the right hand' },
+  { id:'CB_SLEDGE',     label:'Sledgehammer',      arch:'strike', beats:['block','clothesline','atomic_drop','knee_drop','basement_dropkick'],
+    note:'grinding, joint by joint, straight down the middle' },
+  { id:'CB_RALLY',      label:'The Rally',         arch:'strike', beats:['takedown','mounted_punches','stomp','stomp','whip','clothesline'],
+    note:'takes him down and stomps a hole in him' },
+
+  // TECHNICAL / MAT
+  { id:'CB_THREEFOLD',  label:'Threefold',         arch:'tech',   beats:['suplex','suplex','suplex','pin_setup'],
+    note:'three rolling suplexes without ever letting go' },
+  { id:'CB_CHAINRALLY', label:'Chain Rally',       arch:'tech',   beats:['takedown','transition','transition','submission_setup'],
+    note:'takes him down and keeps taking positions until there is a hold on' },
+  { id:'CB_SNAKEBITE',  label:'Snake Bite',        arch:'tech',   beats:['powerslam','backbreaker','rope_ddt','stalk'],
+    note:'the same four things, in the same order, every time — and it always works' },
+  { id:'CB_JOINTWORK',  label:'Joint Work',        arch:'tech',   beats:['leg_kick','leg_kick','takedown','leg_lock_setup'],
+    note:'takes the leg out from under him and stays there' },
+
+  // HEEL / DIRTY
+  { id:'CB_MERCY',      label:'No Mercy Left',     arch:'dirty',  beats:['low_blow','eye_rake','strike','weapon_grab','strike'],
+    note:'a comeback for someone who was never going to do it clean' },
+  { id:'CB_DESPERATE',  label:'Desperation',       arch:'dirty',  beats:['thumb_eye','hair_pull','choke','rope_choke','strike'],
+    note:'everything the official cannot be looking at' },
+  { id:'CB_STEEL',      label:'Steel Comeback',    arch:'dirty',  beats:['weapon_grab','weapon_strike','weapon_strike','buckle_ram'],
+    note:'goes under the ring and comes back a different man' },
+
+  // SHOWMAN
+  { id:'CB_CROWDCALL',  label:'Crowd Call',        arch:'show',   beats:['taunt','absorb','strike','taunt','strike','signature_setup'],
+    note:'plays the room between every blow' },
+  { id:'CB_ENCORE',     label:'Encore',            arch:'show',   beats:['pose','strike','pose','strike','pose','finisher_setup'],
+    note:'insufferable, and it works' }
+];
+
+
 const PAYBACKS = [
-  PB('PB_COMEBACK',   'Comeback',            'major', 'hp<25%',        'Scripted comeback sequence; hitting all beats grants a finisher'),
-  PB('PB_SECOND',     'Second Wind',         'major', 'stamina<15%',   'Full stamina restore, +20% recovery rate for 30s'),
-  PB('PB_IRON',       'Iron Will',           'major', 'pinned at 2',   'Guaranteed single kick-out at the two count'),
-  PB('PB_RESOLVE',    'Resolve',             'major', 'poise<20%',     'Poise shield: next 3 knockdowns become staggers'),
-  PB('PB_ADRENALINE', 'Adrenaline',          'major', 'hp<40%',        'Speed +35% and reversal window doubled for 20s'),
-  PB('PB_BAD_INT',    'Bad Intentions',      'major', 'momentum full', 'Next impact does double damage and forces a bleed roll'),
-  PB('PB_UNDEAD',     'Dead Man Rising',     'major', 'knocked down',  'Instant zombie sit-up get-up, opponent freezes 1.2s'),
-  PB('PB_LOW_BLOW',   'Cheap Shot',          'major', 'manual',        'Instant low blow; DQ risk scales with referee line-of-sight'),
-  PB('PB_WEAPON',     'Under the Ring',      'major', 'ringside',      'Pull a random weapon from under the ring instantly'),
-  PB('PB_MANAGER',    'Outside Interference','major', 'manager alive',  'Manager distracts the referee for 6 seconds'),
-  PB('PB_TIGHTS',     'Handful of Tights',   'major', 'pin active',    'Adds a hidden count to the current pin if the ref cannot see'),
-  PB('PB_ROPE',       'Rope Break Master',   'major', 'in submission', 'Auto-reach the nearest rope from any ground submission'),
-  PB('PB_STEAL',      'Steal the Finish',    'major', 'opp finisher',  "Reverse the opponent's finisher into your own"),
-  PB('PB_ENDURE',     'Endurance',           'minor', 'always',        'Stamina drains 20% slower'),
-  PB('PB_THICK',      'Thick Skin',          'minor', 'always',        'Incoming strike damage -15%'),
-  PB('PB_HEAVY_HAND', 'Heavy Hands',         'minor', 'always',        'Strike damage +12%'),
-  PB('PB_QUICK',      'Quick Recovery',      'minor', 'grounded',      'Get-up 30% faster'),
-  PB('PB_SLIPPERY',   'Slippery',            'minor', 'in grapple',    'Grapple escape window +40%'),
-  PB('PB_TECHNICAL',  'Technical Precision', 'minor', 'chain',         'Chain-wrestling transitions cost no stamina'),
-  PB('PB_HIGH_RISK',  'High Risk',           'minor', 'diving',        'Dive damage +25%, self-damage on miss +25%'),
-  PB('PB_OPPORTUNIST','Opportunist',         'minor', 'opp stunned',   'Roll-up pins get +1 second of count'),
-  PB('PB_CROWD',      'Crowd Favourite',     'minor', 'crowd hot',     'Momentum gain +30% while the crowd is hot'),
-  PB('PB_HATED',      'Most Hated',          'minor', 'crowd cold',    'Momentum gain +30% while the crowd is hostile'),
-  PB('PB_BLEEDER',    'Bleeder',             'minor', 'always',        'Bleeds early, and gains momentum while bleeding'),
-  PB('PB_HARDWAY',    'Hard Way',            'minor', 'bleeding',      'Damage output +20% while bleeding'),
-  PB('PB_SUB_HUNTER', 'Submission Hunter',   'minor', 'always',        'Submission damage +20%, opponent escape -15%'),
-  PB('PB_RING_IQ',    'Ring IQ',             'minor', 'always',        'Reversal timing window +25%'),
-  PB('PB_DIRTY',      'Dirty Player',        'minor', 'ref distracted','Illegal moves do full damage with no DQ accrual')
+  PB('PB_COMEBACK','Comeback','major','hp<25%',
+     'Runs this fighter\'s own comeback chain; landing every beat refills momentum and grants a finisher',
+     { variants: COMEBACKS.map(c => ({ id:c.id, label:c.label, beats:c.beats, note:c.note })) }),
+  PB('PB_SECOND_WIND','Second Wind','major','stamina<15% or grounded',
+     'Stamina restored, momentum maxed, and the fighter comes straight back up',
+     { variants:[
+       { id:'SW_KIP',       label:'Kip-Up',       note:'snaps to his feet from flat on his back', req:'agility' },
+       { id:'SW_NIPUP',     label:'Nip-Up',       note:'a tighter, faster version off the shoulders', req:'agility' },
+       { id:'SW_SITUP',     label:'Dead Sit-Up',  note:'sits bolt upright without using his hands', req:'resilience' },
+       { id:'SW_HANDSPRING',label:'Handspring',   note:'kicks over onto his hands and lands on his feet', req:'aerial' },
+       { id:'SW_ROAR',      label:'Second Breath',note:'hauls himself up on the ropes and screams', req:'any' },
+       { id:'SW_ZOMBIE',    label:'Not Finished', note:'rises in one slow unbroken motion, no stagger', req:'resilience' },
+       { id:'SW_ROLL',      label:'Roll & Rise',  note:'rolls through and comes up already moving', req:'agility' }
+     ]}),
+  PB('PB_FREEZE','Freeze','major','standing, face to face',
+     'Theatre that locks the opponent in a dazed loop long enough to line up a free shot',
+     { variants:[
+       // NO-SELL / INTIMIDATION
+       { id:'FZ_SHAKE',   label:'The Shakes',      hold:2.6, mom:22, note:'fists shaking, finger levelled at him, feeding off the noise' },
+       { id:'FZ_SITUP',   label:'The Sit-Up',      hold:3.0, mom:26, note:'rises from the dead mid-beating and simply looks at him' },
+       { id:'FZ_STARE',   label:'Dead Stare',      hold:2.8, mom:18, note:'stops moving entirely and stares — the crowd does the rest' },
+       { id:'FZ_NOSELL',  label:'Nothing',         hold:2.4, mom:20, note:'takes the shot square and does not move an inch' },
+       { id:'FZ_HEADTILT',label:'The Tilt',        hold:2.6, mom:22, note:'cracks his neck to one side and keeps coming' },
+       { id:'FZ_STANDUP', label:'Straight Up',     hold:3.2, mom:28, note:'rises from prone in one motion without using his hands' },
+       // MOCKERY / DISRESPECT
+       { id:'FZ_LAUGH',   label:'The Laugh',       hold:2.4, mom:24, note:'laughs in his face while blood runs' },
+       { id:'FZ_BECKON',  label:'Bring It',        hold:2.0, mom:16, note:'a slow hand, palm up — asks for the next one' },
+       { id:'FZ_CHEST',   label:'Chest Beat',      hold:2.2, mom:20, note:'beats his own chest and invites the shot' },
+       { id:'FZ_SLAP',    label:'Wake Up',         hold:2.0, mom:18, note:'slaps his own face hard, twice' },
+       { id:'FZ_NOD',     label:'The Nod',         hold:1.8, mom:14, note:'one slow nod, and then violence' },
+       { id:'FZ_WHISPER', label:'The Whisper',     hold:2.6, mom:22, note:'leans in and says something only he hears' },
+       { id:'FZ_GRIN',    label:'Red Smile',       hold:2.4, mom:24, note:'smiles through his own blood' },
+       { id:'FZ_KISS',    label:'Blow the Kiss',   hold:1.8, mom:16, note:'insulting, and effective' },
+       { id:'FZ_CHOP',    label:'Cut-Throat',      hold:2.0, mom:20, note:'draws a thumb across the throat and names the ending' },
+       // RITUAL / SUPERNATURAL
+       { id:'FZ_UNHINGED',label:'Unhinged',        hold:3.0, mom:26, note:'eyes roll back, head tilts, something else is driving' },
+       { id:'FZ_CROSS',   label:'Benediction',     hold:3.0, mom:24, note:'arms out, head back, waits to be hit' },
+       { id:'FZ_KNEEL',   label:'The Kneel',       hold:2.8, mom:22, note:'drops to one knee, arms wide, offers it up' },
+       { id:'FZ_MASK',    label:'Behind the Mask', hold:2.6, mom:20, note:'slowly removes and re-seats the mask' },
+       { id:'FZ_TONGUE',  label:'Feral',           hold:2.4, mom:22, note:'tongue out, breathing wrong, no longer a wrestler' },
+       { id:'FZ_LEVITATE',label:'Ascension',       hold:3.4, mom:30, note:'comes up off the mat far too smoothly' },
+       // SHOWMAN
+       { id:'FZ_CALL',    label:'Calling It',      hold:2.2, mom:20, note:'points at the mat and names the finish out loud' },
+       { id:'FZ_SALUTE',  label:'The Salute',      hold:2.0, mom:16, note:'stands straight and salutes the hard camera' },
+       { id:'FZ_CONDUCT', label:'Conductor',       hold:2.8, mom:28, note:'orchestrates the building like a choir' },
+       { id:'FZ_POSE',    label:'The Pose',        hold:2.2, mom:22, note:'hits the pose mid-beating because he knows' },
+       { id:'FZ_GUITAR',  label:'Air Guitar',      hold:2.0, mom:24, note:'plays a solo nobody asked for' },
+       { id:'FZ_TAPE',    label:'Tearing the Tape',hold:2.6, mom:18, note:'rips the wrist tape off with his teeth' },
+       { id:'FZ_VEST',    label:'Losing the Vest', hold:2.4, mom:20, note:'takes the jacket off, which is never good news' },
+       { id:'FZ_SNAP',    label:'Snap',            hold:1.6, mom:14, note:'one finger snap and the room goes quiet' }
+     ]}),
+  PB('PB_MIST','Poison Mist','major','standing, close',
+     'Blinds the opponent for several seconds; everything lands clean while they cannot see',
+     { dq:true, variants:[
+       { id:'MIST_GREEN', label:'Green Mist',  colour:0x2fbf4a, blind:5.0, extra:'burns — damage over time' },
+       { id:'MIST_RED',   label:'Red Mist',    colour:0xc41b21, blind:4.5, extra:'draws blood from the eyes' },
+       { id:'MIST_BLACK', label:'Black Mist',  colour:0x14141a, blind:7.0, extra:'total blackout, worst DQ odds' },
+       { id:'MIST_BLUE',  label:'Blue Mist',   colour:0x2f6fbf, blind:3.5, extra:'shorter, but slows them badly' },
+       { id:'MIST_GOLD',  label:'Gold Mist',   colour:0xd4af37, blind:4.0, extra:'drains their momentum into yours' },
+       { id:'MIST_VIOLET',label:'Violet Mist', colour:0x7a3fbf, blind:4.0, extra:'scrambles their reversal timing' },
+       { id:'MIST_WHITE', label:'White Mist',  colour:0xe8e8f0, blind:3.0, extra:'a smokescreen — breaks their lock-on' }
+     ]}),
+  PB('PB_RESILIENCY','Resiliency','major','pinned or in a submission',
+     'Escapes a pinfall, a submission or any minigame instantly, with no prompt',
+     { variants:[
+       { id:'RS_SHOULDER', label:'Shoulder Up',      note:'the shoulder comes up at the last possible instant' },
+       { id:'RS_FOOT',     label:'Foot on the Rope', note:'gets the boot onto the bottom rope' },
+       { id:'RS_POWEROUT', label:'Power Out',        note:'simply stands up with them still holding on' },
+       { id:'RS_REFUSAL',  label:'Refusal',          note:'shakes the head, will not go down, breaks the grip' }
+     ]}),
+  PB('PB_SPIRIT','Spirit Breaker','major','standing, face to face',
+     'Locks the opponent into a broken state — no signature or finisher, and their next two reversals fail',
+     { variants:[
+       { id:'SB_HEADBUTTS',label:'Nine Headbutts', note:'until one of you stops' },
+       { id:'SB_SLAPS',    label:'Open Hand',      note:'slaps, not punches, and that is the point' },
+       { id:'SB_CHOPS',    label:'The Wall',       note:'chops him into the corner and does not stop' },
+       { id:'SB_STOMPS',   label:'Ten Count',      note:'corner stomps counted out loud by the building' }
+     ]}),
+  PB('PB_BLACKOUT','Blackout','major','in the ring, one on one',
+     'The lights go out for two seconds and you come back up behind them',
+     { variants:[
+       { id:'BO_DARK',  label:'Lights Out', note:'total dark, then you are behind him' },
+       { id:'BO_STROBE',label:'Strobe',     note:'a stutter of light — he loses you for a beat' },
+       { id:'BO_RED',   label:'Red Light',  note:'the arena goes red and the crowd noise drops out' },
+       { id:'BO_SMOKE', label:'Smoke',      note:'the entrance fires and you are gone from where you were' }
+     ]}),
+  PB('PB_RUNIN','Run-In','major','grounded or on the ropes',
+     'Brings an ally down to distract the official or take your opponent off his feet',
+     { variants:[
+       { id:'RI_ALLY',    label:'The Ally',        note:'a stablemate hits the ring and takes him down' },
+       { id:'RI_DISTRACT',label:'The Distraction', note:'draws the official away instead of touching anyone' },
+       { id:'RI_MANAGER', label:'The Manager',     note:'your second gets involved and pays for it' },
+       { id:'RI_DEBT',    label:'A Debt Called',   note:'someone with no obvious reason to help you, helps you' }
+     ]}),
+  PB('PB_THIEF','Move Thief','major','in position for their finisher',
+     'Performs your opponent\'s own signature or finisher against them',
+     { variants:[
+       { id:'MT_EXACT',label:'Perfect Copy', note:'their move, executed better than they do it' },
+       { id:'MT_MOCK', label:'Mockery',      note:'their taunt first, then their move' },
+       { id:'MT_UGLY', label:'Ugly Copy',    note:'clumsier, uglier, and it hurts more' }
+     ]}),
+  PB('PB_FIREBALL','Fireball','major','standing, close',
+     'Fire to the face. Enormous damage, enormous consequences',
+     { dq:true, variants:[
+       { id:'FB_FLASH',  label:'Flash Paper', note:'a bright hot flash and it is over' },
+       { id:'FB_LIGHTER',label:'Zippo',       note:'crude, slow, and everybody sees it coming' }
+     ]}),
+  PB('PB_PUNCH','Power of the Punch','major','standing',
+     'A single loaded punch that puts them straight on the mat',
+     { dq:true, variants:[
+       { id:'PP_KNUX', label:'Brass',         note:'knuckles out of the trunks' },
+       { id:'PP_TAPE', label:'Loaded Tape',   note:'something wrapped under the hand tape' },
+       { id:'PP_CAST', label:'The Cast',      note:'a protective cast that stopped being protective' },
+       { id:'PP_CLEAN',label:'Just the Hand', note:'nothing loaded at all — he just hits that hard' }
+     ]}),
+  PB('PB_REFBUMP','Ref Bump','major','manual',
+     'Takes the official off his feet: nothing counts and nothing is illegal until he is back',
+     { variants:[
+       { id:'RB_ACCIDENT',   label:'An Accident', note:'genuinely looks like one' },
+       { id:'RB_DELIBERATE', label:'On Purpose',  note:'nobody is pretending' }
+     ]}),
+  PB('PB_SIPHON','Soul Siphon','major','opponent has momentum',
+     'Drains the opponent\'s momentum directly into yours',
+     { variants:[
+       { id:'SS_DRAIN',label:'The Drain', note:'a hand on the throat and the meter moves' },
+       { id:'SS_FEED', label:'Feeding',   note:'takes damage on purpose and grows from it' },
+       { id:'SS_MARK', label:'The Mark',  note:'leaves something on them that keeps taking' }
+     ]}),
+  PB('PB_POWDER','Powder','major','standing, close',
+     'A handful to the eyes — cheaper than mist and harder for the official to spot',
+     { dq:true, variants:[
+       { id:'PW_CHALK',label:'Chalk', note:'straight off the turnbuckle pad' },
+       { id:'PW_SALT', label:'Salt',  note:'from a pouch in the trunks' },
+       { id:'PW_ASH',  label:'Ash',   note:'and it stains' }
+     ]}),
+  // ---- MINOR: always on, no meter ----
+  PB('PB_IRONJAW','Iron Jaw','minor','after a heavy hit','Snaps out of the dazed state instead of eating the long stun'),
+  PB('PB_RAGE','Rage','minor','hp<50%','Damage output climbs as health falls'),
+  PB('PB_FORTIFY','Fortify','minor','always','Incoming damage reduced; knockdowns become staggers more often'),
+  PB('PB_BEAST','Beast','minor','always','Higher weight-class lift ceiling and carry stamina'),
+  PB('PB_ENDURE','Endurance','minor','always','Stamina drains 20% slower'),
+  PB('PB_THICK','Thick Skin','minor','always','Incoming strike damage -15%'),
+  PB('PB_HEAVY_HAND','Heavy Hands','minor','always','Strike damage +12%'),
+  PB('PB_QUICK','Quick Recovery','minor','grounded','Get-up 30% faster'),
+  PB('PB_SLIPPERY','Slippery','minor','in a grapple','Grapple escape window +40%'),
+  PB('PB_TECHNICAL','Technical Precision','minor','chain wrestling','Chain transitions cost no stamina'),
+  PB('PB_HIGH_RISK','High Risk','minor','diving','Dive damage +25%, self-damage on a miss +25%'),
+  PB('PB_OPPORTUNIST','Opportunist','minor','opponent stunned','Roll-up pins get an extra second of count'),
+  PB('PB_CROWD','Crowd Favourite','minor','crowd hot','Momentum gain +30% while the crowd is with you'),
+  PB('PB_HATED','Most Hated','minor','crowd hostile','Momentum gain +30% while the crowd is against you'),
+  PB('PB_BLEEDER','Bleeder','minor','always','Bleeds early, and gains momentum while bleeding'),
+  PB('PB_HARDWAY','Hard Way','minor','bleeding','Damage output +20% while bleeding'),
+  PB('PB_SUB_HUNTER','Submission Hunter','minor','always','Submission damage +20%, opponent escape -15%'),
+  PB('PB_RING_IQ','Ring IQ','minor','always','Reversal timing window +25%'),
+  PB('PB_DIRTY','Dirty Player','minor','referee distracted','Illegal moves do full damage with no DQ accrual'),
+  PB('PB_BULLY','Bully','minor','opponent below 40% hp','Damage climbs against a hurt opponent'),
+  PB('PB_PAPARAZZI','Paparazzi','minor','always','Match rating and momentum both climb faster on big spots'),
+  PB('PB_ROPE','Rope Break Master','minor','in a submission','Auto-reach the nearest rope from any ground submission')
 ];
 
 // ============================================================================================
@@ -1120,7 +1348,7 @@ fs.writeFileSync(OUT, JSON.stringify({
   _note:'AUTO-GENERATED by tools/moves/build_moveset_schema.cjs — the WWE-2K Create-A-Moveset structure as data, WITHOUT 2K\'s number caps (owner law). The editor renders itself from this; adding a category is a data edit, not a UI rewrite. cap:0 means unlimited.',
   generated:new Date().toISOString().slice(0,10),
   categories:CATS.length, slots:n, defaultLoadout:totalPicks, uncappedSlots:uncapped,
-  ai:AI, styles:STYLES, paybacks:PAYBACKS,
+  ai:AI, styles:STYLES, paybacks:PAYBACKS, comebacks:COMEBACKS,
   modifiers:{ source:MODIFIER_SOURCE, list:MODIFIERS,
     expansion:['strike','grapple','carry','combo','dive','submission','pin','rollup','tag']
       .reduce(function(o,k){ o[k]=expansionFor(k); return o; },{}) },
@@ -1138,7 +1366,13 @@ console.log('categories        : ' + CATS.length);
 console.log('slots             : ' + n + '  (' + uncapped + ' uncapped, ' + (n-uncapped) + ' single-value by engine limit)');
 console.log('default loadout   : ' + totalPicks + '  (sum of every pick count — a FLOOR, not a ceiling)');
 console.log('fighting styles   : ' + STYLES.length);
+var vTot = PAYBACKS.reduce(function(a,p){ return a+(p.variants?p.variants.length:0); },0);
 console.log('paybacks          : ' + PAYBACKS.length + '  (' + PAYBACKS.filter(p=>p.tier==='major').length + ' major / ' + PAYBACKS.filter(p=>p.tier==='minor').length + ' minor)');
+console.log('  variants        : ' + vTot + ' distinct performances across ' + PAYBACKS.filter(p=>p.variants.length).length + ' paybacks');
+console.log('  comeback chains : ' + COMEBACKS.length + ' | mist colours ' + PAYBACKS.filter(p=>p.id==='PB_MIST')[0].variants.length +
+            ' | freeze styles ' + PAYBACKS.filter(p=>p.id==='PB_FREEZE')[0].variants.length +
+            ' | kip-up styles ' + PAYBACKS.filter(p=>p.id==='PB_SECOND_WIND')[0].variants.length +
+            ' | DQ-risking ' + PAYBACKS.filter(p=>p.dq).length);
 console.log('pin catalogue     : ' + PINS.length + '  (' + PINS.filter(p=>p.entry==='ROLLUP').length + ' roll-ups, ' + PINS.filter(p=>p.illegal).length + ' illegal)');
 console.log('modifiers         : ' + MODIFIERS.length + '  (declared from the engine\'s OWN inputs: ' + MODIFIER_SOURCE.split(' · ')[1] + ')');
 console.log('  strike x' + expansionFor('strike') + '  grapple x' + expansionFor('grapple') +
