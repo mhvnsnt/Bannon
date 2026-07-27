@@ -45912,12 +45912,22 @@ console.log('%c[BANNON_SEGMENT] in-ring promos are live and BRANCH — BANNON_SE
   // multi-MB FBX files' worth of buffers at once.
   var CONCURRENCY=4;
   function prefetch(){
-    // DO NOT LATCH BEFORE WE CAN ACTUALLY LOAD. loadClipFor returns null instantly when FBXLoader
-    // is not ready yet, so an early call would "complete" in a second having loaded nothing and
-    // then block every later attempt. Measured exactly that: prefetch reported done in 1.5 s with
-    // 3 of 35 resident. Only latch once the loader exists.
+    // DO NOT LATCH BEFORE WE CAN ACTUALLY LOAD. An early call would "complete" having loaded
+    // nothing and then block every later attempt.
+    //
+    // THE GATE WAS STALE AND IT COST US THE WHOLE ANIMATION SYSTEM. It required THREE.FBXLoader —
+    // correct when clips were parsed from FBX at runtime, and WRONG the moment we moved to baked
+    // JSON. ALLOW_RUNTIME_FBX defaults to false precisely so FBXLoader is never loaded, so this
+    // test could never pass: the prefetch returned 0 on every call and not one of the 35 combat
+    // captures was ever warmed. Each move's clip then loaded lazily AFTER the move had already
+    // played, so the first use of anything was always un-animated and the pool rarely repeated.
+    // MEASURED SYMPTOM: 171 clips resident but only ONE distinct clip played across 24 driven
+    // attacks — it animated, it just animated the same way every time.
+    // The real precondition is "can we load a clip at all", which is loadClipFor. Baked JSON needs
+    // no FBXLoader; if runtime FBX is ever re-enabled for authoring, loadClipFor handles that
+    // internally and this gate does not need to know.
     if(prefetched || !distinct.length) return Promise.resolve(0);
-    if(typeof window.loadClipFor!=='function' || typeof THREE==='undefined' || !THREE.FBXLoader) return Promise.resolve(0);
+    if(typeof window.loadClipFor!=='function') return Promise.resolve(0);
     prefetched=true;
     var i=0;
     function worker(){
