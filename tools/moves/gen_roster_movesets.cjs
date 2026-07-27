@@ -74,9 +74,23 @@ function rngFor(s){ let x = seedOf(s) || 1; return () => { x ^= x << 13; x >>>= 
 
 // ── style resolution ─────────────────────────────────────────────────────────────────────────────
 // archetype is the floor; the label and bio are what actually decide.
-const ARCH_STYLE = {
-  powerhouse:'POWERHOUSE', technician:'TECHNICIAN', highFlyer:'HIGH_FLYER',
-  brawler:'BRAWLER', freeAgent:'ATHLETE', enigma:'TRICKSTER'
+// An archetype is not a style, it is a FAMILY of them. Mapping each archetype to one style collapsed
+// 105 characters onto six answers — 36 of the 71 styles went unused and sixteen wrestlers all came
+// out TECHNICIAN. Each archetype now offers everything plausible for it, and the balancer below
+// spreads the roster across the whole family instead of piling onto the first entry.
+const ARCH_FAMILY = {
+  powerhouse:['POWERHOUSE','GIANT','STRONGMAN','BRUISER','MONSTER','BEAST','SUMO','BODYBUILDER',
+              'ENFORCER','LUMBERJACK','GRECO','KINGS_ROAD','STRONG_STYLE','UNDEAD','KYOKUSHIN'],
+  technician:['TECHNICIAN','GRAPPLER','MAT_TECH','CATCH','SHOOTER','AMATEUR','FREESTYLE','JUDO',
+              'SAMBO','BJJ','SUB_SPEC','LUTA_LIVRE','RING_GENERAL','VETERAN','MMA','JUNIOR'],
+  highFlyer: ['HIGH_FLYER','LUCHADOR','CRUISERWEIGHT','JUNIOR','DAREDEVIL','ACROBAT','WUSHU',
+              'TAEKWONDO','CAPOEIRA','KUNG_FU','DANCER','PRODIGY'],
+  brawler:   ['BRAWLER','STREET','BARROOM','PRISON','BIKER','HARDCORE','GARBAGE','DEATHMATCH',
+              'BOXER','MUAY_THAI','KICKBOXER','SAVATE','STRIKER','COWBOY','BOUNCER','SPECIALIST'],
+  freeAgent: ['ATHLETE','PRODIGY','ROOKIE','STRIKER','MMA','SHOWMAN','ENTERTAINER','KARATE',
+              'RING_GENERAL','JUNIOR','TECHNICIAN','HIGH_FLYER'],
+  enigma:    ['TRICKSTER','CHEATER','COWARD','OCCULTIST','CULT_LEADER','UNDEAD','MONSTER','FERAL',
+              'COMEDIAN','ROCKSTAR','SHOWMAN','DANCER']
 };
 // hand-written hints for words the style table cannot match on its own
 const HINTS = [
@@ -113,9 +127,20 @@ function resolveStyle(key, meta, styles){
     const word = s.label.split(/[^A-Za-z]/)[0];
     if (word.length > 4 && new RegExp('\\b' + word, 'i').test(text)) return { id:s.id, via:'style label' };
   }
-  const a = ARCH_STYLE[meta.archetype] || 'ATHLETE';
-  return { id: styles.some(s => s.id === a) ? a : 'ATHLETE', via:'archetype ' + (meta.archetype || '?') };
+  // No hint in the writing. Take the LEAST-USED style from this archetype's family so the roster
+  // spreads across all 71 instead of stacking on whichever one happens to be first.
+  const fam = (ARCH_FAMILY[meta.archetype] || ARCH_FAMILY.freeAgent)
+    .filter(id => styles.some(s => s.id === id));
+  if (!fam.length) return { id:'ATHLETE', via:'fallback' };
+  let best = fam[0], bestN = Infinity;
+  for (const id of fam){
+    const n = USED[id] || 0;
+    if (n < bestN){ bestN = n; best = id; }
+  }
+  return { id:best, via:'archetype spread · ' + (meta.archetype || '?') };
 }
+// running tally the spreader reads. Declared here so resolveStyle can see it.
+const USED = {};
 
 // ── the clip pool ────────────────────────────────────────────────────────────────────────────────
 function clipPool(){
@@ -180,11 +205,72 @@ for (const key of names){
   const st = resolveStyle(key, meta, styles);
   const style = styles.filter(s => s.id === st.id)[0] || styles[0];
   styleTally[style.id] = (styleTally[style.id] || 0) + 1;
+  USED[style.id] = (USED[style.id] || 0) + 1;
 
   const rec = { _style: style.id, _styleVia: st.via, _archetype: meta.archetype || null };
 
+  // ── WHICH GET-UPS, REACTIONS AND EXITS DOES THIS FIGHTER EVEN OWN? ──────────────────────────
+  // Owner: "get ups and other positions and things from Movesets ... they are deep, for every
+  // module". He is right and filling every base slot for everyone was the lazy read: if all 120
+  // wrestlers own the kip-up, the handspring AND the zombie sit-up, then how a man stands back up
+  // says nothing about him. A kip-up is an athlete's move. A rope-assisted get-up is what a
+  // veteran does because he is hurt. A sit-up straight from flat on his back belongs to something
+  // that should not be getting up at all.
+  //
+  // So base-category slots are OWNED conditionally, tested against the fighter's own bias. Nobody
+  // ends up with none — BS_GU_BASE and the standard reactions are unconditional — but which of the
+  // dramatic ones you carry is now a statement about the character.
+  const B = style.bias;
+  const OWNS = {
+    BS_GU_KIP:      B.spd >= 7 && B.air >= 5,          // kip-up: fast and athletic
+    BS_GU_HAND:     B.air >= 7 && B.spd >= 7,          // handspring: genuinely acrobatic
+    BS_GU_ZOMBIE:   B.res >= 8 && B.spd <= 5,          // sit straight up: unkillable and unhurried
+    BS_GU_ROPE:     B.spd <= 6 || B.res <= 6,          // haul yourself up on the ropes
+    BS_GU_CORNER:   B.res <= 7,
+    BS_GU_SLOW:     B.spd <= 6 || B.pow >= 8,          // big or slow men get up slowly
+    BS_GU_KNEE:     true,
+    BS_GU_ROLL:     B.spd >= 6,
+    BS_GU_INSTANT:  B.spd >= 8 && B.res >= 6,          // straight back to his feet
+    BS_GU_BASE:     true,
+    BS_SELL_KO:     true, BS_SELL_L: true, BS_SELL_H: true, BS_SELL_STUN: true,
+    BS_BLOCK:       true,
+    BS_DODGE:       B.spd >= 6,
+    BS_CRAWL:       B.res >= 7,
+    BS_ROLL_IN:     B.spd >= 5,
+    BS_SLIDE_OUT:   B.spd >= 6,
+    BS_CLIMB:       B.air >= 4,
+    BS_APRON_UP:    true,
+    BS_HURT_WALK:   true, BS_BACK: true, BS_STRAFE: true, BS_SPRINT: B.spd >= 5,
+    BS_IDLE_G:      true, BS_IDLE_W: true, BS_IDLE_H: true, BS_IDLE_T: B.sho >= 5,
+    BS_WIN:         true, BS_LOSE: true, BS_CELEBRATE: B.sho >= 5,
+    // taunts scale with showmanship — a shooter does not do six of them
+    TC_TOP:  B.air >= 5, TC_MID: B.air >= 4, TC_AP_IN: B.sho >= 5, TC_AP_OUT: B.sho >= 6,
+    TO_TOP:  B.air >= 5, TO_MID: B.air >= 4, TO_AP_IN: B.sho >= 5, TO_AP_OUT: B.sho >= 6,
+    TW_TOP_R: B.air >= 6, TW_TOP_S: B.air >= 7, TW_MID: B.air >= 5,
+    TS_MOCK: B.sho >= 6,
+    // and the aerial/elevated modules are not for everyone either
+    DV_TH_SUICIDE: B.air >= 6, DV_TH_TOPE: B.air >= 7, DV_TH_TOPCON: B.air >= 8,
+    SB_WALL: B.air >= 7, SB_BARR: B.air >= 7,
+    EL_LD_DIVE: B.air >= 6, EL_RF_THRU: B.res >= 8,
+    MT_DM_TUBES: /HARDCORE|DEATHMATCH|GARBAGE/.test(style.id),
+    MT_DM_BARBED: /HARDCORE|DEATHMATCH|GARBAGE/.test(style.id),
+    MT_DM_THUMB: /HARDCORE|DEATHMATCH|GARBAGE/.test(style.id),
+    MT_DM_PANE: /HARDCORE|DEATHMATCH|GARBAGE/.test(style.id),
+    OA_LOWBLOW: B.sho <= 7 && /CHEAT|COWARD|TRICK|STREET|PRISON|HARDCORE/.test(style.id),
+    OA_EYE:  /CHEAT|COWARD|TRICK|STREET|PRISON|FERAL|MONSTER/.test(style.id),
+    OA_BITE: /FERAL|MONSTER|BEAST|UNDEAD|PRISON/.test(style.id),
+    OA_REF:  /CHEAT|COWARD|MONSTER|PRISON/.test(style.id),
+    SUB_REST: B.tec >= 7 || B.res >= 8,
+    ST_F_CHAIN: B.tec >= 7, ST_F_STRUGGLE: B.tec >= 6, PM_LOCKUP: B.tec >= 6
+  };
+  var ownedBase = 0, skippedBase = 0;
+
   for (const slot of allSlots){
     if (slot.kind === 'ai_slider' || slot.kind === 'ai_sequence') continue;
+    if (Object.prototype.hasOwnProperty.call(OWNS, slot.id)){
+      if (!OWNS[slot.id]){ skippedBase++; continue; }
+      ownedBase++;
+    }
     // PINS are their own catalogue, not the clip pool
     if (slot.kind === 'pin' || slot.kind === 'rollup' || slot.kind === 'pin_cocky' || slot.kind === 'pin_illegal'){
       const want = (pins.pins || []).filter(p => p.id === slot.id);
@@ -211,15 +297,46 @@ for (const key of names){
     assigned += chosen.length;
   }
 
-  // bases and personality come straight off the style row
-  rec._stance = style.stance;
-  rec._gait = style.locomotion;
+  // BASES ARE PER-CHARACTER, NOT PER-STYLE. Reading them straight off the style row meant every
+  // fighter sharing a style stood the same, walked the same and taunted the same — which is most of
+  // what makes a roster feel like one wrestler in different colours. The style sets the FAMILY; the
+  // character's own seed picks within it, so two TECHNICIANs read as two different men.
+  var STANCE_NEAR = {
+    BALANCED:['BALANCED','BLADED','CROUCH','POSED'], WIDE:['WIDE','SUMO','TOWERING','HUNCHED'],
+    CROUCH:['CROUCH','JUDO','BALANCED','MMA'], BLADED:['BLADED','BOXING','MMA','KARATE'],
+    BOXING:['BOXING','BLADED','MMA'], THAI:['THAI','MUAY','BLADED','MMA'],
+    KARATE:['KARATE','KUNGFU','BLADED'], KUNGFU:['KUNGFU','KARATE','CAPOEIRA'],
+    CAPOEIRA:['CAPOEIRA','KUNGFU','LUCHA'], LUCHA:['LUCHA','LIGHT','CAPOEIRA'],
+    LIGHT:['LIGHT','LUCHA','BLADED'], HUNCHED:['HUNCHED','WIDE','STREET'],
+    TOWERING:['TOWERING','WIDE','HUNCHED'], POSED:['POSED','BALANCED','STREET'],
+    STREET:['STREET','HUNCHED','WIDE'], SUMO:['SUMO','WIDE'], JUDO:['JUDO','CROUCH'],
+    MMA:['MMA','BLADED','CROUCH'], GOOFY:['GOOFY','POSED','STREET']
+  };
+  var GAIT_NEAR = {
+    NORMAL:['NORMAL','LIGHT','DELIBERATE'], HEAVY:['HEAVY','LUMBER','STALK'],
+    LUMBER:['LUMBER','HEAVY','STALK'], STALK:['STALK','PROWL','LUMBER'],
+    PROWL:['PROWL','STALK','LIGHT'], LIGHT:['LIGHT','BOUNCE','NORMAL'],
+    BOUNCE:['BOUNCE','LIGHT','SPRING'], SPRING:['SPRING','BOUNCE','LIGHT'],
+    STRUT:['STRUT','SWAGGER','POSED'], SWAGGER:['SWAGGER','STRUT','HEAVY'],
+    DELIBERATE:['DELIBERATE','NORMAL','STALK'], GINGA:['GINGA','SPRING','BOUNCE'],
+    SCURRY:['SCURRY','LIGHT','BOUNCE']
+  };
+  var sPool = STANCE_NEAR[style.stance] || [style.stance];
+  var gPool = GAIT_NEAR[style.locomotion] || [style.locomotion];
+  rec._stance = sPool[Math.floor(rnd() * sPool.length)];
+  rec._gait   = gPool[Math.floor(rnd() * gPool.length)];
+  // an injured walk and a run style of their own, drawn from the same family
+  rec._gaitRun  = gPool[Math.floor(rnd() * gPool.length)];
+  rec._gaitHurt = (GAIT_NEAR.DELIBERATE)[Math.floor(rnd() * 3)];
+  // SIGNATURE TAUNT — showmanship decides how many they carry, the seed decides which
+  rec._taunts = Math.max(1, Math.round(1 + style.bias.sho * 0.45));
   // paybacks: one major and one minor, chosen by what the fighter is
   const majors = (schema.paybacks || []).filter(p => p.tier === 'major');
   const minors = (schema.paybacks || []).filter(p => p.tier === 'minor');
   if (majors.length) rec._pbMajor = majors[Math.floor(rnd() * majors.length)].id;
   if (minors.length) rec._pbMinor = minors[Math.floor(rnd() * minors.length)].id;
 
+  rec._ownedConditional = ownedBase; rec._skippedConditional = skippedBase;
   out[key] = rec;
 
   if (EXPLAIN && WHO){
@@ -255,4 +372,14 @@ const top = Object.keys(styleTally).sort((a,b)=>styleTally[b]-styleTally[a]).sli
 console.log('most common       : ' + top.map(k=>k+' x'+styleTally[k]).join(', '));
 const byLabel = Object.keys(styleTally).filter(k => styleTally[k] === 1).length;
 console.log('one-of-a-kind     : ' + byLabel + ' styles held by exactly one wrestler');
+if (!WHO){
+  var gk = ['BS_GU_KIP','BS_GU_HAND','BS_GU_ZOMBIE','BS_GU_ROPE','BS_GU_INSTANT','BS_GU_SLOW'];
+  console.log('get-up ownership  : ' + gk.map(function(g){
+    return g.replace('BS_GU_','') + ' ' + Object.keys(out).filter(function(k){ return out[k][g]; }).length;
+  }).join(', ') + '   (of ' + Object.keys(out).length + ')');
+  var sigs = new Set(Object.keys(out).map(function(k){
+    return gk.map(function(g){ return out[k][g] ? 1 : 0; }).join('') + out[k]._stance + out[k]._gait;
+  }));
+  console.log('get-up signatures : ' + sigs.size + ' distinct across the roster');
+}
 if (!WHO) console.log('wrote assets/moves/roster_movesets.json');
