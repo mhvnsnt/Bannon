@@ -450,3 +450,96 @@ refuses them; without it they land under assets/moves/datasets/dev/ which is GIT
 bulk sources: **CMU Motion Capture Database** (free for all uses incl. commercial), **Mixamo**
 (Adobe royalty-free), **Truebones CC0**, and our own capture (video_to_clip / FreeMoCap / MoMask).
 Never bake an NC or IP-encumbered dataset into the game without asking.
+
+### SYSTEM DONE: UNIVERSE ⇄ CAREER ⇄ FREE ROAM joined (2026-07-27)
+Owner: "get the universe and free roam and career to mdickie and 2k ful integration."
+Every piece existed; nothing joined them, and one had been silently deleted.
+- **A CARD ENTRY WAS `{a,b,title,main}`** — no stipulation, no building. Measured: `playMatch` handed
+  the engine four fields. So every night of every show for the life of a save was a plain singles
+  match in the same room, while the select screen has 22 match types and the venue picker has 3
+  stages + 96 MDickie buildings. Cards now carry a real `matchType` + `venue` chosen from feud heat /
+  title / supershow week; multi-man stipulations pull real bodies into p3/p4.
+- **`window.BANNON_MDICKIE` WAS ASSIGNED TWICE.** The career-sim port (CalculateWorth /
+  GenerateContract / GenerateAttendance / BackstageMeeting / GenerateTournament / SimulateBracket /
+  PushTurn) is defined first; the props+vehicles module 3,700 lines later used a plain `=` and wiped
+  it. Nothing threw — every call site is `md.fn && md.fn(...)`. Five dead screens from one `=`:
+  CONTRACTS listed everyone at $0, OFFER did nothing, BACKSTAGE had no meeting, TEASE A TURN did
+  nothing, TOURNAMENT did nothing, the show header printed "live" instead of a crowd. Now merges.
+- **ELEVEN BANNON_UNIVERSE FUNCTIONS HAD ZERO CALLERS** — negotiate, demands, freeAgents, loyalty,
+  bookingBreach, rivalInterest, ego, promoBattle, scoreLine, feud, simTournament. All live now,
+  individually AND emergent over 40 unattended weeks. Two thresholds were ported from a different
+  number scale and could never fire: `creativeControl` needed ego>=85 when measured ego tops out at
+  **73** across the whole roster, and `negotiate` awarded a free 25 points when creative control was
+  not demanded, so a 40%-of-asking insult scored 51 against a bar of 60 and `walk()` was unreachable.
+- **CAREER was a read-only tab**; it now enters BANNON_LIFE as your wrestler. **FREE ROAM had no
+  front door.** Both needed adding to `BANNON_LIFE.isLive` or the world clock stands still.
+- **YOU BOOK IT** — addMatch/removeMatch/setType/setSide/setTitle/setMain/setVenue + a booking sheet.
+  Uncapped; the only refusals are a man wrestling himself and someone not in the universe.
+- **THE CLOSURE-WRAP TRAP (do not repeat):** `bookWeek`, `simMatch` and `advanceWeek` are all called
+  through CLOSURE-LOCAL references inside the BANNON_UNIVERSE IIFE, so wrapping the exported property
+  intercepts NOTHING. Stamping moved to `get()` behind a per-week guard; `advanceWeek` resolves the
+  card itself before delegating.
+
+### SYSTEM DONE: TAG moves classified by skeleton count (2026-07-27)
+Owner spotted DOUBLESUPLEX / ASSISTEDDIVSENTON outside TAG. Both were, plus six more.
+- **NEVER CLASSIFY THESE BY NAME.** `DOUBLE_LEG_TAKEDOWN` is one wrestler (the opponent's two legs).
+  `HAMMERLOCKDDT` has 519 animated bones and looks like a crowd, but one of its three Hips roots is a
+  CLOTH rig (`C_Hips_2`) — two bodies, a singles move. `STRONGZERO`, `BUCKLEBOMBENZUGIRI` and
+  `REVERSEGOOZLEDIVFOOTSTOMP` are genuine three-man captures with neither "double" nor "assist" in
+  their names — a name rule misses all three.
+- **tools/moves/classify_tag_moves.cjs** counts BODY skeleton roots (`J_Hips*`, excluding `C_*` cloth)
+  per owner LAW #5. 1 body = solo, 2 = attacker+victim, **3+ = TAG**. 8 captures / 64 clips ->
+  assets/moves/tag_moves.json, with `--gate`.
+- Tag slots drew from `pool.byPos[slot.pos]` like everything else, which is how "Heavy Weapon Swing"
+  became a Standing Double Team. All 17 tag-kind slots now fill from the tag pool only and the tag
+  captures are subtracted from every singles pool. 5,520 fills, 0 wrong either way.
+  NOTE: the subtraction silently did nothing at first — the baked index keys these `DOUBLESUPLEX`
+  while fbx_move_map carries `DoubleSuplex`. Normalise before comparing.
+- **BANNON_TAG** is the runtime half: a tag capture in a singles match would put a phantom partner's
+  animation on one skeleton, so every path is gated on a real partner (booked type or a live ally).
+
+### SYSTEM DONE: ROSTER TAB (2026-07-27)
+120 wrestlers, 16 brands, four tabs (ROSTER / TEAMS / STABLES / RIVALRIES). Inline editor per man:
+brand, alignment, title, tag partner, stables, rivalry heat, start a feud, momentum, contract, injury.
+BOOK IT on a rivalry puts the match on tonight's card through BANNON_SEASON.
+- **DRAG IS POINTER EVENTS, NOT HTML5 DRAG-AND-DROP** — `dragstart` never fires on a touchscreen, so
+  a roster built on it is a screen the owner cannot use on the device he plays on. Every drag also has
+  a tap route (tap handle to pick up, tap a brand to drop). Verified on a 412x915 touch viewport.
+- No parallel state: every edit writes through BANNON_UNIVERSE.save / BANNON_STORY, verified by
+  re-reading localStorage rather than the in-memory object. Moving brands strips belt + tag team.
+
+### SYSTEM DONE: SAVE SLOTS PER MODE (2026-07-27)
+Owner: "wwe games [have separate saves per mode] and we are mixing features from both".
+- **GLOBAL** (MDickie's side): creations, models, move sets, settings, music — one copy everywhere.
+- **SCOPED** (WWE's side): `bannon_universe_v1`, `bannon_life_v1`, `bannon_story_v1`, `bannon_stats_v1`
+  — one copy PER MODE PER SLOT. 5 modes x 6 slots. Exhibition is a mode, which is what makes "things
+  change in different modes differently" true.
+- Scoping is a **localStorage interception in `<head>`**, after the OTA swap and before three.js —
+  every module reads its key while it loads, so doing it later means modules already read slot 1.
+  A scoped key becomes `key@MODE#slot`. Patches **Storage.prototype**, not the instance: assigning
+  `localStorage.getItem` directly is silently ignored in some engines.
+- Loading a save RELOADS the page on purpose. Pressing UNIVERSE/CAREER claims that mode's save.
+- Also copy-to / rename / export+import as text (on a phone the device is the only copy).
+
+### SYSTEM DONE: STIPULATIONS ARE PHYSICAL (2026-07-27)
+**BANNON_CAGE and BANNON_PROPS both had ZERO CALLERS.** The cage panels, the ladder climb, the
+REACH-for-the-hanging-objective win condition — all written, complete, and never once armed.
+- **BANNON_STIP** reads matchType at the bell, dresses the room, installs the win condition, tears
+  it down. 14 stipulations: cage, HIAC, ladder, MITB, TLC, tables, inferno, casket, backstage,
+  anywhere, hardcore, first blood, submission, LMS.
+- **The owner was right about the assets** — the MDickie extraction has `Flame_Thrower.glb` and
+  `Coffin.glb` (ht3 + il), and `assets/ring/bannon_mat_fire.png` is a fire texture. Inferno and
+  Casket are built from those, not primitives.
+- **THE CELL ROOF IS A SURFACE.** Its four corners register as climbable props so `standHeight()` —
+  which every climb/stand/dive-off already reads — takes you to 2.75m; ZONE at a corner gets you up;
+  over the edge at roof height ragdolls you to the FLOOR outside for 220. Verified all four.
+- Ladder climbing had no input. ZONE already resolves apron/floor/climb by context, so a prop within
+  reach is another thing ZONE means — no new button on a phone with no room for one.
+- **TWO ASYNC RACES FIXED:** prop GLBs load async, so a match torn down before its models arrive had
+  them land in the NEXT one (a casket in a Hardcore match), and BANNON_CAGE threw 8x placing a wall
+  after `remove()` nulled its group. Generation token + a null guard. 8 page errors -> 0.
+
+## OPEN / NEXT (owner's own ordering, 2026-07-27)
+1. **More mocap clips from the owner** — Cipher's Lio Rush feral beast run, plus dive/grapple/strike
+   captures. He is handing them over; ingest through video_to_clip / harvest and map into combat.
+2. Still open from before: motion datasets install (task 43), model deformation jank (task 45).
