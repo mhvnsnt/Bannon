@@ -66,8 +66,29 @@ const REACTION_CATS = ['reaction', 'knockdown', 'getup', 'defense', 'locomotion'
 // Armada and Au are capoeira ACTION captures that fbx_move_map.json mislabels as character_rig.
 // Excluding them left every capoeira move in the game with no capture while the file sat on disk.
 const MISLABELLED_ACTIONS = new Set(['Armada', 'Au', 'Capoeira', 'Capoeira (1)', 'Queshada 2', 'Cartwheel']);
+// THE ENGINE LOADS BAKED JSON, NOT FBX. This mapper was drawing its candidates from the .fbx files
+// on disk, and the game runs with ALLOW_RUNTIME_FBX off — it loads assets/moves/clips/*.json. Those
+// two sets are not the same, and nothing checked.
+//
+// MEASURED: of the 137 combat moves this file maps, FORTY-FOUR pointed at a capture with no baked
+// clip behind it at all — "Body Jab Cross", "Baseball Hit". In play that is a move whose `clip` is
+// set, whose STUDIO lookup fails, and which therefore falls through to the procedural path every
+// single time. 44/137 is 32%, which is the 37% of moves measured reaching the engine un-animated.
+//
+// A move must never point at a capture we do not have. Candidates are now intersected with the
+// baked index.
+let BAKED = null;
+try {
+  const idx = JSON.parse(fs.readFileSync(path.join(MOVES, 'clips', 'index.json'), 'utf8'));
+  BAKED = new Set();
+  const norm = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  for (const k of Object.keys(idx)) BAKED.add(norm(k));
+} catch (_) { BAKED = null; }
+const isBaked = c => !BAKED || BAKED.has(String(c).toUpperCase().replace(/[^A-Z0-9]/g, ''));
+
 const CLIPS = [...onDisk].filter(c => {
   if (NOT_AN_ACTION.test(c)) return false;
+  if (!isBaked(c)) return false;          // no baked clip => the engine can never play it
   if (MISLABELLED_ACTIONS.has(c)) return true;
   return (meta[c] ? meta[c].cat !== 'character_rig' : true);
 });

@@ -46072,6 +46072,9 @@ console.log('%c[BANNON_SEGMENT] in-ring promos are live and BRANCH — BANNON_SE
 
   function ingest(j){
     MAP=(j&&j.map)||{};
+    // expose the parsed manifest so BANNON_WARM can see EVERY capture the tables can reach, not
+    // just the ones this module chose to prefetch
+    try{ window.__combatMapRaw=j; }catch(e){}
     var seen={};
     for(var k in MAP){
       byName[norm(k)]=MAP[k];
@@ -53917,6 +53920,150 @@ window.__deriveVariant = async function(key){
       flyingHeadbutt: (typeof DIVE_TYPES!=='undefined' && !!DIVE_TYPES.FLYING_HEADBUTT),
       divingHeadbuttKept: (typeof DIVE_TYPES!=='undefined' && !!DIVE_TYPES.DIVING_HEADBUTT) }; }
   };
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_WARM — load the captures THIS MATCH needs, at the bell, before they are asked for.
+//
+// Owner: "when I play it's only physics based ragdoll marionette animations".
+//
+// The clips were firing. Two things were wrong. The first — combat slots full of death and idle
+// captures — is fixed in the roster generator. This is the second, and it is why 37% of moves in a
+// measured match reached the engine with NO usable clip:
+//
+//   FIRE JAB     -> "Body Jab Cross"    *** NOT LOADED ***
+//   LEO CROSS    -> "Body Jab Cross"    *** NOT LOADED ***
+//   SCORPIO HOOK -> "Baseball Hit"      *** NOT LOADED ***
+//   CHECK HOOK   -> "AlternatingForearms"  resident
+//
+// The move IS mapped. The capture it maps to simply is not in STUDIO yet, so the guard
+// `STUDIO.clips[m.clip]` fails and the body falls through to the procedural path. A lazy
+// loadClipFor fires, but a strike takes a fraction of a second and a fetch does not finish inside
+// it, so the move plays un-animated and only a LATER repetition of the same move looks right.
+//
+// BANNON_COMBAT_MOCAP already has a prefetch — and it deliberately "stays OFF the fight" and waits
+// for a menu lull, on the reasoning that parsing clips mid-match is a hitch. That reasoning was
+// right for FBX parsing and is wrong now: these are baked JSON, a few tens of KB each. If the
+// player presses FIGHT promptly the lull never comes and nothing is ever warmed.
+//
+// This warms a BOUNDED, KNOWN set at match start: every capture the combat map can reach, plus both
+// fighters' own equipped slot clips. Nothing else, so it cannot turn into a download of the whole
+// library on a phone.
+// ============================================================================================
+(function(){
+  'use strict';
+  var ST = { runs:0, wanted:0, loaded:0, already:0, failed:0, ms:0, last:[] };
+  var CONC = 6;
+
+  function clips(){ try{ return (typeof STUDIO!=='undefined' && STUDIO.clips) ? STUDIO.clips : null; }catch(e){ return null; } }
+  function have(k){ var C = clips(); return !!(C && C[k]); }
+
+  // everything the combat tables can ask for
+  function combatTargets(){
+    var out = {};
+    try{
+      var M = window.BANNON_COMBAT_MOCAP;
+      var list = (M && M.distinct && M.distinct()) || null;
+      if(list) list.forEach(function(c){ if(c) out[c] = 1; });
+    }catch(e){}
+    // the module does not expose its list in every build, so read the manifest too
+    try{
+      if(window.__combatMapRaw && window.__combatMapRaw.map){
+        for(var mv in window.__combatMapRaw.map){
+          var v = window.__combatMapRaw.map[mv];
+          var c = (typeof v === 'string') ? v : (v && v.clip);
+          if(c) out[c] = 1;
+        }
+      }
+    }catch(e){}
+    return Object.keys(out);
+  }
+
+  // both fighters' own equipped/default slot clips — what slot rotation will reach for
+  function rosterTargets(){
+    var out = {};
+    try{
+      var fs = (typeof fighters !== 'undefined') ? fighters : window.fighters;
+      var R = window.BANNON_ROSTER_MOVESETS;
+      if(!fs || !R || !R.defaultsFor) return [];
+      fs.forEach(function(f){
+        var nm = f && ((f.opts && f.opts.name) || f.name);
+        if(!nm) return;
+        var d = R.defaultsFor(String(nm).toUpperCase());
+        if(!d) return;
+        Object.keys(d).forEach(function(k){
+          if(k.charAt(0) === '_') return;
+          var v = d[k];
+          (Array.isArray(v) ? v : [v]).forEach(function(c){ if(typeof c === 'string') out[c] = 1; });
+        });
+      });
+    }catch(e){}
+    return Object.keys(out);
+  }
+
+  function warm(extra){
+    var C = clips();
+    if(!C || typeof window.loadClipFor !== 'function') return Promise.resolve(0);
+    var want = {};
+    combatTargets().forEach(function(c){ want[c] = 1; });
+    rosterTargets().forEach(function(c){ want[c] = 1; });
+    (extra || []).forEach(function(c){ if(c) want[c] = 1; });
+    var list = Object.keys(want).filter(function(c){ return !have(c); });
+    ST.runs++; ST.wanted = Object.keys(want).length; ST.already = ST.wanted - list.length;
+    if(!list.length) return Promise.resolve(0);
+    var t0 = (window.performance && performance.now()) || Date.now();
+    var i = 0, got = 0;
+    function lane(){
+      if(i >= list.length) return Promise.resolve();
+      var k = list[i++];
+      return Promise.resolve(window.loadClipFor(k))
+        .then(function(){ if(have(k)) got++; else ST.failed++; })
+        .catch(function(){ ST.failed++; })
+        .then(lane);
+    }
+    var lanes = []; for(var w = 0; w < CONC; w++) lanes.push(lane());
+    return Promise.all(lanes).then(function(){
+      ST.loaded += got;
+      ST.ms = Math.round(((window.performance && performance.now()) || Date.now()) - t0);
+      ST.last = list.slice(0, 12);
+      console.log('%c[BANNON_WARM] ' + got + '/' + list.length + ' captures warmed in ' + ST.ms +
+        'ms (' + ST.already + ' already resident) — combat has its clips before the bell','color:#7CFC00');
+      return got;
+    });
+  }
+
+  // AT THE BELL. Not at a menu lull that may never come.
+  function arm(){
+    if(window.startFight && !window.startFight.__warm){
+      var _sf = window.startFight;
+      var sf = function(){
+        var r = _sf.apply(this, arguments);
+        // after the fighters exist, so their own slot clips are known
+        setTimeout(function(){ try{ warm(); }catch(e){} }, 400);
+        return r;
+      };
+      sf.__warm = true;
+      try{ window.startFight = sf; }catch(e){ return false; }
+      return true;
+    }
+    return false;
+  }
+  (function tryArm(n){ if(arm() || n > 120) return; setTimeout(function(){ tryArm(n + 1); }, 300); })(0);
+
+  window.BANNON_WARM = {
+    warm: warm, combatTargets: combatTargets, rosterTargets: rosterTargets,
+    stats: function(){
+      var ct = combatTargets(), rt = rosterTargets();
+      return { runs:ST.runs, wanted:ST.wanted, loaded:ST.loaded, alreadyResident:ST.already,
+               failed:ST.failed, ms:ST.ms,
+               combatTargets:ct.length, combatResident:ct.filter(have).length,
+               rosterTargets:rt.length, rosterResident:rt.filter(have).length,
+               residentTotal:(clips()?Object.keys(clips()).length:0) };
+    }
+  };
+  console.log('%c[BANNON_WARM] armed — the match warms its own captures at the bell','color:#7CFC00');
 })();
 </script>
 
