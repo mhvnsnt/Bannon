@@ -414,10 +414,20 @@ def capture_two(path, args):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import verify_capture as VC
 
-    fps, raw, tracks, wtracks = VC.track(path, keep_frames=False)
+    fps, raw, tracks, wtracks = VC.track(path, keep_frames=False,
+                                        people=max(2, getattr(args, 'people', 2)))
     n = len(raw)
     if n < 6:
         return None
+    if len(tracks) > 2:
+        # THREE BODIES: two attackers and a receiver. role_of compares a pair, so hand it the two
+        # best-covered tracks and bank the third separately as the partner.
+        order = sorted(range(len(tracks)), key=lambda i: -len(tracks[i]))
+        keep = order[:2]
+        extra = order[2:]
+        tracks_all, wtracks_all = tracks, wtracks
+        tracks = [tracks_all[keep[0]], tracks_all[keep[1]]]
+        wtracks = [wtracks_all[keep[0]], wtracks_all[keep[1]]]
     ai, ri, why = VC.role_of(tracks, n)
     # HUMAN OVERRIDE. The automatic rules cover suplexes and dives onto a grounded man, but a running
     # dive where BOTH men end up horizontal can still come out inverted -- measured on the feral run,
@@ -480,6 +490,8 @@ def main():
     ap.add_argument('--out', default=OUT_DIR)
     ap.add_argument('--dry', action='store_true')
     ap.add_argument('--auto', action='store_true', help='derive the key from each filename')
+    ap.add_argument('--people', type=int, default=2,
+                    help='how many bodies are in the move (3 for a tag double-team)')
     ap.add_argument('--swap', action='store_true',
                     help='two-body: the role detector got it backwards; flip attacker and receiver')
     ap.add_argument('--two', action='store_true',

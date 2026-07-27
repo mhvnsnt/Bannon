@@ -92,3 +92,39 @@ node tools/mocap/ingest.cjs --report
 
 Current: 184 clips indexed, 15 ring positions covered, 215 of 350 moveset picks on real capture,
 137 combat moves mapped, the rest on pose math.
+
+## VIDEO CAPTURE — the multi-person path (2026-07-27)
+
+Owner: "I'm not doing video editing to blank out salient bodies, you can find a way to do that open
+source". The masking was never manual — it was automatic, in code, per frame — but he was right that
+it was a workaround standing in for a real detector.
+
+**YOLOX-tiny (Apache-2.0, ONNX, CPU) via `rtmlib`** now finds the bodies, and MediaPipe poses each
+crop in turn. Top-down, which is the standard shape for multi-person capture: the detector says
+where people are, the single-person estimator runs on one person at a time — the case it is
+genuinely good at. MediaPipe keeps the pose job because its world landmarks are metric 3D and that
+is exactly what the retarget already consumes; a 2D keypoint model would mean rewriting the retarget
+for no gain.
+
+Frames where BOTH wrestlers are found, measured on the owner's own clips:
+
+| clip | `num_poses=2` | mask workaround | YOLOX detector |
+|---|---|---|---|
+| tiger feint (619) | 6.6% | 65.6% | **100.0%** |
+| falcon arrow | 1.1% | 43.0% | **95.5%** |
+| ultra german | 2.7% | 43.8% | **57.5%** |
+| benoit headbutt | 6.6% | 34.2% | 31.6% |
+| feral run (1 man) | — | — | 2.5% |
+
+The feral-run number is the detector being RIGHT: one wrestler in the clip, one body to find. The
+Benoit clip is a distant broadcast shot where nothing sees much.
+
+    pip install rtmlib onnxruntime          # weights cache to ~/.cache/rtmlib on first run
+    python3 tools/mocap/verify_capture.py clip.mp4 --out sheet.png
+    python3 tools/mocap/video_to_clip.py clip.mp4 --name X --two            # attacker + receiver
+    python3 tools/mocap/video_to_clip.py clip.mp4 --name X --two --people 3 # tag double-team
+    python3 tools/mocap/video_to_clip.py clip.mp4 --name X --two --swap     # roles are backwards
+
+ALWAYS run verify_capture and LOOK at the sheet before banking. Coverage and visibility numbers do
+not tell you whether the skeleton was on the right man — twice now they have been green on a clip
+where the roles were inverted.

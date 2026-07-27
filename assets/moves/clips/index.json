@@ -10499,5 +10499,19 @@
   "coverFrac": 0.189,
   "lowCoverage": true,
   "roleBy": "inversion (head below hip) (swapped by hand)"
+ },
+ "DIVING_HEADBUTT_GABLE": {
+  "file": "DIVING_HEADBUTT_GABLE.json",
+  "bytes": 46835,
+  "dur": 1.5862,
+  "keys": 28,
+  "bones": 14,
+  "src": "f21fc9c3-bb0c1f5c6b980ef5fda0e006274c24cc2.mp4",
+  "via": "video_to_clip/mediapipe/two-body",
+  "role": "attacker",
+  "coverage": "33/48",
+  "coverFrac": 0.688,
+  "lowCoverage": false,
+  "roleBy": "travel (who closed the distance)"
  }
 }

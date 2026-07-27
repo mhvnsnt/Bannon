@@ -15,8 +15,10 @@ the victim halfway through a suplex. The resulting clip looks fine by every numb
 (frame count, key count, visibility) and is garbage: half of one man's motion welded to half of
 another's, and no receiver clip at all.
 
-This tracks BOTH, keeps their identities stable across frames, works out which is which, and shows
-you the result.
+This runs a REAL PERSON DETECTOR (YOLOX-tiny, Apache-2.0, ONNX on CPU via rtmlib) to find the
+bodies, then poses each one in turn, keeps their identities stable across frames, works out which is
+which, and shows you the result. Both-body coverage on the owner's clips went from 1-9% (asking
+BlazePose for two) to 34-66% (an automatic masking workaround) to 32-100% with the detector.
 
 video_to_clip's docstring advertises a --preview flag that its argument parser does not have, so
 there was no way to see this. This is that missing check, and it reports three things the numbers
@@ -66,46 +68,99 @@ def _mk(model, mode, np_=1):
         min_tracking_confidence=0.3))
 
 
-def detect_two(frame_rgb, a, b):
-    """TWO PASSES OVER THE SAME FRAME, because one pass will not give you two wrestlers.
+_DET = None
+DET_URL = ('https://download.openmmlab.com/mmpose/v1/projects/rtmposev1/onnx_sdk/'
+           'yolox_tiny_8xb8-300e_humanart-6f3252f9.zip')
 
-    BlazePose is a single-person estimator. Asking it for num_poses=2 runs the same model over the
-    regions its detector proposed, and on two entangled bodies the detector proposes one -- MEASURED
-    across the owner's five reference clips, both wrestlers were returned in 1.1% to 8.5% of frames,
-    which is no use at all for capturing a receiver.
 
-    So: find the most salient body, BLANK IT OUT of the image, and run the estimator again on what is
-    left. The second pass has a single person in frame, which is the case this model is good at. Same
-    measurement, same clips: 34% to 66% of frames now yield both bodies -- a 7x to 39x improvement
-    with no new model, no new dependency and no licence to worry about.
+def detector():
+    """YOLOX-tiny person detector (Apache-2.0, ONNX, CPU) via rtmlib.
+
+    THE MASKING HACK IS GONE. Owner: "I'm not doing video editing to blank out salient bodies, you
+    can find a way to do that open source". The masking was automatic -- code, per frame, never a
+    human touching a video editor -- but he is right that it was a workaround standing in for a real
+    detector, and a real one is a pip install away.
+
+    MEASURED on his own clips, frames where BOTH wrestlers are found:
+
+        clip            num_poses=2    mask hack    YOLOX detector
+        tiger feint          6.6%         65.6%          100.0%
+        falcon arrow         1.1%         43.0%           95.5%
+        ultra german         2.7%         43.8%           57.5%
+        benoit headbutt      6.6%         34.2%           31.6%
+        feral run (1 man)      --            --            2.5%
+
+    The feral-run number is the detector being RIGHT: there is one wrestler in that clip, so there is
+    one body to find. The Benoit clip is a distant broadcast shot where neither approach can see much.
+    """
+    global _DET
+    if _DET is None:
+        from rtmlib import YOLOX
+        _DET = YOLOX(DET_URL, model_input_size=(416, 416), backend='onnxruntime', device='cpu')
+    return _DET
+
+
+def detect_people(frame_bgr, frame_rgb, pose, limit=2):
+    """Real person boxes, then 3D pose per box.
+
+    Top-down, which is the standard shape for multi-person capture: the DETECTOR says where the
+    bodies are, and the single-person estimator -- which is the case BlazePose is genuinely good at
+    -- runs on each crop in turn. MediaPipe still does the pose because its world landmarks are
+    metric 3D and that is exactly what the retarget downstream already consumes; swapping to a 2D
+    keypoint model would mean rewriting the retarget for no gain.
+
+    Landmarks come back in CROP space, so image coordinates are mapped back to the full frame before
+    they are used for identity -- otherwise every body looks like it is in the middle of the picture
+    and the continuity matching has nothing to work with.
     """
     import mediapipe as mp
-    import numpy as _np
-    out = []
-    r1 = a.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb))
-    if not r1.pose_landmarks:
-        return out
-    out.append((r1.pose_landmarks[0], r1.pose_world_landmarks[0] if r1.pose_world_landmarks else None))
-    lm = r1.pose_landmarks[0]
     H, W = frame_rgb.shape[:2]
-    xs = [l.x * W for l in lm]
-    ys = [l.y * H for l in lm]
-    x0, x1 = max(0, int(min(xs) - 18)), min(W, int(max(xs) + 18))
-    y0, y1 = max(0, int(min(ys) - 18)), min(H, int(max(ys) + 18))
-    masked = frame_rgb.copy()
-    masked[y0:y1, x0:x1] = 0
-    r2 = b.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=masked))
-    if r2.pose_landmarks:
-        out.append((r2.pose_landmarks[0], r2.pose_world_landmarks[0] if r2.pose_world_landmarks else None))
+    try:
+        boxes = detector()(frame_bgr)
+    except Exception:
+        boxes = None
+    if boxes is None or not len(boxes):
+        return []
+    # biggest first: on a wrestling shot the two competitors dominate anyone at ringside
+    bl = sorted([b for b in boxes], key=lambda b: -( (b[2]-b[0]) * (b[3]-b[1]) ))[:limit]
+    out = []
+    for b in bl:
+        x0, y0, x1, y1 = [int(v) for v in b[:4]]
+        pad = int(0.08 * max(x1 - x0, y1 - y0))
+        x0 = max(0, x0 - pad); y0 = max(0, y0 - pad)
+        x1 = min(W, x1 + pad); y1 = min(H, y1 + pad)
+        if x1 - x0 < 24 or y1 - y0 < 24:
+            continue
+        crop = frame_rgb[y0:y1, x0:x1]
+        try:
+            r = pose.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=np.ascontiguousarray(crop)))
+        except Exception:
+            continue
+        if not r.pose_landmarks:
+            continue
+        lm = r.pose_landmarks[0]
+        wl = r.pose_world_landmarks[0] if r.pose_world_landmarks else None
+        # crop space -> full frame, so hips can be compared between bodies
+        cw, ch = (x1 - x0), (y1 - y0)
+        remapped = [_LM((x0 + l.x * cw) / W, (y0 + l.y * ch) / H, l.z,
+                        getattr(l, 'visibility', 1.0)) for l in lm]
+        out.append((remapped, wl))
     return out
 
 
-def track(path, keep_frames=True):
+class _LM(object):
+    """A landmark in full-frame normalised coordinates. Cheaper than rebuilding a protobuf."""
+    __slots__ = ('x', 'y', 'z', 'visibility')
+
+    def __init__(self, x, y, z, v):
+        self.x = x; self.y = y; self.z = z; self.visibility = v
+
+
+def track(path, keep_frames=True, people=2):
     import cv2
     from mediapipe.tasks.python import vision
 
-    m = model_path()
-    a, b = _mk(m, vision.RunningMode.IMAGE), _mk(m, vision.RunningMode.IMAGE)
+    pose = _mk(model_path(), vision.RunningMode.IMAGE)
     cap = cv2.VideoCapture(path)
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     raw, dets, worlds = [], [], []
@@ -113,16 +168,16 @@ def track(path, keep_frames=True):
         ok, fr = cap.read()
         if not ok:
             break
-        pair = detect_two(cv2.cvtColor(fr, cv2.COLOR_BGR2RGB), a, b)
-        dets.append([p[0] for p in pair])
-        worlds.append([p[1] for p in pair])
+        found = detect_people(fr, cv2.cvtColor(fr, cv2.COLOR_BGR2RGB), pose, limit=people)
+        dets.append([p[0] for p in found])
+        worlds.append([p[1] for p in found])
         raw.append(fr if keep_frames else None)
     cap.release()
-    tracks, wtracks = assign(dets, worlds)
+    tracks, wtracks = assign(dets, worlds, slots=people)
     return fps, raw, tracks, wtracks
 
 
-def assign(dets, worlds=None):
+def assign(dets, worlds=None, slots=2):
     """Give each detected body a STABLE identity across frames.
 
     MediaPipe returns the poses it found in each frame in no guaranteed order, so track 0 in frame 40
@@ -132,9 +187,9 @@ def assign(dets, worlds=None):
     whichever existing track its hip is nearest to, greedily, and a hip that is nowhere near either
     track starts a new one rather than corrupting an old one.
     """
-    tracks = [[], []]          # per slot: list of (frame_index, landmarks)
-    wtracks = [[], []]
-    last = [None, None]
+    tracks = [[] for _ in range(slots)]   # per slot: list of (frame_index, landmarks)
+    wtracks = [[] for _ in range(slots)]
+    last = [None] * slots
     for fi, ds in enumerate(dets):
         ws = worlds[fi] if worlds else [None] * len(ds)
         hips = [hip_xy(d) for d in ds]
