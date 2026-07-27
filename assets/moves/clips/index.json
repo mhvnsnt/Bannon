@@ -10688,5 +10688,50 @@
   "via": "text_to_clip/momask",
   "prompt": "a person drives a knee upward hard into an opponent in front",
   "bones": 17
+ },
+ "GEN_IDLE_STANCE": {
+  "file": "GEN_IDLE_STANCE.json",
+  "bytes": 52366,
+  "dur": 2.0,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person stands still in a relaxed fighting stance shifting weight slightly",
+  "bones": 17
+ },
+ "GEN_GUARD_HIGH": {
+  "file": "GEN_GUARD_HIGH.json",
+  "bytes": 52350,
+  "dur": 1.9,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person raises both hands to guard the face in a boxing stance",
+  "bones": 17
+ },
+ "GEN_WALK_FWD": {
+  "file": "GEN_WALK_FWD.json",
+  "bytes": 52564,
+  "dur": 2.45,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person walks forward at a steady pace",
+  "bones": 17
+ },
+ "GEN_RUN_FWD": {
+  "file": "GEN_RUN_FWD.json",
+  "bytes": 52452,
+  "dur": 2.0,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person runs forward quickly",
+  "bones": 17
+ },
+ "GEN_SIDESTEP": {
+  "file": "GEN_SIDESTEP.json",
+  "bytes": 52315,
+  "dur": 1.9,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person steps sideways to the left keeping a fighting stance",
+  "bones": 17
  }
 }
