@@ -53692,6 +53692,12 @@ window.__deriveVariant = async function(key){
     // TIGER FEINT KICK (the 619). I read the frames wrong twice -- first calling it a feral run,
     // then a leaping cutter. It is a 619. Wired to the rope position, not as a generic dive.
     TIGER_FEINT_KICK:         { label:'Tiger Feint Kick (619)', kind:'rope',   cover:0.91 },
+    // second batch, identified from the clips' own captions
+    DIVING_HEADBUTT_GABLE:    { label:'Diving Headbutt (Gable)', kind:'dive',   cover:0.69 },
+    BACKDROP_360_FACE:        { label:'360 Backdrop (face first)', kind:'grapple', cover:0.98 },
+    STALLING_SUPLEX_STEPS:    { label:'Stalling Vertical Suplex (up the steps)', kind:'grapple', cover:0.57 },
+    SOMERSAULT_TORNADO_DDT:   { label:'Somersault Tornado DDT', kind:'grapple', cover:0.51 },
+    TAG_POWERBOMB_GERMAN:     { label:'Powerbomb Toss / German (tag)', kind:'tag', cover:0.50, bodies:3 },
     FALCON_ARROW_STANDING:    { label:'Falcon Arrow',           kind:'grapple',    cover:0.84 },
     FALCON_ARROW_GROUNDED:    { label:'Falcon Arrow (grounded)',kind:'grapple',    cover:0.78 },
     PUMPHANDLE_GERMAN_DOUBLE: { label:'Double Pumphandle German',kind:'grapple',   cover:0.38 },
@@ -53702,6 +53708,11 @@ window.__deriveVariant = async function(key){
     CIPHER_FERAL_RUN:         'CIPHER_FERAL_RUN__RECV',
     CIPHER_FERAL_RUN_2:       'CIPHER_FERAL_RUN_2__RECV',
     TIGER_FEINT_KICK:         'TIGER_FEINT_KICK__RECV',
+    DIVING_HEADBUTT_GABLE:    'DIVING_HEADBUTT_GABLE__RECV',
+    BACKDROP_360_FACE:        'BACKDROP_360_FACE__RECV',
+    STALLING_SUPLEX_STEPS:    'STALLING_SUPLEX_STEPS__RECV',
+    SOMERSAULT_TORNADO_DDT:   'SOMERSAULT_TORNADO_DDT__RECV',
+    TAG_POWERBOMB_GERMAN:     'TAG_POWERBOMB_GERMAN__RECV',
     FALCON_ARROW_STANDING:    'FALCON_ARROW_STANDING__RECV',
     FALCON_ARROW_GROUNDED:    'FALCON_ARROW_GROUNDED__RECV',
     PUMPHANDLE_GERMAN_DOUBLE: 'PUMPHANDLE_GERMAN_DOUBLE__RECV',
@@ -53777,6 +53788,25 @@ window.__deriveVariant = async function(key){
     return pool[_feralI];
   }
 
+  // ── 2a. THE SECOND BATCH ──────────────────────────────────────────────────────────────────────
+  // The Gable diving headbutt is a THIRD headbutt, not a replacement for either of the other two --
+  // owner asked to keep the original and swap Bannon's, and this one is its own move on top.
+  function addGableHeadbutt(){
+    try{
+      if(typeof DIVE_TYPES === 'undefined' || DIVE_TYPES.DIVING_HEADBUTT_GABLE) return true;
+      DIVE_TYPES.DIVING_HEADBUTT_GABLE = { label:'DIVING HEADBUTT (GABLE)', dur:0.80, spin:0,
+        pow:116, arc:0.90, sell:1, clip:'DIVING_HEADBUTT_GABLE' };
+      return true;
+    }catch(e){ return false; }
+  }
+  // The tag powerbomb-toss German is a THREE-BODY capture, so it obeys the same law every other tag
+  // move does: no partner, no double team. BANNON_TAG already owns that test.
+  function tagComboFor(f){
+    if(!have('TAG_POWERBOMB_GERMAN')) return null;
+    try{ if(window.BANNON_TAG && !window.BANNON_TAG.hasPartner(f)) return null; }catch(e){}
+    return 'TAG_POWERBOMB_GERMAN';
+  }
+
   // ── 2b. THE 619 NEEDS A MAN ON THE ROPES ──────────────────────────────────────────────────────
   // A tiger feint kick is only a tiger feint kick if the receiver is hung over the middle rope; fired
   // at a man standing in the centre it is a spin into empty air. The engine already tracks a
@@ -53824,6 +53854,7 @@ window.__deriveVariant = async function(key){
     var C = clips();
     if(!C) return false;
     addFlyingHeadbutt();
+    addGableHeadbutt();
     bannonSlot();
     warmAll();
 
@@ -53874,7 +53905,7 @@ window.__deriveVariant = async function(key){
   window.BANNON_OWNER_MOVES = {
     CAPTURES: CAPTURES, PAIRS: PAIRS,
     arm: arm, warm: warmAll, receiverOf: function(k){ return PAIRS[k] || null; },
-    feralFor: feralFor, tigerFeintFor: tigerFeintFor, ropeReady: ropeReady, drive: driveReceiver,
+    feralFor: feralFor, tigerFeintFor: tigerFeintFor, tagComboFor: tagComboFor, ropeReady: ropeReady, drive: driveReceiver,
     stats: function(){ return { armed:ST.armed, captures:Object.keys(CAPTURES).length,
       pairs:ST.pairs, receiverPoses:ST.applied, feralRuns:ST.feral,
       resident:Object.keys(CAPTURES).filter(have).length,
