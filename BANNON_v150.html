@@ -38283,7 +38283,12 @@ window.BANNON_PROPS = (function(){
   function setState(p, s){ if(p){ p.state=s; if(s==='onFire') p.onFire=true; } return p; }
   function nearest(f, maxD){ maxD=maxD||1.4; let best=null,bd=maxD; for(const p of props){ const d=Math.hypot(p.x-f.x,p.z-f.z); if(d<bd){ bd=d; best=p; } } return best; }
   // heights each prop launches/stands you at (metres) — feeds the dive launch
-  const STAND_H = { chair:0.55, steps:0.9, ladder:2.4, ladder_leaned:1.4, table:1.0, table_stacked:1.9 };
+  // `cellroof` is the Hell in a Cell lid, registered at its four corners by BANNON_STIP. It is here
+  // rather than in that module because standHeight() is what every climb, stand and dive-off reads,
+  // and a height the table does not know about silently resolves to the 1.0 default — which would
+  // have put a man "on the roof" a metre and a half below it.
+  const STAND_H = { chair:0.55, steps:0.9, ladder:2.4, ladder_leaned:1.4, table:1.0, table_stacked:1.9,
+                    cellroof:2.75 };
   function standHeight(p){ if(p.type==='ladder'&&p.state==='leaned') return STAND_H.ladder_leaned; if(p.type==='table'&&p.state==='stacked') return STAND_H.table_stacked; return STAND_H[p.type]||1.0; }
   // A suspended objective (belt / MITB briefcase / TLC) hangs above ring-center; climb a ladder under it,
   // REACH for it while ON the ladder, and pulling it down wins the ladder/MITB/TLC match.
@@ -38331,7 +38336,7 @@ window.BANNON_PROPS = (function(){
   function interact(f, diveType){
     if(f && f._onProp && f._onProp.type==='ladder' && !f._onTop && objective && !objective.grabbed) return reach(f);
     const p=nearest(f); if(!p) return false;
-    if(p.type==='ladder'||p.type==='table'||p.type==='steps') return climb(f,p);
+    if(p.type==='ladder'||p.type==='table'||p.type==='steps'||p.type==='cellroof') return climb(f,p);
     if(p.type==='chair') return vault(f,p,diveType);
     return false; }
   return { props, register, clear, setState, nearest, climb, vault, diveOff, interact, standHeight,
@@ -42795,7 +42800,12 @@ window.BANNON_CAGE = (function(){
   // four are identical height and their fence bottoms all seat on the apron, door side included.)
   var REF_MIN=-3.5, REF_MAX=64.76, REF_W=168.4, CAGE_H=2.75;
   function place(obj, side){
-    if(!obj) return;
+    // The panel GLBs load asynchronously, so a match that ends (or restarts) before the fourth wall
+    // arrives calls remove() and nulls `group` while these callbacks are still in flight. The late
+    // one then throws "Cannot read properties of null (reading 'add')" and the wall is lost.
+    // Reproduced eight times over in a rapid arm/clear sweep. A build that is no longer current has
+    // nothing to add its wall to, and should quietly stop.
+    if(!obj || !group) return;
     var hx=halfX(), hz=halfZ(), margin=0.42;
     obj.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
     var targetW = 2*Math.max(hx,hz) + 1.4;                 // span the ring side + overlap so corners close
@@ -53114,6 +53124,523 @@ window.__deriveVariant = async function(key){
   };
   console.log('%c[BANNON_SAVES] ' + MODES.length + ' modes x ' + SLOTS_PER_MODE +
     ' slots — worlds are per-mode, creations are global','color:#7CFC00');
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_STIP — a stipulation is a physical thing in the room, not a label on a menu.
+//
+// Owner: "making the stipulations real like actual cage for cage matches and fire in inferno
+// matches and etc there should be fire assets in the mdickie files ... casket and backstage and
+// falls count anywhere and tlc with different match rules like pin or grab belt or hanging object
+// or pin and submission etc, and hell in a cell, cage match, cage climbing, in too of cell fighting
+// and throwing off of cell, on cage edge dives, etc, ladder climbing and weapon physics".
+//
+// WHAT WAS ACTUALLY THERE, AND WHY NONE OF IT HAPPENED:
+//   BANNON_CAGE   builds four MDickie cage panels around the ring, seats them on the apron, and
+//                 rebuilds the physics trimesh so they are solid. ZERO CALLERS. Never once built.
+//   BANNON_PROPS  registers props, climbs a ladder onto the RUNGS, REACHES for a hanging objective,
+//                 stands on top for a dive, vaults a chair, dives off. Hangs a belt or a briefcase
+//                 over ring centre and calls declareWinner when someone pulls it down.
+//                 ZERO CALLERS. The whole ladder-match win condition, written and unreachable.
+//   table shatter is live in the weapons tick (350N native law) but no match type ever put a table
+//                 in the room or made going through one end anything.
+// So every stipulation in the select screen produced an ordinary match in an ordinary ring.
+//
+// The owner was also right about the assets. The MDickie extraction carries Flame_Thrower.glb and
+// Coffin.glb (ht3 and il both), and assets/ring/bannon_mat_fire.png is a fire texture. Inferno and
+// Casket are built from those rather than from primitives.
+//
+// This module is the arming layer: it reads MATCH_SETUP.matchType at the bell, dresses the room,
+// installs the win condition that stipulation actually wins by, and tears it all down afterwards.
+// ============================================================================================
+(function(){
+  'use strict';
+
+  // `gen` invalidates in-flight GLB callbacks. Every dressing load is asynchronous, so a stipulation
+  // that is torn down before its models arrive would otherwise have them land in the NEXT match --
+  // measured as a casket appearing in a Hardcore match that never asked for one.
+  var ST = { type:null, built:[], objects:[], win:null, armed:false, roof:null, fire:null,
+             casket:null, checks:0, fired:null, tick:null, gen:0 };
+
+  function A(){ try{ return (typeof arenaGroup!=='undefined'&&arenaGroup)?arenaGroup:(typeof scene!=='undefined'?scene:null); }catch(e){ return null; } }
+  function HX(){ try{ return (typeof ARENA_HALF!=='undefined')?ARENA_HALF:3.2; }catch(e){ return 3.2; } }
+  function HZ(){ try{ return (typeof ARENA_HALF_Z!=='undefined')?ARENA_HALF_Z:2.2; }catch(e){ return 2.2; } }
+  function FY(){ try{ return (typeof RING!=='undefined'&&RING.floorY!=null)?RING.floorY:0; }catch(e){ return 0; } }
+  function fs(){ try{ return (typeof fighters!=='undefined')?fighters:(window.fighters||[]); }catch(e){ return []; } }
+  function nameOf(f){ try{ return (f&&f.opts&&f.opts.name)||(f&&f.name)||''; }catch(e){ return ''; } }
+  function say(a,b){ try{ if(typeof announce==='function') announce(a,b||''); }catch(e){} }
+  function win(f, why){
+    if(ST.fired) return;
+    ST.fired = { who:nameOf(f), why:why };
+    say(why, nameOf(f));
+    try{ if(typeof declareWinner==='function') declareWinner(f); }catch(e){}
+  }
+
+  // ── THE TABLE OF STIPULATIONS ─────────────────────────────────────────────────────────────────
+  // Each one says what goes in the room and how it is won. `win` names the condition so the HUD and
+  // the commentary can say it out loud instead of the player guessing.
+  var STIPS = {
+    CAGE:       { label:'Steel Cage',        dress:['cage'],                        win:'PIN_SUB_OR_ESCAPE' },
+    HIAC:       { label:'Hell in a Cell',    dress:['cage','roof'],                 win:'PIN_SUB' },
+    LADDER:     { label:'Ladder Match',      dress:['ladders','belt'],              win:'GRAB' },
+    MITB:       { label:'Money in the Bank', dress:['ladders','case'],              win:'GRAB' },
+    TLC:        { label:'Tables Ladders Chairs', dress:['ladders','tables','chairs','belt'], win:'GRAB' },
+    TABLES:     { label:'Tables Match',      dress:['tables'],                      win:'THROUGH_TABLE' },
+    INFERNO:    { label:'Inferno Match',     dress:['fire'],                        win:'BURN' },
+    CASKET:     { label:'Casket Match',      dress:['casket'],                      win:'CASKET' },
+    BACKSTAGE:  { label:'Backstage Brawl',   dress:['backstage','weapons'],         win:'PIN_SUB_ANYWHERE' },
+    ANYWHERE:   { label:'Falls Count Anywhere', dress:['weapons'],                  win:'PIN_SUB_ANYWHERE' },
+    HARDCORE:   { label:'No-Rules Hardcore', dress:['weapons','tables','chairs'],   win:'PIN_SUB_ANYWHERE' },
+    FIRSTBLOOD: { label:'First Blood',       dress:['weapons'],                     win:'BLOOD' },
+    SUBMISSION: { label:'Submission Match',  dress:[],                              win:'SUB_ONLY' },
+    LMS:        { label:'Last One Standing', dress:['weapons'],                     win:'TEN_COUNT' }
+  };
+
+  // ── DRESSING ──────────────────────────────────────────────────────────────────────────────────
+  function gltf(url, cb){
+    try{
+      if(typeof THREE==='undefined' || !THREE.GLTFLoader) return cb(null);
+      var L = new THREE.GLTFLoader();
+      L.load(url, function(g){ cb(g.scene); }, undefined, function(){
+        var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+        try{ new THREE.GLTFLoader().load(cdn+url, function(g2){ cb(g2.scene); }, undefined, function(){ cb(null); }); }
+        catch(e){ cb(null); }
+      });
+    }catch(e){ cb(null); }
+  }
+  function fitTo(obj, height, x, y, z){
+    var b = new THREE.Box3().setFromObject(obj), sz = new THREE.Vector3(); b.getSize(sz);
+    var s = height / (sz.y || 1);
+    obj.scale.setScalar(s);
+    var b2 = new THREE.Box3().setFromObject(obj);
+    obj.position.set(x - (b2.min.x+b2.max.x)/2, y - b2.min.y, z - (b2.min.z+b2.max.z)/2);
+    obj.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.frustumCulled=false; } });
+    return obj;
+  }
+  function own(o){ if(o){ ST.objects.push(o); } return o; }
+
+  function dressCage(){
+    try{ if(window.BANNON_CAGE && window.BANNON_CAGE.build){ window.BANNON_CAGE.build(); ST.built.push('cage'); return true; } }catch(e){}
+    return false;
+  }
+  // THE CELL ROOF. The cage panels stop at 2.75m; a cell has a lid you can fight on and be thrown
+  // off. A grid, not a solid slab, so you can still see the ring through it from the hard camera.
+  function dressRoof(){
+    var h = A(); if(!h || typeof THREE==='undefined') return false;
+    var hx = HX()+0.42, hz = HZ()+0.42, y = FY()+2.75;
+    var g = new THREE.Group(); g.name = 'BANNON_CELL_ROOF';
+    var mat = new THREE.MeshStandardMaterial({ color:0x50555c, metalness:0.85, roughness:0.55 });
+    var bar = 0.045, step = 0.42;
+    for(var x=-hx; x<=hx+0.01; x+=step){
+      var m = new THREE.Mesh(new THREE.BoxGeometry(bar, bar, hz*2), mat); m.position.set(x, y, 0); g.add(m);
+    }
+    for(var z=-hz; z<=hz+0.01; z+=step){
+      var m2 = new THREE.Mesh(new THREE.BoxGeometry(hx*2, bar, bar), mat); m2.position.set(0, y, z); g.add(m2);
+    }
+    g.traverse(function(o){ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; o.frustumCulled=false; } });
+    h.add(g); own(g); ST.roof = { y:y, hx:hx, hz:hz, group:g }; ST.built.push('roof');
+    window.BANNON_CELL_ROOF = ST.roof;
+
+    // A ROOF YOU CAN GET ON TOP OF. Owner: "in too of cell fighting and throwing off of cell, on
+    // cage edge dives". Geometry alone is scenery — the roof has to be a surface the existing climb
+    // and dive system already knows how to use. BANNON_PROPS drives everything off standHeight(),
+    // so registering the four corners as climbable props makes ZONE at a corner take you up, the
+    // fighters walk and fight at roof height, and diveOff() launches from 2.75m with no new code.
+    try{
+      if(window.BANNON_PROPS){
+        window.BANNON_PROPS.CELL_ROOF_H = 2.75;
+        [[hx-0.3, hz-0.3], [-(hx-0.3), hz-0.3], [hx-0.3, -(hz-0.3)], [-(hx-0.3), -(hz-0.3)]]
+          .forEach(function(c){
+            window.BANNON_PROPS.register('cellroof', c[0], c[1], { state:'roof', roofY:y });
+          });
+      }
+    }catch(e){}
+    ST.built.push('roof-climb x4');
+    say('HELL IN A CELL', 'the roof is live');
+    return true;
+  }
+  function dressLadders(n){
+    n = n || 2;
+    var placed = 0;
+    var spots = [[0, 0.9], [-1.5, -1.3], [1.6, -1.1]];
+    for(var i=0;i<n && i<spots.length;i++){
+      (function(sp){
+        var g0 = ST.gen;
+        gltf('assets/models/props/mdickie/ladder.glb', function(o){
+          if(!o || g0 !== ST.gen) return;
+          var h = A(); if(!h) return;
+          h.add(own(fitTo(o, 2.4, sp[0], FY(), sp[1])));
+        });
+        try{ if(window.BANNON_PROPS) window.BANNON_PROPS.register('ladder', sp[0], sp[1], { state:'upright' }); }catch(e){}
+      })(spots[i]);
+      placed++;
+    }
+    ST.built.push('ladders x'+placed);
+    return placed > 0;
+  }
+  function dressObjective(kind){
+    try{
+      if(window.BANNON_PROPS && window.BANNON_PROPS.setObjective){
+        window.BANNON_PROPS.setObjective(kind === 'case' ? 'case' : 'belt');
+        ST.built.push('objective:'+kind);
+        say(kind==='case' ? 'THE BRIEFCASE IS HANGING' : 'THE BELT IS HANGING', 'climb and take it');
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+  function dressTables(n){
+    n = n || 2;
+    var spots = [[-(HX()+1.5), 0], [HX()+1.5, 0], [0, -(HZ()+1.6)]];
+    var placed = 0;
+    for(var i=0;i<n && i<spots.length;i++){
+      (function(sp){
+        var g0 = ST.gen;
+        gltf('assets/models/props/mdickie/table.glb', function(o){
+          var h = A(); if(!h || !o || g0 !== ST.gen) return;
+          h.add(own(fitTo(o, 0.95, sp[0], FY()-0.85, sp[1])));    // ringside floor, not the mat
+        });
+        try{ if(window.BANNON_PROPS) window.BANNON_PROPS.register('table', sp[0], sp[1], { state:'standing' }); }catch(e){}
+        // the weapons tick owns the 350N shatter, so the table has to exist THERE too or going
+        // through it is only a visual
+        try{ if(window.BANNON_WEAPONS && window.BANNON_WEAPONS.spawn) window.BANNON_WEAPONS.spawn('table', sp[0], sp[1]); }catch(e){}
+      })(spots[i]);
+      placed++;
+    }
+    ST.built.push('tables x'+placed);
+    return placed > 0;
+  }
+  function dressChairs(n){
+    n = n || 3;
+    var placed = 0;
+    for(var i=0;i<n;i++){
+      var ang = (i/n) * Math.PI*2, x = Math.cos(ang)*(HX()+1.9), z = Math.sin(ang)*(HZ()+1.9);
+      (function(x,z){
+        var g0 = ST.gen;
+        gltf('assets/models/props/mdickie/chair.glb', function(o){
+          var h = A(); if(!h || !o || g0 !== ST.gen) return;
+          h.add(own(fitTo(o, 0.9, x, FY()-0.85, z)));
+        });
+        try{ if(window.BANNON_PROPS) window.BANNON_PROPS.register('chair', x, z, { state:'closed' }); }catch(e){}
+        try{ if(window.BANNON_MDICKIE && window.BANNON_MDICKIE.spawnWeapon) window.BANNON_MDICKIE.spawnWeapon('chair', x, z); }catch(e){}
+      })(x,z);
+      placed++;
+    }
+    ST.built.push('chairs x'+placed);
+    return true;
+  }
+  // FIRE, from the MDickie flamethrower asset plus the ring's own fire texture. Ringed around the
+  // apron the way an Inferno match is, and it is a real state on a fighter, not a decal.
+  function dressFire(){
+    var h = A(); if(!h || typeof THREE==='undefined') return false;
+    var g = new THREE.Group(); g.name = 'BANNON_INFERNO';
+    var tex = null;
+    try{
+      tex = new THREE.TextureLoader().load('assets/ring/bannon_mat_fire.png');
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    }catch(e){}
+    var mat = new THREE.MeshBasicMaterial({ map:tex, color:0xff7a1a, transparent:true, opacity:0.9,
+      side:THREE.DoubleSide, depthWrite:false, blending:THREE.AdditiveBlending });
+    var hx = HX()+0.30, hz = HZ()+0.30, y = FY();
+    var planes = [];
+    [[0,hz,0],[0,-hz,Math.PI],[hx,0,-Math.PI/2],[-hx,0,Math.PI/2]].forEach(function(p, i){
+      var w = (i<2) ? hx*2 : hz*2;
+      var m = new THREE.Mesh(new THREE.PlaneGeometry(w, 0.85, 1, 1), mat.clone());
+      m.position.set(p[0], y+0.42, p[1]); m.rotation.y = p[2];
+      m.frustumCulled = false; g.add(m); planes.push(m);
+    });
+    h.add(g); own(g);
+    // the flamethrower prop the MDickie files actually ship, stood in the corner as the source
+    var gF = ST.gen;
+    gltf('assets/models/env/mdickie/world/ht3/Flame_Thrower.glb', function(o){
+      if(!o || gF !== ST.gen) return; var hh = A(); if(!hh) return;
+      hh.add(own(fitTo(o, 1.5, -(HX()+1.6), FY()-0.85, -(HZ()+1.6))));
+    });
+    ST.fire = { group:g, planes:planes, t:0 };
+    ST.built.push('fire');
+    say('INFERNO', 'the ropes are burning');
+    return true;
+  }
+  function dressCasket(){
+    var gC = ST.gen;
+    gltf('assets/models/env/mdickie/world/ht3/Coffin.glb', function(o){
+      var h = A(); if(!h || !o || gC !== ST.gen) return;
+      var x = 0, z = HZ()+2.1;
+      h.add(own(fitTo(o, 0.62, x, FY()-0.85, z)));
+      ST.casket = { x:x, z:z, open:true, inside:null, closing:0 };
+    });
+    // the state exists even if the mesh is still loading, so the win condition never waits on the net
+    ST.casket = ST.casket || { x:0, z:HZ()+2.1, open:true, inside:null, closing:0 };
+    ST.built.push('casket');
+    say('CASKET MATCH', 'put him in it and shut the lid');
+    return true;
+  }
+  function dressBackstage(){
+    try{
+      var E = (window.BANNON_ENVIRONMENTS && window.BANNON_ENVIRONMENTS.ENVS) || [];
+      var pick = E.filter(function(e){ return /BACKSTAGE|PARKING|CORRIDOR|HALLWAY|GARAGE/i.test(String(e.id)+' '+(e.name||'')); })[0];
+      if(pick){
+        window.CURRENT_ENV = pick.id;
+        if(window.BANNON_ENVIRONMENTS.buildCurrent) window.BANNON_ENVIRONMENTS.buildCurrent();
+        ST.built.push('backstage:'+pick.id);
+        say('BACKSTAGE BRAWL', String(pick.name||pick.id).toLowerCase());
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+  function dressWeapons(n){
+    n = n || 5;
+    var placed = 0;
+    try{
+      var MD = window.BANNON_MDICKIE;
+      var pool = ['chair','table','ladder','bat','crate','pipe','trash'];
+      for(var i=0;i<n;i++){
+        var ang = (i/n)*Math.PI*2 + 0.4;
+        var x = Math.cos(ang)*(HX()+2.3), z = Math.sin(ang)*(HZ()+2.3);
+        if(MD && MD.spawnWeapon){ MD.spawnWeapon(pool[i%pool.length], x, z); placed++; }
+      }
+    }catch(e){}
+    ST.built.push('weapons x'+placed);
+    return placed > 0;
+  }
+
+  // ── WIN CONDITIONS ────────────────────────────────────────────────────────────────────────────
+  // Each is checked on a slow timer, not per frame — none of these need 60Hz and the owner's phone
+  // has better uses for the budget.
+  function opponentOf(f){ var L = fs(); for(var i=0;i<L.length;i++){ if(L[i]!==f && L[i] && (L[i].hp||0)>0) return L[i]; } return null; }
+
+  // THROWN OFF THE CELL. A ragdoll at roof height with real horizontal speed goes over the edge and
+  // down to the floor outside, which is the spot the stipulation exists for. Without this a body at
+  // 2.75m simply floats back down inside the cage and the roof is a platform with no consequence.
+  function checkRoofFalls(){
+    if(!ST.roof) return false;
+    var L = fs(), R = ST.roof;
+    for(var i=0;i<L.length;i++){
+      var f = L[i]; if(!f) continue;
+      var up = (f.airLift||0) > 2.0 || (f._onProp && f._onProp.type === 'cellroof');
+      if(!up){ f._roofOn = false; continue; }
+      f._roofOn = true;
+      var over = Math.abs(f.x) > R.hx || Math.abs(f.z) > R.hz;
+      if(over && !f._roofFell){
+        f._roofFell = true;
+        f._onProp = null; f._onTop = false; f.airLift = 0;
+        f.zone = 'FLOOR';
+        try{ if(f.ragdollOn) f.ragdollOn(); else f.ragdoll = true; }catch(e){}
+        try{ f.hp = Math.max(1, (f.hp||100) - 220); f.poise = 0; }catch(e){}
+        say('OFF THE TOP OF THE CELL!', nameOf(f));
+        try{ if(typeof spawnMatDust==='function') spawnMatDust(f.x, f.z, 5.0); }catch(e){}
+      }
+    }
+    return false;
+  }
+
+  function checkEscape(){
+    // over the top of the cage and down the other side. `_onTop` comes from the climb system; the
+    // drop is the fighter's own x/z leaving the cage footprint while up there.
+    var L = fs();
+    for(var i=0;i<L.length;i++){
+      var f = L[i]; if(!f || (f.hp||0)<=0) continue;
+      var out = Math.abs(f.x) > HX()+0.9 || Math.abs(f.z) > HZ()+0.9;
+      var high = (f.airLift||0) > 1.6 || f._onTop;
+      if(high) f._cageHigh = true;
+      if(f._cageHigh && out && (f.airLift||0) < 0.4){ win(f, 'ESCAPED THE CAGE'); return true; }
+    }
+    return false;
+  }
+  function checkThroughTable(){
+    try{
+      var W = window.BANNON_WEAPONS;
+      var items = (W && W.items) || [];
+      for(var i=0;i<items.length;i++){
+        var it = items[i];
+        if(!it || !it.broken || it._stipScored) continue;
+        if(it.spec && it.spec.prop !== 'table') continue;
+        it._stipScored = true;
+        // whoever did NOT go through it wins
+        var victim = null, L = fs();
+        for(var k=0;k<L.length;k++){
+          var f = L[k]; if(!f) continue;
+          if(Math.abs(f.x - it.g.position.x) < 1.2 && Math.abs(f.z - it.g.position.z) < 1.2) victim = f;
+        }
+        var w = victim ? opponentOf(victim) : null;
+        if(w){ win(w, 'PUT HIM THROUGH THE TABLE'); return true; }
+      }
+    }catch(e){}
+    return false;
+  }
+  function checkBurn(){
+    if(!ST.fire) return false;
+    var hx = HX()+0.30, hz = HZ()+0.30, L = fs();
+    for(var i=0;i<L.length;i++){
+      var f = L[i]; if(!f || (f.hp||0)<=0) continue;
+      // touching the burning ropes sets you alight
+      var atRope = Math.abs(Math.abs(f.x)-hx) < 0.28 || Math.abs(Math.abs(f.z)-hz) < 0.28;
+      if(atRope && (f.zone === 'RING' || f.zone == null)){
+        f._alight = (f._alight||0) + 1;
+        if(f._alight === 1) say('HE IS ON FIRE!', nameOf(f));
+        if(f._alight >= 3){ var w = opponentOf(f); if(w){ win(w, 'SET HIM ALIGHT'); return true; } }
+      }
+    }
+    return false;
+  }
+  function checkCasket(){
+    if(!ST.casket) return false;
+    var L = fs(), c = ST.casket;
+    for(var i=0;i<L.length;i++){
+      var f = L[i]; if(!f) continue;
+      var inIt = Math.hypot(f.x-c.x, f.z-c.z) < 0.85 && ((f.hp||100) < 25 || f.ragdoll || f.state==='down');
+      if(inIt){
+        c.inside = f; c.closing = (c.closing||0) + 1;
+        if(c.closing === 1) say('HE IS IN THE CASKET', nameOf(f));
+        if(c.closing >= 4){ var w = opponentOf(f); if(w){ c.open = false; win(w, 'SHUT THE LID'); return true; } }
+      } else if(c.inside === f){ c.inside = null; c.closing = 0; }
+    }
+    return false;
+  }
+  function checkBlood(){
+    var L = fs();
+    for(var i=0;i<L.length;i++){
+      var f = L[i]; if(!f) continue;
+      var bled = f.bleeding || f._bloodied || (f.blood||0) > 0.2;
+      if(bled){ var w = opponentOf(f); if(w){ win(w, 'FIRST BLOOD'); return true; } }
+    }
+    return false;
+  }
+
+  function check(){
+    if(!ST.armed || ST.fired) return;
+    ST.checks++;
+    var w = ST.win;
+    if(ST.roof) checkRoofFalls();
+    if(w === 'PIN_SUB_OR_ESCAPE') checkEscape();
+    else if(w === 'THROUGH_TABLE') checkThroughTable();
+    else if(w === 'BURN') checkBurn();
+    else if(w === 'CASKET') checkCasket();
+    else if(w === 'BLOOD') checkBlood();
+    // GRAB is owned by BANNON_PROPS.reach, which already calls declareWinner
+    // PIN_SUB / SUB_ONLY / TEN_COUNT / *_ANYWHERE are the engine's own rules
+    // the fire needs to look alive
+    if(ST.fire){
+      ST.fire.t += 0.12;
+      ST.fire.planes.forEach(function(m, i){
+        try{
+          if(m.material.map){ m.material.map.offset.y = (ST.fire.t*0.6 + i*0.13) % 1; }
+          m.material.opacity = 0.72 + 0.22*Math.sin(ST.fire.t*3 + i);
+        }catch(e){}
+      });
+    }
+  }
+
+  // ── ARM / CLEAR ───────────────────────────────────────────────────────────────────────────────
+  function clear(){
+    if(ST.tick){ clearInterval(ST.tick); ST.tick = null; }
+    try{ if(window.BANNON_CAGE && window.BANNON_CAGE.remove) window.BANNON_CAGE.remove(); }catch(e){}
+    try{ if(window.BANNON_PROPS){ window.BANNON_PROPS.clearObjective(); window.BANNON_PROPS.clear(); } }catch(e){}
+    ST.objects.forEach(function(o){
+      try{ if(o.parent) o.parent.remove(o);
+        o.traverse&&o.traverse(function(m){ if(m.isMesh){ m.geometry&&m.geometry.dispose(); } }); }catch(e){}
+    });
+    fs().forEach(function(f){ if(f){ f._alight = 0; f._cageHigh = false; f._roofOn = false; f._roofFell = false; } });
+    ST.gen++;                                  // anything still loading now belongs to a dead match
+    ST.objects = []; ST.built = []; ST.type = null; ST.win = null; ST.armed = false;
+    ST.roof = null; ST.fire = null; ST.casket = null; ST.fired = null;
+    window.BANNON_CELL_ROOF = null;
+  }
+
+  function arm(type){
+    clear();
+    type = String(type || (window.MATCH_SETUP && window.MATCH_SETUP.matchType) || 'ONE_ON_ONE').toUpperCase();
+    var S = STIPS[type];
+    if(!S){ ST.type = type; ST.win = 'PIN_SUB'; return false; }   // an ordinary match needs no dressing
+    ST.type = type; ST.win = S.win; ST.armed = true;
+    (S.dress||[]).forEach(function(d){
+      if(d === 'cage')      dressCage();
+      else if(d === 'roof') dressRoof();
+      else if(d === 'ladders') dressLadders(type === 'TLC' ? 3 : 2);
+      else if(d === 'belt') dressObjective('belt');
+      else if(d === 'case') dressObjective('case');
+      else if(d === 'tables') dressTables(type === 'TABLES' ? 3 : 2);
+      else if(d === 'chairs') dressChairs(3);
+      else if(d === 'fire') dressFire();
+      else if(d === 'casket') dressCasket();
+      else if(d === 'backstage') dressBackstage();
+      else if(d === 'weapons') dressWeapons(5);
+    });
+    ST.tick = setInterval(check, 250);
+    console.log('%c[BANNON_STIP] ' + S.label + ' — ' + ST.built.join(', ') + '  ·  win by ' + S.win, 'color:#ff9a4a');
+    return true;
+  }
+
+  // ── THE ZONE BUTTON REACHES A PROP ────────────────────────────────────────────────────────────
+  // Ladder climbing had no input. ZONE already resolves apron / floor / climb by context, which is
+  // exactly the MDickie and WWE convention, so a prop within reach becomes another thing ZONE means
+  // rather than a new button on a phone screen that has no room for one.
+  function armInput(){
+    try{
+      if(typeof Fighter === 'undefined' || !Fighter.prototype.zoneAction) return false;
+      if(Fighter.prototype.zoneAction.__stip) return true;
+      var _za = Fighter.prototype.zoneAction;
+      var za = function(){
+        try{
+          var P = window.BANNON_PROPS;
+          if(ST.armed && P){
+            // already on a ladder with something hanging: this tap is the REACH
+            if(this._onProp && this._onProp.type === 'ladder' && !this._onTop && P.objective && !P.objective.grabbed)
+              return P.reach(this);
+            var near = P.nearest(this, 1.5);
+            if(near) return P.interact(this);
+          }
+        }catch(e){}
+        return _za.apply(this, arguments);
+      };
+      za.__stip = true;
+      Fighter.prototype.zoneAction = za;
+      return true;
+    }catch(e){ return false; }
+  }
+
+  // ── ARM AT THE BELL ───────────────────────────────────────────────────────────────────────────
+  function armStart(){
+    if(window.startFight && !window.startFight.__stip){
+      var _sf = window.startFight;
+      var sf = function(){
+        var r = _sf.apply(this, arguments);
+        // after the world builds, not before — dressing needs arenaGroup to exist
+        setTimeout(function(){
+          try{ armInput(); arm(); }catch(e){}
+        }, 1200);
+        return r;
+      };
+      sf.__stip = true;
+      try{ window.startFight = sf; }catch(e){ return false; }
+      return true;
+    }
+    return false;
+  }
+  (function tryArm(n){ var a = armStart(); armInput(); if((a && n>2) || n > 100) return;
+    setTimeout(function(){ tryArm(n+1); }, 300); })(0);
+
+  window.BANNON_STIP = {
+    STIPS: STIPS,
+    arm: arm, clear: clear, check: check, armInput: armInput,
+    type: function(){ return ST.type; },
+    winBy: function(){ return ST.win; },
+    built: function(){ return ST.built.slice(); },
+    roof: function(){ return ST.roof; },
+    casket: function(){ return ST.casket; },
+    onFire: function(){ return !!ST.fire; },
+    result: function(){ return ST.fired; },
+    labelOf: function(t){ var s = STIPS[String(t||'').toUpperCase()]; return s ? s.label : ''; },
+    stats: function(){ return { type:ST.type, win:ST.win, armed:ST.armed, built:ST.built.slice(),
+      objects:ST.objects.length, checks:ST.checks, fired:ST.fired,
+      inputWired: !!(typeof Fighter!=='undefined' && Fighter.prototype.zoneAction && Fighter.prototype.zoneAction.__stip) }; }
+  };
+  console.log('%c[BANNON_STIP] ' + Object.keys(STIPS).length +
+    ' stipulations are physical — cage, cell roof, ladders, tables, real fire, the MDickie coffin',
+    'color:#7CFC00');
 })();
 </script>
 
