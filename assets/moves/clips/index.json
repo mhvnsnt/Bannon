@@ -10625,5 +10625,14 @@
   "coverFrac": 0.215,
   "lowCoverage": true,
   "roleBy": "inversion (head below hip)"
+ },
+ "BRAINBUSTER_VERTICAL_SHEER": {
+  "file": "BRAINBUSTER_VERTICAL_SHEER.json",
+  "bytes": 52446,
+  "dur": 4.0,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a wrestler lifts an opponent vertically upside down, holds them in the air, then drops straight down driving them head first into the mat",
+  "bones": 17
  }
 }
