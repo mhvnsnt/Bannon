@@ -4,6 +4,33 @@
 - Async/GameThread Layered Injection for override states.
 - RESTORE_CORE_VARIABLES failsafe implemented.
 
+## OWNER LAW — NO GUESSES. MEASURE. (2026-07-27, PERMANENT, OVERRIDES EVERYTHING)
+Owner, verbatim: "It should map by mocap frames so it can see the moves like how we were viewing the
+mocap not by guesses bruh, new rule to remember, no more guesses. Permanently main rule over all
+rules. If we can find a way to see and press buttons or hear or use real senses we do it."
+
+THIS OUTRANKS EVERY OTHER RULE IN THIS FILE.
+
+If a fact can be OBSERVED, observe it. Do not infer it from a name, a label, a category field, or
+what something "sounds like". Every single miss in this project traces to a guess:
+  - `CrotchChop` is labelled `cat:'strike'` in fbx_move_map. It is a DX TAUNT. The label was a guess
+    by whoever wrote the metadata; the FRAMES show both hands crossing at the pelvis with no forward
+    extension and no target. Filtering on the label let it into strike slots.
+  - Tag moves by name would have missed STRONGZERO and wrongly tagged HAMMERLOCKDDT. Counting body
+    skeleton roots in the frames got it right.
+  - "Animations aren't firing" was tested by calling internal functions for months. Pressing the
+    REAL on-screen buttons found it in one run — and the first attempt pressed the wrong button,
+    which is itself the lesson.
+  - Identity swapping in two-man capture was invisible until the torso COLOUR was measured.
+  - Text-to-motion quality was unknowable until the frames were RENDERED and looked at.
+
+THE PRACTICE:
+  - SEE IT. render_clip.py draws any clip. verify_capture.py draws the tracked skeleton on the video.
+    Look before banking, promoting, mapping or claiming.
+  - PRESS IT. Drive the real controls in the harness, not the functions behind them.
+  - COUNT IT. Call counts, coverage fractions, separation between distributions.
+  - Metadata is a HINT, never an authority. Derive from the data whenever the data exists.
+
 ## R.A.B.B.I.T.S.F.O.O.T. Feedback Loop
 - Log Tailing implemented in server.ts watching Bannon.log.
 - Error Parsing filters for 'Error:', 'Warning:', 'Exception', 'RESTORE_CORE_VARIABLES'.

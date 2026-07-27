@@ -10634,5 +10634,59 @@
   "via": "text_to_clip/momask",
   "prompt": "a wrestler lifts an opponent vertically upside down, holds them in the air, then drops straight down driving them head first into the mat",
   "bones": 17
+ },
+ "GEN_JAB": {
+  "file": "GEN_JAB.json",
+  "bytes": 52463,
+  "dur": 1.4,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person throws a fast straight left jab punch forward then returns the hand to guard",
+  "bones": 17
+ },
+ "GEN_CROSS": {
+  "file": "GEN_CROSS.json",
+  "bytes": 52561,
+  "dur": 1.7,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person throws a powerful straight right cross punch rotating the hips",
+  "bones": 17
+ },
+ "GEN_UPPERCUT": {
+  "file": "GEN_UPPERCUT.json",
+  "bytes": 52567,
+  "dur": 1.85,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person throws an uppercut punch driving upward from low to high",
+  "bones": 17
+ },
+ "GEN_HOOK": {
+  "file": "GEN_HOOK.json",
+  "bytes": 52473,
+  "dur": 1.65,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person throws a hooking punch swinging the arm horizontally at head height",
+  "bones": 17
+ },
+ "GEN_ELBOW": {
+  "file": "GEN_ELBOW.json",
+  "bytes": 52402,
+  "dur": 2.0,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person strikes forward with a bent elbow at head height",
+  "bones": 17
+ },
+ "GEN_KNEE": {
+  "file": "GEN_KNEE.json",
+  "bytes": 52376,
+  "dur": 1.25,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person drives a knee upward hard into an opponent in front",
+  "bones": 17
  }
 }
