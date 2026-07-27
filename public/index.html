@@ -279,6 +279,98 @@ window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10
 })();
 </script>
 
+<!-- ════════════════════════════════════════════════════════════════════════════════════════════
+  BANNON SAVE SLOTS — the storage scoping layer. Runs SECOND, right after the OTA swap and before
+  three.js and the engine, because every module that owns state reads its key while it loads. Doing
+  this later would mean modules had already read slot 1 and a switch could not reach them.
+
+  Owner: "in different modes like WWE and mdickie games there may be seperate saves or roster setups
+  than the main exhibition since things change in different modes differently ... mdickie doesn't
+  have separate rosters and save slots per mode but wwe games do and we are mixing features from
+  both ... gotta make sure the saves across modes persist per each too."
+
+  So the split is deliberate, and it is the mix he asked for:
+
+    GLOBAL — one copy, shared by every mode and every slot. MDickie's side of the mix: a wrestler you
+             created exists everywhere, and your move sets, models, settings and music follow you.
+             bannonForged, bannon_caw_*, bannonCharModels, bannonChosenModels, bannon_moveset_slots,
+             bannon_movesets_v1, BANNON_SETTINGS, music, tuning, the OTA cache.
+
+    SCOPED — one copy PER MODE PER SLOT. WWE's side: what happens in Universe does not touch Career.
+             bannon_universe_v1 (roster brands, records, titles, teams, rivalries, the card, the
+             week), bannon_life_v1 (clock, needs, money, where you are, the diary), bannon_story_v1
+             (relationships, allegiance, events), bannon_stats_v1.
+
+  EXHIBITION is a mode like any other, which is what makes "things change in different modes
+  differently" true: booking a title change in Universe leaves the exhibition roster alone.
+
+  The scoping is a localStorage interception rather than an edit to fifteen modules. A scoped key
+  becomes `key@MODE#slot` on the way through; nothing that reads or writes it knows or cares.
+════════════════════════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+  var ACTIVE = '__bannon_active_save';        // never scoped — it is the pointer to the scope
+  var INDEX  = '__bannon_save_index';         // never scoped — the catalogue of slots
+
+  // Everything mode-scoped. Prefix match, so bannon_universe_v1 and any future _v2 both scope.
+  var SCOPED = ['bannon_universe_v1', 'bannon_life_v1', 'bannon_story_v1', 'bannon_stats_v1'];
+
+  var raw = null;
+  try{ raw = window.localStorage; }catch(e){}
+  if(!raw) return;                            // no storage at all — nothing to scope, boot normally
+
+  // read/write the pointer through the RAW api, or scoping would recurse on its own key
+  function rawGet(k){ try{ return raw.getItem.call(raw, k); }catch(e){ return null; } }
+  function rawSet(k,v){ try{ raw.setItem.call(raw, k, v); }catch(e){} }
+
+  function active(){
+    var s = rawGet(ACTIVE);
+    if(s){ try{ var o = JSON.parse(s); if(o && o.mode) return o; }catch(e){} }
+    return { mode:'EXHIBITION', slot:1 };
+  }
+  var CUR = active();
+
+  function isScoped(k){
+    k = String(k||'');
+    for(var i=0;i<SCOPED.length;i++) if(k.indexOf(SCOPED[i]) === 0) return true;
+    return false;
+  }
+  function scope(k){ return isScoped(k) ? (k + '@' + CUR.mode + '#' + CUR.slot) : k; }
+
+  var _get = raw.getItem.bind(raw), _set = raw.setItem.bind(raw), _rm = raw.removeItem.bind(raw);
+  try{
+    Object.defineProperty(window, '__BANNON_RAW_LS', { value:{ get:_get, set:_set, rm:_rm }, writable:false });
+  }catch(e){}
+
+  // Patch the PROTOTYPE methods. Assigning to localStorage.getItem directly is silently ignored in
+  // some engines because Storage is an exotic object whose own properties are index-like.
+  try{
+    var P = Object.getPrototypeOf(raw) || Storage.prototype;
+    P.getItem = function(k){ return _get(scope(k)); };
+    P.setItem = function(k, v){ return _set(scope(k), v); };
+    P.removeItem = function(k){ return _rm(scope(k)); };
+  }catch(e){ return; }
+
+  window.BANNON_SAVE_SCOPE = {
+    SCOPED: SCOPED.slice(),
+    ACTIVE_KEY: ACTIVE, INDEX_KEY: INDEX,
+    current: function(){ return { mode:CUR.mode, slot:CUR.slot }; },
+    key: scope,
+    isScoped: isScoped,
+    raw: { get:_get, set:_set, rm:_rm },
+    // switching is a page reload on purpose: modules read their state as they load, so a live swap
+    // would leave half the game looking at the old save. Loading a save reloads the world in every
+    // wrestling game there has ever been.
+    use: function(mode, slot){
+      rawSet(ACTIVE, JSON.stringify({ mode:String(mode||'EXHIBITION'), slot:(slot|0)||1 }));
+      CUR = active();
+      return CUR;
+    }
+  };
+})();
+</script>
+
 <!-- THREE.js loaded SYNCHRONOUSLY before inline script: no race condition -->
 <script>
 // ============================================================================================
@@ -52675,6 +52767,353 @@ window.__deriveVariant = async function(key){
   };
   console.log('%c[BANNON_ROSTER] roster tab — view, edit, drag between brands, teams, stables, rivalries',
     'color:#7CFC00');
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_SAVES — save slots per mode, and the screen that manages them.
+//
+// The scoping layer at the top of <head> makes `bannon_universe_v1` resolve to
+// `bannon_universe_v1@UNIVERSE#2` when that slot is active. This module is everything above it:
+// the catalogue of slots, what each one contains, and the create / load / copy / rename / delete
+// / export / import verbs — plus the doors that put a mode into its own save when you enter it.
+//
+// WHY MODES DIFFER (owner: "things change in different modes differently"): each mode has its own
+// slots, so a title change you book in Universe is invisible in Career, and Exhibition keeps the
+// pristine roster no matter what either of them does. What DOESN'T split is anything you made —
+// created wrestlers, models, move sets, settings and music are global, MDickie-style, so they
+// follow you into every mode and every slot.
+// ============================================================================================
+(function(){
+  'use strict';
+
+  var SC = window.BANNON_SAVE_SCOPE;
+  var ST = { root:null, mode:null, open:false };
+
+  // The modes that carry a world. GOD_WITHIN and CAREER both run BANNON_LIFE but they are different
+  // playthroughs of it, so they get different slots.
+  var MODES = [
+    { id:'EXHIBITION', label:'Exhibition', desc:'Quick matches. The roster stays as it shipped.' },
+    { id:'UNIVERSE',   label:'Universe',   desc:'You book the shows. Brands, belts and feuds are yours.' },
+    { id:'CAREER',     label:'Career',     desc:'One wrestler, living the weeks between shows.' },
+    { id:'GOD_WITHIN', label:'God Within', desc:'The story RPG and its world.' },
+    { id:'BOOKING',    label:'Booking',    desc:'A promoter save kept apart from your Universe.' }
+  ];
+  var SLOTS_PER_MODE = 6;
+
+  function rawGet(k){ return SC ? SC.raw.get(k) : null; }
+  function rawSet(k,v){ if(SC) SC.raw.set(k,v); }
+  function rawRm(k){ if(SC) SC.raw.rm(k); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function toast(t){ try{ (window.toast||function(){})(t); }catch(e){} }
+
+  function index(){
+    try{ var s = rawGet(SC.INDEX_KEY); if(s) return JSON.parse(s) || {}; }catch(e){}
+    return {};
+  }
+  function writeIndex(ix){ rawSet(SC.INDEX_KEY, JSON.stringify(ix)); return ix; }
+  function slotId(mode, slot){ return mode + '#' + slot; }
+
+  function keysFor(mode, slot){
+    return (SC.SCOPED || []).map(function(k){ return k + '@' + mode + '#' + slot; });
+  }
+  // What is actually IN a slot, read straight off the stored bytes so the card cannot lie about a
+  // save it has not opened.
+  function summarise(mode, slot){
+    var out = { mode:mode, slot:slot, exists:false, bytes:0 };
+    keysFor(mode, slot).forEach(function(k){
+      var v = rawGet(k); if(v == null) return;
+      out.exists = true; out.bytes += v.length;
+      try{
+        var o = JSON.parse(v);
+        if(k.indexOf('bannon_universe') === 0){
+          out.week = o.week; out.roster = o.fighters ? Object.keys(o.fighters).length : 0;
+          out.titles = o.titles ? Object.keys(o.titles).filter(function(t){ return o.titles[t]; }).length : 0;
+          out.teams = o.teams ? Object.keys(o.teams).length : 0;
+        }
+        if(k.indexOf('bannon_life') === 0){
+          out.day = o.day; out.me = o.me; out.money = o.money;
+        }
+      }catch(e){}
+    });
+    var ix = index()[slotId(mode, slot)];
+    if(ix){ out.name = ix.name; out.saved = ix.saved; }
+    return out;
+  }
+
+  function stamp(mode, slot, name){
+    var ix = index(), id = slotId(mode, slot);
+    ix[id] = { name: name || (ix[id] && ix[id].name) || (mode.charAt(0) + mode.slice(1).toLowerCase() + ' ' + slot),
+               mode: mode, slot: slot, saved: Date.now() };
+    return writeIndex(ix);
+  }
+
+  function use(mode, slot, reload){
+    if(!SC) return false;
+    SC.use(mode, slot);
+    stamp(mode, slot);
+    if(reload !== false) location.reload();
+    return true;
+  }
+  function erase(mode, slot){
+    keysFor(mode, slot).forEach(rawRm);
+    var ix = index(); delete ix[slotId(mode, slot)]; writeIndex(ix);
+    return true;
+  }
+  function copy(fromMode, fromSlot, toMode, toSlot){
+    if(fromMode === toMode && fromSlot === toSlot) return false;
+    erase(toMode, toSlot);
+    (SC.SCOPED || []).forEach(function(base){
+      var v = rawGet(base + '@' + fromMode + '#' + fromSlot);
+      if(v != null) rawSet(base + '@' + toMode + '#' + toSlot, v);
+    });
+    var src = index()[slotId(fromMode, fromSlot)];
+    stamp(toMode, toSlot, (src && src.name ? src.name + ' (copy)' : null));
+    return true;
+  }
+  function rename(mode, slot, name){
+    var ix = index(), id = slotId(mode, slot);
+    ix[id] = ix[id] || { mode:mode, slot:slot, saved:Date.now() };
+    ix[id].name = name; writeIndex(ix); return true;
+  }
+  // Export/import so a save survives a reinstall — the phone is the only copy otherwise.
+  function exportSlot(mode, slot){
+    var blob = { _bannon:'save', v:1, mode:mode, slot:slot, at:Date.now(), data:{} };
+    (SC.SCOPED || []).forEach(function(base){
+      var v = rawGet(base + '@' + mode + '#' + slot);
+      if(v != null) blob.data[base] = v;
+    });
+    var ix = index()[slotId(mode, slot)];
+    if(ix) blob.name = ix.name;
+    return JSON.stringify(blob);
+  }
+  function importSlot(text, mode, slot){
+    var b; try{ b = JSON.parse(text); }catch(e){ return false; }
+    if(!b || b._bannon !== 'save' || !b.data) return false;
+    erase(mode, slot);
+    Object.keys(b.data).forEach(function(base){ rawSet(base + '@' + mode + '#' + slot, b.data[base]); });
+    stamp(mode, slot, b.name || null);
+    return true;
+  }
+
+  // ── SCREEN ────────────────────────────────────────────────────────────────────────────────────
+  var CSS = ''+
+  '#saveSlots{position:fixed;inset:5% 4%;z-index:100046;background:#05070c;border:1px solid #7CFC0088;'+
+    'border-radius:12px;color:#e8e2d4;font:12px var(--f-ui);display:none;flex-direction:column;'+
+    'box-shadow:0 14px 48px #000d;overflow:hidden}'+
+  '#saveSlots .sv-top{padding:9px 12px;border-bottom:1px solid #7CFC0044;display:flex;gap:7px;align-items:center;flex-wrap:wrap}'+
+  '#saveSlots .sv-top b{font-family:"Bebas Neue";letter-spacing:3px;font-size:19px;color:#7CFC00}'+
+  '#saveSlots .sv-mode{background:#151821;border:1px solid #ffffff22;color:#c9c2b4;border-radius:14px;'+
+    'padding:4px 11px;font:700 10px var(--f-ui);letter-spacing:1px;cursor:pointer}'+
+  '#saveSlots .sv-mode.on{background:#0d2a08;border-color:#7CFC00;color:#7CFC00}'+
+  '#saveSlots .sv-body{flex:1;overflow-y:auto;padding:10px 12px;-webkit-overflow-scrolling:touch}'+
+  '#saveSlots .sv-desc{opacity:.7;font-size:11px;margin-bottom:9px}'+
+  '#saveSlots .sv-card{background:#0d1017;border:1px solid #ffffff18;border-radius:9px;padding:9px;margin-bottom:8px}'+
+  '#saveSlots .sv-card.cur{border-color:#7CFC00;background:#0d1a0d}'+
+  '#saveSlots .sv-card.empty{opacity:.62;border-style:dashed}'+
+  '#saveSlots .sv-nm{display:flex;align-items:center;gap:7px}'+
+  '#saveSlots .sv-nm b{font-size:13px}'+
+  '#saveSlots .sv-badge{font:8px var(--f-mono);letter-spacing:1px;color:#7CFC00;border:1px solid #7CFC0066;'+
+    'border-radius:4px;padding:1px 5px}'+
+  '#saveSlots .sv-meta{font:10px var(--f-mono);opacity:.75;margin:5px 0}'+
+  '#saveSlots .sv-acts{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px}'+
+  '#saveSlots button.sv-b{background:#0d2a08;border:1px solid #7CFC0055;color:#9de86a;border-radius:6px;'+
+    'padding:5px 11px;font:700 10px var(--f-ui);cursor:pointer}'+
+  '#saveSlots button.sv-b.warn{background:#2a0d08;border-color:#ff7a6b55;color:#ff9a8b}'+
+  '#saveSlots input,#saveSlots textarea,#saveSlots select{background:#12141c;color:#e8e2d4;'+
+    'border:1px solid #ffffff22;border-radius:6px;padding:5px 7px;font:11px var(--f-ui);width:100%}'+
+  '#saveSlots .sv-note{font-size:11px;opacity:.72;border-top:1px solid #ffffff14;margin-top:10px;padding-top:9px}';
+
+  function build(){
+    if(ST.root) return ST.root;
+    var s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s);
+    var d = document.createElement('div'); d.id = 'saveSlots';
+    d.innerHTML = '<div class="sv-top"><b>💾 SAVES</b><span id="svModes"></span>'+
+      '<button class="sv-mode" id="svClose" style="margin-left:auto">CLOSE</button></div>'+
+      '<div class="sv-body" id="svBody"></div>';
+    document.body.appendChild(d);
+    ST.root = d;
+    d.querySelector('#svClose').onclick = close;
+    return d;
+  }
+
+  function render(){
+    var d = build(), cur = SC.current();
+    if(!ST.mode) ST.mode = cur.mode;
+    d.querySelector('#svModes').innerHTML = MODES.map(function(m){
+      return '<button class="sv-mode'+(ST.mode===m.id?' on':'')+'" data-m="'+m.id+'">'+esc(m.label)+'</button>';
+    }).join('');
+    var M = MODES.filter(function(m){ return m.id===ST.mode; })[0] || MODES[0];
+    var h = '<div class="sv-desc">'+esc(M.desc)+'</div>';
+    for(var i=1;i<=SLOTS_PER_MODE;i++){
+      var s = summarise(ST.mode, i);
+      var isCur = (cur.mode===ST.mode && cur.slot===i);
+      h += '<div class="sv-card'+(isCur?' cur':'')+(s.exists?'':' empty')+'">'+
+        '<div class="sv-nm"><b>'+esc(s.name || (M.label+' '+i))+'</b>'+
+          (isCur?'<span class="sv-badge">PLAYING</span>':'')+
+          (s.exists?'':'<span class="sv-badge" style="color:#8a8a8a;border-color:#8a8a8a55">EMPTY</span>')+
+        '</div>';
+      if(s.exists){
+        var bits = [];
+        if(s.week != null) bits.push('week '+s.week);
+        if(s.roster) bits.push(s.roster+' wrestlers');
+        if(s.titles != null) bits.push(s.titles+' champions');
+        if(s.teams) bits.push(s.teams+' teams');
+        if(s.day != null) bits.push('day '+s.day+(s.me?(' as '+String(s.me).replace(/_/g,' ')):''));
+        if(s.money != null) bits.push('$'+s.money);
+        bits.push((s.bytes/1024).toFixed(1)+' KB');
+        if(s.saved) bits.push(new Date(s.saved).toLocaleString());
+        h += '<div class="sv-meta">'+esc(bits.join('  ·  '))+'</div>';
+      }
+      h += '<div class="sv-acts">'+
+        (isCur ? '' : '<button class="sv-b" data-a="use" data-i="'+i+'">'+(s.exists?'LOAD':'START HERE')+'</button>')+
+        (s.exists ? '<button class="sv-b" data-a="rename" data-i="'+i+'">RENAME</button>'+
+                    '<button class="sv-b" data-a="copy" data-i="'+i+'">COPY TO…</button>'+
+                    '<button class="sv-b" data-a="export" data-i="'+i+'">EXPORT</button>'+
+                    '<button class="sv-b warn" data-a="erase" data-i="'+i+'">ERASE</button>' : '')+
+        '</div>';
+      if(s.exists) h += '<div id="svOut'+i+'" style="margin-top:6px"></div>';
+      h += '</div>';
+    }
+    h += '<div class="sv-card"><div class="sv-nm"><b>IMPORT A SAVE</b></div>'+
+      '<div class="sv-meta">Paste an exported save to restore it into a slot in this mode.</div>'+
+      '<textarea id="svImp" rows="3" placeholder="paste here"></textarea>'+
+      '<div class="sv-acts"><select id="svImpSlot" style="width:auto">'+
+        Array.apply(null,Array(SLOTS_PER_MODE)).map(function(_,k){
+          return '<option value="'+(k+1)+'">slot '+(k+1)+'</option>'; }).join('')+
+      '</select><button class="sv-b" data-a="import">IMPORT</button></div></div>';
+    h += '<div class="sv-note">Your created wrestlers, models, move sets, settings and music are ' +
+         'GLOBAL — they follow you into every mode and every slot. What a slot holds is the world: ' +
+         'the roster’s brands and records, titles, teams, rivalries, the card and the week, and — ' +
+         'in the modes that have one — the clock, your money and the diary. Loading a save reloads ' +
+         'the game, the same as it does anywhere else.</div>';
+    d.querySelector('#svBody').innerHTML = h;
+    wire();
+  }
+
+  function wire(){
+    var d = ST.root;
+    d.querySelectorAll('[data-m]').forEach(function(b){
+      b.onclick = function(){ ST.mode = b.dataset.m; render(); }; });
+    d.querySelectorAll('[data-a]').forEach(function(b){
+      b.onclick = function(){
+        var a = b.dataset.a, i = +b.dataset.i;
+        if(a === 'use'){ use(ST.mode, i); return; }
+        if(a === 'erase'){
+          var out = d.querySelector('#svOut'+i);
+          if(b.dataset.armed !== '1'){ b.dataset.armed = '1'; b.textContent = 'ERASE — SURE?';
+            setTimeout(function(){ if(b) { b.dataset.armed=''; b.textContent='ERASE'; } }, 4000); return; }
+          erase(ST.mode, i);
+          if(SC.current().mode === ST.mode && SC.current().slot === i) { location.reload(); return; }
+          render(); return;
+        }
+        if(a === 'rename'){
+          var out2 = d.querySelector('#svOut'+i);
+          out2.innerHTML = '<input id="svRn'+i+'" placeholder="name this save" value="'+
+            esc((summarise(ST.mode,i).name)||'')+'"><div class="sv-acts">'+
+            '<button class="sv-b" data-rn="'+i+'">SAVE NAME</button></div>';
+          out2.querySelector('[data-rn]').onclick = function(){
+            rename(ST.mode, i, (d.querySelector('#svRn'+i)||{}).value || null); render(); };
+          return;
+        }
+        if(a === 'copy'){
+          var out3 = d.querySelector('#svOut'+i);
+          out3.innerHTML = '<div class="sv-acts"><select id="svCpM'+i+'" style="width:auto">'+
+            MODES.map(function(m){ return '<option value="'+m.id+'"'+(m.id===ST.mode?' selected':'')+'>'+
+              esc(m.label)+'</option>'; }).join('')+'</select>'+
+            '<select id="svCpS'+i+'" style="width:auto">'+
+            Array.apply(null,Array(SLOTS_PER_MODE)).map(function(_,k){
+              return '<option value="'+(k+1)+'">slot '+(k+1)+'</option>'; }).join('')+'</select>'+
+            '<button class="sv-b" data-cp="'+i+'">COPY</button></div>';
+          out3.querySelector('[data-cp]').onclick = function(){
+            var m = d.querySelector('#svCpM'+i).value, s2 = +d.querySelector('#svCpS'+i).value;
+            if(copy(ST.mode, i, m, s2)) toast('copied into '+m+' slot '+s2);
+            ST.mode = m; render(); };
+          return;
+        }
+        if(a === 'export'){
+          var out4 = d.querySelector('#svOut'+i);
+          out4.innerHTML = '<textarea rows="3" readonly id="svEx'+i+'"></textarea>'+
+            '<div class="sv-meta">Copy this text somewhere safe. IMPORT restores it.</div>';
+          var ta = d.querySelector('#svEx'+i); ta.value = exportSlot(ST.mode, i);
+          try{ ta.select(); }catch(e){}
+          return;
+        }
+        if(a === 'import'){
+          var txt = (d.querySelector('#svImp')||{}).value || '';
+          var slot = +(d.querySelector('#svImpSlot')||{}).value || 1;
+          if(importSlot(txt, ST.mode, slot)){ toast('imported into slot '+slot); render(); }
+          else toast('that is not a BANNON save');
+          return;
+        }
+      };
+    });
+  }
+
+  function open(mode){ build(); ST.open = true; if(mode) ST.mode = mode; ST.root.style.display='flex'; render(); }
+  function close(){ if(ST.root) ST.root.style.display='none'; ST.open = false; }
+
+  // ── ENTERING A MODE PUTS YOU IN ITS SAVE ──────────────────────────────────────────────────────
+  // Without this the slots would be a screen you had to remember to visit. Pressing UNIVERSE should
+  // land you in your Universe save, not in whatever save you were last in. If you are already in the
+  // right mode nothing happens — no reload, no interruption.
+  function enter(mode){
+    if(!SC) return false;
+    var cur = SC.current();
+    if(cur.mode === mode) return false;
+    // pick the slot you last played in this mode, else the first one with something in it, else 1
+    var ix = index(), best = null, bestAt = -1;
+    for(var k in ix){ var e = ix[k];
+      if(e && e.mode === mode && (e.saved||0) > bestAt){ bestAt = e.saved||0; best = e.slot; } }
+    if(best == null){ for(var i=1;i<=SLOTS_PER_MODE;i++){ if(summarise(mode,i).exists){ best=i; break; } } }
+    use(mode, best || 1);        // reloads
+    return true;
+  }
+
+  (function doors(n){
+    var wired = 0;
+    // each play-mode button claims its mode before the mode's own handler runs
+    [['pmUniverse','UNIVERSE'],['pmCareer','CAREER'],['pmGodWithin','GOD_WITHIN'],
+     ['pmFreeRoam','GOD_WITHIN'],['pmExhibition','EXHIBITION']].forEach(function(p){
+      var el = document.getElementById(p[0]);
+      if(!el || el.__sv) return;
+      el.__sv = true; wired++;
+      el.addEventListener('click', function(ev){
+        if(enter(p[1])) { ev.stopImmediatePropagation(); ev.preventDefault(); }
+      }, true);
+    });
+    // a SAVES tile on the play menu
+    var pm = document.querySelector('#playMenu .play-grid');
+    if(pm && !pm.__sv){
+      pm.__sv = true;
+      var b = document.createElement('button');
+      b.className = 'play-mode'; b.id = 'pmSaves';
+      b.innerHTML = '<span class="pm-ico">💾</span><span class="pm-t">SAVES</span>'+
+        '<span class="pm-d">Slots per mode — load, copy, rename, export</span>';
+      b.addEventListener('click', function(){
+        var m = document.getElementById('playMenu'); if(m) m.classList.add('hidden'); open(); });
+      pm.appendChild(b); wired++;
+    }
+    if(wired < 2 && n < 80) setTimeout(function(){ doors(n+1); }, 300);
+  })(0);
+
+  window.BANNON_SAVES = {
+    MODES: MODES, SLOTS: SLOTS_PER_MODE,
+    open: open, close: close,
+    current: function(){ return SC ? SC.current() : null; },
+    list: function(mode){ var out=[]; for(var i=1;i<=SLOTS_PER_MODE;i++) out.push(summarise(mode||(SC&&SC.current().mode), i)); return out; },
+    summarise: summarise, use: use, enter: enter, erase: erase, copy: copy, rename: rename,
+    exportSlot: exportSlot, importSlot: importSlot, index: index,
+    stats: function(){
+      var cur = SC ? SC.current() : null, used = 0;
+      MODES.forEach(function(m){ for(var i=1;i<=SLOTS_PER_MODE;i++) if(summarise(m.id,i).exists) used++; });
+      return { scoped: SC ? SC.SCOPED.length : 0, modes: MODES.length, slotsPerMode: SLOTS_PER_MODE,
+               inUse: used, current: cur }; }
+  };
+  console.log('%c[BANNON_SAVES] ' + MODES.length + ' modes x ' + SLOTS_PER_MODE +
+    ' slots — worlds are per-mode, creations are global','color:#7CFC00');
 })();
 </script>
 
