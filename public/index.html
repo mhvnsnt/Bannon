@@ -49987,6 +49987,42 @@ window.__deriveVariant = async function(key){
     return false;
   }
 
+  // ---- THE LIGHT BUDGET -------------------------------------------------------------------------
+  // The arena builds 16 forward lights: ambient, hemisphere, key, three rims, a spot, four points
+  // and the truss spots. three.js's forward renderer evaluates EVERY one of them for EVERY fragment
+  // of EVERY material, and rebuilds every shader when the set changes. Sixteen is wrong on any
+  // target and badly wrong on a phone.
+  //
+  // The cheap fix is to switch them off, and it looks awful — the rims and the point fills are what
+  // give the arena its colour. So instead their contribution is FOLDED INTO THE AMBIENT before they
+  // are zeroed: sum the colour each dropped light was adding, weight it by intensity, and push that
+  // into the ambient term. You lose the directionality, you keep the palette.
+  function foldLights(keepSet, lights){
+    var amb = null;
+    for (var i = 0; i < lights.length; i++) if (lights[i].isAmbientLight){ amb = lights[i]; break; }
+    if (!amb) return;
+    if (amb.userData.__foldBase === undefined){
+      amb.userData.__foldBase = { r:amb.color.r, g:amb.color.g, b:amb.color.b, i:amb.intensity };
+    }
+    var B = amb.userData.__foldBase;
+    var r = B.r * B.i, g = B.g * B.i, b = B.b * B.i, added = 0;
+    for (var k = 0; k < lights.length; k++){
+      var l = lights[k];
+      if (l === amb || l.isHemisphereLight) continue;
+      if (keepSet.indexOf(l) >= 0) continue;
+      var base = (l.userData.__perfBaseInt !== undefined) ? l.userData.__perfBaseInt : l.intensity;
+      // a dropped light contributes a small fraction of its colour as flat light — enough to keep
+      // the arena's tint, nowhere near enough to wash it out
+      var w = Math.min(0.16, base * 0.055);
+      r += l.color.r * w; g += l.color.g * w; b += l.color.b * w; added += w;
+    }
+    var total = B.i + added;
+    if (total > 0.0001){
+      amb.color.setRGB(Math.min(1, r / total), Math.min(1, g / total), Math.min(1, b / total));
+      amb.intensity = Math.min(0.95, total);
+    }
+  }
+
   function applyTier(t){
     var s = scene_(), r = rend_();
     if (!s || !r) return;
@@ -50016,6 +50052,15 @@ window.__deriveVariant = async function(key){
         else l.castShadow = false;
       }
     });
+    // fold what we just switched off back into the ambient so the arena keeps its colour
+    try{
+      var kept = lights.filter(function(l, i){ return l.isAmbientLight || l.isHemisphereLight || i < T.maxLights; });
+      if (T.maxLights < lights.length) foldLights(kept, lights);
+      else { var a0 = lights.filter(function(l){ return l.isAmbientLight; })[0];
+             if (a0 && a0.userData.__foldBase){ var B = a0.userData.__foldBase;
+               a0.color.setRGB(B.r, B.g, B.b); a0.intensity = B.i; } }
+    }catch(e){}
+
     if (T.casters !== 'all'){
       s.traverse(function(n){
         if (!n.isMesh) return;
@@ -50057,13 +50102,33 @@ window.__deriveVariant = async function(key){
   }
   // Step DOWN when we are under target for a sustained stretch. Never step back up automatically —
   // oscillating quality mid-match is worse than being one tier lower than strictly necessary.
-  var lowRun = 0;
+  var lowRun = 0, highRun = 0;
   function autoTier(){
     if (window.BANNON_PERF_AUTO === false) return;
     if (ST.tier == null) return;
     if (typeof gameState !== 'undefined' && gameState !== 'fight') return;
     if (ST.fps < ST.target) lowRun++; else lowRun = 0;
-    if (lowRun >= 4 && ST.tier < TIERS.length - 1){ lowRun = 0; applyTier(ST.tier + 1); }
+    if (lowRun >= 3 && ST.tier < TIERS.length - 1){ lowRun = 0; highRun = 0; ST.everDropped = true; applyTier(ST.tier + 1); }
+    // step UP only if we have never had to drop, and only while comfortably clear of target, so a
+    // strong device is not punished by the conservative opening guess. One direction, once settled.
+    if (ST.fps > ST.target * 1.6) highRun++; else highRun = 0;
+    if (!ST.everDropped && highRun >= 6 && ST.tier > 0){ highRun = 0; applyTier(ST.tier - 1); }
+  }
+
+  // What tier should this device open on? Deliberately conservative: being one tier low for two
+  // seconds is invisible, being three tiers high is a frozen match.
+  function guessTier(){
+    try{
+      if (window.BANNON_PERF_TIER != null) return window.BANNON_PERF_TIER;
+      var ua = navigator.userAgent || '';
+      var mobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua) || (navigator.maxTouchPoints || 0) > 1;
+      var cores = navigator.hardwareConcurrency || 4;
+      var mem   = navigator.deviceMemory || 4;
+      if (!mobile) return cores >= 8 ? 0 : 1;
+      if (cores <= 4 || mem <= 3) return 4;      // budget phone — open at POTATO, earn your way up
+      if (cores <= 6 || mem <= 4) return 3;
+      return 2;
+    }catch(e){ return 3; }
   }
 
   function buildHud(){
@@ -50081,8 +50146,11 @@ window.__deriveVariant = async function(key){
     if (ST.armed) return true;
     if (!scene_() || !rend_()) return false;
     buildHud();
-    // start at FULL and let the measurement decide. A device that can hold 30 never gets touched.
-    applyTier(0);
+    // START WHERE THE DEVICE PROBABLY LIVES, then let the measurement correct it. Booting at FULL
+    // and waiting four half-second samples for the first cut means four seconds at 2 FPS, which on
+    // a phone IS the freeze being reported. A desktop that can hold 60 is stepped back up once,
+    // after a clean read — the only place this system ever steps up.
+    applyTier(guessTier());
     ST.armed = true;
     // ?perf in the URL shows the readout from the first frame; otherwise it is a toggle
     try{ if (/[?&]perf\b/.test(location.search)) ST.hud.style.display = 'block'; }catch(e){}
@@ -50093,7 +50161,28 @@ window.__deriveVariant = async function(key){
   (function tryArm(n){ if (arm() || n > 120) return; setTimeout(function(){ tryArm(n + 1); }, 250); })(0);
   requestAnimationFrame(frame);
 
+  // TELEMETRY WITHOUT HOMEWORK. The device writes its own perf history to localStorage every few
+  // seconds and the God Mode OS panel reads it. Asking the owner to open a console, run a command
+  // and paste the output back is work I created for him; this is the same information arriving on
+  // its own. Rolling window of 40 so it can never grow without bound.
+  function persist(){
+    try{
+      var log = JSON.parse(localStorage.getItem('bannon_perf_log') || '[]');
+      log.push({ t: Date.now(), fps: +ST.fps.toFixed(1), tier: (TIERS[ST.tier || 0] || {}).name,
+                 mode: (typeof gameState !== 'undefined' ? gameState : '?'),
+                 env: (window.CURRENT_ENV || null), scene: census() });
+      while (log.length > 40) log.shift();
+      localStorage.setItem('bannon_perf_log', JSON.stringify(log));
+    }catch(e){}
+  }
+  setInterval(function(){ if (ST.armed && ST.fps > 0) persist(); }, 6000);
+
   window.BANNON_PERF = {
+    history: function(){ try{ return JSON.parse(localStorage.getItem('bannon_perf_log') || '[]'); }catch(e){ return []; } },
+    worstOf: function(){
+      var h = this.history(); if (!h.length) return null;
+      return h.reduce(function(a, b){ return (b.fps < a.fps) ? b : a; });
+    },
     fps: function(){ return +ST.fps.toFixed(1); },
     tier: function(){ return (TIERS[ST.tier || 0] || {}).name; },
     setTier: function(n){ applyTier(n); },
@@ -50116,6 +50205,113 @@ window.__deriveVariant = async function(key){
       };
     }
   };
+})();
+</script>
+
+<script>
+// ============================================================================
+// BANNON_ROSTER_MOVESETS — every character walks out with their OWN move set.
+//
+// 120 characters x 439 slots = 84,593 assignments, generated by
+// tools/moves/gen_roster_movesets.cjs from each fighter's own style, archetype, label and bio. KAGE
+// fights KARATE because his label says "Karate · Shadow"; ZEPHYR fights CAPOEIRA because his says
+// "Capoeira · Wind". 35 distinct styles across the roster, 12 of them held by exactly one wrestler.
+//
+// PRECEDENCE, and it only goes one way:
+//   1. what the PLAYER equipped in the move-set studio   (localStorage bannon_moveset_slots)
+//   2. this character's generated default                 (this file)
+//   3. the engine's own procedural fallback               (unchanged)
+// Regenerating the defaults can never touch a player edit, which is what makes it safe to rerun.
+// ============================================================================
+(function(){
+  'use strict';
+  var DB = null, ST = { loaded:false, hits:0, misses:0 };
+  function key(n){ return String(n || 'BANNON').toUpperCase().replace(/[^A-Z0-9]/g, '_'); }
+
+  function load(){
+    var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    var urls = ['assets/moves/roster_movesets.json', cdn + 'assets/moves/roster_movesets.json'];
+    (function next(i){
+      if (i >= urls.length){ console.warn('[BANNON_ROSTER_MOVESETS] defaults unreachable — procedural fallback stands'); return; }
+      fetch(urls[i]).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        .then(function(j){
+          DB = j; ST.loaded = true;
+          console.log('%c[BANNON_ROSTER_MOVESETS] ' + j.characters + ' characters have their own move set (' +
+            j.assignments.toLocaleString() + ' assignments, ' +
+            Object.keys(j.styleDistribution || {}).length + ' distinct fighting styles)','color:#7CFC00');
+        }).catch(function(){ next(i + 1); });
+    })(0);
+  }
+  load();
+
+  function player(name){
+    try{ return (JSON.parse(localStorage.getItem('bannon_moveset_slots') || '{}'))[key(name)] || {}; }catch(e){ return {}; }
+  }
+  function defaults(name){ return (DB && DB.sets && DB.sets[key(name)]) || null; }
+
+  // The one function everything else asks. Player edit first, generated default second, null third.
+  function slot(name, slotId){
+    var p = player(name);
+    if (p && p[slotId] != null){ ST.hits++; return p[slotId]; }
+    var d = defaults(name);
+    if (d && d[slotId] != null){ ST.hits++; return d[slotId]; }
+    ST.misses++; return null;
+  }
+  // a slot can hold several moves; the engine wants one to throw right now
+  function pick(name, slotId){
+    var v = slot(name, slotId);
+    if (Array.isArray(v)) return v.length ? v[(Math.random() * v.length) | 0] : null;
+    return v;
+  }
+
+  window.BANNON_ROSTER_MOVESETS = {
+    loaded: function(){ return ST.loaded; },
+    slot: slot, pick: pick,
+    styleOf: function(n){ var d = defaults(n); return d ? d._style : null; },
+    stanceOf: function(n){ var d = defaults(n); return d ? d._stance : null; },
+    gaitOf: function(n){ var d = defaults(n); return d ? d._gait : null; },
+    paybacksOf: function(n){ var d = defaults(n); return d ? { major:d._pbMajor, minor:d._pbMinor } : null; },
+    defaultsFor: defaults,
+    stats: function(){ return { loaded:ST.loaded, resolved:ST.hits, unresolved:ST.misses,
+      characters: DB ? DB.characters : 0, styles: DB ? Object.keys(DB.styleDistribution || {}).length : 0 }; },
+    // auditable: prove two fighters actually differ instead of taking it on trust
+    compare: function(a, b, n){
+      var A = defaults(a), B = defaults(b);
+      if (!A || !B) return { err:'not loaded or unknown character' };
+      var keys = Object.keys(A).filter(function(k){ return k[0] !== '_'; });
+      var diff = keys.filter(function(k){ return JSON.stringify(A[k]) !== JSON.stringify(B[k]); });
+      return { a:a, b:b, styleA:A._style, styleB:B._style, slots:keys.length,
+               different:diff.length, samplesDiffering:diff.slice(0, n || 6) };
+    }
+  };
+
+  // THE CONSUMER. BANNON_MOVESET_SLOTS.binding() is what the engine already asks for a position's
+  // clip, and it only ever knew about player equips and a global default. It now falls through to
+  // the character's own set before giving up to procedural — which is the entire point of
+  // generating 120 of them.
+  (function wire(n){
+    try{
+      var S = window.BANNON_MOVESET_SLOTS;
+      if (S && S.binding && !S.binding.__roster){
+        var orig = S.binding;
+        var wrapped = function(charKey, pos){
+          var r = orig.apply(this, arguments);
+          if (r && r.clip) return r;
+          var d = defaults(charKey);
+          if (d && d[pos] != null){
+            var v = Array.isArray(d[pos]) ? d[pos][0] : d[pos];
+            if (v) return { clip:v, via:'roster default · ' + (d._style || '?') };
+          }
+          return r;
+        };
+        wrapped.__roster = true;
+        S.binding = wrapped;
+        console.log('%c[BANNON_ROSTER_MOVESETS] wired into BANNON_MOVESET_SLOTS.binding','color:#7CFC00');
+        return;
+      }
+    }catch(e){}
+    if (n < 60) setTimeout(function(){ wire(n + 1); }, 400);
+  })(0);
 })();
 </script>
 
