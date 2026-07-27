@@ -7405,7 +7405,9 @@ Fighter.prototype.applyMesh = function(){
     const targetMetalness = THREE.MathUtils.lerp(0.0, 0.35, exhaustLevel);   // Sweat glosses skin highlights
     this.skinMat.roughness = THREE.MathUtils.lerp(this.skinMat.roughness, targetRoughness, 0.05);
     this.skinMat.metalness = THREE.MathUtils.lerp(this.skinMat.metalness, targetMetalness, 0.05);
-    if (this.skinMat.map) this.skinMat.needsUpdate = true;
+    // NO needsUpdate — see the note in applyMesh. roughness/metalness are uniforms. skinMat is
+    // SHARED across every body segment, so one bump here dirtied dozens of meshes at once, every
+    // frame, for every fighter.
   }
   if (this.muscleMat && this.muscleMat !== this.skinMat) {
     const exhaustLevel = this.stamina ? (100 - this.stamina) / 100 : 0;
@@ -7413,7 +7415,6 @@ Fighter.prototype.applyMesh = function(){
     const targetMetalness = THREE.MathUtils.lerp(0.0, 0.35, exhaustLevel);
     this.muscleMat.roughness = THREE.MathUtils.lerp(this.muscleMat.roughness, targetRoughness, 0.05);
     this.muscleMat.metalness = THREE.MathUtils.lerp(this.muscleMat.metalness, targetMetalness, 0.05);
-    if (this.muscleMat.map) this.muscleMat.needsUpdate = true;
   }
 
   // --- CUMULATIVE PROBABILITY BLOOD dripping ---
@@ -25853,7 +25854,7 @@ function applyArchetype(fighter){
       const r = ((skinCol>>16)&0xff)/255, g2 = ((skinCol>>8)&0xff)/255, b = (skinCol&0xff)/255;
       if(mat.emissive){ mat.emissive.setRGB(r*0.08, g2*0.04, b*0.02); mat.emissiveIntensity=0.65; }
       mat.roughness = 0.66;
-      mat.needsUpdate = true;
+      // emissive, emissiveIntensity and roughness are uniforms — no recompile needed (see applyMesh)
     }
   };
 })();
@@ -26257,7 +26258,7 @@ console.log('[BANNON v77] Buttons fixed · Shadow floor-tracked · Zone responsi
         mat.emissiveIntensity = 0.72;
       }
       mat.roughness = Math.min(mat.roughness||0.6, 0.50); // slight sheen (sweat)
-      mat.needsUpdate = true;
+      // uniforms only — no recompile (see applyMesh)
     });
 
     // ── KNEE PADS — black protective pad over each knee ──
@@ -26297,12 +26298,10 @@ console.log('[BANNON v77] Buttons fixed · Shadow floor-tracked · Zone responsi
     if (s.gloveL && s.gloveL.material){
       s.gloveL.material.roughness = 0.22;
       s.gloveL.material.envMapIntensity = 1.6;
-      s.gloveL.material.needsUpdate = true;
     }
     if (s.gloveR && s.gloveR.material){
       s.gloveR.material.roughness = 0.22;
       s.gloveR.material.envMapIntensity = 1.6;
-      s.gloveR.material.needsUpdate = true;
     }
   };
 })();
@@ -26750,10 +26749,9 @@ try{
             m.material.emissiveIntensity = 0.72;
           }
           m.material.roughness = Math.min(m.material.roughness||0.6, 0.50);
-          m.material.needsUpdate = true;
         });
-        if(s.gloveL&&s.gloveL.material){ s.gloveL.material.roughness=0.22; s.gloveL.material.envMapIntensity=1.6; s.gloveL.material.needsUpdate=true; }
-        if(s.gloveR&&s.gloveR.material){ s.gloveR.material.roughness=0.22; s.gloveR.material.envMapIntensity=1.6; s.gloveR.material.needsUpdate=true; }
+        if(s.gloveL&&s.gloveL.material){ s.gloveL.material.roughness=0.22; s.gloveL.material.envMapIntensity=1.6; }
+        if(s.gloveR&&s.gloveR.material){ s.gloveR.material.roughness=0.22; s.gloveR.material.envMapIntensity=1.6; }
         // Add knee pads if not present
         if (!s.kpadL && f.root){
           const kpadMat = new THREE.MeshStandardMaterial({color:0x151515,roughness:0.80,metalness:0.0});
@@ -35440,7 +35438,14 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
          if(!mat) return;
          if(mat.roughness !== undefined) mat.roughness += (targetRoughness - mat.roughness) * 0.05;
          if(mat.metalness !== undefined) mat.metalness += (targetMetalness - mat.metalness) * 0.05;
-         mat.needsUpdate = true;
+         // NO needsUpdate. roughness and metalness are plain UNIFORMS in three.js — they are
+         // uploaded every frame regardless and changing them NEVER requires a shader recompile.
+         // Setting needsUpdate here bumped material.version on every fighter material on EVERY
+         // FRAME, which sends three.js back through acquireProgram -> getProgramInfoLog, and
+         // getProgramInfoLog is a synchronous stall that waits on the GPU driver to finish linking.
+         // MEASURED: 994 version bumps in 3 seconds across 393 materials, and acquireProgram +
+         // getProgramInfoLog was 918ms / 14% of all sampled time — the single biggest cost in the
+         // frame, far above rendering itself. This is the freeze.
       };
       if (this.skinMat) updateMat(this.skinMat);
       if (this.muscleMat) updateMat(this.muscleMat);
@@ -50046,7 +50051,9 @@ window.__deriveVariant = async function(key){
       // actually drops it out of the lighting maths.
       if (l.userData.__perfBaseInt === undefined) l.userData.__perfBaseInt = l.intensity;
       l.intensity = keep ? l.userData.__perfBaseInt : 0;
-      l.visible = keep ? l.userData.__perfBaseVis : false;
+      // DO NOT toggle .visible — three.js keys its shader programs on the LIGHT COUNT, so hiding a
+      // light recompiles every material in the scene. Intensity 0 culls it with no recompile.
+      l.visible = l.userData.__perfBaseVis;
       if (l.userData.__perfBaseShadow && !free){
         if (shadowsLeft > 0 && l.visible){ l.castShadow = true; shadowsLeft--; }
         else l.castShadow = false;
