@@ -144,8 +144,49 @@ def detect_people(frame_bgr, frame_rgb, pose, limit=2):
         cw, ch = (x1 - x0), (y1 - y0)
         remapped = [_LM((x0 + l.x * cw) / W, (y0 + l.y * ch) / H, l.z,
                         getattr(l, 'visibility', 1.0)) for l in lm]
-        out.append((remapped, wl))
+        out.append((remapped, wl, torso_look(frame_bgr, remapped)))
     return out
+
+
+def torso_look(frame_bgr, lm):
+    """What this body LOOKS like, as a small colour signature over the torso.
+
+    Owner, watching the falcon arrow capture: "deliver is a black guy wearing red shirt, receiver is
+    white with no shirt, ur kind of swapping them out per frame". He was right. Position continuity
+    alone cannot hold identity through a grapple -- the whole point of a suplex is that the two
+    bodies occupy the same space, so "nearest hip to last frame's hip" picks the wrong man exactly
+    when it matters most.
+
+    MEASURED before the fix, redness (R - (G+B)/2) over the torso across the falcon arrow: track 0
+    mean 35.1 spread -40..87, track 1 mean 41.9 spread -12..67. Two tracks with the SAME
+    distribution, when a clean split would be one high (red shirt) and one low (bare skin). Both
+    tracks were carrying both men.
+
+    A mean BGR over the shoulder-to-hip box is enough here and costs nothing -- a red shirt and bare
+    skin are far apart in colour. This is the appearance half of a standard appearance-plus-motion
+    tracker; the learned-embedding version buys nothing when the two subjects are this distinct.
+    """
+    try:
+        H, W = frame_bgr.shape[:2]
+        xs = [lm[i].x * W for i in (11, 12, 23, 24)]
+        ys = [lm[i].y * H for i in (11, 12, 23, 24)]
+        x0, x1 = int(max(0, min(xs))), int(min(W, max(xs)))
+        y0, y1 = int(max(0, min(ys))), int(min(H, max(ys)))
+        if x1 - x0 < 4 or y1 - y0 < 4:
+            return None
+        import cv2 as _cv
+        patch = frame_bgr[y0:y1, x0:x1]
+        hsv = _cv.cvtColor(patch, _cv.COLOR_BGR2HSV)
+        # hue x saturation histogram. A MEAN colour was not enough: measured on the falcon arrow it
+        # separated the two men by 6.8 points of redness against a spread of 20, which is no
+        # separation at all. A distribution survives motion blur and a torso box that catches some
+        # background; a mean does not.
+        h = _cv.calcHist([hsv], [0, 1], None, [12, 6], [0, 180, 0, 256])
+        h = h.flatten()
+        n = float(h.sum())
+        return (h / n) if n > 0 else None
+    except Exception:
+        return None
 
 
 class _LM(object):
@@ -163,7 +204,7 @@ def track(path, keep_frames=True, people=2):
     pose = _mk(model_path(), vision.RunningMode.IMAGE)
     cap = cv2.VideoCapture(path)
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
-    raw, dets, worlds = [], [], []
+    raw, dets, worlds, looks = [], [], [], []
     while True:
         ok, fr = cap.read()
         if not ok:
@@ -171,13 +212,14 @@ def track(path, keep_frames=True, people=2):
         found = detect_people(fr, cv2.cvtColor(fr, cv2.COLOR_BGR2RGB), pose, limit=people)
         dets.append([p[0] for p in found])
         worlds.append([p[1] for p in found])
+        looks.append([p[2] for p in found])
         raw.append(fr if keep_frames else None)
     cap.release()
-    tracks, wtracks = assign(dets, worlds, slots=people)
+    tracks, wtracks = assign(dets, worlds, slots=people, looks=looks)
     return fps, raw, tracks, wtracks
 
 
-def assign(dets, worlds=None, slots=2):
+def assign(dets, worlds=None, slots=2, looks=None):
     """Give each detected body a STABLE identity across frames.
 
     MediaPipe returns the poses it found in each frame in no guaranteed order, so track 0 in frame 40
@@ -190,8 +232,25 @@ def assign(dets, worlds=None, slots=2):
     tracks = [[] for _ in range(slots)]   # per slot: list of (frame_index, landmarks)
     wtracks = [[] for _ in range(slots)]
     last = [None] * slots
+    # REFERENCE APPEARANCES, FIXED, taken from the first frame where every body is found and they are
+    # cleanly apart. An exponential average drifts: the moment the tracker takes one wrong frame
+    # during the entangled part of a throw, the average moves toward the other man and every later
+    # frame is judged against a blend of both. A reference captured BEFORE contact does not move.
+    ref = [None] * slots
+    if looks:
+        for fi0, lk0 in enumerate(looks):
+            if len(lk0) < slots or any(x is None for x in lk0[:slots]):
+                continue
+            hp = [hip_xy(d) for d in dets[fi0][:slots]]
+            if any(h is None for h in hp):
+                continue
+            if slots == 2 and float(np.linalg.norm(hp[0] - hp[1])) < 0.13:
+                continue                      # too close together to be sure who is who
+            ref = [lk0[i] for i in range(slots)]
+            break
     for fi, ds in enumerate(dets):
         ws = worlds[fi] if worlds else [None] * len(ds)
+        lks = looks[fi] if looks else [None] * len(ds)
         hips = [hip_xy(d) for d in ds]
         used = set()
         # existing tracks claim their nearest unclaimed detection first
@@ -199,18 +258,30 @@ def assign(dets, worlds=None, slots=2):
         for slot in order:
             if last[slot] is None:
                 continue
-            best, bd = None, 0.28          # further than this in one frame is a different person
+            # COST = how far it moved + how different it looks. Position alone swaps the men
+            # during a grapple; appearance alone drifts when the lighting changes mid-throw.
+            # Together they hold through the entangled frames, which is where the mocap is decided.
+            best, bd = None, 0.62
             for di, h in enumerate(hips):
                 if di in used or h is None:
                     continue
                 d = float(np.linalg.norm(h - last[slot]))
-                if d < bd:
-                    bd, best = d, di
+                if d > 0.34:
+                    continue                       # nothing crosses that far in one frame
+                cost = d
+                if ref[slot] is not None and lks[di] is not None:
+                    # Bhattacharyya-style distance between the two histograms: 0 identical, 1 apart
+                    bc = float(np.sqrt(ref[slot] * lks[di]).sum())
+                    cost += 1.25 * (1.0 - bc)
+                if cost < bd:
+                    bd, best = cost, di
             if best is not None:
                 used.add(best)
                 tracks[slot].append((fi, ds[best]))
                 wtracks[slot].append((fi, ws[best] if best < len(ws) else None))
                 last[slot] = hips[best]
+                if ref[slot] is None and best < len(lks) and lks[best] is not None:
+                    ref[slot] = lks[best]      # seed only; never updated, so it cannot drift
         # anything left over seeds an empty slot
         for di, h in enumerate(hips):
             if di in used or h is None:
@@ -221,6 +292,8 @@ def assign(dets, worlds=None, slots=2):
                     tracks[slot].append((fi, ds[di]))
                     wtracks[slot].append((fi, ws[di] if di < len(ws) else None))
                     last[slot] = h
+                    if ref[slot] is None and di < len(lks) and lks[di] is not None:
+                        ref[slot] = lks[di]
                     break
     return tracks, wtracks
 
