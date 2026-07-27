@@ -329,6 +329,14 @@ def capture(path, args):
         print('  only %d frames had a detectable person — not a usable capture' % detected)
         return None
 
+    return build_clip(world_seq, conf_seq, times, args, fps, detected)
+
+
+def build_clip(world_seq, conf_seq, times, args, fps, detected):
+    """Turn a sequence of world landmarks into the engine's clip format.
+
+    Split out of capture() so a TWO-BODY capture can run it twice -- once for the attacker and once
+    for the receiver -- without duplicating the retarget, the scaling or the quality gate."""
     world_seq = smooth(world_seq, args.smooth)
 
     # ── quality gate: a clip that does not MOVE is worse than no clip, because it silently replaces a
@@ -388,6 +396,73 @@ def capture(path, args):
             'bones': len(bone_names), 'seconds': total}
 
 
+
+def capture_two(path, args):
+    """CAPTURE BOTH WRESTLERS. Owner: "some of those moves need to map the receiver tho".
+
+    He is right, and a single-person capture cannot do it. A falcon arrow, a German suplex or a
+    headbutt onto a prone man is two bodies, and the one being thrown carries half the move. The
+    original path ran BlazePose with num_poses=1 and produced one skeleton with no idea whose it was.
+
+    This uses the two-pass masked detection in verify_capture (measured 34-66% both-body coverage
+    against 1-9% for num_poses=2), keeps each body's identity stable across frames by hip continuity,
+    and decides which is the attacker by inversion -- the receiver is the one whose head goes below
+    his hips, which covers suplexes, drivers, falcon arrows and a prone man taking a dive.
+
+    Returns {'attacker': <clip result>, 'receiver': <clip result>, 'roleBy': str, 'coverage': {...}}.
+    """
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import verify_capture as VC
+
+    fps, raw, tracks, wtracks = VC.track(path, keep_frames=False)
+    n = len(raw)
+    if n < 6:
+        return None
+    ai, ri, why = VC.role_of(tracks, n)
+    # HUMAN OVERRIDE. The automatic rules cover suplexes and dives onto a grounded man, but a running
+    # dive where BOTH men end up horizontal can still come out inverted -- measured on the feral run,
+    # where the diver's head drops below his hips and the rule called him the receiver. Rather than
+    # keep bolting cases onto a heuristic, --swap lets whoever has just LOOKED at the verify sheet
+    # state the truth. Guessing harder is not better than reading the answer off the picture.
+    if getattr(args, 'swap', False):
+        ai, ri = ri, ai
+        why += ' (swapped by hand)'
+
+    # trim to where the move actually is, unless the caller stated a window
+    lo, hi = 0, n - 1
+    if not (args.start or args.end):
+        info = VC.analyse(fps, VC.densify(tracks[ai], n))
+        lo, hi = info['window']
+        # a receiver-dominant capture (the attacker is behind him and occluded) should use the
+        # receiver's window instead, or the trim is driven by the sparser of the two tracks
+        if info['tracked'] < 0.5 * n:
+            info2 = VC.analyse(fps, VC.densify(tracks[ri], n))
+            if info2['tracked'] > info['tracked']:
+                lo, hi = info2['window']
+
+    out = {'roleBy': why, 'coverage': {}, 'window_s': (round(lo / fps, 2), round(hi / fps, 2))}
+    for role, ti in (('attacker', ai), ('receiver', ri)):
+        wd = VC.densify(wtracks[ti], n)
+        ld = VC.densify(tracks[ti], n)
+        seq, conf, times = [], [], []
+        for fi in range(lo, hi + 1):
+            w, l = wd[fi], ld[fi]
+            if w is None:
+                continue
+            arr = np.array([[q.x, q.y, q.z] for q in w], dtype=float)
+            arr[:, 1] *= -1.0
+            arr[:, 2] *= -1.0
+            seq.append(arr)
+            conf.append(float(np.mean([getattr(q, 'visibility', 1.0) for q in (l or w)])))
+            times.append(fi / fps)
+        out['coverage'][role] = '%d/%d' % (len(seq), hi - lo + 1)
+        if len(seq) < 6:
+            out[role] = None
+            continue
+        out[role] = build_clip(seq, conf, times, args, fps, len(seq))
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description='AI motion capture from video into the BANNON clip format.')
     ap.add_argument('videos', nargs='+')
@@ -398,9 +473,17 @@ def main():
     ap.add_argument('--end', type=float, default=0.0)
     ap.add_argument('--min-conf', type=float, default=0.55, help='reject below this mean visibility')
     ap.add_argument('--min-span', type=float, default=0.25, help='reject if the body barely moved')
+    ap.add_argument('--min-cover', type=float, default=0.0,
+                    help='two-body: OPT-IN filter. Skip a track found in fewer than this fraction '
+                         'of frames. Default 0 = bank everything and flag it; generated content is '
+                         'never discarded on the tool\'s own judgement.')
     ap.add_argument('--out', default=OUT_DIR)
     ap.add_argument('--dry', action='store_true')
     ap.add_argument('--auto', action='store_true', help='derive the key from each filename')
+    ap.add_argument('--swap', action='store_true',
+                    help='two-body: the role detector got it backwards; flip attacker and receiver')
+    ap.add_argument('--two', action='store_true',
+                    help='capture BOTH wrestlers: writes <NAME> and <NAME>__RECV')
     args = ap.parse_args()
 
     if args.name and len(args.videos) > 1:
@@ -422,6 +505,64 @@ def main():
         key = base.upper().replace(' ', '_')
         key = ''.join(c for c in key if c.isalnum() or c == '_')
         print('%s  <- %s' % (key, os.path.basename(v)))
+
+        # TWO-BODY: attacker and receiver both get a clip, keyed <NAME> and <NAME>__RECV.
+        if args.two:
+            two = capture_two(v, args)
+            if not two:
+                print('  no usable bodies in this video')
+                continue
+            print('  roles by %s · move window %.2fs..%.2fs' % (two['roleBy'], two['window_s'][0], two['window_s'][1]))
+            for role, suffix in (('attacker', ''), ('receiver', '__RECV')):
+                r2 = two.get(role)
+                k2 = key + suffix
+                cov = two['coverage'].get(role, '?')
+                if not r2:
+                    print('  %-9s %-28s no usable frames (%s)' % (role, k2, cov))
+                    continue
+                # COVERAGE IS RECORDED, NOT USED TO DISCARD. I had this refusing anything under 45%
+                # of frames, and that was wrong twice over.
+                #
+                # Owner: "the aftermath of a flying headbutt is important, that's noted in our game
+                # for certain moves" -- and he is right, it is IN the engine: DIVING_HEADBUTT carries
+                # sell:1, "angelic flight, violent crash - attacker PAYS", with a 0.45s sell reaction.
+                # So on that reference the frames I was calling worthless (the crash and the two men
+                # laid out) are the half of the move the engine actually models.
+                #
+                # And it breaks the standing law about generated content: harvest.py was already
+                # changed to BANK AND FLAG low-divergence variants rather than delete them on my own
+                # judgement. Same rule applies here. A low-coverage track is banked with its coverage
+                # recorded so a human can judge it; --min-cover is opt-in for anyone who wants
+                # filtering, and it is never the default.
+                bad = []
+                cn, cd = (cov.split('/') + ['1'])[:2]
+                frac = int(cn) / max(1, int(cd))
+                low = frac < 0.45
+                if args.min_cover > 0 and frac < args.min_cover:
+                    bad.append('only %.0f%% of frames tracked' % (100 * frac))
+                if r2['conf'] < args.min_conf:
+                    bad.append('visibility %.2f' % r2['conf'])
+                if r2['span'] < args.min_span:
+                    bad.append('span %.2f m' % r2['span'])
+                if r2['bones'] < 12:
+                    bad.append('%d bones' % r2['bones'])
+                txt = json.dumps(r2['clip'])
+                print('  %-9s %-28s %.2fs %2d keys %2d bones vis %.2f cover %-7s %s'
+                      % (role, k2, r2['seconds'], len(r2['clip']['keys']), r2['bones'], r2['conf'],
+                         cov, ('SKIPPED: ' + ', '.join(bad)) if bad
+                              else ('banked · LOW COVERAGE, judge it' if low else 'banked')))
+                if bad or args.dry:
+                    continue
+                with open(os.path.join(args.out, k2 + '.json'), 'w') as fh:
+                    fh.write(txt)
+                index[k2] = {'file': k2 + '.json', 'bytes': len(txt), 'dur': r2['clip']['dur'],
+                             'keys': len(r2['clip']['keys']), 'bones': r2['bones'],
+                             'src': os.path.basename(v), 'via': 'video_to_clip/mediapipe/two-body',
+                             'role': role, 'coverage': cov, 'coverFrac': round(frac, 3),
+                             'lowCoverage': bool(low), 'roleBy': two['roleBy']}
+                ok += 1
+            continue
+
         r = capture(v, args)
         if not r:
             continue

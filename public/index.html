@@ -53644,6 +53644,229 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script>
+// ============================================================================================
+// BANNON_OWNER_MOVES — the captures the owner filmed, wired to something that plays them.
+//
+// Five reference videos, ten clips (an attacker and a receiver track for each), captured by
+// tools/mocap/video_to_clip.py --two. Banked data with no consumer is the same dead end as every
+// other "built but never called" thing in this file, so this is the consumer.
+//
+// THE RECEIVER HALF IS THE POINT. Owner: "some of those moves need to map the receiver tho". A
+// falcon arrow or a German is two bodies and the man being thrown carries half the move; before
+// this the capture pipeline ran a single-person estimator and there was no receiver track at all.
+// PAIRS below binds each attacker clip to its receiver clip, and the victim is driven by it for the
+// same phase the attacker is driven by his.
+//
+// AND THE AFTERMATH COUNTS. Owner: "the aftermath of a flying headbutt is important, that's noted
+// in our game for certain moves" — and it is: DIVE_TYPES.DIVING_HEADBUTT carries sell:1, "angelic
+// flight, violent crash — attacker PAYS", with a 0.45s sell reaction already in the engine. So the
+// flying-headbutt capture is deliberately NOT trimmed to the moment of contact; the crash and the
+// two men laid out afterwards are kept, and the clip is held across the sell rather than cut at
+// impact.
+// ============================================================================================
+(function(){
+  'use strict';
+
+  var ST = { armed:false, applied:0, feral:0, pairs:0, missing:[] };
+
+  function clips(){ try{ return (typeof STUDIO!=='undefined' && STUDIO.clips) ? STUDIO.clips : null; }catch(e){ return null; } }
+  function have(k){ var C = clips(); return !!(C && C[k]); }
+  function warm(k){ try{ if(window.loadClipFor && !have(k)) window.loadClipFor(k); }catch(e){} }
+  function nameOf(f){ try{ return String((f&&f.opts&&f.opts.name)||(f&&f.name)||'').toUpperCase(); }catch(e){ return ''; } }
+
+  // ── THE CAPTURES ──────────────────────────────────────────────────────────────────────────────
+  // `cover` is the fraction of frames that body was actually tracked in, carried through from the
+  // capture so it is visible here rather than buried in a manifest. A low number is not a reason to
+  // throw the clip away (owner law: generated content is banked and flagged, never deleted on my
+  // judgement) but it IS a reason to know which ones to re-shoot from a closer angle.
+  var CAPTURES = {
+    // THE TWO REAL FERAL RUNS. Owner correction, and he was right: "there were only two, that mean
+    // u got a different move mixed up wit them ... these only show him doing it". Both of these are
+    // ONE man on all fours with no opponent involved. The outdoor clip I first labelled a feral run
+    // has two wrestlers and a man diving onto a kneeling opponent, which is a different move
+    // entirely -- it is parked under UNIDENTIFIED_OUTDOOR_DIVE until he says what it is, rather than
+    // left mislabelled in Cipher's run rotation where it would fire on MOD+run.
+    CIPHER_FERAL_RUN:         { label:'Feral Run (all fours)',  kind:'locomotion', cover:0.81 },
+    CIPHER_FERAL_RUN_2:       { label:'Feral Run (scramble)',   kind:'locomotion', cover:0.80 },
+    UNIDENTIFIED_OUTDOOR_DIVE:{ label:'Unidentified (outdoor dive onto a kneeling man)',
+                                kind:'dive', cover:0.91, pendingId:true },
+    FALCON_ARROW_STANDING:    { label:'Falcon Arrow',           kind:'grapple',    cover:0.84 },
+    FALCON_ARROW_GROUNDED:    { label:'Falcon Arrow (grounded)',kind:'grapple',    cover:0.78 },
+    PUMPHANDLE_GERMAN_DOUBLE: { label:'Double Pumphandle German',kind:'grapple',   cover:0.38 },
+    FLYING_HEADBUTT:          { label:'Flying Headbutt',        kind:'dive',       cover:0.37 }
+  };
+  // attacker clip -> receiver clip. The victim plays his own capture, in step with the attacker.
+  var PAIRS = {
+    CIPHER_FERAL_RUN:         'CIPHER_FERAL_RUN__RECV',
+    CIPHER_FERAL_RUN_2:       'CIPHER_FERAL_RUN_2__RECV',
+    UNIDENTIFIED_OUTDOOR_DIVE:'UNIDENTIFIED_OUTDOOR_DIVE__RECV',
+    FALCON_ARROW_STANDING:    'FALCON_ARROW_STANDING__RECV',
+    FALCON_ARROW_GROUNDED:    'FALCON_ARROW_GROUNDED__RECV',
+    PUMPHANDLE_GERMAN_DOUBLE: 'PUMPHANDLE_GERMAN_DOUBLE__RECV',
+    FLYING_HEADBUTT:          'FLYING_HEADBUTT__RECV'
+  };
+
+  function warmAll(){
+    Object.keys(CAPTURES).forEach(warm);
+    Object.keys(PAIRS).forEach(function(k){ warm(PAIRS[k]); });
+  }
+
+  // ── 1. BANNON'S DIVING HEADBUTT BECOMES THE SPREAD-ARM FLYING HEADBUTT ────────────────────────
+  // Owner: "u have a diving head butt in the game attached to Bannon I want to keep that as diving
+  // head but 1 but switch the one in his moveset out with one like the spread armed cris benoit
+  // style". So DIVING_HEADBUTT stays exactly as it is — it is still in DIVE_TYPES, still bookable,
+  // still on anyone who has it — and a SECOND entry is added for the Benoit/Bryan version, which is
+  // the one Bannon now carries.
+  function addFlyingHeadbutt(){
+    try{
+      if(typeof DIVE_TYPES === 'undefined' || !DIVE_TYPES.DIVING_HEADBUTT) return false;
+      if(DIVE_TYPES.FLYING_HEADBUTT) return true;
+      var base = DIVE_TYPES.DIVING_HEADBUTT;
+      DIVE_TYPES.FLYING_HEADBUTT = {
+        label:'FLYING HEADBUTT', dur:0.84, spin:0, pow:118, arc:0.94, sell:1,
+        clip:'FLYING_HEADBUTT'
+      };
+      // the original keeps its identity and its slot; nothing about it changes
+      if(!base.clip) base.clip = 'DIVING_HEADBUTT';
+      return true;
+    }catch(e){ return false; }
+  }
+  // put it in BANNON's own slot without touching anyone else's
+  function bannonSlot(){
+    try{
+      var R = window.BANNON_ROSTER_MOVESETS;
+      if(!R || !R.defaultsFor) return false;
+      var d = R.defaultsFor('BANNON');
+      if(!d) return false;
+      // DV_TOP_* are the top-rope dive slots in the schema
+      Object.keys(d).forEach(function(k){
+        if(k.indexOf('DV_') !== 0) return;
+        var v = d[k];
+        var list = Array.isArray(v) ? v : [v];
+        var hit = list.some(function(c){ return String(c).toUpperCase().indexOf('HEADBUTT') >= 0; });
+        if(hit) d[k] = Array.isArray(v) ? ['FLYING_HEADBUTT'].concat(list.filter(function(c){
+          return String(c).toUpperCase().indexOf('HEADBUTT') < 0; })) : 'FLYING_HEADBUTT';
+      });
+      return true;
+    }catch(e){ return false; }
+  }
+
+  // ── 2. CIPHER'S FERAL RUN, ON MOD + RUN ───────────────────────────────────────────────────────
+  // Owner: "2 feral Lio Rush Cipher runs, activated by holding MoD plus run with cipher". powerMod
+  // is already `keys.shift || heldBtns.block || heldBtns.mod` in the movement code, so the trigger
+  // exists; this is the clip that plays when it is held and the man is Cipher.
+  function modHeld(){
+    try{
+      return !!((typeof keys !== 'undefined' && keys['shift']) ||
+                (window.heldBtns && (window.heldBtns['block'] || window.heldBtns['mod'])));
+    }catch(e){ return false; }
+  }
+  // exactly the two captures that ARE feral runs. The unidentified clip is deliberately not here.
+  var FERAL = ['CIPHER_FERAL_RUN', 'CIPHER_FERAL_RUN_2'];
+  var _feralI = -1;
+  function feralFor(f){
+    if(!f || !modHeld()) return null;
+    if(nameOf(f).indexOf('CIPHER') < 0) return null;
+    // ROTATE. Three captures of the run exist; replaying one is exactly the bug that made every
+    // strike in the game look identical, and it would read the same way here.
+    var pool = FERAL.filter(have);
+    if(!pool.length) return null;
+    _feralI = (_feralI + 1) % pool.length;
+    return pool[_feralI];
+  }
+
+  // ── 3. THE RECEIVER, DRIVEN IN STEP ───────────────────────────────────────────────────────────
+  // The engine drives an attacker's body from a clip through studioApplyClipPose(f, clip, phase).
+  // The victim had nothing equivalent: he was posed by the grapple solver and the ragdoll alone. If
+  // a receiver capture exists for the clip the attacker is playing, he plays it at the same phase,
+  // which is what makes the two bodies read as one move instead of two.
+  function driveReceiver(attacker, clipKey, phase){
+    try{
+      var rk = PAIRS[clipKey];
+      if(!rk) return false;
+      var C = clips(); if(!C || !C[rk]) return false;
+      var v = attacker && (attacker.grappleTarget || attacker._victim ||
+              (attacker.opponent && attacker.opponent()));
+      if(!v || v === attacker) return false;
+      if(v.ragdoll) return false;                  // physics has it now — owner LAW: the move ends
+                                                   // when the physics says it ends
+      if(window.studioApplyClipPose){ window.studioApplyClipPose(v, C[rk], phase); ST.applied++; return true; }
+    }catch(e){}
+    return false;
+  }
+
+  // ── ARM ───────────────────────────────────────────────────────────────────────────────────────
+  function arm(){
+    if(ST.armed) return true;
+    var C = clips();
+    if(!C) return false;
+    addFlyingHeadbutt();
+    bannonSlot();
+    warmAll();
+
+    // hook the pose applier so the receiver rides along with every attacker clip that has a partner
+    if(window.studioApplyClipPose && !window.studioApplyClipPose.__owner){
+      var _ap = window.studioApplyClipPose;
+      var ap = function(f, clip, phase){
+        var r = _ap.apply(this, arguments);
+        try{
+          if(clip && !f.__isReceiverDrive){
+            // find which key this clip is, so PAIRS can be looked up
+            var key = clip.__key;
+            if(!key){ for(var k in PAIRS){ if(C[k] === clip){ key = k; clip.__key = k; break; } } }
+            if(key && PAIRS[key]){
+              var v = f && (f.grappleTarget || f._victim || (f.opponent && f.opponent()));
+              if(v){ v.__isReceiverDrive = true; driveReceiver(f, key, phase); v.__isReceiverDrive = false; }
+            }
+          }
+        }catch(e){}
+        return r;
+      };
+      ap.__owner = true;
+      window.studioApplyClipPose = ap;
+      ST.pairs = Object.keys(PAIRS).length;
+    }
+
+    // Cipher's feral run rides the existing clip-rotation hook rather than a second system
+    if(window.__slotClipRotate && !window.__slotClipRotate.__owner){
+      var _r = window.__slotClipRotate;
+      var w = function(f, m){
+        var fr = feralFor(f);
+        if(fr && m && /run|sprint|dash|charge/i.test(String(m.name || m.kind || ''))){ ST.feral++; return fr; }
+        return _r.apply(this, arguments);
+      };
+      w.__owner = true;
+      window.__slotClipRotate = w;
+    }
+
+    ST.missing = Object.keys(CAPTURES).concat(Object.keys(PAIRS).map(function(k){ return PAIRS[k]; }))
+      .filter(function(k){ return !have(k); });
+    ST.armed = true;
+    console.log('%c[BANNON_OWNER_MOVES] ' + Object.keys(CAPTURES).length + ' owner captures + ' +
+      Object.keys(PAIRS).length + ' receiver tracks — the victim plays his own capture','color:#7CFC00');
+    return true;
+  }
+  (function tryArm(n){ if(arm() || n > 120) return; setTimeout(function(){ tryArm(n+1); }, 300); })(0);
+
+  window.BANNON_OWNER_MOVES = {
+    CAPTURES: CAPTURES, PAIRS: PAIRS,
+    arm: arm, warm: warmAll, receiverOf: function(k){ return PAIRS[k] || null; },
+    feralFor: feralFor, drive: driveReceiver,
+    stats: function(){ return { armed:ST.armed, captures:Object.keys(CAPTURES).length,
+      pairs:ST.pairs, receiverPoses:ST.applied, feralRuns:ST.feral,
+      resident:Object.keys(CAPTURES).filter(have).length,
+      residentRecv:Object.keys(PAIRS).map(function(k){ return PAIRS[k]; }).filter(have).length,
+      // recomputed, not the snapshot taken at arm time -- clips warm in asynchronously, so a list
+      // frozen when the module armed reports everything as missing forever
+      missing:Object.keys(CAPTURES).concat(Object.keys(PAIRS).map(function(k){ return PAIRS[k]; }))
+              .filter(function(k){ return !have(k); }),
+      flyingHeadbutt: (typeof DIVE_TYPES!=='undefined' && !!DIVE_TYPES.FLYING_HEADBUTT),
+      divingHeadbuttKept: (typeof DIVE_TYPES!=='undefined' && !!DIVE_TYPES.DIVING_HEADBUTT) }; }
+  };
+})();
+</script>
+
 </body></html>
 
 
