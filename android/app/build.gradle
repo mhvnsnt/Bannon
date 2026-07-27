@@ -7,12 +7,33 @@ apply plugin: 'com.android.application'
 def _storePw = (project.hasProperty('BANNON_STORE_PW') ? BANNON_STORE_PW : 'bannon123')
 def _keyPw   = (project.hasProperty('BANNON_KEY_PW')   ? BANNON_KEY_PW   : 'bannon123')
 
+// SIDE-BY-SIDE BUILD. Android hard-refuses to install an APK over an existing app with the same
+// package name and a DIFFERENT signing key — reported on the phone as "App not installed" or, on some
+// OEM installers, "problem parsing the package". Nothing in the APK can fix that, because it is the
+// installer refusing on identity grounds and the package IS structurally fine (v1+v2+v3 present,
+// resources.arsc STORED, versionCode climbing).
+//
+// The owner has an install predating the stable-key commit, so his phone has exactly that clash, and
+// the only in-package answer is a DIFFERENT package name that installs ALONGSIDE the old one instead
+// of over it. -PbannonFresh=true produces com.bannon.game.fresh with its own label, so there is
+// always an APK that installs no matter what is already on the device. No uninstall, no data loss on
+// the old one, and both can sit on the home screen while he checks the new build is good.
+def _fresh   = project.hasProperty('bannonFresh') && bannonFresh.toString() == 'true'
+
 android {
     namespace = "com.bannon.game"
     compileSdk 34
 
     defaultConfig {
         applicationId "com.bannon.game"
+        if (_fresh) {
+            applicationIdSuffix ".fresh"
+            // app_name already exists in strings.xml, so resValue here would be a duplicate-resource
+            // build failure. Override the label through a manifest placeholder instead.
+            manifestPlaceholders = [ bannonLabel: "BANNON fresh" ]
+        } else {
+            manifestPlaceholders = [ bannonLabel: "BANNON" ]
+        }
         minSdkVersion 21   // Android 5.0+ (was 24) — installs on far more devices AND forces v1 JAR
                            // signing to stay on (AGP auto-drops v1 at minSdk>=24), fixing "problem
                            // parsing the package" on OEM/older installers. WebView game runs fine on 21+.

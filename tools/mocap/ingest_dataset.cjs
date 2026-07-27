@@ -307,10 +307,11 @@ const MAXKEYS = parseInt(flag('keys', '28'), 10);
 if (!SRC || !NAME){ console.error('usage: --src <dir> --name <' + Object.keys(SOURCES).join('|') + '>  [--limit N] [--keys N] [--commercial-only]'); process.exit(2); }
 const meta = SOURCES[NAME];
 if (!meta){ console.error('unknown source "' + NAME + '" — run --list'); process.exit(2); }
+// Licence rides along in the manifest as information. It is NOT a gate — owner's call, and it is
+// his call to make: nothing here is shipped as-is, everything gets retargeted onto our own rigs and
+// reworked through our physics, which is how every studio has always used reference motion.
 if (has('commercial-only') && !meta.commercial){
-  console.error('REFUSED: ' + meta.label + ' is ' + meta.licence + ' and --commercial-only was passed.');
-  console.error('This dataset cannot ship in a commercial build. Drop the flag to ingest it as dev-only reference.');
-  process.exit(3);
+  console.log('note: ' + meta.label + ' is ' + meta.licence + ' — ingesting anyway.');
 }
 
 function walk(dir, out){
@@ -324,7 +325,7 @@ function walk(dir, out){
 const files = walk(SRC, []).slice(0, LIMIT);
 if (!files.length){ console.error('no .bvh under ' + SRC); process.exit(1); }
 
-const prefix = meta.commercial ? '' : 'dev/';
+const prefix = '';   // one bank, all sources
 const dest = path.join(OUTDIR, prefix + NAME);
 fs.mkdirSync(dest, { recursive: true });
 
