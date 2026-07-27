@@ -162,7 +162,46 @@ function clipPool(){
       add(typeof v === 'string' ? v : (v && v.clip), (v && v.pos) || null, (v && v.kind) || null, []);
     }
   }catch(e){}
-  return { byPos, all };
+
+  // ── TAG IS ITS OWN POOL, AND IT IS SUBTRACTED FROM EVERY OTHER ONE ─────────────────────────────
+  // Owner: "DOUBLESUPLEX and ASSISTEDDIVSENTON sound like tag moves and there's probably others u
+  // should have put in the tag category". He was right, and the cause was that TAG slots drew from
+  // pool.byPos[slot.pos] like everything else — so a Standing Double Team resolved to whatever
+  // singles capture happened to score highest at STANDING_FRONT, which is how "Heavy Weapon Swing"
+  // ended up as a tag move. Meanwhile the eight genuine two-attacker captures were used for nothing.
+  //
+  // tag_moves.json is produced by tools/moves/classify_tag_moves.cjs, which counts BODY skeleton
+  // roots in each baked clip rather than reading its name. That distinction matters both ways:
+  // HAMMERLOCKDDT looks like a crowd at 519 bones but has only two bodies, and STRONGZERO is a real
+  // three-man capture with neither "double" nor "assist" anywhere in its name.
+  // NORMALISE BEFORE COMPARING. The baked clip index keys these captures as DOUBLESUPLEX while
+  // fbx_move_map.json carries the same capture as "DoubleSuplex" and other sources space them out.
+  // A literal string compare silently matched nothing, so the subtraction below did nothing at all.
+  const norm = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  let tagSet = {};
+  const tagPool = [];
+  try{
+    const t = JSON.parse(fs.readFileSync(path.join(MOVES, 'tag_moves.json'), 'utf8'));
+    (t.tag || []).forEach(entry => {
+      (entry.clips || []).forEach(c => {
+        tagSet[norm(c)] = entry.base;
+        tagPool.push({ clip:c, base:entry.base, bodies:entry.bodies, pos:null, cat:'tag', style:[] });
+      });
+      tagSet[norm(entry.base)] = entry.base;
+    });
+  }catch(e){}
+  // a two-attacker capture must NOT be reachable from a singles slot — a lone wrestler cannot
+  // perform a move that needs a partner, and leaving them in the general pool is how the mistake
+  // would come straight back.
+  const isTag = c => !!tagSet[norm(c)];
+  const solo = all.filter(r => !isTag(r.clip));
+  const soloByPos = {};
+  Object.keys(byPos).forEach(k => {
+    const keep = byPos[k].filter(r => !isTag(r.clip));
+    if (keep.length) soloByPos[k] = keep;
+  });
+
+  return { byPos: soloByPos, all: solo, tagPool, isTag, tagBases: Object.keys(tagSet).length };
 }
 
 // how well does a capture suit a slot, for a fighter with this bias?
@@ -286,8 +325,11 @@ for (const key of names){
       }
       continue;
     }
-    const cands = (slot.pos && pool.byPos[slot.pos] && pool.byPos[slot.pos].length)
-      ? pool.byPos[slot.pos] : pool.all;
+    // a TAG slot can only be filled by a capture that has two attackers in it
+    const cands = (slot.kind === 'tag')
+      ? (pool.tagPool && pool.tagPool.length ? pool.tagPool : [])
+      : ((slot.pos && pool.byPos[slot.pos] && pool.byPos[slot.pos].length)
+          ? pool.byPos[slot.pos] : pool.all);
     if (!cands.length) continue;
     const n = Math.max(1, Math.min(slot.pick || 1, cands.length));
     const scored = cands.map(c => [scoreClip(c, slot, style, rnd), c]).sort((a, b) => b[0] - a[0]);

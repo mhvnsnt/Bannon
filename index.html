@@ -51931,6 +51931,156 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script>
+// ============================================================================================
+// BANNON_TAG — a move that needs two attackers only plays when there ARE two attackers.
+//
+// Owner: "moves like DOUBLESUPLEX and ASSISTEDDIVSENTON sound like tag moves and there's probably
+// others u should have put in the tag category".
+//
+// He was right, and there were six more. tools/moves/classify_tag_moves.cjs settles which by
+// COUNTING BODY SKELETON ROOTS in each baked capture rather than reading its name — 3+ bodies means
+// two attackers on one victim. That distinction is not cosmetic:
+//   HAMMERLOCKDDT  looks like a crowd at 519 animated bones, but two of its three Hips roots are a
+//                  CLOTH rig (C_Hips_2). Two bodies. A singles move. A bone-count rule tags it wrongly.
+//   STRONGZERO     is a genuine three-man capture with neither "double" nor "assist" in its name.
+//                  A name rule misses it entirely. So do BUCKLEBOMBENZUGIRI and
+//                  REVERSEGOOZLEDIVFOOTSTOMP.
+// Eight captures, 64 clips with their variants. The generator now fills all 17 tag-kind slots from
+// that pool and nothing else, and subtracts them from every singles pool.
+//
+// THIS module is the runtime half. The data being right is not enough — a tag capture reaching the
+// engine in a singles match would put a phantom partner's animation on one man's skeleton. Every
+// path that hands the engine a clip is filtered here against whether a partner actually exists.
+// ============================================================================================
+(function(){
+  'use strict';
+  var ST = { loaded:false, set:{}, bases:[], blocked:0, allowed:0, urls:0 };
+
+  function norm(s){ return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+
+  function ingest(j){
+    if(!j || !j.tag) return false;
+    j.tag.forEach(function(e){
+      ST.bases.push(e.base);
+      ST.set[norm(e.base)] = e.base;
+      (e.clips||[]).forEach(function(c){ ST.set[norm(c)] = e.base; });
+    });
+    ST.loaded = true;
+    console.log('%c[BANNON_TAG] ' + ST.bases.length + ' two-attacker captures (' +
+      Object.keys(ST.set).length + ' clip names) — tag moves are gated on having a partner','color:#7CFC00');
+    return true;
+  }
+
+  // same local-first / CDN-fallback shape the rest of the data modules use
+  (function load(){
+    var urls = ['assets/moves/tag_moves.json',
+      (window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/')+'assets/moves/tag_moves.json'];
+    var i = 0;
+    (function next(){
+      if(i >= urls.length){ console.warn('[BANNON_TAG] tag manifest unreachable — tag gating is OFF'); return; }
+      var u = urls[i++]; ST.urls++;
+      fetch(u).then(function(r){ return r.ok ? r.json() : Promise.reject(0); })
+        .then(function(j){ if(!ingest(j)) next(); })
+        .catch(function(){ next(); });
+    })();
+  })();
+
+  function isTag(clip){ return !!ST.set[norm(clip)]; }
+
+  // ── IS THERE A PARTNER? ───────────────────────────────────────────────────────────────────────
+  // Two independent signals, because either one alone is wrong at some point in a match:
+  //   the MATCH TYPE says a tag match was booked — true from the bell, before anyone has tagged in
+  //   a LIVE ALLY says there is a second man on your side standing up right now — which is what
+  //   actually matters for a run-in or a multi-man where the booking said nothing about tags
+  function tagMatch(){
+    try{
+      var t = (window.MATCH_SETUP && window.MATCH_SETUP.matchType) || '';
+      return /^(TAG|MIX|MIXED|TORNADO)/.test(String(t).toUpperCase());
+    }catch(e){ return false; }
+  }
+  function liveAlly(f){
+    if(!f) return null;
+    var fs = null;
+    try{ fs = (typeof fighters !== 'undefined') ? fighters : window.fighters; }catch(e){}
+    if(!fs || !fs.length) return null;
+    for(var i=0;i<fs.length;i++){
+      var o = fs[i];
+      if(!o || o === f) continue;
+      if((o.hp||0) <= 0) continue;
+      if(o._eliminated) continue;
+      // an ally is someone on your side: same team flag, or explicitly your partner
+      var same = (o.team != null && f.team != null && o.team === f.team) ||
+                 (o._partnerOf === f) || (f._partnerOf === o) ||
+                 (o.isPlayer === f.isPlayer && fs.length > 2 && o._ally);
+      if(same) return o;
+    }
+    return null;
+  }
+  function hasPartner(f){ return !!(tagMatch() || liveAlly(f)); }
+
+  // ── THE GATE ──────────────────────────────────────────────────────────────────────────────────
+  function allow(f, clip){
+    if(!ST.loaded) return true;              // no manifest, no opinion — never block on missing data
+    if(!isTag(clip)) return true;
+    if(hasPartner(f)){ ST.allowed++; return true; }
+    ST.blocked++; return false;
+  }
+  function filter(f, list){
+    if(!list || !ST.loaded) return list;
+    var arr = Array.isArray(list) ? list : [list];
+    var keep = arr.filter(function(c){ return allow(f, c); });
+    if(!keep.length) return null;            // caller falls back to procedural, which is correct
+    return Array.isArray(list) ? keep : keep[0];
+  }
+
+  // Wrap the two paths that actually hand a capture to the engine. Both are installed by other
+  // modules, so wait for them rather than assuming an order.
+  function arm(){
+    var did = 0;
+    if(window.__slotClipRotate && !window.__slotClipRotate.__tag){
+      var _r = window.__slotClipRotate;
+      var w = function(f, m){
+        var c = _r.apply(this, arguments);
+        if(c && !allow(f, c)) return null;   // no partner, no double team — the solo clip stands
+        return c;
+      };
+      w.__tag = true; window.__slotClipRotate = w; did++;
+    }
+    var RM = window.BANNON_ROSTER_MOVESETS;
+    if(RM && RM.slot && !RM.slot.__tag){
+      var _s = RM.slot;
+      var s = function(who, slotId){
+        var v = _s.apply(this, arguments);
+        if(!v || !ST.loaded) return v;
+        // resolve the name to a live fighter so the partner test has something to look at
+        var f = null;
+        try{
+          var fs = (typeof fighters !== 'undefined') ? fighters : window.fighters;
+          if(fs) for(var i=0;i<fs.length;i++){
+            var nm = fs[i] && ((fs[i].opts && fs[i].opts.name) || fs[i].name);
+            if(nm && String(nm).toUpperCase() === String(who).toUpperCase()){ f = fs[i]; break; }
+          }
+        }catch(e){}
+        return filter(f, v);
+      };
+      s.__tag = true; RM.slot = s; did++;
+    }
+    return did;
+  }
+  (function tryArm(n){ arm(); if(n > 60) return; setTimeout(function(){ tryArm(n+1); }, 400); })(0);
+
+  window.BANNON_TAG = {
+    isTag: isTag, allow: allow, filter: filter,
+    hasPartner: hasPartner, tagMatch: tagMatch, ally: liveAlly,
+    bases: function(){ return ST.bases.slice(); },
+    loaded: function(){ return ST.loaded; },
+    stats: function(){ return { loaded:ST.loaded, captures:ST.bases.length,
+      clipNames:Object.keys(ST.set).length, blocked:ST.blocked, allowed:ST.allowed }; }
+  };
+})();
+</script>
+
 </body></html>
 
 
