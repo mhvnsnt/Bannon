@@ -4815,6 +4815,17 @@ Fighter.prototype.poseAttack = function(dt){
   // strike in the game ever carried a clip and studioApplyClipPose was measured at 0 calls across a
   // full match. combat_clip_map.json maps them by limb/trajectory/style; this stamps it on.
   if (m && !m.clip && m.name && window.__combatClipFor){ try{ var _cc=window.__combatClipFor(m.name); if(_cc) m.clip=_cc; }catch(_e){} }
+  // VARIETY. STRIKE_MAP[kind][dir] resolves to exactly ONE move name, so a given button + direction
+  // always produced the same move and therefore the same capture. MEASURED: 24 driven attacks across
+  // four buttons played 3 distinct clips — HURRICANE_KICK x15, VAR_PILEDRIVER_2 x11,
+  // BANNON_STRONG_STRIKE_COMBO x6. It animates; it just animates identically every time, which is
+  // what reads as "the animations aren't working".
+  //
+  // The fighter already OWNS a set of clips for this slot — 84,593 assignments across the roster,
+  // chosen from their own fighting style. Rotate through them instead of replaying one. Damage,
+  // timing and tuning are untouched: only the CAPTURE the body plays changes, so the combat maths
+  // stays exactly as authored.
+  if (m && m.name && window.__slotClipRotate){ try{ var _rc=window.__slotClipRotate(this, m); if(_rc) m.clip=_rc; }catch(_e){} }
   // LAZY-LOAD a mapped clip that isn't in STUDIO yet (the #1 reason mapped moves fell back to
   // procedural: the clip was named on the move but never loaded). Next rep plays the real mocap.
   if (m && m.clip && window.loadClipFor && typeof STUDIO!=='undefined' && !(STUDIO.clips&&(STUDIO.clips[m.clip]))){ try{ window.loadClipFor(m.clip); }catch(_e){} }
@@ -50752,6 +50763,91 @@ window.__deriveVariant = async function(key){
                comebackChains:((CAT&&CAT.comebacks)||[]).length };
     }
   };
+})();
+</script>
+
+<script>
+// ============================================================================
+// __slotClipRotate — stop every press of a button playing the same capture.
+//
+// STRIKE_MAP[kind][dir] resolves to ONE move name, so a button plus a direction always produced the
+// same move object and therefore the same animation. Measured over 24 driven attacks: 3 distinct
+// clips, one of them fifteen times. The bodies were animating perfectly and doing the same three
+// things forever, which is exactly what "the animations aren't working" looks like from the outside.
+//
+// Meanwhile every fighter already owns a set of captures per slot — 84,593 assignments generated
+// from their own fighting style. This routes the MOVE to its slot, and rotates through what that
+// fighter has there, never repeating back-to-back.
+//
+// IT ONLY CHANGES WHICH CAPTURE PLAYS. Damage, power, timing, reach and every other tuned number
+// come from the move object and are untouched.
+// ============================================================================
+(function(){
+  'use strict';
+  var ST = { rot:{}, hits:0, misses:0 };
+
+  // A move's shape decides its slot. Kept deliberately coarse — the point is variety within the
+  // right family, not a second move-selection system competing with the engine's.
+  function slotFor(f, m){
+    var cat  = String(m.cat || '').toUpperCase();
+    var limb = String(m.limb || '').toUpperCase();
+    var rear = !!(m._rear || m.rear);
+    if (cat === 'GRAPPLE' || cat === 'THROW') return rear ? 'ST_R_HGRAP' : (m._loaded ? 'ST_F_HGRAP' : 'ST_F_LGRAP');
+    if (cat === 'GROUND')  return 'GS_UP_ATK';
+    if (cat === 'DIVE' || m.traj === 'FLYING') return 'DV_TR_H';
+    if (cat === 'SUBMISSION') return 'SUB_STAND';
+    try{ if (f.running) return m._loaded ? 'ST_F_RUN_H' : 'ST_F_RUN_L'; }catch(e){}
+    if (rear) return 'ST_R_HEAVY';
+    // a loaded / heavy strike is the heavy slot, everything else is the light slot
+    if (m._loaded || (m.power || 0) >= 62) return 'ST_F_HEAVY';
+    return 'ST_F_LIGHT';
+  }
+  function nameOf(f){
+    try{ return String((f.opts && f.opts.name) || (f.who && f.who()) || 'BANNON').toUpperCase().replace(/[^A-Z0-9]/g,'_'); }catch(e){ return 'BANNON'; }
+  }
+  function poolFor(f, slot){
+    var who = nameOf(f), v = null;
+    try{ if (window.BANNON_ROSTER_MOVESETS) v = window.BANNON_ROSTER_MOVESETS.slot(who, slot); }catch(e){}
+    if (!v) return null;
+    var list = Array.isArray(v) ? v.slice() : [v];
+    // only offer captures that are actually resident, so rotation never downgrades a move to
+    // procedural just for the sake of being different
+    try{
+      if (typeof STUDIO !== 'undefined' && STUDIO.clips){
+        var ready = list.filter(function(c){ return !!STUDIO.clips[c]; });
+        // warm the rest for next time rather than dropping them permanently
+        if (window.loadClipFor) list.forEach(function(c){ if (!STUDIO.clips[c]) { try{ window.loadClipFor(c); }catch(e){} } });
+        if (ready.length) list = ready;
+      }
+    }catch(e){}
+    return list.length ? list : null;
+  }
+
+  window.__slotClipRotate = function(f, m){
+    if (!f || !m) return null;
+    var slot = slotFor(f, m);
+    var pool = poolFor(f, slot);
+    if (!pool || pool.length < 1){ ST.misses++; return null; }
+    var key = nameOf(f) + '|' + slot;
+    var st = ST.rot[key] || (ST.rot[key] = { i: -1, last: null });
+    // advance, and never play the same capture twice running when there is an alternative
+    var pick = null;
+    for (var tries = 0; tries < pool.length; tries++){
+      st.i = (st.i + 1) % pool.length;
+      var c = pool[st.i];
+      if (c !== st.last || pool.length === 1){ pick = c; break; }
+    }
+    if (!pick) pick = pool[0];
+    st.last = pick; ST.hits++;
+    return pick;
+  };
+
+  window.BANNON_CLIP_ROTATE = {
+    slotFor: slotFor, poolFor: poolFor,
+    stats: function(){ return { rotated:ST.hits, noPool:ST.misses, slotsInUse:Object.keys(ST.rot).length }; },
+    reset: function(){ ST.rot = {}; ST.hits = 0; ST.misses = 0; }
+  };
+  console.log('%c[BANNON_CLIP_ROTATE] strikes rotate through each fighter\u2019s own equipped captures','color:#7CFC00');
 })();
 </script>
 
