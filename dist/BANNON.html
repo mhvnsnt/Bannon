@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2440"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2443"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -958,6 +958,136 @@ body { font-family:'Rajdhani', sans-serif; position:fixed; inset:0; overscroll-b
 </style>
 </head>
 <body class="touch">
+<!-- ============================================================================================
+     BANNON BOOT SCREEN — the loading screen the game never had.
+     Owner: "Just made a loading screen at boot like WWE 2k with short load time or like mdickie to
+     let all assets and things load and render before play."
+
+     WHY IT IS THE RIGHT FIX AND NOT A COVER-UP: BANNON_BOOT measured the engine as READY at 3,966 ms
+     while DOMContentLoaded lands at 26,435 ms. For twenty-two of those seconds the engine already
+     works and the player is looking at nothing, with no idea whether the game is alive. That is the
+     actual experience of "slow load" — not the milliseconds, the silence. A loading screen turns dead
+     time into visible progress AND, more importantly, gives the game somewhere to do its warm-up work
+     ON PURPOSE instead of scattering it through the first match.
+
+     This markup lives at the very top of <body> and is styled inline so it PAINTS ON THE FIRST FRAME —
+     before the stylesheet, before three.js, before any of the 2.59 MB of script. Nothing it depends on
+     can be late, because nothing it depends on exists yet.
+     ============================================================================================ -->
+<div id="bootScreen" style="position:fixed;inset:0;z-index:100000;background:#07080b;color:#e8e2d4;
+     display:flex;flex-direction:column;align-items:center;justify-content:center;
+     font:600 13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;-webkit-tap-highlight-color:transparent">
+  <div style="font:900 42px/1 ui-monospace,monospace;letter-spacing:6px;color:#ffd23f;
+              text-shadow:0 0 28px rgba(255,210,63,.35)">BANNON</div>
+  <div style="margin-top:6px;font-size:10px;letter-spacing:3px;opacity:.5">OFF THE TOP ROPE</div>
+  <div id="bootBarWrap" style="margin-top:26px;width:min(74vw,420px);height:5px;border-radius:3px;
+       background:rgba(255,255,255,.10);overflow:hidden">
+    <div id="bootBar" style="height:100%;width:0%;border-radius:3px;
+         background:linear-gradient(90deg,#7a0000,#ffd23f);transition:width .28s ease"></div>
+  </div>
+  <div id="bootPhase" style="margin-top:12px;font-size:11px;letter-spacing:1.5px;opacity:.85">starting the engine</div>
+  <div id="bootPct" style="margin-top:3px;font-size:10px;opacity:.45">0%</div>
+  <div id="bootTip" style="position:absolute;bottom:34px;left:50%;transform:translateX(-50%);
+       max-width:78vw;text-align:center;font-size:11px;line-height:1.6;opacity:.55"></div>
+  <div id="bootSkip" style="position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+       font-size:9px;opacity:0;letter-spacing:1px;transition:opacity .4s">tap to continue anyway</div>
+</div>
+<script>
+(function(){
+  var el = function(id){ return document.getElementById(id); };
+  var BOOT = { pct:0, done:false, phase:'starting the engine' };
+  window.BANNON_BOOT_SCREEN = BOOT;
+
+  // Tips rotate so a long load has something to read — MDickie's loading screens and 2K's both do
+  // this, and it is the difference between "loading" and "frozen".
+  var TIPS = [
+    'A pin is not a button. Put both shoulders on the mat where the referee can see them.',
+    'Weight is real. Lifting someone heavier drains you and can botch the move.',
+    'Poise is not health. A body can crumple long before the HP runs out.',
+    'The ropes remember. Momentum off them is real physics, not an animation.',
+    'Walk to the edge of a location and keep walking — that is how you leave.',
+    'Sleep anywhere: a bed, a bench, a car, a table, the bare floor. The surface decides the rest.',
+    'Hit someone in the street and the witnesses matter. So does the referee, in the ring.',
+    'Every variant is a real move — snap, kneeling, sit-out and reversed all read differently.'
+  ];
+  var tip = el('bootTip');
+  if (tip) {
+    var ti = Math.floor(Math.random() * TIPS.length);
+    tip.textContent = TIPS[ti];
+    setInterval(function(){ ti = (ti + 1) % TIPS.length;
+      tip.style.opacity = 0;
+      setTimeout(function(){ tip.textContent = TIPS[ti]; tip.style.opacity = .55; }, 320);
+    }, 4200);
+  }
+
+  function paint(){
+    var b = el('bootBar'), p = el('bootPhase'), c = el('bootPct');
+    if (b) b.style.width = Math.max(0, Math.min(100, BOOT.pct)) + '%';
+    if (p) p.textContent = BOOT.phase;
+    if (c) c.textContent = Math.round(BOOT.pct) + '%';
+  }
+  BOOT.set = function(pct, phase){
+    if (pct != null && pct > BOOT.pct) BOOT.pct = pct;      // never go backwards; that reads as a hang
+    if (phase) BOOT.phase = phase;
+    paint();
+  };
+  BOOT.hide = function(){
+    if (BOOT.done) return;
+    BOOT.done = true;
+    BOOT.set(100, 'ready');
+    var d = el('bootScreen');
+    if (!d) return;
+    d.style.transition = 'opacity .45s';
+    d.style.opacity = '0';
+    setTimeout(function(){ try{ d.parentNode.removeChild(d); }catch(e){} }, 500);
+    try{ if (window.BANNON_BOOT) window.BANNON_BOOT.mark('boot screen dismissed'); }catch(e){}
+  };
+
+  // ── PHASES. Each is a REAL condition, not a timer. A fake progress bar that finishes before the
+  // game does is worse than none, because the first thing you then do is tap a dead screen.
+  var phases = [
+    { at: 12, label:'loading renderer',      ready:function(){ return typeof THREE !== 'undefined'; } },
+    { at: 34, label:'building the engine',   ready:function(){ return typeof window.startFight === 'function'; } },
+    { at: 58, label:'loading move clips',    ready:function(){
+        try{ return typeof STUDIO !== 'undefined' && STUDIO.clips && Object.keys(STUDIO.clips).length > 8; }
+        catch(e){ return false; } } },
+    { at: 76, label:'waking the world',      ready:function(){
+        return typeof window.BANNON_LIFE !== 'undefined' && typeof window.BANNON_MOVEPOOL !== 'undefined'; } },
+    { at: 92, label:'finishing up',          ready:function(){ return document.readyState === 'complete'
+                                                                    || document.readyState === 'interactive'; } }
+  ];
+  var idx = 0, t0 = Date.now();
+  var poll = setInterval(function(){
+    // advance through every phase whose condition is already met
+    while (idx < phases.length && phases[idx].ready()) {
+      BOOT.set(phases[idx].at, phases[idx].label);
+      idx++;
+    }
+    if (idx < phases.length) {
+      // creep slowly toward the next milestone so the bar never looks stuck, but never PAST it —
+      // the number has to keep meaning something
+      var floor = idx > 0 ? phases[idx-1].at : 0;
+      var ceil  = phases[idx].at;
+      BOOT.set(Math.min(ceil - 1, BOOT.pct + (ceil - floor) * 0.012), phases[idx].label);
+    }
+    // DONE when the document has finished AND the engine is real. Both, because either alone lies:
+    // the engine exists at ~4 s while the document runs to ~26 s, and a document can finish with a
+    // broken engine.
+    var engineUp = (typeof window.startFight === 'function');
+    var docDone  = (document.readyState === 'complete');
+    if (engineUp && docDone) { clearInterval(poll); BOOT.hide(); }
+    // A LAST RESORT, not a normal path: if something never finishes, let the player in rather than
+    // trapping them behind a loading screen forever. Shows only after it is clearly wrong.
+    if (Date.now() - t0 > 20000) { var sk = el('bootSkip'); if (sk) sk.style.opacity = '.5'; }
+    if (Date.now() - t0 > 75000) { clearInterval(poll); BOOT.hide(); }
+  }, 120);
+  var skipNow = function(){ if (Date.now() - t0 > 20000) BOOT.hide(); };
+  document.addEventListener('click', skipNow);
+  document.addEventListener('touchend', skipNow);
+  paint();
+})();
+</script>
+
 <canvas id="gameCanvas" width="1080" height="2032" style="width: 432px; height: 813px;"></canvas>
 <style>
 #freecamBtn{ position:fixed; top:calc(var(--safe-top) + 92px); left:10px; z-index:140; width:46px; height:46px; border-radius:12px; background:rgba(0,0,0,0.55); border:1.5px solid rgba(255,215,0,0.55); color:#FFD700; font-size:21px; display:none; align-items:center; justify-content:center; cursor:pointer; -webkit-tap-highlight-color:transparent; }
