@@ -50851,6 +50851,165 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script>
+// ============================================================================
+// BANNON_SHOWTIME — entrances and victory moments you CONTROL, MDickie-style.
+//
+// Owner: "a victory scene or victory moment and entrance moment like mdickie where u control your
+// entrance and victory moments and can exit the arena whenever u please and control ur entrance and
+// get in the ring at entrance when u feel like it or leave the arena after a match when u feel like
+// it."
+//
+// THE POINT IS THAT IT IS NOT A CUTSCENE. You come through the curtain and then you are just a man
+// standing on a ramp. Walk down when you want. Stand there and soak it in. Go and hit someone
+// before the bell. Climb in when you feel like it. Same after the finish: the match is over and you
+// are still standing in the ring with the run of the building until you decide to leave.
+//
+// WHAT WAS THERE: a startEntrance/updateEntrance pair, DUPLICATED in two separate IIFEs, with ZERO
+// callers — nothing in the game ever invoked either copy. And it could not have worked if it had:
+// it set `fighter.z = -500` and `fighter.y = 30` in a world where the ring is 3.2m across and the
+// entrance stage sits at z = -10.7. It would have thrown the fighter half a kilometre into the dark
+// and 30 metres into the air. This replaces it with the arena's real geometry.
+//
+// It reuses the systems that already work rather than scripting around them: the ramp/stage from
+// buildArena, the apron + ring-in from zoneAction, the ceremony window from BANNON_FX (so entrance
+// and victory pyro fire and NOTHING else does), and BANNON_LIFE for walking out of the building.
+// ============================================================================
+(function(){
+  'use strict';
+  var ST = { phase:null, who:null, since:0, banner:null, freed:false };
+
+  function HZ(){ try{ return (typeof ARENA_HALF_Z!=='undefined') ? ARENA_HALF_Z : 2.2; }catch(e){ return 2.2; } }
+  // the arena's own numbers, not invented ones: buildArena puts the stage deck at -(HZ + 8.5)
+  function stageZ(){ return -(HZ() + 8.5); }
+  function rampMouth(){ return -(HZ() + 1.2); }          // where the ramp meets the ring apron
+  function now(){ return performance.now ? performance.now() : Date.now(); }
+
+  function banner(html){
+    var b = document.getElementById('showBanner');
+    if (!b){
+      b = document.createElement('div'); b.id = 'showBanner';
+      b.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:96px;z-index:99980;' +
+        'background:#0a0c12e8;border:1px solid #ff7a1a88;border-radius:10px;padding:9px 14px;color:#ffd9a8;' +
+        'font:700 12px var(--f-ui);letter-spacing:1px;text-align:center;box-shadow:0 8px 26px #000b;' +
+        'display:none;max-width:92vw';
+      document.body.appendChild(b);
+    }
+    ST.banner = b;
+    if (html === false){ b.style.display = 'none'; return b; }
+    b.innerHTML = html; b.style.display = 'block';
+    return b;
+  }
+  function btn(label, id, accent){
+    return '<button data-show="' + id + '" style="background:' + (accent ? '#ff7a1a' : '#141a26') +
+      ';color:' + (accent ? '#120a04' : '#cfe8ff') + ';border:1px solid ' + (accent ? '#ff7a1a' : '#26303f') +
+      ';border-radius:7px;padding:6px 11px;margin:0 3px;cursor:pointer;font:700 11px var(--f-ui)">' + label + '</button>';
+  }
+  function wire(){
+    if (!ST.banner) return;
+    ST.banner.querySelectorAll('[data-show]').forEach(function(b){
+      b.onclick = function(){ act(b.getAttribute('data-show')); };
+    });
+  }
+
+  // ---- ENTRANCE -----------------------------------------------------------------------------
+  // You are placed at the top of the ramp and given control. Nothing walks you anywhere.
+  function entrance(f, opts){
+    opts = opts || {};
+    f = f || (typeof fighters !== 'undefined' && fighters[0]);
+    if (!f) return false;
+    ST.phase = 'entrance'; ST.who = f; ST.since = now();
+    try{
+      f.x = 0; f.z = stageZ() + 1.4; f.zone = 'FLOOR';
+      f.state = 'idle'; f.stateTime = 0; f.vx = 0; f.vz = 0;
+      f.facing = -Math.PI / 2;                      // looking down the ramp at the ring
+      f.ragdoll = false;
+    }catch(e){}
+    // the ONE place entrance pyro is legal — declared, not leaked (see BANNON_FX.ceremony)
+    try{ if (window.BANNON_FX && window.BANNON_FX.ceremony) window.BANNON_FX.ceremony(opts.pyroSec || 7); }catch(e){}
+    try{ if (window.BANNON_FX && window.BANNON_FX.stagePyro) window.BANNON_FX.stagePyro(); }catch(e){}
+    try{ if (typeof announce === 'function') announce(((f.opts && f.opts.name) || 'BANNON') + ' — MAKE YOUR ENTRANCE', 'take your time'); }catch(e){}
+    banner('<div style="margin-bottom:6px">YOUR ENTRANCE — walk down when you are ready</div>' +
+      btn('GET IN THE RING', 'ring', true) + btn('POSE', 'pose') + btn('SKIP', 'skip'));
+    wire();
+    return true;
+  }
+
+  // ---- VICTORY ------------------------------------------------------------------------------
+  // The bell has gone and you still have the run of the place. Celebrate, go up the ramp, or leave.
+  function victory(f, opts){
+    opts = opts || {};
+    f = f || (typeof fighters !== 'undefined' && fighters[0]);
+    if (!f) return false;
+    ST.phase = 'victory'; ST.who = f; ST.since = now();
+    try{ f.state = 'idle'; f.stateTime = 0; f.ragdoll = false; }catch(e){}
+    try{ if (window.BANNON_FX && window.BANNON_FX.ceremony) window.BANNON_FX.ceremony(opts.pyroSec || 9); }catch(e){}
+    try{ if (window.BANNON_FX && window.BANNON_FX.stagePyro) window.BANNON_FX.stagePyro(); }catch(e){}
+    try{ if (typeof announce === 'function') announce('YOUR MOMENT', 'stay as long as you like'); }catch(e){}
+    banner('<div style="margin-bottom:6px">THE MATCH IS OVER — the building is yours</div>' +
+      btn('CELEBRATE', 'celebrate', true) + btn('CLIMB THE BUCKLE', 'buckle') +
+      btn('LEAVE THE ARENA', 'leave'));
+    wire();
+    return true;
+  }
+
+  function act(what){
+    var f = ST.who || (typeof fighters !== 'undefined' && fighters[0]);
+    if (!f) return;
+    if (what === 'ring'){
+      // hand off to the REAL ring-in path rather than teleporting: walk to the apron and let
+      // zoneAction climb through the ropes exactly as it does any other time.
+      try{ f.z = rampMouth(); f.zone = 'FLOOR'; if (f.zoneAction) f.zoneAction(); }catch(e){}
+      finish();
+    } else if (what === 'skip'){
+      try{ f.x = 0; f.z = HZ() * 0.55; f.zone = 'RING'; f.state = 'idle'; }catch(e){}
+      finish();
+    } else if (what === 'pose'){
+      try{ if (window.performTaunt) window.performTaunt('up'); }catch(e){}
+      try{ if (window.BANNON_FX && window.BANNON_FX.ceremony) window.BANNON_FX.ceremony(4); }catch(e){}
+    } else if (what === 'celebrate'){
+      try{ if (window.performTaunt) window.performTaunt('up'); }catch(e){}
+      try{ if (window.BANNON_FX){ window.BANNON_FX.ceremony(5); window.BANNON_FX.stagePyro(); } }catch(e){}
+    } else if (what === 'buckle'){
+      try{ if (f.startClimb) f.startClimb('top'); else if (f.zoneAction) f.zoneAction(); }catch(e){}
+      try{ if (window.performTaunt) window.performTaunt('up'); }catch(e){}
+    } else if (what === 'leave'){
+      // walk out of the building — BANNON_LIFE owns the world beyond the arena
+      try{
+        if (window.BANNON_LIFE && window.BANNON_LIFE.goTo){ window.BANNON_LIFE.goTo('STREET'); }
+        else if (typeof gameState !== 'undefined'){ gameState = 'menu'; }
+      }catch(e){}
+      finish();
+    }
+  }
+  function finish(){
+    ST.phase = null; ST.who = null;
+    banner(false);
+  }
+
+  // The ceremony ends the moment you climb through the ropes for an entrance, so the match can
+  // start clean — and pyro stops being legal at exactly the same instant.
+  setInterval(function(){
+    try{
+      if (ST.phase !== 'entrance' || !ST.who) return;
+      var f = ST.who;
+      if (f.zone === 'RING'){ finish();
+        try{ if (typeof announce === 'function') announce('IN THE RING', 'ring the bell'); }catch(e){} }
+    }catch(e){}
+  }, 250);
+
+  window.BANNON_SHOWTIME = {
+    entrance: entrance, victory: victory, act: act, end: finish,
+    phase: function(){ return ST.phase; },
+    stageZ: stageZ, rampMouth: rampMouth,
+    state: function(){ return { phase:ST.phase, who:ST.who && ST.who.opts && ST.who.opts.name,
+      elapsed: ST.phase ? Math.round(now() - ST.since) : 0 }; }
+  };
+  console.log('%c[BANNON_SHOWTIME] entrances and victory moments are yours to control — ' +
+    'walk out, get in when you like, leave when you like','color:#7CFC00');
+})();
+</script>
+
 </body></html>
 
 
