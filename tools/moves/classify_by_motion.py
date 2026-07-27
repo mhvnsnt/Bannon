@@ -123,9 +123,37 @@ def profile(clip):
         if 'haL' in f and 'haR' in f:
             sym.append(float(np.dot(f['haL'] - ch, fwd) - np.dot(f['haR'] - ch, fwd)) / H)
 
+    # ROOT MOTION IS STRIPPED. Every clip in this repo stores joints RELATIVE TO THE PELVIS -- the
+    # pelvis itself is literally [0,0,0] in every key of every clip, captured and generated alike,
+    # because the engine owns the root and the clip only supplies the pose. Measured on GEN_WALK_FWD
+    # and on TIGER_FEINT_KICK: identical, all zeros.
+    #
+    # So body travel, hip drop and hip rise are STRUCTURALLY ZERO and always were. Three verdicts --
+    # drop, lift and locomotion -- could never fire, which is most of why 336 clips came back
+    # unknown. This is exactly the kind of thing that only shows up when you measure your own
+    # measurements.
+    #
+    # The signals have to live in the pose itself:
+    #   stride   the feet swapping fore and aft, repeatedly -- that IS walking, with or without a root
+    #   fold     head-to-foot distance shrinking (a body dropping/folding) or growing (standing up)
     hip_y = np.array(hip_y)
     P = np.array(pos)
     travel = float(np.linalg.norm(P.max(0) - P.min(0))) / H if len(P) else 0.0
+    stride, fold = 0.0, []
+    try:
+        sep = []
+        for f in F:
+            if 'ftL' in f and 'ftR' in f:
+                sep.append(float(f['ftL'][2] - f['ftR'][2]) / H)
+            if 'head' in f and 'ftL' in f and 'ftR' in f:
+                lo = min(f['ftL'][1], f['ftR'][1])
+                fold.append((f['head'][1] - lo) / H)
+        if len(sep) > 4:
+            sg = np.sign(np.array(sep))
+            stride = float(np.sum(sg[1:] != sg[:-1]))     # fore/aft crossings = steps taken
+    except Exception:
+        pass
+    fold = np.array(fold) if fold else np.array([1.0])
     return dict(
         handRise=round(max((max(x) - min(x)) for x in (hL, hR) if x) if (hL or hR) else 0.0, 3),
         armExtend=round(float(np.max(arm_ext)) if arm_ext else 0.0, 3),
@@ -138,6 +166,10 @@ def profile(clip):
         hipDrop=round(float(hip_y[0] - hip_y.min()) / H, 3),
         hipRise=round(float(hip_y.max() - hip_y[0]) / H, 3),
         travel=round(travel, 3),
+        stride=round(float(stride), 1),
+        foldMin=round(float(fold.min()), 3),
+        foldMax=round(float(fold.max()), 3),
+        foldRange=round(float(fold.max() - fold.min()), 3),
         spin=round(float(np.sum(spin)) if spin else 0.0, 3),
         # near 0 = both hands do the same thing (chop, double axe, taunt); large = one hand leads
         symmetry=round(float(np.max(np.abs(sym))) if sym else 0.0, 3),
@@ -162,10 +194,12 @@ def verdict(p):
         return 'unknown', 'too few keyframes to measure'
     ae, le, kr, fy = p['armExtend'], p['legExtend'], p['kneeRise'], p['footHeight']
     # order matters: the biggest, least ambiguous body signals first
-    if p['hipDrop'] > 0.45 and p['hipRise'] < 0.15:
-        return 'drop', 'pelvis falls %.2f body heights' % p['hipDrop']
-    if p['hipRise'] > 0.35:
-        return 'lift', 'pelvis climbs %.2f' % p['hipRise']
+    # the body FOLDING or RISING, measured head-to-foot, because the root is not in the data
+    if p['foldMin'] < 0.55 and p['foldRange'] > 0.30:
+        return ('getup' if p['foldMax'] - p['foldMin'] > 0.45 and p['stride'] < 6 else 'drop'), \
+               'body folds to %.2f of standing height and back (range %.2f)' % (p['foldMin'], p['foldRange'])
+    if p['stride'] >= 4:
+        return 'locomotion', '%d fore/aft foot crossings -- a stride cycle' % int(p['stride'])
     if kr > 0.10:
         return 'knee', 'knee drives %.2f above the hip' % kr
     if fy > 0.55 and le > 0.80:
@@ -179,8 +213,6 @@ def verdict(p):
     # chest over the clip, and on the labelled set the uppercut leads every other punch on it.
     if p['handRise'] > 0.30 and ae > 0.60:
         return 'punch', 'bent arm drives the hand up %.2f body heights' % p['handRise']
-    if p['travel'] > 0.9:
-        return 'locomotion', 'body travels %.2f body heights' % p['travel']
     if p['spin'] > 4.0:
         return 'spin', 'shoulder line rotates %.1f rad' % p['spin']
     if ae < 0.80 and fy < 0.25 and kr < -0.05 and p['hipDrop'] < 0.12 and p['travel'] < 0.35:

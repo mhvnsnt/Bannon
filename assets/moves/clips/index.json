@@ -10733,5 +10733,32 @@
   "via": "text_to_clip/momask",
   "prompt": "a person steps sideways to the left keeping a fighting stance",
   "bones": 17
+ },
+ "GEN_GETUP_FRONT": {
+  "file": "GEN_GETUP_FRONT.json",
+  "bytes": 52454,
+  "dur": 1.8,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person lying face down pushes up off the floor and stands upright",
+  "bones": 17
+ },
+ "GEN_GETUP_BACK": {
+  "file": "GEN_GETUP_BACK.json",
+  "bytes": 52493,
+  "dur": 3.6,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person lying on their back rolls over and gets up to standing",
+  "bones": 17
+ },
+ "GEN_TAUNT_ARMS": {
+  "file": "GEN_TAUNT_ARMS.json",
+  "bytes": 52252,
+  "dur": 2.4,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person raises both arms above the head to celebrate",
+  "bones": 17
  }
 }
