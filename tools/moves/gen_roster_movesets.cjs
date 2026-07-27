@@ -325,11 +325,34 @@ for (const key of names){
       }
       continue;
     }
+    // A COMBAT SLOT CANNOT HOLD A DEATH ANIMATION. The category is already on every clip in
+    // fbx_move_map and the filler ignored it, so slots were scored purely on style fit and position.
+    // MEASURED on BANNON: 19 of 281 combat fills were non-combat captures -- "Death From Back
+    // Headshot" in a STRIKE slot, "Zombie Dying" and "CemeteryDrive" in GRAPPLE slots, "falling idle"
+    // and "idle (3)" in strike and carry slots. In a real match that was the single most-played
+    // capture in the game: 41 of 79 poses across a button-mashing run were DEATH_FROM_BACK_HEADSHOT.
+    // A strike that plays a dying animation is exactly the limp marionette flop the owner keeps
+    // reporting, and it is why the fix has never stuck -- the clips WERE firing, they were just the
+    // wrong clips.
+    const COMBAT_KINDS = { strike:1, combo:1, combo_ender:1, grapple:1, carry:1, dive:1,
+                           submission:1, chain:1, breaker:1, rollup:1 };
+    const okFor = (slot, rec) => {
+      if (!COMBAT_KINDS[slot.kind]) return true;            // stances, taunts, get-ups keep their own
+      const cat = String(rec.cat || '').toLowerCase();
+      if (cat && /knockdown|locomotion|taunt|style_stance|character_rig|reaction|misc/.test(cat)) return false;
+      // backstop for clips with no category recorded
+      return !/death|dying|zombie|coffin|cemetery|corpse|\bidle\b|falling|sit|walk|run cycle/i.test(rec.clip || '');
+    };
     // a TAG slot can only be filled by a capture that has two attackers in it
-    const cands = (slot.kind === 'tag')
+    let cands = (slot.kind === 'tag')
       ? (pool.tagPool && pool.tagPool.length ? pool.tagPool : [])
       : ((slot.pos && pool.byPos[slot.pos] && pool.byPos[slot.pos].length)
           ? pool.byPos[slot.pos] : pool.all);
+    if (COMBAT_KINDS[slot.kind]){
+      const clean = cands.filter(c => okFor(slot, c));
+      // fall back to the whole pool's clean half rather than to junk if this position has none
+      cands = clean.length ? clean : pool.all.filter(c => okFor(slot, c));
+    }
     if (!cands.length) continue;
     const n = Math.max(1, Math.min(slot.pick || 1, cands.length));
     const scored = cands.map(c => [scoreClip(c, slot, style, rnd), c]).sort((a, b) => b[0] - a[0]);
