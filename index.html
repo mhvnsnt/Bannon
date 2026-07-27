@@ -352,10 +352,24 @@ window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10
   setTimeout(function(){ try{ clearInterval(iv2); }catch(e){} }, 120000);
 })();
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- THREE + GLTFLoader — VENDORED LOCALLY, CDN only as a fallback.
+     These were CDN-FIRST, which made the entire engine a hostage to three network round-trips before
+     a single line of game code ran. Two consequences, both of which the owner has reported:
+       1. NO NETWORK = NO GAME. Measured in the headless harness with the CDN unreachable: 44 page
+          errors, `THREE is not defined`, and because the engine's top-level `let fighters = []`
+          sits after the first `new THREE.*`, the binding is never created and EVERY later system
+          throws `fighters is not defined`. Not a degraded game — a dead one. On an APK over file://
+          with no signal, that is exactly what happens.
+       2. SLOW BOOT. A blocking script tag pointing at a third-party host costs a DNS lookup, a TLS
+          handshake and a transfer before the parser moves on — three times over, on a phone.
+     Local first (same treatment FBXLoader already got, and for the same reason), CDN retained as a
+     document.write fallback so a stripped single-file copy with no assets/ folder still works. -->
+<script src="assets/vendor/three.min.js"></script>
+<script>if(typeof THREE==='undefined'){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>');}</script>
 <script>if(typeof THREE==='undefined'){document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"><\/script>');}</script>
 <script>if(typeof THREE==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');}</script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="assets/vendor/GLTFLoader.js"></script>
+<script>if(typeof THREE!=='undefined'&&!THREE.GLTFLoader){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');}</script>
 <script>if(typeof THREE!=='undefined'&&!THREE.GLTFLoader){document.write('<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');}</script>
 <!-- FBXLoader + fflate — VENDORED LOCALLY so the offline APK (file://) can load mocap animation.
      This is THE reason combat looked marionette: FBXLoader was CDN-only and never loaded on the APK,
@@ -9838,18 +9852,66 @@ Fighter.prototype.poseGrab = function(dt){
       const S=clamp((1.18-margin)+(1-stF)*0.55, 0, 1) * (st===2?1:0.55);
       this._liftStruggle=S;
       if(S>0.02){
+        // ===== TEETER RESTORED TO FULL (2026-07-27) =====================================
+        // The owner: "the sine wave struggle lift teeter needs to be restored to full holiness[,] it
+        // was a trail that was broken when it got dampened without me asking ... sometimes they would
+        // still struggle back down or side to side or make u lean back or forward it was great."
+        // He is right and this was mine to undo. The block below had a teeter of S*wob*0.085 — a
+        // NINE CENTIMETRE maximum rock at the chest, on one axis, with no lateral sway, no
+        // low-stamina swell and nothing that could ever fail. That is not a fight to hoist a body,
+        // it is a shiver. Restored:
+        //   AMP     x2.5 at rest .. x3.2 at the edge of failure (was x1.0)
+        //   LATERAL 0.5 .. 0.7 of the forward amplitude on the SIDE axis — the "side to side" that
+        //           was missing entirely; the stack sways across the body, not just fore/aft
+        //   GAS     x1.6 .. x1.9 extra as stamina empties — a blown lifter wobbles worse
+        //   SHAKE   the camera goes with it past |wob| > 0.7, so a near-drop reads as a near-drop
+        //   FAIL    when BANNON_REACH.liftCheck says the strength/mass ratio is under the floor, the
+        //           lift COLLAPSES BACK DOWN instead of completing — "struggle back down"
         const tt=this.stateTime||0;
-        const wob=Math.sin(tt*4.6)*0.55 + Math.sin(tt*2.15+0.7)*0.45;   // fast tremor + slow near-drop swell
+        // three primes, so the wave never repeats itself into a mechanical loop
+        const wob=Math.sin(tt*4.6)*0.55 + Math.sin(tt*2.15+0.7)*0.45 + Math.sin(tt*7.3+1.9)*0.18;
         const down=Math.max(0,-wob), apex=Math.max(0,wob);
-        const vSag = -S*(0.05 + down*0.15) + S*apex*0.03;               // slip down on the down-beats, catch on the up
+        // strength-vs-mass severity: 0 = comfortable lift, 1 = about to lose it
+        let sev=0, willFail=false;
+        try{ const LC=window.BANNON_REACH && BANNON_REACH.liftCheck(this,_v);
+             if(LC){ sev=LC.severity; willFail=LC.fail; } }catch(e){}
+        const AMP  = 2.5 + 0.7*Math.max(sev, S);          // 2.5 .. 3.2
+        const GAS  = 1.6 + 0.3*(1-stF);                   // 1.6 .. 1.9 as the tank empties
+        const LAT  = 0.5 + 0.2*Math.max(sev, S);          // 0.5 .. 0.7 of forward amplitude
+        const K    = S*AMP*GAS;
+        const vSag = -K*(0.05 + down*0.15) + K*apex*0.03;              // slip on the down-beats, catch on the up
         this.J.pelvis.tgt.y += vSag*0.9; this.J.chest.tgt.y += vSag; this.J.head.tgt.y += vSag*1.05;
-        this.J.knL.tgt.y += -S*down*0.085; this.J.knR.tgt.y += -S*down*0.085;   // knees buckle when it's slipping
-        const teeter=S*wob*0.085;                                       // fwd/back rock, head lags most
+        this.J.knL.tgt.y += -K*down*0.085; this.J.knR.tgt.y += -K*down*0.085;   // knees buckle when it's slipping
+        // FORE/AFT — the lean back and forward. Head lags most, which is what sells the weight.
+        const teeter=K*wob*0.085;
         this.J.pelvis.tgt.x += teeter*0.5; this.J.chest.tgt.x += teeter*0.85; this.J.head.tgt.x += teeter*1.1;
-        const bend=S*(down*0.18 - apex*0.09);                           // spine flexes under grind, extends at lockout
+        // SIDE TO SIDE — on the axis perpendicular to the way he is facing, on its own slower beat so
+        // it crosses the fore/aft rock instead of riding it. This axis simply did not exist before.
+        const sway=K*LAT*0.085*(Math.sin(tt*3.1+2.4)*0.7 + Math.sin(tt*1.37)*0.3);
+        const rx=Math.sin(this.facing||0), rz=Math.cos(this.facing||0);   // right-hand vector
+        this.J.pelvis.tgt.x += rx*sway*0.45; this.J.pelvis.tgt.z += rz*sway*0.45;
+        this.J.chest.tgt.x  += rx*sway*0.90; this.J.chest.tgt.z  += rz*sway*0.90;
+        this.J.head.tgt.x   += rx*sway*1.15; this.J.head.tgt.z   += rz*sway*1.15;
+        // spine flexes under the grind and extends at lockout — the phases of the hoist
+        const bend=K*(down*0.18 - apex*0.09);
         this.J.chest.tgt.x += bend*0.7; this.J.head.tgt.x += bend*1.0;
+        // the near-drop is a CAMERA event, not just a pose one
+        if(Math.abs(wob)>0.7 && S>0.35){
+          try{ if(typeof camShake!=='undefined') camShake=Math.max(camShake||0, 0.10+0.16*S); }catch(e){}
+        }
+        // STRUGGLE BACK DOWN. Under the fail floor the hoist does not quietly complete — it loses
+        // the fight on a down-beat and the body comes back down on top of him.
+        if(willFail && down>0.82 && st===2 && !this._liftCollapsed){
+          this._liftCollapsed=true;
+          try{
+            if(typeof announce==='function') announce('HE CAN\'T GET HIM UP!', (this.who&&this.who())||'');
+            this.stamina=Math.max(0,(this.stamina||0)-18);
+            this.grappleStage=1; this.grabTimer=0;
+            if(typeof camShake!=='undefined') camShake=Math.max(camShake||0,0.34);
+          }catch(e){}
+        }
       }
-    } else { this._liftStruggle=0; } }
+    } else { this._liftStruggle=0; this._liftCollapsed=false; } }
   this.solveArmIK();
 };
 
@@ -10617,6 +10679,13 @@ function registerHit(attacker, move){
     else if (move.traj==='OVERHAND') reach = 1.32;
   }
 
+  // REACH IS THE BODY, NOT A CONSTANT (owner law: "Range is strictly driven by the physical reach of
+  // the character model and their core attributes/stats"). The numbers above are the tuned BASE for a
+  // reference-height fighter; BANNON_REACH measures the bound GLB's actual shoulder->hand and
+  // hip->foot bone chains and scales them, so a cruiserweight genuinely cannot touch a giant from
+  // where the giant can touch him. No model bound = scale 1 = today's behaviour exactly.
+  reach *= (window.BANNON_REACH ? BANNON_REACH.scaleFor(attacker, move) : 1);
+
   const groundMove = move.height==='GROUND' || move.cat==='GROUND' || move.cat==='THROW' || move.cat==='GRAPPLE';
 
   // downed/falling opponent
@@ -10629,7 +10698,17 @@ function registerHit(attacker, move){
     }
     return;
   }
-  if (!inFront || dist > reach) return; // whiff
+  if (!inFront) return;
+  // THE "BARELY PASSES" BAND — the owner's question, answered in three numbers instead of a state
+  // machine. Inside `clean` the strike plays as authored. Between clean and the stretch ceiling the
+  // fighter SPENDS THE SHORTFALL ON HIS BODY: the spine leans, the shoulder rotates through and the
+  // striking arm extends toward the target by exactly the deficit, scaled by agility. He does not
+  // slide, he does not warp, and the shot arrives at the edge of its range looking like a shot at the
+  // edge of its range — and doing less, because a fully-extended arm has no mass behind it.
+  var _rb = window.BANNON_REACH ? BANNON_REACH.band(attacker, opp, reach, dist, move)
+                                : { hit: dist <= reach, dmg: 1, lean: 0 };
+  if (!_rb.hit) return;                       // genuinely out of range — a real whiff
+  if (_rb.lean > 0 && window.BANNON_REACH) BANNON_REACH.applyLean(attacker, opp, _rb.lean);
 
   // block check (normal moves only; ground/throw pierce block)
   if (opp.state==='block' && !groundMove) {
@@ -10669,7 +10748,8 @@ function registerHit(attacker, move){
   const _pmA = window.personaModsFor ? window.personaModsFor(attacker) : null;
   const _pmD = window.personaModsFor ? window.personaModsFor(opp) : null;
   const kbF   = clamp(Math.pow(_mA/Math.max(0.1,_mD), 0.6), 0.70, 1.45) / (_pmD ? _pmD.staggerRes : 1);
-  const effPower = clamp(move.power * rangeF * stamF * velF * loadF * massF * (_pmA ? _pmA.damageMult : 1), 6, 135);
+  // _rb.dmg is the stretch taper: 1.0 inside clean range, falling toward ~0.55 at maximum extension.
+  const effPower = clamp(move.power * rangeF * stamF * velF * loadF * massF * (_rb.dmg || 1) * (_pmA ? _pmA.damageMult : 1), 6, 135);
   const em = Object.assign({}, move, { power: effPower, _massF: massF, _kbF: kbF }); // reactions key off effective power
   // tier label feedback (Light / Medium / Heavy)
   const tier = effPower<35 ? 'LIGHT' : effPower<70 ? 'MEDIUM' : 'HEAVY';
@@ -16614,10 +16694,20 @@ function setupInput(){
     if (!meter || !needle || !zone) return;
     if (meter._subActive) return;
 
+    // THE PIN'S OWN NUMBERS. BANNON_PINS resolves which of the 38 catalogue pins this is (lateral
+    // press / schoolboy / La Magistral / feet on the ropes...) and leaves the row here before
+    // calling. Without it we fall back to a plain lateral press so every legacy caller still works.
+    var PM = (window.__pinMods || { label:'PIN COVER', kick:1, speed:1, lift:1, hold:0, illegal:false, cocky:false });
+    window.__pinMods = null;
+    // MATCH RULES decide the count, the rope break and whether the referee polices anything at all.
+    var PR = (window.BANNON_PINS && BANNON_PINS.rules()) || { pinfall:true, count:3, ropeBreak:true, zoneOnly:true, dq:true };
+    var countTo = Math.max(1, PR.count || 3);
+
     meter._subActive = true;
     meter.classList.add('active');
+    meter._pinMods = PM; meter._pinRules = PR;
 
-    if (lbl) lbl.textContent = "PIN COVER";
+    if (lbl) lbl.textContent = String(PM.label || 'PIN COVER').toUpperCase();
     if (tapHint) {
       if (victim.isPlayer) {
         tapHint.textContent = "TAP ZONE BUTTON IN GREEN ZONE TO KICK OUT!";
@@ -16638,8 +16728,11 @@ function setupInput(){
     const trackW = 256;
     const victimHpRatio = clamp(victim.hp / (victim.maxHp || 10000), 0, 1);
     
-    const zoneW = Math.max(16, Math.min(85, 14 + 75 * victimHpRatio)); 
-    const zoneStart = 20 + Math.random() * (trackW - zoneW - 40);
+    // PM.kick is the pin's escape difficulty: >1 = easier to kick out of (a cocky one-foot cover is
+    // 1.45, feet-on-the-ropes is 0.55). It scales the green window directly, which is the only place
+    // "how hard is this pin to escape" can honestly live.
+    const zoneW = Math.max(10, Math.min(96, (14 + 75 * victimHpRatio) * (PM.kick || 1)));
+    const zoneStart = 20 + Math.random() * Math.max(1, trackW - zoneW - 40);
     
     zone.style.background = 'rgba(0, 255, 110, 0.75)';
     zone.style.borderColor = '#00ffaa';
@@ -16670,35 +16763,60 @@ function setupInput(){
       var _pdt = Math.min(100, _pnow - (meter._pinLastT || _pnow)); meter._pinLastT = _pnow;
       if (refSees){ refTimer += (_pdt || 20); meter._losWarned = false; }
       else if (!meter._losWarned){ meter._losWarned = true; try{ if(typeof announce==='function') announce(window.BANNON_REF&&BANNON_REF.isDown()?'NO REFEREE':'REF CAN\'T SEE IT','the count is held'); }catch(e){} }
-      if (refTimer >= 1500) {
+
+      // ILLEGAL PIN — feet on the ropes, a handful of tights. The numbers are the best in the file
+      // and the referee IS the cost: if he can see it AND this match type enforces DQ, he waves it
+      // off. In a hardcore or triple-threat rules set (dq:false) nobody is checking, and it stands.
+      if (PM.illegal && refSees && PR.dq && !escaped && !meter._waved){
+        meter._waved = true;
+        if (Math.random() < 0.55){
+          try{ if(typeof announce==='function') announce('THE REFEREE SEES IT!','the count is waved off'); }catch(e){}
+          try{ if(window.BANNON_RULES && BANNON_RULES.accrue) BANNON_RULES.accrue('ILLEGAL_PIN', attacker); }catch(e){}
+          escaped = true; endPin('stagger'); return;
+        }
+      }
+      // ROPE BREAK — a hand on the bottom rope stops the count dead. PM.hold>0 pins (roll-ups) are
+      // deliberately exempt: you are rolled up in the middle of the ring, there is nothing to grab.
+      if (PR.ropeBreak && !PM.hold && !escaped && refCount >= 1){
+        try{
+          var _half = (typeof ARENA_HALF!=='undefined') ? ARENA_HALF : 3.6;
+          if (Math.abs(victim.x) > _half - 0.32 || Math.abs(victim.z||0) > (_half*0.72) - 0.32){
+            try{ if(typeof announce==='function') announce('ROPE BREAK!','the hand is on the rope'); }catch(e){}
+            escaped = true; endPin('stagger'); return;
+          }
+        }catch(e){}
+      }
+      // ROLL-UP EXPIRY — a schoolboy is not a cover. It buys you a fast count and then it is over,
+      // which is exactly why they are dramatic instead of dominant.
+      if (PM.hold > 0 && !escaped){
+        meter._holdT = (meter._holdT || 0) + (_pdt || 20);
+        if (meter._holdT >= PM.hold * 1000){
+          try{ if(typeof announce==='function') announce('KICKED FREE','the roll-up is broken'); }catch(e){}
+          escaped = true; endPin('stagger'); return;
+        }
+      }
+
+      // PM.speed scales the beat between counts: a roll-up's ~0.5 means the referee is already
+      // sliding into position as you roll through, which is the whole point of a surprise pin.
+      if (refTimer >= 1500 * (PM.speed || 1)) {
         refTimer = 0;
         refCount++;
-        if (refCount === 1) {
-          if (typeof announce === 'function') announce('referee: ONE!', attacker.opts && attacker.opts.name || 'BANNON');
-        } else if (refCount === 2) {
-          if (typeof announce === 'function') announce('referee: TWO!!', attacker.opts && attacker.opts.name || 'BANNON');
+        var _WORD = ['','ONE!','TWO!!','THREE!!!','FOUR!!!','FIVE!!!'];
+        if (refCount < countTo) {
+          if (typeof announce === 'function') announce('referee: ' + (_WORD[refCount] || (refCount + '!')), attacker.opts && attacker.opts.name || 'BANNON');
+        }
+        if (refCount === countTo - 1) {
           // NEAR FALL is the classic run-in beat: somebody dives in to break up the count at two.
           // BANNON_RULES.triggerRunIn had been written and never called by anything — this is its
           // first real trigger, and BANNON_INTERFERENCE turns the returned name into an actual body.
           try{ if(window.BANNON_INTERFERENCE) window.BANNON_INTERFERENCE.maybe('NEAR_FALL', victim, attacker); }catch(e){}
           try{ if(window.BANNON_RATING_CREDIT) window.BANNON_RATING_CREDIT('nearFall', 1); }catch(e){}
-        } else if (refCount >= 3 && !escaped) {
-          clearInterval(tick);
-          meter.classList.remove('active');
-          meter._subActive = false;
-          if (meter._cleanEscape) meter._cleanEscape();
-          
+        }
+        if (refCount >= countTo && !escaped) {
           victim.hp = 0;
-          if (typeof announce === 'function') announce('referee: THREE!!! PINNED!', attacker.opts && attacker.opts.name || 'BANNON');
-
-          attacker.state = 'idle';
-          attacker.stateTime = 0;
-          attacker._pinTarget = null;
-
-          victim.state = 'down';
-          victim.stateTime = 0;
-          victim._pinBy = null;
-          try{ window.__refPin=null; }catch(e){}
+          if (typeof announce === 'function') announce('referee: ' + (_WORD[countTo] || countTo) + ' PINNED!', attacker.opts && attacker.opts.name || 'BANNON');
+          try{ if(window.BANNON_PINS) BANNON_PINS._fall(attacker, victim, PM); }catch(e){}
+          endPin('down');
         }
       }
 
@@ -16716,29 +16834,36 @@ function setupInput(){
     }, 20);
     meter._subTick = tick;
 
+    // ONE teardown for every way a pin can end — three count, kick-out, rope break, roll-up expiry
+    // and a waved-off illegal cover. Four call sites used to each unwind the state by hand, which is
+    // how you end up with a fighter stuck in 'pinCover' forever after an edge case.
+    function endPin(victimState){
+      if (!meter._subActive) return;
+      clearInterval(tick);
+      meter.classList.remove('active');
+      meter._subActive = false;
+      meter._holdT = 0; meter._waved = false;
+      if (meter._cleanEscape) meter._cleanEscape();
+      attacker.state = 'idle';
+      attacker.stateTime = 0;
+      attacker._pinTarget = null;
+      victim.state = victimState || 'stagger';
+      victim.stateTime = 0;
+      victim._pinBy = null;
+      try{ window.__refPin = null; }catch(e){}
+      try{ if(window.BANNON_PINS) BANNON_PINS._ended(attacker, victim); }catch(e){}
+    }
+
     function triggerKickout(){
       if (!meter._subActive) return;
-      
+
       const nPct = needlePos / trackW;
       const zonePct = zoneStart / trackW;
       const zoneEndPct = (zoneStart + zoneW) / trackW;
-      
+
       if (nPct >= zonePct - 0.02 && nPct <= zoneEndPct + 0.02){
         escaped = true;
-        clearInterval(tick);
-        meter.classList.remove('active');
-        meter._subActive = false;
-        if (meter._cleanEscape) meter._cleanEscape();
-        
-        attacker.state = 'idle';
-        attacker.stateTime = 0;
-        attacker._pinTarget = null;
-        
-        victim.state = 'stagger';
-        victim.stateTime = 0;
-        victim._pinBy = null;
-        try{ window.__refPin=null; }catch(e){}
-
+        endPin('stagger');
         if (typeof spawnMatDust === 'function') spawnMatDust(victim.x, victim.z, 2.5);
       } else {
         zone.style.background = 'rgba(230, 20, 20, 0.8)';
@@ -48240,6 +48365,1412 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+
+<script>
+// ============================================================================
+// BANNON_PINS — THREE WAYS TO GET A FALL, and match rules that decide whether any of them count.
+//
+// The owner's correction, verbatim: "I want procedural pins, front and back roll up/surprise pins
+// like WWE games have ... like school boy and la magistral etc, and also a 3rd down plus zone to
+// grounded opponent and rules depend on match rules, not just procedural pin only, I literal asked
+// for down plus zone and procedural pin."
+//
+// So there are THREE entry paths and they are all real:
+//
+//   1. DOWN + ZONE  — the deliberate cover. Hold down on the stick/joy and press ZONE next to a
+//      grounded opponent. This already existed as a call to startPin(); what it lacked was any
+//      notion of WHICH pin, so every cover in the game was the same lateral press. It now resolves
+//      through the catalogue, so a fighter with the Jackknife equipped covers with a jackknife and
+//      gets the jackknife's harder kick-out window.
+//
+//   2. PROCEDURAL   — no button at all. If a landing leaves an opponent supine with BOTH shoulder
+//      proxies inside 15 cm of the mat and you are lying across them, that IS a pin and the referee
+//      slides in. Read off the verlet ragdoll (V.shL / V.shR) and groundFacingOf(), which are the
+//      engine's own truth about where a body actually is — not a state flag we set and hope holds.
+//
+//   3. ROLL-UP / SURPRISE — front AND rear, out of a standing exchange. Schoolboy, O'Connor roll,
+//      backslide, La Magistral, small package, sunset flip, crucifix, victory roll. These are not
+//      covers: they start the count almost instantly (speed ~0.5) and they EXPIRE after a couple of
+//      seconds (hold). Fast count, short fuse — that is what makes them dramatic instead of
+//      dominant, and it is why they are worth owning as a separate category.
+//
+// MATCH RULES gate all three. A ladder match has no pinfalls. Hell in a Cell has no rope break. A
+// triple threat has no disqualification, so an illegal pin simply works. assets/moves/pin_moves.json
+// carries a rule row per match type keyed to BANNON_RULES.MATCH_TYPES, and rules() reads the live
+// MATCH_SETUP. Nothing here hardcodes "three".
+// ============================================================================
+(function(){
+  'use strict';
+  var CAT = null;
+  var FALLBACK_RULES = { pinfall:true, count:3, ropeBreak:true, zoneOnly:true, dq:true };
+  // the one cover every fighter can always do, so a missing catalogue degrades to today's behaviour
+  var FALLBACK_PIN = { id:'PN_LATERAL', label:'Lateral Press', entry:'COVER', face:'front',
+                       lift:1, kick:1, speed:1, hold:0, illegal:false, cocky:false };
+
+  var SHOULDER_H   = 0.15;   // metres above the mat — the owner's 15 cm shoulder proxy test
+  var SETTLE_S     = 0.35;   // shoulders must STAY down this long; a bounce is not a pin
+  var REACH        = 1.15;   // how close the attacker's body must be to be covering them
+  var ACROSS_H     = 0.78;   // attacker landed ACROSS them — instant, no dwell needed
+  var STAND_DWELL  = 0.85;   // or: standing over them, doing nothing, this long = going for the cover
+  var COOLDOWN_MS  = 3000;   // between procedural attempts, so a long lie-down isn't a pin loop
+  var ROLLUP_REACH = 1.30;
+
+  var ST = { lastProc:0, lastRoll:0, settle:{}, aiRoll:0, count:{proc:0, zone:0, rollup:0} };
+
+  // ---- catalogue -----------------------------------------------------------------------------
+  function load(){
+    var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    var urls = ['assets/moves/pin_moves.json', cdn + 'assets/moves/pin_moves.json'];
+    (function next(i){
+      if (i >= urls.length){
+        console.warn('[BANNON_PINS] catalogue unreachable — running on the lateral-press fallback');
+        return;
+      }
+      fetch(urls[i]).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        .then(function(j){
+          CAT = j;
+          console.log('%c[BANNON_PINS] ' + (j.pins||[]).length + ' pins armed (' +
+            (j.pins||[]).filter(function(p){ return p.entry==='ROLLUP'; }).length + ' roll-ups) · ' +
+            (Object.keys(j.rules||{}).length - 1) + ' match-type rule sets','color:#7CFC00');
+        })
+        .catch(function(){ next(i+1); });
+    })(0);
+  }
+  load();
+
+  function pins(){ return (CAT && CAT.pins) || [FALLBACK_PIN]; }
+  function byId(id){ var L = pins(); for (var i=0;i<L.length;i++) if (L[i].id === id) return L[i]; return null; }
+
+  function rules(){
+    var t = (window.MATCH_SETUP && window.MATCH_SETUP.matchType) || 'ONE_ON_ONE';
+    var R = CAT && CAT.rules;
+    return (R && (R[t] || R._default)) || FALLBACK_RULES;
+  }
+
+  // ---- equipped pins -------------------------------------------------------------------------
+  // Read the SAME per-character record the move-set editor writes, so equipping a schoolboy in the
+  // editor is the schoolboy you hit in the match. No second store, no sync problem.
+  function ckey(f){
+    try{ return String((f.opts && f.opts.name) || (f.who && f.who()) || 'BANNON').toUpperCase(); }catch(e){ return 'BANNON'; }
+  }
+  function savedFor(f){
+    try{ return (JSON.parse(localStorage.getItem('bannon_moveset_slots')||'{}'))[ckey(f)] || {}; }catch(e){ return {}; }
+  }
+  // Which catalogue pins is THIS fighter carrying for a given entry path and facing? A fighter who
+  // has equipped nothing still wrestles: they fall back to every legal pin of that shape, which is
+  // how a fresh roster member behaves without anyone having to author 120 movesets by hand.
+  // The victim's ACTUAL position, so a cover on a supine body cannot resolve to the prone "Turn &
+  // Cover", and a standing roll-up cannot resolve to the "Apron Drag Pin". Filtering on entry+facing
+  // alone was not enough — both of those wrong picks showed up on the first harness run.
+  function posFor(a, v, entry, face){
+    if (entry === 'ROLLUP'){
+      try{
+        if (v.zone === 'APRON' || a.zone === 'APRON') return 'APRON';
+        if (v.state === 'running' || a.state === 'running' || a.running) return 'RUNNING';
+        if (v._corner || v.state === 'corner' || v.state === 'cornerStun') return 'CORNER_FRONT';
+        if (v.state === 'ropeLean' || v._ropeLean) return 'ROPE_LEAN';
+      }catch(e){}
+      return face === 'rear' ? 'STANDING_REAR' : 'STANDING_FRONT';
+    }
+    if (entry === 'COVER'){
+      try{ if (window.groundFacingOf && window.groundFacingOf(v) === 'DOWN') return 'GROUNDED_HEAD_DOWN'; }catch(e){}
+      return 'GROUNDED_HEAD_UP';
+    }
+    return null;
+  }
+  function equipped(f, entry, face, pos){
+    var want = pins().filter(function(p){
+      return p.entry === entry && (!face || p.face === face) && (!pos || p.from === pos);
+    });
+    // GROUNDED_SIDE and the cocky covers live on HEAD_UP; if a position yields nothing, widen to the
+    // entry+facing set rather than leaving a fighter with no pin at all.
+    if (!want.length) want = pins().filter(function(p){ return p.entry === entry && (!face || p.face === face); });
+    // An ILLEGAL pin is something you choose to carry, never something the game hands you. Without
+    // this the unequipped fallback pool offered "Mask / Hair Grab" as a default cover and every
+    // fighter in the game was quietly cheating.
+    var legalOnly = want.filter(function(p){ return !p.illegal; });
+    if (legalOnly.length) want = legalOnly;
+    var mine = savedFor(f), out = [];
+    for (var k in mine){ var p = byId(k); if (p && want.indexOf(p) >= 0) out.push(p); }
+    // a fighter's STYLE biases what they reach for when nothing is explicitly equipped: a trickster
+    // or a luchador goes for roll-ups, a powerhouse leans on the heavy covers.
+    if (!out.length){
+      var st = null;
+      try{ st = (window.CHAR_STYLES && window.CHAR_STYLES[ckey(f)]) || (f.opts && f.opts.style) || null; }catch(e){}
+      if (st && /TRICK|LUCHA|CRUISER|HIGH_FLY|ACROBAT|COMEDIAN|CHEAT|COWARD/i.test(String(st)) && entry === 'ROLLUP') {
+        out = want;                                    // they will take any roll-up going
+      } else {
+        out = want;
+      }
+    }
+    return out;
+  }
+  function pick(list){ return list.length ? list[(Math.random()*list.length)|0] : null; }
+
+  // ---- geometry ------------------------------------------------------------------------------
+  function matY(f){ try{ return f.zoneY || 0; }catch(e){ return 0; } }
+  function shoulderHeights(f){
+    try{
+      var y = matY(f), V = f.V;
+      if (V && V.shL && V.shR) return [V.shL.pos.y - y, V.shR.pos.y - y];
+      // NO VERLET. A fighter knocked into 'down' without a ragdoll has no V at all, so reading only
+      // the ragdoll meant the procedural pin could never fire on the most common knockdown in the
+      // game. The rig's own world joints are the same truth at lower resolution.
+      if (f.worldJoint){
+        var L = f.worldJoint('shL'), R = f.worldJoint('shR');
+        if (L && R) return [L.y - y, R.y - y];
+      }
+      return null;
+    }catch(e){ return null; }
+  }
+  function pelvisH(f){
+    try{
+      if (f.V && f.V.pelvis) return f.V.pelvis.pos.y - matY(f);
+      var j = f.worldJoint && f.worldJoint('pelvis');
+      return j ? j.y - matY(f) : 99;
+    }catch(e){ return 99; }
+  }
+  function gap(a, b){ return Math.hypot((a.x||0)-(b.x||0), (a.z||0)-(b.z||0)); }
+  // Is `a` behind `v`? v.facing is rotation.y and the engine's forward is (cos f, -sin f) in x/z —
+  // the same convention Fighter.facing = atan2(-dz, dx) establishes.
+  function behind(a, v){
+    try{
+      var fx = Math.cos(v.facing||0), fz = -Math.sin(v.facing||0);
+      return (((a.x||0)-(v.x||0))*fx + ((a.z||0)-(v.z||0))*fz) < 0;
+    }catch(e){ return false; }
+  }
+  function inRing(f){ try{ return !f.zone || f.zone === 'RING'; }catch(e){ return true; } }
+  function meterBusy(){
+    try{ var m = document.getElementById('subMeter'); return !!(m && m._subActive); }catch(e){ return false; }
+  }
+
+  // ---- legality ------------------------------------------------------------------------------
+  function legal(a, v, why){
+    var R = rules();
+    if (!a || !v || a === v) return false;
+    if (!R.pinfall){ if (why) why.reason = 'no pinfalls in this match'; return false; }
+    if (R.zoneOnly && (!inRing(a) || !inRing(v))){ if (why) why.reason = 'falls do not count out here'; return false; }
+    if ((a.hp||0) <= 0 || (v.hp||0) <= 0) return false;
+    if (a._interferer || v._interferer) return false;      // a run-in cannot win the match
+    if (a.ragdoll || a.state === 'down' && !a._pinTarget) { /* landing across them is allowed */ }
+    if (meterBusy()) return false;
+    return true;
+  }
+
+  // ---- starting a pin ------------------------------------------------------------------------
+  function start(a, v, p, path){
+    if (!p) p = FALLBACK_PIN;
+    if (typeof window.startPin !== 'function') return false;
+    window.__pinMods = {
+      label: p.label, kick: p.kick, speed: p.speed, lift: p.lift,
+      hold: p.hold, illegal: !!p.illegal, cocky: !!p.cocky, id: p.id
+    };
+    ST.count[path] = (ST.count[path]||0) + 1;
+    ST.active = { a:a, v:v, pin:p, path:path, t:Date.now() };
+    try{
+      if (typeof announce === 'function' && path !== 'zone')
+        announce(String(p.label).toUpperCase() + (path==='rollup' ? '!' : ''), (a.who && a.who()) || '');
+    }catch(e){}
+    // the equipped clip plays through the same applier every other move uses
+    try{ if (p.clip && window.loadClipFor) window.loadClipFor(p.clip); }catch(e){}
+    window.startPin(a, v);
+    return true;
+  }
+
+  // ---- PATH 1: DOWN + ZONE ---------------------------------------------------------------------
+  // The input already existed and called startPin() bare. Wrapping startPin means the existing call
+  // site keeps working untouched while every cover now carries a real pin's numbers.
+  var _origStartPin = null;
+  function wrapStartPin(){
+    if (_origStartPin || typeof window.startPin !== 'function') return;
+    _origStartPin = window.startPin;
+    window.startPin = function(a, v){
+      // A pin resolved by BANNON_PINS leaves __pinMods set; anything else is a bare legacy call
+      // (the DOWN+ZONE handler, a script command) and gets a resolved cover instead of a blank one.
+      if (!window.__pinMods){
+        var why = {};
+        if (!legal(a, v, why)){
+          try{ if (why.reason && typeof announce === 'function') announce('NO FALL', why.reason); }catch(e){}
+          return;
+        }
+        var p = pick(equipped(a, 'COVER', 'front', posFor(a, v, 'COVER', 'front'))) || FALLBACK_PIN;
+        window.__pinMods = { label:p.label, kick:p.kick, speed:p.speed, lift:p.lift,
+                             hold:p.hold, illegal:!!p.illegal, cocky:!!p.cocky, id:p.id };
+        ST.count.zone++;
+        ST.active = { a:a, v:v, pin:p, path:'zone', t:Date.now() };
+      }
+      return _origStartPin.apply(this, arguments);
+    };
+  }
+  wrapStartPin();
+  // startPin is defined in an earlier block, but a few boots have raced it; retry briefly.
+  (function retry(n){ if (_origStartPin || n > 40) return; wrapStartPin(); setTimeout(function(){ retry(n+1); }, 250); })(0);
+
+  // ---- PATH 3: ROLL-UPS ------------------------------------------------------------------------
+  // Available when the opponent is UP and momentarily vulnerable. Which one you get depends on which
+  // side of them you are standing: behind = schoolboy / O'Connor / backslide, in front = cradle /
+  // magistral / sunset flip. That is the whole front-and-back ask, resolved geometrically.
+  var VULNERABLE = /^(stagger|stun|groggy|walk|idle|running|rebound|dazed|winded)$/i;
+  function rollupAvailable(a, v){
+    if (!a || !v) return null;
+    if (!legal(a, v)) return null;
+    if (v.ragdoll || v.state === 'down' || v.state === 'pinnedDown') return null;
+    if (!VULNERABLE.test(String(v.state||''))) return null;
+    if (gap(a, v) > ROLLUP_REACH) return null;
+    if (a.state === 'attack' || a.state === 'deliver' || a.grappling) return null;
+    if (Date.now() - ST.lastRoll < 1500) return null;
+    var face = behind(a, v) ? 'rear' : 'front';
+    var p = pick(equipped(a, 'ROLLUP', face, posFor(a, v, 'ROLLUP', face)));
+    return p ? { pin:p, face:face } : null;
+  }
+  function rollup(a, v){
+    a = a || (typeof fighters !== 'undefined' && fighters[0]);
+    v = v || (a && a.opponent && a.opponent());
+    var av = rollupAvailable(a, v);
+    if (!av) return false;
+    ST.lastRoll = Date.now();
+    // a roll-up is a scramble, not a slam: it costs real stamina and it turns you around
+    try{ a.stamina = Math.max(0, (a.stamina||0) - 8); }catch(e){}
+    try{ v.state = 'down'; v.stateTime = 0; }catch(e){}
+    return start(a, v, av.pin, 'rollup');
+  }
+
+  // The ZONE press is already fully spoken for (exit / climb / whip / cover). Rather than editing
+  // that handler, take the press in the CAPTURE phase at the document — which runs before any
+  // listener on the button itself — and ONLY when a roll-up is genuinely on. Otherwise the event
+  // falls through untouched and ZONE does exactly what it did before. The TAB key path dispatches a
+  // bubbling mousedown on the same button, so desktop is covered by the same intercept.
+  function intercept(e){
+    try{
+      if (typeof gameState !== 'undefined' && gameState !== 'fight') return;
+      var t = e.target;
+      if (!t || !t.closest || !t.closest('#btnZone')) return;
+      var p = (typeof fighters !== 'undefined') && fighters[0];
+      if (!p) return;
+      // DOWN held = the deliberate cover (path 1). Never steal that press.
+      var down = false;
+      try{ down = !!(window.keys && (window.keys['s'] || window.keys['arrowdown'])) ||
+                  !!(window.joy && window.joy.active && window.joy.y > 0.45); }catch(_){}
+      if (down) return;
+      var opp = p.opponent ? p.opponent() : null;
+      if (!rollupAvailable(p, opp)) return;
+      e.preventDefault(); e.stopPropagation();
+      if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+      rollup(p, opp);
+    }catch(err){}
+  }
+  document.addEventListener('mousedown',  intercept, true);
+  document.addEventListener('touchstart', intercept, { capture:true, passive:false });
+
+  // ---- PATH 2: PROCEDURAL ----------------------------------------------------------------------
+  // No button. A body whose shoulders are both on the mat, with someone lying across it, is pinned —
+  // the referee decides that, not an input. Everything here is read from the verlet ragdoll, so it
+  // is true when the physics says it is true rather than when a state flag claims it.
+  function tick(dt){
+    try{
+      if (typeof gameState !== 'undefined' && gameState !== 'fight') return;
+      if (typeof fighters === 'undefined' || !fighters || fighters.length < 2) return;
+      if (meterBusy()) return;
+      var now = Date.now();
+      if (now - ST.lastProc < COOLDOWN_MS) return;
+      if (!rules().pinfall) return;
+
+      for (var i = 0; i < fighters.length; i++){
+        var v = fighters[i];
+        if (!v || v._pinBy || (v.hp||0) <= 0) continue;
+        var sh = shoulderHeights(v);
+        var id = 'f' + i;
+        if (!sh || sh[0] > SHOULDER_H || sh[1] > SHOULDER_H){ ST.settle[id] = 0; continue; }
+        // both shoulders down — but a body BOUNCES through that for a frame or two on any hard
+        // landing, so it has to hold before the official will even look at it.
+        try{ if (window.groundFacingOf && window.groundFacingOf(v) !== 'UP'){ ST.settle[id] = 0; continue; } }catch(e){}
+        ST.settle[id] = (ST.settle[id] || 0) + dt;
+        if (ST.settle[id] < SETTLE_S) continue;
+
+        for (var k = 0; k < fighters.length; k++){
+          if (k === i) continue;
+          var a = fighters[k];
+          if (!a || (a.hp||0) <= 0 || a._pinTarget) continue;
+          if (a.state === 'attack' || a.state === 'deliver' || a.grappling) continue;
+          if (gap(a, v) > REACH) continue;
+          // TWO ways to be covering someone, and the engine can tell them apart:
+          //   ACROSS  — you are on the mat with them, which is the slam that ends in a cover. Instant.
+          //   STANDING — you are on your feet over a man whose shoulders are down and you are doing
+          //              nothing else. Hold that and you drop into the cover. This is the common case
+          //              and gating it out was why the procedural pin could essentially never fire.
+          var across = pelvisH(a) <= ACROSS_H;
+          if (!across){
+            var sk = 'a' + k + 'v' + i;
+            if (a.state !== 'idle' && a.state !== 'walk'){ ST.settle[sk] = 0; continue; }
+            ST.settle[sk] = (ST.settle[sk] || 0) + dt;
+            if (ST.settle[sk] < STAND_DWELL) continue;
+            ST.settle[sk] = 0;
+          }
+          if (!legal(a, v)) continue;
+          if (window.BANNON_REF && !window.BANNON_REF.canCount(v)) continue;
+          ST.lastProc = now; ST.settle[id] = 0;
+          var p = pick(equipped(a, 'COVER', 'front', posFor(a, v, 'COVER', 'front'))) || FALLBACK_PIN;
+          start(a, v, p, 'proc');
+          return;
+        }
+      }
+
+      // AI ROLL-UPS. Without this the surprise pin is a player-only toy and the CPU never once
+      // catches you with one, which is exactly the flatness the owner is describing in 2K.
+      if (now - ST.aiRoll > 9000){
+        for (var q = 1; q < fighters.length; q++){
+          var ai = fighters[q];
+          if (!ai || ai.isPlayer) continue;
+          var tgt = ai.opponent && ai.opponent();
+          var av = rollupAvailable(ai, tgt);
+          // rarer when healthy, much likelier when the AI is hurt and needs a shortcut
+          var chance = 0.10 + 0.35 * (1 - Math.max(0, Math.min(1, (ai.hp||0) / (ai.maxHp||10000))));
+          if (av && Math.random() < chance * dt * 6){
+            ST.aiRoll = now; rollup(ai, tgt); return;
+          }
+        }
+      }
+    }catch(e){}
+  }
+  var _last = performance.now();
+  setInterval(function(){
+    var n = performance.now(), dt = Math.min(0.08, (n - _last) / 1000); _last = n; tick(dt);
+  }, 33);
+
+  // ---- exports ---------------------------------------------------------------------------------
+  window.BANNON_PINS = {
+    rules: rules,
+    catalogue: pins,
+    byId: byId,
+    equipped: equipped,
+    legal: legal,
+    rollup: rollup,
+    rollupAvailable: rollupAvailable,
+    cover: function(a, v, id){
+      a = a || (typeof fighters !== 'undefined' && fighters[0]);
+      v = v || (a && a.opponent && a.opponent());
+      if (!legal(a, v)) return false;
+      return start(a, v, (id && byId(id)) || pick(equipped(a, 'COVER', 'front', posFor(a, v, 'COVER', 'front'))), 'zone');
+    },
+    active: function(){ return ST.active; },
+    // auditable: exactly what the procedural gate sees, so a failure to fire can be diagnosed
+    // against numbers rather than inferred from a meter that did not open.
+    probe: function(v, a){
+      v = v || (typeof fighters!=='undefined' && fighters[1]);
+      a = a || (typeof fighters!=='undefined' && fighters[0]);
+      var sh = shoulderHeights(v);
+      return { shoulders: sh, shoulderLimit: SHOULDER_H, hasVerlet: !!(v && v.V && v.V.shL),
+               facing: (window.groundFacingOf ? window.groundFacingOf(v) : null),
+               attackerPelvis: pelvisH(a), acrossLimit: ACROSS_H,
+               gap: (a && v) ? +gap(a,v).toFixed(3) : null, reachLimit: REACH,
+               refCanCount: !window.BANNON_REF || window.BANNON_REF.canCount(v),
+               legal: legal(a,v), settled: ST.settle };
+    },
+    stats: function(){ return { byPath: ST.count, pins: pins().length, rules: rules() }; },
+    _fall:  function(a, v){ try{ if (window.BANNON_RATING_CREDIT) window.BANNON_RATING_CREDIT('pinfall', 1); }catch(e){} },
+    _ended: function(){ ST.active = null; ST.settle = {}; }
+  };
+
+  console.log('%c[BANNON_PINS] three paths live — DOWN+ZONE cover, procedural shoulders-down, ' +
+    'front/rear roll-ups; count and rope-break read from the match rules','color:#7CFC00');
+})();
+</script>
+
+<script>
+// ============================================================================
+// BANNON_MOVESET_STUDIO — the move-set screen the owner actually described:
+//
+//   "the 3d viewport that takes up the most and shows u the moves happening [as] u scroll across
+//    them or tap them then tap them twice to select etc, and all the get ups and locomotion and
+//    fighting styles and etc we should have 59+ fighting styles laid out and paybacks and kip
+//    ups/get ups, taunts all move positions and submission position ... to give each fighter an
+//    individual moveset for when u select their character edit"
+//
+// The existing MOVE SET panel is a spreadsheet of <select> dropdowns. It is correct and it is
+// auditable and it is nothing like picking a move in 2K, because you cannot SEE anything. This is
+// the front door instead: the viewport owns the screen, the list is a strip under it, and moving
+// through the list plays the move on the body in real time. Tap once to preview, tap twice to equip.
+//
+// It shares ONE store with the list editor and with BANNON_PINS — localStorage bannon_moveset_slots,
+// keyed by character. There is no second source of truth to drift, and equipping a schoolboy here is
+// the schoolboy that fires in the match.
+//
+// The viewport is its own tiny scene with its own renderer, because this screen has to work from the
+// MENU where there is no live fighter to borrow. It drives the GLB skeleton by bone name off the
+// same baked STUDIO clips the match uses, so a preview is the real animation and not an approximation.
+// ============================================================================
+(function(){
+  'use strict';
+  var KEY = 'bannon_moveset_slots';
+  var SCHEMA = null, PINCAT = null;
+  var panel = null, cv = null, ren = null, sc = null, cam = null, rig = null, mixerRoot = null;
+  var raf = 0, who = 'BANNON', tab = 'MOVES', cat = 'STANDING', slotId = null, filter = '';
+  var previewClip = null, previewT = 0, previewName = '', lastTap = { id:null, t:0 };
+  var loadedModelFor = null;
+
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){
+    return ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' })[c]; }); }
+  function ck(n){ return String(n || 'BANNON').toUpperCase().replace(/[^A-Z0-9]/g, '_'); }
+  function saved(){ try{ return JSON.parse(localStorage.getItem(KEY) || '{}'); }catch(e){ return {}; } }
+  function store(m){ try{ localStorage.setItem(KEY, JSON.stringify(m)); }catch(e){} }
+  function mine(){ return saved()[who] || {}; }
+  function setEquip(id, val){
+    var S = saved(), m = S[who] = S[who] || {};
+    if (val) m[id] = val; else delete m[id];
+    store(S);
+  }
+
+  // ---- data ------------------------------------------------------------------------------------
+  function loadJSON(rel){
+    var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    return fetch(rel).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+      .catch(function(){ return fetch(cdn + rel).then(function(r){ return r.ok ? r.json() : Promise.reject(); }); });
+  }
+  function loadData(){
+    var a = SCHEMA ? Promise.resolve(SCHEMA) : loadJSON('assets/moves/moveset_schema.json').then(function(j){ return (SCHEMA = j); }).catch(function(){ return null; });
+    var b = PINCAT ? Promise.resolve(PINCAT) : loadJSON('assets/moves/pin_moves.json').then(function(j){ return (PINCAT = j); }).catch(function(){ return null; });
+    return Promise.all([a, b]);
+  }
+
+  function roster(){
+    try{
+      var r = (window.BANNON_ROSTER || []).map(function(x){ return x.name; });
+      return r.length ? r : ['BANNON'];
+    }catch(e){ return ['BANNON']; }
+  }
+  // Which captures can legally fill this slot. Position first (a top-rope dive cannot go in a
+  // standing light-attack slot), then the slot's KIND as a keyword filter over the clip names, so a
+  // "grapple" slot does not offer you a taunt.
+  var KIND_HINT = {
+    strike:/punch|kick|elbow|knee|chop|clothesline|lariat|strike|jab|cross|hook|uppercut|stomp|forearm|headbutt|slap/i,
+    grapple:/suplex|slam|throw|takedown|ddt|neckbreaker|bomb|driver|grapple|toss|hip_?toss|snapmare|backbreaker/i,
+    carry:/carry|lift|rack|fireman|shoulder|electric/i,
+    submission:/lock|hold|stretch|choke|clutch|submission|crab|figure|armbar|camel/i,
+    dive:/dive|splash|senton|moonsault|swanton|elbow_?drop|leg_?drop|frog|crossbody|plancha|tope/i,
+    taunt:/taunt|pose|celebrat|gesture|point|flex|mock/i,
+    getup:/get_?up|kip|nip|stand|rise|recover|wake/i,
+    locomotion:/walk|run|jog|strut|stride|sprint|march|limp|crawl/i,
+    stance:/idle|stance|guard|ready|breath/i,
+    rollup:/roll|cradle|pin|package|flip|schoolboy|backslide|prawn/i,
+    pin:/pin|cover|press|hook/i,
+    reaction:/hit|react|stagger|stun|flinch|knock|sell|fall/i,
+    combo:/combo|chain|flurry|series/i,
+    reversal:/counter|revers|block|parry|catch|escape/i
+  };
+  function candidates(slot){
+    var out = [];
+    try{
+      var M = window.__fbxMoveMap;
+      var clips = (M && M.clips) || [];
+      out = clips.filter(function(c){ return !slot.pos || c.pos === slot.pos; }).map(function(c){ return c.clip; });
+      // nothing at the exact position: widen to every capture rather than showing an empty screen,
+      // and let the KIND filter do the work. A missing position is a mapping gap, not a dead slot.
+      if (!out.length) out = clips.map(function(c){ return c.clip; });
+      var hint = KIND_HINT[slot.kind];
+      if (hint){
+        var narrowed = out.filter(function(c){ return hint.test(c); });
+        if (narrowed.length) out = narrowed;
+      }
+    }catch(e){}
+    // dedupe, and put anything already equipped at the top so you can see your own pick
+    var seen = {}, eq = mine()[slot.id];
+    out = out.filter(function(c){ if (seen[c]) return false; seen[c] = 1; return true; });
+    out.sort(function(a, b){ return (b === eq ? 1 : 0) - (a === eq ? 1 : 0) || a.localeCompare(b); });
+    if (filter) out = out.filter(function(c){ return c.toUpperCase().indexOf(filter.toUpperCase()) >= 0; });
+    return out;
+  }
+
+  // ---- viewport --------------------------------------------------------------------------------
+  // Standalone scene. It must run from the menu, so it cannot borrow the match's fighter or renderer.
+  function initScene(){
+    if (ren || typeof THREE === 'undefined') return;
+    try{
+      ren = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true });
+      ren.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      sc = new THREE.Scene();
+      cam = new THREE.PerspectiveCamera(38, 1, 0.05, 60);
+      cam.position.set(0, 1.15, 3.15); cam.lookAt(0, 0.95, 0);
+      sc.add(new THREE.HemisphereLight(0xffffff, 0x223344, 1.05));
+      var key = new THREE.DirectionalLight(0xffe6c0, 1.5); key.position.set(2.4, 3.6, 2.8); sc.add(key);
+      var rim = new THREE.DirectionalLight(0x66aaff, 0.75); rim.position.set(-2.6, 1.8, -2.4); sc.add(rim);
+      var floor = new THREE.Mesh(new THREE.CircleGeometry(2.1, 48),
+        new THREE.MeshBasicMaterial({ color: 0x0d1017, transparent: true, opacity: 0.85 }));
+      floor.rotation.x = -Math.PI / 2; sc.add(floor);
+      var gridHelp = new THREE.GridHelper(4.2, 14, 0xff7a1a, 0x243040);
+      gridHelp.material.opacity = 0.28; gridHelp.material.transparent = true; sc.add(gridHelp);
+    }catch(e){ ren = null; }
+  }
+  function fitCanvas(){
+    if (!ren || !cv) return;
+    var w = cv.clientWidth || 320, h = cv.clientHeight || 240;
+    if (!w || !h) return;
+    ren.setSize(w, h, false);
+    cam.aspect = w / h; cam.updateProjectionMatrix();
+  }
+  function loadModel(){
+    if (!sc || typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    if (loadedModelFor === who) return;
+    var rec = null;
+    try{ rec = window.charModelFor ? window.charModelFor(who) : null; }catch(e){}
+    var url = rec && rec.url;
+    if (!url) return;
+    loadedModelFor = who;
+    var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    var L = new THREE.GLTFLoader();
+    var done = function(g){
+      if (rig) { sc.remove(rig); rig = null; }
+      rig = g.scene; rig.traverse(function(o){ if (o.isMesh){ o.frustumCulled = false; } });
+      // normalise height so every body frames the same regardless of export scale
+      try{
+        var box = new THREE.Box3().setFromObject(rig), sz = new THREE.Vector3(); box.getSize(sz);
+        if (sz.y > 0.01){ var s = 1.8 / sz.y; rig.scale.setScalar(s); }
+        box.setFromObject(rig); rig.position.y -= box.min.y;
+      }catch(e){}
+      sc.add(rig); mixerRoot = rig;
+      // bank each bone's rest orientation once — every pose is a delta from rest, same as the match
+      rig.traverse(function(b){ if (b.isBone) b.userData.__rest = b.quaternion.clone(); });
+    };
+    L.load(url, done, undefined, function(){ try{ L.load(cdn + url, done, undefined, function(){}); }catch(e){} });
+  }
+
+  // Bone lookup is forgiving on purpose: captures come from Mixamo, from our own rigs and from the
+  // text-to-motion pipeline, and they do not agree on prefixes. Exact, then mixamorig-stripped, then
+  // case-insensitive — resolved once and cached per model.
+  var boneCache = null;
+  function boneFor(name){
+    if (!rig) return null;
+    if (!boneCache){
+      boneCache = {};
+      rig.traverse(function(b){ if (b.isBone){ boneCache[b.name] = b; boneCache[b.name.toLowerCase()] = b;
+        var st = b.name.replace(/^mixamorig:?/i, ''); boneCache[st] = boneCache[st] || b; boneCache[st.toLowerCase()] = boneCache[st.toLowerCase()] || b; } });
+    }
+    return boneCache[name] || boneCache[String(name).toLowerCase()] ||
+           boneCache[String(name).replace(/^mixamorig:?/i, '')] || null;
+  }
+  function applyClip(clip, phase){
+    if (!rig || !clip || !clip.keys || !clip.keys.length) return;
+    var keys = clip.keys, dur = clip.dur || 1, t = Math.max(0, Math.min(1, phase)) * dur;
+    var a = keys[0], b = keys[keys.length - 1], k;
+    for (k = 0; k < keys.length - 1; k++){ if (keys[k].t <= t && keys[k + 1].t >= t){ a = keys[k]; b = keys[k + 1]; break; } }
+    var span = Math.max(1e-4, (b.t - a.t)), u = Math.max(0, Math.min(1, (t - a.t) / span));
+    var A = a.bones || {}, B = b.bones || {}, names = {}, n;
+    for (n in A) names[n] = 1; for (n in B) names[n] = 1;
+    for (n in names){
+      var bone = boneFor(n); if (!bone || !bone.userData.__rest) continue;
+      var p = A[n] || {}, q = B[n] || {};
+      var rx = (p.rx || 0) + ((q.rx || 0) - (p.rx || 0)) * u;
+      var ry = (p.ry || 0) + ((q.ry || 0) - (p.ry || 0)) * u;
+      var rz = (p.rz || 0) + ((q.rz || 0) - (p.rz || 0)) * u;
+      var e = new THREE.Euler(rx, ry, rz, 'XYZ');
+      bone.quaternion.copy(bone.userData.__rest).multiply(new THREE.Quaternion().setFromEuler(e));
+    }
+  }
+  function loop(){
+    raf = requestAnimationFrame(loop);
+    if (!ren || !panel || panel.style.display === 'none') return;
+    fitCanvas();
+    if (rig){
+      if (previewClip){
+        previewT += 0.014;
+        if (previewT > 1){ previewT = 0; }             // loop the preview — you are studying it
+        applyClip(previewClip, previewT);
+      }
+      rig.rotation.y = Math.sin(performance.now() * 0.00028) * 0.42;
+    }
+    try{ ren.render(sc, cam); }catch(e){}
+  }
+
+  function preview(name){
+    previewName = name; previewT = 0; previewClip = null;
+    if (!name) return;
+    var have = null;
+    try{ have = (typeof STUDIO !== 'undefined' && STUDIO.clips) ? STUDIO.clips[name] : null; }catch(e){}
+    if (have){ previewClip = have; return; }
+    if (window.loadClipFor){
+      Promise.resolve(window.loadClipFor(name)).then(function(c){
+        if (c && previewName === name){ previewClip = c; previewT = 0; }
+      }).catch(function(){});
+    }
+  }
+
+  // ---- UI --------------------------------------------------------------------------------------
+  var CSS = 'position:fixed;inset:0;z-index:100010;background:#070910;color:#ffd9a8;font:12px var(--f-ui);' +
+            'display:none;flex-direction:column;overflow:hidden';
+  function build(){
+    if (panel) return;
+    panel = document.createElement('div');
+    panel.style.cssText = CSS;
+    document.body.appendChild(panel);
+  }
+
+  function slotsOf(catId){
+    if (!SCHEMA || !SCHEMA.cats) return [];
+    var c = SCHEMA.cats.filter(function(x){ return x.id === catId; })[0];
+    if (!c) return [];
+    var out = [];
+    c.groups.forEach(function(g){ g.slots.forEach(function(s){ out.push({ g: g.label, s: s }); }); });
+    return out;
+  }
+
+  function render(){
+    if (!panel) return;
+    var eqCount = Object.keys(mine()).filter(function(k){ return k.charAt(0) !== '_'; }).length;
+    var h = '';
+    // ---- header
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:#0b0e16;border-bottom:1px solid #ff7a1a44;flex:0 0 auto">' +
+      '<button data-a="close" style="background:none;border:none;color:#ffd9a8;font-size:20px;cursor:pointer;padding:0 4px">&#10005;</button>' +
+      '<select data-a="who" style="background:#11151d;color:#ffd9a8;border:1px solid #ff7a1a55;border-radius:7px;padding:6px 8px;font:700 12px var(--f-ui);max-width:44vw">' +
+      roster().map(function(nm){ var k = ck(nm); return '<option value="' + esc(k) + '"' + (k === who ? ' selected' : '') + '>' + esc(nm) + '</option>'; }).join('') +
+      '</select>' +
+      '<span style="font:700 10px var(--f-mono);color:#7CFC00">' + eqCount + ' EQUIPPED</span>' +
+      '<span style="flex:1"></span>' +
+      ['MOVES', 'STYLE', 'PAYBACKS', 'PINS'].map(function(t){
+        return '<button data-tab="' + t + '" style="background:' + (tab === t ? '#ff7a1a' : 'none') + ';color:' + (tab === t ? '#120a04' : '#ffd9a8') +
+          ';border:1px solid #ff7a1a55;border-radius:7px;padding:5px 9px;cursor:pointer;font:700 10px var(--f-ui)">' + t + '</button>'; }).join('') +
+      '</div>';
+
+    // ---- THE VIEWPORT. It gets the majority of the screen, which is the entire point of this screen.
+    h += '<div style="position:relative;flex:1 1 auto;min-height:44vh;background:radial-gradient(ellipse at 50% 42%,#141a26 0%,#070910 72%)">' +
+      '<canvas data-a="cv" style="position:absolute;inset:0;width:100%;height:100%;display:block"></canvas>' +
+      '<div data-a="cap" style="position:absolute;left:0;right:0;bottom:8px;text-align:center;font:700 13px var(--f-mono);' +
+      'color:#ffd9a8;text-shadow:0 2px 10px #000;pointer-events:none;letter-spacing:1px">' + esc(previewName || '—') + '</div>' +
+      (rig ? '' : '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:600 11px var(--f-ui);color:#5c6675;pointer-events:none">loading ' + esc(who.replace(/_/g, ' ')) + '…</div>') +
+      '</div>';
+
+    if (tab === 'MOVES')      h += renderMoves();
+    else if (tab === 'STYLE') h += renderStyle();
+    else if (tab === 'PAYBACKS') h += renderPaybacks();
+    else                      h += renderPins();
+
+    panel.innerHTML = h;
+    cv = panel.querySelector('[data-a="cv"]');
+    initScene(); fitCanvas(); loadModel();
+    if (!raf) loop();
+    wire();
+  }
+
+  function chipRow(items, attr, active){
+    return '<div style="display:flex;gap:6px;overflow-x:auto;padding:7px 10px;background:#0b0e16;border-bottom:1px solid #ffffff10;' +
+      'flex:0 0 auto;-webkit-overflow-scrolling:touch;scrollbar-width:none">' +
+      items.map(function(it){
+        var on = it.id === active;
+        return '<button ' + attr + '="' + esc(it.id) + '" style="flex:0 0 auto;background:' + (on ? '#ff7a1a' : '#141a26') +
+          ';color:' + (on ? '#120a04' : '#c8d2e0') + ';border:1px solid ' + (on ? '#ff7a1a' : '#26303f') +
+          ';border-radius:20px;padding:6px 12px;cursor:pointer;font:700 10px var(--f-ui);white-space:nowrap">' + esc(it.label) + '</button>';
+      }).join('') + '</div>';
+  }
+
+  function renderMoves(){
+    if (!SCHEMA || !SCHEMA.cats) return '<div style="padding:20px;text-align:center;color:#7d8895">loading the move-set schema…</div>';
+    var h = chipRow(SCHEMA.cats.map(function(c){ return { id: c.id, label: c.label }; }), 'data-cat', cat);
+    var list = slotsOf(cat);
+    if (!list.length) return h + '<div style="padding:20px;color:#7d8895">nothing in this category</div>';
+    if (!slotId || !list.filter(function(x){ return x.s.id === slotId; }).length) slotId = list[0].s.id;
+    h += chipRow(list.map(function(x){
+      var eq = mine()[x.s.id];
+      return { id: x.s.id, label: (eq ? '● ' : '') + x.s.label + (x.s.cap === 0 ? '' : '') };
+    }), 'data-slot', slotId);
+
+    var slot = list.filter(function(x){ return x.s.id === slotId; })[0].s;
+    var cands = candidates(slot);
+    var eq = mine()[slot.id];
+    h += '<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0b0e16;flex:0 0 auto">' +
+      '<span style="font:700 10px var(--f-ui);color:#4ac8ff">' + esc(slot.kind.toUpperCase()) + '</span>' +
+      '<span style="font:400 10px var(--f-mono);color:#7d8895">' + esc(slot.pos || 'any position') + '</span>' +
+      '<span style="font:400 10px var(--f-ui);color:' + (slot.cap === 0 ? '#7CFC00' : '#c0653a') + '">' +
+        (slot.cap === 0 ? 'UNLIMITED' : 'single') + '</span>' +
+      '<span style="flex:1"></span>' +
+      '<input data-a="find" placeholder="filter" value="' + esc(filter) + '" style="width:98px;background:#11151d;border:1px solid #26303f;' +
+      'color:#ffd9a8;border-radius:6px;padding:4px 7px;font:11px var(--f-mono)">' +
+      '<button data-a="clear" style="background:#2a1a1a;border:1px solid #a55;color:#faa;border-radius:6px;padding:4px 8px;cursor:pointer;font:700 10px var(--f-ui)">CLEAR</button>' +
+      '</div>';
+
+    // THE STRIP. Scrolling it previews whatever lands under the centre line, tapping previews on
+    // demand, tapping the same row twice inside 400 ms equips it — the interaction he described.
+    h += '<div data-a="strip" style="flex:0 0 auto;height:26vh;min-height:150px;overflow-y:auto;-webkit-overflow-scrolling:touch;' +
+      'background:#080b12;border-top:1px solid #ffffff12">';
+    if (!cands.length) h += '<div style="padding:18px;text-align:center;color:#7d8895;font:400 11px var(--f-ui)">no capture maps to this position yet — the slot still plays procedurally</div>';
+    cands.forEach(function(c){
+      var on = c === eq;
+      h += '<div data-move="' + esc(c) + '" style="display:flex;align-items:center;gap:9px;padding:10px 12px;cursor:pointer;' +
+        'border-bottom:1px solid #ffffff08;background:' + (on ? '#14301a' : 'transparent') + '">' +
+        '<span style="flex:0 0 16px;color:' + (on ? '#7CFC00' : '#3a4a5c') + '">' + (on ? '●' : '○') + '</span>' +
+        '<span style="flex:1;min-width:0;font:600 12px var(--f-mono);color:' + (on ? '#7CFC00' : '#ffd9a8') +
+        ';overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(c) + '</span>' +
+        '<button data-equip="' + esc(c) + '" style="flex:0 0 auto;background:' + (on ? '#14301a' : '#1b2432') +
+        ';border:1px solid ' + (on ? '#7CFC00' : '#4ac8ff55') + ';color:' + (on ? '#7CFC00' : '#cfe8ff') +
+        ';border-radius:6px;padding:5px 9px;cursor:pointer;font:700 9px var(--f-ui)">' +
+        (on ? 'EQUIPPED' : 'EQUIP') + '</button>' +
+        '</div>';
+    });
+    h += '</div>';
+    h += '<div style="flex:0 0 auto;padding:7px 12px;background:#0b0e16;border-top:1px solid #ffffff10;font:400 10px var(--f-ui);color:#7d8895">' +
+      'Scroll to preview · tap to play it again · tap twice to equip. ' + cands.length + ' captures legal here.</div>';
+    return h;
+  }
+
+  function renderStyle(){
+    var S = (SCHEMA && SCHEMA.styles) || [];
+    if (!S.length) return '<div style="padding:20px;color:#7d8895">loading styles…</div>';
+    var cur = mine()._style || '';
+    var h = '<div style="flex:0 0 auto;padding:7px 12px;background:#0b0e16;border-top:1px solid #ffffff10;font:700 10px var(--f-ui);color:#4ac8ff">' +
+      S.length + ' FIGHTING STYLES · a style biases attributes, the AI\'s move choice and the default moveset</div>';
+    h += '<div style="flex:0 0 auto;height:30vh;min-height:170px;overflow-y:auto;background:#080b12">';
+    S.forEach(function(st){
+      var on = st.id === cur, b = st.bias;
+      h += '<div data-style="' + esc(st.id) + '" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #ffffff08;background:' +
+        (on ? '#14301a' : 'transparent') + '">' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+        '<span style="color:' + (on ? '#7CFC00' : '#5c6675') + '">' + (on ? '●' : '○') + '</span>' +
+        '<b style="font:700 12px var(--f-ui);color:' + (on ? '#7CFC00' : '#ffd9a8') + '">' + esc(st.label) + '</b>' +
+        '<span style="flex:1"></span>' +
+        '<span style="font:400 9px var(--f-mono);color:#7d8895">' + esc(st.stance) + ' · ' + esc(st.locomotion) + '</span></div>' +
+        '<div style="display:flex;gap:3px;margin-top:5px">' +
+        [['PW', b.pow], ['SP', b.spd], ['TC', b.tec], ['RS', b.res], ['SH', b.sho], ['AR', b.air], ['SB', b.sub], ['ST', b.str]].map(function(p){
+          return '<span style="flex:1;font:400 8px var(--f-mono);color:#7d8895;text-align:center">' + p[0] +
+            '<div style="height:4px;margin-top:2px;background:#1b2432;border-radius:2px;overflow:hidden">' +
+            '<div style="height:100%;width:' + (p[1] * 11.1) + '%;background:' + (p[1] >= 8 ? '#7CFC00' : p[1] >= 6 ? '#ff7a1a' : '#3d4a5c') + '"></div></div></span>';
+        }).join('') + '</div>' +
+        '<div style="font:400 9px var(--f-ui);color:#5c6675;margin-top:4px">reaches for: ' + esc(st.prefers.join(', ')) + '</div>' +
+        '</div>';
+    });
+    return h + '</div>';
+  }
+
+  function renderPaybacks(){
+    var P = (SCHEMA && SCHEMA.paybacks) || [];
+    if (!P.length) return '<div style="padding:20px;color:#7d8895">loading paybacks…</div>';
+    var m = mine(), maj = m._pbMajor || '', min = m._pbMinor || '';
+    var h = '<div style="flex:0 0 auto;padding:7px 12px;background:#0b0e16;border-top:1px solid #ffffff10;font:700 10px var(--f-ui);color:#4ac8ff">' +
+      P.length + ' PAYBACKS · one MAJOR (once a match) + one MINOR (always on)</div>';
+    h += '<div style="flex:0 0 auto;height:30vh;min-height:170px;overflow-y:auto;background:#080b12">';
+    ['major', 'minor'].forEach(function(tier){
+      h += '<div style="padding:6px 12px;font:700 9px var(--f-ui);color:#ff7a1a;letter-spacing:2px;background:#0d1119">' + tier.toUpperCase() + '</div>';
+      P.filter(function(p){ return p.tier === tier; }).forEach(function(p){
+        var on = (tier === 'major' ? maj : min) === p.id;
+        h += '<div data-pb="' + esc(p.id) + '" data-tier="' + tier + '" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #ffffff08;background:' +
+          (on ? '#14301a' : 'transparent') + '">' +
+          '<div style="display:flex;align-items:center;gap:8px">' +
+          '<span style="color:' + (on ? '#7CFC00' : '#5c6675') + '">' + (on ? '●' : '○') + '</span>' +
+          '<b style="font:700 12px var(--f-ui);color:' + (on ? '#7CFC00' : '#ffd9a8') + '">' + esc(p.label) + '</b>' +
+          '<span style="flex:1"></span><span style="font:400 9px var(--f-mono);color:#7d8895">' + esc(p.trigger) + '</span></div>' +
+          '<div style="font:400 10px var(--f-ui);color:#8e99a8;margin-top:3px">' + esc(p.effect) + '</div></div>';
+      });
+    });
+    return h + '</div>';
+  }
+
+  function renderPins(){
+    var L = (PINCAT && PINCAT.pins) || [];
+    if (!L.length) return '<div style="padding:20px;color:#7d8895">loading the pin catalogue…</div>';
+    var R = null; try{ R = window.BANNON_PINS && window.BANNON_PINS.rules(); }catch(e){}
+    var m = mine();
+    var h = '<div style="flex:0 0 auto;padding:7px 12px;background:#0b0e16;border-top:1px solid #ffffff10;font:700 10px var(--f-ui);color:#4ac8ff">' +
+      L.length + ' PINS · ' + L.filter(function(p){ return p.entry === 'ROLLUP'; }).length + ' roll-ups' +
+      (R ? ' · this match counts to ' + R.count + (R.pinfall ? '' : ' — NO PINFALLS') + (R.ropeBreak ? ' · rope breaks' : ' · no rope break') : '') + '</div>';
+    h += '<div style="flex:0 0 auto;height:30vh;min-height:170px;overflow-y:auto;background:#080b12">';
+    [['COVER', 'COVERS — down + zone, and procedurally when they land shoulders-down'],
+     ['ROLLUP', 'ROLL-UPS — press ZONE facing a vulnerable opponent. Behind them = rear.'],
+     ['COUNTER', 'COUNTERS — only out of a reversal window']].forEach(function(pair){
+      h += '<div style="padding:6px 12px;font:700 9px var(--f-ui);color:#ff7a1a;letter-spacing:1px;background:#0d1119">' + esc(pair[1]) + '</div>';
+      L.filter(function(p){ return p.entry === pair[0]; }).forEach(function(p){
+        var on = !!m[p.id];
+        h += '<div data-pin="' + esc(p.id) + '" style="display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer;' +
+          'border-bottom:1px solid #ffffff08;background:' + (on ? '#14301a' : 'transparent') + '">' +
+          '<span style="color:' + (on ? '#7CFC00' : '#5c6675') + '">' + (on ? '●' : '○') + '</span>' +
+          '<b style="flex:1;font:700 12px var(--f-ui);color:' + (p.illegal ? '#ff6b6b' : on ? '#7CFC00' : '#ffd9a8') + '">' + esc(p.label) +
+          (p.illegal ? ' <span style="font:400 9px var(--f-ui);color:#ff6b6b">ILLEGAL</span>' : '') +
+          (p.cocky ? ' <span style="font:400 9px var(--f-ui);color:#c0653a">COCKY</span>' : '') + '</b>' +
+          '<span style="font:400 9px var(--f-mono);color:#7d8895">' + esc(p.face) + ' · escape ×' + p.kick.toFixed(2) +
+          ' · count ×' + p.speed.toFixed(2) + (p.hold ? ' · ' + p.hold + 's' : '') + '</span></div>';
+      });
+    });
+    return h + '</div>';
+  }
+
+  // ---- wiring ----------------------------------------------------------------------------------
+  function wire(){
+    var q = function(s){ return panel.querySelectorAll(s); };
+    q('[data-a="close"]').forEach(function(b){ b.onclick = close; });
+    var sel = panel.querySelector('[data-a="who"]');
+    if (sel) sel.onchange = function(){ who = sel.value; loadedModelFor = null; boneCache = null; if (rig){ sc.remove(rig); rig = null; } render(); };
+    q('[data-tab]').forEach(function(b){ b.onclick = function(){ tab = b.dataset.tab; render(); }; });
+    q('[data-cat]').forEach(function(b){ b.onclick = function(){ cat = b.dataset.cat; slotId = null; render(); }; });
+    q('[data-slot]').forEach(function(b){ b.onclick = function(){ slotId = b.dataset.slot; render(); }; });
+    var f = panel.querySelector('[data-a="find"]');
+    if (f) f.oninput = function(){ var at = f.selectionStart; filter = f.value; render();
+      var g = panel.querySelector('[data-a="find"]'); if (g){ g.focus(); try{ g.setSelectionRange(at, at); }catch(e){} } };
+    var cl = panel.querySelector('[data-a="clear"]');
+    if (cl) cl.onclick = function(){ setEquip(slotId, null); render(); };
+
+    // TAP = preview. TAP TWICE = equip. Exactly what he asked for, and the double-tap window is
+    // generous because this is a phone and a thumb.
+    q('[data-move]').forEach(function(row){
+      row.onclick = function(){
+        var id = row.dataset.move, now = Date.now();
+        if (lastTap.id === id && now - lastTap.t < 420){
+          setEquip(slotId, id);
+          lastTap = { id: null, t: 0 };
+          try{ (window.toast || function(){})('equipped ' + id); }catch(e){}
+          render();
+          return;
+        }
+        lastTap = { id: id, t: now };
+        preview(id);
+        var capEl = panel.querySelector('[data-a="cap"]'); if (capEl) capEl.textContent = id;
+      };
+    });
+
+    q('[data-equip]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        var id = b.getAttribute('data-equip');
+        setEquip(slotId, mine()[slotId] === id ? null : id);
+        try{ (window.toast || function(){})('equipped ' + id); }catch(e){}
+        render();
+      };
+    });
+
+    // SCROLL PREVIEWS. Whatever row is under the strip's centre line becomes the preview, so
+    // dragging through the list plays each move as it passes — the thing that makes this a viewport
+    // and not a menu. Throttled to one resolve per 140 ms so a fast flick does not queue 40 loads.
+    var strip = panel.querySelector('[data-a="strip"]');
+    if (strip){
+      var t0 = 0;
+      strip.onscroll = function(){
+        var now = Date.now(); if (now - t0 < 140) return; t0 = now;
+        var r = strip.getBoundingClientRect(), midY = r.top + r.height * 0.42;
+        var rows = strip.querySelectorAll('[data-move]');
+        for (var i = 0; i < rows.length; i++){
+          var rr = rows[i].getBoundingClientRect();
+          if (rr.top <= midY && rr.bottom >= midY){
+            var nm = rows[i].dataset.move;
+            if (nm !== previewName){
+              preview(nm);
+              var capEl = panel.querySelector('[data-a="cap"]'); if (capEl) capEl.textContent = nm;
+            }
+            break;
+          }
+        }
+      };
+    }
+
+    q('[data-style]').forEach(function(row){
+      row.onclick = function(){ var S = saved(), m = S[who] = S[who] || {}; m._style = row.dataset.style; store(S);
+        try{ if (window.BANNON_BASES && SCHEMA){
+          var st = SCHEMA.styles.filter(function(x){ return x.id === row.dataset.style; })[0];
+          if (st) window.BANNON_BASES.set(who, st.stance, st.locomotion);
+        } }catch(e){}
+        render(); };
+    });
+    q('[data-pb]').forEach(function(row){
+      row.onclick = function(){ var S = saved(), m = S[who] = S[who] || {};
+        var f = row.dataset.tier === 'major' ? '_pbMajor' : '_pbMinor';
+        m[f] = (m[f] === row.dataset.pb) ? '' : row.dataset.pb; store(S); render(); };
+    });
+    q('[data-pin]').forEach(function(row){
+      row.onclick = function(){ var id = row.dataset.pin, S = saved(), m = S[who] = S[who] || {};
+        if (m[id]) delete m[id]; else m[id] = id; store(S); render(); };
+    });
+  }
+
+  function open(name){
+    build();
+    if (name) who = ck(name);
+    panel.style.display = 'flex';
+    render();
+    loadData().then(function(){ if (panel && panel.style.display !== 'none') render(); });
+  }
+  function close(){
+    if (panel) panel.style.display = 'none';
+    if (raf){ cancelAnimationFrame(raf); raf = 0; }
+    previewClip = null;
+  }
+
+  window.BANNON_MOVESET_STUDIO = {
+    open: open, close: close,
+    schema: function(){ return SCHEMA; },
+    pins: function(){ return PINCAT; },
+    // what this fighter has actually equipped, for anyone resolving a move at runtime
+    equippedFor: function(name){ var S = saved(); return S[ck(name)] || {}; },
+    styleOf: function(name){ var m = (saved()[ck(name)] || {}); return m._style || null; },
+    paybacksOf: function(name){ var m = (saved()[ck(name)] || {}); return { major: m._pbMajor || null, minor: m._pbMinor || null }; }
+  };
+  window.openMovesetStudio = open;
+
+  // FRONT DOORS. The owner asked for this to be reachable "when u select their character edit", so
+  // it goes on the creation hub AND on the existing move-set tile, which becomes the way in rather
+  // than a competing screen.
+  (function tiles(){
+    var tries = 0;
+    (function attempt(){
+      tries++;
+      try{
+        var host = document.getElementById('btnHubMovesetSlots') || document.getElementById('btnHubMovesetLib') || document.getElementById('btnHubMoves');
+        if (host && host.parentElement && !document.getElementById('btnHubMovesetStudio')){
+          var b = document.createElement('button');
+          b.className = 'hub-tile'; b.id = 'btnHubMovesetStudio';
+          b.innerHTML = '<span class="hub-ico">🎬</span><span class="hub-lbl">MOVESET STUDIO</span>';
+          b.addEventListener('click', function(){ open(who); });
+          host.parentElement.insertBefore(b, host);
+          return;
+        }
+      }catch(e){}
+      if (tries < 60) setTimeout(attempt, 1000);
+    })();
+  })();
+
+  console.log('%c[BANNON_MOVESET_STUDIO] viewport move-set editor armed — scroll to preview, tap twice to equip', 'color:#7CFC00');
+})();
+</script>
+
+<script>
+// ============================================================================
+// BANNON_REACH — range is the BODY and the STATS, not an authored number.
+//
+// Owner's rule, verbatim: "Range is strictly driven by the physical reach of the character model and
+// their core attributes/stats, keeping the execution grounded and realistic rather than artificially
+// boosted." And: "Instead of a move 'warping' the attacker forward, the move's success depends
+// entirely on the bone-length data of your character model."
+//
+// So three things live here and nothing else:
+//
+//   1. MEASURE. Walk the bound GLB skeleton once per model and add up the real bone chains —
+//      shoulder->elbow->hand for the arms, hip->knee->foot for the legs, pelvis->chest for a
+//      shoulder block. Cache it. registerHit's tuned constants become a BASE that this scales.
+//
+//   2. BAND. He asked directly what should happen when a reach check barely passes. The answer is
+//      not a binary and not a warp: inside `clean` the move plays as authored; between clean and the
+//      stretch ceiling the fighter spends the shortfall on his own body — spine lean, shoulder
+//      rotation, limb extension — weighted by agility, and the damage tapers because a fully
+//      extended arm has no mass behind it. Past the ceiling it whiffs, honestly.
+//
+//   3. LIFT. A carry or a suplex is a strength question against the other body's mass. Passing it
+//      cleanly is a clean lift; failing it is not a whiff, it is a STRUGGLE — which is the teeter,
+//      and the teeter is supposed to be dramatic.
+//
+// Everything degrades to 1.0 when there is no model bound, so a procedural body behaves exactly as
+// it does today and nothing regresses on a fighter whose GLB has not loaded yet.
+// ============================================================================
+(function(){
+  'use strict';
+  // A 1.83 m fighter with an ordinary build is the reference the existing registerHit constants were
+  // tuned against; every measured body is expressed as a ratio to this so the tuning survives.
+  var REF = { arm: 0.78, leg: 0.94, body: 0.52, height: 1.83 };
+  var CFG = null;                 // execution block from moveset_schema.json
+  var FALLBACK = {
+    grappleClosure: 0.62, clean: 0.82, lean: 1.00, max: 1.14,
+    struggleBelow: 1.00, failFloor: 0.62,
+    stamina: { gateCarry:0.35, gateFinisher:0.25, gateDive:0.30, gateRunning:0.20 }
+  };
+  var cache = new WeakMap ? new WeakMap() : null;
+  var byName = {};
+
+  function load(){
+    var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    var urls = ['assets/moves/moveset_schema.json', cdn + 'assets/moves/moveset_schema.json'];
+    (function next(i){
+      if (i >= urls.length) return;
+      fetch(urls[i]).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        .then(function(j){ CFG = j.execution || null;
+          console.log('%c[BANNON_REACH] execution filter loaded — clean ' + cfg().clean +
+            ' / lean ' + cfg().lean + ' / max ' + cfg().max + ' of measured reach','color:#7CFC00'); })
+        .catch(function(){ next(i+1); });
+    })(0);
+  }
+  load();
+  function cfg(){
+    var r = (CFG && CFG.reach) || {};
+    return {
+      grappleClosure: r.grappleClosure != null ? r.grappleClosure : FALLBACK.grappleClosure,
+      clean: r.clean != null ? r.clean : FALLBACK.clean,
+      lean:  r.lean  != null ? r.lean  : FALLBACK.lean,
+      max:   r.max   != null ? r.max   : FALLBACK.max
+    };
+  }
+  function wcfg(){ return (CFG && CFG.weightClass) || FALLBACK; }
+  function scfg(){ return (CFG && CFG.stamina) || FALLBACK.stamina; }
+
+  // ---- 1. MEASURE ------------------------------------------------------------------------------
+  // Bone names differ between Mixamo exports, our own UniRig output and the transfer_weights rigs,
+  // so match on the SHAPE of the name rather than an exact table.
+  var PAT = {
+    shoulder:/(^|[^a-z])(upperarm|shoulder|arm)(l|r|left|right)?$/i,
+    elbow:   /(forearm|lowerarm|elbow)/i,
+    hand:    /(hand|wrist)/i,
+    hip:     /(upleg|upperleg|thigh|hip)/i,
+    knee:    /(leg|shin|calf|knee)/i,
+    foot:    /(foot|ankle|toebase)/i,
+    chest:   /(spine2|chest|upperchest)/i,
+    pelvis:  /(hips|pelvis|root)/i
+  };
+  function dist3(a, b){
+    if (!a || !b) return 0;
+    var pa = new THREE.Vector3(), pb = new THREE.Vector3();
+    a.getWorldPosition(pa); b.getWorldPosition(pb);
+    return pa.distanceTo(pb);
+  }
+  function measure(model){
+    if (!model || typeof THREE === 'undefined') return null;
+    var got = {};
+    model.traverse(function(o){
+      if (!o.isBone) return;
+      var n = o.name;
+      // prefer the RIGHT side so a one-sided match does not average two different lengths
+      var right = /r$|right/i.test(n);
+      for (var k in PAT){ if (PAT[k].test(n) && (!got[k] || right)) got[k] = o; }
+    });
+    if (!got.shoulder && !got.hip) return null;
+    var arm = dist3(got.shoulder, got.elbow) + dist3(got.elbow, got.hand);
+    var leg = dist3(got.hip, got.knee) + dist3(got.knee, got.foot);
+    var body = dist3(got.pelvis, got.chest);
+    var h = 0;
+    try{ var box = new THREE.Box3().setFromObject(model), s = new THREE.Vector3(); box.getSize(s); h = s.y; }catch(e){}
+    if (!(arm > 0.05) && !(leg > 0.05)) return null;
+    return {
+      arm: arm > 0.05 ? arm : REF.arm,
+      leg: leg > 0.05 ? leg : REF.leg,
+      body: body > 0.05 ? body : REF.body,
+      height: h > 0.5 ? h : REF.height
+    };
+  }
+  function reachOf(f){
+    if (!f) return null;
+    var m = f.model || (f.root && f.root.userData && f.root.userData.model) || null;
+    if (!m) return null;
+    if (cache && cache.has(m)) return cache.get(m);
+    var r = measure(m);
+    if (r && cache) cache.set(m, r);
+    try{ if (r) byName[String((f.opts && f.opts.name) || '').toUpperCase()] = r; }catch(e){}
+    return r;
+  }
+  // Which limb does this move actually throw?
+  function limbOf(move){
+    var L = String((move && move.limb) || '').toUpperCase();
+    var C = String((move && move.cat) || '').toUpperCase();
+    if (C === 'GRAPPLE' || C === 'THROW' || C === 'CARRY') return 'grapple';
+    if (L.indexOf('KICK') >= 0 || L === 'KNEE' || L.indexOf('STOMP') >= 0) return 'leg';
+    if (L === 'HEADBUTT' || L.indexOf('SHOULDER') >= 0 || L.indexOf('TACKLE') >= 0) return 'body';
+    return 'arm';
+  }
+  // The multiplier registerHit applies to its tuned base reach.
+  function scaleFor(f, move){
+    var r = reachOf(f); if (!r) return 1;
+    var lb = limbOf(move);
+    if (lb === 'grapple'){
+      // a grapple needs CLOSURE, not extension — hands have to meet around the other body
+      return Math.max(0.80, Math.min(1.22, (r.arm / REF.arm) * 0.55 + (r.height / REF.height) * 0.45));
+    }
+    var key = lb === 'leg' ? 'leg' : lb === 'body' ? 'body' : 'arm';
+    var ratio = r[key] / REF[key];
+    // torso height contributes: a taller frame plants further away and still connects
+    ratio = ratio * 0.78 + (r.height / REF.height) * 0.22;
+    return Math.max(0.78, Math.min(1.30, ratio));
+  }
+
+  // ---- stats ------------------------------------------------------------------------------------
+  // Stats do not conjure range. They decide how much of the body's OWN reach a fighter can commit
+  // inside the move's frames — which is the difference between a lunging cross and a lazy one.
+  function stat(f, name, dflt){
+    try{
+      var p = f.profile || (f.opts && f.opts.profile) || f.opts || {};
+      var v = p[name];
+      if (typeof v === 'number') return v > 1.5 ? v / 100 : v;   // accept 0..1 or 0..100
+    }catch(e){}
+    return dflt;
+  }
+  function agilityOf(f){ return Math.max(0.2, Math.min(1, stat(f, 'agility', stat(f, 'speed', 0.6)))); }
+  function strengthOf(f){ return Math.max(0.2, Math.min(1, stat(f, 'strength', stat(f, 'power', 0.6)))); }
+
+  // ---- 2. BAND ----------------------------------------------------------------------------------
+  function band(a, v, reach, dist, move){
+    var C = cfg();
+    var clean = reach * C.clean;
+    if (dist <= clean) return { hit:true, dmg:1, lean:0, band:'clean' };
+    // how far past clean, as a fraction of the stretch corridor
+    var agi = agilityOf(a);
+    // agility buys corridor: a sluggish fighter's ceiling sits nearer `lean`, an agile one reaches
+    // most of the way to `max`. Nobody exceeds `max`.
+    var ceiling = reach * (C.lean + (C.max - C.lean) * agi);
+    if (dist > ceiling) return { hit:false, dmg:0, lean:0, band:'whiff' };
+    var over = (dist - clean) / Math.max(1e-4, ceiling - clean);   // 0..1 through the corridor
+    // stamina takes the edge off a lunge — a blown fighter does not extend
+    var stam = 0.5 + 0.5 * Math.min(1, (a.stamina || 0) / (a.maxStamina || 100));
+    var lean = over * agi * stam;
+    // damage taper: full inside clean, ~0.55 at maximum stretch. Not linear — the last third of the
+    // corridor is where a strike really stops carrying anything.
+    var dmg = 1 - 0.45 * (over * over * 0.6 + over * 0.4);
+    return { hit:true, dmg:Math.max(0.5, dmg), lean:lean, band: over < 0.5 ? 'lean' : 'stretch' };
+  }
+
+  // Spend the shortfall on the body: lean the spine toward the target and rotate the striking
+  // shoulder through. This is the ONLY thing that moves, and the root is never touched — that is
+  // what separates an extension from a warp.
+  function applyLean(a, v, amt){
+    try{
+      if (!a || !a.J || !(amt > 0.01)) return;
+      var dx = (v.x || 0) - (a.x || 0), dz = (v.z || 0) - (a.z || 0);
+      var d = Math.hypot(dx, dz) || 1;
+      var k = Math.min(0.34, amt * 0.34);         // metres of lean, hard-capped
+      var pull = function(j, mul){
+        var J = a.J[j]; if (!J || !J.tgt) return;
+        J.tgt.x += (dx / d) * k * mul;
+        J.tgt.z += (dz / d) * k * mul;
+      };
+      // the chain leans as a chain — chest most, pelvis least, striking hand furthest of all
+      pull('chest', 1.0); pull('spineMid', 0.62); pull('spineLow', 0.34); pull('pelvis', 0.16);
+      pull('haR', 1.45); pull('haL', 0.5); pull('elR', 1.05);
+      a._reachLean = amt;
+    }catch(e){}
+  }
+
+  // ---- 3. LIFT ----------------------------------------------------------------------------------
+  // Strength vs the other body's mass. Above struggleBelow it is a clean lift; between that and the
+  // fail floor it is a STRUGGLE (and the struggle amplitude is the teeter); below the floor it fails
+  // and they come back down on top of you.
+  function massOf(f){
+    try{
+      if (f.strikeMass) return 88 * f.strikeMass();
+      var p = f.profile || (f.opts && f.opts.profile) || {};
+      if (typeof p.weight === 'number') return p.weight;
+    }catch(e){}
+    return 95;
+  }
+  function classOf(kg){
+    var L = (wcfg().classes) || FALLBACK.classes || [];
+    for (var i = 0; i < L.length; i++) if (kg <= L[i].maxKg) return L[i].id;
+    return 'GIANT';
+  }
+  function liftCheck(a, v){
+    var W = wcfg();
+    var str = strengthOf(a), mA = massOf(a), mV = massOf(v);
+    // a strong 120 kg man lifts a 120 kg man; the ratio is strength-weighted mass parity
+    var ratio = (mA * (0.55 + 0.9 * str)) / Math.max(1, mV);
+    var stam = Math.min(1, (a.stamina || 0) / (a.maxStamina || 100));
+    ratio *= 0.72 + 0.28 * stam;
+    var below = W.struggleBelow != null ? W.struggleBelow : 1.0;
+    var floor = W.failFloor != null ? W.failFloor : 0.62;
+    return {
+      ratio: ratio,
+      clean: ratio >= below,
+      struggle: ratio < below && ratio >= floor,
+      fail: ratio < floor,
+      // how hard the teeter should fight back: 0 at a clean lift, 1 at the very edge of failure
+      severity: Math.max(0, Math.min(1, (below - ratio) / Math.max(1e-3, below - floor))),
+      classA: classOf(mA), classV: classOf(mV), massA: mA, massV: mV
+    };
+  }
+
+  // Does the move pool even offer this? An exhausted fighter is not shown the biggest lifts.
+  function staminaGate(f, kind){
+    var S = scfg(), frac = Math.min(1, (f.stamina || 0) / (f.maxStamina || 100));
+    var need = kind === 'carry' ? S.gateCarry : kind === 'finisher' ? S.gateFinisher
+             : kind === 'dive' ? S.gateDive : kind === 'running' ? S.gateRunning : 0;
+    return frac >= need;
+  }
+
+  window.BANNON_REACH = {
+    scaleFor: scaleFor, band: band, applyLean: applyLean,
+    liftCheck: liftCheck, staminaGate: staminaGate,
+    measure: function(f){ return reachOf(f); },
+    // auditable: what did we actually measure on this body, and what does it buy
+    report: function(f){
+      f = f || (typeof fighters !== 'undefined' && fighters[0]);
+      var r = reachOf(f);
+      if (!r) return { measured:false, note:'no GLB bound — scale 1.0, engine behaves as before' };
+      return { measured:true, arm:+r.arm.toFixed(3), leg:+r.leg.toFixed(3), height:+r.height.toFixed(3),
+               armScale:+scaleFor(f,{limb:'JAB'}).toFixed(3),
+               legScale:+scaleFor(f,{limb:'KICK'}).toFixed(3),
+               grappleScale:+scaleFor(f,{cat:'GRAPPLE'}).toFixed(3),
+               agility:+agilityOf(f).toFixed(2), strength:+strengthOf(f).toFixed(2) };
+    },
+    config: function(){ return { reach:cfg(), weight:wcfg(), stamina:scfg() }; }
+  };
+
+  console.log('%c[BANNON_REACH] reach measured from bone length; stretch band replaces the binary whiff','color:#7CFC00');
+})();
+</script>
+
+<script>
+// ============================================================================
+// BANNON_GRID — the grid sensor, brought back and actually wired to movement and zoning.
+//
+// The sensor itself was never deleted: FighterGridSensor (16x16 cells, 6 channels) is still in the
+// file and the AI still reads oppSide / oppApproaching / oppInCorner / recentAttackHeat off it. What
+// was missing is why it did not feel present:
+//
+//   1. IT ONLY EVER RAN FOR THE AI. `if (!this.isPlayer && this.gridSensor)` — the player's sensor
+//      was constructed and then never updated once, so BANNON_SENSOR.get(0) returned a buffer of
+//      zeros forever and anything that wanted to reason about the player's surroundings could not.
+//   2. IT HAD NO IDEA WHERE THE EDGES WERE. Six channels about the opponent and not one about the
+//      ring. The owner's ask was "hook it up ... make sure combat and movement and zoning looks
+//      good", and zoning is exactly the part the sensor was blind to — which is why the AI would
+//      happily strafe itself off the apron.
+//
+// This adds the missing half and gives it consumers. No new sensor, no parallel system: the same
+// FighterGridSensor, ticked for everyone, with an edge/zone layer on top that movement reads.
+// ============================================================================
+(function(){
+  'use strict';
+  var ST = { armed:false, ticks:0, edgeSaves:0, protoDone:false };
+
+  function halfW(){ try{ return (typeof ARENA_HALF !== 'undefined') ? ARENA_HALF : 3.6; }catch(e){ return 3.6; } }
+  function halfD(){ return halfW() * 0.72; }          // the ring is not square
+
+  // ---- the edge/zone layer ---------------------------------------------------------------------
+  // Distance to each of the four ropes as a 0..1 proximity, plus which zone a step in a given
+  // direction would put you in. This is the information the sensor never had.
+  function edgeProximity(f){
+    var hw = halfW(), hd = halfD();
+    var ex = Math.max(0, 1 - (hw - Math.abs(f.x || 0)) / 0.9);
+    var ez = Math.max(0, 1 - (hd - Math.abs(f.z || 0)) / 0.9);
+    return {
+      x: ex, z: ez, worst: Math.max(ex, ez),
+      // signed: +1 means the near edge is on the +x / +z side
+      sx: (f.x || 0) >= 0 ? 1 : -1,
+      sz: (f.z || 0) >= 0 ? 1 : -1
+    };
+  }
+  // What zone would a step of `d` metres in (dx,dz) land in? RING inside the ropes, APRON on the
+  // skirt, FLOOR past it. Reads the engine's own ZONE_Y keys so it can never disagree with them.
+  function zoneAt(x, z){
+    var hw = halfW(), hd = halfD();
+    var ox = Math.abs(x) - hw, oz = Math.abs(z) - hd;
+    var out = Math.max(ox, oz);
+    if (out <= 0) return 'RING';
+    if (out <= 0.55) return 'APRON';
+    return 'FLOOR';
+  }
+  function zoneAhead(f, dx, dz, d){
+    d = d || 0.75;
+    var L = Math.hypot(dx, dz) || 1;
+    return zoneAt((f.x || 0) + dx / L * d, (f.z || 0) + dz / L * d);
+  }
+
+  // Given a preferred strafe direction, return one that does NOT walk you out of the ring. This is
+  // the consumer that makes the whole layer worth having: the AI used to nudge `_strafe` to the
+  // opposite side of the opponent with no idea whether there was a rope there.
+  function safeStrafe(f, want){
+    try{
+      if (!want) return want;
+      var fwdx = Math.cos(f.facing || 0), fwdz = -Math.sin(f.facing || 0);
+      var rx = -fwdz, rz = fwdx;                       // right-hand vector
+      var z1 = zoneAhead(f, rx * want, rz * want, 0.9);
+      if (z1 === 'RING') return want;
+      var z2 = zoneAhead(f, rx * -want, rz * -want, 0.9);
+      if (z2 === 'RING'){ ST.edgeSaves++; return -want; }
+      return 0;                                        // both sides are out — hold position
+    }catch(e){ return want; }
+  }
+
+  function install(){
+    if (ST.armed) return true;
+    if (typeof Fighter === 'undefined' || !Fighter.prototype) return false;
+    if (typeof window.BANNON_SENSOR === 'undefined') return false;
+
+    // 1. TICK THE SENSOR FOR EVERY FIGHTER, INCLUDING THE PLAYER. It is a 16x16x6 float buffer at
+    //    30 Hz — the cost is nothing and the alternative is a sensor that is wrong for the one body
+    //    the player actually controls.
+    var last = performance.now();
+    setInterval(function(){
+      var now = performance.now(), dt = Math.min(0.08, (now - last) / 1000); last = now;
+      try{
+        if (typeof gameState !== 'undefined' && gameState !== 'fight') return;
+        if (typeof fighters === 'undefined' || !fighters) return;
+        // grab the constructor off the first live AI sensor, then extend its prototype once
+        if (!ST.protoDone){
+          for (var q = 0; q < fighters.length; q++){
+            var fs = fighters[q] && fighters[q].gridSensor;
+            if (!fs) continue;
+            var proto = Object.getPrototypeOf(fs);
+            proto.edgeProximity = function(){ return edgeProximity(this.owner); };
+            proto.zoneAhead     = function(dx, dz, d){ return zoneAhead(this.owner, dx, dz, d); };
+            proto.safeStrafe    = function(want){ return safeStrafe(this.owner, want); };
+            proto.nearEdge      = function(t){ return edgeProximity(this.owner).worst >= (t == null ? 0.55 : t); };
+            window.__FighterGridSensor = proto.constructor;
+            ST.protoDone = true;
+            break;
+          }
+        }
+        for (var i = 0; i < fighters.length; i++){
+          var f = fighters[i]; if (!f) continue;
+          // the AI path updates its own inside updateAI; only fill the gap
+          if (!f.isPlayer) continue;
+          if (!f.gridSensor && window.__FighterGridSensor) f.gridSensor = new window.__FighterGridSensor(f);
+          if (f.gridSensor && f.gridSensor.update) f.gridSensor.update(dt);
+        }
+        ST.ticks++;
+      }catch(e){}
+    }, 33);
+
+    // 2. GIVE THE SENSOR THE EDGE/ZONE LAYER IT NEVER HAD, on the prototype so every existing
+    //    instance gains it too.
+    //    LAZILY. FighterGridSensor is a class local to its own IIFE — the only way to reach the
+    //    constructor is off a live instance, and the AI does not build one until updateAI first
+    //    runs. Doing this once at install found nothing (no fighters yet), left __FighterGridSensor
+    //    undefined, and the player therefore never got a sensor at all — the exact bug this module
+    //    exists to fix, reintroduced one layer up.
+    ST.protoDone = false;
+
+    // 3. THE CONSUMER. Wrap move2D so no fighter driven by the AI strafes itself out of the ring —
+    //    the sensor now knows there is a rope there, and this is where that knowledge pays.
+    if (Fighter.prototype.move2D && !Fighter.prototype.move2D.__grid){
+      var _origMove2D = Fighter.prototype.move2D;
+      var wrapped = function(dx, dz, dt){
+        try{
+          if (!this.isPlayer && this.gridSensor && !this.ragdoll && this.zone === 'RING'){
+            var e = edgeProximity(this);
+            if (e.worst > 0.62){
+              // steer along the rope instead of into it — the component heading out is damped, the
+              // component running parallel is kept, so the AI slides down the ropes rather than
+              // stopping dead or walking through them
+              if (e.x > 0.62 && Math.sign(dx || 0) === e.sx) dx *= (1 - e.x) * 0.5;
+              if (e.z > 0.62 && Math.sign(dz || 0) === e.sz) dz *= (1 - e.z) * 0.5;
+              ST.edgeSaves++;
+            }
+          }
+        }catch(err){}
+        return _origMove2D.call(this, dx, dz, dt);
+      };
+      wrapped.__grid = true;
+      Fighter.prototype.move2D = wrapped;
+    }
+
+    ST.armed = true;
+    console.log('%c[BANNON_GRID] grid sensor ticking for EVERY fighter (player included) + edge/zone ' +
+      'layer wired into movement','color:#7CFC00');
+    return true;
+  }
+
+  // Fighter and BANNON_SENSOR are both defined in earlier blocks; retry briefly rather than assume.
+  (function arm(n){ if (install() || n > 80) return; setTimeout(function(){ arm(n + 1); }, 250); })(0);
+
+  window.BANNON_GRID = {
+    armed: function(){ return ST.armed; },
+    stats: function(){ return { armed:ST.armed, playerTicks:ST.ticks, edgeSaves:ST.edgeSaves }; },
+    edgeProximity: edgeProximity,
+    zoneAt: zoneAt,
+    zoneAhead: zoneAhead,
+    safeStrafe: safeStrafe,
+    // auditable: what the sensor sees for a fighter right now, edges included
+    report: function(idx){
+      var f = (typeof fighters !== 'undefined') ? fighters[idx == null ? 0 : idx] : null;
+      if (!f) return { err:'no fighter' };
+      var s = f.gridSensor;
+      var e = edgeProximity(f);
+      return {
+        who: (f.opts && f.opts.name) || '?', isPlayer: !!f.isPlayer, hasSensor: !!s,
+        oppSide: s && s.oppSide ? s.oppSide() : null,
+        approaching: s && s.oppApproaching ? s.oppApproaching() : null,
+        oppInCorner: s && s.oppInCorner ? s.oppInCorner() : null,
+        attackHeat: s && s.recentAttackHeat ? +s.recentAttackHeat().toFixed(3) : null,
+        edge: { x:+e.x.toFixed(3), z:+e.z.toFixed(3), worst:+e.worst.toFixed(3) },
+        zone: f.zone, zoneUnderfoot: zoneAt(f.x || 0, f.z || 0)
+      };
+    }
+  };
+})();
+</script>
 
 </body></html>
 

@@ -8,20 +8,42 @@
  * extend, so it lives here as a schema and the editor renders itself from it. Adding a category
  * later is a data edit, not a UI rewrite.
  *
+ * OWNER LAW — NO NUMBER CAPS. 2K's "Pick 3 / Pick 5" exist because a console moveset is a fixed
+ * memory budget. Ours is not, and the owner said so plainly: "u know our game doesn't include the
+ * same caps as WWE games in those areas with number caps." So every slot carries TWO numbers:
+ *   pick  how many the slot starts with — the DEFAULT loadout, what a fresh fighter gets
+ *   cap   the hard ceiling. 0 MEANS UNLIMITED, and that is the value on almost everything.
+ * A slot is capped only where the ENGINE can address one thing at a time (you have one fighting
+ * stance, one walk cycle, one entrance) — that is a physical limit, not a budget.
+ *
  * Each slot declares:
  *   id      stable key used for storage + equippedClipFor() lookups
  *   label   what the editor shows
- *   pick    how many moves this slot holds (2K's "Pick 3", "Pick 5"...)
+ *   pick    default loadout size
+ *   cap     hard ceiling, 0 = unlimited
  *   kind    what TYPE of move is legal here — this is the position lock. 2K will not let you put a
  *           top-rope dive in a standing light attack slot, and neither will we.
  *   pos     the ENGINE position this maps to, so a binding can reach real mocap + real physics
  *   ai      whether AI Priority/Repetition/Timing apply (2K: everything except sigs/finishers)
+ *
+ * This builder also emits assets/moves/pin_moves.json — the named pin/roll-up catalogue that fills
+ * the PINS category and that BANNON_PINS reads at runtime. Pins are a moveset category in 2K, so
+ * their catalogue belongs with the schema that shapes it, not in a second scattered file.
  */
 const fs = require('fs'), path = require('path');
-const OUT = path.join(__dirname, '..', '..', 'assets', 'moves', 'moveset_schema.json');
+const DIR = path.join(__dirname, '..', '..', 'assets', 'moves');
+const OUT = path.join(DIR, 'moveset_schema.json');
+const OUT_PINS = path.join(DIR, 'pin_moves.json');
 
 let n = 0;
-const S = (id, label, pick, kind, pos, ai) => { n++; return { id, label, pick: pick || 1, kind, pos: pos || null, ai: ai !== false }; };
+// S(id, label, pick, kind, pos, ai, cap)  — cap defaults to 0 = UNLIMITED (owner law)
+const S = (id, label, pick, kind, pos, ai, cap) => {
+  n++;
+  return { id, label, pick: pick || 1, cap: cap === undefined ? 0 : cap, kind, pos: pos || null, ai: ai !== false };
+};
+// S1 — genuinely single-valued because the engine can only address one at a time (one stance, one
+// walk cycle). This is a physical limit, not a budget, so it is the ONLY place a cap belongs.
+const S1 = (id, label, kind, pos, ai) => S(id, label, 1, kind, pos, ai, 1);
 const G = (label, slots) => ({ label, slots });
 const C = (id, label, groups) => ({ id, label, groups });
 
@@ -36,6 +58,8 @@ const CATS = [
       S('ST_F_HEAVY',      'Heavy Attack',      3, 'strike',   'STANDING_FRONT'),
       S('ST_F_LGRAP',      'Light Grapple',     5, 'grapple',  'STANDING_FRONT'),
       S('ST_F_HGRAP',      'Heavy Grapple',     5, 'grapple',  'STANDING_FRONT'),
+      S('ST_F_CHAIN',      'Chain Wrestling',   4, 'chain',    'STANDING_FRONT'),
+      S('ST_F_STRUGGLE',   'Collar-Elbow Struggle', 3, 'struggle', 'STANDING_FRONT'),
       S('ST_F_RUN_L',      'Running · Light',   1, 'strike',   'RUNNING'),
       S('ST_F_RUN_H',      'Running · Heavy',   1, 'strike',   'RUNNING'),
       S('ST_F_RUN_G',      'Running · Grapple', 1, 'grapple',  'RUNNING')
@@ -44,6 +68,7 @@ const CATS = [
       S('ST_R_HEAVY',      'Heavy Attack',      1, 'strike',   'STANDING_REAR'),
       S('ST_R_LGRAP',      'Light Grapple',     5, 'grapple',  'STANDING_REAR'),
       S('ST_R_HGRAP',      'Heavy Grapple',     5, 'grapple',  'STANDING_REAR'),
+      S('ST_R_WAIST',      'Rear Waistlock',    4, 'grapple',  'STANDING_REAR'),
       S('ST_R_RUN_L',      'Running · Light',   1, 'strike',   'RUNNING'),
       S('ST_R_RUN_H',      'Running · Heavy',   1, 'strike',   'RUNNING'),
       S('ST_R_RUN_G',      'Running · Grapple', 1, 'grapple',  'RUNNING')
@@ -56,28 +81,111 @@ const CATS = [
       S('CARRY_PB_DROP',   '  ↳ Drop / Driver', 3, 'carry_finish', 'CARRY_POWERBOMB'),
       S('CARRY_PB_ENV',    '  ↳ Environmental', 2, 'carry_env',    'CARRY_POWERBOMB'),
       S('CARRY_PB_PIN',    '  ↳ Pin Combination',1,'carry_pin',    'CARRY_POWERBOMB'),
+      S('CARRY_PB_TRANS',  '  ↳ Transition',    2, 'carry_trans',  'CARRY_POWERBOMB'),
       S('CARRY_FIREMAN',   "Fireman's Carry",   1, 'carry',    'CARRY_FIREMAN'),
       S('CARRY_FM_DROP',   '  ↳ Drop / Driver', 3, 'carry_finish', 'CARRY_FIREMAN'),
       S('CARRY_FM_ENV',    '  ↳ Environmental', 2, 'carry_env',    'CARRY_FIREMAN'),
       S('CARRY_FM_PIN',    '  ↳ Pin Combination',1,'carry_pin',    'CARRY_FIREMAN'),
+      S('CARRY_FM_TRANS',  '  ↳ Transition',    2, 'carry_trans',  'CARRY_FIREMAN'),
       S('CARRY_SHOULDER',  'Shoulder Carry',    1, 'carry',    'CARRY_SHOULDER'),
       S('CARRY_SH_DROP',   '  ↳ Drop / Driver', 3, 'carry_finish', 'CARRY_SHOULDER'),
       S('CARRY_SH_ENV',    '  ↳ Environmental', 2, 'carry_env',    'CARRY_SHOULDER'),
       S('CARRY_SH_PIN',    '  ↳ Pin Combination',1,'carry_pin',    'CARRY_SHOULDER'),
+      S('CARRY_SH_TRANS',  '  ↳ Transition',    2, 'carry_trans',  'CARRY_SHOULDER'),
       S('CARRY_CRADLE',    'Cradle Carry',      1, 'carry',    'CARRY_CRADLE'),
       S('CARRY_CR_DROP',   '  ↳ Drop / Driver', 3, 'carry_finish', 'CARRY_CRADLE'),
       S('CARRY_CR_ENV',    '  ↳ Environmental', 2, 'carry_env',    'CARRY_CRADLE'),
-      S('CARRY_CR_PIN',    '  ↳ Pin Combination',1,'carry_pin',    'CARRY_CRADLE')
+      S('CARRY_CR_PIN',    '  ↳ Pin Combination',1,'carry_pin',    'CARRY_CRADLE'),
+      S('CARRY_CR_TRANS',  '  ↳ Transition',    2, 'carry_trans',  'CARRY_CRADLE'),
+      S('CARRY_ELECTRIC',  'Electric Chair',    1, 'carry',    'CARRY_ELECTRIC'),
+      S('CARRY_EC_DROP',   '  ↳ Drop / Driver', 3, 'carry_finish', 'CARRY_ELECTRIC'),
+      S('CARRY_EC_PIN',    '  ↳ Pin Combination',1,'carry_pin',    'CARRY_ELECTRIC'),
+      S('CARRY_TORTURE',   'Torture Rack',      1, 'carry',    'CARRY_RACK'),
+      S('CARRY_TR_DROP',   '  ↳ Drop / Driver', 3, 'carry_finish', 'CARRY_RACK'),
+      S('CARRY_TR_SUB',    '  ↳ Hold / Submission',2,'submission',  'CARRY_RACK'),
+      S('CARRY_ARGENTINE', 'Argentine Rack',    1, 'carry',    'CARRY_RACK'),
+      S('CARRY_AR_DROP',   '  ↳ Drop / Driver', 3, 'carry_finish', 'CARRY_RACK'),
+      S('CARRY_DRAG',      'Drag / Haul',       1, 'carry',    'CARRY_DRAG'),
+      S('CARRY_DR_THROW',  '  ↳ Throw',         2, 'carry_env','CARRY_DRAG')
     ]),
     G('Foot Catch', [
       S('FC_LIGHT',        'Light Attack',      1, 'strike',     'FOOT_CATCH'),
       S('FC_HEAVY',        'Heavy Attack',      1, 'strike',     'FOOT_CATCH'),
       S('FC_SUB',          'Foot Catch Submission', 1, 'submission', 'FOOT_CATCH'),
+      S('FC_SPIN',         'Spin Out',          1, 'grapple',    'FOOT_CATCH'),
       S('FC_REV',          'Reversal',          1, 'reversal',   'FOOT_CATCH')
     ]),
-    G('Leverage Pin', [
-      S('LEV_FRONT',       'Front',             1, 'pin', 'STANDING_FRONT'),
-      S('LEV_REAR',        'Rear',              1, 'pin', 'STANDING_REAR')
+    G('Catch / Counter', [
+      S('CT_CATCH_DIVE',   'Catch a Diver',     2, 'catch',    'STANDING_FRONT'),
+      S('CT_CATCH_RUN',    'Catch a Runner',    2, 'catch',    'STANDING_FRONT'),
+      S('CT_COUNTER_STRK', 'Strike Counter',    3, 'reversal', 'STANDING_FRONT'),
+      S('CT_COUNTER_GRAP', 'Grapple Counter',   3, 'reversal', 'STANDING_FRONT'),
+      S('CT_COUNTER_REAR', 'Rear Counter',      3, 'reversal', 'STANDING_REAR')
+    ])
+  ]),
+
+  // ==========================================================================================
+  // PINS — the owner's correction, in full. THREE ENTRY PATHS, not one:
+  //   1. DOWN + ZONE on a grounded opponent   (deliberate, the input he explicitly asked for)
+  //   2. PROCEDURAL                            (a landing that leaves shoulders down IS a pin)
+  //   3. ROLL-UP / SURPRISE                    (front AND rear, from standing, running, counters)
+  // and pin legality is a MATCH-RULE question, not a global one. Every slot is uncapped.
+  // ==========================================================================================
+  C('PINS', 'Pins & Roll-Ups', [
+    G('Ground Covers', [
+      S('PN_LATERAL',  'Lateral Press',           2, 'pin', 'GROUNDED_HEAD_UP'),
+      S('PN_LEG_HOOK', 'Leg Hook Cover',          2, 'pin', 'GROUNDED_HEAD_UP'),
+      S('PN_DBL_LEG',  'Double Leg Hook',         1, 'pin', 'GROUNDED_HEAD_UP'),
+      S('PN_JACKKNIFE','Jackknife Cover',         1, 'pin', 'GROUNDED_HEAD_UP'),
+      S('PN_GRAPEVINE','Grapevine Cover',         1, 'pin', 'GROUNDED_HEAD_UP'),
+      S('PN_KNEE',     'Knee-on-Chest Cover',     1, 'pin', 'GROUNDED_HEAD_UP'),
+      S('PN_ARM_HOOK', 'Arm Hook Cover',          1, 'pin', 'GROUNDED_SIDE'),
+      S('PN_PRONE',    'Cover vs Prone (turn)',   1, 'pin', 'GROUNDED_HEAD_DOWN')
+    ]),
+    // Cocky covers matter for CHARACTER — a heel's one-foot pin is a personality beat, and it costs
+    // you: the catalogue gives these a kickout bonus to the victim, which is the whole joke.
+    G('Cocky Covers', [
+      S('PN_FOOT',     'Foot-on-Chest',           1, 'pin_cocky', 'GROUNDED_HEAD_UP'),
+      S('PN_ONE_ARM',  'One-Arm Cover',           1, 'pin_cocky', 'GROUNDED_HEAD_UP'),
+      S('PN_SEATED',   'Seated Cover',            1, 'pin_cocky', 'GROUNDED_HEAD_UP'),
+      S('PN_PUSHUP',   'Push-Up Cover',           1, 'pin_cocky', 'GROUNDED_HEAD_UP')
+    ]),
+    // THE DRAMATIC ONES. Front-facing surprise pins out of a standing exchange or a counter.
+    G('Roll-Ups · Front', [
+      S('PN_RU_CRADLE',   'Inside Cradle',        1, 'rollup', 'STANDING_FRONT'),
+      S('PN_RU_SMALLPKG', 'Small Package',        1, 'rollup', 'STANDING_FRONT'),
+      S('PN_RU_MAGISTRAL','Magistral Cradle',     1, 'rollup', 'STANDING_FRONT'),
+      S('PN_RU_CRUCIFIX', 'Crucifix Pin',         1, 'rollup', 'STANDING_FRONT'),
+      S('PN_RU_SUNSET',   'Sunset Flip',          1, 'rollup', 'STANDING_FRONT'),
+      S('PN_RU_VICTORY',  'Victory Roll',         1, 'rollup', 'STANDING_FRONT'),
+      S('PN_RU_RANA',     'Rana Pin',             1, 'rollup', 'STANDING_FRONT'),
+      S('PN_RU_ROLLTHRU', 'Roll-Through Pin',     1, 'rollup', 'STANDING_FRONT'),
+      S('PN_RU_OKLAHOMA', 'Oklahoma Roll',        1, 'rollup', 'STANDING_FRONT'),
+      S('PN_RU_PRAWN',    'Prawn Hold',           1, 'rollup', 'STANDING_FRONT')
+    ]),
+    G('Roll-Ups · Rear', [
+      S('PN_RR_SCHOOLBOY','Schoolboy Roll-Up',    1, 'rollup', 'STANDING_REAR'),
+      S('PN_RR_OCONNOR',  "O'Connor Roll",        1, 'rollup', 'STANDING_REAR'),
+      S('PN_RR_BACKSLIDE','Backslide',            1, 'rollup', 'STANDING_REAR'),
+      S('PN_RR_VICTORY',  'Rear Victory Roll',    1, 'rollup', 'STANDING_REAR'),
+      S('PN_RR_CRADLE',   'Rear Cradle',          1, 'rollup', 'STANDING_REAR'),
+      S('PN_RR_SUNSET',   'Rear Sunset Flip',     1, 'rollup', 'STANDING_REAR'),
+      S('PN_RR_ROLLPRAWN','Rolling Prawn Hold',   1, 'rollup', 'STANDING_REAR')
+    ]),
+    G('Leverage & Situational', [
+      S('PN_LV_CORNER',   'Corner Leverage Pin',  1, 'rollup', 'CORNER_FRONT'),
+      S('PN_LV_ROPE',     'Rope-Assisted Roll',   1, 'rollup', 'ROPE_LEAN'),
+      S('PN_LV_APRON',    'Apron Drag Pin',       1, 'rollup', 'APRON'),
+      S('PN_LV_COUNTER',  'Counter-to-Pin',       3, 'rollup', 'STANDING_FRONT'),
+      S('PN_LV_RUNNING',  'Running Roll-Up',      1, 'rollup', 'RUNNING'),
+      S('PN_LV_REVERSE',  'Reverse a Roll-Up',    2, 'rollup', 'STANDING_FRONT')
+    ]),
+    // ILLEGAL pins are legal to OWN — they just get you caught. The catalogue flags them and the
+    // referee's line-of-sight decides whether they work or get the count waved off.
+    G('Illegal', [
+      S('PN_IL_TIGHTS',   'Handful of Tights',    1, 'pin_illegal', 'GROUNDED_HEAD_UP'),
+      S('PN_IL_ROPES',    'Feet on the Ropes',    1, 'pin_illegal', 'GROUNDED_HEAD_UP'),
+      S('PN_IL_MASK',     'Mask / Hair Grab',     1, 'pin_illegal', 'GROUNDED_HEAD_UP')
     ])
   ]),
 
@@ -92,7 +200,8 @@ const CATS = [
       S('GS_LO_ATK',  'Lower · Attack',  1, 'strike',     'GROUNDED_LEG'),
       S('GS_LO_LIMB', 'Lower · Limb',    1, 'limb',       'GROUNDED_LEG'),
       S('GS_LO_GRAP', 'Lower · Grapple', 1, 'grapple',    'GROUNDED_LEG'),
-      S('GS_RUN',     'Running',         1, 'strike',     'GROUNDED_HEAD_UP')
+      S('GS_RUN',     'Running',         1, 'strike',     'GROUNDED_HEAD_UP'),
+      S('GS_MOUNT',   'Mounted Strikes', 2, 'strike',     'GROUNDED_HEAD_UP')
     ]),
     G('Prone · Face Down', [
       S('GP_UP_ATK',  'Upper · Attack',  1, 'strike',  'GROUNDED_HEAD_DOWN'),
@@ -103,7 +212,8 @@ const CATS = [
       S('GP_SD_GRAP', 'Side · Grapple',  1, 'grapple', 'GROUNDED_SIDE'),
       S('GP_LO_ATK',  'Lower · Attack',  1, 'strike',  'GROUNDED_LEG'),
       S('GP_LO_LIMB', 'Lower · Limb',    1, 'limb',    'GROUNDED_LEG'),
-      S('GP_LO_GRAP', 'Lower · Grapple', 1, 'grapple', 'GROUNDED_LEG')
+      S('GP_LO_GRAP', 'Lower · Grapple', 1, 'grapple', 'GROUNDED_LEG'),
+      S('GP_TURN',    'Turn Them Over',  1, 'grapple', 'GROUNDED_HEAD_DOWN')
     ]),
     G('Kneeling', [
       S('GK_F_LIGHT', 'Front · Light Attack',   1, 'strike',  'KNEELING'),
@@ -131,7 +241,8 @@ const CATS = [
       S('CN_F_HGRAP', 'Heavy Grapple',  3, 'grapple', 'CORNER_FRONT'),
       S('CN_F_RUN_L', 'Light Running',  1, 'strike',  'CORNER_FRONT'),
       S('CN_F_RUN_H', 'Heavy Running',  1, 'strike',  'CORNER_FRONT'),
-      S('CN_F_RUN_G', 'Grab Running',   1, 'grapple', 'CORNER_FRONT')
+      S('CN_F_RUN_G', 'Grab Running',   1, 'grapple', 'CORNER_FRONT'),
+      S('CN_F_MOUNT', 'Corner Mount Strikes', 1, 'strike', 'CORNER_FRONT')
     ]),
     G('Leaning · Rear', [
       S('CN_R_LIGHT', 'Light Attack',   1, 'strike',  'CORNER_BACK'),
@@ -155,6 +266,10 @@ const CATS = [
     G('Tree of Woe', [
       S('CN_TW_HEAVY','Heavy Attack',   1, 'strike',  'TREE_OF_WOE'),
       S('CN_TW_RUN',  'Running Attack', 1, 'strike',  'TREE_OF_WOE')
+    ]),
+    G('Exposed Steel', [
+      S('CN_EX_EXPOSE','Expose the Buckle', 1, 'grapple', 'CORNER_FRONT'),
+      S('CN_EX_RAM',   'Ram into Steel',    2, 'grapple', 'CORNER_FRONT')
     ])
   ]),
 
@@ -163,11 +278,16 @@ const CATS = [
       S('RP_L_LIGHT', 'Light Attack',   1, 'strike',  'ROPE_LEAN'),
       S('RP_L_HEAVY', 'Heavy Attack',   1, 'strike',  'ROPE_LEAN'),
       S('RP_L_HGRAP', 'Heavy Grapple',  3, 'grapple', 'ROPE_LEAN'),
-      S('RP_L_RUN',   'Running Attack', 1, 'strike',  'ROPE_LEAN')
+      S('RP_L_RUN',   'Running Attack', 1, 'strike',  'ROPE_LEAN'),
+      S('RP_L_CHOKE', 'Rope Choke',     1, 'illegal', 'ROPE_LEAN')
     ]),
     G('Middle Rope', [
       S('RP_M_HEAVY', 'Heavy Attack',   1, 'strike',  'MIDDLE_ROPE'),
       S('RP_M_RUN',   'Running Attack', 1, 'strike',  'MIDDLE_ROPE')
+    ]),
+    G('Tangled / 619', [
+      S('RP_T_SPIN',  'Rope Spin Attack', 1, 'strike', 'ROPE_LEAN'),
+      S('RP_T_TANGLE','vs Tangled Opponent', 1, 'strike', 'ROPE_LEAN')
     ])
   ]),
 
@@ -176,11 +296,17 @@ const CATS = [
       S('IW_ACTION',  'Rebound Action', 2, 'rebound', 'IRISH_WHIP'),
       S('IW_R_LIGHT', 'Rebound · Light Attack',  1, 'strike',  'ROPE_REBOUND'),
       S('IW_R_HEAVY', 'Rebound · Heavy Attack',  1, 'strike',  'ROPE_REBOUND'),
-      S('IW_R_GRAP',  'Rebound · Grapple',       1, 'grapple', 'ROPE_REBOUND')
+      S('IW_R_GRAP',  'Rebound · Grapple',       1, 'grapple', 'ROPE_REBOUND'),
+      S('IW_R_DUCK',  'Rebound · Duck / Leapfrog',2,'evade',   'ROPE_REBOUND')
     ]),
     G('Pullback', [
       S('IW_P_LIGHT', 'Pullback · Light Attack', 1, 'strike', 'IRISH_WHIP'),
       S('IW_P_HEAVY', 'Pullback · Heavy Attack', 1, 'strike', 'IRISH_WHIP')
+    ]),
+    G('Hammer Throw', [
+      S('IW_H_CORNER','To Corner',      1, 'grapple', 'IRISH_WHIP'),
+      S('IW_H_STEPS', 'To Steel Steps', 1, 'grapple', 'IRISH_WHIP'),
+      S('IW_H_BARR',  'To Barricade',   1, 'grapple', 'BARRICADE')
     ])
   ]),
 
@@ -197,7 +323,11 @@ const CATS = [
       S('AP_RS_STAND','To Ringside · vs Standing',     1, 'strike',  'APRON'),
       S('AP_RS_SUP',  'To Ringside · vs Supine',       1, 'strike',  'APRON')
     ]),
-    G('To Apron', [ S('AP_DRAG', 'Drag to Apron', 1, 'grapple', 'APRON') ])
+    G('To Apron', [ S('AP_DRAG', 'Drag to Apron', 1, 'grapple', 'APRON') ]),
+    G('Skirt / Under Ring', [
+      S('AP_UNDER_GET','Grab from Under the Ring', 1, 'weapon_grab', 'APRON'),
+      S('AP_UNDER_PULL','Pull Them Under',         1, 'grapple',     'APRON')
+    ])
   ]),
 
   C('DIVING', 'Diving', [
@@ -205,13 +335,19 @@ const CATS = [
       S('DV_TR_L',     'Light Dive',            1, 'dive', 'TURNBUCKLE_TOP'),
       S('DV_TR_H',     'Heavy Dive',            1, 'dive', 'TURNBUCKLE_TOP'),
       S('DV_TR_L_SUP', 'Light Dive · vs Supine',1, 'dive', 'TURNBUCKLE_TOP'),
-      S('DV_TR_H_SUP', 'Heavy Dive · vs Supine',1, 'dive', 'TURNBUCKLE_TOP')
+      S('DV_TR_H_SUP', 'Heavy Dive · vs Supine',1, 'dive', 'TURNBUCKLE_TOP'),
+      S('DV_TR_OUT',   'Dive to Ringside',      1, 'dive', 'DIVE_TO_FLOOR')
     ]),
     G('Middle Rope', [
       S('DV_MR_L',     'Light Dive',            1, 'dive', 'MIDDLE_ROPE'),
       S('DV_MR_H',     'Heavy Dive',            1, 'dive', 'MIDDLE_ROPE'),
       S('DV_MR_L_SUP', 'Light Dive · vs Supine',1, 'dive', 'MIDDLE_ROPE'),
       S('DV_MR_H_SUP', 'Heavy Dive · vs Supine',1, 'dive', 'MIDDLE_ROPE')
+    ]),
+    G('Through the Ropes', [
+      S('DV_TH_SUICIDE','Suicide Dive',   1, 'dive', 'DIVE_TO_FLOOR'),
+      S('DV_TH_TOPE',   'Tope',           1, 'dive', 'DIVE_TO_FLOOR'),
+      S('DV_TH_TOPCON', 'Tope Con Hilo',  1, 'dive', 'DIVE_TO_FLOOR')
     ]),
     G('Ledge',         [ S('DV_LG_ST','vs Standing',1,'dive','DIVE_TO_FLOOR'), S('DV_LG_SUP','vs Supine',1,'dive','DIVE_TO_FLOOR') ]),
     G('Equipment Box', [ S('DV_EB_ST','vs Standing',1,'dive','DIVE_TO_FLOOR'), S('DV_EB_SUP','vs Supine',1,'dive','DIVE_TO_FLOOR') ]),
@@ -220,26 +356,39 @@ const CATS = [
 
   C('SPRINGBOARD', 'Springboard', [
     G('To Ring',    [ S('SB_TR_ST','vs Standing',5,'dive','SPRINGBOARD'), S('SB_TR_SUP','vs Supine',5,'dive','SPRINGBOARD') ]),
-    G('To Ringside',[ S('SB_RS_ST','vs Standing',5,'dive','SPRINGBOARD'), S('SB_RS_SUP','vs Supine',5,'dive','SPRINGBOARD') ])
+    G('To Ringside',[ S('SB_RS_ST','vs Standing',5,'dive','SPRINGBOARD'), S('SB_RS_SUP','vs Supine',5,'dive','SPRINGBOARD') ]),
+    G('Wall / Post',[ S('SB_WALL','Off the Post',2,'dive','SPRINGBOARD'), S('SB_BARR','Off the Barricade',2,'dive','SPRINGBOARD') ])
   ]),
 
   C('SUBMISSIONS', 'Holds / Submissions', [
     G('Holds', [
       S('SUB_STAND', 'Standing Submission',        1, 'submission', 'STANDING_FRONT'),
+      S('SUB_REAR',  'Rear Standing Submission',   1, 'submission', 'STANDING_REAR'),
       S('SUB_FOOT',  'Foot Catch Submission',      1, 'submission', 'FOOT_CATCH'),
       S('SUB_UPPER', 'Upper Body Ground',          1, 'submission', 'GROUNDED_HEAD_UP'),
       S('SUB_SIDE',  'Side Ground',                1, 'submission', 'GROUNDED_SIDE'),
       S('SUB_LOWER', 'Lower Body Ground',          1, 'submission', 'GROUNDED_LEG'),
+      S('SUB_PRONE', 'Prone Ground',               1, 'submission', 'GROUNDED_HEAD_DOWN'),
+      S('SUB_ROPE',  'Rope-Break Hold',            1, 'submission', 'ROPE_LEAN'),
       // Rest holds were a real category in the simulation-era games and 2K dropped them. Ours keeps
       // them: a hold you apply to SLOW the match and recover, not to finish. Owner north-star note.
       S('SUB_REST',  'Rest Hold',                  2, 'rest_hold',  'STANDING_FRONT')
+    ]),
+    G('Targeted', [
+      S('SUB_T_ARM',  'Arm Submission',   2, 'submission', 'GROUNDED_SIDE'),
+      S('SUB_T_LEG',  'Leg Submission',   2, 'submission', 'GROUNDED_LEG'),
+      S('SUB_T_NECK', 'Neck Submission',  2, 'submission', 'GROUNDED_HEAD_UP'),
+      S('SUB_T_BACK', 'Back Submission',  2, 'submission', 'GROUNDED_HEAD_DOWN')
     ])
   ]),
 
   C('SIGNATURE', 'Signatures', [
     G('Signature', [
       S('SIG_RING',  'In-Ring',  5, 'signature', null, false),
-      S('SIG_SIDE',  'Ringside', 2, 'signature', null, false)
+      S('SIG_SIDE',  'Ringside', 2, 'signature', null, false),
+      S('SIG_CORNER','Corner',   2, 'signature', 'CORNER_FRONT', false),
+      S('SIG_TOP',   'Top Rope', 2, 'signature', 'TURNBUCKLE_TOP', false),
+      S('SIG_GROUND','vs Grounded', 2, 'signature', 'GROUNDED_HEAD_UP', false)
     ])
   ]),
 
@@ -250,13 +399,28 @@ const CATS = [
       S('FIN_TAG',   'Tag Team', 2, 'finisher', null, false),
       S('FIN_LADDER','Ladder',   2, 'finisher', null, false),
       S('FIN_TABLE', 'Table',    2, 'finisher', null, false),
-      S('FIN_RUMBLE','Rumble',   4, 'finisher', null, false)
+      S('FIN_RUMBLE','Rumble',   4, 'finisher', null, false),
+      S('FIN_TOP',   'Top Rope', 2, 'finisher', 'TURNBUCKLE_TOP', false),
+      S('FIN_SUB',   'Submission Finisher', 2, 'finisher', null, false)
     ]),
     G('Other', [
       S('FIN_1V2',    '1v2 Finisher',      1, 'finisher', null, false),
       S('FIN_CATCH',  'Catching Finisher', 1, 'finisher', null, false),
       S('FIN_LEDGE',  'Ledge Finisher',    1, 'finisher', null, false),
       S('FIN_CELL',   'Break Cell Wall',   1, 'finisher', null, false)
+    ]),
+    // CREATE-A-FINISHER — cut after SvR 2011 and never replaced. The owner named it directly as one
+    // of the things the old games had that 2K lost. It is not a move slot, it is a SEQUENCE of parts:
+    // pick an approach, a grab, optional transitions, an impact and a landing, and the engine chains
+    // them. Uncapped transitions is the whole point — that is where the absurd ones come from.
+    G('Create-A-Finisher', [
+      S('CAF_APPROACH',  'Approach',        1, 'caf_approach',  null, false),
+      S('CAF_GRAB',      'Grab / Setup',    1, 'caf_grab',      null, false),
+      S('CAF_TRANS',     'Transitions',     2, 'caf_trans',     null, false),
+      S('CAF_IMPACT',    'Impact',          1, 'caf_impact',    null, false),
+      S('CAF_LANDING',   'Landing',         1, 'caf_landing',   null, false),
+      S('CAF_PIN',       'Pin Combination', 1, 'caf_pin',       null, false),
+      S('CAF_SLOTS',     'Saved Finishers', 3, 'caf_saved',     null, false)
     ])
   ]),
 
@@ -264,16 +428,27 @@ const CATS = [
     G('Table',  [ S('MT_TABLE',  'Table Moves',  7, 'table',  'TABLE') ]),
     G('Ladder', [ S('MT_LADDER', 'Ladder Moves', 5, 'ladder', 'LADDER') ]),
     G('Rumble', [ S('MT_RUMBLE', 'Rumble Moves', 4, 'rumble', 'ROPE_LEAN') ]),
+    G('Cage',   [ S('MT_CAGE_CLIMB','Cage Climb',1,'cage','CAGE'), S('MT_CAGE_SLAM','Cage Slam',3,'cage','CAGE'), S('MT_CAGE_TOP','Off the Cage',2,'dive','CAGE') ]),
     G('Tag Team', [
       S('MT_TAG_ATK',   'Normal Tag Attacks',  4, 'tag', 'STANDING_FRONT'),
       S('MT_TAG_FIN',   'Normal Tag Finishers',2, 'tag', null, false),
       S('MT_MIX_ATK',   'Mixed Tag Attacks',   4, 'tag', 'STANDING_FRONT'),
       S('MT_MIX_FIN',   'Mixed Tag Finishers', 2, 'tag', null, false),
-      S('MT_DOUBLE',    'Double Team',         4, 'tag', 'STANDING_FRONT')
+      S('MT_DOUBLE',    'Double Team',         4, 'tag', 'STANDING_FRONT'),
+      S('MT_TAG_LIFT',  'Assisted Lift',       2, 'tag', 'STANDING_FRONT'),
+      S('MT_TAG_HOTTAG','Hot Tag Sequence',    2, 'tag', 'STANDING_FRONT')
     ]),
     G('Hell in a Cell', [
       S('MT_HIAC_THROW','Ledge Throw',    1, 'grapple', 'DIVE_TO_FLOOR'),
       S('MT_HIAC_WALL', 'Break Cell Wall',1, 'grapple', 'DIVE_TO_FLOOR')
+    ]),
+    // Deathmatch is a north-star (Ultraviolence / Neckbreaker). Its moves are a real category, not a
+    // reskin of the table slot — a light-tube spot has its own setup, its own shatter, its own bleed.
+    G('Deathmatch', [
+      S('MT_DM_TUBES',  'Light Tube Spots', 4, 'deathmatch', 'STANDING_FRONT'),
+      S('MT_DM_BARBED', 'Barbed Wire Spots',4, 'deathmatch', 'STANDING_FRONT'),
+      S('MT_DM_THUMB',  'Thumbtack Spots',  3, 'deathmatch', 'GROUNDED_HEAD_UP'),
+      S('MT_DM_PANE',   'Glass Pane Spots', 3, 'deathmatch', 'STANDING_FRONT')
     ])
   ]),
 
@@ -281,15 +456,28 @@ const CATS = [
     G('Environment', [
       S('OA_BAR_HEAVY','Barricade · Heavy Attack', 1, 'strike',  'BARRICADE'),
       S('OA_BAR_GRAP', 'Barricade · Grapple',      1, 'grapple', 'BARRICADE'),
+      S('OA_STEPS',    'Steel Steps',              2, 'grapple', 'BARRICADE'),
+      S('OA_POST',     'Ring Post',                2, 'grapple', 'BARRICADE'),
+      S('OA_CROWD',    'Into the Crowd',           2, 'grapple', 'BARRICADE'),
       S('OA_TABLE_FIN','Announce Table Finisher',  1, 'finisher','ANNOUNCE_TABLE', false),
       S('OA_LEDGE_FIN','Ledge Finisher',           1, 'finisher','DIVE_TO_FLOOR',  false),
       // Weapon grapples were a peak-SvR feature 2K cut back hard. Ours keeps dedicated slots.
       S('OA_WEAP_GRAP','Weapon Grapple',           3, 'weapon_grapple', 'STANDING_FRONT'),
-      S('OA_WEAP_STRK','Weapon Strike',            3, 'weapon_strike',  'STANDING_FRONT')
+      S('OA_WEAP_STRK','Weapon Strike',            3, 'weapon_strike',  'STANDING_FRONT'),
+      S('OA_WEAP_THROW','Weapon Throw',            2, 'weapon_strike',  'STANDING_FRONT')
+    ]),
+    G('Dirty', [
+      S('OA_LOWBLOW', 'Low Blow',        1, 'illegal', 'STANDING_FRONT'),
+      S('OA_EYE',     'Eye Rake',        1, 'illegal', 'STANDING_FRONT'),
+      S('OA_CHOKE',   'Choke',           1, 'illegal', 'STANDING_FRONT'),
+      S('OA_BITE',    'Bite',            1, 'illegal', 'STANDING_FRONT'),
+      S('OA_HAIR',    'Hair Pull',       1, 'illegal', 'STANDING_FRONT'),
+      S('OA_REF',     'Shove the Ref',   1, 'illegal', 'STANDING_FRONT')
     ]),
     G('Momentum', [
       S('OA_COMEBACK','Comeback', 1, 'comeback', 'STANDING_FRONT', false),
-      S('OA_FREEZE',  'Freeze',   1, 'freeze',   'STANDING_FRONT', false)
+      S('OA_FREEZE',  'Freeze',   1, 'freeze',   'STANDING_FRONT', false),
+      S('OA_HULK',    'Second Wind Sequence', 1, 'comeback', 'STANDING_FRONT', false)
     ])
   ]),
 
@@ -297,31 +485,68 @@ const CATS = [
     G('Warmup', [
       S('PM_WARMUP',   'Warmup',                 3, 'taunt', 'TAUNT', false),
       S('PM_TITLE_C',  'Title Match · Champion', 1, 'taunt', 'TAUNT', false),
-      S('PM_TITLE_X',  'Title Match · Challenger',1,'taunt', 'TAUNT', false)
+      S('PM_TITLE_X',  'Title Match · Challenger',1,'taunt', 'TAUNT', false),
+      S('PM_STAREDOWN','Staredown',              2, 'taunt', 'TAUNT', false),
+      S('PM_LOCKUP',   'Opening Lock-Up',        2, 'chain', 'STANDING_FRONT', false)
     ])
   ]),
 
   // THE OLD SMACKDOWN "BASES". The owner is right that these made every wrestler feel distinct just
   // by how they stood, walked and entered — and that 2K flattened them. Full category here.
+  // These are the S1 (genuinely one-at-a-time) slots: you have ONE walk cycle at a time.
   C('BASES', 'Bases · Stance & Motion', [
     G('Idle', [
-      S('BS_STANCE',  'Fighting Stance',   1, 'stance',      'STANCE', false),
-      S('BS_IDLE_T',  'Idle · Taunting',   1, 'stance',      'STANCE', false),
-      S('BS_IDLE_H',  'Idle · Hurt',       1, 'stance',      'STANCE', false)
+      S1('BS_STANCE',  'Fighting Stance',   'stance', 'STANCE', false),
+      S1('BS_IDLE_T',  'Idle · Taunting',   'stance', 'STANCE', false),
+      S1('BS_IDLE_H',  'Idle · Hurt',       'stance', 'STANCE', false),
+      S1('BS_IDLE_G',  'Idle · Groggy',     'stance', 'STANCE', false),
+      S1('BS_IDLE_W',  'Idle · Winded',     'stance', 'STANCE', false)
     ]),
     G('Locomotion', [
-      S('BS_WALK',    'Walking Style',     1, 'locomotion',  'LOCOMOTION', false),
-      S('BS_RUN',     'Running Style',     1, 'locomotion',  'LOCOMOTION', false),
-      S('BS_STRAFE',  'Strafe / Circle',   1, 'locomotion',  'LOCOMOTION', false),
-      S('BS_HURT_WALK','Injured Walk',     1, 'locomotion',  'LOCOMOTION', false)
+      S1('BS_WALK',    'Walking Style',     'locomotion', 'LOCOMOTION', false),
+      S1('BS_RUN',     'Running Style',     'locomotion', 'LOCOMOTION', false),
+      S1('BS_SPRINT',  'Sprint Style',      'locomotion', 'LOCOMOTION', false),
+      S1('BS_STRAFE',  'Strafe / Circle',   'locomotion', 'LOCOMOTION', false),
+      S1('BS_BACK',    'Backpedal',         'locomotion', 'LOCOMOTION', false),
+      S1('BS_HURT_WALK','Injured Walk',     'locomotion', 'LOCOMOTION', false),
+      S1('BS_CRAWL',   'Crawl',             'locomotion', 'LOCOMOTION', false)
     ]),
     G('Ring In / Out', [
-      S('BS_RING_IN', 'Enter Ring',        1, 'movement', 'APRON_TO_RING', false),
-      S('BS_RING_OUT','Exit Ring',         1, 'movement', 'APRON',         false),
-      S('BS_CLIMB',   'Climb Top Rope',    1, 'movement', 'TURNBUCKLE_TOP',false),
-      S('BS_RECOVER', 'Instant Recovery',  1, 'movement', 'GROUND_TO_STANDING_WAKEUP', false)
+      S1('BS_RING_IN', 'Enter Ring',        'movement', 'APRON_TO_RING', false),
+      S1('BS_RING_OUT','Exit Ring',         'movement', 'APRON',         false),
+      S1('BS_ROLL_IN', 'Roll In',           'movement', 'APRON_TO_RING', false),
+      S1('BS_SLIDE_OUT','Slide Out',        'movement', 'APRON',         false),
+      S1('BS_CLIMB',   'Climb Top Rope',    'movement', 'TURNBUCKLE_TOP',false),
+      S1('BS_APRON_UP','Climb to Apron',    'movement', 'APRON',         false)
     ]),
-    G('Victory', [ S('BS_WIN', 'Winning Pose', 1, 'taunt', 'TAUNT', false) ])
+    // GET-UPS AND KIP-UPS — asked for by name. How a fighter stands back up is character, and it is
+    // also a real tactical choice: a kip-up is fast and costs stamina, a rope-assisted get-up is slow
+    // and safe. Uncapped because a fighter can own many and the engine picks by damage state.
+    G('Get-Ups', [
+      S('BS_GU_BASE',  'Standard Get-Up',   2, 'getup', 'GROUND_TO_STANDING_WAKEUP', false),
+      S('BS_GU_KIP',   'Kip-Up / Nip-Up',   1, 'getup', 'GROUND_TO_STANDING_WAKEUP', false),
+      S('BS_GU_HAND',  'Handspring Up',     1, 'getup', 'GROUND_TO_STANDING_WAKEUP', false),
+      S('BS_GU_ZOMBIE','Sit-Up (Zombie)',   1, 'getup', 'GROUND_TO_STANDING_WAKEUP', false),
+      S('BS_GU_ROPE',  'Rope-Assisted',     1, 'getup', 'ROPE_LEAN', false),
+      S('BS_GU_CORNER','Corner Crawl-Up',   1, 'getup', 'CORNER_FRONT', false),
+      S('BS_GU_SLOW',  'Groggy Get-Up',     1, 'getup', 'GROUND_TO_STANDING_WAKEUP', false),
+      S('BS_GU_KNEE',  'To One Knee',       1, 'getup', 'KNEELING', false),
+      S('BS_GU_ROLL',  'Roll Away & Up',    1, 'getup', 'GROUND_TO_STANDING_WAKEUP', false),
+      S('BS_GU_INSTANT','Instant Recovery', 1, 'getup', 'GROUND_TO_STANDING_WAKEUP', false)
+    ]),
+    G('Reactions', [
+      S('BS_SELL_L',   'Light Hit Reaction',  3, 'reaction', 'STANDING_FRONT', false),
+      S('BS_SELL_H',   'Heavy Hit Reaction',  3, 'reaction', 'STANDING_FRONT', false),
+      S('BS_SELL_STUN','Stagger / Stun',      2, 'reaction', 'STANDING_FRONT', false),
+      S('BS_SELL_KO',  'Knockdown',           3, 'reaction', 'GROUNDED_HEAD_UP', false),
+      S('BS_BLOCK',    'Block Pose',          1, 'reaction', 'STANDING_FRONT', false),
+      S('BS_DODGE',    'Dodge / Slip',        2, 'evade',    'STANDING_FRONT', false)
+    ]),
+    G('Victory / Defeat', [
+      S('BS_WIN',      'Winning Pose',      2, 'taunt', 'TAUNT', false),
+      S('BS_LOSE',     'Losing Pose',       1, 'taunt', 'TAUNT', false),
+      S('BS_CELEBRATE','Post-Match Celebration', 2, 'taunt', 'TAUNT', false)
+    ])
   ]),
 
   C('TAUNTS', 'Taunts', [
@@ -350,9 +575,430 @@ const CATS = [
       S('TW_MID',   'Middle Rope',    1, 'taunt', 'MIDDLE_ROPE', false),
       S('TW_AP_R',  'Apron → Ring',   1, 'taunt', 'APRON', false),
       S('TW_AP_S',  'Apron → Ringside',1,'taunt', 'APRON', false)
+    ]),
+    G('Signature Taunt', [
+      S('TS_SIG',   'Signature Taunt',  2, 'taunt', 'TAUNT', false),
+      S('TS_FIN',   'Finisher Taunt',   2, 'taunt', 'TAUNT', false),
+      S('TS_MOCK',  'Mock the Opponent',2, 'taunt', 'TAUNT', false)
+    ])
+  ]),
+
+  // ============================================================================================
+  // The modules below close the gaps the owner listed by name after the first pass. Each one is a
+  // real context the engine can already be IN and that had nowhere to hang a move.
+  // ============================================================================================
+
+  // DEFENCE. 2K buries dodge/leapfrog/roll and the combo breakers; they are choices that define how
+  // a fighter moves as much as any strike does, so they get a category.
+  C('DEFENCE', 'Defence & Counters', [
+    G('Evasion', [
+      S('DF_DUCK',    'Duck',              1, 'evade', 'STANDING_FRONT'),
+      S('DF_LEAPFROG','Leapfrog',          1, 'evade', 'STANDING_FRONT'),
+      S('DF_ROLL',    'Combat Roll',       1, 'evade', 'STANDING_FRONT'),
+      S('DF_SIDESTEP','Sidestep / Matrix', 1, 'evade', 'STANDING_FRONT'),
+      S('DF_BACKSTEP','Back Step',         1, 'evade', 'STANDING_FRONT'),
+      S('DF_DROPDOWN','Drop Down',         1, 'evade', 'STANDING_FRONT')
+    ]),
+    G('Breakers', [
+      S('DF_BRK_L',   'Light Combo Breaker', 2, 'breaker', 'STANDING_FRONT'),
+      S('DF_BRK_H',   'Heavy Combo Breaker', 2, 'breaker', 'STANDING_FRONT'),
+      S('DF_BRK_GRAP','Grapple Breaker',     2, 'breaker', 'STANDING_FRONT'),
+      S('DF_BRK_SUB', 'Submission Breaker',  2, 'breaker', 'GROUNDED_HEAD_UP')
+    ]),
+    G('Blocking', [
+      S('DF_BLK_HIGH','High Block',   1, 'block', 'STANDING_FRONT'),
+      S('DF_BLK_LOW', 'Low Block',    1, 'block', 'STANDING_FRONT'),
+      S('DF_PARRY',   'Parry',        2, 'reversal', 'STANDING_FRONT'),
+      S('DF_CATCH',   'Catch & Hold', 2, 'catch',    'STANDING_FRONT')
+    ])
+  ]),
+
+  // GROGGY STATES. A fighter leaning on the ropes, slumped in the corner or bent double in the
+  // middle of the ring is in three different situations, and 2K treats them as one.
+  C('GROGGY', 'Groggy & Stagger States', [
+    G('Rope Groggy', [
+      S('GG_ROPE_STRK','Strike',        2, 'strike',  'ROPE_LEAN'),
+      S('GG_ROPE_GRAP','Grapple',       2, 'grapple', 'ROPE_LEAN'),
+      S('GG_ROPE_HOT', 'Hotshot',       1, 'grapple', 'ROPE_LEAN')
+    ]),
+    G('Corner Groggy', [
+      S('GG_CORN_STRK','Strike',        2, 'strike',  'CORNER_FRONT'),
+      S('GG_CORN_GRAP','Grapple',       2, 'grapple', 'CORNER_FRONT'),
+      S('GG_CORN_SET', 'Setup / Perch', 2, 'grapple', 'CORNER_FRONT')
+    ]),
+    G('Bent Over · Centre', [
+      S('GG_BENT_STRK','Strike',        2, 'strike',  'STANDING_FRONT'),
+      S('GG_BENT_GRAP','Grapple',       3, 'grapple', 'STANDING_FRONT'),
+      S('GG_BENT_CARRY','Lift to Carry',2, 'carry',   'STANDING_FRONT')
+    ]),
+    G('Stunned Upright', [
+      S('GG_STUN_STRK','Strike',        2, 'strike',  'STANDING_FRONT'),
+      S('GG_STUN_GRAP','Grapple',       2, 'grapple', 'STANDING_FRONT'),
+      S('GG_STUN_FIN', 'Finisher Window',1,'finisher','STANDING_FRONT', false)
+    ])
+  ]),
+
+  // ELEVATED. Cage tops, the cell roof, a ladder platform, a backstage ledge. Structurally these are
+  // the same problem — you are up high and there is a long way down — and none of it existed.
+  C('ELEVATED', 'Elevated & Ledge', [
+    G('Cage Wall', [
+      S('EL_CG_CLIMB','Climbing Strike',      2, 'cage', 'CAGE'),
+      S('EL_CG_SCRAPE','Mesh Scrape',         2, 'cage', 'CAGE'),
+      S('EL_CG_SLAM', 'Slam into the Mesh',   3, 'cage', 'CAGE'),
+      S('EL_CG_DROP', 'Throw Off the Wall',   2, 'cage', 'CAGE')
+    ]),
+    G('Cell Roof', [
+      S('EL_RF_STRK', 'Roof Strike',          2, 'strike',  'CELL_ROOF'),
+      S('EL_RF_GRAP', 'Roof Grapple',         2, 'grapple', 'CELL_ROOF'),
+      S('EL_RF_SLAM', 'Roof Slam',            2, 'cage',    'CELL_ROOF'),
+      S('EL_RF_THRU', 'Through the Roof',     1, 'finisher','CELL_ROOF', false)
+    ]),
+    G('Ladder Top', [
+      S('EL_LD_FIGHT','Ladder-Top Fighting',  3, 'ladder', 'LADDER'),
+      S('EL_LD_THROW','Throw Off the Ladder', 2, 'ladder', 'LADDER'),
+      S('EL_LD_DIVE', 'Dive Off the Ladder',  2, 'dive',   'LADDER')
+    ]),
+    G('Ledge', [
+      S('EL_LG_GRAP', 'Ledge Grapple',        2, 'grapple', 'LEDGE'),
+      S('EL_LG_THROW','Throw to the Floor',   2, 'grapple', 'LEDGE'),
+      S('EL_LG_BAL',  'Balancing Strike',     2, 'strike',  'LEDGE'),
+      S('EL_LG_HANG', 'Ledge-Hang Defence',   2, 'reversal','LEDGE')
+    ])
+  ]),
+
+  // RINGSIDE FLOOR. Distinct from barricade work: two people standing on the thin padding.
+  C('RINGSIDE', 'Ringside Floor', [
+    G('Standing on the Floor', [
+      S('RS_F_LIGHT','Front · Light Attack',  2, 'strike',  'FLOOR'),
+      S('RS_F_HEAVY','Front · Heavy Attack',  2, 'strike',  'FLOOR'),
+      S('RS_F_TIEUP','Front Tie-Up',          4, 'grapple', 'FLOOR'),
+      S('RS_R_TIEUP','Rear Tie-Up',           4, 'grapple', 'FLOOR'),
+      S('RS_F_SUB',  'Floor Submission',      2, 'submission','FLOOR')
+    ]),
+    G('Floor Ground Game', [
+      S('RS_G_STRK', 'vs Grounded · Strike',  2, 'strike',  'FLOOR'),
+      S('RS_G_GRAP', 'vs Grounded · Grapple', 2, 'grapple', 'FLOOR'),
+      S('RS_G_PIN',  'Floor Cover',           1, 'pin',     'FLOOR')
+    ])
+  ]),
+
+  // NON-COMPETITORS. Shielding the referee, a manager distraction, the low blow behind his back.
+  // These are the beats that make a heel a heel and they had no home at all.
+  C('OUTSIDERS', 'Referee & Managers', [
+    G('Referee', [
+      S('NC_REF_SHIELD','Shield the Referee', 1, 'illegal', 'STANDING_FRONT'),
+      S('NC_REF_SHOVE', 'Shove the Referee',  1, 'illegal', 'STANDING_FRONT'),
+      S('NC_REF_HIDE',  'Blind-Side Foul',    2, 'illegal', 'STANDING_FRONT'),
+      S('NC_REF_PULL',  'Pull the Referee In',1, 'illegal', 'STANDING_FRONT')
+    ]),
+    G('Manager / Second', [
+      S('NC_MG_DISTRACT','Manager Distraction', 1, 'taunt',   'TAUNT', false),
+      S('NC_MG_HAND',    'Weapon Handoff',      1, 'weapon_grab','STANDING_FRONT'),
+      S('NC_MG_TRIP',    'Trip from Ringside',  1, 'illegal', 'FLOOR'),
+      S('NC_MG_ATTACK',  'Attack the Manager',  2, 'strike',  'FLOOR')
+    ])
+  ]),
+
+  // TAG TEAM promoted out of MATCH_TYPE — it is a whole way of wrestling, not a match option.
+  C('TAG', 'Tag Team', [
+    G('Tandem', [
+      S('TG_CORNER',   'Corner Tag Tandem',    4, 'tag', 'CORNER_FRONT'),
+      S('TG_DOUBLE',   'Standing Double Team', 4, 'tag', 'STANDING_FRONT'),
+      S('TG_GROUND',   'vs Grounded Double',   3, 'tag', 'GROUNDED_HEAD_UP'),
+      S('TG_ASSIST',   'Assisted Lift',        3, 'tag', 'STANDING_FRONT'),
+      S('TG_LAUNCH',   'Launch / Catapult',    2, 'tag', 'STANDING_FRONT')
+    ]),
+    G('Sequences', [
+      S('TG_HOTTAG',   'Hot Tag Sequence',     2, 'tag', 'STANDING_FRONT'),
+      S('TG_ISOLATE',  'Isolation Sequence',   2, 'tag', 'CORNER_FRONT'),
+      S('TG_SAVE',     'Break Up the Count',   2, 'tag', 'GROUNDED_HEAD_UP')
+    ]),
+    G('Tag Finishers', [
+      S('TG_FIN_CORNER','Corner Tag Finisher', 2, 'tag', 'CORNER_FRONT', false),
+      S('TG_FIN_STAND', 'Standing Tag Finisher',2,'tag', 'STANDING_FRONT', false)
+    ])
+  ]),
+
+  // RUMBLE specifics — elimination is a different win condition and needs its own verbs.
+  C('RUMBLE', 'Rumble & Elimination', [
+    G('Elimination', [
+      S('RB_ELIM_GRAP','Rope Elimination Grapple', 4, 'rumble', 'ROPE_LEAN'),
+      S('RB_ELIM_STRK','Elimination Strike',       3, 'rumble', 'ROPE_LEAN'),
+      S('RB_ELIM_TEAM','Team Elimination',         2, 'rumble', 'ROPE_LEAN')
+    ]),
+    G('Survival', [
+      S('RB_SUR_APRON','Apron Survival Defence',   3, 'reversal', 'APRON'),
+      S('RB_SUR_SKIN', 'Skin-of-the-Teeth Save',   2, 'reversal', 'APRON'),
+      S('RB_SUR_HANG', 'Rope Hang Recovery',       2, 'getup',    'APRON', false)
+    ])
+  ]),
+
+  // AI is data too. Sliders, targeting bias, object urgency and the scripted sequences 2K26 added.
+  C('AI', 'AI Behaviour', [
+    G('Tendencies', [
+      S('AI_STRIKE_GRAP','Strike vs Grapple Ratio', 1, 'ai_slider', null, false, 1),
+      S('AI_AERIAL',     'Aerial Risk Bias',        1, 'ai_slider', null, false, 1),
+      S('AI_PIN_FREQ',   'Pin Attempt Frequency',   1, 'ai_slider', null, false, 1),
+      S('AI_SUB_FREQ',   'Submission Frequency',    1, 'ai_slider', null, false, 1),
+      S('AI_DIRTY',      'Illegal Move Tendency',   1, 'ai_slider', null, false, 1),
+      S('AI_TAUNT',      'Taunt Frequency',         1, 'ai_slider', null, false, 1),
+      S('AI_REVERSAL',   'Reversal Aggression',     1, 'ai_slider', null, false, 1),
+      S('AI_RUN',        'Running Attack Bias',     1, 'ai_slider', null, false, 1)
+    ]),
+    G('Targeting Priority', [
+      S('AI_TG_PARTNER','Legal Partner Focus',      1, 'ai_slider', null, false, 1),
+      S('AI_TG_MANAGER','Manager Distraction Bias', 1, 'ai_slider', null, false, 1),
+      S('AI_TG_MULTI',  'Multi-Man Threat Weighting',1,'ai_slider', null, false, 1),
+      S('AI_TG_HURT',   'Target the Hurt Limb',     1, 'ai_slider', null, false, 1)
+    ]),
+    G('Match Object Urgency', [
+      S('AI_OB_LADDER', 'Ladder Climb Priority',    1, 'ai_slider', null, false, 1),
+      S('AI_OB_WEAPON', 'Weapon Retrieval Rate',    1, 'ai_slider', null, false, 1),
+      S('AI_OB_TABLE',  'Table Setup Rate',         1, 'ai_slider', null, false, 1),
+      S('AI_OB_ESCAPE', 'Cage Escape Priority',     1, 'ai_slider', null, false, 1)
+    ]),
+    // 2K26's scripted chains, uncapped. They cap at 10 sequences of 10; we do not cap either.
+    G('Custom Sequences', [
+      S('AI_SEQ',       'Scripted Sequences',       10,'ai_sequence', null, false),
+      S('AI_SEQ_LEN',   'Moves per Sequence',       10,'ai_sequence', null, false)
     ])
   ])
 ];
+
+// ============================================================================================
+// FIGHTING STYLES — the owner asked for "59+ fighting styles laid out". These are not cosmetic
+// labels: each carries an attribute BIAS and a set of PREFERRED move kinds, so the AI's move
+// selection, the default moveset a fresh fighter is generated with, and the fighter's baseline
+// attributes all read from the same row. A style is a real thing in the engine or it is nothing.
+//   b  attribute bias 0..9: pow speed tech resil show aerial sub strike
+//   k  move kinds this style reaches for first
+//   st default fighting stance / lo default locomotion
+// ============================================================================================
+const FS = (id, label, b, k, st, lo) => ({
+  id, label,
+  bias: { pow: b[0], spd: b[1], tec: b[2], res: b[3], sho: b[4], air: b[5], sub: b[6], str: b[7] },
+  prefers: k, stance: st || 'BALANCED', locomotion: lo || 'NORMAL'
+});
+const STYLES = [
+  // --- power / size ---
+  FS('POWERHOUSE',   'Powerhouse',            [9,3,5,8,5,1,4,6], ['grapple','carry'],            'WIDE',    'HEAVY'),
+  FS('GIANT',        'Giant',                 [9,1,3,9,4,0,3,6], ['grapple','carry','strike'],   'TOWERING','LUMBER'),
+  FS('STRONGMAN',    'Strongman',             [9,2,4,8,4,0,4,5], ['carry','grapple'],            'WIDE',    'HEAVY'),
+  FS('BRUISER',      'Bruiser',               [8,4,4,8,4,1,3,8], ['strike','grapple'],           'WIDE',    'HEAVY'),
+  FS('MONSTER',      'Monster',               [9,3,2,9,6,1,2,7], ['strike','carry','illegal'],   'HUNCHED', 'STALK'),
+  FS('BEAST',        'Beast',                 [9,4,2,9,5,2,2,8], ['strike','carry'],             'HUNCHED', 'STALK'),
+  FS('FERAL',        'Feral',                 [7,6,2,7,6,3,3,9], ['strike','illegal'],           'HUNCHED', 'PROWL'),
+  FS('SUMO',         'Sumo',                  [9,2,5,9,4,0,4,6], ['grapple','strike'],           'SUMO',    'HEAVY'),
+  FS('BODYBUILDER',  'Bodybuilder',           [8,3,4,7,7,1,3,5], ['carry','grapple'],            'POSED',   'STRUT'),
+  // --- striking ---
+  FS('STRIKER',      'Striker',               [6,7,6,5,5,3,3,9], ['strike','combo'],             'BLADED',  'LIGHT'),
+  FS('BOXER',        'Boxer',                 [6,8,6,5,5,1,2,9], ['strike','combo','evade'],     'BOXING',  'BOUNCE'),
+  FS('MUAY_THAI',    'Muay Thai',             [7,7,6,6,4,2,3,9], ['strike','combo'],             'THAI',    'LIGHT'),
+  FS('KICKBOXER',    'Kickboxer',             [6,8,6,5,5,3,2,9], ['strike','combo'],             'BLADED',  'BOUNCE'),
+  FS('KARATE',       'Karateka',              [6,7,8,5,5,3,3,9], ['strike','combo'],             'KARATE',  'LIGHT'),
+  FS('TAEKWONDO',    'Taekwondo',             [5,9,7,4,6,5,2,9], ['strike','combo'],             'KARATE',  'BOUNCE'),
+  FS('KUNG_FU',      'Kung Fu',               [5,8,8,4,6,4,3,9], ['strike','combo','evade'],     'KUNGFU',  'LIGHT'),
+  FS('WUSHU',        'Wushu',                 [4,9,8,4,8,6,2,8], ['strike','combo','dive'],      'KUNGFU',  'LIGHT'),
+  FS('CAPOEIRA',     'Capoeira',              [5,9,7,4,9,6,1,8], ['strike','evade','combo'],     'CAPOEIRA','GINGA'),
+  FS('SAVATE',       'Savate',                [5,8,7,4,6,3,2,9], ['strike','combo'],             'BLADED',  'BOUNCE'),
+  FS('KYOKUSHIN',    'Kyokushin',             [7,6,7,8,4,1,3,9], ['strike'],                     'KARATE',  'LIGHT'),
+  FS('STRONG_STYLE', 'Strong Style',          [8,6,7,8,5,2,5,9], ['strike','grapple'],           'BLADED',  'DELIBERATE'),
+  FS('KINGS_ROAD',   "King's Road",           [8,5,8,9,6,2,5,8], ['grapple','strike','carry'],   'BALANCED','DELIBERATE'),
+  // --- grappling / mat ---
+  FS('TECHNICIAN',   'Technician',            [5,6,9,6,5,3,7,5], ['grapple','chain','submission'],'CROUCH', 'DELIBERATE'),
+  FS('GRAPPLER',     'Grappler',              [7,5,8,7,4,1,7,5], ['grapple','chain'],            'CROUCH',  'DELIBERATE'),
+  FS('MAT_TECH',     'Mat Technician',        [5,6,9,6,4,1,8,4], ['chain','submission','grapple'],'CROUCH', 'DELIBERATE'),
+  FS('CATCH',        'Catch Wrestler',        [6,6,9,7,3,1,9,5], ['submission','chain'],         'CROUCH',  'DELIBERATE'),
+  FS('SHOOTER',      'Shooter',               [6,6,9,7,3,1,9,6], ['submission','chain','strike'],'CROUCH',  'DELIBERATE'),
+  FS('AMATEUR',      'Amateur / Collegiate',  [7,6,9,7,3,1,7,4], ['chain','grapple'],            'CROUCH',  'DELIBERATE'),
+  FS('FREESTYLE',    'Freestyle Wrestling',   [7,7,9,7,3,1,7,4], ['chain','grapple'],            'CROUCH',  'DELIBERATE'),
+  FS('GRECO',        'Greco-Roman',           [8,5,9,8,3,1,6,4], ['grapple','carry','chain'],    'CROUCH',  'DELIBERATE'),
+  FS('JUDO',         'Judoka',                [7,6,9,6,4,2,8,4], ['grapple','submission'],       'JUDO',    'DELIBERATE'),
+  FS('SAMBO',        'Sambo',                 [7,6,9,7,3,1,9,5], ['submission','grapple'],       'JUDO',    'DELIBERATE'),
+  FS('BJJ',          'Jiu-Jitsu',             [4,6,9,6,3,2,9,4], ['submission','chain'],         'CROUCH',  'DELIBERATE'),
+  FS('SUB_SPEC',     'Submission Specialist', [5,5,8,6,4,1,9,4], ['submission','rest_hold'],     'CROUCH',  'DELIBERATE'),
+  FS('MMA',          'Mixed Martial Artist',  [7,7,8,7,4,2,8,8], ['strike','submission','chain'],'MMA',     'LIGHT'),
+  FS('LUTA_LIVRE',   'Luta Livre',            [6,6,8,6,3,2,9,5], ['submission','grapple'],       'CROUCH',  'DELIBERATE'),
+  // --- aerial ---
+  FS('HIGH_FLYER',   'High-Flyer',            [3,9,6,4,7,9,3,5], ['dive','combo','rollup'],      'LIGHT',   'SPRING'),
+  FS('LUCHADOR',     'Luchador',              [3,9,7,4,9,9,4,5], ['dive','rollup','combo'],      'LUCHA',   'SPRING'),
+  FS('CRUISERWEIGHT','Cruiserweight',         [4,9,7,4,7,8,4,6], ['dive','combo','rollup'],      'LIGHT',   'SPRING'),
+  FS('JUNIOR',       'Junior Heavyweight',    [5,8,8,5,6,7,5,7], ['dive','combo','chain'],       'LIGHT',   'SPRING'),
+  FS('DAREDEVIL',    'Daredevil',             [4,8,5,5,9,9,2,6], ['dive'],                       'LIGHT',   'SPRING'),
+  FS('ACROBAT',      'Acrobat',               [3,9,7,3,9,9,3,5], ['dive','evade','combo'],       'LUCHA',   'SPRING'),
+  // --- hardcore ---
+  FS('HARDCORE',     'Hardcore',              [7,5,4,9,6,3,3,8], ['weapon_strike','illegal'],    'HUNCHED', 'STALK'),
+  FS('DEATHMATCH',   'Deathmatch',            [7,4,3,9,7,2,2,8], ['deathmatch','weapon_strike'], 'HUNCHED', 'STALK'),
+  FS('GARBAGE',      'Garbage Wrestler',      [6,5,3,9,6,3,2,7], ['weapon_strike','illegal'],    'HUNCHED', 'STALK'),
+  FS('BRAWLER',      'Brawler',               [7,6,4,8,5,2,3,9], ['strike','illegal'],           'WIDE',    'HEAVY'),
+  FS('STREET',       'Street Fighter',        [7,7,4,7,5,3,3,9], ['strike','illegal'],           'STREET',  'SWAGGER'),
+  FS('BARROOM',      'Bar Room Brawler',      [7,5,3,8,6,1,3,9], ['strike','weapon_strike'],     'STREET',  'SWAGGER'),
+  FS('PRISON',       'Prison Yard',           [8,5,4,9,4,1,4,9], ['strike','illegal'],           'HUNCHED', 'STALK'),
+  FS('BIKER',        'Biker',                 [8,5,4,8,6,1,3,8], ['strike','weapon_strike'],     'WIDE',    'SWAGGER'),
+  FS('BOUNCER',      'Bouncer',               [8,5,5,8,4,1,5,7], ['grapple','strike'],           'WIDE',    'HEAVY'),
+  // --- character / persona ---
+  FS('SHOWMAN',      'Showman',               [5,6,6,5,9,5,4,6], ['taunt','combo','signature'],  'POSED',   'STRUT'),
+  FS('ENTERTAINER',  'Sports Entertainer',    [6,6,6,6,9,4,4,6], ['taunt','signature'],          'POSED',   'STRUT'),
+  FS('ROCKSTAR',     'Rockstar',              [6,6,5,6,9,4,3,7], ['taunt','strike'],             'POSED',   'STRUT'),
+  FS('DANCER',       'Dancer',                [4,8,6,4,9,6,3,6], ['taunt','evade','combo'],      'CAPOEIRA','GINGA'),
+  FS('COMEDIAN',     'Comedian',              [4,6,5,5,9,4,3,5], ['taunt','rollup','illegal'],   'GOOFY',   'BOUNCE'),
+  FS('TRICKSTER',    'Trickster',             [4,8,7,5,7,6,5,6], ['rollup','evade','illegal'],   'LIGHT',   'PROWL'),
+  FS('CHEATER',      'Cheater',               [5,6,6,5,6,3,5,7], ['illegal','rollup','pin_illegal'],'STREET','PROWL'),
+  FS('COWARD',       'Chickenshit Heel',      [4,7,5,4,7,3,4,6], ['evade','illegal','rollup'],   'GOOFY',   'SCURRY'),
+  FS('RING_GENERAL', 'Ring General',          [6,6,9,8,7,3,7,7], ['chain','grapple','rest_hold'],'BALANCED','DELIBERATE'),
+  FS('VETERAN',      'Grizzled Veteran',      [6,4,9,8,6,1,7,7], ['rest_hold','chain','illegal'],'BALANCED','DELIBERATE'),
+  FS('ROOKIE',       'Rookie',                [5,7,4,5,4,4,3,6], ['strike','grapple'],           'BALANCED','NORMAL'),
+  FS('PRODIGY',      'Prodigy',               [6,8,8,6,6,6,6,7], ['combo','chain','dive'],       'BALANCED','LIGHT'),
+  FS('ATHLETE',      'Pure Athlete',          [7,8,7,7,5,6,5,7], ['combo','grapple','dive'],     'BALANCED','LIGHT'),
+  FS('COWBOY',       'Cowboy',                [7,5,6,7,6,1,5,8], ['strike','grapple'],           'WIDE',    'SWAGGER'),
+  FS('LUMBERJACK',   'Lumberjack',            [8,4,5,8,4,1,4,8], ['strike','carry'],             'WIDE',    'LUMBER'),
+  FS('OCCULTIST',    'Occultist',             [7,5,5,9,8,2,5,7], ['strike','submission','taunt'],'HUNCHED', 'STALK'),
+  FS('UNDEAD',       'Undead',                [8,3,5,9,8,1,5,7], ['grapple','taunt'],            'TOWERING','STALK'),
+  FS('CULT_LEADER',  'Cult Leader',           [7,5,6,8,9,2,6,7], ['grapple','taunt','submission'],'POSED',  'STALK'),
+  FS('ENFORCER',     'Enforcer',              [8,5,6,8,4,1,5,8], ['strike','grapple'],           'WIDE',    'HEAVY'),
+  FS('SPECIALIST',   'Weapon Specialist',     [6,6,6,7,6,2,3,8], ['weapon_grapple','weapon_strike'],'STREET','PROWL')
+];
+
+// PAYBACKS — 2K's ability system, proprietary names. Owner asked for these laid out. Two tiers:
+// MINOR fires on a threshold and is cheap, MAJOR is once-a-match and swings the finish.
+const PB = (id, label, tier, trigger, effect) => ({ id, label, tier, trigger, effect });
+const PAYBACKS = [
+  PB('PB_COMEBACK',   'Comeback',            'major', 'hp<25%',        'Scripted comeback sequence; hitting all beats grants a finisher'),
+  PB('PB_SECOND',     'Second Wind',         'major', 'stamina<15%',   'Full stamina restore, +20% recovery rate for 30s'),
+  PB('PB_IRON',       'Iron Will',           'major', 'pinned at 2',   'Guaranteed single kick-out at the two count'),
+  PB('PB_RESOLVE',    'Resolve',             'major', 'poise<20%',     'Poise shield: next 3 knockdowns become staggers'),
+  PB('PB_ADRENALINE', 'Adrenaline',          'major', 'hp<40%',        'Speed +35% and reversal window doubled for 20s'),
+  PB('PB_BAD_INT',    'Bad Intentions',      'major', 'momentum full', 'Next impact does double damage and forces a bleed roll'),
+  PB('PB_UNDEAD',     'Dead Man Rising',     'major', 'knocked down',  'Instant zombie sit-up get-up, opponent freezes 1.2s'),
+  PB('PB_LOW_BLOW',   'Cheap Shot',          'major', 'manual',        'Instant low blow; DQ risk scales with referee line-of-sight'),
+  PB('PB_WEAPON',     'Under the Ring',      'major', 'ringside',      'Pull a random weapon from under the ring instantly'),
+  PB('PB_MANAGER',    'Outside Interference','major', 'manager alive',  'Manager distracts the referee for 6 seconds'),
+  PB('PB_TIGHTS',     'Handful of Tights',   'major', 'pin active',    'Adds a hidden count to the current pin if the ref cannot see'),
+  PB('PB_ROPE',       'Rope Break Master',   'major', 'in submission', 'Auto-reach the nearest rope from any ground submission'),
+  PB('PB_STEAL',      'Steal the Finish',    'major', 'opp finisher',  "Reverse the opponent's finisher into your own"),
+  PB('PB_ENDURE',     'Endurance',           'minor', 'always',        'Stamina drains 20% slower'),
+  PB('PB_THICK',      'Thick Skin',          'minor', 'always',        'Incoming strike damage -15%'),
+  PB('PB_HEAVY_HAND', 'Heavy Hands',         'minor', 'always',        'Strike damage +12%'),
+  PB('PB_QUICK',      'Quick Recovery',      'minor', 'grounded',      'Get-up 30% faster'),
+  PB('PB_SLIPPERY',   'Slippery',            'minor', 'in grapple',    'Grapple escape window +40%'),
+  PB('PB_TECHNICAL',  'Technical Precision', 'minor', 'chain',         'Chain-wrestling transitions cost no stamina'),
+  PB('PB_HIGH_RISK',  'High Risk',           'minor', 'diving',        'Dive damage +25%, self-damage on miss +25%'),
+  PB('PB_OPPORTUNIST','Opportunist',         'minor', 'opp stunned',   'Roll-up pins get +1 second of count'),
+  PB('PB_CROWD',      'Crowd Favourite',     'minor', 'crowd hot',     'Momentum gain +30% while the crowd is hot'),
+  PB('PB_HATED',      'Most Hated',          'minor', 'crowd cold',    'Momentum gain +30% while the crowd is hostile'),
+  PB('PB_BLEEDER',    'Bleeder',             'minor', 'always',        'Bleeds early, and gains momentum while bleeding'),
+  PB('PB_HARDWAY',    'Hard Way',            'minor', 'bleeding',      'Damage output +20% while bleeding'),
+  PB('PB_SUB_HUNTER', 'Submission Hunter',   'minor', 'always',        'Submission damage +20%, opponent escape -15%'),
+  PB('PB_RING_IQ',    'Ring IQ',             'minor', 'always',        'Reversal timing window +25%'),
+  PB('PB_DIRTY',      'Dirty Player',        'minor', 'ref distracted','Illegal moves do full damage with no DQ accrual')
+];
+
+// ============================================================================================
+// MOVE MODIFIERS — DECLARED, NOT INVENTED.
+//
+// The owner: "u don't need to add the modifier system[,] [it] should be there to build on top of."
+// He is right, and it is. The engine already multiplies every slot by its own live inputs:
+//
+//   GRAPPLE_MATRIX[mode][kind][dir5]  and  [dir5 + '_M']   (BANNON_v150.html, pickGrapplePosition)
+//   powerMod = keys.shift || heldBtns.block || heldBtns.mod           (playerAttack)
+//   running / runCharge / _runKeyHeld                                  (movement)
+//
+// That is mode(2) x kind(4) x dir5(5) x powerMod(2) = 80 distinct grapple executions ALREADY
+// resolved from the same tables, before a single new system is written. Declaring them here means
+// the move-set editor can show a slot's true execution count and the AI can reason about them,
+// instead of a parallel modifier system existing beside the real one and drifting from it.
+//
+//   reads   where the engine picks this modifier up from — grep-able, so it stays honest
+//   x       how many executions this modifier multiplies a compatible slot by
+const MODIFIER_SOURCE = 'BANNON_v150.html · GRAPPLE_MATRIX / pickGrapplePosition / playerAttack';
+const MODIFIERS = [
+  { id:'MOD_FACING', label:'Facing (front / rear)', reads:'GRAPPLE_MATRIX[mode]', input:'which side you are on',
+    x:2, applies:['grapple','carry','strike','submission','rollup','pin'] },
+  { id:'MOD_KIND',   label:'Attack Kind (jab / kick / cross / special)', reads:'GRAPPLE_MATRIX[mode][kind]', input:'which attack button',
+    x:4, applies:['grapple','strike','combo'] },
+  { id:'MOD_DIR5',   label:'Direction (neutral / up / down / left / right)', reads:'dir5 in playerAttack', input:'stick or D-pad held',
+    x:5, applies:['grapple','carry','strike','combo','dive'] },
+  { id:'MOD_POWER',  label:'Power / Loaded (MOD held)', reads:"powerMod = keys.shift || heldBtns.block || heldBtns.mod", input:'hold MOD',
+    x:2, applies:['grapple','carry','strike','combo','submission'] },
+  { id:'MOD_RUN',    label:'Running / Momentum', reads:'running / runCharge / _runKeyHeld', input:'hold RUN',
+    x:2, applies:['strike','grapple','dive','tag'] },
+  { id:'MOD_HAMMER', label:'Hammer Throw (held whip)', reads:'held whip branch in the ZONE handler', input:'RUN + ZONE in a grapple',
+    x:2, applies:['grapple'] },
+  { id:'MOD_ZONE',   label:'Zone (ring / apron / floor)', reads:'window.ZONE_Y + f.zone', input:'where you are standing',
+    x:3, applies:['strike','grapple','dive','pin','submission'] },
+  { id:'MOD_WEAPON', label:'Armed', reads:'BANNON_WEAPONS held item', input:'holding a weapon',
+    x:2, applies:['strike','grapple'] }
+];
+// What a modifier set actually buys a slot, per kind. This is the honest number: the product of
+// every modifier that APPLIES to that kind. The owner asked that nothing be capped and that the
+// modifiers "at least double all areas" — measured against the declared engine inputs, the floor is
+// far above double everywhere the modifiers reach.
+function expansionFor(kind){
+  return MODIFIERS.reduce(function(a, m){ return a * (m.applies.indexOf(kind) >= 0 ? m.x : 1); }, 1);
+}
+
+// ============================================================================================
+// EXECUTION FILTERS — reach and stats decide what lands, not a slot budget.
+//
+// The owner's rule: "Range is strictly driven by the physical reach of the character model and their
+// core attributes/stats, keeping the execution grounded and realistic rather than artificially
+// boosted." So there is no warp-to-target. A move whiffs when the arm is not long enough.
+//
+// And his question — what happens when a reach check BARELY passes — has one correct answer for a
+// physics-first game: you do not snap and you do not slide the root. You spend the shortfall on the
+// body. The attacker leans, rotates the spine and extends the limb toward the target by the exact
+// deficit, scaled by agility, and the strike arrives at the edge of its range looking like a strike
+// at the edge of its range. Below `lean` it is a clean hit; between `lean` and `max` it is a
+// stretched one that does less damage; past `max` it whiffs. That is the whole blend and it is
+// three numbers, not a state machine.
+// ============================================================================================
+const EXECUTION = {
+  reach: {
+    source: 'bone_length',
+    note: 'measured from the bound GLB skeleton: shoulder->hand for arms, hip->foot for legs, ' +
+          'plus the torso lean the spine chain can contribute. No per-move authored range.',
+    limbs: {
+      arm: { chain:['shoulder','elbow','hand'], strikeKinds:['jab','cross','elbow','chop','clothesline','lariat'] },
+      leg: { chain:['hip','knee','foot'],       strikeKinds:['kick','knee','stomp'] },
+      body:{ chain:['pelvis','chest'],          strikeKinds:['shoulder','headbutt','tackle'] }
+    },
+    // grapples need CONTACT, not extension — you have to be able to close your hands on them
+    grappleClosure: 0.62,
+    // fractions of full reach
+    clean: 0.82,   // inside this, the move plays as authored
+    lean:  1.00,   // between clean and lean: dynamic extension, damage tapers
+    max:   1.14    // between lean and max: maximum stretch, heavy damage taper; past it, whiff
+  },
+  // Stats do not add range out of nowhere; they change how much of the body's own reach a fighter
+  // can actually commit inside the move's frames.
+  stats: {
+    agility:  { affects:'extension', note:'how far into the lean the fighter can commit', weight:0.55 },
+    strength: { affects:'lift',      note:'weight-class gate on carries and suplexes',    weight:1.00 },
+    speed:    { affects:'startup',   note:'frames before the reach test is taken',        weight:0.40 },
+    dexterity:{ affects:'closure',   note:'grapple closure tolerance',                    weight:0.35 },
+    stamina:  { affects:'pool',      note:'which moves the pool will even offer',         weight:1.00 }
+  },
+  // A lift is a strength question against the OTHER body's mass. Failing it is not a whiff, it is a
+  // visible struggle — which is exactly the teeter the owner wants at full amplitude.
+  weightClass: {
+    classes: [
+      { id:'CRUISER',  maxKg: 95 },
+      { id:'LIGHT',    maxKg:110 },
+      { id:'MIDDLE',   maxKg:125 },
+      { id:'HEAVY',    maxKg:145 },
+      { id:'SUPER',    maxKg:180 },
+      { id:'GIANT',    maxKg:999 }
+    ],
+    // ratio of lifter strength to target mass below which the lift becomes a STRUGGLE rather than a
+    // clean execution; below failFloor it collapses and they come back down on top of you
+    struggleBelow: 1.00,
+    failFloor:     0.62
+  },
+  stamina: {
+    // the move pool filters itself: an exhausted fighter is not offered the biggest lifts
+    gateCarry: 0.35, gateFinisher: 0.25, gateDive: 0.30, gateRunning: 0.20
+  }
+};
 
 // AI settings vocabulary — 2K's exact options, so the editor can offer them verbatim
 const AI = {
@@ -361,15 +1007,142 @@ const AI = {
   timing:     ['Any','Avoid Early','Prefer Early','Early Only','Prefer Late','Late Only']
 };
 
-const totalPicks = CATS.reduce((a,c)=>a+c.groups.reduce((b,g)=>b+g.slots.reduce((d,s)=>d+s.pick,0),0),0);
+// ============================================================================================
+// PIN CATALOGUE — the named pins that fill the PINS category, with the numbers the pin resolver
+// actually reads. This is the owner's ask made concrete: "the dramatic different ones they have in
+// WWE 2k26 like school boy and la magistral etc", front AND rear.
+//
+//   entry     how it can be started: COVER (down+zone or procedural on a grounded body),
+//             ROLLUP (out of a standing exchange), COUNTER (only off a reversal window)
+//   from      the engine position required
+//   face      'front' | 'rear' — which side of the opponent you must be on
+//   lift      how far the victim's shoulders are pressed down; feeds the shoulder proxy test
+//   kick      kick-out difficulty multiplier for the VICTIM. >1 = easier to escape.
+//   speed     how fast the count starts. Roll-ups start instantly, that is their whole appeal —
+//             and they are correspondingly easy to kick out of, which is also correct.
+//   hold      seconds the pin can be maintained before it naturally breaks (roll-ups expire)
+//   illegal   the referee will wave it off if he sees it
+// ============================================================================================
+const P = (id, label, entry, from, face, o) => Object.assign({
+  id, label, entry, from, face,
+  lift: 1.0, kick: 1.0, speed: 1.0, hold: 0, illegal: false, cocky: false,
+  clip: null   // filled by the clip mapper; null means fall back to the position's generic pin
+}, o || {});
 
+const PINS = [
+  // ---- ground covers: slow to lock in, hard to escape, they hold forever ----
+  P('PN_LATERAL',  'Lateral Press',        'COVER', 'GROUNDED_HEAD_UP', 'front', { lift:1.00, kick:1.00, speed:1.00, hold:0 }),
+  P('PN_LEG_HOOK', 'Leg Hook Cover',       'COVER', 'GROUNDED_HEAD_UP', 'front', { lift:1.05, kick:0.88, speed:0.92, hold:0 }),
+  P('PN_DBL_LEG',  'Double Leg Hook',      'COVER', 'GROUNDED_HEAD_UP', 'front', { lift:1.10, kick:0.78, speed:0.84, hold:0 }),
+  P('PN_JACKKNIFE','Jackknife Cover',      'COVER', 'GROUNDED_HEAD_UP', 'front', { lift:1.15, kick:0.72, speed:0.80, hold:0 }),
+  P('PN_GRAPEVINE','Grapevine Cover',      'COVER', 'GROUNDED_HEAD_UP', 'front', { lift:1.08, kick:0.80, speed:0.86, hold:0 }),
+  P('PN_KNEE',     'Knee-on-Chest Cover',  'COVER', 'GROUNDED_HEAD_UP', 'front', { lift:1.12, kick:0.85, speed:0.95, hold:0 }),
+  P('PN_ARM_HOOK', 'Arm Hook Cover',       'COVER', 'GROUNDED_SIDE',    'front', { lift:1.02, kick:0.94, speed:0.96, hold:0 }),
+  P('PN_PRONE',    'Turn & Cover',         'COVER', 'GROUNDED_HEAD_DOWN','front',{ lift:1.00, kick:1.00, speed:1.35, hold:0 }),
+  // ---- cocky covers: the disrespect costs you a real amount of count ----
+  P('PN_FOOT',     'Foot-on-Chest',        'COVER', 'GROUNDED_HEAD_UP', 'front', { lift:0.80, kick:1.45, speed:1.10, hold:0, cocky:true }),
+  P('PN_ONE_ARM',  'One-Arm Cover',        'COVER', 'GROUNDED_HEAD_UP', 'front', { lift:0.88, kick:1.30, speed:1.05, hold:0, cocky:true }),
+  P('PN_SEATED',   'Seated Cover',         'COVER', 'GROUNDED_HEAD_UP', 'front', { lift:0.85, kick:1.35, speed:1.08, hold:0, cocky:true }),
+  P('PN_PUSHUP',   'Push-Up Cover',        'COVER', 'GROUNDED_HEAD_UP', 'front', { lift:0.75, kick:1.55, speed:1.12, hold:0, cocky:true }),
+  // ---- front roll-ups: instant count, short fuse ----
+  P('PN_RU_CRADLE',   'Inside Cradle',     'ROLLUP','STANDING_FRONT','front', { lift:1.10, kick:1.15, speed:0.55, hold:3.2 }),
+  P('PN_RU_SMALLPKG', 'Small Package',     'ROLLUP','STANDING_FRONT','front', { lift:1.20, kick:1.05, speed:0.50, hold:3.0 }),
+  P('PN_RU_MAGISTRAL','Magistral Cradle',  'ROLLUP','STANDING_FRONT','front', { lift:1.18, kick:1.00, speed:0.52, hold:3.4 }),
+  P('PN_RU_CRUCIFIX', 'Crucifix Pin',      'ROLLUP','STANDING_FRONT','front', { lift:1.12, kick:1.10, speed:0.58, hold:3.0 }),
+  P('PN_RU_SUNSET',   'Sunset Flip',       'ROLLUP','STANDING_FRONT','front', { lift:1.05, kick:1.25, speed:0.60, hold:2.8 }),
+  P('PN_RU_VICTORY',  'Victory Roll',      'ROLLUP','STANDING_FRONT','front', { lift:1.08, kick:1.18, speed:0.58, hold:2.9 }),
+  P('PN_RU_RANA',     'Rana Pin',          'ROLLUP','STANDING_FRONT','front', { lift:1.06, kick:1.22, speed:0.56, hold:2.8 }),
+  P('PN_RU_ROLLTHRU', 'Roll-Through Pin',  'ROLLUP','STANDING_FRONT','front', { lift:1.00, kick:1.30, speed:0.62, hold:2.6 }),
+  P('PN_RU_OKLAHOMA', 'Oklahoma Roll',     'ROLLUP','STANDING_FRONT','front', { lift:1.10, kick:1.12, speed:0.56, hold:3.0 }),
+  P('PN_RU_PRAWN',    'Prawn Hold',        'ROLLUP','STANDING_FRONT','front', { lift:1.22, kick:0.98, speed:0.54, hold:3.4 }),
+  // ---- rear roll-ups: the surprise ones. Schoolboy and O'Connor are the owner's named examples. ----
+  P('PN_RR_SCHOOLBOY','Schoolboy Roll-Up', 'ROLLUP','STANDING_REAR','rear',  { lift:1.15, kick:1.05, speed:0.48, hold:3.0 }),
+  P('PN_RR_OCONNOR',  "O'Connor Roll",     'ROLLUP','STANDING_REAR','rear',  { lift:1.18, kick:1.00, speed:0.50, hold:3.2 }),
+  P('PN_RR_BACKSLIDE','Backslide',         'ROLLUP','STANDING_REAR','rear',  { lift:1.25, kick:0.95, speed:0.52, hold:3.6 }),
+  P('PN_RR_VICTORY',  'Rear Victory Roll', 'ROLLUP','STANDING_REAR','rear',  { lift:1.10, kick:1.15, speed:0.55, hold:2.9 }),
+  P('PN_RR_CRADLE',   'Rear Cradle',       'ROLLUP','STANDING_REAR','rear',  { lift:1.14, kick:1.08, speed:0.53, hold:3.1 }),
+  P('PN_RR_SUNSET',   'Rear Sunset Flip',  'ROLLUP','STANDING_REAR','rear',  { lift:1.06, kick:1.20, speed:0.58, hold:2.8 }),
+  P('PN_RR_ROLLPRAWN','Rolling Prawn Hold','ROLLUP','STANDING_REAR','rear',  { lift:1.20, kick:1.00, speed:0.50, hold:3.4 }),
+  // ---- leverage / situational ----
+  P('PN_LV_CORNER',   'Corner Leverage Pin','ROLLUP','CORNER_FRONT','front', { lift:1.12, kick:1.10, speed:0.55, hold:3.0 }),
+  P('PN_LV_ROPE',     'Rope-Assisted Roll', 'ROLLUP','ROPE_LEAN','front',    { lift:1.15, kick:1.05, speed:0.55, hold:3.0 }),
+  P('PN_LV_APRON',    'Apron Drag Pin',     'ROLLUP','APRON','front',        { lift:1.05, kick:1.20, speed:0.62, hold:2.6 }),
+  P('PN_LV_RUNNING',  'Running Roll-Up',    'ROLLUP','RUNNING','front',      { lift:1.10, kick:1.14, speed:0.50, hold:2.8 }),
+  P('PN_LV_COUNTER',  'Counter-to-Pin',     'COUNTER','STANDING_FRONT','front',{lift:1.20, kick:0.96, speed:0.45, hold:3.4 }),
+  P('PN_LV_REVERSE',  'Reverse a Roll-Up',  'COUNTER','STANDING_FRONT','front',{lift:1.18, kick:1.00, speed:0.48, hold:3.2 }),
+  // ---- illegal: the strongest numbers in the file, and the referee is the whole cost ----
+  P('PN_IL_TIGHTS',   'Handful of Tights',  'COVER','GROUNDED_HEAD_UP','front',{lift:1.35, kick:0.60, speed:0.85, hold:0, illegal:true }),
+  P('PN_IL_ROPES',    'Feet on the Ropes',  'COVER','GROUNDED_HEAD_UP','front',{lift:1.40, kick:0.55, speed:0.85, hold:0, illegal:true }),
+  P('PN_IL_MASK',     'Mask / Hair Grab',   'COVER','GROUNDED_HEAD_UP','front',{lift:1.30, kick:0.65, speed:0.88, hold:0, illegal:true })
+];
+
+// ============================================================================================
+// PIN RULES BY MATCH TYPE — the owner's other correction: "rules depend on match rules, not just
+// procedural pin only". A pin is not universally legal, does not always count to three, and does
+// not always break at the ropes. Keyed to BANNON_RULES.MATCH_TYPES ids.
+//   pinfall   can a pin end the match at all
+//   count     how many the referee counts to
+//   ropeBreak does touching a rope break the count
+//   zoneOnly  must the pin happen inside the ring
+//   dq        does the referee enforce disqualification (so illegal pins get waved off)
+// ============================================================================================
+const R = (count, o) => Object.assign({ pinfall: true, count, ropeBreak: true, zoneOnly: true, dq: true }, o || {});
+const PIN_RULES = {
+  _default:    R(3),
+  ONE_ON_ONE:  R(3),
+  TAG:         R(3),
+  TRIPLE:      R(3, { dq: false }),                      // no DQ in a triple threat, and no rope break
+  FOURWAY:     R(3, { dq: false }),
+  LADDER:      R(3, { pinfall: false }),                 // the belt decides it, not a cover
+  TABLES:      R(3, { pinfall: false }),
+  TLC:         R(3, { pinfall: false }),
+  CAGE:        R(3, { zoneOnly: false }),                // escape OR pin, and the floor counts
+  LMS:         R(3, { pinfall: false }),                 // ten-count over a downed body instead
+  SUBMISSION:  R(3, { pinfall: false }),                 // tap or nothing
+  IRONMAN:     R(3),                                     // pins bank falls, match keeps going
+  ANYWHERE:    R(3, { zoneOnly: false, ropeBreak: false }),
+  GAUNTLET:    R(3),
+  ROYALE:      R(3, { pinfall: false }),                 // over the top rope
+  HARDCORE:    R(3, { zoneOnly: false, ropeBreak: false, dq: false }),
+  FIRSTBLOOD:  R(3, { pinfall: false }),
+  IQUIT:       R(3, { pinfall: false }),
+  CASKET:      R(3, { pinfall: false }),
+  INFERNO:     R(3, { pinfall: false }),
+  STRETCHER:   R(3, { pinfall: false }),
+  KOTP:        R(3, { ropeBreak: false, dq: false })     // canon (Book 5): the pit has no ropes
+};
+
+const totalPicks = CATS.reduce((a,c)=>a+c.groups.reduce((b,g)=>b+g.slots.reduce((d,s)=>d+s.pick,0),0),0);
+const uncapped   = CATS.reduce((a,c)=>a+c.groups.reduce((b,g)=>b+g.slots.filter(s=>!s.cap).length,0),0);
+
+fs.mkdirSync(DIR, { recursive: true });
 fs.writeFileSync(OUT, JSON.stringify({
-  _note:'AUTO-GENERATED by tools/moves/build_moveset_schema.cjs — the WWE-2K Create-A-Moveset structure as data. The editor renders itself from this; adding a category is a data edit, not a UI rewrite.',
+  _note:'AUTO-GENERATED by tools/moves/build_moveset_schema.cjs — the WWE-2K Create-A-Moveset structure as data, WITHOUT 2K\'s number caps (owner law). The editor renders itself from this; adding a category is a data edit, not a UI rewrite. cap:0 means unlimited.',
   generated:new Date().toISOString().slice(0,10),
-  categories:CATS.length, slots:n, assignableMoves:totalPicks, ai:AI, cats:CATS
+  categories:CATS.length, slots:n, defaultLoadout:totalPicks, uncappedSlots:uncapped,
+  ai:AI, styles:STYLES, paybacks:PAYBACKS,
+  modifiers:{ source:MODIFIER_SOURCE, list:MODIFIERS,
+    expansion:['strike','grapple','carry','combo','dive','submission','pin','rollup','tag']
+      .reduce(function(o,k){ o[k]=expansionFor(k); return o; },{}) },
+  execution:EXECUTION,
+  cats:CATS
+}, null, 1));
+
+fs.writeFileSync(OUT_PINS, JSON.stringify({
+  _note:'AUTO-GENERATED by tools/moves/build_moveset_schema.cjs — the named pin/roll-up catalogue BANNON_PINS reads at runtime, plus per-match-type pin rules.',
+  generated:new Date().toISOString().slice(0,10),
+  pins:PINS, rules:PIN_RULES
 }, null, 1));
 
 console.log('categories        : ' + CATS.length);
-console.log('slots             : ' + n);
-console.log('assignable moves  : ' + totalPicks + '  (sum of every pick count)');
-console.log('wrote assets/moves/moveset_schema.json');
+console.log('slots             : ' + n + '  (' + uncapped + ' uncapped, ' + (n-uncapped) + ' single-value by engine limit)');
+console.log('default loadout   : ' + totalPicks + '  (sum of every pick count — a FLOOR, not a ceiling)');
+console.log('fighting styles   : ' + STYLES.length);
+console.log('paybacks          : ' + PAYBACKS.length + '  (' + PAYBACKS.filter(p=>p.tier==='major').length + ' major / ' + PAYBACKS.filter(p=>p.tier==='minor').length + ' minor)');
+console.log('pin catalogue     : ' + PINS.length + '  (' + PINS.filter(p=>p.entry==='ROLLUP').length + ' roll-ups, ' + PINS.filter(p=>p.illegal).length + ' illegal)');
+console.log('modifiers         : ' + MODIFIERS.length + '  (declared from the engine\'s OWN inputs: ' + MODIFIER_SOURCE.split(' · ')[1] + ')');
+console.log('  strike x' + expansionFor('strike') + '  grapple x' + expansionFor('grapple') +
+            '  carry x' + expansionFor('carry') + '  dive x' + expansionFor('dive') +
+            '  submission x' + expansionFor('submission') + '   <- executions per equipped move');
+console.log('pin rule sets     : ' + (Object.keys(PIN_RULES).length - 1) + ' match types + default');
+console.log('wrote assets/moves/moveset_schema.json + pin_moves.json');

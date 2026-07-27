@@ -85,6 +85,32 @@ jobs:
           done
           echo "::error::assembleRelease failed three times — this is a real failure, not a registry blip"
           exit 1
+      # SIDE-BY-SIDE APK. The main APK is structurally sound — verified v1+v2+v3 signatures,
+      # resources.arsc STORED, versionCode climbing — but Android still refuses to install it over an
+      # app of the SAME package name signed with a DIFFERENT key, which is what a pre-stable-key
+      # install leaves on the device. That refusal cannot be fixed inside the package; it is the
+      # installer objecting on identity. So build a second APK under com.bannon.game.fresh that
+      # installs ALONGSIDE whatever is already there. There is then always an APK that installs.
+      - name: Build side-by-side APK (com.bannon.game.fresh)
+        run: |
+          set -o pipefail
+          export BANNON_VERSION_CODE=$(git rev-list --count HEAD)
+          for attempt in 1 2 3; do
+            if gradle -p android assembleRelease --no-daemon -PbannonFresh=true; then exit 0; fi
+            [ "$attempt" -lt 3 ] && sleep $((attempt * 20))
+          done
+          echo "::warning::fresh-id APK failed to build; the main APK is unaffected"
+          exit 0
+
+      - name: Stash the fresh APK before the main build is re-read
+        run: |
+          mkdir -p /tmp/freshapk
+          cp android/app/build/outputs/apk/release/app-release*.apk /tmp/freshapk/BANNON-fresh.apk 2>/dev/null || true
+          ls -la /tmp/freshapk || true
+          # rebuild the MAIN id so every later step (gate, artifact, dist) sees the normal package
+          export BANNON_VERSION_CODE=$(git rev-list --count HEAD)
+          gradle -p android assembleRelease --no-daemon
+
       # INSTALLABILITY GATE. Every "cannot install / package couldn't be parsed" report so far traced to
       # one of these three, all silent at build time — so each is now a hard failure, not a warning:
       #   1. v1 (JAR) signature missing. AGP drops v1 automatically in some configs, and many OEM
@@ -193,6 +219,8 @@ jobs:
         run: |
           mkdir -p dist
           cp android/app/build/outputs/apk/release/app-release*.apk dist/BANNON.apk
+          # the side-by-side build, so there is always one that installs no matter what is on the phone
+          cp /tmp/freshapk/BANNON-fresh.apk dist/BANNON-fresh.apk 2>/dev/null || true
           # OTA content: the STAMPED game HTML the installed app fetches + hot-swaps (same build number
           # the bundle carries, so no loop).
           cp BANNON_v150.stamped.html dist/BANNON.html
@@ -209,6 +237,7 @@ jobs:
           git config user.name  "Claude"
           git config user.email "noreply@anthropic.com"
           git add dist/BANNON.apk dist/BANNON.html dist/version.json
+          [ -f dist/BANNON-fresh.apk ] && git add dist/BANNON-fresh.apk
           if git diff --cached --quiet; then echo "dist unchanged"; exit 0; fi
           git commit -m "ci: rebuild dist/BANNON.apk + OTA payload from ${GITHUB_SHA::7} [skip ci]"
           # PUSH RACE: this job checked out an older sha, so main has usually moved on by the time the
