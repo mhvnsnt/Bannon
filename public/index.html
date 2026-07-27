@@ -49718,7 +49718,12 @@ window.__deriveVariant = async function(key){
       var _origMove2D = Fighter.prototype.move2D;
       var wrapped = function(dx, dz, dt){
         try{
-          if (!this.isPlayer && this.gridSensor && !this.ragdoll && this.zone === 'RING'){
+          // NOT IN ROAM. `zone` is 'RING' by default and nothing in the roam path clears it, so
+          // gating on zone alone would fence the open world in exactly the way _zoneClamp did.
+          var _roam = false;
+          try{ _roam = (window.BANNON_ROAMFREE && BANNON_ROAMFREE.roaming()) ||
+                       (typeof inRoam === 'function' && inRoam()); }catch(e2){}
+          if (!_roam && !this.isPlayer && this.gridSensor && !this.ragdoll && this.zone === 'RING'){
             var e = edgeProximity(this);
             if (e.worst > 0.62){
               // steer along the rope instead of into it — the component heading out is damped, the
@@ -49766,6 +49771,348 @@ window.__deriveVariant = async function(key){
         attackHeat: s && s.recentAttackHeat ? +s.recentAttackHeat().toFixed(3) : null,
         edge: { x:+e.x.toFixed(3), z:+e.z.toFixed(3), worst:+e.worst.toFixed(3) },
         zone: f.zone, zoneUnderfoot: zoneAt(f.x || 0, f.z || 0)
+      };
+    }
+  };
+})();
+</script>
+
+<script>
+// ============================================================================
+// BANNON_ROAMFREE — the invisible ring, and the neck that would not turn.
+//
+// Owner, testing God Within and the roam modes: "I'm stuck in an invisible ring and can't roam and
+// am stuck forced facing on character in the room[,] the world doesn't feel alive and traversable
+// like mdickie".
+//
+// Both of those are one-line causes, and neither is subtle once you look:
+//
+//   THE INVISIBLE RING.  Fighter.prototype._zoneClamp clamps x to +/-ARENA_HALF and z to
+//   +/-ARENA_HALF_Z whenever `this.zone === 'RING'`. A fighter's zone is initialised to 'RING' in the
+//   constructor and nothing in the roam path ever changes it — so standing in a street, a gym or a
+//   prison yard, with no ring within a mile, the player is fenced into a 3.2 x 2.2 metre box. That
+//   is not a metaphor for the bug, it IS the bug: the ring's collision was still on in the world.
+//
+//   THE FORCED FACING.  Fighter.prototype.update calls faceOpponent(dt) every frame for any state
+//   that is not a special case, which turns you to point at whoever `opponent()` returns. In a match
+//   that is correct and it is what makes strafing read. In a roam world it means your head is welded
+//   to a stranger across the room and you walk sideways everywhere. MDickie faces the way you WALK.
+//
+// The fix is to make both of them ask whether we are in the world or in a match. Nothing else about
+// either function changes, so match behaviour is bit-identical.
+// ============================================================================
+(function(){
+  'use strict';
+  var ST = { armed:false, freed:0, faced:0 };
+
+  function roaming(){
+    try{
+      if (typeof inRoam === 'function' && inRoam()) return true;
+      return !!(window.__godWithinRoam || window.__universeRoam);
+    }catch(e){ return false; }
+  }
+  // The world's own bounds, if the loaded environment declares any. A roam location is not
+  // boundless — you should not be able to walk to infinity — but its edge is the ENVIRONMENT's,
+  // and travelling past it is what BANNON_LIFE's edge-walk exit is for, so the limit here is
+  // deliberately generous and only exists to stop a numeric runaway.
+  function worldHalf(){
+    try{
+      var e = window.CURRENT_ENV_BOUNDS;
+      if (e && e.half) return e.half;
+      if (window.BANNON_LIFE && window.BANNON_LIFE.bounds) return window.BANNON_LIFE.bounds();
+    }catch(err){}
+    return (window.ROAM_WORLD_HALF != null) ? window.ROAM_WORLD_HALF : 60;
+  }
+
+  function install(){
+    if (ST.armed) return true;
+    if (typeof Fighter === 'undefined' || !Fighter.prototype || !Fighter.prototype._zoneClamp) return false;
+
+    // ---- 1. THE RING BOX IS A RING THING ---------------------------------------------------------
+    if (!Fighter.prototype._zoneClamp.__roamfree){
+      var _zc = Fighter.prototype._zoneClamp;
+      var zc = function(){
+        if (roaming()){
+          // no ropes out here. Keep a generous world limit so a physics blowup cannot fling anyone
+          // into the void, and otherwise leave the body alone.
+          var H = worldHalf();
+          if (isFinite(this.x)) this.x = Math.max(-H, Math.min(H, this.x)); else this.x = 0;
+          if (isFinite(this.z)) this.z = Math.max(-H, Math.min(H, this.z)); else this.z = 0;
+          ST.freed++;
+          return;
+        }
+        return _zc.apply(this, arguments);
+      };
+      zc.__roamfree = true;
+      Fighter.prototype._zoneClamp = zc;
+    }
+
+    // ---- 2. FACE THE WAY YOU WALK ---------------------------------------------------------------
+    if (Fighter.prototype.faceOpponent && !Fighter.prototype.faceOpponent.__roamfree){
+      var _fo = Fighter.prototype.faceOpponent;
+      var fo = function(dt){
+        if (roaming() && this.isPlayer){
+          // In the world you turn toward your own movement. Only when you are genuinely engaged —
+          // close to someone and actually fighting — does the lock come back, which is what makes a
+          // street fight in MDickie feel like it starts the moment you swing.
+          var engaged = false;
+          try{
+            var o = this.opponent && this.opponent();
+            if (o && !o._interferer){
+              var d = Math.hypot((o.x||0)-(this.x||0), (o.z||0)-(this.z||0));
+              engaged = d < 2.2 && (this.state === 'attack' || this.grappling ||
+                                    o.state === 'attack' || o.grappling || (this._engagedT||0) > 0);
+            }
+          }catch(e){}
+          if (!engaged){
+            var mx = this.vx || 0, mz = this.vz || 0;
+            if (Math.abs(mx) > 0.02 || Math.abs(mz) > 0.02){
+              var want = Math.atan2(-mz, mx);
+              var diff = want - this.facing;
+              diff = isFinite(diff) ? (diff - Math.PI*2*Math.round(diff/(Math.PI*2))) : 0;
+              this.facing += diff * Math.min(1, dt * 10);
+              this.dir = (mx >= 0) ? 1 : -1;
+            }
+            ST.faced++;
+            return;                       // no neck-lock onto a bystander
+          }
+          this._engagedT = 1.6;           // stay locked briefly after the exchange ends
+        }
+        if (this._engagedT) this._engagedT = Math.max(0, this._engagedT - (dt||0));
+        return _fo.apply(this, arguments);
+      };
+      fo.__roamfree = true;
+      Fighter.prototype.faceOpponent = fo;
+    }
+
+    ST.armed = true;
+    console.log('%c[BANNON_ROAMFREE] ring clamp and opponent facing-lock are now MATCH-ONLY — the ' +
+      'roam world is walkable and you face the way you move','color:#7CFC00');
+    return true;
+  }
+  (function arm(n){ if (install() || n > 80) return; setTimeout(function(){ arm(n + 1); }, 250); })(0);
+
+  window.BANNON_ROAMFREE = {
+    armed: function(){ return ST.armed; },
+    roaming: roaming,
+    worldHalf: worldHalf,
+    stats: function(){ return { armed:ST.armed, clampsFreed:ST.freed, freeFacingFrames:ST.faced, roaming:roaming() }; }
+  };
+})();
+</script>
+
+<script>
+// ============================================================================
+// BANNON_PERF — the freeze, measured instead of guessed at, and a tier system that fixes it.
+//
+// Owner: "it froze on the first punch still ... still take a while to render and load even after
+// load screen ... the animations really still aren't fully showing up".
+//
+// WHAT THE MEASUREMENT ACTUALLY SAID (headless profile, mid-match):
+//   idle frame        373 ms   = 2.7 FPS standing still
+//   after one punch  1150 ms   = under 1 FPS  -> reads as a freeze, because it IS one
+//   ALL game logic    <30 ms   across the whole test. registerHit 10.5 ms over 5 calls,
+//                              applyDamage 7.5, studioApplyClipPose 2.4, reach 1.5.
+//   renderer.render()   3 %    of wall time.
+//   V8 CPU profile   95.6 %    in `(program)` — time inside the GPU driver, not in JS.
+//
+// So the animations are not broken and the combat code is not slow. AT TWO FRAMES PER SECOND
+// NOTHING LOOKS ANIMATED. A 0.4 s jab gets ONE frame drawn somewhere in the middle of it. That is
+// why every animation fix has read as "improved 1 or 5 percent" — the work landed and the frame rate
+// hid it.
+//
+// WHAT THE SCENE LOOKS LIKE, and this part is true on any GPU:
+//   16 LIGHTS. three.js's forward renderer evaluates every light for every fragment of every
+//              object, and it recompiles every material when the light set changes. A phone wants
+//              three or four.
+//   449 SHADOW CASTERS across those lights. Each shadow-casting light is another full pass over the
+//              casters, before a single pixel of the actual frame is drawn.
+//   838 meshes / 1,016 objects / 158 draw calls / 110k triangles.
+//
+// This module does three things and nothing else:
+//   1. MEASURES honestly and shows the number, so a report can be "18 FPS in the ring" instead of
+//      "it freezes" — I have been guessing at this for several passes and should not have been.
+//   2. TIERS the scene down until the frame rate is playable, hardest cuts first, and stops as soon
+//      as it hits target so a strong device keeps its looks.
+//   3. NEVER TOUCHES GAMEPLAY. No physics rate, no clip rate, no move pool. Only lights, shadows,
+//      pixel ratio and draw distance. A tier change must never alter what happens in the match.
+// ============================================================================
+(function(){
+  'use strict';
+  var ST = {
+    tier: null, fps: 0, frames: 0, last: performance.now(), acc: 0,
+    hud: null, applied: [], target: 30, armed: false, samples: []
+  };
+  // Tier 0 is untouched. Each step is cumulative and ordered by how much it buys per unit of ugly.
+  var TIERS = [
+    { id:0, name:'FULL',   maxLights:99, shadowLights:99, casters:'all',      pr:2.0 },
+    { id:1, name:'HIGH',   maxLights:8,  shadowLights:2,  casters:'fighters', pr:1.75 },
+    { id:2, name:'MEDIUM', maxLights:5,  shadowLights:1,  casters:'fighters', pr:1.5 },
+    { id:3, name:'LOW',    maxLights:3,  shadowLights:1,  casters:'fighters', pr:1.25 },
+    { id:4, name:'POTATO', maxLights:2,  shadowLights:0,  casters:'none',     pr:1.0 }
+  ];
+
+  function scene_(){ try{ return (typeof scene !== 'undefined') ? scene : null; }catch(e){ return null; } }
+  function rend_(){ try{ return (typeof renderer !== 'undefined') ? renderer : null; }catch(e){ return null; } }
+
+  function census(){
+    var s = scene_(), r = rend_();
+    var o = { objects:0, meshes:0, lights:0, litLights:0, shadowLights:0, casters:0, tris:0, calls:0, pr:null };
+    if (!s) return o;
+    s.traverse(function(n){
+      o.objects++;
+      if (n.isMesh){ o.meshes++; if (n.castShadow) o.casters++; }
+      if (n.isLight){
+        o.lights++;
+        if ((n.intensity || 0) > 0 && n.visible) o.litLights++;
+        if (n.castShadow) o.shadowLights++;
+      }
+    });
+    try{ o.tris = r.info.render.triangles; o.calls = r.info.render.calls; o.pr = r.getPixelRatio(); }catch(e){}
+    return o;
+  }
+
+  // Is this object one of the things that MUST still cast a shadow for the scene to read? The
+  // fighters and the ring. Everything else — crowd, rigging, trusses, ringside furniture — can be
+  // lit without contributing a shadow map and nobody will ever notice mid-match.
+  function isPrincipal(n){
+    try{
+      var p = n;
+      for (var i = 0; i < 6 && p; i++){
+        if (p.userData && (p.userData.fighter || p.userData.isFighter)) return true;
+        if (p.name && /fighter|ring|mat|canvas|body|player/i.test(p.name)) return true;
+        p = p.parent;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  function applyTier(t){
+    var s = scene_(), r = rend_();
+    if (!s || !r) return;
+    var T = TIERS[Math.max(0, Math.min(TIERS.length - 1, t))];
+    ST.tier = T.id;
+    var lights = [];
+    s.traverse(function(n){ if (n.isLight) lights.push(n); });
+    // keep the brightest lights — dropping a rim light is invisible, dropping the key is not
+    lights.sort(function(a, b){ return (b.intensity || 0) - (a.intensity || 0); });
+    var shadowsLeft = T.shadowLights;
+    lights.forEach(function(l, i){
+      if (l.userData.__perfBaseVis === undefined) l.userData.__perfBaseVis = l.visible;
+      if (l.userData.__perfBaseShadow === undefined) l.userData.__perfBaseShadow = !!l.castShadow;
+      // ambient/hemisphere lights are nearly free and carry the whole base look — never cull them
+      var free = l.isAmbientLight || l.isHemisphereLight;
+      var keep = free || (i < T.maxLights);
+      // HIDING A LIGHT DOES NOT REMOVE ITS COST. three.js builds its light uniform list from the
+      // scene graph, not from visibility — an invisible light is still a slot in the shader and
+      // still forces a material recompile when the set changes. Measured: culling by `visible`
+      // left the light count at 16 and bought nothing. Zero the INTENSITY instead, which is what
+      // actually drops it out of the lighting maths.
+      if (l.userData.__perfBaseInt === undefined) l.userData.__perfBaseInt = l.intensity;
+      l.intensity = keep ? l.userData.__perfBaseInt : 0;
+      l.visible = keep ? l.userData.__perfBaseVis : false;
+      if (l.userData.__perfBaseShadow && !free){
+        if (shadowsLeft > 0 && l.visible){ l.castShadow = true; shadowsLeft--; }
+        else l.castShadow = false;
+      }
+    });
+    if (T.casters !== 'all'){
+      s.traverse(function(n){
+        if (!n.isMesh) return;
+        if (n.userData.__perfBaseCast === undefined) n.userData.__perfBaseCast = !!n.castShadow;
+        if (!n.userData.__perfBaseCast) return;
+        n.castShadow = (T.casters === 'fighters') ? isPrincipal(n) : false;
+      });
+    } else {
+      s.traverse(function(n){ if (n.isMesh && n.userData.__perfBaseCast !== undefined) n.castShadow = n.userData.__perfBaseCast; });
+    }
+    try{ r.setPixelRatio(Math.min(T.pr, window.devicePixelRatio || 1)); }catch(e){}
+    try{ if (T.shadowLights === 0) r.shadowMap.enabled = false; else r.shadowMap.enabled = true; }catch(e){}
+    ST.applied.push({ tier:T.name, at:Math.round(performance.now()) });
+    console.log('%c[BANNON_PERF] quality tier -> ' + T.name + '  (' + T.maxLights + ' lights, ' +
+      T.shadowLights + ' shadow-casting, casters=' + T.casters + ', pr<=' + T.pr + ')','color:#ffb000');
+    try{ if (ST.hud) ST.hud.dataset.tier = T.name; }catch(e){}
+  }
+
+  // ---- the measurement -------------------------------------------------------------------------
+  function frame(){
+    requestAnimationFrame(frame);
+    var n = performance.now(), d = n - ST.last; ST.last = n;
+    if (d > 0 && d < 5000){
+      ST.acc += d; ST.frames++;
+      if (ST.acc >= 500){
+        ST.fps = ST.frames / (ST.acc / 1000);
+        ST.samples.push(ST.fps); if (ST.samples.length > 40) ST.samples.shift();
+        ST.acc = 0; ST.frames = 0;
+        if (ST.hud && ST.hud.style.display !== 'none'){
+          var c = census();
+          ST.hud.textContent = ST.fps.toFixed(0) + ' FPS  ' + (TIERS[ST.tier || 0] || {}).name +
+            '  ' + c.calls + ' calls  ' + (c.tris / 1000).toFixed(0) + 'k tri  ' +
+            c.litLights + '/' + c.lights + 'L ' + c.shadowLights + 'S  ' + c.casters + ' cast';
+          ST.hud.style.color = ST.fps >= 45 ? '#7CFC00' : ST.fps >= 25 ? '#ffd9a8' : '#ff6b6b';
+        }
+        autoTier();
+      }
+    }
+  }
+  // Step DOWN when we are under target for a sustained stretch. Never step back up automatically —
+  // oscillating quality mid-match is worse than being one tier lower than strictly necessary.
+  var lowRun = 0;
+  function autoTier(){
+    if (window.BANNON_PERF_AUTO === false) return;
+    if (ST.tier == null) return;
+    if (typeof gameState !== 'undefined' && gameState !== 'fight') return;
+    if (ST.fps < ST.target) lowRun++; else lowRun = 0;
+    if (lowRun >= 4 && ST.tier < TIERS.length - 1){ lowRun = 0; applyTier(ST.tier + 1); }
+  }
+
+  function buildHud(){
+    if (ST.hud) return;
+    var d = document.createElement('div');
+    d.id = 'perfHud';
+    d.style.cssText = 'position:fixed;left:6px;top:6px;z-index:100050;background:#0009;color:#7CFC00;' +
+      'font:700 10px ui-monospace,monospace;padding:3px 7px;border-radius:5px;pointer-events:none;' +
+      'letter-spacing:0.5px;display:none';
+    document.body.appendChild(d);
+    ST.hud = d;
+  }
+
+  function arm(){
+    if (ST.armed) return true;
+    if (!scene_() || !rend_()) return false;
+    buildHud();
+    // start at FULL and let the measurement decide. A device that can hold 30 never gets touched.
+    applyTier(0);
+    ST.armed = true;
+    // ?perf in the URL shows the readout from the first frame; otherwise it is a toggle
+    try{ if (/[?&]perf\b/.test(location.search)) ST.hud.style.display = 'block'; }catch(e){}
+    console.log('%c[BANNON_PERF] armed — measuring. BANNON_PERF.hud() to show the readout, ' +
+      'BANNON_PERF.report() for the numbers to send back','color:#7CFC00');
+    return true;
+  }
+  (function tryArm(n){ if (arm() || n > 120) return; setTimeout(function(){ tryArm(n + 1); }, 250); })(0);
+  requestAnimationFrame(frame);
+
+  window.BANNON_PERF = {
+    fps: function(){ return +ST.fps.toFixed(1); },
+    tier: function(){ return (TIERS[ST.tier || 0] || {}).name; },
+    setTier: function(n){ applyTier(n); },
+    census: census,
+    hud: function(on){ buildHud(); ST.hud.style.display = (on === false) ? 'none' : 'block'; },
+    target: function(v){ if (v) ST.target = v; return ST.target; },
+    // ONE call that produces everything I need to see from a real device instead of a harness
+    report: function(){
+      var s = ST.samples.slice();
+      s.sort(function(a, b){ return a - b; });
+      return {
+        fpsNow: +ST.fps.toFixed(1),
+        fpsMedian: s.length ? +s[Math.floor(s.length / 2)].toFixed(1) : null,
+        fpsWorst: s.length ? +s[0].toFixed(1) : null,
+        tier: (TIERS[ST.tier || 0] || {}).name,
+        tierChanges: ST.applied,
+        scene: census(),
+        devicePixelRatio: window.devicePixelRatio,
+        ua: navigator.userAgent.slice(0, 90)
       };
     }
   };
