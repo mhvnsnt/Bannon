@@ -1272,6 +1272,7 @@ body.match-live #movesBtn { display:none !important; }
       <button class="play-mode" id="pmCareer"><span class="pm-ico">📈</span><span class="pm-t">CAREER</span><span class="pm-d">Rise as one wrestler — matches, injuries, titles, aging</span></button>
       <button class="play-mode" id="pmUniverse"><span class="pm-ico">🌍</span><span class="pm-t">PROMOTER</span><span class="pm-d">Book &amp; run a promotion week to week — the booking career</span></button>
       <button class="play-mode" id="pmGodWithin"><span class="pm-ico">👁️</span><span class="pm-t">GOD WITHIN</span><span class="pm-d">Roam the world, confront the daemon — the story RPG</span></button>
+      <button class="play-mode" id="pmFreeRoam"><span class="pm-ico">🚶</span><span class="pm-t">FREE ROAM</span><span class="pm-d">Just live in it — no story, no card, 65 places and a clock</span></button>
       <button class="play-mode" id="pmTraining"><span class="pm-ico">🏋️</span><span class="pm-t">TRAINING</span><span class="pm-d">Build your stats between shows</span></button>
       <button class="play-mode" id="pmPromotionsView"><span class="pm-ico">🏟️</span><span class="pm-t">PROMOTIONS</span><span class="pm-d">All 15 promotions — prestige, style, rosters</span></button>
       <button class="play-mode" id="pmRoster"><span class="pm-ico">📋</span><span class="pm-t">ROSTER</span><span class="pm-d">Every wrestler across the promotions</span></button>
@@ -1296,6 +1297,7 @@ body.match-live #movesBtn { display:none !important; }
       <button class="uni-tab" data-tab="career">MY CAREER</button>
       <button class="uni-tab" data-tab="backstage">BACKSTAGE</button>
       <button class="uni-tab" data-tab="contracts">CONTRACTS</button>
+      <button class="uni-tab" data-tab="agency">FREE AGENCY</button>
       <button class="uni-tab" data-tab="promotions">PROMOTIONS</button>
       <button class="uni-tab" data-tab="roster">ROSTER</button>
       <button class="uni-tab" data-tab="hof">HALL OF FAME</button>
@@ -17111,7 +17113,17 @@ function setupInput(){
     _w('pmBack',  ()=>{ if(pm) pm.classList.add('hidden'); });
     _w('pmExhibition', ()=>{ if(pm)pm.classList.add('hidden'); window.openSelectWhenReady(); });   // wait for select — never auto-drop into a match
     _w('pmUniverse', ()=>{ if(pm)pm.classList.add('hidden'); if(window.openUniverse) window.openUniverse(); });
-    _w('pmCareer', ()=>{ if(pm)pm.classList.add('hidden'); try{ window.CAREER_ME=window.CAREER_ME||'BANNON'; }catch(e){} if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="career"]').click(); }catch(e){} } });
+    // CAREER used to open a READ-ONLY TAB. Wrestling Empire's career is not a status page — it is
+    // one wrestler living the days between shows, which is exactly what BANNON_LIFE already runs and
+    // what nothing outside God Within ever started. BANNON_SEASON.career() enters that world as your
+    // wrestler with the contract live and the diary carrying your bookings. The tab stays as the
+    // fallback so the button is never dead if the module has not armed yet.
+    _w('pmCareer', ()=>{ if(pm)pm.classList.add('hidden'); try{ window.CAREER_ME=window.CAREER_ME||'BANNON'; }catch(e){}
+      if(window.BANNON_SEASON && window.BANNON_SEASON.career){ window.BANNON_SEASON.career(); return; }
+      if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="career"]').click(); }catch(e){} } });
+    _w('pmFreeRoam', ()=>{ if(pm)pm.classList.add('hidden');
+      if(window.BANNON_SEASON && window.BANNON_SEASON.freeRoam){ window.BANNON_SEASON.freeRoam(); return; }
+      if(window.BANNON_GODWITHIN && window.BANNON_GODWITHIN.start) window.BANNON_GODWITHIN.start(); });
     _w('pmTraining', ()=>{ if(pm)pm.classList.add('hidden'); if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="training"]').click(); }catch(e){} } });
     const _uniTab=(t)=>{ if(pm)pm.classList.add('hidden'); if(window.openUniverse){ window.openUniverse(); try{ document.querySelector('#uniTabs .uni-tab[data-tab="'+t+'"]').click(); }catch(e){} } };
     _w('pmPromotionsView', ()=>_uniTab('promotions'));
@@ -39756,8 +39768,15 @@ window.BANNON_UNIVERSE = (function(){
   function rivalInterest(u,f){ return Math.round(worth(f) * (0.5 + (ego(f)/200))); }
   // what the fighter DEMANDS this negotiation: multi-clause, ego/worth-scaled (Negotiations.bb + LLM clauses).
   function demands(u,name){ const f=u.fighters[name]; if(!f) return null; const w=worth(f), e=ego(f);
-    return { salary:Math.round(w*10 + e*40), merchCut: e>75?50: e>50?30:15, creativeControl: e>=85,
-      guaranteedWins: e>=90?3: e>=70?1:0, length: e>80?26:52, downside:Math.round(w*4), signBonus:Math.round(w*2*(e/100)) }; }
+    // THRESHOLDS RE-SCALED TO OUR ACTUAL EGO RANGE. These came across from a port written against a
+    // different worth scale and were unreachable here: measured across the whole 120-man roster on a
+    // fresh universe, ego tops out at 73 with a median of 24, so `creativeControl: e>=85` was NEVER
+    // true for anybody. That made this clause dead, and it made bookingBreach() — which only fires
+    // on a man WITH creative control booked to lose — permanently dead behind it. Re-pegged to the
+    // real distribution: the top of the card (60+) gets creative control, which is roughly the top
+    // handful of wrestlers, as it should be.
+    return { salary:Math.round(w*10 + e*40), merchCut: e>55?50: e>38?30:15, creativeControl: e>=60,
+      guaranteedWins: e>=68?3: e>=52?1:0, length: e>58?26:52, downside:Math.round(w*4), signBonus:Math.round(w*2*(e/100)) }; }
   // evaluate an OFFER {salary,merchCut,creativeControl,guaranteedWins,length,signBonus} -> accept/counter/walk.
   function negotiate(u,name,promo,offer){ u=u||get(); const f=u.fighters[name]; if(!f) return {walk:true,reason:'no such fighter'};
     offer=offer||{}; const d=demands(u,name), loy=loyalty(f), samePromo=(f.promo===promo);
@@ -39765,7 +39784,15 @@ window.BANNON_UNIVERSE = (function(){
     const salOK=(offer.salary||0)>=d.salary*0.9;
     const ccOK=(!d.creativeControl)||!!offer.creativeControl;
     const merchOK=(offer.merchCut||0)>=d.merchCut*0.8;
-    let score=(salOK?50:Math.round(50*((offer.salary||0)/Math.max(1,d.salary)))) + (ccOK?25:0) + (merchOK?15:0) + (samePromo?loy*0.1:0);
+    // THE CREATIVE-CONTROL CREDIT USED TO BE FREE MONEY. `ccOK ? 25 : 0` awards the full 25 whenever
+    // the fighter did not ask for creative control — which, before the ego re-scale above, was
+    // everybody. Measured: an offer at FORTY PERCENT of a man's asking salary still scored 51 out of
+    // a bar of 60, so a deliberate insult read as a near-miss and walk() was unreachable. When the
+    // clause is not on the table its credit now scales with how serious the money is, so a lowball
+    // cannot buy 25 points for offering nothing.
+    const salFrac=Math.min(1,(offer.salary||0)/Math.max(1,d.salary));
+    const ccScore=d.creativeControl ? (offer.creativeControl?25:0) : Math.round(25*salFrac);
+    let score=(salOK?50:Math.round(50*salFrac)) + ccScore + (merchOK?15:0) + (samePromo?loy*0.1:0);
     // rival interest raises the bar (they can walk to another promo)
     const bar=60 + (rivalInterest(u,f)>d.salary?10:0);
     if(score>=bar){ f.promo=promo; f.contractWeeks=offer.length||d.length; f.creativeControl=!!offer.creativeControl; f.title=samePromo?f.title:null; f.team=samePromo?f.team:null;
@@ -41245,11 +41272,25 @@ window.BANNON_LEGACY = (function(){
         const card=(u&&u.card)||[];
         if(!card.length) h+='<div style="opacity:.7">No card booked — ADVANCE WEEK to book the show.</div>';
         const ordered=card.map((m,i)=>({m,i})).sort((a,b)=>(a.m.main?1:0)-(b.m.main?1:0));
+        const SEA=()=>window.BANNON_SEASON;
         ordered.forEach((o,k)=>{ const m=o.m, i=o.i; const slot=m.main?'MAIN EVENT':('MATCH '+(k+1));
+          // STIPULATION + BUILDING. A card entry used to be {a,b,title,main} and nothing else, so
+          // every night on every show for the rest of the save was a plain singles match in the same
+          // room. BANNON_SEASON stamps a real matchType and a real venue on each one.
+          const stip=(SEA()&&SEA().typeLabel)?SEA().typeLabel(m.type):'';
+          const bld =(SEA()&&SEA().venueLabel)?SEA().venueLabel(m.venue):'';
           h+=`<div class="mcard${m.title?' title-match':''}">`+pfChip(m.a)+
-             `<div class="mc-mid"><div style="font:8px var(--f-mono);color:#e8c15a;letter-spacing:2px">${slot}</div><div class="vs">VS</div>${m.title?`<div class="mc-title">🏆 ${esc(m.title)}</div>`:''}</div>`+pfChip(m.b)+
-             `<div class="mc-act">`+(m._done?`<span style="color:#7CFC00;font:10px var(--f-mono)">✔ DONE</span>`:`<button class="uni-act" data-play="${i}">PLAY</button><button class="uni-act" data-sim="${i}">SIM</button>`)+`</div></div>`;
+             `<div class="mc-mid"><div style="font:8px var(--f-mono);color:#e8c15a;letter-spacing:2px">${slot}</div><div class="vs">VS</div>`+
+             (stip&&m.type!=='ONE_ON_ONE'?`<div class="mc-title" style="color:#ff9a4a">⛓ ${esc(stip)}</div>`:'')+
+             (m.title?`<div class="mc-title">🏆 ${esc(m.title)}</div>`:'')+
+             (bld?`<div style="font:8px var(--f-mono);color:#9a9a8a">${esc(bld)}</div>`:'')+
+             `</div>`+pfChip(m.b)+
+             `<div class="mc-act">`+(m._done?`<span style="color:#7CFC00;font:10px var(--f-mono)">✔ DONE</span>`:`<button class="uni-act" data-play="${i}">PLAY</button><button class="uni-act" data-sim="${i}">SIM</button><button class="uni-act" data-season="edit" data-idx="${i}">EDIT</button>`)+`</div></div>`;
         });
+        // YOU BOOK IT (2K Universe's core verb). The card was auto-booked and read-only.
+        h+='<div style="margin:8px 0;display:flex;gap:6px;flex-wrap:wrap">'+
+           '<button class="uni-act" data-season="add">➕ ADD A MATCH</button>'+
+           '<button class="uni-act" data-season="sheet">📋 BOOKING SHEET</button></div>';
         // NIGHT SUMMARY (MDickie in-between screen): the show is in the books — results + gate + advance
         if(card.length && card.every(m=>m._done)){
           const res=((u&&u.history)||[]).filter(x=>x.week===wk);
@@ -41312,6 +41353,13 @@ window.BANNON_LEGACY = (function(){
           keys.forEach(k=>{ let worth='—'; try{ worth='$'+(md.calculateWorth?md.calculateWorth(k):0).toLocaleString(); }catch(e){}
             h+=`<div class="uni-row"><span>${esc(k)}</span><span>${worth} <button class="uni-act" data-sign="${esc(k)}">OFFER</button></span></div>`; });
         } else h+='<div>Contracts module not loaded.</div>';
+      }
+      // FREE AGENCY — BANNON_UNIVERSE has a complete Negotiations.bb port (worth / ego / loyalty /
+      // rivalInterest / demands / negotiate / bookingBreach) and every one of those functions had
+      // ZERO callers. This is their surface: real demands, real counters, real walk-outs.
+      else if(tab==='agency'){
+        h+=(window.BANNON_SEASON&&window.BANNON_SEASON.agencyHTML)?window.BANNON_SEASON.agencyHTML()
+           :'<div>Season module not loaded.</div>';
       }
       else if(tab==='training'){
         h+='<div class="uni-h">TRAINING</div>';
@@ -41380,8 +41428,17 @@ window.BANNON_LEGACY = (function(){
     body.querySelectorAll('[data-adv]').forEach(b=>b.onclick=()=>{ try{ const U=UNI(); if(U&&U.advanceWeek) U.advanceWeek(); }catch(e){} viewWk=null; render(); });
     body.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>{ const U=UNI(),u=U.get(); const m=u.card[+b.dataset.play]; if(m&&U.playMatch){ close(); U.playMatch(m); } });
     body.querySelectorAll('[data-sim]').forEach(b=>b.onclick=()=>{ const U=UNI(),u=U.get(); const m=u.card[+b.dataset.sim]; if(m){ if(U.simMatch)U.simMatch(u,m); m._done=1; U.save&&U.save(u); render(); } });
+    // Everything BANNON_SEASON owns — booking sheet, stipulation edits, free agency — comes back
+    // through one delegate so the panel does not need to know how any of it works.
+    body.querySelectorAll('[data-season]').forEach(b=>b.onclick=()=>{
+      try{ const S=window.BANNON_SEASON; if(S&&S.act) S.act(b.dataset.season, Object.assign({}, b.dataset)); }catch(e){}
+      render(); });
+    // CUT PROMO used to call md.promoCharm, which has never existed in any module — the button was a
+    // toast over dead air. It now runs BANNON_UNIVERSE's real promoBattle/scoreLine engine.
     body.querySelectorAll('[data-promo]').forEach(b=>b.onclick=()=>{ const md=MD(),me=(window.CAREER_ME||'BANNON'); try{ let r=null;
-      if(b.dataset.promo==='charm'&&md.promoCharm) r=md.promoCharm(me); else if(md.backstageMeeting) r=md.backstageMeeting(me);
+      const S=window.BANNON_SEASON;
+      if(S&&S.promo) r=S.promo(me, b.dataset.promo);
+      else if(md.backstageMeeting) r=md.backstageMeeting(me);
       (window.toast||alert)((r&&(r.headline||r.text))||'Promo delivered — momentum up.'); }catch(e){} render(); });
     body.querySelectorAll('[data-turn]').forEach(b=>b.onclick=()=>{ const md=MD(),me=(window.CAREER_ME||'BANNON'); try{ md.pushTurn&&md.pushTurn(me); (window.toast||alert)('Turn teased — the locker room is talking.'); }catch(e){} render(); });
     body.querySelectorAll('[data-sign]').forEach(b=>b.onclick=()=>{ const md=MD(); try{ const c=md.generateContract?md.generateContract(b.dataset.sign):null; (window.toast||alert)(c?('Offer to '+b.dataset.sign+': $'+(c.value||c.salary||0).toLocaleString()+'/wk — '+(c.verdict||'pending')):'Offer sent.'); }catch(e){} });
@@ -43925,10 +43982,23 @@ console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot
     return { carryable:c.carry.length, decor:c.decor.length, wearable:c.wear.length, vehicles:c.vehicles.length,
              weaponized:_weaponized, dressed:Object.keys(_dressed) }; }
 
-  window.BANNON_MDICKIE={ classify:classify, catalog:catalog, weaponize:weaponize,
+  // NAME COLLISION, and it silently killed five screens. `window.BANNON_MDICKIE` was ALREADY the
+  // MDickie career-sim legacy module (CalculateWorth / GenerateContract / GenerateAttendance /
+  // BackstageMeeting / GenerateTournament / SimulateBracket / IdentifyInjury / PushTurn). This block
+  // runs LATER in the file, so a plain `=` replaced it wholesale and every one of those functions
+  // became undefined. Nothing threw — every call site is `md.fn && md.fn(...)` — so the Universe hub
+  // just rendered nothing: CONTRACTS showed every wrestler worth $0, OFFER did nothing, BACKSTAGE had
+  // no meeting and CUT PROMO was a toast over dead air, TEASE A TURN did nothing, TOURNAMENT did
+  // nothing, and the show header printed "live" instead of an attendance because md.attendance was
+  // gone. MERGE onto whatever is already there instead of replacing it — both halves are real and
+  // both are called by name elsewhere. The props half also stands alone as BANNON_MDICKIE_PROPS so a
+  // future module can reach it without going through the shared name.
+  var _propsAPI = { classify:classify, catalog:catalog, weaponize:weaponize,
     spawnWeapon:spawnWeapon, dress:dress, dressedAt:dressedAt, stats:stats,
     redress:function(){ _dressed={}; _placedAt={}; },
     wearables:wearables, wearOn:wearOn, unwear:unwear };
+  window.BANNON_MDICKIE_PROPS = _propsAPI;
+  window.BANNON_MDICKIE = Object.assign(window.BANNON_MDICKIE || {}, _propsAPI);
 
   // wait for BANNON_WORLD's venues.json fetch + the environments module, then arm
   var tries=0;
@@ -48018,7 +48088,9 @@ window.BANNON_LIFE = (function(){
   function isLive(){
     try{
       if(typeof gameState!=='undefined' && gameState!=='fight') return false;
-      if(!window.__godWithinRoam && !window.__universeRoam) return false;
+      // __careerRoam / __freeRoam are the two doors BANNON_SEASON opens. Without them here the world
+      // clock never ticks for CAREER or FREE ROAM and both modes stand still in a dead building.
+      if(!window.__godWithinRoam && !window.__universeRoam && !window.__careerRoam && !window.__freeRoam) return false;
       return !!get().place;
     }catch(e){ return false; }
   }
@@ -51007,6 +51079,855 @@ window.__deriveVariant = async function(key){
   };
   console.log('%c[BANNON_SHOWTIME] entrances and victory moments are yours to control — ' +
     'walk out, get in when you like, leave when you like','color:#7CFC00');
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_SEASON — Universe, Career and Free Roam finally joined into ONE running world.
+//
+// Owner: "get the universe and free roam and career to mdickie and 2k ful integration."
+//
+// Every piece already existed. Nothing joined them, and one of them had been silently deleted by a
+// name collision. What the probe actually found, before a line was written:
+//
+//  1. A CARD ENTRY WAS {a, b, title, main} AND NOTHING ELSE. No match type, no building. Measured:
+//     U.playMatch(card[0]) handed the engine {p1Name, p2Name, p1Control, p2Control} — no matchType,
+//     no venue. So every night, on every show, for the whole life of a save, was a plain singles
+//     match in the same room, while the select screen has 22 match types (12 live) and the venue
+//     picker has 3 base stages plus 96 MDickie buildings. The stipulation vocabulary and the world
+//     were both right there and the season never reached for either.
+//  2. window.BANNON_MDICKIE WAS ASSIGNED TWICE. The MDickie career-sim port (CalculateWorth /
+//     GenerateContract / GenerateAttendance / BackstageMeeting / GenerateTournament /
+//     SimulateBracket / PushTurn) is defined first; the props-and-vehicles surfacing module is
+//     defined ~3,700 lines later and used a plain `=`, wiping it. Nothing threw, because every call
+//     site is `md.fn && md.fn(...)`. It just meant: CONTRACTS listed every wrestler as worth $0,
+//     OFFER did nothing, BACKSTAGE showed no meeting, TEASE A TURN did nothing, TOURNAMENT did
+//     nothing, and the show header printed "live" instead of a crowd. Five dead screens from one
+//     equals sign. Fixed at the source (that block now merges instead of replacing).
+//  3. ELEVEN BANNON_UNIVERSE FUNCTIONS HAD ZERO CALLERS: negotiate, demands, freeAgents, loyalty,
+//     bookingBreach, rivalInterest, ego, promoBattle, scoreLine, feud, simTournament. That is the
+//     entire Negotiations.bb + promo-battle port — the machinery that makes a career feel like
+//     Wrestling Empire — written, correct and unreachable. They all have real callers now.
+//  4. CAREER WAS A READ-ONLY TAB. pmCareer opened the Universe panel on a status page. Meanwhile
+//     BANNON_LIFE — clock, needs, money, 65 places, travel, people, arrest, hospital, sleep — was
+//     only ever started by God Within. A career is living the days between shows; that loop existed
+//     and the career mode could not reach it.
+//  5. FREE ROAM HAD NO FRONT DOOR at all. It was a side effect of entering a story mode.
+//
+// This module is the join, and it adds no parallel state: it stamps fields onto the universe save
+// that BANNON_UNIVERSE already persists, and it drives the existing functions.
+// ============================================================================================
+(function(){
+  'use strict';
+
+  var ST = { armed:false, wrapped:{}, sheet:null, picker:null, lastOffer:null, beats:0 };
+
+  function U(){ return window.BANNON_UNIVERSE || null; }
+  function uget(){ try{ var u=U(); return (u&&u.get)?u.get():null; }catch(e){ return null; } }
+  function usave(u){ try{ var U0=U(); if(U0&&U0.save) U0.save(u); }catch(e){} return u; }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function pretty(n){ return String(n||'').replace(/_/g,' '); }
+  function toast(t){ try{ (window.toast||function(x){ if(window.announce) window.announce(x,''); })(t); }catch(e){} }
+
+  // deterministic per (week, index) so a schedule does not reshuffle every time you look at it
+  function hash(s){ var h=2166136261; s=String(s); for(var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=(h*16777619)>>>0; } return h>>>0; }
+
+  // ── STIPULATIONS ──────────────────────────────────────────────────────────────────────────────
+  // Only types the engine ACTUALLY runs. This mirrors the select screen's live:true set — booking a
+  // stipulation the match engine has never heard of would give you a singles match with a lying
+  // label on it, which is worse than no stipulation.
+  //   weight   how often it turns up in ordinary booking
+  //   heat     feud heat at which it becomes appropriate (a cage is for blood, not for a squash)
+  //   men      how many bodies it needs
+  //   sim      how the paper sim should treat it (injury risk, upset chance)
+  var TYPES = [
+    { id:'ONE_ON_ONE', label:'One on One',            weight:44, heat:0,  men:2, injury:1.0, upset:1.00 },
+    { id:'SUBMISSION', label:'Submission Match',      weight:7,  heat:12, men:2, injury:1.4, upset:0.95 },
+    { id:'IRONMAN',    label:'Iron Man',              weight:4,  heat:24, men:2, injury:1.3, upset:0.80 },
+    { id:'HARDCORE',   label:'No-Rules Hardcore',     weight:8,  heat:20, men:2, injury:2.2, upset:1.25 },
+    { id:'ANYWHERE',   label:'Falls Count Anywhere',  weight:6,  heat:16, men:2, injury:1.7, upset:1.20 },
+    { id:'FIRSTBLOOD', label:'First Blood',           weight:4,  heat:28, men:2, injury:1.9, upset:1.30 },
+    { id:'LMS',        label:'Last One Standing',     weight:5,  heat:26, men:2, injury:2.0, upset:1.10 },
+    { id:'CAGE',       label:'Steel Cage',            weight:5,  heat:34, men:2, injury:1.8, upset:0.90 },
+    { id:'TRIPLE',     label:'Triple Threat',         weight:7,  heat:0,  men:3, injury:1.3, upset:1.35 },
+    { id:'FOURWAY',    label:'Four-Way',              weight:5,  heat:0,  men:4, injury:1.4, upset:1.50 },
+    { id:'ROYALE',     label:'Open Battle Royale',    weight:2,  heat:0,  men:6, injury:1.5, upset:1.70 }
+  ];
+  function typeById(id){ for(var i=0;i<TYPES.length;i++){ if(TYPES[i].id===id) return TYPES[i]; } return TYPES[0]; }
+  function typeLabel(id){ return id ? typeById(id).label : ''; }
+
+  function heatOf(u, a, b){ try{ var U0=U(); return (U0&&U0.rivalry)? (U0.rivalry(u,a,b)||0) : 0; }catch(e){ return 0; } }
+
+  // Pick a stipulation for one booking. A supershow main event with real blood behind it gets the
+  // big one; an undercard on a normal week is usually just a wrestling match, which is correct —
+  // stipulation inflation is what makes a card read as noise.
+  function typeFor(u, m, wk, seed){
+    var heat = heatOf(u, m.a, m.b);
+    var ppv  = (wk>0 && wk%4===0);
+    var pool = TYPES.filter(function(t){ return heat >= t.heat; });
+    // the marquee only unlocks on the big night or in the main event
+    if(!ppv && !m.main) pool = pool.filter(function(t){ return t.heat <= 20; });
+    var r = hash('stip:'+wk+':'+m.a+':'+m.b+':'+(seed||0));
+    // hotter feud and a bigger stage push away from the plain singles match
+    var plainBias = (heat>=30?0.35:heat>=15?0.6:0.9) * (ppv?0.75:1) * (m.main?0.8:1) * (m.title?0.9:1);
+    var total = pool.reduce(function(s,t){ return s + t.weight * (t.id==='ONE_ON_ONE'? plainBias : 1); }, 0);
+    var x = (r % 100000) / 100000 * total;
+    for(var i=0;i<pool.length;i++){
+      var w = pool[i].weight * (pool[i].id==='ONE_ON_ONE'? plainBias : 1);
+      if(x < w) return pool[i].id; x -= w;
+    }
+    return 'ONE_ON_ONE';
+  }
+
+  // multi-man types need bodies. Pull them from the same promotion, healthy, not already booked.
+  function fillField(u, m, need, taken){
+    var have = [m.a, m.b], pool = [];
+    try{
+      var A = u.fighters[m.a] || {};
+      pool = Object.values(u.fighters).filter(function(f){
+        return f.injuredWeeks<=0 && have.indexOf(f.name)<0 && !taken[f.name] && (!A.promo || f.promo===A.promo);
+      });
+      if(pool.length < need-2) pool = Object.values(u.fighters).filter(function(f){
+        return f.injuredWeeks<=0 && have.indexOf(f.name)<0 && !taken[f.name]; });
+    }catch(e){}
+    var extra = [], r = hash('field:'+m.a+':'+m.b+':'+(u.week||0));
+    for(var i=0; i<need-2 && pool.length; i++){
+      var k = (r >>> (i*3)) % pool.length;
+      extra.push(pool[k].name); taken[pool[k].name]=1; pool.splice(k,1);
+    }
+    return extra;
+  }
+
+  // ── VENUES: real buildings, not decorative strings ────────────────────────────────────────────
+  // The Universe panel had an eight-item array of invented venue names that mapped to nothing, so
+  // every show happened in whichever arena you happened to be in. These resolve to a stage the
+  // engine can actually build.
+  function baseStages(){ try{ return (typeof ARENAS!=='undefined' && ARENAS.length) ? ARENAS.slice() : ['FIRE PIT']; }catch(e){ return ['FIRE PIT']; } }
+  // A show can be run anywhere a crowd fits — which in MDickie means most of the world, not just a
+  // building with ARENA in the name. Two sources, because they populate at different times: the
+  // environments the engine has already registered, and BANNON_WORLD's 96 banked MDickie locations
+  // (the same list the venue picker uses), which arrive after a fetch.
+  var VENUE_RX = /ARENA|STADIUM|DOME|COLISEUM|COLOSSEUM|THEATRE|THEATER|HALL|CENTER|CENTRE|GYM|CLUB|WAREHOUSE|YARD|PARK|LOT|ROOFTOP|BAR\b|SCHOOL|CHURCH|TEMPLE|FACTORY|DOCK|BEACH|RING/i;
+  function worldArenas(){
+    var out=[], seen={};
+    function push(id, label){
+      if(!id || seen[id] || id==='ARENA') return;
+      seen[id]=1; out.push({ kind:'LOC', id:id, label:label || String(id).replace(/^LOC_/,'').replace(/_/g,' ') });
+    }
+    try{
+      var E = (window.BANNON_ENVIRONMENTS && window.BANNON_ENVIRONMENTS.ENVS) || [];
+      E.forEach(function(e){
+        var s = String(e.id||'')+' '+String(e.name||'');
+        if(VENUE_RX.test(s)) push(String(e.id), e.name);
+      });
+    }catch(e){}
+    try{
+      var L = (window.BANNON_WORLD && window.BANNON_WORLD.list) ? (window.BANNON_WORLD.list('locations')||[]) : [];
+      L.forEach(function(loc){
+        if(!loc || !loc.name) return;
+        if(!VENUE_RX.test(String(loc.name))) return;
+        push('LOC_'+String(loc.name).toUpperCase().replace(/[^A-Z0-9]/g,'_'), loc.name);
+      });
+    }catch(e){}
+    return out;
+  }
+  function venueList(){
+    var v = baseStages().map(function(a,i){ return { kind:'BASE', idx:i, id:'BASE:'+i, label:a }; });
+    return v.concat(worldArenas());
+  }
+  function venueFor(wk){
+    var L = venueList(); if(!L.length) return null;
+    return L[ hash('venue:'+wk) % L.length ];
+  }
+  function venueById(id){
+    if(!id) return null;
+    var L=venueList(); for(var i=0;i<L.length;i++){ if(L[i].id===id) return L[i]; }
+    return null;
+  }
+  function venueLabel(id){ var v=venueById(id); return v?v.label:''; }
+  // Put the engine in that building. arenaIdx is a file-level `let`, which classic scripts share, so
+  // it is assignable from here — the same shared-lexical-scope trick that makes `fighters` reachable.
+  function applyVenue(id){
+    var v = venueById(id); if(!v) return false;
+    try{
+      if(v.kind==='BASE'){
+        if(typeof arenaIdx!=='undefined') arenaIdx = v.idx % baseStages().length;
+        window.CURRENT_ENV = 'ARENA';
+        var an=document.getElementById('arenaName'); if(an) an.textContent = v.label;
+      } else {
+        window.CURRENT_ENV = v.id;
+      }
+    }catch(e){ return false; }
+    return true;
+  }
+
+  // ── STAMPING: give every card entry a stipulation and a building ──────────────────────────────
+  // Runs over the card whether it was booked by bookWeek or by hand, and it never overwrites a
+  // choice someone made — `_userType` marks a stipulation the player set, and it is left alone.
+  function restyle(u){
+    u = u || uget(); if(!u || !u.card) return 0;
+    var taken={}, n=0;
+    u.card.forEach(function(m){ if(m){ taken[m.a]=1; taken[m.b]=1; (m.extra||[]).forEach(function(x){ taken[x]=1; }); } });
+    u.card.forEach(function(m, i){
+      if(!m) return;
+      if(!m.type){ m.type = typeFor(u, m, u.week, i); n++; }
+      var T = typeById(m.type);
+      if(T.men > 2){ if(!m.extra || m.extra.length !== T.men-2) m.extra = fillField(u, m, T.men, taken); }
+      else if(m.extra) delete m.extra;
+      if(!m.venue){ m.venue = (venueFor(u.week)||{}).id || null; n++; }
+    });
+    if(n){ u._stampedWeek = u.week; usave(u); }
+    return n;
+  }
+
+  // ── BOOKING: the verb 2K Universe is built around, and we did not have ────────────────────────
+  // NO CAPS (owner law): add as many matches to a night as you want. The only refusals are ones the
+  // sim genuinely cannot resolve — a man wrestling himself, or someone who is not in the universe.
+  function participants(m){ return [m.a, m.b].concat(m.extra||[]); }
+  function addMatch(a, b, opts){
+    var u = uget(); if(!u) return null;
+    opts = opts || {};
+    if(!u.fighters[a] || !u.fighters[b]) return null;
+    if(a === b) return null;
+    var m = { a:a, b:b, title:opts.title||null, main:!!opts.main, type:opts.type||null, venue:opts.venue||null, _hand:1 };
+    u.card = u.card || []; u.card.push(m);
+    restyle(u); usave(u);
+    return m;
+  }
+  function removeMatch(i){ var u=uget(); if(!u||!u.card||!u.card[i]) return false; u.card.splice(i,1); usave(u); return true; }
+  function setType(i, id){ var u=uget(); if(!u||!u.card||!u.card[i]) return false;
+    u.card[i].type = id; u.card[i]._userType = 1; delete u.card[i].extra; restyle(u); usave(u); return true; }
+  function setSide(i, side, name){ var u=uget(); if(!u||!u.card||!u.card[i]||!u.fighters[name]) return false;
+    var m=u.card[i]; if(side==='a'){ if(m.b===name) return false; m.a=name; } else { if(m.a===name) return false; m.b=name; }
+    delete m.extra; restyle(u); usave(u); return true; }
+  function setTitle(i, t){ var u=uget(); if(!u||!u.card||!u.card[i]) return false;
+    u.card[i].title = t||null; usave(u); return true; }
+  function setMain(i){ var u=uget(); if(!u||!u.card||!u.card[i]) return false;
+    u.card.forEach(function(m){ if(m) m.main=false; }); u.card[i].main=true; usave(u); return true; }
+  function setVenue(id){ var u=uget(); if(!u) return false;
+    (u.card||[]).forEach(function(m){ if(m) m.venue=id; }); usave(u); return true; }
+
+  // ── PLAYING A BOOKED MATCH FOR REAL ───────────────────────────────────────────────────────────
+  // The original playMatch built MATCH_SETUP and called startFight in one statement, so there was no
+  // seam to enrich. This replaces it rather than wrapping it — the whole body is four lines and
+  // pretending otherwise with a stub-startFight trick would be worse to read.
+  function playMatch(m){
+    var u = uget();
+    try{
+      if(u){ restyle(u); }
+      window.__universeMatch = m;
+      if(m.venue) applyVenue(m.venue);
+      var T = typeById(m.type);
+      var extra = m.extra || [];
+      window.MATCH_SETUP = {
+        p1Name:m.a, p2Name:m.b, p3Name:extra[0]||null, p4Name:extra[1]||null,
+        p1Control:'YOU', p2Control:'CPU',
+        matchType: m.type || 'ONE_ON_ONE',
+        venue: m.venue || null,
+        title: m.title || null,
+        stage: (venueById(m.venue)||{}).idx || 0
+      };
+      if(typeof startFight==='function') startFight();
+      else if(window.startFight) window.startFight();
+      if(m.type && m.type!=='ONE_ON_ONE') toast(T.label.toUpperCase()+(m.title?(' · '+m.title):''));
+    }catch(e){}
+    return m;
+  }
+
+  // ── SIMULATING ONE, WITH THE STIPULATION MATTERING ────────────────────────────────────────────
+  function simMatch(u, m){
+    u = u || uget(); if(!u || !m) return null;
+    var U0 = U(); if(!U0) return null;
+    var T = typeById(m.type);
+    var field = participants(m).filter(function(n){ return u.fighters[n]; });
+    if(field.length < 2) return null;
+    // upset multiplier widens the variance band — a four-way is a lottery, an Iron Man is not
+    var scored = field.map(function(n){
+      var f = u.fighters[n];
+      var swing = 0.8 + (Math.random() * 0.5 * T.upset);
+      return { n:n, s:U0.rating(f) * swing };
+    }).sort(function(x,y){ return y.s - x.s; });
+    var win = scored[0].n, lose = scored[1].n;
+    var res = U0.applyResult(u, m, win, lose);
+    // injury odds ride the stipulation. applyResult already rolled its own 6%; this is the extra
+    // risk the stipulation adds, and only for the types that earn it.
+    if(T.injury > 1.05){
+      field.forEach(function(n){
+        if(n === win) return;
+        if(Math.random() < 0.05 * (T.injury - 1)){
+          var f = u.fighters[n]; if(!f) return;
+          f.injuredWeeks = Math.max(f.injuredWeeks||0, 1 + Math.floor(Math.random()*3));
+          u.news.push('W'+u.week+': '+n+' hurt in the '+T.label+' — out '+f.injuredWeeks+'wk.');
+        }
+      });
+    }
+    if(field.length > 2) u.news.push('W'+u.week+': '+win+' won the '+T.label+' over '+(field.length-1)+' others.');
+    // the match itself is heat: a stipulation brawl deepens the feud it came out of
+    try{ if(U0.feud) U0.feud(u, m.a, m.b, T.heat>=20 ? 4 : 2); }catch(e){}
+    return res;
+  }
+
+  // ── THE WEEKLY BEAT: this is where the eleven orphans do their work ────────────────────────────
+  function weeklyBeat(u){
+    u = u || uget(); if(!u) return;
+    var U0 = U(); if(!U0) return;
+    ST.beats++;
+    var me = window.CAREER_ME || 'BANNON';
+
+    // 0. YOUR MAN IS ON THE SHOW. bookWeek books by rating, so in a 120-man universe the wrestler
+    //    whose career you are playing simply might not make the card — and BANNON_LIFE's diary only
+    //    creates an appointment for matches you are IN, so a career could go weeks with nothing to
+    //    turn up to. Measured on a fresh save: diary 0. If you are healthy and unbooked, you get
+    //    booked, against the man you have the most heat with.
+    try{
+      var mine = u.fighters[me];
+      var booked = (u.card||[]).some(function(m){ return m && participants(m).indexOf(me)>=0; });
+      if(mine && !booked && mine.injuredWeeks<=0){
+        var taken0={}; (u.card||[]).forEach(function(m){ if(m) participants(m).forEach(function(n){ taken0[n]=1; }); });
+        var foe = null;
+        var hot = (U0.topFeuds(u, 12)||[]).filter(function(f){ return f.pair.indexOf(me)>=0; });
+        for(var i=0;i<hot.length && !foe;i++){
+          var other = hot[i].pair[0]===me ? hot[i].pair[1] : hot[i].pair[0];
+          if(u.fighters[other] && u.fighters[other].injuredWeeks<=0 && !taken0[other]) foe = other;
+        }
+        if(!foe){
+          var cands = Object.values(u.fighters).filter(function(f){
+            return f.name!==me && f.injuredWeeks<=0 && !taken0[f.name] && f.promo===mine.promo; });
+          if(!cands.length) cands = Object.values(u.fighters).filter(function(f){
+            return f.name!==me && f.injuredWeeks<=0 && !taken0[f.name]; });
+          if(cands.length) foe = cands[hash('yourfoe'+u.week+me) % cands.length].name;
+        }
+        if(foe){
+          u.card = u.card || [];
+          u.card.push({ a:me, b:foe, title:null, main:false, type:null, venue:null, _yours:1 });
+          u._stampedWeek = null; restyle(u);
+        }
+      }
+    }catch(e){}
+
+    // 1. BOOKING BREACH (bookingBreach) — a man with creative control who is booked to lose refuses.
+    //    Classic MDickie, and now it actually changes the card instead of being a function nobody ran.
+    (u.card||[]).forEach(function(m){
+      if(!m || m._done) return;
+      try{
+        // the paper sim's likely loser is the lower-rated man
+        var A=u.fighters[m.a], B=u.fighters[m.b]; if(!A||!B) return;
+        var loser = (U0.rating(A) >= U0.rating(B)) ? m.b : m.a;
+        var br = U0.bookingBreach(u, loser, true);
+        if(br && br.refuses){ m._breach = loser; }
+      }catch(e){}
+    });
+
+    // 2. FEUD (feud) — last week's results are this week's bad blood, which is what feeds the
+    //    stipulation picker above. Without this the heat graph never moved on its own.
+    try{
+      (u.history||[]).filter(function(h){ return h.week === (u.week-1); }).forEach(function(h){
+        U0.feud(u, h.a, h.b, h.title ? 5 : 2);
+      });
+    }catch(e){}
+
+    // 3. PROMO BATTLE (promoBattle + scoreLine) — the hottest feud that is not booked tonight cuts
+    //    a promo instead, so a rivalry can build on the mic like it does on television.
+    try{
+      var feuds = (U0.topFeuds(u, 6) || []).filter(function(f){
+        return !(u.card||[]).some(function(m){ return m && ((m.a===f.pair[0]&&m.b===f.pair[1])||(m.a===f.pair[1]&&m.b===f.pair[0])); });
+      });
+      if(feuds.length && feuds[0].heat >= 10){
+        var p = feuds[0].pair;
+        var KW = [['callout','insult'],['threat','catchphrase'],['betrayal','respect']];
+        var aL = [KW[hash('pa'+u.week+p[0])%3], KW[hash('pa2'+u.week+p[0])%3]];
+        var bL = [KW[hash('pb'+u.week+p[1])%3], KW[hash('pb2'+u.week+p[1])%3]];
+        var pb = U0.promoBattle(u, p[0], p[1], aL, bL);
+        if(pb && pb.brawl) u.news.push('W'+u.week+': the '+p[0]+' / '+p[1]+' promo turned into a brawl.');
+      }
+    }catch(e){}
+
+    // 4. FREE AGENCY (freeAgents + rivalInterest + ego + loyalty + demands) — expiring deals get
+    //    picked up by whoever wants them most, and if it is YOUR deal that ran out, you get an offer
+    //    on the table instead of the number just quietly resetting.
+    //
+    //    RENEWALS matter as much as expiries. Contracts are seeded at 26–78 weeks, so on a fresh
+    //    save NOBODY is a free agent for half a year — measured: 14 weeks in, freeAgents 0, zero
+    //    signings, zero walk-outs, and the whole negotiation port still had nothing to do. Talks
+    //    open when a deal has FOUR WEEKS left, which is when a promotion would actually start them,
+    //    and that is what makes the screen live from the first month.
+    try{
+      var expiring = Object.values(u.fighters).filter(function(f){
+        return f.contractWeeks > 0 && f.contractWeeks <= 4 && f.name !== me; });
+      expiring.forEach(function(f){
+        try{
+          var d0 = U0.demands(u, f.name); if(!d0) return;
+          // A MAN WHO WANTS CREATIVE CONTROL DOES NOT GET RENEWED QUIETLY. Without this, renewals at
+          // 0.80–1.01x always cleared the bar, every deal rolled over, and NOBODY on a 120-man
+          // roster ever reached free agency — measured: 32 weeks in, freeAgents 0, and therefore
+          // zero creative-control clauses and zero booking breaches, because both live behind a man
+          // actually hitting the market. He takes a rival's call instead, and a rival will hand him
+          // the clause his own promotion refuses — which is how a star ends up with creative control
+          // and how bookingBreach finally has someone to fire on.
+          if(d0.creativeControl){
+            var rivals = (u.promos||[]).filter(function(p){ return p !== f.promo; });
+            if(rivals.length){
+              var pk = rivals[hash('cc'+u.week+f.name) % rivals.length];
+              var bid = { salary: Math.round(d0.salary*1.05), merchCut:d0.merchCut, creativeControl:true,
+                          length:d0.length, signBonus:d0.signBonus };
+              var cr = U0.negotiate(u, f.name, pk, bid);
+              if(cr && cr.accept) u.news.push('W'+u.week+': '+f.name+' left '+f.promo+' for '+pk+' — with creative control.');
+            }
+            return;
+          }
+          var loy0 = U0.loyalty(f);
+          // the home promotion opens at a discount scaled by how loyal he is; a hot property gets
+          // to say no and hit the market when his deal runs out
+          var home = { salary: Math.round(d0.salary * (0.80 + loy0/400)), merchCut: Math.round(d0.merchCut*0.8),
+                       creativeControl:false, length:d0.length, signBonus:0 };
+          var rr = U0.negotiate(u, f.name, f.promo, home);
+          if(rr && rr.walk) u.news.push('W'+u.week+': '+f.name+' broke off renewal talks with '+f.promo+'.');
+        }catch(e){}
+      });
+    }catch(e){}
+    try{
+      var fa = U0.freeAgents(u) || [];
+      fa.forEach(function(a){
+        var f = u.fighters[a.name]; if(!f) return;
+        if(a.name === me){ ST.lastOffer = buildOfferTo(me); return; }   // yours is a decision, not a dice roll
+        // a rival promotion's interest decides whether anyone bothers
+        var interest = U0.rivalInterest(u, f);
+        var d = U0.demands(u, a.name);
+        if(!d) return;
+        var promos = (u.promos||[]).filter(function(p){ return p !== f.promo; });
+        if(!promos.length) return;
+        var pick = promos[hash('fa'+u.week+a.name) % promos.length];
+        // they offer roughly what the fighter is worth to them; loyalty pulls back toward home
+        var loy = U0.loyalty(f);
+        var offer = { salary: Math.round(d.salary * (0.85 + (interest/Math.max(1,d.salary))*0.2)),
+                      // a rival prising a man loose gives him the clause he is asking for — that is
+                      // the leverage. It is also the ONLY way creativeControl ever gets set on a
+                      // fighter, and therefore the only way bookingBreach ever has anyone to fire on.
+                      merchCut: d.merchCut, creativeControl: d.creativeControl,
+                      length: d.length, signBonus: d.signBonus };
+        var r = U0.negotiate(u, a.name, (loy > 70 && Math.random() < 0.6) ? f.promo : pick, offer);
+        if(r && r.walk) u.news.push('W'+u.week+': '+a.name+' is still a free agent — talks collapsed.');
+      });
+    }catch(e){}
+
+    // 5. TOURNAMENT (generateTournament + simTournament) — a promotion with no champion runs a cup
+    //    to crown one. simTournament had never been called by anything.
+    try{
+      if(!u.tournament && (u.week % 8 === 0)){
+        var open = (u.promos||[]).filter(function(p){ return !u.titles[p+' World']; });
+        var pr = open.length ? open[0] : (u.promos||[])[hash('cup'+u.week) % Math.max(1,(u.promos||[]).length)];
+        if(pr){ U0.generateTournament(u, pr, 8); var tr = U0.simTournament(u);
+          if(tr && !u.titles[pr+' World']){ u.titles[pr+' World'] = tr.winner;
+            if(u.fighters[tr.winner]) u.fighters[tr.winner].title = pr+' World';
+            u.news.push('W'+u.week+': '+tr.winner+' is the new '+pr+' World champion.'); } }
+      }
+    }catch(e){}
+
+    usave(u);
+  }
+
+  // what a promotion puts in front of YOU when your deal runs out
+  function buildOfferTo(name){
+    var u = uget(), U0 = U(); if(!u || !U0) return null;
+    var f = u.fighters[name]; if(!f) return null;
+    var d = U0.demands(u, name); if(!d) return null;
+    var promos = (u.promos||[]).slice();
+    return promos.map(function(p){
+      var home = (p === f.promo);
+      // your own promotion leans on loyalty and lowballs a little; a rival has to buy you out
+      var mult = home ? 0.92 : 1.08;
+      return { promo:p, home:home,
+        salary: Math.round(d.salary * mult), merchCut: d.merchCut, length: d.length,
+        creativeControl: !home && d.creativeControl, signBonus: home ? 0 : d.signBonus };
+    });
+  }
+
+  // ── FREE AGENCY SCREEN ────────────────────────────────────────────────────────────────────────
+  function agencyHTML(){
+    var u = uget(), U0 = U();
+    if(!u || !U0) return '<div>Universe not loaded.</div>';
+    var me = window.CAREER_ME || 'BANNON';
+    var h = '';
+    var mine = u.fighters[me];
+
+    // YOUR deal first — this is the career half of the screen
+    if(mine){
+      var wks = mine.contractWeeks|0;
+      h += '<div class="uni-h">YOUR DEAL</div>';
+      h += '<div class="uni-row"><span>'+esc(pretty(me))+' · '+esc(mine.promo||'unsigned')+'</span>'+
+           '<span>'+(wks>0 ? (wks+' weeks left') : '<b style="color:#ff9a4a">EXPIRED</b>')+'</span></div>';
+      try{
+        var d = U0.demands(u, me);
+        h += '<div class="uni-row"><span>Worth / ego / loyalty</span><span>$'+U0.worth(mine).toLocaleString()+
+             ' · '+U0.ego(mine)+' · '+U0.loyalty(mine)+'</span></div>';
+        if(d) h += '<div class="uni-row"><span>You would ask for</span><span>$'+d.salary.toLocaleString()+
+             '/wk · '+d.merchCut+'% merch'+(d.creativeControl?' · creative control':'')+'</span></div>';
+      }catch(e){}
+      var offers = buildOfferTo(me) || [];
+      if(wks <= 0 && offers.length){
+        h += '<div class="uni-h">ON THE TABLE</div>';
+        offers.forEach(function(o){
+          h += '<div class="uni-row"><span>'+esc(o.promo)+(o.home?' <span style="opacity:.6">(home)</span>':'')+
+               '</span><span>$'+o.salary.toLocaleString()+'/wk · '+o.length+'w'+
+               (o.creativeControl?' · CC':'')+' <button class="uni-act" data-season="signme" data-promo="'+esc(o.promo)+'">SIGN</button></span></div>';
+        });
+      }
+    }
+
+    // THE BOARD — everyone you could actually sign right now. Free agents first, then the men whose
+    // deals are nearly up, because a board that only lists expiries is empty for the first half-year
+    // of a save and there is nothing to do on it.
+    var fa = [], soon = [];
+    try{ fa = U0.freeAgents(u) || []; }catch(e){}
+    try{ soon = Object.values(u.fighters)
+      .filter(function(f){ return f.contractWeeks > 0 && f.contractWeeks <= 8 && f.name !== me; })
+      .sort(function(a,b){ return a.contractWeeks - b.contractWeeks; })
+      .map(function(f){ return { name:f.name, weeks:f.contractWeeks }; }); }catch(e){}
+
+    function line(name, tag){
+      var f = u.fighters[name]; if(!f) return '';
+      var d = null; try{ d = U0.demands(u, name); }catch(e){}
+      var ri = 0; try{ ri = U0.rivalInterest(u, f); }catch(e){}
+      return '<div class="uni-row"><span>'+esc(pretty(name))+' <span style="opacity:.55;font-size:10px">'+esc(f.promo||'')+
+           (ri ? (' · rival interest $'+ri.toLocaleString()) : '')+
+           ' · ego '+U0.ego(f)+' · loyal '+U0.loyalty(f)+'</span></span><span>'+
+           (d ? ('$'+d.salary.toLocaleString()+'/wk') : '') + ' <span style="opacity:.5;font-size:10px">'+esc(tag)+'</span>'+
+           ' <button class="uni-act" data-season="offer" data-who="'+esc(name)+'">OFFER</button>'+
+           ' <button class="uni-act" data-season="lowball" data-who="'+esc(name)+'">LOWBALL</button></span></div>';
+    }
+
+    h += '<div class="uni-h">FREE AGENTS ('+fa.length+')</div>';
+    if(!fa.length) h += '<div style="opacity:.7">Nobody is out of contract right now.</div>';
+    fa.slice(0, 20).forEach(function(a){ h += line(a.name, 'unsigned'); });
+
+    h += '<div class="uni-h">DEALS RUNNING DOWN ('+soon.length+')</div>';
+    if(!soon.length) h += '<div style="opacity:.7">Every deal has more than eight weeks on it.</div>';
+    soon.slice(0, 20).forEach(function(s){ h += line(s.name, s.weeks+'w left'); });
+    // The reply to your last offer has to be part of the RENDER, not written into the DOM after it.
+    // The panel's click delegate calls render() right after act(), which replaces #uniBody wholesale
+    // — so a message poked into #agencyOut was destroyed in the same tick it was written. Measured:
+    // offerResult null every time, even though the negotiation had genuinely resolved.
+    h += '<div id="agencyOut" style="margin-top:8px;color:#e8c15a;min-height:18px">'+esc(ST.agencyMsg||'')+'</div>';
+    return h;
+  }
+
+  function agencyOut(txt){ ST.agencyMsg = txt;
+    var el=document.getElementById('agencyOut'); if(el) el.textContent = txt; }
+
+  // ── PROMOS, THROUGH THE REAL ENGINE ───────────────────────────────────────────────────────────
+  // CUT PROMO used to call md.promoCharm, a function that has never existed in this file.
+  function promo(me, kind){
+    var u = uget(), U0 = U(); if(!u || !U0) return null;
+    var foe = null;
+    try{
+      var rv = U0.rivalsOf(u, me) || [];
+      foe = rv[0] || Object.keys(u.fighters).filter(function(k){ return k!==me; })[0];
+    }catch(e){}
+    if(!foe) return null;
+    var mine = (kind === 'callout') ? [['callout','threat'],['insult','catchphrase']]
+                                    : [['catchphrase','respect'],['callout','cheapheat']];
+    var theirs = [['insult','threat'],['cheapheat','awkward']];
+    var r = U0.promoBattle(u, me, foe, mine, theirs);
+    if(!r) return null;
+    if(kind === 'callout'){ try{ U0.feud(u, me, foe, 8); }catch(e){} }
+    return { headline: (r.winner === me ? 'You got the better of ' : 'You got shown up by ') +
+             pretty(foe) + ' (' + r.sa + '-' + r.sb + ')' + (r.brawl ? ' — and it spilled into a brawl.' : '.') };
+  }
+
+  // ── THE BOOKING SHEET ─────────────────────────────────────────────────────────────────────────
+  function sheetEl(){
+    if(ST.sheet) return ST.sheet;
+    var d = document.createElement('div');
+    d.id = 'seasonSheet';
+    d.style.cssText = 'position:fixed;inset:4% 5%;z-index:100040;background:#080a10f8;border:1px solid #e8c15a;'+
+      'border-radius:12px;color:#e8e2d4;font:12px var(--f-ui);display:none;flex-direction:column;'+
+      'box-shadow:0 12px 44px #000d;overflow:hidden';
+    document.body.appendChild(d);
+    ST.sheet = d; return d;
+  }
+  function roster(){ var u=uget(); return u ? Object.keys(u.fighters).sort() : []; }
+  function sheetHTML(){
+    var u = uget(); if(!u) return '<div style="padding:14px">Universe not loaded.</div>';
+    var names = roster();
+    var opts = function(sel){ return names.map(function(n){
+      return '<option value="'+esc(n)+'"'+(n===sel?' selected':'')+'>'+esc(pretty(n))+'</option>'; }).join(''); };
+    var titles = ['']. concat(Object.keys(u.titles||{}));
+    var h = '<div style="padding:10px 14px;border-bottom:1px solid #e8c15a44;display:flex;align-items:center;gap:10px">'+
+      '<b style="font-family:\'Bebas Neue\';letter-spacing:3px;font-size:19px;color:#e8c15a">📋 BOOKING SHEET</b>'+
+      '<span style="opacity:.7">Week '+(u.week||1)+' · '+(u.card||[]).length+' matches · no limit</span>'+
+      '<button id="seasonSheetClose" style="margin-left:auto;background:#2a1408;border:1px solid #e8c15a66;color:#e8c15a;'+
+      'border-radius:6px;padding:5px 12px;cursor:pointer;font:700 11px var(--f-ui)">CLOSE</button></div>'+
+      '<div style="padding:12px 14px;overflow-y:auto;flex:1">';
+
+    // the building the whole night runs in
+    h += '<div class="uni-h">THE BUILDING</div><select data-sheet="venue" style="width:100%;padding:6px;background:#12141c;'+
+         'color:#e8e2d4;border:1px solid #ffffff22;border-radius:6px">' +
+         venueList().map(function(v){
+           var on = (u.card||[]).length && u.card[0].venue===v.id;
+           return '<option value="'+esc(v.id)+'"'+(on?' selected':'')+'>'+esc(v.label)+'</option>'; }).join('') +
+         '</select>';
+
+    h += '<div class="uni-h" style="margin-top:12px">THE CARD</div>';
+    (u.card||[]).forEach(function(m, i){
+      if(!m) return;
+      h += '<div style="border:1px solid #ffffff1a;border-radius:8px;padding:8px;margin-bottom:8px'+
+           (m.main?';border-color:#e8c15a88':'')+'">'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+
+          '<select data-sheet="a" data-idx="'+i+'" style="flex:1;min-width:120px;padding:5px;background:#12141c;color:#e8e2d4;border:1px solid #ffffff22;border-radius:6px">'+opts(m.a)+'</select>'+
+          '<b style="color:#e8c15a">vs</b>'+
+          '<select data-sheet="b" data-idx="'+i+'" style="flex:1;min-width:120px;padding:5px;background:#12141c;color:#e8e2d4;border:1px solid #ffffff22;border-radius:6px">'+opts(m.b)+'</select>'+
+        '</div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px">'+
+          '<select data-sheet="type" data-idx="'+i+'" style="flex:1;min-width:130px;padding:5px;background:#12141c;color:#e8e2d4;border:1px solid #ffffff22;border-radius:6px">'+
+            TYPES.map(function(t){ return '<option value="'+t.id+'"'+(t.id===m.type?' selected':'')+'>'+esc(t.label)+'</option>'; }).join('')+
+          '</select>'+
+          '<select data-sheet="title" data-idx="'+i+'" style="flex:1;min-width:130px;padding:5px;background:#12141c;color:#e8e2d4;border:1px solid #ffffff22;border-radius:6px">'+
+            titles.map(function(t){ return '<option value="'+esc(t)+'"'+(t===(m.title||'')?' selected':'')+'>'+(t?('🏆 '+esc(t)):'no title')+'</option>'; }).join('')+
+          '</select>'+
+          '<button class="uni-act" data-sheet="main" data-idx="'+i+'">'+(m.main?'★ MAIN':'MAKE MAIN')+'</button>'+
+          '<button class="uni-act" data-sheet="del" data-idx="'+i+'">✕</button>'+
+        '</div>'+
+        (m.extra&&m.extra.length ? '<div style="margin-top:5px;font:10px var(--f-mono);color:#9a9a8a">also in: '+esc(m.extra.map(pretty).join(', '))+'</div>' : '')+
+        (m._breach ? '<div style="margin-top:5px;font:10px var(--f-mono);color:#ff7a6b">⚠ '+esc(pretty(m._breach))+' has creative control and refuses to lose.</div>' : '')+
+      '</div>';
+    });
+    h += '<button class="uni-act" data-sheet="add">➕ ADD A MATCH</button>';
+    h += '</div>';
+    return h;
+  }
+  function openSheet(){
+    var d = sheetEl(); d.innerHTML = sheetHTML(); d.style.display = 'flex';
+    var cl = d.querySelector('#seasonSheetClose'); if(cl) cl.onclick = function(){ d.style.display='none'; try{ if(window.openUniverse) window.openUniverse(); }catch(e){} };
+    d.querySelectorAll('select[data-sheet]').forEach(function(s){
+      s.onchange = function(){
+        var i = +s.dataset.idx, k = s.dataset.sheet, v = s.value;
+        if(k==='a') setSide(i,'a',v); else if(k==='b') setSide(i,'b',v);
+        else if(k==='type') setType(i, v); else if(k==='title') setTitle(i, v||null);
+        else if(k==='venue') setVenue(v);
+        openSheet();
+      };
+    });
+    d.querySelectorAll('button[data-sheet]').forEach(function(b){
+      b.onclick = function(){
+        var k = b.dataset.sheet, i = +b.dataset.idx;
+        if(k==='del') removeMatch(i);
+        else if(k==='main') setMain(i);
+        else if(k==='add') quickAdd();
+        openSheet();
+      };
+    });
+  }
+  // ADD A MATCH picks two people who are not booked yet, so the button always produces something
+  // real; you then change either side from the dropdowns.
+  function quickAdd(){
+    var u = uget(); if(!u) return null;
+    var taken = {}; (u.card||[]).forEach(function(m){ if(m) participants(m).forEach(function(n){ taken[n]=1; }); });
+    var free = Object.values(u.fighters).filter(function(f){ return !taken[f.name] && f.injuredWeeks<=0; });
+    if(free.length < 2) free = Object.values(u.fighters).filter(function(f){ return f.injuredWeeks<=0; });
+    if(free.length < 2) return null;
+    return addMatch(free[0].name, free[1].name, {});
+  }
+
+  // ── THE DELEGATE the Universe panel calls ─────────────────────────────────────────────────────
+  function act(cmd, ds){
+    ds = ds || {};
+    var u = uget(), U0 = U();
+    if(cmd === 'sheet' || cmd === 'edit'){ openSheet(); return true; }
+    if(cmd === 'add'){ quickAdd(); return true; }
+    if(cmd === 'signme'){
+      var me = window.CAREER_ME || 'BANNON';
+      var offers = buildOfferTo(me) || [];
+      var o = offers.filter(function(x){ return x.promo === ds.promo; })[0];
+      if(!o || !U0) return false;
+      var r = U0.negotiate(u, me, o.promo, o);
+      toast(r && r.accept ? ('Signed with '+o.promo+'.') : (r && r.walk ? 'They pulled the offer.' : 'They want more.'));
+      return true;
+    }
+    if(cmd === 'offer' || cmd === 'lowball'){
+      if(!U0 || !u) return false;
+      var who = ds.who, f = u.fighters[who]; if(!f) return false;
+      var d = U0.demands(u, who); if(!d) return false;
+      // 0.40 sits right on the walk-out boundary once ego and loyalty are in — so LOWBALL is a real
+      // gamble that sometimes saves you money and sometimes loses you the wrestler, rather than a
+      // strictly-worse button. Measured: score lands either side of the walk threshold of 33.
+      var mult = (cmd === 'lowball') ? 0.40 : 1.0;
+      var promoK = (window.CAREER_PROMO) || (u.fighters[window.CAREER_ME||'BANNON']||{}).promo || (u.promos||[])[0];
+      var offer = { salary: Math.round(d.salary*mult), merchCut: Math.round(d.merchCut*mult),
+                    creativeControl: (cmd!=='lowball') && d.creativeControl, length:d.length,
+                    signBonus: Math.round(d.signBonus*mult) };
+      var res = U0.negotiate(u, who, promoK, offer);
+      if(res.accept)      agencyOut(pretty(who)+' signed with '+promoK+' for $'+offer.salary.toLocaleString()+'/wk.');
+      else if(res.walk)   agencyOut(pretty(who)+' walked out — insulted.');
+      else                agencyOut(pretty(who)+' wants $'+res.demand.salary.toLocaleString()+'/wk'+
+                            (res.demand.creativeControl?' and creative control':'')+'.');
+      return true;
+    }
+    return false;
+  }
+
+  // ── CAREER AS A MODE ──────────────────────────────────────────────────────────────────────────
+  function pickerEl(){
+    if(ST.picker) return ST.picker;
+    var d = document.createElement('div');
+    d.id = 'seasonPicker';
+    d.style.cssText = 'position:fixed;inset:6% 6%;z-index:100041;background:#080a10f8;border:1px solid #7CFC0088;'+
+      'border-radius:12px;color:#e8e2d4;font:12px var(--f-ui);display:none;flex-direction:column;'+
+      'box-shadow:0 12px 44px #000d;overflow:hidden';
+    document.body.appendChild(d);
+    ST.picker = d; return d;
+  }
+  function openCareerPicker(){
+    var u = uget(); if(!u){ enterWorld('BANNON', 'career'); return; }
+    var U0 = U();
+    var d = pickerEl();
+    var list = Object.values(u.fighters).sort(function(a,b){ return U0.rating(b)-U0.rating(a); });
+    var h = '<div style="padding:10px 14px;border-bottom:1px solid #7CFC0044;display:flex;align-items:center;gap:10px">'+
+      '<b style="font-family:\'Bebas Neue\';letter-spacing:3px;font-size:19px;color:#7CFC00">📈 WHOSE CAREER?</b>'+
+      '<span style="opacity:.7">you will live his days, not just his matches</span>'+
+      '<button id="seasonPickClose" style="margin-left:auto;background:#0d2a08;border:1px solid #7CFC0066;color:#7CFC00;'+
+      'border-radius:6px;padding:5px 12px;cursor:pointer;font:700 11px var(--f-ui)">CANCEL</button></div>'+
+      '<div style="padding:10px 14px;overflow-y:auto;flex:1">';
+    list.slice(0, 140).forEach(function(f){
+      h += '<div class="uni-row" style="cursor:pointer" data-pick="'+esc(f.name)+'">'+
+           '<span>'+esc(pretty(f.name))+' <span style="opacity:.55;font-size:10px">'+esc(f.promo||'')+
+           ' · '+(f.allegiance||'')+'</span></span>'+
+           '<span>'+(f.wins||0)+'-'+(f.losses||0)+(f.title?' 🏆':'')+' · '+(f.contractWeeks|0)+'w</span></div>';
+    });
+    h += '</div>';
+    d.innerHTML = h; d.style.display = 'flex';
+    d.querySelector('#seasonPickClose').onclick = function(){ d.style.display='none'; };
+    d.querySelectorAll('[data-pick]').forEach(function(r){
+      r.onclick = function(){ d.style.display='none'; enterWorld(r.dataset.pick, 'career'); };
+    });
+  }
+
+  // One door into the living world, used by both CAREER and FREE ROAM. It deliberately does NOT go
+  // through BANNON_GODWITHIN.start — that mode sets up a daemon story frame and a scripted rival,
+  // which is right for God Within and wrong for a career.
+  function enterWorld(me, mode){
+    me = me || 'BANNON';
+    try{
+      window.CAREER_ME = me;
+      var u = uget();
+      if(u && u.fighters[me]) window.CAREER_PROMO = u.fighters[me].promo;
+      window.__careerRoam = (mode === 'career');
+      window.__freeRoam   = (mode === 'roam');
+      window.__godWithinRoam = false;
+      window.MATCH_SETUP = { p1Name:me, p2Name:(u&&U()&&(U().rivalsOf(u,me)||[])[0]) || 'VIPER',
+                             p1Control:'YOU', p2Control:'AI', matchType:'ONE_ON_ONE' };
+      // the world decides where you wake up (home, a cell you have not finished, a hospital bed)
+      var at = null;
+      if(window.BANNON_LIFE && window.BANNON_LIFE.start) at = window.BANNON_LIFE.start({ me: me });
+      if(at) window.CURRENT_ENV = at;
+      if(typeof startFight === 'function') startFight();
+      else if(window.startFight) window.startFight();
+      try{ if(at && window.BANNON_ENVIRONMENTS && window.BANNON_ENVIRONMENTS.buildCurrent) window.BANNON_ENVIRONMENTS.buildCurrent(); }catch(e){}
+      // bookings become diary appointments the moment you are in the world
+      try{ if(window.BANNON_LIFE && window.BANNON_LIFE.syncDiary) window.BANNON_LIFE.syncDiary(); }catch(e){}
+      try{ if(window.BANNON_LIFE_UI && window.BANNON_LIFE_UI.open) window.BANNON_LIFE_UI.open(); }catch(e){}
+      var gw = document.getElementById('gwBanner'); if(gw) gw.style.display = 'block';
+      try{ if(typeof announce === 'function')
+        announce(mode==='career' ? 'CAREER' : 'FREE ROAM',
+                 mode==='career' ? (pretty(me)+' — live the week, make the show') : 'go wherever you like'); }catch(e){}
+    }catch(e){}
+    return true;
+  }
+  function career(name){ if(name) return enterWorld(name, 'career'); openCareerPicker(); return true; }
+  function freeRoam(){ return enterWorld(window.CAREER_ME || 'BANNON', 'roam'); }
+
+  // ── ARM ───────────────────────────────────────────────────────────────────────────────────────
+  function arm(){
+    if(ST.armed) return true;
+    var U0 = U(); if(!U0 || !U0.get) return false;
+
+    // STAMP ON get(), NOT ON bookWeek. Wrapping the exported bookWeek looked right and measured
+    // WRONG: allTyped=false, typeSpread=[null] on a fresh universe. BANNON_UNIVERSE is an IIFE and
+    // both newUniverse() and advanceWeek() call the CLOSURE-LOCAL `bookWeek(u)`, never the property
+    // on the returned object — so replacing the property intercepts nothing that matters. get() is
+    // the one funnel every reader goes through, and the _stampedWeek guard keeps it O(1) after the
+    // first call in a week, so this costs nothing in the render loop.
+    if(U0.get && !U0.get.__season){
+      var _get = U0.get;
+      var gt = function(){ var u = _get.apply(this, arguments);
+        try{ if(u && u._stampedWeek !== u.week){ restyle(u); u._stampedWeek = u.week; } }catch(e){}
+        return u; };
+      gt.__season = true; U0.get = gt; ST.wrapped.get = true;
+    }
+    // bookWeek is still wrapped for anyone who calls the export directly (the panel's
+    // ensureUniverse() does exactly that when a save has an empty card).
+    if(U0.bookWeek && !U0.bookWeek.__season){
+      var _bw = U0.bookWeek;
+      var bw = function(u){ var card = _bw.apply(this, arguments);
+        try{ if(u){ u.card = card; u._stampedWeek = null; restyle(u); card = u.card; } }catch(e){}
+        return card; };
+      bw.__season = true; U0.bookWeek = bw; ST.wrapped.bookWeek = true;
+    }
+    // playMatch: carry the stipulation and the building into the engine
+    if(U0.playMatch && !U0.playMatch.__season){
+      playMatch.__season = true; U0._playMatchBase = U0.playMatch; U0.playMatch = playMatch; ST.wrapped.playMatch = true;
+    }
+    // simMatch: let the stipulation decide the shape of the result
+    if(U0.simMatch && !U0.simMatch.__season){
+      simMatch.__season = true; U0._simMatchBase = U0.simMatch; U0.simMatch = simMatch; ST.wrapped.simMatch = true;
+    }
+    // reset / newUniverse hand their return value straight back without going through get(), so a
+    // caller holding that object saw an unstamped card. Measured: allTyped false, typeSpread [null]
+    // on the object U.reset() returns, even though the very next U.get() was correct.
+    ['reset','newUniverse'].forEach(function(k){
+      if(U0[k] && !U0[k].__season){
+        var _f = U0[k];
+        var g = function(){ var u = _f.apply(this, arguments);
+          try{ if(u){ u._stampedWeek = null; restyle(u); } }catch(e){} return u; };
+        g.__season = true; U0[k] = g; ST.wrapped[k] = true;
+      }
+    });
+    // advanceWeek: the SAME closure trap as bookWeek — its body calls the local simMatch, so the
+    // wrapped export never runs and stipulations had no effect on a simulated night (measured: no
+    // stipulation injuries, no multi-man results, across 14 weeks). Resolve every unplayed match
+    // OURSELVES first and mark it done; the original then does what only it can do — injury decay,
+    // contract decay, the news window, the re-book and the week increment.
+    if(U0.advanceWeek && !U0.advanceWeek.__season){
+      var _aw = U0.advanceWeek;
+      var aw = function(u){
+        try{
+          var uu = u || uget();
+          if(uu){ restyle(uu); (uu.card||[]).forEach(function(m){ if(m && !m._done){ simMatch(uu, m); m._done = 1; } }); }
+        }catch(e){}
+        var r = _aw.apply(this, arguments);
+        try{ weeklyBeat(r || uget()); }catch(e){}
+        return r; };
+      aw.__season = true; U0.advanceWeek = aw; ST.wrapped.advanceWeek = true;
+    }
+    try{ restyle(uget()); }catch(e){}
+    ST.armed = true;
+    console.log('%c[BANNON_SEASON] universe + career + free roam joined — stipulations, real venues, ' +
+      'player booking, free agency','color:#7CFC00');
+    return true;
+  }
+  (function tryArm(n){ if(arm() || n > 100) return; setTimeout(function(){ tryArm(n+1); }, 250); })(0);
+
+  window.BANNON_SEASON = {
+    // stipulations + venues
+    TYPES: TYPES, typeFor: typeFor, typeLabel: typeLabel, typeById: typeById,
+    venues: venueList, venueFor: venueFor, venueLabel: venueLabel, applyVenue: applyVenue,
+    restyle: restyle,
+    // booking, uncapped
+    addMatch: addMatch, removeMatch: removeMatch, setType: setType, setSide: setSide,
+    setTitle: setTitle, setMain: setMain, setVenue: setVenue, sheet: openSheet,
+    // running the night
+    play: playMatch, sim: simMatch, beat: weeklyBeat,
+    // career / free agency / promos
+    career: career, freeRoam: freeRoam, enter: enterWorld,
+    agencyHTML: agencyHTML, offersTo: buildOfferTo, promo: promo, act: act,
+    armed: function(){ return ST.armed; },
+    stats: function(){ var u = uget();
+      return { armed:ST.armed, wrapped:Object.keys(ST.wrapped), beats:ST.beats,
+               week:u?u.week:null, card:(u&&u.card||[]).length,
+               stipulations:(u&&u.card||[]).filter(function(m){ return m&&m.type&&m.type!=='ONE_ON_ONE'; }).length,
+               venues:venueList().length,
+               freeAgents:(function(){ try{ return (U().freeAgents(u)||[]).length; }catch(e){ return null; } })() }; }
+  };
 })();
 </script>
 
