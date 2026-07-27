@@ -46,3 +46,9 @@ tools/iso/*key*.bin
 # discarded. Only derived proprietary output is ever committed.
 /iso_staging/
 /mocap_video/
+
+# Converted motion from NON-COMMERCIAL / IP-encumbered datasets (Bandai Namco CC BY-NC 4.0,
+# CombatMotion which is derived from shipped game assets). The INGEST TOOL is committed; the
+# converted data is not, because BANNON ships commercially and NC data cannot ride along.
+# Regenerate locally with: node tools/mocap/ingest_dataset.cjs --src <dir> --name <source>
+assets/moves/datasets/dev/
