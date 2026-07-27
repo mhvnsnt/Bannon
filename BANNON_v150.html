@@ -280,6 +280,78 @@ window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10
 </script>
 
 <!-- THREE.js loaded SYNCHRONOUSLY before inline script: no race condition -->
+<script>
+// ============================================================================================
+// BANNON_BOOT — the game times its own start-up and will tell you where it went.
+//
+// WHY THIS EXISTS: the owner reports slow loading on his phone. I could not find it from here. My
+// harness renders through software rasterisation, so its numbers are dominated by an emulated GPU
+// that his device does not have. I measured a 26-second domInteractive and then ELIMINATED, one at a
+// time: script parse and compile (~2 s, proven by building a version with the JS externalised),
+// all canvas 2D texture generation (~1.5 s, proven by stubbing the 2D context), and WebGL shader
+// compile and texture upload (0.4 s, proven by hooking compileShader/linkProgram/texImage2D).
+// That accounts for four seconds out of twenty-six. I do not know where the rest goes on MY box, and
+// my box is not the one with the problem.
+//
+// So the game measures itself. Marks are cheap (a performance.now() push), cost nothing, and the
+// report comes from the device that actually has the symptom.
+//
+//   window.BANNON_BOOT.report()   -> a table in the console, slowest phase first
+//   window.BANNON_BOOT.text()     -> the same as a string you can paste back to me
+//   ?boottime  in the URL          -> prints it automatically once the game is ready
+// ============================================================================================
+(function(){
+  var T0 = (window.performance && performance.now) ? performance.now() : Date.now();
+  var marks = [['document-start', 0]];
+  function now(){ return ((window.performance && performance.now) ? performance.now() : Date.now()) - T0; }
+  function mark(name){ try{ marks.push([String(name), now()]); }catch(e){} }
+  // phases, in order, each measured from the one before it
+  function rows(){
+    var out = [], prev = 0;
+    for (var i=0;i<marks.length;i++){
+      out.push({ phase: marks[i][0], at: Math.round(marks[i][1]), took: Math.round(marks[i][1]-prev) });
+      prev = marks[i][1];
+    }
+    return out;
+  }
+  function text(){
+    var r = rows(), lines = ['BANNON boot timing — total ' + (r.length? r[r.length-1].at : 0) + 'ms'];
+    r.slice().sort(function(a,b){ return b.took-a.took; }).forEach(function(x){
+      lines.push('  ' + String(x.took).padStart(7) + 'ms  ' + x.phase + '   (at ' + x.at + 'ms)');
+    });
+    try{
+      var nav = performance.getEntriesByType('navigation')[0];
+      if(nav) lines.push('  navigation: responseEnd ' + Math.round(nav.responseEnd) +
+                         'ms, domInteractive ' + Math.round(nav.domInteractive) + 'ms');
+    }catch(e){}
+    try{ lines.push('  device: ' + (navigator.hardwareConcurrency||'?') + ' cores, dpr ' +
+                    (window.devicePixelRatio||1) + ', ' + screen.width + 'x' + screen.height); }catch(e){}
+    return lines.join('\n');
+  }
+  window.BANNON_BOOT = {
+    mark: mark, rows: rows, text: text,
+    report: function(){ try{ console.log(text()); }catch(e){} return text(); },
+    t0: T0
+  };
+  // automatic marks that need no cooperation from the rest of the file
+  try{ document.addEventListener('DOMContentLoaded', function(){ mark('DOMContentLoaded'); }); }catch(e){}
+  try{ window.addEventListener('load', function(){ mark('window.load'); }); }catch(e){}
+  // three.js is the first big dependency; knowing when it lands separates network from our own code
+  var iv = setInterval(function(){
+    if (typeof THREE !== 'undefined'){ mark('THREE available'); clearInterval(iv); }
+  }, 30);
+  setTimeout(function(){ try{ clearInterval(iv); }catch(e){} }, 60000);
+  // and once the engine is up, say so — automatically if asked via the URL
+  var iv2 = setInterval(function(){
+    if (typeof window.startFight === 'function'){
+      mark('engine ready (startFight defined)');
+      clearInterval(iv2);
+      if (/[?&]boottime\b/.test(location.search)) setTimeout(function(){ window.BANNON_BOOT.report(); }, 200);
+    }
+  }, 50);
+  setTimeout(function(){ try{ clearInterval(iv2); }catch(e){} }, 120000);
+})();
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>if(typeof THREE==='undefined'){document.write('<script src="https://unpkg.com/three@0.128.0/build/three.min.js"><\/script>');}</script>
 <script>if(typeof THREE==='undefined'){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"><\/script>');}</script>
