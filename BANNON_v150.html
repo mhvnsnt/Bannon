@@ -52081,6 +52081,603 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script>
+// ============================================================================================
+// BANNON_ROSTER — the roster screen MDickie and WWE both have and we did not.
+//
+// Owner: "the roster tabs mdicke style where u can view and edit and even drag and swap brands and
+// etc all the things u can do from the roster tab in mdickie games and WWE games, teams, alliances,
+// rivalries, etc".
+//
+// The existing ROSTER tab was a READ-ONLY LIST — 40 names, a win-loss record, a coloured promotion
+// chip, and no way to change any of it. Everything needed to make it editable was already in the
+// save and had no editor pointed at it:
+//   BANNON_UNIVERSE.fighters  promo · allegiance · title · team · momentum · contractWeeks · injury
+//   BANNON_UNIVERSE.teams     tag teams, with members
+//   BANNON_UNIVERSE.rivalries a heat number per pair, keyed a::b
+//   BANNON_STORY              rel / changeRel / align / pushTurn / formTeam / breakup
+//   CHAR_STABLES              14 authored stables with a leader and members
+//   BANNON_PROMOTIONS         15 promotions — the brands you drag between
+//
+// PHONE FIRST. The owner plays on a phone, so "drag" here is Pointer Events, which are the same
+// code path for touch and mouse — HTML5 drag-and-drop does not fire on mobile Safari or Chrome at
+// all, and building on it would have shipped a screen he could not use. There is also a tap route
+// for every drag: tap a wrestler to pick him up, tap a brand to drop him. Nothing is drag-only.
+//
+// NO PARALLEL STATE. Every edit writes through BANNON_UNIVERSE.save / BANNON_STORY, so a change
+// made here is the same change the booker, the sim and the diary see.
+// ============================================================================================
+(function(){
+  'use strict';
+
+  var ST = { open:false, tab:'roster', root:null, sel:null, held:null, filter:'', promoFilter:'*',
+             sort:'rank', drag:null, edits:0 };
+
+  function U(){ return window.BANNON_UNIVERSE || null; }
+  function uget(){ try{ var u=U(); return u&&u.get?u.get():null; }catch(e){ return null; } }
+  function usave(u){ try{ var x=U(); if(x&&x.save) x.save(u); }catch(e){} ST.edits++; return u; }
+  function STO(){ return window.BANNON_STORY || null; }
+  function PR(){ return window.BANNON_PROMOTIONS || null; }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function pretty(n){ return String(n||'').replace(/_/g,' '); }
+  function toast(t){ try{ (window.toast||function(){})(t); }catch(e){} }
+
+  function promos(){
+    var p = null;
+    try{ p = PR() && PR().keys ? PR().keys() : null; }catch(e){}
+    if(p && p.length) return p;
+    var u = uget(); return (u && u.promos) || [];
+  }
+  function promoInfo(k){ try{ return (PR()&&PR().get)?PR().get(k):null; }catch(e){ return null; } }
+  function promoColor(k){ var i=promoInfo(k); return (i&&i.color) || '#666'; }
+  function promoShort(k){ var i=promoInfo(k); return (i&&i.short) || String(k||'').slice(0,4); }
+
+  // ── EDITS, all writing through the real save ──────────────────────────────────────────────────
+  function setPromo(name, promo){
+    var u = uget(); if(!u || !u.fighters[name]) return false;
+    var f = u.fighters[name];
+    if(f.promo === promo) return false;
+    var from = f.promo;
+    f.promo = promo;
+    // a title and a tag team belong to the brand you left — this is what BANNON_UNIVERSE.sign()
+    // already does on a real signing, and doing anything else here would let a man hold a belt in
+    // a promotion he does not wrestle for.
+    if(f.title){ if(u.titles[f.title] === name) u.titles[f.title] = null; f.title = null; }
+    if(f.team){ dropFromTeam(u, name); }
+    u.news.unshift('W'+(u.week||1)+': '+name+' moved from '+from+' to '+promo+'.');
+    usave(u); return true;
+  }
+  function dropFromTeam(u, name){
+    var t = u.teams && u.teams[u.fighters[name].team];
+    if(t){ t.members = (t.members||[]).filter(function(m){ return m !== name; });
+      if(t.members.length < 2){ (t.members||[]).forEach(function(m){ if(u.fighters[m]) u.fighters[m].team = null; });
+        delete u.teams[t.name]; } }
+    u.fighters[name].team = null;
+  }
+  function setAlign(name, a){
+    var u = uget(); if(!u || !u.fighters[name]) return false;
+    u.fighters[name].allegiance = a;
+    try{ var s=STO(); if(s && s.pushTurn && a!=='tweener'){ /* keep the story graph in step */
+      if(s.align(name) !== a) s.pushTurn(name); } }catch(e){}
+    usave(u); return true;
+  }
+  function setTitle(name, belt){
+    var u = uget(); if(!u) return false;
+    if(!belt){ var f0=u.fighters[name]; if(f0 && f0.title){ if(u.titles[f0.title]===name) u.titles[f0.title]=null; f0.title=null; } usave(u); return true; }
+    var prev = u.titles[belt];
+    if(prev && u.fighters[prev]) u.fighters[prev].title = null;
+    u.titles[belt] = name;
+    if(u.fighters[name]) u.fighters[name].title = belt;
+    u.news.unshift('W'+(u.week||1)+': '+name+' is recognised as '+belt+' champion.');
+    usave(u); return true;
+  }
+  function makeTeam(a, b, nm){
+    var u = uget(); if(!u || !u.fighters[a] || !u.fighters[b] || a===b) return false;
+    if(u.fighters[a].team) dropFromTeam(u, a);
+    if(u.fighters[b].team) dropFromTeam(u, b);
+    try{ var x=U(); if(x && x.formTeam){ x.formTeam(u, a, b, nm); } }catch(e){}
+    try{ var s=STO(); if(s && s.formTeam) s.formTeam(a, b); }catch(e){}
+    usave(u); return true;
+  }
+  function splitTeam(nm){
+    var u = uget(); if(!u || !u.teams || !u.teams[nm]) return false;
+    var mem = (u.teams[nm].members||[]).slice();
+    mem.forEach(function(m){ if(u.fighters[m]) u.fighters[m].team = null; });
+    delete u.teams[nm];
+    if(mem.length >= 2){ try{ var s=STO(); if(s && s.breakup) s.breakup(mem[0], mem[1]); }catch(e){} }
+    u.news.unshift('W'+(u.week||1)+': '+nm+' have split up.');
+    usave(u); return true;
+  }
+  // STABLES live in CHAR_STABLES, which is authored data with no editor. Player edits ride in the
+  // universe save so a fresh page keeps them and the authored file stays untouched.
+  function stables(){
+    var out = {}, u = uget();
+    try{ var A = window.CHAR_STABLES || {};
+      for(var k in A) out[k] = { id:k, name:A[k].name, leader:A[k].leader, members:(A[k].members||[]).slice(), authored:true }; }catch(e){}
+    if(u && u.stables){ for(var k2 in u.stables){
+      var s = u.stables[k2];
+      out[k2] = { id:k2, name:s.name, leader:s.leader, members:(s.members||[]).slice(), authored:false }; } }
+    return out;
+  }
+  function stableWrite(id, rec){
+    var u = uget(); if(!u) return false;
+    u.stables = u.stables || {};
+    if(rec) u.stables[id] = rec; else u.stables[id] = { name:'(disbanded)', leader:null, members:[] };
+    usave(u); return true;
+  }
+  function stableAdd(id, who){
+    var all = stables(), s = all[id]; if(!s) return false;
+    if(s.members.indexOf(who) >= 0) return false;
+    s.members.push(who);
+    return stableWrite(id, { name:s.name, leader:s.leader, members:s.members });
+  }
+  function stableRemove(id, who){
+    var all = stables(), s = all[id]; if(!s) return false;
+    s.members = s.members.filter(function(m){ return m !== who; });
+    return stableWrite(id, { name:s.name, leader:(s.leader===who? (s.members[0]||null) : s.leader), members:s.members });
+  }
+  function stableNew(name, leader){
+    var id = 'PLAYER_' + String(name||'stable').toUpperCase().replace(/[^A-Z0-9]/g,'_').slice(0,24);
+    return stableWrite(id, { name:name||'New Stable', leader:leader||null, members:leader?[leader]:[] }) && id;
+  }
+  function setFeud(a, b, heat){
+    var u = uget(), x = U(); if(!u || !x) return false;
+    u.rivalries = u.rivalries || {};
+    var k = [a,b].sort().join('::');
+    u.rivalries[k] = Math.max(0, heat|0);
+    usave(u); return true;
+  }
+  function bumpFeud(a, b, amt){
+    var x = U(); if(!x || !x.feud) return false;
+    x.feud(uget(), a, b, amt); ST.edits++; return true;
+  }
+
+  // ── THE LIST ──────────────────────────────────────────────────────────────────────────────────
+  function rows(){
+    var u = uget(); if(!u) return [];
+    var x = U();
+    var list = Object.values(u.fighters);
+    if(ST.promoFilter !== '*') list = list.filter(function(f){ return f.promo === ST.promoFilter; });
+    if(ST.filter){ var q = ST.filter.toUpperCase();
+      list = list.filter(function(f){ return String(f.name).toUpperCase().indexOf(q) >= 0; }); }
+    var by = {
+      rank:  function(a,b){ return x.rating(b) - x.rating(a); },
+      name:  function(a,b){ return String(a.name).localeCompare(String(b.name)); },
+      record:function(a,b){ return ((b.wins-b.losses) - (a.wins-a.losses)); },
+      promo: function(a,b){ return String(a.promo).localeCompare(String(b.promo)) || (x.rating(b)-x.rating(a)); },
+      deal:  function(a,b){ return (a.contractWeeks|0) - (b.contractWeeks|0); }
+    };
+    return list.sort(by[ST.sort] || by.rank);
+  }
+
+  function chip(k){
+    return '<span class="rt-brand" data-brand="'+esc(k)+'" style="background:'+promoColor(k)+'22;'+
+      'border:1px solid '+promoColor(k)+'88;color:'+promoColor(k)+'">'+esc(promoShort(k))+'</span>';
+  }
+
+  function rosterHTML(){
+    var u = uget(); if(!u) return '<div style="padding:16px">Universe not loaded.</div>';
+    var R = rows(), P = promos();
+    var h = '';
+    // the brand rail — drop targets, and each shows its headcount
+    h += '<div class="rt-rail">';
+    h += '<div class="rt-drop'+(ST.promoFilter==='*'?' on':'')+'" data-filter="*">ALL <b>'+Object.keys(u.fighters).length+'</b></div>';
+    P.forEach(function(k){
+      var n = Object.values(u.fighters).filter(function(f){ return f.promo===k; }).length;
+      h += '<div class="rt-drop'+(ST.promoFilter===k?' on':'')+'" data-filter="'+esc(k)+'" data-drop="'+esc(k)+'" '+
+           'style="border-color:'+promoColor(k)+'99">'+esc(promoShort(k))+' <b>'+n+'</b></div>';
+    });
+    h += '</div>';
+    h += '<div class="rt-tools">'+
+         '<input id="rtSearch" placeholder="search the roster" value="'+esc(ST.filter)+'">'+
+         '<select id="rtSort">'+
+           ['rank|by rating','name|A–Z','record|by record','promo|by brand','deal|deal expiring']
+             .map(function(o){ var p=o.split('|');
+               return '<option value="'+p[0]+'"'+(ST.sort===p[0]?' selected':'')+'>'+p[1]+'</option>'; }).join('')+
+         '</select></div>';
+    if(ST.held) h += '<div class="rt-held">holding <b>'+esc(pretty(ST.held))+'</b> — tap a brand to move him, or tap him again to put him down</div>';
+
+    h += '<div class="rt-list">';
+    R.forEach(function(f){
+      var hurt = (f.injuredWeeks|0) > 0;
+      h += '<div class="rt-row'+(ST.sel===f.name?' sel':'')+(ST.held===f.name?' held':'')+'" data-who="'+esc(f.name)+'" draggable="false">'+
+        '<span class="rt-grab">⠿</span>'+
+        chip(f.promo)+
+        '<span class="rt-name">'+esc(pretty(f.name))+
+          (f.title?' <span class="rt-belt">🏆</span>':'')+
+          (f.team?' <span class="rt-team">'+esc(f.team)+'</span>':'')+
+          (f.creativeControl?' <span class="rt-cc">CC</span>':'')+
+        '</span>'+
+        '<span class="rt-align a-'+esc(f.allegiance||'tweener')+'">'+esc((f.allegiance||'tweener').slice(0,4))+'</span>'+
+        '<span class="rt-rec">'+(f.wins|0)+'-'+(f.losses|0)+'</span>'+
+        '<span class="rt-deal'+(hurt?' hurt':'')+'">'+(hurt?((f.injuredWeeks|0)+'w hurt'):((f.contractWeeks|0)+'w'))+'</span>'+
+        '</div>';
+      if(ST.sel === f.name) h += editorHTML(f);
+    });
+    h += '</div>';
+    return h;
+  }
+
+  function editorHTML(f){
+    var u = uget();
+    var belts = [''].concat(Object.keys(u.titles||{}));
+    var others = Object.keys(u.fighters).filter(function(n){ return n !== f.name; }).sort();
+    var x = U();
+    var h = '<div class="rt-edit">';
+    h += '<div class="rt-erow"><label>brand</label><select data-ed="promo">'+
+      promos().map(function(k){ return '<option value="'+esc(k)+'"'+(k===f.promo?' selected':'')+'>'+
+        esc((promoInfo(k)&&promoInfo(k).name)||k)+'</option>'; }).join('')+'</select></div>';
+    h += '<div class="rt-erow"><label>alignment</label><span class="rt-seg">'+
+      ['face','tweener','heel'].map(function(a){
+        return '<button data-ed="align" data-v="'+a+'" class="'+((f.allegiance||'tweener')===a?'on':'')+'">'+a+'</button>'; }).join('')+
+      '</span></div>';
+    h += '<div class="rt-erow"><label>title</label><select data-ed="title">'+
+      belts.map(function(b){ return '<option value="'+esc(b)+'"'+(b===(f.title||'')?' selected':'')+'>'+
+        (b?('🏆 '+esc(b)):'none')+'</option>'; }).join('')+'</select></div>';
+    h += '<div class="rt-erow"><label>tag partner</label><select data-ed="team"><option value="">— none —</option>'+
+      others.map(function(n){ var mate = f.team && u.teams[f.team] && u.teams[f.team].members.indexOf(n)>=0;
+        return '<option value="'+esc(n)+'"'+(mate?' selected':'')+'>'+esc(pretty(n))+'</option>'; }).join('')+
+      '</select>'+(f.team?'<button data-ed="split" class="rt-mini">SPLIT</button>':'')+'</div>';
+    // stables he is in, and one he could join
+    var SB = stables(), inS = [];
+    for(var k in SB) if(SB[k].members.indexOf(f.name) >= 0) inS.push(SB[k]);
+    h += '<div class="rt-erow"><label>stable</label><span>'+
+      (inS.length ? inS.map(function(s){ return '<span class="rt-stab">'+esc(s.name)+
+        '<button data-ed="leave" data-v="'+esc(s.id)+'">×</button></span>'; }).join('') : '<i style="opacity:.6">none</i>')+
+      '</span></div>';
+    h += '<div class="rt-erow"><label>join</label><select data-ed="join"><option value="">— pick a stable —</option>'+
+      Object.keys(SB).map(function(k){ return '<option value="'+esc(k)+'">'+esc(SB[k].name)+'</option>'; }).join('')+
+      '</select></div>';
+    // rivalries — the heat graph, editable
+    var riv = [];
+    try{ (x.topFeuds(u, 200)||[]).forEach(function(fd){
+      if(fd.pair.indexOf(f.name) >= 0) riv.push({ who: fd.pair[0]===f.name?fd.pair[1]:fd.pair[0], heat:fd.heat }); }); }catch(e){}
+    h += '<div class="rt-erow"><label>rivalries</label><span>'+
+      (riv.length ? riv.slice(0,6).map(function(r){
+        return '<span class="rt-riv">'+esc(pretty(r.who))+' <b>'+r.heat+'</b>'+
+          '<button data-ed="heat+" data-v="'+esc(r.who)+'">+</button>'+
+          '<button data-ed="heat-" data-v="'+esc(r.who)+'">−</button></span>'; }).join('')
+        : '<i style="opacity:.6">no bad blood</i>')+'</span></div>';
+    h += '<div class="rt-erow"><label>start a feud</label><select data-ed="feud"><option value="">— pick an opponent —</option>'+
+      others.map(function(n){ return '<option value="'+esc(n)+'">'+esc(pretty(n))+'</option>'; }).join('')+'</select></div>';
+    h += '<div class="rt-erow"><label>momentum</label>'+
+      '<button data-ed="mom-" class="rt-mini">−</button><b style="min-width:34px;text-align:center;display:inline-block">'+
+      (f.momentum|0)+'</b><button data-ed="mom+" class="rt-mini">+</button>'+
+      '<label style="margin-left:10px">deal</label><button data-ed="deal-" class="rt-mini">−4w</button>'+
+      '<b style="min-width:44px;text-align:center;display:inline-block">'+(f.contractWeeks|0)+'w</b>'+
+      '<button data-ed="deal+" class="rt-mini">+26w</button></div>';
+    if((f.injuredWeeks|0) > 0)
+      h += '<div class="rt-erow"><label>injury</label><button data-ed="heal" class="rt-mini">CLEAR ('+(f.injuredWeeks|0)+'w)</button></div>';
+    h += '</div>';
+    return h;
+  }
+
+  function teamsHTML(){
+    var u = uget(); if(!u) return '';
+    var T = u.teams || {};
+    var keys = Object.keys(T);
+    var h = '<div class="rt-pane"><div class="rt-h">TAG TEAMS ('+keys.length+')</div>';
+    if(!keys.length) h += '<div style="opacity:.65">No teams. Pair anyone from their row in the ROSTER tab.</div>';
+    keys.forEach(function(k){
+      var t = T[k];
+      h += '<div class="rt-card">'+chip(t.promo)+'<b>'+esc(t.name)+'</b>'+
+        '<div class="rt-sub">'+esc((t.members||[]).map(pretty).join('  &  '))+'</div>'+
+        '<button data-team="split" data-v="'+esc(k)+'" class="rt-mini">SPLIT</button></div>';
+    });
+    h += '</div>';
+    return h;
+  }
+
+  function stablesHTML(){
+    var SB = stables(), keys = Object.keys(SB);
+    var u = uget();
+    var all = u ? Object.keys(u.fighters).sort() : [];
+    var h = '<div class="rt-pane"><div class="rt-h">STABLES &amp; ALLIANCES ('+keys.length+')</div>';
+    keys.forEach(function(k){
+      var s = SB[k];
+      if(!s.members.length) return;
+      h += '<div class="rt-card"><b>'+esc(s.name)+'</b>'+
+        (s.authored?'<span class="rt-tagline">canon</span>':'<span class="rt-tagline" style="color:#7CFC00">yours</span>')+
+        '<div class="rt-sub">'+s.members.map(function(m){
+          return '<span class="rt-mem'+(m===s.leader?' lead':'')+'">'+esc(pretty(m))+
+                 '<button data-stab="kick" data-v="'+esc(k)+'" data-w="'+esc(m)+'">×</button></span>'; }).join('')+'</div>'+
+        '<select data-stab="add" data-v="'+esc(k)+'"><option value="">+ add a member</option>'+
+          all.filter(function(n){ return s.members.indexOf(n)<0; })
+             .map(function(n){ return '<option value="'+esc(n)+'">'+esc(pretty(n))+'</option>'; }).join('')+
+        '</select></div>';
+    });
+    h += '<div class="rt-card"><b>NEW STABLE</b><div class="rt-sub">'+
+      '<input id="rtNewStable" placeholder="name it"> '+
+      '<select id="rtNewLeader"><option value="">leader…</option>'+
+        all.map(function(n){ return '<option value="'+esc(n)+'">'+esc(pretty(n))+'</option>'; }).join('')+'</select> '+
+      '<button data-stab="new" class="rt-mini">CREATE</button></div></div>';
+    h += '</div>';
+    return h;
+  }
+
+  function rivalsHTML(){
+    var u = uget(), x = U(); if(!u || !x) return '';
+    var F = [];
+    try{ F = x.topFeuds(u, 40) || []; }catch(e){}
+    var h = '<div class="rt-pane"><div class="rt-h">RIVALRIES ('+F.length+')</div>';
+    if(!F.length) h += '<div style="opacity:.65">No bad blood yet. Matches and promos build it, or start one from a wrestler’s row.</div>';
+    F.forEach(function(f){
+      var w = Math.min(100, Math.round(f.heat));
+      h += '<div class="rt-card"><b>'+esc(pretty(f.pair[0]))+'</b> vs <b>'+esc(pretty(f.pair[1]))+'</b>'+
+        '<div class="rt-bar"><i style="width:'+w+'%"></i></div>'+
+        '<div class="rt-sub">heat '+f.heat+
+          ' <button data-riv="up" data-a="'+esc(f.pair[0])+'" data-b="'+esc(f.pair[1])+'" class="rt-mini">+10</button>'+
+          ' <button data-riv="down" data-a="'+esc(f.pair[0])+'" data-b="'+esc(f.pair[1])+'" class="rt-mini">−10</button>'+
+          ' <button data-riv="book" data-a="'+esc(f.pair[0])+'" data-b="'+esc(f.pair[1])+'" class="rt-mini">BOOK IT</button>'+
+        '</div></div>';
+    });
+    h += '</div>';
+    return h;
+  }
+
+  var CSS = ''+
+  '#rosterTab{position:fixed;inset:3% 3%;z-index:100045;background:#05070c;border:1px solid #e8c15a;'+
+    'border-radius:12px;color:#e8e2d4;font:12px var(--f-ui);display:none;flex-direction:column;'+
+    'box-shadow:0 14px 48px #000d;overflow:hidden;touch-action:manipulation}'+
+  '#rosterTab .rt-top{padding:9px 12px;border-bottom:1px solid #e8c15a44;display:flex;gap:8px;align-items:center;flex-wrap:wrap}'+
+  '#rosterTab .rt-top b{font-family:"Bebas Neue";letter-spacing:3px;font-size:19px;color:#e8c15a}'+
+  '#rosterTab .rt-tab{background:#151821;border:1px solid #ffffff22;color:#c9c2b4;border-radius:14px;'+
+    'padding:4px 11px;font:700 10px var(--f-ui);letter-spacing:1px;cursor:pointer}'+
+  '#rosterTab .rt-tab.on{background:#2a1408;border-color:#e8c15a;color:#e8c15a}'+
+  '#rosterTab .rt-body{flex:1;overflow-y:auto;padding:8px 10px;-webkit-overflow-scrolling:touch}'+
+  '#rosterTab .rt-rail{display:flex;gap:5px;overflow-x:auto;padding-bottom:6px}'+
+  '#rosterTab .rt-drop{flex:0 0 auto;background:#12141c;border:1px solid #ffffff22;border-radius:8px;'+
+    'padding:6px 9px;font:700 10px var(--f-ui);letter-spacing:1px;cursor:pointer;white-space:nowrap}'+
+  '#rosterTab .rt-drop.on{background:#2a1408;color:#e8c15a}'+
+  '#rosterTab .rt-drop.hot{background:#1d3a12;border-color:#7CFC00;color:#7CFC00;transform:scale(1.06)}'+
+  '#rosterTab .rt-drop b{opacity:.65;font-weight:400;margin-left:3px}'+
+  '#rosterTab .rt-tools{display:flex;gap:6px;margin:7px 0}'+
+  '#rosterTab input,#rosterTab select{background:#12141c;color:#e8e2d4;border:1px solid #ffffff22;'+
+    'border-radius:6px;padding:5px 7px;font:11px var(--f-ui)}'+
+  '#rosterTab #rtSearch{flex:1}'+
+  '#rosterTab .rt-held{background:#1d3a12;border:1px solid #7CFC0066;color:#cdf5b0;border-radius:7px;'+
+    'padding:5px 9px;margin-bottom:6px;font-size:11px}'+
+  '#rosterTab .rt-row{display:flex;align-items:center;gap:7px;padding:7px 6px;border-bottom:1px solid #ffffff10;'+
+    'cursor:pointer;user-select:none}'+
+  '#rosterTab .rt-row.sel{background:#ffffff0d}'+
+  '#rosterTab .rt-row.held{opacity:.45}'+
+  '#rosterTab .rt-grab{opacity:.5;font-size:17px;cursor:grab;touch-action:none;padding:10px 9px;'+
+    'margin:-10px -3px -10px -6px}'+   /* 44px thumb target; the glyph is only the visible part */
+  
+  '#rosterTab .rt-brand{font:700 9px var(--f-mono);border-radius:5px;padding:2px 5px;min-width:34px;text-align:center}'+
+  '#rosterTab .rt-name{flex:1;font-size:12px}'+
+  '#rosterTab .rt-team{font:9px var(--f-mono);opacity:.6}'+
+  '#rosterTab .rt-cc{font:9px var(--f-mono);color:#ff9a4a;border:1px solid #ff9a4a66;border-radius:4px;padding:0 3px}'+
+  '#rosterTab .rt-align{font:9px var(--f-mono);opacity:.85;width:34px;text-align:center}'+
+  '#rosterTab .a-face{color:#7fd0ff}#rosterTab .a-heel{color:#ff7a6b}#rosterTab .a-tweener{color:#c9b98a}'+
+  '#rosterTab .rt-rec{font:10px var(--f-mono);width:46px;text-align:right;opacity:.85}'+
+  '#rosterTab .rt-deal{font:9px var(--f-mono);width:56px;text-align:right;opacity:.6}'+
+  '#rosterTab .rt-deal.hurt{color:#ff7a6b;opacity:1}'+
+  '#rosterTab .rt-edit{background:#0d1017;border:1px solid #e8c15a33;border-radius:8px;padding:8px;margin:2px 0 8px}'+
+  '#rosterTab .rt-erow{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-bottom:6px}'+
+  '#rosterTab .rt-erow label{width:78px;font:9px var(--f-mono);letter-spacing:1px;color:#9a927f;text-transform:uppercase}'+
+  '#rosterTab .rt-seg button{background:#12141c;border:1px solid #ffffff22;color:#c9c2b4;padding:4px 10px;'+
+    'font:10px var(--f-ui);cursor:pointer}'+
+  '#rosterTab .rt-seg button:first-child{border-radius:6px 0 0 6px}'+
+  '#rosterTab .rt-seg button:last-child{border-radius:0 6px 6px 0}'+
+  '#rosterTab .rt-seg button.on{background:#2a1408;border-color:#e8c15a;color:#e8c15a}'+
+  '#rosterTab .rt-mini{background:#2a1408;border:1px solid #e8c15a66;color:#e8c15a;border-radius:6px;'+
+    'padding:3px 9px;font:700 10px var(--f-ui);cursor:pointer}'+
+  '#rosterTab .rt-stab,#rosterTab .rt-riv,#rosterTab .rt-mem{display:inline-flex;align-items:center;gap:3px;'+
+    'background:#12141c;border:1px solid #ffffff22;border-radius:12px;padding:2px 4px 2px 9px;margin:2px;font-size:10px}'+
+  '#rosterTab .rt-mem.lead{border-color:#e8c15a88;color:#e8c15a}'+
+  '#rosterTab .rt-stab button,#rosterTab .rt-riv button,#rosterTab .rt-mem button{background:none;border:0;'+
+    'color:#c9c2b4;cursor:pointer;font-size:11px;padding:0 3px}'+
+  '#rosterTab .rt-pane{padding:2px}'+
+  '#rosterTab .rt-h{font-family:"Bebas Neue";letter-spacing:2px;font-size:14px;color:#e8c15a;margin:8px 0 5px}'+
+  '#rosterTab .rt-card{background:#0d1017;border:1px solid #ffffff18;border-radius:8px;padding:8px;margin-bottom:7px}'+
+  '#rosterTab .rt-sub{font-size:11px;opacity:.85;margin:4px 0}'+
+  '#rosterTab .rt-tagline{font:8px var(--f-mono);opacity:.6;margin-left:6px;letter-spacing:1px}'+
+  '#rosterTab .rt-bar{height:5px;background:#ffffff14;border-radius:3px;overflow:hidden;margin:5px 0}'+
+  '#rosterTab .rt-bar i{display:block;height:100%;background:linear-gradient(90deg,#e8c15a,#ff5a3c)}'+
+  '#rtGhost{position:fixed;z-index:100060;pointer-events:none;background:#2a1408ee;border:1px solid #e8c15a;'+
+    'color:#e8c15a;border-radius:7px;padding:5px 11px;font:700 11px var(--f-ui);box-shadow:0 6px 18px #000b}';
+
+  function build(){
+    if(ST.root) return ST.root;
+    var s = document.createElement('style'); s.textContent = CSS; document.head.appendChild(s);
+    var d = document.createElement('div'); d.id = 'rosterTab';
+    d.innerHTML = '<div class="rt-top"><b>📋 ROSTER</b>'+
+      ['roster|ROSTER','teams|TEAMS','stables|STABLES','rivals|RIVALRIES']
+        .map(function(t){ var p=t.split('|');
+          return '<button class="rt-tab" data-rt="'+p[0]+'">'+p[1]+'</button>'; }).join('')+
+      '<button class="rt-tab" id="rtClose" style="margin-left:auto">CLOSE</button></div>'+
+      '<div class="rt-body" id="rtBody"></div>';
+    document.body.appendChild(d);
+    ST.root = d;
+    d.querySelector('#rtClose').onclick = close;
+    return d;
+  }
+
+  function render(){
+    var d = build(), b = d.querySelector('#rtBody');
+    d.querySelectorAll('.rt-tab[data-rt]').forEach(function(t){ t.classList.toggle('on', t.dataset.rt===ST.tab); });
+    b.innerHTML = ST.tab==='roster' ? rosterHTML()
+                : ST.tab==='teams'  ? teamsHTML()
+                : ST.tab==='stables'? stablesHTML()
+                : rivalsHTML();
+    wire(b);
+  }
+
+  // ── WIRING, including the pointer-based drag ──────────────────────────────────────────────────
+  function wire(b){
+    ST.root.querySelectorAll('.rt-tab[data-rt]').forEach(function(t){
+      t.onclick = function(){ ST.tab = t.dataset.rt; ST.sel = null; render(); }; });
+
+    var q = b.querySelector('#rtSearch');
+    if(q) q.oninput = function(){ ST.filter = q.value; var p=q.selectionStart; render();
+      var q2 = ST.root.querySelector('#rtSearch'); if(q2){ q2.focus(); try{ q2.setSelectionRange(p,p); }catch(e){} } };
+    var so = b.querySelector('#rtSort');
+    if(so) so.onchange = function(){ ST.sort = so.value; render(); };
+
+    // brand rail: filter on tap, and drop target for a held/dragged wrestler
+    b.querySelectorAll('.rt-drop').forEach(function(el){
+      el.onclick = function(){
+        if(ST.held && el.dataset.drop){ var who = ST.held; ST.held = null;
+          if(setPromo(who, el.dataset.drop)) toast(pretty(who)+' → '+el.dataset.drop);
+          render(); return; }
+        ST.promoFilter = el.dataset.filter; render();
+      };
+    });
+
+    b.querySelectorAll('.rt-row').forEach(function(row){
+      var who = row.dataset.who;
+      row.onclick = function(ev){
+        if(ST.drag && ST.drag.moved) return;                 // a drag just ended here
+        if(ev.target.closest('.rt-edit')) return;            // clicks inside the editor are its own
+        if(ST.held === who){ ST.held = null; render(); return; }
+        if(ST.held){ return; }                               // holding someone: only a brand accepts a drop
+        ST.sel = (ST.sel === who) ? null : who; render();
+      };
+      var grab = row.querySelector('.rt-grab');
+      if(grab){
+        grab.onclick = function(ev){ ev.stopPropagation();
+          ST.held = (ST.held === who) ? null : who; ST.sel = null; render(); };
+        grab.addEventListener('pointerdown', function(ev){ startDrag(ev, who, grab); });
+      }
+      if(ST.sel === who) wireEditor(row.nextElementSibling || b.querySelector('.rt-edit'), who);
+    });
+
+    b.querySelectorAll('[data-team]').forEach(function(el){
+      el.onclick = function(){ if(el.dataset.team==='split'){ splitTeam(el.dataset.v); render(); } }; });
+
+    b.querySelectorAll('select[data-stab="add"]').forEach(function(el){
+      el.onchange = function(){ if(el.value){ stableAdd(el.dataset.v, el.value); render(); } }; });
+    b.querySelectorAll('button[data-stab="kick"]').forEach(function(el){
+      el.onclick = function(){ stableRemove(el.dataset.v, el.dataset.w); render(); }; });
+    var mk = b.querySelector('button[data-stab="new"]');
+    if(mk) mk.onclick = function(){
+      var nm = (b.querySelector('#rtNewStable')||{}).value, ld = (b.querySelector('#rtNewLeader')||{}).value;
+      if(!nm) { toast('name it first'); return; }
+      stableNew(nm, ld||null); render(); };
+
+    b.querySelectorAll('[data-riv]').forEach(function(el){
+      el.onclick = function(){
+        var a = el.dataset.a, c = el.dataset.b, k = el.dataset.riv;
+        if(k==='up')   bumpFeud(a, c, 10);
+        if(k==='down'){ var u=uget(); var key=[a,c].sort().join('::');
+          setFeud(a, c, Math.max(0, ((u.rivalries||{})[key]||0) - 10)); }
+        if(k==='book'){
+          var S = window.BANNON_SEASON;
+          if(S && S.addMatch){ S.addMatch(a, c, { main:true }); toast('Booked '+pretty(a)+' vs '+pretty(c)); }
+          else toast('booking module not loaded');
+        }
+        render(); };
+    });
+  }
+
+  function wireEditor(el, who){
+    if(!el || !el.classList || !el.classList.contains('rt-edit')) return;
+    var u = uget(), f = u && u.fighters[who]; if(!f) return;
+    el.onclick = function(ev){ ev.stopPropagation(); };
+    el.querySelectorAll('[data-ed]').forEach(function(c){
+      var k = c.dataset.ed;
+      var run = function(){
+        if(k==='promo')  setPromo(who, c.value);
+        else if(k==='align') setAlign(who, c.dataset.v);
+        else if(k==='title') setTitle(who, c.value || null);
+        else if(k==='team'){ if(c.value) makeTeam(who, c.value); }
+        else if(k==='split') splitTeam(f.team);
+        else if(k==='leave') stableRemove(c.dataset.v, who);
+        else if(k==='join'){ if(c.value) stableAdd(c.value, who); }
+        else if(k==='feud'){ if(c.value) bumpFeud(who, c.value, 20); }
+        else if(k==='heat+') bumpFeud(who, c.dataset.v, 10);
+        else if(k==='heat-'){ var key=[who,c.dataset.v].sort().join('::');
+          setFeud(who, c.dataset.v, Math.max(0, ((u.rivalries||{})[key]||0)-10)); }
+        else if(k==='mom+'){ f.momentum = Math.min(20,(f.momentum|0)+1); usave(u); }
+        else if(k==='mom-'){ f.momentum = Math.max(-10,(f.momentum|0)-1); usave(u); }
+        else if(k==='deal+'){ f.contractWeeks = (f.contractWeeks|0)+26; usave(u); }
+        else if(k==='deal-'){ f.contractWeeks = Math.max(0,(f.contractWeeks|0)-4); usave(u); }
+        else if(k==='heal'){ f.injuredWeeks = 0; usave(u); }
+        render();
+      };
+      if(c.tagName === 'SELECT') c.onchange = run; else c.onclick = function(e){ e.stopPropagation(); run(); };
+    });
+  }
+
+  // POINTER EVENTS, not HTML5 drag-and-drop. HTML5 dragstart never fires on a touchscreen, so a
+  // drag built on it is a feature that exists only on a desktop the owner does not use.
+  function startDrag(ev, who, handle){
+    ev.preventDefault(); ev.stopPropagation();
+    try{ handle.setPointerCapture(ev.pointerId); }catch(e){}
+    var g = document.createElement('div'); g.id = 'rtGhost'; g.textContent = pretty(who);
+    document.body.appendChild(g);
+    ST.drag = { who:who, moved:false, ghost:g, hot:null };
+    var move = function(e){
+      ST.drag.moved = true;
+      g.style.left = (e.clientX + 12) + 'px'; g.style.top = (e.clientY - 14) + 'px';
+      var over = document.elementFromPoint(e.clientX, e.clientY);
+      var drop = over && over.closest ? over.closest('.rt-drop[data-drop]') : null;
+      if(ST.drag.hot && ST.drag.hot !== drop) ST.drag.hot.classList.remove('hot');
+      if(drop) drop.classList.add('hot');
+      ST.drag.hot = drop;
+    };
+    var up = function(e){
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+      handle.removeEventListener('pointercancel', up);
+      if(ST.drag.hot) ST.drag.hot.classList.remove('hot');
+      var drop = ST.drag.hot;
+      if(g.parentNode) g.parentNode.removeChild(g);
+      var moved = ST.drag.moved;
+      var target = drop && drop.dataset.drop;
+      ST.drag = null;
+      if(moved && target){ if(setPromo(who, target)) toast(pretty(who)+' → '+target); ST.held = null; render(); }
+      else if(moved){ render(); }
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+    handle.addEventListener('pointercancel', up);
+  }
+
+  function open(tab){ build(); ST.open = true; if(tab) ST.tab = tab; ST.root.style.display='flex'; render(); }
+  function close(){ if(ST.root) ST.root.style.display='none'; ST.open=false; ST.held=null; ST.sel=null; }
+
+  // FRONT DOORS: the play menu's ROSTER button and the Universe hub's ROSTER tab both used to land
+  // on the read-only list. Both come here now.
+  (function doors(n){
+    var did = false;
+    var pmr = document.getElementById('pmRoster');
+    if(pmr && !pmr.__rt){ pmr.__rt = true;
+      pmr.addEventListener('click', function(ev){ ev.stopImmediatePropagation();
+        var pm = document.getElementById('playMenu'); if(pm) pm.classList.add('hidden');
+        open('roster'); }, true);
+      did = true; }
+    var ut = document.querySelector('#uniTabs .uni-tab[data-tab="roster"]');
+    if(ut && !ut.__rt){ ut.__rt = true;
+      ut.addEventListener('click', function(ev){ ev.stopImmediatePropagation();
+        var up = document.getElementById('universePanel'); if(up) up.classList.add('hidden');
+        open('roster'); }, true);
+      did = true; }
+    if(!did && n < 80) setTimeout(function(){ doors(n+1); }, 300);
+  })(0);
+
+  window.BANNON_ROSTER = {
+    open: open, close: close, render: render,
+    setPromo: setPromo, setAlign: setAlign, setTitle: setTitle,
+    makeTeam: makeTeam, splitTeam: splitTeam,
+    stables: stables, stableAdd: stableAdd, stableRemove: stableRemove, stableNew: stableNew,
+    setFeud: setFeud, bumpFeud: bumpFeud,
+    rows: rows,
+    stats: function(){ var u = uget();
+      return { open:ST.open, tab:ST.tab, edits:ST.edits,
+               fighters: u ? Object.keys(u.fighters).length : 0,
+               brands: promos().length,
+               teams: u ? Object.keys(u.teams||{}).length : 0,
+               stables: Object.keys(stables()).length,
+               rivalries: u ? Object.keys(u.rivalries||{}).length : 0 }; }
+  };
+  console.log('%c[BANNON_ROSTER] roster tab — view, edit, drag between brands, teams, stables, rivalries',
+    'color:#7CFC00');
+})();
+</script>
+
 </body></html>
 
 
