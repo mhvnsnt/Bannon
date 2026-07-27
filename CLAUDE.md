@@ -354,3 +354,41 @@ Owner: "We need to get momask, motiongpt, and mdm setup up any wired into our mo
 - LENGTH: the length estimator's argmax saturated at its 196-frame maximum (9.8 s) for every prompt
   tried. `--frames N` states a length, and output is auto-trimmed to the moving span by the same
   motion-energy test harvest.py segments video with. Measured: 60 -> 47 frames, 2.35 s for a kip-up.
+
+## OWNER SPEC 2026-07-26 — read this before touching combat. Corrections to things I got wrong.
+1. **SUBMISSIONS KEEP THE WWE 2K MINI-GAME.** Owner, explicitly: "We will not replace that system."
+   Applying AND escaping stay the 2K button/stick mini-game, untouched input and win/lose condition.
+   Physics layers AROUND and UNDERNEATH it — while the mini-game runs, the bodies fight visibly:
+   attacker posture/weight shifts, defender twists and hyperextends, driven by the EXISTING sine-wave
+   + mass-delta + stamina system. Winning the mini-game makes the body start winning the physics too.
+   Do NOT convert submissions to pure physics constraints. That was my suggestion; he overruled it.
+2. **NO NUMBER CAPS.** "u know our game doesn't include the same caps as WWE games in those areas with
+   number caps." 2K's Pick 3 / Pick 5 / up-to-5-finishers limits are 2K's engine limits, not ours.
+   The moveset slots take as many as the player wants.
+3. **PROCEDURAL PIN IS OURS AND IT STAYS.** Both shoulder proxies within ~15 cm of the mat + referee
+   line-of-sight starts the count. No pin button on delivery. Deepen it, do not replace it:
+   - receiver fights to raise ONE shoulder using the sine-wave struggle
+   - attacker can add weight / shift centre of mass to hold it down
+   - a low-stamina or off-balance attacker makes the pin unstable and easier to kick out of
+   - near-falls are PHYSICAL: shoulder rises a few cm, the ref's hand hesitates, it drops again
+   - roll-ups, small packages and bridges fall out of this for free — no scripting
+   Optional classic hold-to-pin can exist as a manual override when the shoulders are already down.
+4. **STRUGGLE-LIFT TEETER EXISTS BUT IS TOO QUIET.** It was never deleted, it got damped. Target
+   values he gave: amplitude x2.5-3.2, lateral sway 0.5-0.7 of vertical, low-stamina (<0.45) violence
+   boost x1.6-1.9 with frequency x0.65, plus camera shake when |sine|>0.7.
+5. **CARRY IS A SYSTEM** (restated): the four holds are SETUP positions, each opening its own pool of
+   follow-up slams/drivers/environmental throws/pin combos/transitions. Not four moves.
+6. **DELIVERY HANDS OFF TO PHYSICS.** Authored animation is the INTENT; at impact/release blend hard
+   into active ragdoll. If shoulders land clean and the ref sees it -> pin. If not, bodies crumple and
+   scramble. No forced animation. "The move ends when the physics says it ends."
+
+### OPEN SOURCE THAT ACTUALLY KNOWS WRESTLING — I was wrong, he found it
+I said "no open-source motion model has wrestling in it". That was wrong. These exist:
+- **AnimationGPT / CombatMotion** (github.com/fyyakaxyy/AnimationGPT) — text-to-motion built ON
+  MotionGPT and FINE-TUNED ON A COMBAT DATASET. This is the wrestling-aware generator, not HumanML3D.
+- **Bandai Namco Research Motion Dataset** — professional mocap of real martial artists, BVH, free.
+  BVH already loads: assets/vendor/BVHLoader.js is vendored and the baker handles BVH unchanged.
+- **RollTec grappling** (github.com/ChristopherGS/rolltec_motion) — close-quarters grappling transitions.
+- **FreeMoCap**, **AI4Animation** — markerless capture and a trainable animation framework.
+Contact clipping is the known cost of any mocap on two-body grapples; the fix is procedural IK fitting
+to force hands/feet onto the opponent's limbs, then ragdoll on impact.
