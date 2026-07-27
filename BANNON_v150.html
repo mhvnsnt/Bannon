@@ -49591,6 +49591,187 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script>
+// ============================================================================
+// BANNON_GRID — the grid sensor, brought back and actually wired to movement and zoning.
+//
+// The sensor itself was never deleted: FighterGridSensor (16x16 cells, 6 channels) is still in the
+// file and the AI still reads oppSide / oppApproaching / oppInCorner / recentAttackHeat off it. What
+// was missing is why it did not feel present:
+//
+//   1. IT ONLY EVER RAN FOR THE AI. `if (!this.isPlayer && this.gridSensor)` — the player's sensor
+//      was constructed and then never updated once, so BANNON_SENSOR.get(0) returned a buffer of
+//      zeros forever and anything that wanted to reason about the player's surroundings could not.
+//   2. IT HAD NO IDEA WHERE THE EDGES WERE. Six channels about the opponent and not one about the
+//      ring. The owner's ask was "hook it up ... make sure combat and movement and zoning looks
+//      good", and zoning is exactly the part the sensor was blind to — which is why the AI would
+//      happily strafe itself off the apron.
+//
+// This adds the missing half and gives it consumers. No new sensor, no parallel system: the same
+// FighterGridSensor, ticked for everyone, with an edge/zone layer on top that movement reads.
+// ============================================================================
+(function(){
+  'use strict';
+  var ST = { armed:false, ticks:0, edgeSaves:0, protoDone:false };
+
+  function halfW(){ try{ return (typeof ARENA_HALF !== 'undefined') ? ARENA_HALF : 3.6; }catch(e){ return 3.6; } }
+  function halfD(){ return halfW() * 0.72; }          // the ring is not square
+
+  // ---- the edge/zone layer ---------------------------------------------------------------------
+  // Distance to each of the four ropes as a 0..1 proximity, plus which zone a step in a given
+  // direction would put you in. This is the information the sensor never had.
+  function edgeProximity(f){
+    var hw = halfW(), hd = halfD();
+    var ex = Math.max(0, 1 - (hw - Math.abs(f.x || 0)) / 0.9);
+    var ez = Math.max(0, 1 - (hd - Math.abs(f.z || 0)) / 0.9);
+    return {
+      x: ex, z: ez, worst: Math.max(ex, ez),
+      // signed: +1 means the near edge is on the +x / +z side
+      sx: (f.x || 0) >= 0 ? 1 : -1,
+      sz: (f.z || 0) >= 0 ? 1 : -1
+    };
+  }
+  // What zone would a step of `d` metres in (dx,dz) land in? RING inside the ropes, APRON on the
+  // skirt, FLOOR past it. Reads the engine's own ZONE_Y keys so it can never disagree with them.
+  function zoneAt(x, z){
+    var hw = halfW(), hd = halfD();
+    var ox = Math.abs(x) - hw, oz = Math.abs(z) - hd;
+    var out = Math.max(ox, oz);
+    if (out <= 0) return 'RING';
+    if (out <= 0.55) return 'APRON';
+    return 'FLOOR';
+  }
+  function zoneAhead(f, dx, dz, d){
+    d = d || 0.75;
+    var L = Math.hypot(dx, dz) || 1;
+    return zoneAt((f.x || 0) + dx / L * d, (f.z || 0) + dz / L * d);
+  }
+
+  // Given a preferred strafe direction, return one that does NOT walk you out of the ring. This is
+  // the consumer that makes the whole layer worth having: the AI used to nudge `_strafe` to the
+  // opposite side of the opponent with no idea whether there was a rope there.
+  function safeStrafe(f, want){
+    try{
+      if (!want) return want;
+      var fwdx = Math.cos(f.facing || 0), fwdz = -Math.sin(f.facing || 0);
+      var rx = -fwdz, rz = fwdx;                       // right-hand vector
+      var z1 = zoneAhead(f, rx * want, rz * want, 0.9);
+      if (z1 === 'RING') return want;
+      var z2 = zoneAhead(f, rx * -want, rz * -want, 0.9);
+      if (z2 === 'RING'){ ST.edgeSaves++; return -want; }
+      return 0;                                        // both sides are out — hold position
+    }catch(e){ return want; }
+  }
+
+  function install(){
+    if (ST.armed) return true;
+    if (typeof Fighter === 'undefined' || !Fighter.prototype) return false;
+    if (typeof window.BANNON_SENSOR === 'undefined') return false;
+
+    // 1. TICK THE SENSOR FOR EVERY FIGHTER, INCLUDING THE PLAYER. It is a 16x16x6 float buffer at
+    //    30 Hz — the cost is nothing and the alternative is a sensor that is wrong for the one body
+    //    the player actually controls.
+    var last = performance.now();
+    setInterval(function(){
+      var now = performance.now(), dt = Math.min(0.08, (now - last) / 1000); last = now;
+      try{
+        if (typeof gameState !== 'undefined' && gameState !== 'fight') return;
+        if (typeof fighters === 'undefined' || !fighters) return;
+        // grab the constructor off the first live AI sensor, then extend its prototype once
+        if (!ST.protoDone){
+          for (var q = 0; q < fighters.length; q++){
+            var fs = fighters[q] && fighters[q].gridSensor;
+            if (!fs) continue;
+            var proto = Object.getPrototypeOf(fs);
+            proto.edgeProximity = function(){ return edgeProximity(this.owner); };
+            proto.zoneAhead     = function(dx, dz, d){ return zoneAhead(this.owner, dx, dz, d); };
+            proto.safeStrafe    = function(want){ return safeStrafe(this.owner, want); };
+            proto.nearEdge      = function(t){ return edgeProximity(this.owner).worst >= (t == null ? 0.55 : t); };
+            window.__FighterGridSensor = proto.constructor;
+            ST.protoDone = true;
+            break;
+          }
+        }
+        for (var i = 0; i < fighters.length; i++){
+          var f = fighters[i]; if (!f) continue;
+          // the AI path updates its own inside updateAI; only fill the gap
+          if (!f.isPlayer) continue;
+          if (!f.gridSensor && window.__FighterGridSensor) f.gridSensor = new window.__FighterGridSensor(f);
+          if (f.gridSensor && f.gridSensor.update) f.gridSensor.update(dt);
+        }
+        ST.ticks++;
+      }catch(e){}
+    }, 33);
+
+    // 2. GIVE THE SENSOR THE EDGE/ZONE LAYER IT NEVER HAD, on the prototype so every existing
+    //    instance gains it too.
+    //    LAZILY. FighterGridSensor is a class local to its own IIFE — the only way to reach the
+    //    constructor is off a live instance, and the AI does not build one until updateAI first
+    //    runs. Doing this once at install found nothing (no fighters yet), left __FighterGridSensor
+    //    undefined, and the player therefore never got a sensor at all — the exact bug this module
+    //    exists to fix, reintroduced one layer up.
+    ST.protoDone = false;
+
+    // 3. THE CONSUMER. Wrap move2D so no fighter driven by the AI strafes itself out of the ring —
+    //    the sensor now knows there is a rope there, and this is where that knowledge pays.
+    if (Fighter.prototype.move2D && !Fighter.prototype.move2D.__grid){
+      var _origMove2D = Fighter.prototype.move2D;
+      var wrapped = function(dx, dz, dt){
+        try{
+          if (!this.isPlayer && this.gridSensor && !this.ragdoll && this.zone === 'RING'){
+            var e = edgeProximity(this);
+            if (e.worst > 0.62){
+              // steer along the rope instead of into it — the component heading out is damped, the
+              // component running parallel is kept, so the AI slides down the ropes rather than
+              // stopping dead or walking through them
+              if (e.x > 0.62 && Math.sign(dx || 0) === e.sx) dx *= (1 - e.x) * 0.5;
+              if (e.z > 0.62 && Math.sign(dz || 0) === e.sz) dz *= (1 - e.z) * 0.5;
+              ST.edgeSaves++;
+            }
+          }
+        }catch(err){}
+        return _origMove2D.call(this, dx, dz, dt);
+      };
+      wrapped.__grid = true;
+      Fighter.prototype.move2D = wrapped;
+    }
+
+    ST.armed = true;
+    console.log('%c[BANNON_GRID] grid sensor ticking for EVERY fighter (player included) + edge/zone ' +
+      'layer wired into movement','color:#7CFC00');
+    return true;
+  }
+
+  // Fighter and BANNON_SENSOR are both defined in earlier blocks; retry briefly rather than assume.
+  (function arm(n){ if (install() || n > 80) return; setTimeout(function(){ arm(n + 1); }, 250); })(0);
+
+  window.BANNON_GRID = {
+    armed: function(){ return ST.armed; },
+    stats: function(){ return { armed:ST.armed, playerTicks:ST.ticks, edgeSaves:ST.edgeSaves }; },
+    edgeProximity: edgeProximity,
+    zoneAt: zoneAt,
+    zoneAhead: zoneAhead,
+    safeStrafe: safeStrafe,
+    // auditable: what the sensor sees for a fighter right now, edges included
+    report: function(idx){
+      var f = (typeof fighters !== 'undefined') ? fighters[idx == null ? 0 : idx] : null;
+      if (!f) return { err:'no fighter' };
+      var s = f.gridSensor;
+      var e = edgeProximity(f);
+      return {
+        who: (f.opts && f.opts.name) || '?', isPlayer: !!f.isPlayer, hasSensor: !!s,
+        oppSide: s && s.oppSide ? s.oppSide() : null,
+        approaching: s && s.oppApproaching ? s.oppApproaching() : null,
+        oppInCorner: s && s.oppInCorner ? s.oppInCorner() : null,
+        attackHeat: s && s.recentAttackHeat ? +s.recentAttackHeat().toFixed(3) : null,
+        edge: { x:+e.x.toFixed(3), z:+e.z.toFixed(3), worst:+e.worst.toFixed(3) },
+        zone: f.zone, zoneUnderfoot: zoneAt(f.x || 0, f.z || 0)
+      };
+    }
+  };
+})();
+</script>
+
 </body></html>
 
 

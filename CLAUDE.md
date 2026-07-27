@@ -392,3 +392,61 @@ I said "no open-source motion model has wrestling in it". That was wrong. These 
 - **FreeMoCap**, **AI4Animation** — markerless capture and a trainable animation framework.
 Contact clipping is the known cost of any mocap on two-body grapples; the fix is procedural IK fitting
 to force hands/feet onto the opponent's limbs, then ragdoll on impact.
+
+### SYSTEM DONE: THE MOVESET SYSTEM + THREE-PATH PINS + REACH FILTER (2026-07-27)
+- **SCHEMA 7 -> 25 categories / 439 slots, 405 UNCAPPED.** `pick` = default loadout, `cap` = ceiling
+  where 0 means unlimited. Only 34 slots are single-valued and every one is a real engine limit (one
+  walk cycle at a time), never a budget. New: PINS, DEFENCE (dodge/leapfrog/combat roll + light and
+  heavy combo breakers), GROGGY (rope / corner / bent-over / stunned are FOUR situations, not one),
+  ELEVATED (cage wall, cell roof, ladder top, ledge), RINGSIDE floor tie-ups, OUTSIDERS (ref shields,
+  manager distraction, blind-side foul), TAG as its own category, RUMBLE, AI (tendencies, targeting
+  bias, object urgency, scripted sequences). Plus Create-A-Finisher as a parts chain, super/catching
+  finishers, limb targeting, chain wrestling, deathmatch spots. 71 fighting styles each with an
+  8-axis bias + preferred kinds + default stance/gait. 28 paybacks.
+- **MODIFIERS ARE DECLARED, NOT INVENTED** (owner correction: "u don't need to add the modifier
+  system[,] [it] should be there to build on top of" — he was right). The engine already multiplies
+  every slot by GRAPPLE_MATRIX[mode][kind][dir5] / [dir5+'_M'], powerMod, running, zone and armed.
+  Those are now written down and COUNTED instead of duplicated: strike slot = 960 executions,
+  grapple slot = 1920. Never build a second modifier system beside the real one.
+- **BANNON_MOVESET_STUDIO** — viewport-first move-set screen, 51% of a phone screen measured. Own
+  scene + renderer so it works from the MENU with no live fighter. Scroll the strip -> the move under
+  the centre line plays on the body; tap replays; tap twice equips; an explicit EQUIP button too.
+  ONE store shared with the list editor and BANNON_PINS (localStorage bannon_moveset_slots).
+- **BANNON_PINS — THREE PATHS** (owner: "I literal asked for down plus zone and procedural pin"):
+  (1) DOWN+ZONE existed but called startPin() bare so every cover was the same lateral press — now
+  resolves through a 38-pin catalogue; (2) PROCEDURAL, no button, shoulders inside 15 cm of the mat
+  read off the verlet with a rig-joint fallback for knockdowns that never ragdoll, instant if you
+  landed across them, short dwell if you are standing over them; (3) ROLL-UPS front AND rear chosen
+  GEOMETRICALLY — behind = schoolboy / O'Connor / backslide, in front = inside cradle / La Magistral
+  / sunset flip, fast count and a short fuse. Match rules set the count, rope break, ring-only and DQ
+  per match type (ladder refuses pins; hardcore has no rope break and no DQ). ILLEGAL pins have the
+  best numbers and are NEVER in the default pool — carrying one is a choice.
+- **BANNON_REACH** — range is the body and the stats. Measures the bound GLB's shoulder->elbow->hand
+  and hip->knee->foot chains and scales registerHit's tuned constants; no model bound = 1.0 = old
+  behaviour. The binary whiff becomes a BAND: clean -> lean -> stretch -> whiff, and in the stretch
+  the fighter spends the shortfall on his own body (spine lean + shoulder rotation + limb extension,
+  weighted by agility and stamina) with damage tapering to ~0.55. THE ROOT IS NEVER MOVED — that is
+  what separates an extension from a warp. Plus a weight-class lift check the teeter reads.
+- **THE TEETER, RESTORED** (owner: "damped without me asking ... it was beautiful"). It had become a
+  9 cm single-axis rock, no lateral sway, no low-stamina swell, no way to fail. Now amplitude
+  x2.5..x3.2, low-stamina x1.6..x1.9, a real SIDE-TO-SIDE axis on its own slower beat, camera shake
+  past |sine| > 0.7, and a genuine collapse: under the strength/mass fail floor the hoist loses it on
+  a down-beat and comes back down on him. DO NOT DAMP THIS AGAIN.
+- **THREE.js VENDORED LOCALLY** (CDN kept as fallback). It was CDN-first, so the whole engine was
+  hostage to three network round-trips before any game code ran. Measured with the CDN unreachable:
+  44 page errors, `THREE is not defined`, and because the engine's top-level `let fighters = []` sits
+  after the first `new THREE.*` the binding is never created and EVERY later system throws. 44 -> 0.
+- **BANNON_GRID** — the grid sensor was never deleted; it only ever ran for the AI (`!this.isPlayer`)
+  so the player's sensor was zeros forever, and it had no idea where the ropes were. Now ticked for
+  every fighter and given an edge/zone layer that movement consumes: an AI near the ropes slides
+  along them instead of walking out.
+
+### OWNER LAW ADDED 2026-07-27 — LICENCE IS A SHIPPING CONSTRAINT
+tools/mocap/ingest_dataset.cjs converts any BVH dataset to our clips (bone-name normaliser handles
+LeftForeArm / LowerArm_L / lradius conventions). Verified on Bandai Namco: 2,902/2,902 clips.
+BUT: **Bandai Namco Research Motiondataset is CC BY-NC 4.0** and **CombatMotion (CMP/CMR) is derived
+from shipped commercial game assets** — NEITHER can ship in a commercial game. `--commercial-only`
+refuses them; without it they land under assets/moves/datasets/dev/ which is GITIGNORED. Ship-safe
+bulk sources: **CMU Motion Capture Database** (free for all uses incl. commercial), **Mixamo**
+(Adobe royalty-free), **Truebones CC0**, and our own capture (video_to_clip / FreeMoCap / MoMask).
+Never bake an NC or IP-encumbered dataset into the game without asking.
