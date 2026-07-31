@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2484"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2485"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -54600,7 +54600,18 @@ window.__deriveVariant = async function(key){
       var o = window.studioApplyClipPose;
       var w = function(f, clip, t){
         POSE.calls++;
-        try{ var k = (clip && (clip.key || clip.name)) || '?'; POSE.byClip[k] = (POSE.byClip[k]||0)+1; }catch(e){}
+        try{
+          // Baked clips carry no name field, so keying off clip.key/name lumps every move under '?'
+          // and reports distinctClips=1 no matter what is playing. Fingerprint by shape instead --
+          // duration plus key count plus first-frame joint count identifies a capture reliably.
+          var k = (clip && (clip.key || clip.name)) || null;
+          if (!k && clip){
+            var kn = (clip.keys && clip.keys.length) || 0;
+            var jn = (clip.keys && clip.keys[0] && clip.keys[0].pose) ? Object.keys(clip.keys[0].pose).length : 0;
+            k = 'clip[' + (clip.dur != null ? (+clip.dur).toFixed(2) : '?') + 's/' + kn + 'k/' + jn + 'j]';
+          }
+          POSE.byClip[k || '?'] = (POSE.byClip[k || '?']||0)+1;
+        }catch(e){}
         return o.apply(this, arguments);
       };
       w.__bridge = true;
@@ -54636,6 +54647,177 @@ window.__deriveVariant = async function(key){
     }
   };
   console.log('%c[BANNON_BRIDGE] live handle online — BANNON_BRIDGE.health() / .press("jab")','color:#7CFC00');
+})();
+</script>
+
+<script>
+/* ============================================================================================
+   BANNON_PANELS — dialogue boxes that actually close when you leave.
+
+   Owner: "some are hanging around in different menus and modes when u exit back to main menu and
+   go to different modes the dialogue boxes from other modes never go away."
+
+   MEASURED, by walking every mode and listing what is still on screen back at the menu:
+       rosterTab   387x860  z=100045   leaked after 5 of 7 modes
+       saveSlots   379x824  z=100046   leaked after 3 of 7 modes
+       craneStick  106x106             leaked after 7 of 7
+       p1-wrap     165x62              leaked after 7 of 7
+   rosterTab and saveSlots are near-FULLSCREEN at z-index 100045+. Once opened they never close and
+   they sit on top of every other mode -- which is exactly what the owner is describing.
+
+   THE CAUSE. Screen changes go through show(id) -> hideAll(), and hideAll() iterates OVERLAYS, a
+   HARDCODED LIST written when the game had a fixed set of screens. Every panel a later module adds
+   -- the roster tab, the save slots, the life panel, the builder -- is invisible to it. Nothing was
+   broken in those panels; the navigation simply never knew they existed.
+
+   THE FIX IS A REGISTRY, NOT A LIST OF FIXES. Rather than patch each panel's close button, close
+   every registered panel whenever the game NAVIGATES. New panels register themselves (or get picked
+   up by the sweep), so the next module added does not reintroduce this.
+
+   The match HUD (craneStick, p1-wrap and friends) is a separate case: it is not a dialogue, it is
+   gameplay furniture that belongs on screen during a match and nowhere else. It follows gameState.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  // Panels a module opens over the top of a screen. Closed on ANY navigation.
+  var MODE_PANELS = ['rosterTab','saveSlots','bannonLifePanel','bannon-life-panel','godmodePanel',
+                     'surgeonPanel','movesetStudio','bannonBookingSheet','bannonCardPanel',
+                     'creationSuite','bannonSegmentPanel','bannonPromoPanel'];
+
+  // Gameplay furniture — on during a match, off everywhere else. NOT dialogues.
+  // hitstop-flash and announcer are match EFFECTS: full-screen but low z, so the overlay sweep
+  // below (which looks for z >= 1000) will never see them. They belong here instead.
+  var MATCH_HUD = ['craneStick','p1-wrap','p2-wrap','hitstop-flash','announcer'];
+
+  function el(id){ try{ return document.getElementById(id); }catch(e){ return null; } }
+  function hide(id){
+    var e = el(id); if (!e) return false;
+    e.classList.add('hidden');
+    // some panels are shown with an inline style, which a class cannot beat
+    if (e.style && e.style.display && e.style.display !== 'none') e.style.display = 'none';
+    return true;
+  }
+
+  // Anything a module put on screen that we do not know by name yet: a big, high-z, fixed overlay.
+  // Derived from the DOM so a panel added tomorrow is covered without editing this list.
+  function discover(){
+    var found = [];
+    try{
+      document.querySelectorAll('div,section,aside,dialog').forEach(function(e){
+        if (!e.id || MODE_PANELS.indexOf(e.id) >= 0 || MATCH_HUD.indexOf(e.id) >= 0) return;
+        var cs = getComputedStyle(e);
+        if (cs.display === 'none' || cs.visibility === 'hidden') return;
+        if (cs.position !== 'fixed' && cs.position !== 'absolute') return;
+        var z = parseInt(cs.zIndex, 10);
+        if (!(z >= 1000)) return;                       // real overlays sit high; HUD chrome does not
+        var r = e.getBoundingClientRect();
+        if (r.width < 200 || r.height < 200) return;    // a toast is not a stuck dialogue
+        found.push(e.id);
+      });
+    }catch(e){}
+    return found;
+  }
+
+  var ST = { closes:0, lastClosed:[] };
+
+  function closeAll(except){
+    var closed = [];
+    MODE_PANELS.concat(discover()).forEach(function(id){
+      if (except && id === except) return;
+      if (hide(id)) closed.push(id);
+    });
+    if (closed.length){ ST.closes++; ST.lastClosed = closed; }
+    return closed;
+  }
+
+  // ASK THE ENGINE, do not infer. `gameState` is NOT the signal -- it reads 'fight' at the menu and
+  // inside God Within too, so keying the HUD off it left the health bars on screen everywhere
+  // (measured: p1-wrap was the last element still visible at the menu). show() maintains
+  // body.match-live for exactly this question, and the main menu being open is the other half.
+  function inMatch(){
+    try{
+      if (document.body && document.body.classList.contains('match-live')) return true;
+      var mm = el('mainMenu');
+      if (mm && !mm.classList.contains('hidden')) return false;   // menu is up => not fighting
+      return !!document.body && document.body.classList.contains('match-live');
+    }catch(e){ return false; }
+  }
+
+  // The match HUD follows the match. Checked rather than toggled at transitions, so it is
+  // self-correcting no matter which path got us here.
+  function syncHUD(){
+    var on = inMatch();
+    MATCH_HUD.forEach(function(id){
+      var e = el(id); if (!e) return;
+      // Inline display, not just the class. p1-wrap is a .health-wrap, and that rule's specificity
+      // beats a bare .hidden class -- measured: it was the one element still on screen at the menu
+      // after everything else was fixed. An inline style is the only thing that reliably wins.
+      if (on){ e.classList.remove('hidden'); if (e.style.display === 'none') e.style.display = ''; }
+      else { e.classList.add('hidden'); e.style.display = 'none'; }
+    });
+  }
+
+  // ---- hook NAVIGATION, which is the one thing every one of these paths has in common ----
+  function arm(){
+    if (typeof window.show === 'function' && !window.show.__panels){
+      var origShow = window.show;
+      var w = function(id){
+        try{ closeAll(id); }catch(e){}
+        var r = origShow.apply(this, arguments);
+        try{ syncHUD(); }catch(e){}
+        return r;
+      };
+      w.__panels = true;
+      try{ window.show = w; }catch(e){}
+    }
+    if (typeof window.hideAll === 'function' && !window.hideAll.__panels){
+      var origHide = window.hideAll;
+      var h = function(){
+        var r = origHide.apply(this, arguments);
+        try{ closeAll(); }catch(e){}
+        return r;
+      };
+      h.__panels = true;
+      try{ window.hideAll = h; }catch(e){}
+    }
+    if (typeof window.startFight === 'function' && !window.startFight.__panels){
+      var origSF = window.startFight;
+      var s = function(){
+        try{ closeAll(); }catch(e){}          // no dialogue survives the bell
+        var r = origSF.apply(this, arguments);
+        try{ syncHUD(); }catch(e){}
+        return r;
+      };
+      s.__panels = true;
+      for (var k in origSF){ if (Object.prototype.hasOwnProperty.call(origSF, k)) s[k] = origSF[k]; }
+      try{ window.startFight = s; }catch(e){}
+    }
+    return typeof window.show === 'function' && window.show.__panels;
+  }
+
+  (function tryArm(n){
+    if (arm()){
+      syncHUD();
+      setInterval(syncHUD, 1200);       // cheap, and fixes any path that bypasses show()
+      console.log('%c[BANNON_PANELS] navigation closes mode panels — no more stuck dialogues','color:#7CFC00');
+      return;
+    }
+    if (n > 200) return;
+    setTimeout(function(){ tryArm(n+1); }, 250);
+  })(0);
+
+  window.BANNON_PANELS = {
+    close: closeAll,
+    syncHUD: syncHUD,
+    register: function(id){ if (id && MODE_PANELS.indexOf(id) < 0) MODE_PANELS.push(id); return MODE_PANELS.slice(); },
+    panels: function(){ return MODE_PANELS.slice(); },
+    hud: function(){ return MATCH_HUD.slice(); },
+    discover: discover,
+    stats: function(){ return { closes:ST.closes, lastClosed:ST.lastClosed,
+                                registered:MODE_PANELS.length, inMatch:inMatch(),
+                                openNow:discover() }; }
+  };
 })();
 </script>
 
