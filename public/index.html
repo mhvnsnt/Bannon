@@ -54821,6 +54821,349 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script>
+/* ============================================================================================
+   BANNON_STYLE — the 71 fighting styles finally DO something.
+
+   Owner: "get the ... animations and styles and combat and locomotion deeper and more advanced."
+
+   MEASURED FIRST, because the shallow thing is not always the thing you would guess:
+     * LOCOMOTION IS NOT BROKEN. Holding movement for 60 frames rotates the leg bones by 25.76
+       radians total (0.43/frame). The legs walk. There was no floating bug to invent here.
+     * COMBAT VARIETY IS REAL BUT NARROW. 60 real button presses -> 45 pose calls across 8 distinct
+       clips, but the only fighter states ever entered were `idle` and `attack`.
+     * THE STYLES ARE DEAD DATA. assets/moves/moveset_schema.json authors 71 styles, each with an
+       8-axis bias, a `prefers` list, a stance and a locomotion gait. `st.bias` and `st.prefers` are
+       read in exactly ONE place in the whole engine -- a UI screen that LISTS them, whose own text
+       claims "a style biases attributes, the AI's move choice and the default moveset". Nothing at
+       runtime read any of it. Every fighter fought identically.
+
+   THREE DISCONNECTED VOCABULARIES, which is why this never joined up on its own:
+     1. the roster's display string   'KARATE · SHADOW', 'BRAWLER · IRON', 'CAPOEIRA · WIND'
+     2. per-move tags                 style:"BOXING", style:"MUAY THAI"
+     3. the schema's 71 ids           KARATE, BRAWLER, CAPOEIRA, POWERHOUSE, GRAPPLER ...
+   resolve() joins 1 -> 3 by matching the schema's own ids against the words in the display string.
+   DERIVED FROM THE DATA, never a hand-written lookup table: add a style to the schema and it
+   resolves without touching this file.
+
+   WHAT A STYLE NOW DRIVES:
+     bias.pow/str  -> outgoing damage, through a multiplier on the fighter (never on DMG_SCALE)
+     bias.res      -> stamina ceiling
+     bias.spd      -> attack cadence
+     prefers       -> which KIND of move the pool reaches for (BANNON_MOVEPOOL.pick already took a
+                      style argument and NOTHING EVER PASSED ONE)
+     stance        -> recorded on the fighter for the guard/idle pose to read
+     locomotion    -> gait weight
+
+   ABSOLUTE MATH IS UNTOUCHED. DMG_SCALE 8.0, MAX_BODY_VEL 3.8 and MAX_HP stay exactly where they
+   are; a style scales a FIGHTER'S OWN multiplier, the same way BANNON_LIFE's _lifeDmgMul does, and
+   the two compose. A style makes a wrestler different, it does not move the engine's floor.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  var STYLES = [], BY_ID = {};
+  var ST = { resolved:0, applied:0, picks:0, preferHits:0, delivered:0, lastMove:null, unresolved:{} };
+
+  // bias axes run 0..9 and 5 is the middle of the authored range, so 5 is "no change".
+  function axis(s, k){ var b = s && s.bias; var v = (b && b[k] != null) ? +b[k] : 5; return (v - 5) / 5; }
+
+  // ---- join the roster's display string to a schema id, using the schema's OWN ids ----
+  function resolve(nameOrStyleText){
+    var t = String(nameOrStyleText || '').toUpperCase();
+    if (!t) return null;
+    if (BY_ID[t]) return BY_ID[t];
+    var words = t.split(/[^A-Z]+/).filter(Boolean);
+    var best = null, bestLen = 0;
+    for (var i = 0; i < STYLES.length; i++){
+      var s = STYLES[i];
+      var idWords = s.id.split('_');
+      // every word of the style id must appear in the text; longest match wins so MUAY_THAI beats
+      // a bare THAI and KUNG_FU is not mistaken for FU
+      var all = idWords.every(function(w){ return words.indexOf(w) >= 0; });
+      if (all && s.id.length > bestLen){ best = s; bestLen = s.id.length; }
+    }
+    if (best) return best;
+    // second pass: the LABEL, for styles whose id and prose differ
+    for (var j = 0; j < STYLES.length; j++){
+      var lab = String(STYLES[j].label || '').toUpperCase();
+      if (lab && t.indexOf(lab) >= 0) return STYLES[j];
+    }
+    return null;
+  }
+
+  // CANDIDATES IN PRIORITY ORDER, tried one at a time -- never concatenated.
+  // Joining them into one string was wrong twice over: it produced junk like
+  // "ORTHODOX ORTHODOX ORTHODOX" on repeat calls, and it let a GUARD stance shadow the real thing.
+  // f.style is NOT the fighting style -- it holds the guard (ORTHODOX / PHILLY_SHELL, see
+  // GUARD_STYLES). The roster's own display string is the authority and goes first.
+  function styleCandidates(f){
+    var out = [];
+    if (!f) return out;
+    var push = function(v){ v = String(v || '').trim(); if (v && out.indexOf(v) < 0) out.push(v); };
+    try{
+      var nm = (f.specName || (f.opts && f.opts.name) || f.name || '');
+      if (typeof ROSTER !== 'undefined' && ROSTER && ROSTER.length){
+        for (var i = 0; i < ROSTER.length; i++)
+          if (String(ROSTER[i].name).toUpperCase() === String(nm).toUpperCase()){ push(ROSTER[i].style); break; }
+      }
+      if (f.styleId) push(f.styleId);
+      if (f.opts && f.opts.style) push(f.opts.style);
+      if (f.spec && f.spec.style) push(f.spec.style);
+      if (f.fightingStyle) push(f.fightingStyle);
+      // f.style last: it is usually the guard, and only helps when nothing better exists
+      if (f.style) push(f.style);
+    }catch(e){}
+    return out;
+  }
+
+  // Some roster prose names no authored style at all -- VIPER is 'SOUTHPAW · ICE', and SOUTHPAW is a
+  // STANCE, not one of the 71. Rather than leave that fighter with no style at all, fall back to the
+  // weight class the game already authors in CHAR_ARCHETYPE. Still derived from real data, never a
+  // guess from the name.
+  var ARCH_STYLE = { HEAVYWEIGHT:'POWERHOUSE', CRUISERWEIGHT:'CRUISERWEIGHT',
+                     MIDDLEWEIGHT:'RING_GENERAL', LIGHTWEIGHT:'HIGH_FLYER' };
+  function archetypeStyle(f){
+    try{
+      var nm = String(f.specName || (f.opts && f.opts.name) || f.name || '').toUpperCase();
+      var a = (typeof CHAR_ARCHETYPE !== 'undefined' && CHAR_ARCHETYPE[nm]) || null;
+      if (!a) return null;
+      return BY_ID[ARCH_STYLE[a] || ''] || null;
+    }catch(e){ return null; }
+  }
+
+  // ---- apply a style to a fighter. Idempotent: authored values are remembered once. ----
+  function apply(f){
+    if (!f) return null;
+    var s = f._style;
+    if (!s){
+      var cands = styleCandidates(f);
+      for (var i = 0; i < cands.length && !s; i++) s = resolve(cands[i]);
+      if (!s) s = archetypeStyle(f);
+      if (!s){ if (cands.length) ST.unresolved[cands.join(' | ')] = (ST.unresolved[cands.join(' | ')]||0)+1; return null; }
+    }
+    if (f._styleApplied === s.id) return s;
+
+    if (f._styleBase == null) f._styleBase = { maxStamina: f.maxStamina };
+    var pow = axis(s,'pow'), str = axis(s,'str'), res = axis(s,'res'), spd = axis(s,'spd');
+
+    // OUTGOING DAMAGE. Same pattern as BANNON_LIFE's _lifeDmgMul -- a multiplier ON THE FIGHTER,
+    // consumed in the applyDamage funnel below. DMG_SCALE is never touched.
+    f._styleDmgMul = 1 + 0.22 * pow + 0.10 * str;          // ~0.78x .. ~1.32x across the roster
+
+    // STAMINA CEILING from resilience.
+    if (f._styleBase.maxStamina) f.maxStamina = f._styleBase.maxStamina * (1 + 0.20 * res);
+
+    // CADENCE from speed — read by the pick hook to space a striker's offence tighter.
+    f._styleCadence = 1 - 0.18 * spd;
+
+    f._style = s;
+    f._styleId = s.id;
+    f._stance = s.stance || 'BALANCED';                    // guard/idle pose reads this
+    f._gait = s.locomotion || 'NORMAL';                    // gait weight reads this
+    f._prefers = (s.prefers || []).slice();
+    f._styleApplied = s.id;
+    ST.applied++;
+    return s;
+  }
+
+  function applyAll(){
+    var F = (function(){ try{ return (typeof fighters !== 'undefined' && fighters) ? fighters : []; }catch(e){ return []; } })();
+    var n = 0;
+    for (var i = 0; i < F.length; i++) if (F[i] && apply(F[i])) n++;
+    return n;
+  }
+
+  // ---- CONSUMER 1: outgoing damage ----
+  function hookDamage(tries){
+    tries = tries || 0;
+    try{
+      if (typeof window.applyDamage === 'function' && !window.applyDamage.__style){
+        var orig = window.applyDamage;
+        var w = function(victim, dmg, attacker, move, forceDown){
+          try{ if (attacker && attacker._styleDmgMul) dmg = dmg * attacker._styleDmgMul; }catch(e){}
+          return orig.call(this, victim, dmg, attacker, move, forceDown);
+        };
+        w.__style = true;
+        for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) w[k] = orig[k]; }
+        window.applyDamage = w;
+        return true;
+      }
+    }catch(e){}
+    if (tries < 200) setTimeout(function(){ hookDamage(tries+1); }, 250);
+    return false;
+  }
+
+  // ---- CONSUMER 2: what KIND of move the pool reaches for ----
+  // BANNON_MOVEPOOL.pick(pos, style, kind) already accepted a style and a kind. Nothing ever passed
+  // either. A POWERHOUSE prefers grapple/carry, a STRIKER prefers strike/combo -- so bias the KIND
+  // by the attacker's own prefers list before falling back to the unbiased pool.
+  var KIND_OF = { grapple:'grapple', carry:'grapple', chain:'grapple', rest_hold:'grapple',
+                  weapon_grapple:'grapple', strike:'strike', combo:'strike', illegal:'strike',
+                  weapon_strike:'strike', deathmatch:'strike', dive:'dive', submission:'sub' };
+  function hookPool(tries){
+    tries = tries || 0;
+    try{
+      var MP = window.BANNON_MOVEPOOL;
+      if (MP && typeof MP.pick === 'function' && !MP.pick.__style){
+        var orig = MP.pick;
+        var w = function(pos, style, kind){
+          ST.picks++;
+          try{
+            if (!kind){
+              var f = window.__styleAttacker;
+              var pref = f && f._prefers;
+              if (pref && pref.length){
+                // weight the attacker's own preferences, first listed weighted highest
+                var idx = Math.floor(Math.random() * Math.min(pref.length, 3));
+                var k = KIND_OF[pref[idx]];
+                if (k){
+                  var m = orig.call(this, pos, style, k);
+                  if (m){ ST.preferHits++; return m; }     // fall through to unbiased if empty
+                }
+              }
+            }
+          }catch(e){}
+          return orig.apply(this, arguments);
+        };
+        w.__style = true;
+        MP.pick = w;
+        // remember who is attacking, so pick() can read their style without changing its signature
+        if (typeof MP.run === 'function' && !MP.run.__style){
+          var origRun = MP.run;
+          var wr = function(attacker){
+            window.__styleAttacker = attacker;
+            try{ if (attacker) apply(attacker); }catch(e){}
+            try{ return origRun.apply(this, arguments); }
+            finally { window.__styleAttacker = null; }
+          };
+          wr.__style = true;
+          MP.run = wr;
+        }
+        return true;
+      }
+    }catch(e){}
+    if (tries < 200) setTimeout(function(){ hookPool(tries+1); }, 250);
+    return false;
+  }
+
+  // ---- CONSUMER 3: the MDickie grapple vocabulary, in NORMAL PLAY ----
+  // BANNON_MOVEPOOL hooks window.execGrappleMove, and execGrappleMove is a WRAPPER that calls
+  // attacker.grappleDeliver(). Player input never goes through the wrapper -- it reaches
+  // Fighter.prototype.grappleDeliver directly (grappleStage===3 -> deliver). MEASURED: 22 grapple
+  // deliveries in a driven match, execGrappleMove called ZERO times, movepool picks ZERO.
+  // So the whole authored library was hooked to a door the game does not use when you play.
+  //
+  // The join was there all along and nobody had made it: a library move carries `pos`
+  // (BACK_SUPLEX / POWERBOMB ...) which IS this.grapplePos, `deliver` (toss/slam/bridge/drop/spike/
+  // choke) which IS grappleDeliver's own type argument, and `style` tags that are the SCHEMA STYLE
+  // IDS IN LOWERCASE ("powerhouse", "technical"). Passing the fighter's resolved style therefore
+  // filters the library correctly with no new mapping table.
+  function hookDeliver(tries){
+    tries = tries || 0;
+    try{
+      if (typeof Fighter === 'function' && Fighter.prototype && Fighter.prototype.grappleDeliver
+          && !Fighter.prototype.grappleDeliver.__style){
+        var orig = Fighter.prototype.grappleDeliver;
+        var w = function(type, aim){
+          try{
+            if (window.STYLE_GRAPPLE_VARIETY !== false && !this._explicitMove && !this._finisherPending){
+              var MP = window.BANNON_MOVEPOOL;
+              if (MP && MP.pick && MP.positionOf){
+                var s = apply(this) || this._style;
+                var sid = s ? String(s.id).toLowerCase() : null;
+                var pos = MP.positionOf(this);
+                var m = null;
+                // A LEAN, NOT A LAW. Forcing the preferred kind on every delivery collapsed the
+                // variety: TITAN (BRAWLER) and ZEPHYR (CAPOEIRA) both list `strike` first, so both
+                // came out of 25 grapples with the SAME two takedowns. A style should colour what a
+                // wrestler reaches for, not reduce him to one drawer. Roughly two deliveries in
+                // three follow the preference; the rest draw from everything the position allows.
+                if (this._prefers && this._prefers.length && Math.random() < 0.65){
+                  var k = KIND_OF[this._prefers[Math.floor(Math.random()*Math.min(this._prefers.length,3))]];
+                  if (k) m = MP.pick(pos, sid, k);
+                }
+                if (!m) m = MP.pick(pos, sid, 'grapple') || MP.pick(pos, sid);
+                if (m){
+                  ST.delivered++;
+                  // the move's own position and delivery, so the library actually changes what happens
+                  if (m.pos && typeof GRAPPLE_POSITIONS !== 'undefined' && GRAPPLE_POSITIONS[m.pos]) this.grapplePos = m.pos;
+                  if (m.deliver) type = m.deliver;
+                  ST.lastMove = m.name || null;
+                  try{ if (typeof announce === 'function' && m.name) announce(m.name, String(pos).replace(/_/g,' ')); }catch(e){}
+                }
+              }
+            }
+          }catch(e){}
+          return orig.call(this, type, aim);
+        };
+        w.__style = true;
+        Fighter.prototype.grappleDeliver = w;
+        return true;
+      }
+    }catch(e){}
+    if (tries < 200) setTimeout(function(){ hookDeliver(tries+1); }, 250);
+    return false;
+  }
+
+  // ---- load the authored styles, then arm ----
+  function boot(){
+    fetch('assets/moves/moveset_schema.json').then(function(r){ return r.json(); }).then(function(j){
+      STYLES = (j && j.styles) || [];
+      STYLES.forEach(function(s){ BY_ID[String(s.id).toUpperCase()] = s; });
+      ST.resolved = STYLES.length;
+      hookDamage(); hookPool(); hookDeliver();
+      // apply at the bell and whenever the roster changes
+      (function armBell(n){
+        if (typeof window.startFight === 'function' && !window.startFight.__style){
+          var orig = window.startFight;
+          var w = function(){
+            var r = orig.apply(this, arguments);
+            setTimeout(applyAll, 600);      // fighters exist by now
+            setTimeout(applyAll, 2500);     // and again once async models/specs land
+            return r;
+          };
+          w.__style = true;
+          for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) w[k] = orig[k]; }
+          try{ window.startFight = w; }catch(e){}
+          return;
+        }
+        if (n < 200) setTimeout(function(){ armBell(n+1); }, 250);
+      })(0);
+      setInterval(applyAll, 5000);          // covers interference spawns and roam NPCs
+      console.log('%c[BANNON_STYLE] ' + STYLES.length + ' fighting styles now drive damage, stamina, '
+        + 'cadence, move choice, stance and gait','color:#7CFC00');
+    }).catch(function(e){
+      console.warn('[BANNON_STYLE] schema unavailable, styles stay cosmetic:', e && e.message);
+    });
+  }
+  boot();
+
+  window.BANNON_STYLE = {
+    resolve: resolve,
+    apply: apply,
+    applyAll: applyAll,
+    styles: function(){ return STYLES.slice(); },
+    of: function(f){ return f && f._style ? { id:f._style.id, label:f._style.label,
+      dmgMul:+(f._styleDmgMul||1).toFixed(3), stance:f._stance, gait:f._gait,
+      prefers:f._prefers, maxStamina:f.maxStamina } : null; },
+    // one call that shows whether styles are actually differentiating the roster
+    spread: function(){
+      var F = (function(){ try{ return (typeof fighters!=='undefined'&&fighters)?fighters:[]; }catch(e){ return []; } })();
+      return F.filter(Boolean).map(function(f){
+        return { name:(f.opts&&f.opts.name)||f.name||'?', style:f._styleId||null,
+                 dmgMul:+(f._styleDmgMul||1).toFixed(3), stance:f._stance||null,
+                 gait:f._gait||null, prefers:(f._prefers||[]).join('/') };
+      });
+    },
+    stats: function(){ return { authored:STYLES.length, applied:ST.applied, picks:ST.picks,
+                                preferBiasedPicks:ST.preferHits,
+                                poolGrapplesDelivered:ST.delivered, lastMove:ST.lastMove,
+                                unresolved:ST.unresolved }; }
+  };
+})();
+</script>
+
 </body></html>
 
 
