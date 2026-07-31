@@ -31018,8 +31018,19 @@ if (_origCouple && !_origCouple._v98){
     const prevX = this.x, prevZ = this.z;
     _origZU.call(this, dt);
     // If near the rope boundary but NOT actively trying to exit (hold < threshold),
-    // clamp position so fighter can stand at the ropes freely
-    if (this.zone === 'RING'){
+    // clamp position so fighter can stand at the ropes freely.
+    //
+    // ONLY IN THE ARENA. `zone` defaults to 'RING' and nothing outside a match ever changes it, so
+    // without this check the ring's own boundary followed the player into every MDickie location and
+    // penned them inside a 3.2 x 2.2 box in the middle of a ~90-unit hotel/street/gym. MEASURED by
+    // trapping the write: set the player to x=43 in LOC_HOTEL and updateZone put them back at 3.16
+    // on the very next frame. That is the whole of "mdickie environments are not really rendering
+    // for real or travel able through them" -- the rooms were built and dressed correctly, the
+    // player just could never walk more than three units from the middle of one, so every location
+    // read as a backdrop and the walk-to-the-edge travel could never fire.
+    // Same condition _zoneClamp already uses, so the two agree on where the ring exists.
+    var inArena = !window.CURRENT_ENV || window.CURRENT_ENV === 'ARENA';
+    if (inArena && this.zone === 'RING'){
       const AH = (typeof ARENA_HALF !== 'undefined' ? ARENA_HALF : 3.2) - 0.04;
       const AHZ = (typeof ARENA_HALF_Z !== 'undefined' ? ARENA_HALF_Z : 2.2) - 0.04;
       if (Math.abs(this.x) > AH) this.x = AH * Math.sign(this.x);
