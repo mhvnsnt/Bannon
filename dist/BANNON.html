@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2485"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2487"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -31029,8 +31029,11 @@ if (_origCouple && !_origCouple._v98){
     // player just could never walk more than three units from the middle of one, so every location
     // read as a backdrop and the walk-to-the-edge travel could never fire.
     // Same condition _zoneClamp already uses, so the two agree on where the ring exists.
+    // A fighter making an ENTRANCE is deliberately outside the ring, walking down the ramp from
+    // ~11m behind it. The ring boundary must not exist for him yet or he is yanked to the mat on
+    // the first frame -- the same way it used to pen the player inside every MDickie location.
     var inArena = !window.CURRENT_ENV || window.CURRENT_ENV === 'ARENA';
-    if (inArena && this.zone === 'RING'){
+    if (inArena && this.zone === 'RING' && !this._entering){
       const AH = (typeof ARENA_HALF !== 'undefined' ? ARENA_HALF : 3.2) - 0.04;
       const AHZ = (typeof ARENA_HALF_Z !== 'undefined' ? ARENA_HALF_Z : 2.2) - 0.04;
       if (Math.abs(this.x) > AH) this.x = AH * Math.sign(this.x);
@@ -42372,48 +42375,16 @@ window.BANNON_ITEMS = (function(){
 // defined above (~line 40746). Removed — one definition, one source of truth. Its API is
 // generateHeadline(name) / generateWeeklyNews(universe); BANNON_CARDS presents them as cards.
 
-window.BANNON_ENTRANCES = (function(){
-  function startEntrance(fighter) {
-    if(!fighter) return;
-    fighter.state = 'entrance_stage';
-    fighter.z = -500; // Deep in the aisle
-    fighter.x = 0;
-    if(window.addEvent) window.addEvent(`${fighter.name} steps through the curtain!`, 'entrance');
-  }
-  
-  function updateEntrance(fighter) {
-    if(fighter.state === 'entrance_stage') {
-        fighter.z += 2; // Walk down the ramp
-        if(fighter.z >= -100) {
-           fighter.state = 'entrance_apron';
-        }
-    } else if (fighter.state === 'entrance_apron') {
-        fighter.z += 1;
-        fighter.y = 30; // Step onto apron
-        if(fighter.z >= -40) {
-           fighter.state = 'entrance_ring';
-        }
-    } else if (fighter.state === 'entrance_ring') {
-        fighter.z += 1;
-        fighter.y = 0; // Step into ring
-        if(fighter.z >= 0) {
-           fighter.state = 'idle';
-           if(window.addEvent) window.addEvent(`${fighter.name} is ready for action!`, 'entrance');
-        }
-    }
-  }
-  
-  function triggerPyro(fighter) {
-    if(fighter.state !== 'entrance_stage') return;
-    if(window.addEvent) window.addEvent(`BOOM! Pyro goes off for ${fighter.name}!`, 'pyro');
-  }
-
-  return {
-    startEntrance,
-    updateEntrance,
-    triggerPyro
-  };
-})();
+// SECOND, IDENTICAL DEFINITION OF BANNON_ENTRANCES REMOVED.
+// It was a byte-for-byte copy of the module ~370 lines above and silently overwrote it with a plain
+// `=` -- the same bug that wiped BANNON_MDICKIE's career-sim half and cost five dead screens, and
+// the comment a few lines up records fixing exactly this for a duplicated BANNON_NEWS and missing
+// this one. One definition, one source of truth.
+//
+// NOTE ON THE SURVIVING COPY: it has never had a caller, and its numbers are not this engine's --
+// z = -500, y = 30 for the apron, +2 per tick, in an engine where ARENA_HALF_Z is 2.2 metres. It is
+// left in place as the salvaged AI-Studio reference it is. The entrance that actually runs is
+// BANNON_WALKOUT at the end of this file, rebuilt in metres off the arena's real ramp geometry.
 </script>
 
 <!-- ============================================================================================
@@ -54818,6 +54789,563 @@ window.__deriveVariant = async function(key){
                                 registered:MODE_PANELS.length, inMatch:inMatch(),
                                 openNow:discover() }; }
   };
+})();
+</script>
+
+<script>
+/* ============================================================================================
+   BANNON_STYLE — the 71 fighting styles finally DO something.
+
+   Owner: "get the ... animations and styles and combat and locomotion deeper and more advanced."
+
+   MEASURED FIRST, because the shallow thing is not always the thing you would guess:
+     * LOCOMOTION IS NOT BROKEN. Holding movement for 60 frames rotates the leg bones by 25.76
+       radians total (0.43/frame). The legs walk. There was no floating bug to invent here.
+     * COMBAT VARIETY IS REAL BUT NARROW. 60 real button presses -> 45 pose calls across 8 distinct
+       clips, but the only fighter states ever entered were `idle` and `attack`.
+     * THE STYLES ARE DEAD DATA. assets/moves/moveset_schema.json authors 71 styles, each with an
+       8-axis bias, a `prefers` list, a stance and a locomotion gait. `st.bias` and `st.prefers` are
+       read in exactly ONE place in the whole engine -- a UI screen that LISTS them, whose own text
+       claims "a style biases attributes, the AI's move choice and the default moveset". Nothing at
+       runtime read any of it. Every fighter fought identically.
+
+   THREE DISCONNECTED VOCABULARIES, which is why this never joined up on its own:
+     1. the roster's display string   'KARATE · SHADOW', 'BRAWLER · IRON', 'CAPOEIRA · WIND'
+     2. per-move tags                 style:"BOXING", style:"MUAY THAI"
+     3. the schema's 71 ids           KARATE, BRAWLER, CAPOEIRA, POWERHOUSE, GRAPPLER ...
+   resolve() joins 1 -> 3 by matching the schema's own ids against the words in the display string.
+   DERIVED FROM THE DATA, never a hand-written lookup table: add a style to the schema and it
+   resolves without touching this file.
+
+   WHAT A STYLE NOW DRIVES:
+     bias.pow/str  -> outgoing damage, through a multiplier on the fighter (never on DMG_SCALE)
+     bias.res      -> stamina ceiling
+     bias.spd      -> attack cadence
+     prefers       -> which KIND of move the pool reaches for (BANNON_MOVEPOOL.pick already took a
+                      style argument and NOTHING EVER PASSED ONE)
+     stance        -> recorded on the fighter for the guard/idle pose to read
+     locomotion    -> gait weight
+
+   ABSOLUTE MATH IS UNTOUCHED. DMG_SCALE 8.0, MAX_BODY_VEL 3.8 and MAX_HP stay exactly where they
+   are; a style scales a FIGHTER'S OWN multiplier, the same way BANNON_LIFE's _lifeDmgMul does, and
+   the two compose. A style makes a wrestler different, it does not move the engine's floor.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  var STYLES = [], BY_ID = {};
+  var ST = { resolved:0, applied:0, picks:0, preferHits:0, delivered:0, lastMove:null, unresolved:{} };
+
+  // bias axes run 0..9 and 5 is the middle of the authored range, so 5 is "no change".
+  function axis(s, k){ var b = s && s.bias; var v = (b && b[k] != null) ? +b[k] : 5; return (v - 5) / 5; }
+
+  // ---- join the roster's display string to a schema id, using the schema's OWN ids ----
+  function resolve(nameOrStyleText){
+    var t = String(nameOrStyleText || '').toUpperCase();
+    if (!t) return null;
+    if (BY_ID[t]) return BY_ID[t];
+    var words = t.split(/[^A-Z]+/).filter(Boolean);
+    var best = null, bestLen = 0;
+    for (var i = 0; i < STYLES.length; i++){
+      var s = STYLES[i];
+      var idWords = s.id.split('_');
+      // every word of the style id must appear in the text; longest match wins so MUAY_THAI beats
+      // a bare THAI and KUNG_FU is not mistaken for FU
+      var all = idWords.every(function(w){ return words.indexOf(w) >= 0; });
+      if (all && s.id.length > bestLen){ best = s; bestLen = s.id.length; }
+    }
+    if (best) return best;
+    // second pass: the LABEL, for styles whose id and prose differ
+    for (var j = 0; j < STYLES.length; j++){
+      var lab = String(STYLES[j].label || '').toUpperCase();
+      if (lab && t.indexOf(lab) >= 0) return STYLES[j];
+    }
+    return null;
+  }
+
+  // CANDIDATES IN PRIORITY ORDER, tried one at a time -- never concatenated.
+  // Joining them into one string was wrong twice over: it produced junk like
+  // "ORTHODOX ORTHODOX ORTHODOX" on repeat calls, and it let a GUARD stance shadow the real thing.
+  // f.style is NOT the fighting style -- it holds the guard (ORTHODOX / PHILLY_SHELL, see
+  // GUARD_STYLES). The roster's own display string is the authority and goes first.
+  function styleCandidates(f){
+    var out = [];
+    if (!f) return out;
+    var push = function(v){ v = String(v || '').trim(); if (v && out.indexOf(v) < 0) out.push(v); };
+    try{
+      var nm = (f.specName || (f.opts && f.opts.name) || f.name || '');
+      if (typeof ROSTER !== 'undefined' && ROSTER && ROSTER.length){
+        for (var i = 0; i < ROSTER.length; i++)
+          if (String(ROSTER[i].name).toUpperCase() === String(nm).toUpperCase()){ push(ROSTER[i].style); break; }
+      }
+      if (f.styleId) push(f.styleId);
+      if (f.opts && f.opts.style) push(f.opts.style);
+      if (f.spec && f.spec.style) push(f.spec.style);
+      if (f.fightingStyle) push(f.fightingStyle);
+      // f.style last: it is usually the guard, and only helps when nothing better exists
+      if (f.style) push(f.style);
+    }catch(e){}
+    return out;
+  }
+
+  // Some roster prose names no authored style at all -- VIPER is 'SOUTHPAW · ICE', and SOUTHPAW is a
+  // STANCE, not one of the 71. Rather than leave that fighter with no style at all, fall back to the
+  // weight class the game already authors in CHAR_ARCHETYPE. Still derived from real data, never a
+  // guess from the name.
+  var ARCH_STYLE = { HEAVYWEIGHT:'POWERHOUSE', CRUISERWEIGHT:'CRUISERWEIGHT',
+                     MIDDLEWEIGHT:'RING_GENERAL', LIGHTWEIGHT:'HIGH_FLYER' };
+  function archetypeStyle(f){
+    try{
+      var nm = String(f.specName || (f.opts && f.opts.name) || f.name || '').toUpperCase();
+      var a = (typeof CHAR_ARCHETYPE !== 'undefined' && CHAR_ARCHETYPE[nm]) || null;
+      if (!a) return null;
+      return BY_ID[ARCH_STYLE[a] || ''] || null;
+    }catch(e){ return null; }
+  }
+
+  // ---- apply a style to a fighter. Idempotent: authored values are remembered once. ----
+  function apply(f){
+    if (!f) return null;
+    var s = f._style;
+    if (!s){
+      var cands = styleCandidates(f);
+      for (var i = 0; i < cands.length && !s; i++) s = resolve(cands[i]);
+      if (!s) s = archetypeStyle(f);
+      if (!s){ if (cands.length) ST.unresolved[cands.join(' | ')] = (ST.unresolved[cands.join(' | ')]||0)+1; return null; }
+    }
+    if (f._styleApplied === s.id) return s;
+
+    if (f._styleBase == null) f._styleBase = { maxStamina: f.maxStamina };
+    var pow = axis(s,'pow'), str = axis(s,'str'), res = axis(s,'res'), spd = axis(s,'spd');
+
+    // OUTGOING DAMAGE. Same pattern as BANNON_LIFE's _lifeDmgMul -- a multiplier ON THE FIGHTER,
+    // consumed in the applyDamage funnel below. DMG_SCALE is never touched.
+    f._styleDmgMul = 1 + 0.22 * pow + 0.10 * str;          // ~0.78x .. ~1.32x across the roster
+
+    // STAMINA CEILING from resilience.
+    if (f._styleBase.maxStamina) f.maxStamina = f._styleBase.maxStamina * (1 + 0.20 * res);
+
+    // CADENCE from speed — read by the pick hook to space a striker's offence tighter.
+    f._styleCadence = 1 - 0.18 * spd;
+
+    f._style = s;
+    f._styleId = s.id;
+    f._stance = s.stance || 'BALANCED';                    // guard/idle pose reads this
+    f._gait = s.locomotion || 'NORMAL';                    // gait weight reads this
+    f._prefers = (s.prefers || []).slice();
+    f._styleApplied = s.id;
+    ST.applied++;
+    return s;
+  }
+
+  function applyAll(){
+    var F = (function(){ try{ return (typeof fighters !== 'undefined' && fighters) ? fighters : []; }catch(e){ return []; } })();
+    var n = 0;
+    for (var i = 0; i < F.length; i++) if (F[i] && apply(F[i])) n++;
+    return n;
+  }
+
+  // ---- CONSUMER 1: outgoing damage ----
+  function hookDamage(tries){
+    tries = tries || 0;
+    try{
+      if (typeof window.applyDamage === 'function' && !window.applyDamage.__style){
+        var orig = window.applyDamage;
+        var w = function(victim, dmg, attacker, move, forceDown){
+          try{ if (attacker && attacker._styleDmgMul) dmg = dmg * attacker._styleDmgMul; }catch(e){}
+          return orig.call(this, victim, dmg, attacker, move, forceDown);
+        };
+        w.__style = true;
+        for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) w[k] = orig[k]; }
+        window.applyDamage = w;
+        return true;
+      }
+    }catch(e){}
+    if (tries < 200) setTimeout(function(){ hookDamage(tries+1); }, 250);
+    return false;
+  }
+
+  // ---- CONSUMER 2: what KIND of move the pool reaches for ----
+  // BANNON_MOVEPOOL.pick(pos, style, kind) already accepted a style and a kind. Nothing ever passed
+  // either. A POWERHOUSE prefers grapple/carry, a STRIKER prefers strike/combo -- so bias the KIND
+  // by the attacker's own prefers list before falling back to the unbiased pool.
+  var KIND_OF = { grapple:'grapple', carry:'grapple', chain:'grapple', rest_hold:'grapple',
+                  weapon_grapple:'grapple', strike:'strike', combo:'strike', illegal:'strike',
+                  weapon_strike:'strike', deathmatch:'strike', dive:'dive', submission:'sub' };
+  function hookPool(tries){
+    tries = tries || 0;
+    try{
+      var MP = window.BANNON_MOVEPOOL;
+      if (MP && typeof MP.pick === 'function' && !MP.pick.__style){
+        var orig = MP.pick;
+        var w = function(pos, style, kind){
+          ST.picks++;
+          try{
+            if (!kind){
+              var f = window.__styleAttacker;
+              var pref = f && f._prefers;
+              if (pref && pref.length){
+                // weight the attacker's own preferences, first listed weighted highest
+                var idx = Math.floor(Math.random() * Math.min(pref.length, 3));
+                var k = KIND_OF[pref[idx]];
+                if (k){
+                  var m = orig.call(this, pos, style, k);
+                  if (m){ ST.preferHits++; return m; }     // fall through to unbiased if empty
+                }
+              }
+            }
+          }catch(e){}
+          return orig.apply(this, arguments);
+        };
+        w.__style = true;
+        MP.pick = w;
+        // remember who is attacking, so pick() can read their style without changing its signature
+        if (typeof MP.run === 'function' && !MP.run.__style){
+          var origRun = MP.run;
+          var wr = function(attacker){
+            window.__styleAttacker = attacker;
+            try{ if (attacker) apply(attacker); }catch(e){}
+            try{ return origRun.apply(this, arguments); }
+            finally { window.__styleAttacker = null; }
+          };
+          wr.__style = true;
+          MP.run = wr;
+        }
+        return true;
+      }
+    }catch(e){}
+    if (tries < 200) setTimeout(function(){ hookPool(tries+1); }, 250);
+    return false;
+  }
+
+  // ---- CONSUMER 3: the MDickie grapple vocabulary, in NORMAL PLAY ----
+  // BANNON_MOVEPOOL hooks window.execGrappleMove, and execGrappleMove is a WRAPPER that calls
+  // attacker.grappleDeliver(). Player input never goes through the wrapper -- it reaches
+  // Fighter.prototype.grappleDeliver directly (grappleStage===3 -> deliver). MEASURED: 22 grapple
+  // deliveries in a driven match, execGrappleMove called ZERO times, movepool picks ZERO.
+  // So the whole authored library was hooked to a door the game does not use when you play.
+  //
+  // The join was there all along and nobody had made it: a library move carries `pos`
+  // (BACK_SUPLEX / POWERBOMB ...) which IS this.grapplePos, `deliver` (toss/slam/bridge/drop/spike/
+  // choke) which IS grappleDeliver's own type argument, and `style` tags that are the SCHEMA STYLE
+  // IDS IN LOWERCASE ("powerhouse", "technical"). Passing the fighter's resolved style therefore
+  // filters the library correctly with no new mapping table.
+  function hookDeliver(tries){
+    tries = tries || 0;
+    try{
+      if (typeof Fighter === 'function' && Fighter.prototype && Fighter.prototype.grappleDeliver
+          && !Fighter.prototype.grappleDeliver.__style){
+        var orig = Fighter.prototype.grappleDeliver;
+        var w = function(type, aim){
+          try{
+            if (window.STYLE_GRAPPLE_VARIETY !== false && !this._explicitMove && !this._finisherPending){
+              var MP = window.BANNON_MOVEPOOL;
+              if (MP && MP.pick && MP.positionOf){
+                var s = apply(this) || this._style;
+                var sid = s ? String(s.id).toLowerCase() : null;
+                var pos = MP.positionOf(this);
+                var m = null;
+                // A LEAN, NOT A LAW. Forcing the preferred kind on every delivery collapsed the
+                // variety: TITAN (BRAWLER) and ZEPHYR (CAPOEIRA) both list `strike` first, so both
+                // came out of 25 grapples with the SAME two takedowns. A style should colour what a
+                // wrestler reaches for, not reduce him to one drawer. Roughly two deliveries in
+                // three follow the preference; the rest draw from everything the position allows.
+                if (this._prefers && this._prefers.length && Math.random() < 0.65){
+                  var k = KIND_OF[this._prefers[Math.floor(Math.random()*Math.min(this._prefers.length,3))]];
+                  if (k) m = MP.pick(pos, sid, k);
+                }
+                if (!m) m = MP.pick(pos, sid, 'grapple') || MP.pick(pos, sid);
+                if (m){
+                  ST.delivered++;
+                  // the move's own position and delivery, so the library actually changes what happens
+                  if (m.pos && typeof GRAPPLE_POSITIONS !== 'undefined' && GRAPPLE_POSITIONS[m.pos]) this.grapplePos = m.pos;
+                  if (m.deliver) type = m.deliver;
+                  ST.lastMove = m.name || null;
+                  try{ if (typeof announce === 'function' && m.name) announce(m.name, String(pos).replace(/_/g,' ')); }catch(e){}
+                }
+              }
+            }
+          }catch(e){}
+          return orig.call(this, type, aim);
+        };
+        w.__style = true;
+        Fighter.prototype.grappleDeliver = w;
+        return true;
+      }
+    }catch(e){}
+    if (tries < 200) setTimeout(function(){ hookDeliver(tries+1); }, 250);
+    return false;
+  }
+
+  // ---- load the authored styles, then arm ----
+  function boot(){
+    fetch('assets/moves/moveset_schema.json').then(function(r){ return r.json(); }).then(function(j){
+      STYLES = (j && j.styles) || [];
+      STYLES.forEach(function(s){ BY_ID[String(s.id).toUpperCase()] = s; });
+      ST.resolved = STYLES.length;
+      hookDamage(); hookPool(); hookDeliver();
+      // apply at the bell and whenever the roster changes
+      (function armBell(n){
+        if (typeof window.startFight === 'function' && !window.startFight.__style){
+          var orig = window.startFight;
+          var w = function(){
+            var r = orig.apply(this, arguments);
+            setTimeout(applyAll, 600);      // fighters exist by now
+            setTimeout(applyAll, 2500);     // and again once async models/specs land
+            return r;
+          };
+          w.__style = true;
+          for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) w[k] = orig[k]; }
+          try{ window.startFight = w; }catch(e){}
+          return;
+        }
+        if (n < 200) setTimeout(function(){ armBell(n+1); }, 250);
+      })(0);
+      setInterval(applyAll, 5000);          // covers interference spawns and roam NPCs
+      console.log('%c[BANNON_STYLE] ' + STYLES.length + ' fighting styles now drive damage, stamina, '
+        + 'cadence, move choice, stance and gait','color:#7CFC00');
+    }).catch(function(e){
+      console.warn('[BANNON_STYLE] schema unavailable, styles stay cosmetic:', e && e.message);
+    });
+  }
+  boot();
+
+  window.BANNON_STYLE = {
+    resolve: resolve,
+    apply: apply,
+    applyAll: applyAll,
+    styles: function(){ return STYLES.slice(); },
+    of: function(f){ return f && f._style ? { id:f._style.id, label:f._style.label,
+      dmgMul:+(f._styleDmgMul||1).toFixed(3), stance:f._stance, gait:f._gait,
+      prefers:f._prefers, maxStamina:f.maxStamina } : null; },
+    // one call that shows whether styles are actually differentiating the roster
+    spread: function(){
+      var F = (function(){ try{ return (typeof fighters!=='undefined'&&fighters)?fighters:[]; }catch(e){ return []; } })();
+      return F.filter(Boolean).map(function(f){
+        return { name:(f.opts&&f.opts.name)||f.name||'?', style:f._styleId||null,
+                 dmgMul:+(f._styleDmgMul||1).toFixed(3), stance:f._stance||null,
+                 gait:f._gait||null, prefers:(f._prefers||[]).join('/') };
+      });
+    },
+    stats: function(){ return { authored:STYLES.length, applied:ST.applied, picks:ST.picks,
+                                preferBiasedPicks:ST.preferHits,
+                                poolGrapplesDelivered:ST.delivered, lastMove:ST.lastMove,
+                                unresolved:ST.unresolved }; }
+  };
+})();
+</script>
+
+<script>
+/* ============================================================================================
+   BANNON_WALKOUT — entrances that actually happen, and the victory screen that follows.
+
+   Owner: "entrances and victories aren't actually happening either."
+
+   MEASURED, and he is right about the entrance:
+     window.BANNON_ENTRANCES has ZERO CALLERS. It is DEFINED TWICE (the second assignment silently
+     overwrites the first -- the same `=` bug that wiped BANNON_MDICKIE, and the comment directly
+     above it even records fixing a duplicated BANNON_NEWS at that spot and missing this one).
+     Nothing has ever invoked it. Fighters go straight to `idle` at the bell.
+
+   WHY I DID NOT JUST CALL IT. That salvaged module is written in a DIFFERENT UNIT SYSTEM:
+   `fighter.z = -500`, `z += 2` per tick, `y = 30` to step onto the apron. This engine is in METRES
+   -- ARENA_HALF_Z is 2.2 and the apron sits at y 0. Calling it would fling a wrestler five hundred
+   metres up the aisle and drop him thirty metres in the air. So the walk is rebuilt here in the
+   engine's own units, off the arena's REAL geometry: buildArenaStage puts the stage at
+   z = -(HZ + 8.5) with a ramp running from it to the ring, and ZONE_Y already defines RING 0 /
+   APRON 0 / FLOOR -0.85.
+
+   THE VICTORY HALF IS NOT BROKEN, and saying so matters more than shipping a fix. Measured:
+   declareWinner fired 5 times, endRound once, endMatch zero, winnerMenu never shown -- which LOOKS
+   damning until you read endRound: it only calls endMatch when `matchOver`, and matchOver needs
+   p1Rounds >= ROUNDS_TO_WIN, which is 2 for the default best-of-3. My test won ONE round of three,
+   so the engine correctly went to nextRound instead. The re-entry guard is why declareWinner can
+   fire 5 times and endRound once. Nothing to fix; it needed the rounds actually won.
+   What WAS missing is that a win passes with no moment on it, so a real victory beat is added.
+
+   SKIPPABLE, ALWAYS. An entrance you cannot skip is a punishment on the fifth viewing. Any control
+   press, or a tap anywhere, cuts straight to the bell. window.BANNON_ENTRANCE=false disables them.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  var ST = { runs:0, skipped:0, completed:0, lastPhase:null, victories:0 };
+  var active = null;
+
+  function grab(n){
+    try{ return (new Function('try{ return typeof '+n+'!=="undefined" ? '+n+' : null; }catch(e){ return null; }'))(); }
+    catch(e){ return null; }
+  }
+  function fighters_(){ var f = grab('fighters'); return (f && f.length) ? f : []; }
+  function HZ(){ var v = grab('ARENA_HALF_Z'); return (typeof v === 'number' && v > 0) ? v : 2.2; }
+  function zoneY(k){ try{ return (window.ZONE_Y && window.ZONE_Y[k] != null) ? window.ZONE_Y[k] : (k==='FLOOR'?-0.85:0); }catch(e){ return 0; } }
+
+  // the arena's own stage position, so the walk starts where the ramp actually is
+  function stageZ(){ return -(HZ() + 8.5); }
+
+  function nameOf(f){ try{ return (f.specName || (f.opts&&f.opts.name) || f.name || 'FIGHTER'); }catch(e){ return 'FIGHTER'; } }
+
+  // ---- place a fighter at the top of the ramp ----
+  function begin(f, lane){
+    if (!f) return;
+    f._entering = true;                       // exempts him from the ring boundary (see updateZone)
+    f._entryPhase = 'STAGE';
+    f._entryT = 0;
+    f._entryLane = lane || 0;
+    f.x = lane * 0.9;
+    f.z = stageZ();
+    f.zone = 'FLOOR';
+    f.y = zoneY('FLOOR');
+    try{ f.state = 'walk'; }catch(e){}
+    try{ if (window.addEvent) window.addEvent(nameOf(f) + ' steps through the curtain!', 'entrance'); }catch(e){}
+    try{ if (window.BANNON_STORY && window.BANNON_STORY.playEntrance)
+      window.BANNON_STORY.playEntrance(String(nameOf(f)).toUpperCase().replace(/[^A-Z0-9]/g,'_')); }catch(e){}
+  }
+
+  // ---- one step of the walk, in metres ----
+  var RAMP_SPD = 3.4, APRON_SPD = 1.6;
+  function step(f, dt){
+    if (!f || !f._entering) return true;
+    f._entryT += dt;
+    var edge = -(HZ() + 0.55);                       // apron edge, just outside the ropes
+    if (f._entryPhase === 'STAGE'){
+      // a beat on the stage to be looked at, then walk
+      try{ f.state = 'idle'; }catch(e){}
+      if (f._entryT > 0.9){ f._entryPhase = 'RAMP'; try{ f.state='walk'; }catch(e){} }
+    } else if (f._entryPhase === 'RAMP'){
+      f.z += RAMP_SPD * dt;
+      f.zone = 'FLOOR'; f.y = zoneY('FLOOR');
+      try{ f.state = 'walk'; }catch(e){}
+      if (f.z >= edge){ f.z = edge; f._entryPhase = 'APRON'; }
+    } else if (f._entryPhase === 'APRON'){
+      f.zone = 'APRON'; f.y = zoneY('APRON');        // climb: the apron and the ring share a floor
+      f.z += APRON_SPD * dt;
+      if (f.z >= -(HZ() - 0.35)){ f._entryPhase = 'RING'; }
+    } else if (f._entryPhase === 'RING'){
+      f.zone = 'RING'; f.y = zoneY('RING');
+      f.z += APRON_SPD * dt;
+      if (f.z >= -0.9){ return true; }                // arrived
+    }
+    ST.lastPhase = f._entryPhase;
+    return false;
+  }
+
+  function release(f, lane){
+    if (!f) return;
+    f._entering = false;
+    f._entryPhase = null;
+    f.zone = 'RING';
+    f.y = zoneY('RING');
+    f.z = -0.9 + (lane ? 0.2 : 0);
+    f.x = (lane || 0) * 0.7;
+    try{ f.state = 'idle'; }catch(e){}
+    try{ if (window.addEvent) window.addEvent(nameOf(f) + ' is ready for action!', 'entrance'); }catch(e){}
+  }
+
+  function finish(why){
+    if (!active) return;
+    var A = active; active = null;
+    A.fs.forEach(function(f, i){ release(f, i ? 1 : -1); });
+    if (why === 'skip') ST.skipped++; else ST.completed++;
+    try{ document.removeEventListener('pointerdown', onSkip, true); }catch(e){}
+    try{ var b = document.getElementById('bannonEntranceSkip'); if (b) b.remove(); }catch(e){}
+    try{ if (typeof announce === 'function') announce('RING THE BELL', ''); }catch(e){}
+  }
+  function onSkip(){ finish('skip'); }
+
+  function skipChip(){
+    try{
+      if (document.getElementById('bannonEntranceSkip')) return;
+      var d = document.createElement('div'); d.id = 'bannonEntranceSkip';
+      d.textContent = 'TAP TO SKIP';
+      d.style.cssText = 'position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));'
+        + 'transform:translateX(-50%);z-index:100040;background:rgba(10,13,19,.72);color:#ffe9c0;'
+        + 'border:1px solid #d8a24a;border-radius:12px;padding:8px 14px;'
+        + 'font:700 12px/1 system-ui,sans-serif;letter-spacing:1px;pointer-events:none;';
+      (document.body||document.documentElement).appendChild(d);
+    }catch(e){}
+  }
+
+  function run(){
+    if (window.BANNON_ENTRANCE === false) return;
+    // only in the arena, and never in the middle of the world loop
+    try{ if (window.CURRENT_ENV && window.CURRENT_ENV !== 'ARENA') return; }catch(e){}
+    var F = fighters_().filter(function(f){ return f && !f._interferer; }).slice(0, 2);
+    if (F.length < 1) return;
+    ST.runs++;
+    F.forEach(function(f, i){ begin(f, i ? 1 : -1); });
+    active = { fs:F, t:0 };
+    skipChip();
+    try{ document.addEventListener('pointerdown', onSkip, true); }catch(e){}
+    // hard ceiling: an entrance must never be able to hang the start of a match
+    setTimeout(function(){ if (active) finish('timeout'); }, 12000);
+  }
+
+  // drive it off the real frame clock
+  var last = 0;
+  function tick(){
+    var now = (performance && performance.now) ? performance.now()/1000 : Date.now()/1000;
+    var dt = last ? Math.min(now - last, 0.1) : 0.016; last = now;
+    if (active){
+      var done = true;
+      active.fs.forEach(function(f){ if (!step(f, dt)) done = false; });
+      if (done) finish('done');
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ---- arm at the bell ----
+  (function arm(n){
+    if (typeof window.startFight === 'function' && !window.startFight.__walkout){
+      var orig = window.startFight;
+      var w = function(){
+        var r = orig.apply(this, arguments);
+        setTimeout(function(){ try{ run(); }catch(e){} }, 500);   // after fighters exist
+        return r;
+      };
+      w.__walkout = true;
+      for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) w[k] = orig[k]; }
+      try{ window.startFight = w; }catch(e){}
+    }
+    // ---- the victory beat: endMatch already shows winnerMenu, it just passed with no moment ----
+    if (typeof window.endMatch === 'function' && !window.endMatch.__walkout){
+      var om = window.endMatch;
+      var wm = function(winner){
+        try{
+          ST.victories++;
+          var nm = winner ? nameOf(winner) : '';
+          if (typeof announce === 'function') announce(String(nm).toUpperCase() + ' WINS', 'YOUR WINNER');
+          if (window.addEvent) window.addEvent(nm + ' stands tall.', 'victory');
+          if (window.BANNON_STORY && window.BANNON_STORY.playVictory)
+            window.BANNON_STORY.playVictory(String(nm).toUpperCase().replace(/[^A-Z0-9]/g,'_'));
+          // the winner celebrates rather than standing in his idle
+          if (winner){ winner.state = 'taunt'; winner._entering = false; }
+        }catch(e){}
+        return om.apply(this, arguments);
+      };
+      wm.__walkout = true;
+      for (var k2 in om){ if (Object.prototype.hasOwnProperty.call(om, k2)) wm[k2] = om[k2]; }
+      try{ window.endMatch = wm; }catch(e){}
+    }
+    if (n < 200 && !(window.startFight && window.startFight.__walkout && window.endMatch && window.endMatch.__walkout))
+      setTimeout(function(){ arm(n+1); }, 250);
+  })(0);
+
+  window.BANNON_WALKOUT = {
+    run: run,
+    skip: function(){ finish('skip'); return true; },
+    active: function(){ return !!active; },
+    stageZ: stageZ,
+    stats: function(){
+      return { runs:ST.runs, completed:ST.completed, skipped:ST.skipped, victories:ST.victories,
+               lastPhase:ST.lastPhase, running:!!active,
+               entering: fighters_().filter(function(f){ return f && f._entering; })
+                 .map(function(f){ return { name:nameOf(f), phase:f._entryPhase,
+                   z:+(f.z||0).toFixed(2), zone:f.zone }; }) };
+    }
+  };
+  console.log('%c[BANNON_WALKOUT] entrances walk the real ramp; victory has a moment','color:#7CFC00');
 })();
 </script>
 
