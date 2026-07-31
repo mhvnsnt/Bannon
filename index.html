@@ -31029,8 +31029,11 @@ if (_origCouple && !_origCouple._v98){
     // player just could never walk more than three units from the middle of one, so every location
     // read as a backdrop and the walk-to-the-edge travel could never fire.
     // Same condition _zoneClamp already uses, so the two agree on where the ring exists.
+    // A fighter making an ENTRANCE is deliberately outside the ring, walking down the ramp from
+    // ~11m behind it. The ring boundary must not exist for him yet or he is yanked to the mat on
+    // the first frame -- the same way it used to pen the player inside every MDickie location.
     var inArena = !window.CURRENT_ENV || window.CURRENT_ENV === 'ARENA';
-    if (inArena && this.zone === 'RING'){
+    if (inArena && this.zone === 'RING' && !this._entering){
       const AH = (typeof ARENA_HALF !== 'undefined' ? ARENA_HALF : 3.2) - 0.04;
       const AHZ = (typeof ARENA_HALF_Z !== 'undefined' ? ARENA_HALF_Z : 2.2) - 0.04;
       if (Math.abs(this.x) > AH) this.x = AH * Math.sign(this.x);
@@ -42372,48 +42375,16 @@ window.BANNON_ITEMS = (function(){
 // defined above (~line 40746). Removed — one definition, one source of truth. Its API is
 // generateHeadline(name) / generateWeeklyNews(universe); BANNON_CARDS presents them as cards.
 
-window.BANNON_ENTRANCES = (function(){
-  function startEntrance(fighter) {
-    if(!fighter) return;
-    fighter.state = 'entrance_stage';
-    fighter.z = -500; // Deep in the aisle
-    fighter.x = 0;
-    if(window.addEvent) window.addEvent(`${fighter.name} steps through the curtain!`, 'entrance');
-  }
-  
-  function updateEntrance(fighter) {
-    if(fighter.state === 'entrance_stage') {
-        fighter.z += 2; // Walk down the ramp
-        if(fighter.z >= -100) {
-           fighter.state = 'entrance_apron';
-        }
-    } else if (fighter.state === 'entrance_apron') {
-        fighter.z += 1;
-        fighter.y = 30; // Step onto apron
-        if(fighter.z >= -40) {
-           fighter.state = 'entrance_ring';
-        }
-    } else if (fighter.state === 'entrance_ring') {
-        fighter.z += 1;
-        fighter.y = 0; // Step into ring
-        if(fighter.z >= 0) {
-           fighter.state = 'idle';
-           if(window.addEvent) window.addEvent(`${fighter.name} is ready for action!`, 'entrance');
-        }
-    }
-  }
-  
-  function triggerPyro(fighter) {
-    if(fighter.state !== 'entrance_stage') return;
-    if(window.addEvent) window.addEvent(`BOOM! Pyro goes off for ${fighter.name}!`, 'pyro');
-  }
-
-  return {
-    startEntrance,
-    updateEntrance,
-    triggerPyro
-  };
-})();
+// SECOND, IDENTICAL DEFINITION OF BANNON_ENTRANCES REMOVED.
+// It was a byte-for-byte copy of the module ~370 lines above and silently overwrote it with a plain
+// `=` -- the same bug that wiped BANNON_MDICKIE's career-sim half and cost five dead screens, and
+// the comment a few lines up records fixing exactly this for a duplicated BANNON_NEWS and missing
+// this one. One definition, one source of truth.
+//
+// NOTE ON THE SURVIVING COPY: it has never had a caller, and its numbers are not this engine's --
+// z = -500, y = 30 for the apron, +2 per tick, in an engine where ARENA_HALF_Z is 2.2 metres. It is
+// left in place as the salvaged AI-Studio reference it is. The entrance that actually runs is
+// BANNON_WALKOUT at the end of this file, rebuilt in metres off the arena's real ramp geometry.
 </script>
 
 <!-- ============================================================================================
@@ -55161,6 +55132,220 @@ window.__deriveVariant = async function(key){
                                 poolGrapplesDelivered:ST.delivered, lastMove:ST.lastMove,
                                 unresolved:ST.unresolved }; }
   };
+})();
+</script>
+
+<script>
+/* ============================================================================================
+   BANNON_WALKOUT — entrances that actually happen, and the victory screen that follows.
+
+   Owner: "entrances and victories aren't actually happening either."
+
+   MEASURED, and he is right about the entrance:
+     window.BANNON_ENTRANCES has ZERO CALLERS. It is DEFINED TWICE (the second assignment silently
+     overwrites the first -- the same `=` bug that wiped BANNON_MDICKIE, and the comment directly
+     above it even records fixing a duplicated BANNON_NEWS at that spot and missing this one).
+     Nothing has ever invoked it. Fighters go straight to `idle` at the bell.
+
+   WHY I DID NOT JUST CALL IT. That salvaged module is written in a DIFFERENT UNIT SYSTEM:
+   `fighter.z = -500`, `z += 2` per tick, `y = 30` to step onto the apron. This engine is in METRES
+   -- ARENA_HALF_Z is 2.2 and the apron sits at y 0. Calling it would fling a wrestler five hundred
+   metres up the aisle and drop him thirty metres in the air. So the walk is rebuilt here in the
+   engine's own units, off the arena's REAL geometry: buildArenaStage puts the stage at
+   z = -(HZ + 8.5) with a ramp running from it to the ring, and ZONE_Y already defines RING 0 /
+   APRON 0 / FLOOR -0.85.
+
+   THE VICTORY HALF IS NOT BROKEN, and saying so matters more than shipping a fix. Measured:
+   declareWinner fired 5 times, endRound once, endMatch zero, winnerMenu never shown -- which LOOKS
+   damning until you read endRound: it only calls endMatch when `matchOver`, and matchOver needs
+   p1Rounds >= ROUNDS_TO_WIN, which is 2 for the default best-of-3. My test won ONE round of three,
+   so the engine correctly went to nextRound instead. The re-entry guard is why declareWinner can
+   fire 5 times and endRound once. Nothing to fix; it needed the rounds actually won.
+   What WAS missing is that a win passes with no moment on it, so a real victory beat is added.
+
+   SKIPPABLE, ALWAYS. An entrance you cannot skip is a punishment on the fifth viewing. Any control
+   press, or a tap anywhere, cuts straight to the bell. window.BANNON_ENTRANCE=false disables them.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  var ST = { runs:0, skipped:0, completed:0, lastPhase:null, victories:0 };
+  var active = null;
+
+  function grab(n){
+    try{ return (new Function('try{ return typeof '+n+'!=="undefined" ? '+n+' : null; }catch(e){ return null; }'))(); }
+    catch(e){ return null; }
+  }
+  function fighters_(){ var f = grab('fighters'); return (f && f.length) ? f : []; }
+  function HZ(){ var v = grab('ARENA_HALF_Z'); return (typeof v === 'number' && v > 0) ? v : 2.2; }
+  function zoneY(k){ try{ return (window.ZONE_Y && window.ZONE_Y[k] != null) ? window.ZONE_Y[k] : (k==='FLOOR'?-0.85:0); }catch(e){ return 0; } }
+
+  // the arena's own stage position, so the walk starts where the ramp actually is
+  function stageZ(){ return -(HZ() + 8.5); }
+
+  function nameOf(f){ try{ return (f.specName || (f.opts&&f.opts.name) || f.name || 'FIGHTER'); }catch(e){ return 'FIGHTER'; } }
+
+  // ---- place a fighter at the top of the ramp ----
+  function begin(f, lane){
+    if (!f) return;
+    f._entering = true;                       // exempts him from the ring boundary (see updateZone)
+    f._entryPhase = 'STAGE';
+    f._entryT = 0;
+    f._entryLane = lane || 0;
+    f.x = lane * 0.9;
+    f.z = stageZ();
+    f.zone = 'FLOOR';
+    f.y = zoneY('FLOOR');
+    try{ f.state = 'walk'; }catch(e){}
+    try{ if (window.addEvent) window.addEvent(nameOf(f) + ' steps through the curtain!', 'entrance'); }catch(e){}
+    try{ if (window.BANNON_STORY && window.BANNON_STORY.playEntrance)
+      window.BANNON_STORY.playEntrance(String(nameOf(f)).toUpperCase().replace(/[^A-Z0-9]/g,'_')); }catch(e){}
+  }
+
+  // ---- one step of the walk, in metres ----
+  var RAMP_SPD = 3.4, APRON_SPD = 1.6;
+  function step(f, dt){
+    if (!f || !f._entering) return true;
+    f._entryT += dt;
+    var edge = -(HZ() + 0.55);                       // apron edge, just outside the ropes
+    if (f._entryPhase === 'STAGE'){
+      // a beat on the stage to be looked at, then walk
+      try{ f.state = 'idle'; }catch(e){}
+      if (f._entryT > 0.9){ f._entryPhase = 'RAMP'; try{ f.state='walk'; }catch(e){} }
+    } else if (f._entryPhase === 'RAMP'){
+      f.z += RAMP_SPD * dt;
+      f.zone = 'FLOOR'; f.y = zoneY('FLOOR');
+      try{ f.state = 'walk'; }catch(e){}
+      if (f.z >= edge){ f.z = edge; f._entryPhase = 'APRON'; }
+    } else if (f._entryPhase === 'APRON'){
+      f.zone = 'APRON'; f.y = zoneY('APRON');        // climb: the apron and the ring share a floor
+      f.z += APRON_SPD * dt;
+      if (f.z >= -(HZ() - 0.35)){ f._entryPhase = 'RING'; }
+    } else if (f._entryPhase === 'RING'){
+      f.zone = 'RING'; f.y = zoneY('RING');
+      f.z += APRON_SPD * dt;
+      if (f.z >= -0.9){ return true; }                // arrived
+    }
+    ST.lastPhase = f._entryPhase;
+    return false;
+  }
+
+  function release(f, lane){
+    if (!f) return;
+    f._entering = false;
+    f._entryPhase = null;
+    f.zone = 'RING';
+    f.y = zoneY('RING');
+    f.z = -0.9 + (lane ? 0.2 : 0);
+    f.x = (lane || 0) * 0.7;
+    try{ f.state = 'idle'; }catch(e){}
+    try{ if (window.addEvent) window.addEvent(nameOf(f) + ' is ready for action!', 'entrance'); }catch(e){}
+  }
+
+  function finish(why){
+    if (!active) return;
+    var A = active; active = null;
+    A.fs.forEach(function(f, i){ release(f, i ? 1 : -1); });
+    if (why === 'skip') ST.skipped++; else ST.completed++;
+    try{ document.removeEventListener('pointerdown', onSkip, true); }catch(e){}
+    try{ var b = document.getElementById('bannonEntranceSkip'); if (b) b.remove(); }catch(e){}
+    try{ if (typeof announce === 'function') announce('RING THE BELL', ''); }catch(e){}
+  }
+  function onSkip(){ finish('skip'); }
+
+  function skipChip(){
+    try{
+      if (document.getElementById('bannonEntranceSkip')) return;
+      var d = document.createElement('div'); d.id = 'bannonEntranceSkip';
+      d.textContent = 'TAP TO SKIP';
+      d.style.cssText = 'position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom,0px));'
+        + 'transform:translateX(-50%);z-index:100040;background:rgba(10,13,19,.72);color:#ffe9c0;'
+        + 'border:1px solid #d8a24a;border-radius:12px;padding:8px 14px;'
+        + 'font:700 12px/1 system-ui,sans-serif;letter-spacing:1px;pointer-events:none;';
+      (document.body||document.documentElement).appendChild(d);
+    }catch(e){}
+  }
+
+  function run(){
+    if (window.BANNON_ENTRANCE === false) return;
+    // only in the arena, and never in the middle of the world loop
+    try{ if (window.CURRENT_ENV && window.CURRENT_ENV !== 'ARENA') return; }catch(e){}
+    var F = fighters_().filter(function(f){ return f && !f._interferer; }).slice(0, 2);
+    if (F.length < 1) return;
+    ST.runs++;
+    F.forEach(function(f, i){ begin(f, i ? 1 : -1); });
+    active = { fs:F, t:0 };
+    skipChip();
+    try{ document.addEventListener('pointerdown', onSkip, true); }catch(e){}
+    // hard ceiling: an entrance must never be able to hang the start of a match
+    setTimeout(function(){ if (active) finish('timeout'); }, 12000);
+  }
+
+  // drive it off the real frame clock
+  var last = 0;
+  function tick(){
+    var now = (performance && performance.now) ? performance.now()/1000 : Date.now()/1000;
+    var dt = last ? Math.min(now - last, 0.1) : 0.016; last = now;
+    if (active){
+      var done = true;
+      active.fs.forEach(function(f){ if (!step(f, dt)) done = false; });
+      if (done) finish('done');
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ---- arm at the bell ----
+  (function arm(n){
+    if (typeof window.startFight === 'function' && !window.startFight.__walkout){
+      var orig = window.startFight;
+      var w = function(){
+        var r = orig.apply(this, arguments);
+        setTimeout(function(){ try{ run(); }catch(e){} }, 500);   // after fighters exist
+        return r;
+      };
+      w.__walkout = true;
+      for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) w[k] = orig[k]; }
+      try{ window.startFight = w; }catch(e){}
+    }
+    // ---- the victory beat: endMatch already shows winnerMenu, it just passed with no moment ----
+    if (typeof window.endMatch === 'function' && !window.endMatch.__walkout){
+      var om = window.endMatch;
+      var wm = function(winner){
+        try{
+          ST.victories++;
+          var nm = winner ? nameOf(winner) : '';
+          if (typeof announce === 'function') announce(String(nm).toUpperCase() + ' WINS', 'YOUR WINNER');
+          if (window.addEvent) window.addEvent(nm + ' stands tall.', 'victory');
+          if (window.BANNON_STORY && window.BANNON_STORY.playVictory)
+            window.BANNON_STORY.playVictory(String(nm).toUpperCase().replace(/[^A-Z0-9]/g,'_'));
+          // the winner celebrates rather than standing in his idle
+          if (winner){ winner.state = 'taunt'; winner._entering = false; }
+        }catch(e){}
+        return om.apply(this, arguments);
+      };
+      wm.__walkout = true;
+      for (var k2 in om){ if (Object.prototype.hasOwnProperty.call(om, k2)) wm[k2] = om[k2]; }
+      try{ window.endMatch = wm; }catch(e){}
+    }
+    if (n < 200 && !(window.startFight && window.startFight.__walkout && window.endMatch && window.endMatch.__walkout))
+      setTimeout(function(){ arm(n+1); }, 250);
+  })(0);
+
+  window.BANNON_WALKOUT = {
+    run: run,
+    skip: function(){ finish('skip'); return true; },
+    active: function(){ return !!active; },
+    stageZ: stageZ,
+    stats: function(){
+      return { runs:ST.runs, completed:ST.completed, skipped:ST.skipped, victories:ST.victories,
+               lastPhase:ST.lastPhase, running:!!active,
+               entering: fighters_().filter(function(f){ return f && f._entering; })
+                 .map(function(f){ return { name:nameOf(f), phase:f._entryPhase,
+                   z:+(f.z||0).toFixed(2), zone:f.zone }; }) };
+    }
+  };
+  console.log('%c[BANNON_WALKOUT] entrances walk the real ramp; victory has a moment','color:#7CFC00');
 })();
 </script>
 
