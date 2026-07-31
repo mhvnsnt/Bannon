@@ -54476,6 +54476,169 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script>
+/* ============================================================================================
+   BANNON_BRIDGE — one honest handle on the RUNNING game.
+
+   Owner: "MCP straight into the live engine... That's your own 'press the real buttons' law."
+   He is right, and the cost of not having it was paid three times in one session:
+
+     window.renderer   undefined -> a render probe reported "no renderer" and measured nothing
+     window.fighters   undefined -> a travel probe reported "no player fighter", a false bug
+     L.exits()         called with no id -> read as "0 exits everywhere", nearly sent me
+                                            "fixing" a place graph that was already healthy
+
+   None of those were engine bugs. The engine declares `let scene, camera, renderer, clock` and
+   `let fighters = []` at the top level of a classic script, and a top-level `let` lives in the
+   global LEXICAL environment -- it is reachable by bare name but is NOT a property of window. Every
+   tool that reached for window.<thing> got undefined and reported a fault that did not exist.
+
+   So: publish them deliberately, once, from inside the scope that can see them. Everything that
+   wants to inspect or drive the live game -- headless harnesses, the God Mode OS, an MCP server --
+   goes through here instead of guessing at globals. Read-only by default; nothing here changes how
+   the game plays.
+
+   PRESS, don't call. press() dispatches real pointer events at the real on-screen buttons, because
+   the standing law is to drive the controls rather than the functions behind them -- a lesson that
+   cost months when "animations aren't firing" was tested by calling internals for ages and found in
+   one run by pressing the actual button (and the first attempt pressed the WRONG one).
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  // Reach the lexical globals from a scope that can see them. typeof guards mean a missing binding
+  // is null rather than a ReferenceError that would take the whole module down.
+  function grab(name){
+    try{ return (new Function('try{ return typeof ' + name + '!=="undefined" ? ' + name + ' : null; }catch(e){ return null; }'))(); }
+    catch(e){ return null; }
+  }
+
+  var LIVE = ['scene','camera','renderer','clock','fighters','STUDIO','RING','ARENA_HALF','ARENA_HALF_Z','gameState','arenaGroup'];
+
+  function snapshot(){
+    var o = {};
+    LIVE.forEach(function(k){ o[k] = grab(k); });
+    return o;
+  }
+
+  // ---- what is actually on screen right now ----
+  function scene_stats(){
+    var S = grab('scene'), R = grab('renderer');
+    if (!S) return { error: 'no scene yet' };
+    var meshes = 0, skinned = 0, lights = [], tris = 0, visible = 0;
+    S.traverse(function(n){
+      if (n.isLight) lights.push(n.type + (n.visible ? '' : '(off)'));
+      if (!n.isMesh) return;
+      meshes++;
+      if (!n.visible) return;
+      visible++;
+      if (n.isSkinnedMesh) skinned++;
+      var g = n.geometry;
+      if (g && g.index) tris += g.index.count / 3;
+      else if (g && g.attributes && g.attributes.position) tris += g.attributes.position.count / 3;
+    });
+    return { meshes: meshes, visibleMeshes: visible, skinnedMeshes: skinned,
+             triangles: Math.round(tris), lights: lights.length, lightTypes: lights,
+             drawCalls: R ? R.info.render.calls : null,
+             programs: R && R.info.programs ? R.info.programs.length : null,
+             geometries: R ? R.info.memory.geometries : null,
+             textures: R ? R.info.memory.textures : null,
+             pixelRatio: R ? R.getPixelRatio() : null,
+             env: window.CURRENT_ENV || null };
+  }
+
+  // ---- who is in the match, and what is driving them ----
+  function fighters_state(){
+    var F = grab('fighters') || [];
+    return F.map(function(f, i){
+      if (!f) return { i: i, null: true };
+      return { i: i, name: (f.opts && f.opts.name) || f.name || null,
+               isPlayer: !!f.isPlayer, interferer: !!f._interferer,
+               x: +(f.x||0).toFixed(2), z: +(f.z||0).toFixed(2),
+               zone: f.zone || null, state: f.state || null,
+               hp: f.hp != null ? Math.round(f.hp) : null,
+               stamina: f.stamina != null ? Math.round(f.stamina) : null,
+               model: (f.modelKey || (f._glb && f._glb.key) || null),
+               hasRig: !!(f.clipBones || f._skel || f.skeleton),
+               attacking: !!f.attacking, grappling: !!(f.grappleWith || f.grappling) };
+    });
+  }
+
+  // ---- PRESS A REAL BUTTON. Not the function behind it. ----
+  var BUTTONS = {
+    jab:'.act-btn.act-jab', cross:'.act-btn.act-cross', kick:'.act-btn.act-kick',
+    grab:'.act-btn.act-grab', special:'.act-btn.act-special', block:'.act-btn.act-block',
+    zone:'#btnZone', run:'#btnRun', mod:'#btnMod', tag:'#btnTag'
+  };
+  function press(which, ms){
+    var sel = BUTTONS[which] || which;
+    var el = document.querySelector(sel);
+    if (!el) return { ok:false, error:'no such control: ' + sel, known:Object.keys(BUTTONS) };
+    var r = el.getBoundingClientRect();
+    var cx = r.left + r.width/2, cy = r.top + r.height/2;
+    function fire(type, Ctor, init){
+      try{ el.dispatchEvent(new Ctor(type, Object.assign({ bubbles:true, cancelable:true,
+        clientX:cx, clientY:cy }, init||{}))); }catch(e){}
+    }
+    fire('pointerdown', window.PointerEvent || MouseEvent, { pointerId:1, isPrimary:true, button:0 });
+    fire('touchstart', window.TouchEvent || Event, {});
+    fire('mousedown', MouseEvent, { button:0 });
+    var up = function(){
+      fire('pointerup', window.PointerEvent || MouseEvent, { pointerId:1, isPrimary:true, button:0 });
+      fire('touchend', window.TouchEvent || Event, {});
+      fire('mouseup', MouseEvent, { button:0 });
+      fire('click', MouseEvent, { button:0 });
+    };
+    if (ms > 0) setTimeout(up, ms); else up();
+    return { ok:true, pressed:sel, held:ms||0 };
+  }
+
+  // ---- is the animation system actually running? the count that found the marionette bug ----
+  var POSE = { calls:0, byClip:{} };
+  (function armPoseCounter(n){
+    if (typeof window.studioApplyClipPose === 'function' && !window.studioApplyClipPose.__bridge){
+      var o = window.studioApplyClipPose;
+      var w = function(f, clip, t){
+        POSE.calls++;
+        try{ var k = (clip && (clip.key || clip.name)) || '?'; POSE.byClip[k] = (POSE.byClip[k]||0)+1; }catch(e){}
+        return o.apply(this, arguments);
+      };
+      w.__bridge = true;
+      try{ window.studioApplyClipPose = w; }catch(e){}
+      return;
+    }
+    if (n > 200) return;
+    setTimeout(function(){ armPoseCounter(n+1); }, 250);
+  })(0);
+
+  window.BANNON_BRIDGE = {
+    // the lexical globals, reachable at last
+    get: grab,
+    live: snapshot,
+    names: LIVE,
+    // measurements
+    scene: scene_stats,
+    fighters: fighters_state,
+    pose: function(){ return { calls:POSE.calls, distinctClips:Object.keys(POSE.byClip).length,
+                               byClip:POSE.byClip }; },
+    resetPose: function(){ POSE.calls = 0; POSE.byClip = {}; },
+    gfx: function(){ try{ return window.BANNON_GFX.stats(); }catch(e){ return null; } },
+    prewarm: function(){ try{ return window.BANNON_PREWARM.stats(); }catch(e){ return null; } },
+    // actuation
+    press: press,
+    buttons: BUTTONS,
+    // one call that answers "is the game healthy right now"
+    health: function(){
+      return { scene: scene_stats(), fighters: fighters_state(), pose: this.pose(),
+               gfx: this.gfx(), prewarm: this.prewarm(),
+               place: (function(){ try{ return window.BANNON_LIFE.get().place; }catch(e){ return null; } })(),
+               modules: Object.keys(window).filter(function(k){ return /^BANNON_/.test(k); }).length };
+    }
+  };
+  console.log('%c[BANNON_BRIDGE] live handle online — BANNON_BRIDGE.health() / .press("jab")','color:#7CFC00');
+})();
+</script>
+
 </body></html>
 
 
