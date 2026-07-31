@@ -100,7 +100,20 @@ function main() {
   let synced = 0, skipped = 0, failed = 0;
   for (const name of names) {
     const id = files[name];
-    if (manifest[name] && manifest[name].id === id && manifest[name].ok) continue;  // already synced this exact upload
+    // Already synced this exact upload? Only if the FILE IS STILL THERE. The destinations for models
+    // and video are gitignored, so a fresh container clone has an empty disk and a full manifest —
+    // and the manifest alone made sync skip every one of them forever. That is how an owner upload
+    // can sit "synced" for days and never actually be in the repo. Trust the disk, not the record.
+    const prev = manifest[name];
+    // Where SHOULD this file be? Older manifest entries predate the `local` field, so fall back to
+    // recomputing the destination rather than treating "no local field" as "not on disk" -- that
+    // mistake re-pulled 241 files that were present as Git LFS pointers and would have committed
+    // gigabytes of binary straight into git history.
+    const expect = prev && prev.local ? path.join(ROOT, prev.local) : DEST(safeLocal(name));
+    const onDisk = fs.existsSync(expect);
+    if (prev && prev.id === id && prev.ok && onDisk) continue;
+    if (prev && prev.ok && !onDisk) console.log(`[drive-sync] re-pull ${name} — manifest said synced but ${path.relative(ROOT, expect)} is gone`);
+    if (prev && prev.ok === false && prev.reason === 'truncated' && prev.id === id) continue; // known-broken upload, unchanged
     const dest = DEST(safeLocal(name));
     if (DRY) { console.log(`[dry] would fetch: ${name} (${id}) -> ${path.basename(dest)}`); continue; }
     fs.mkdirSync(path.dirname(dest), { recursive: true });

@@ -54035,12 +54035,24 @@ window.__deriveVariant = async function(key){
   }
 
   // AT THE BELL. Not at a menu lull that may never come.
+  //
+  // 2026-07-31: measured 240 asset fetches landing in the FIRST 30 SECONDS OF LIVE PLAY, because
+  // this fired 400ms after startFight -- that is not "at the bell", that is during the match. On a
+  // phone those fetches compete with the frame for main thread and network, and each newly loaded
+  // clip drags in a first-use texture upload and shader compile with it. The work is still done
+  // eagerly (that was the right call -- a clip fetched at the moment it is needed plays
+  // un-animated, which is the bug BANNON_COMBAT_MOCAP exists to fix); it just happens BEFORE the
+  // fighters start trading, while the intro is on screen.
   function arm(){
     if(window.startFight && !window.startFight.__warm){
       var _sf = window.startFight;
       var sf = function(){
+        // kick the fetches off BEFORE the original runs, so they are in flight during setup
+        // rather than during the first exchange. warm() is async and self-throttling.
+        try{ warm(); }catch(e){}
         var r = _sf.apply(this, arguments);
-        // after the fighters exist, so their own slot clips are known
+        // second pass once the fighters exist, so their own slot clips are known. Kept short so
+        // it still lands inside the entrance window rather than in the middle of a move.
         setTimeout(function(){ try{ warm(); }catch(e){} }, 400);
         return r;
       };
@@ -54064,6 +54076,392 @@ window.__deriveVariant = async function(key){
     }
   };
   console.log('%c[BANNON_WARM] armed — the match warms its own captures at the bell','color:#7CFC00');
+})();
+</script>
+
+<script>
+/* ============================================================================================
+   BANNON_GFX — THE MID-MATCH FREEZE. Measured, not guessed.
+
+   The owner reported the game freezing during matches to the point of being unplayable. Three
+   probes in the headless harness at his phone's viewport (412x915), during a live match:
+
+     1. rAF callback body      median 0.1ms, mean 6.5ms   -> our GAME LOGIC is NOT the freeze
+        wall time in our JS    2.4%                          (it accounts for almost nothing)
+     2. renderer.render()      stubbed to a no-op          -> 60 frames/20s BECOMES 3285 frames/20s
+                                                              2.6 fps -> 164 fps. It is the RENDER.
+     3. one knob at a time     lights 16 -> 3               2.6 -> 6.0 fps   (2.3x, the biggest)
+                               pixelRatio 0.5               2.6 -> 5.3 fps
+                               spotlights off (5)           2.6 -> 4.9 fps
+
+   NOTE on probe 2: calling renderer.render() in a tight loop measures only 2.25ms, which is
+   misleading and cost me a pass. render() SUBMITS GPU commands and returns; the real cost lands
+   at present time and shows up as the gap BETWEEN frames, not inside the call. Measure frames
+   delivered per wall-clock second, never the duration of render().
+
+   WHY LIGHTS ARE THE ANSWER, and why this is not a headless artifact: three.js is a FORWARD
+   renderer. Every light in the scene becomes an iteration of a loop inside the fragment shader of
+   every lit material. 16 lights (4 directional + 5 spot + 4 point + ambient + hemi) means that
+   loop runs 16 times for every pixel of every fighter, rope, seat and floor tile. That cost is
+   per-pixel and per-light on ANY GPU -- a phone pays it worse than this software rasteriser, not
+   better. Cutting the count cuts shader work everywhere at once.
+
+   WHAT THIS DOES NOT DO: it does not delete a single light (OWNER LAW, 2026-07-26 -- do not
+   delete generated content). Every light is still constructed exactly as authored. HIGH restores
+   all 16. LOW hides the ones over budget and FOLDS THEIR COLOUR back into the ambient and
+   hemisphere terms, so the accent mood the arena lighting was written for survives at a fraction
+   of the per-pixel cost.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  // budgets. `lights` counts only the EXPENSIVE lights (directional/spot/point) -- ambient and
+  // hemisphere are per-object constants, not per-pixel loops, so they are always free and kept.
+  var TIERS = {
+    LOW:  { lights:2,  pixelRatio:1.0, shadow:false, shadowMap:1024, label:'LOW (phone)'  },
+    MED:  { lights:6,  pixelRatio:1.5, shadow:true,  shadowMap:1024, label:'MEDIUM'       },
+    HIGH: { lights:99, pixelRatio:2.0, shadow:true,  shadowMap:2048, label:'HIGH (as authored)' }
+  };
+  var KEY = 'bannon_gfx_tier';            // a SETTING -> global scope, not per-mode (save-slot law)
+
+  // Auto-detect. A coarse pointer on a narrow screen is a phone; that is the device the owner
+  // plays on and the one that was unplayable, so it gets the cheap tier by default.
+  function detect(){
+    try{
+      var coarse = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+      var narrow = Math.min(screen.width, screen.height) <= 820;
+      var mobUA  = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+      if (coarse && (narrow || mobUA)) return 'LOW';
+      if (mobUA) return 'LOW';
+      var cores = navigator.hardwareConcurrency || 4;
+      return cores <= 4 ? 'MED' : 'HIGH';
+    }catch(e){ return 'MED'; }
+  }
+
+  var cur = null;
+  try{ cur = localStorage.getItem(KEY); }catch(e){}
+  if (!TIERS[cur]) cur = detect();
+
+  function sceneOf(){ try{ return (typeof scene !== 'undefined' && scene) ? scene : null; }catch(e){ return null; } }
+  function rendererOf(){ try{ return (typeof renderer !== 'undefined' && renderer) ? renderer : null; }catch(e){ return null; } }
+
+  // ---- restore every light this module ever touched, back to as-authored ----
+  function restoreAll(){
+    var S = sceneOf(); if (!S) return;
+    S.traverse(function(n){
+      if (!n.isLight) return;
+      if (n.__gfxHidden){ n.visible = true; n.__gfxHidden = false; }
+      if (n.__gfxBaseIntensity != null){ n.intensity = n.__gfxBaseIntensity; }
+      if (n.__gfxBaseColor != null && n.color){ n.color.setHex(n.__gfxBaseColor); }
+      if (n.__gfxBaseGround != null && n.groundColor){ n.groundColor.setHex(n.__gfxBaseGround); }
+      if (n.__gfxBaseCast != null){ n.castShadow = n.__gfxBaseCast; }
+    });
+  }
+
+  // remember the authored values ONCE, so repeated apply() never compounds its own compensation
+  function remember(n){
+    if (n.__gfxBaseIntensity == null) n.__gfxBaseIntensity = n.intensity;
+    if (n.__gfxBaseColor == null && n.color) n.__gfxBaseColor = n.color.getHex();
+    if (n.__gfxBaseGround == null && n.groundColor) n.__gfxBaseGround = n.groundColor.getHex();
+    if (n.__gfxBaseCast == null) n.__gfxBaseCast = !!n.castShadow;
+  }
+
+  var last = { hidden:0, kept:0, tier:null };
+
+  function apply(){
+    var S = sceneOf(), R = rendererOf();
+    if (!S) return false;
+    var T = TIERS[cur] || TIERS.MED;
+
+    restoreAll();
+
+    // gather, remembering authored state before we touch anything
+    var ambient = [], hemi = [], costly = [];
+    S.traverse(function(n){
+      if (!n.isLight) return;
+      remember(n);
+      if (n.type === 'AmbientLight') ambient.push(n);
+      else if (n.type === 'HemisphereLight') hemi.push(n);
+      else costly.push(n);
+    });
+
+    // RANK: a shadow-casting light is the one carving the bodies, it survives first. After that,
+    // brightest wins -- intensity is the honest measure of how much a light contributes, and it is
+    // authored right there in the arena code.
+    costly.sort(function(a,b){
+      var sa = (a.__gfxBaseCast?1:0), sb = (b.__gfxBaseCast?1:0);
+      if (sa !== sb) return sb - sa;
+      return (b.__gfxBaseIntensity||0) - (a.__gfxBaseIntensity||0);
+    });
+
+    var keep = costly.slice(0, T.lights), drop = costly.slice(T.lights);
+
+    // ---- FOLD the dropped lights back in, so the mood survives the budget ----
+    // A hidden light removes roughly colour*intensity*<N.L> from every surface it reached. The
+    // average of N.L over a hemisphere is ~0.5, and these are rims/fills hitting a fraction of the
+    // scene, so a third of their energy re-added as ambient is a fair stand-in. It is an
+    // approximation ON PURPOSE: the alternative is paying full per-pixel cost for a subtle wash.
+    var addR = 0, addG = 0, addB = 0;
+    drop.forEach(function(n){
+      n.visible = false; n.__gfxHidden = true;
+      var i = n.__gfxBaseIntensity || 0;
+      if (n.color){ addR += n.color.r * i; addG += n.color.g * i; addB += n.color.b * i; }
+    });
+    var FOLD = 0.33;
+    if ((addR + addG + addB) > 0 && ambient.length){
+      var a = ambient[0];
+      var br = a.color.r * a.intensity + addR * FOLD;
+      var bg = a.color.g * a.intensity + addG * FOLD;
+      var bb = a.color.b * a.intensity + addB * FOLD;
+      var peak = Math.max(br, bg, bb, 1e-6);
+      // keep the HUE of the folded sum, carry the energy in intensity -- a colour channel clamps
+      // at 1.0 and would silently throw away everything above it.
+      a.color.setRGB(br/peak, bg/peak, bb/peak);
+      a.intensity = Math.min(peak, 1.25);          // ceiling: past this the deep shadows the arena
+                                                   // lighting is built on wash out entirely
+    }
+
+    // shadows: the key light's map is a full extra render pass of the scene
+    keep.forEach(function(n){
+      if (!n.__gfxBaseCast) return;
+      n.castShadow = T.shadow;
+      if (T.shadow && n.shadow && n.shadow.mapSize && n.shadow.mapSize.x !== T.shadowMap){
+        n.shadow.mapSize.set(T.shadowMap, T.shadowMap);
+        if (n.shadow.map){ n.shadow.map.dispose(); n.shadow.map = null; }   // force a resized realloc
+      }
+    });
+    if (R){
+      R.shadowMap.enabled = T.shadow;
+      var want = Math.min(window.devicePixelRatio || 1, T.pixelRatio);
+      if (R.getPixelRatio() !== want) R.setPixelRatio(want);
+    }
+
+    last = { hidden:drop.length, kept:keep.length, tier:cur, ambient:ambient.length, hemi:hemi.length };
+    return true;
+  }
+
+  function set(t){
+    t = String(t || '').toUpperCase();
+    if (!TIERS[t]) return false;
+    cur = t;
+    try{ localStorage.setItem(KEY, t); }catch(e){}
+    apply();
+    console.log('%c[BANNON_GFX] ' + TIERS[t].label + ' — ' + last.kept + ' costly lights kept, '
+      + last.hidden + ' folded into ambient', 'color:#7CFC00');
+    return true;
+  }
+
+  // ---- keep it applied across arena rebuilds ----
+  // buildArena() reconstructs every light, so the budget has to be re-applied after each one.
+  // It is wrapped rather than edited so the authored lighting block stays exactly as written.
+  function hook(){
+    if (typeof window.buildArena === 'function' && !window.buildArena.__gfxWrapped){
+      var orig = window.buildArena;
+      var w = function(){ var r = orig.apply(this, arguments); try{ apply(); }catch(e){} return r; };
+      w.__gfxWrapped = true;
+      window.buildArena = w;
+    }
+    if (typeof window.buildArenaStage === 'function' && !window.buildArenaStage.__gfxWrapped){
+      var o2 = window.buildArenaStage;
+      var w2 = function(){ var r = o2.apply(this, arguments); try{ apply(); }catch(e){} return r; };
+      w2.__gfxWrapped = true;
+      window.buildArenaStage = w2;
+    }
+  }
+
+  // A rebuild can also come from paths that never go through buildArena (environments, stipulation
+  // dressing). Rather than hunt every one, watch the light COUNT: if the scene grew costly lights
+  // past the budget, re-apply. Cheap poll, and it self-corrects whatever added them.
+  function watch(){
+    var S = sceneOf(); if (!S) return;
+    var over = 0;
+    S.traverse(function(n){
+      if (n.isLight && n.visible && n.type !== 'AmbientLight' && n.type !== 'HemisphereLight') over++;
+    });
+    var T = TIERS[cur] || TIERS.MED;
+    if (over > T.lights) apply();
+  }
+
+  (function arm(n){
+    hook();
+    if (sceneOf()){ apply(); console.log('%c[BANNON_GFX] ' + (TIERS[cur]||{}).label
+      + ' — ' + last.kept + ' costly lights kept, ' + last.hidden + ' folded into ambient',
+      'color:#7CFC00'); setInterval(watch, 4000); return; }
+    if (n > 200) return;
+    setTimeout(function(){ arm(n+1); }, 250);
+  })(0);
+
+  window.BANNON_GFX = {
+    TIERS: TIERS,
+    get tier(){ return cur; },
+    set: set,
+    apply: apply,
+    auto: function(){ return set(detect()); },
+    detected: detect,
+    restore: restoreAll,
+    stats: function(){
+      var S = sceneOf(), all = 0, vis = 0, costly = 0, shadow = 0;
+      if (S) S.traverse(function(n){
+        if (!n.isLight) return;
+        all++;
+        if (n.visible){ vis++;
+          if (n.type !== 'AmbientLight' && n.type !== 'HemisphereLight') costly++;
+          if (n.castShadow) shadow++; }
+      });
+      var R = rendererOf();
+      return { tier:cur, budget:(TIERS[cur]||{}).lights, lightsInScene:all, visible:vis,
+               costlyVisible:costly, shadowCasters:shadow, folded:last.hidden,
+               pixelRatio: R ? R.getPixelRatio() : null,
+               devicePixelRatio: window.devicePixelRatio || 1 };
+    }
+  };
+  console.log('%c[BANNON_GFX] armed — tier ' + cur + ' (detected ' + detect() + ')','color:#7CFC00');
+})();
+</script>
+
+<script>
+/* ============================================================================================
+   BANNON_PREWARM — the OTHER half of the freeze, and the half that is real on a phone.
+
+   BANNON_GFX above cut per-pixel shader cost. But raw frame rate measured in this harness comes
+   from a SOFTWARE rasteriser (swiftshader), which exaggerates rasterising and tells us nothing
+   reliable about the owner's actual GPU. So the honest question was: what stalls the main thread
+   for reasons that have NOTHING to do with how fast pixels get filled?
+
+   MEASURED over 30 seconds of live match:
+       shader programs   28 -> 43     (+15)
+       textures          16 -> 42     (+26)
+       asset fetches                   240
+   Every one of those is device-independent work happening WHILE THE OWNER IS FIGHTING.
+
+   A new shader program means a GLSL compile plus a link. On mobile GPUs that is routinely
+   50-500ms of BLOCKED MAIN THREAD each, and drivers do it lazily at first draw -- so it lands the
+   instant a new move, prop or fighter first appears on screen. Fifteen of them across a match is
+   the stutter the owner has been describing. Texture uploads block the same way.
+
+   THE FIX IS NOT TO REMOVE ANYTHING. It is to do the work EARLY, while a loading screen or an
+   entrance is on-screen and a hitch costs nothing, instead of during play:
+     * renderer.compile(scene, camera) forces every material in the scene to compile and link NOW.
+     * renderer.initTexture(tex) forces the upload NOW.
+   Both are stock three.js, built for exactly this.
+
+   Also: BANNON_WARM fetched its clips 400ms AFTER startFight -- i.e. during the match, which is
+   what the 240 fetches were. Moved ahead of the bell.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  var ST = { compiles:0, lastMeshCount:-1, textures:0, ms:0, duringPlay:0, armed:false };
+
+  function sceneOf(){ try{ return (typeof scene !== 'undefined' && scene) ? scene : null; }catch(e){ return null; } }
+  function camOf(){ try{ return (typeof camera !== 'undefined' && camera) ? camera : null; }catch(e){ return null; } }
+  function rendOf(){ try{ return (typeof renderer !== 'undefined' && renderer) ? renderer : null; }catch(e){ return null; } }
+
+  // Force every material in the scene through compile+link, and every texture through upload,
+  // RIGHT NOW. Returns how long it blocked -- a cost we are choosing to pay here rather than
+  // have the driver charge us mid-move.
+  function prewarm(why){
+    var S = sceneOf(), C = camOf(), R = rendOf();
+    if (!S || !C || !R) return 0;
+    var t0 = (performance && performance.now) ? performance.now() : Date.now();
+    var before = R.info.programs ? R.info.programs.length : -1;
+    try{ R.compile(S, C); }catch(e){ return 0; }
+
+    // textures: compile() links programs but does not necessarily upload every map, and a first
+    // upload is its own hitch. initTexture is the supported way to force it ahead of time.
+    var seen = 0;
+    if (typeof R.initTexture === 'function'){
+      var done = new Set();
+      S.traverse(function(n){
+        if (!n.material) return;
+        var ms = Array.isArray(n.material) ? n.material : [n.material];
+        ms.forEach(function(m){
+          if (!m) return;
+          ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap','alphaMap','bumpMap']
+            .forEach(function(k){
+              var t = m[k];
+              if (t && t.isTexture && !done.has(t.uuid)){
+                done.add(t.uuid);
+                try{ R.initTexture(t); seen++; }catch(e){}
+              }
+            });
+        });
+      });
+    }
+    var ms = ((performance && performance.now) ? performance.now() : Date.now()) - t0;
+    var after = R.info.programs ? R.info.programs.length : -1;
+    ST.compiles++; ST.textures += seen; ST.ms += ms;
+    if (ST.armed) ST.duringPlay++;
+    console.log('%c[BANNON_PREWARM] ' + why + ' — programs ' + before + ' -> ' + after
+      + ', ' + seen + ' textures, ' + ms.toFixed(0) + 'ms paid up front', 'color:#7CFC00');
+    return ms;
+  }
+
+  function meshCount(){
+    var S = sceneOf(); if (!S) return -1;
+    var n = 0; S.traverse(function(o){ if (o.isMesh) n++; });
+    return n;
+  }
+
+  // The scene keeps growing after the bell: fighter GLBs land async, stipulations dress the room,
+  // props stream in. Each addition is a potential new program. Rather than hunt every code path
+  // that adds a mesh, watch the count and re-compile when it MOVES -- one compile right after the
+  // meshes appear beats a driver compile in the middle of a suplex.
+  function watch(){
+    var n = meshCount();
+    if (n < 0) return;
+    if (ST.lastMeshCount < 0){ ST.lastMeshCount = n; return; }
+    if (n !== ST.lastMeshCount){
+      ST.lastMeshCount = n;
+      prewarm('scene changed (' + n + ' meshes)');
+    }
+  }
+
+  // ---- hook the bell ----
+  function arm(){
+    if (typeof window.startFight !== 'function' || window.startFight.__prewarm) return false;
+    var orig = window.startFight;
+    var wrapped = function(){
+      var r = orig.apply(this, arguments);
+      ST.armed = false;
+      // The fighters and the arena are constructed inside startFight, but their GLBs resolve
+      // async. Compile immediately for everything that exists, then again as models land. The
+      // early passes happen while the entrance/intro is on screen, where a hitch is invisible.
+      try{ prewarm('at the bell'); }catch(e){}
+      [300, 900, 2000, 4000].forEach(function(d){
+        setTimeout(function(){ try{ watch(); }catch(e){} }, d);
+      });
+      setTimeout(function(){ ST.armed = true; }, 5000);   // after this, a compile IS a visible stall
+      return r;
+    };
+    wrapped.__prewarm = true;
+    // preserve anything an earlier wrapper stamped on the function (BANNON_WARM marks __warm)
+    for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) wrapped[k] = orig[k]; }
+    try{ window.startFight = wrapped; }catch(e){ return false; }
+    return true;
+  }
+
+  (function tryArm(n){
+    if (arm()){
+      setInterval(watch, 1500);
+      console.log('%c[BANNON_PREWARM] armed — shaders and textures compile before the bell, not during','color:#7CFC00');
+      return;
+    }
+    if (n > 200) return;
+    setTimeout(function(){ tryArm(n+1); }, 250);
+  })(0);
+
+  window.BANNON_PREWARM = {
+    now: function(){ return prewarm('manual'); },
+    stats: function(){
+      var R = rendOf();
+      return { compiles:ST.compiles, texturesUploaded:ST.textures,
+               totalMsPaidUpFront:+ST.ms.toFixed(0),
+               compilesAfterBell:ST.duringPlay,
+               programsNow: R && R.info.programs ? R.info.programs.length : -1,
+               meshes: meshCount() };
+    }
+  };
 })();
 </script>
 

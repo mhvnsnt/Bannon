@@ -3,889 +3,1071 @@
   "id": "1SjNTCC4zXelINHzt2n5U5-vW7phK82bF",
   "ok": true,
   "size": 76314806,
-  "at": "2026-07-12T08:33:51.176Z"
+  "local": "imports/incoming/2k moves 2k28.zip",
+  "at": "2026-07-31T17:32:33.700Z"
  },
  "330f70aa-1686-4807-85b9-2138fd29f7bc.glb": {
   "id": "15jYSzjYxbUAWoVlesw8b_4oEk7WMpXch",
   "ok": true,
-  "at": "2026-07-11T19:24:55.386Z"
+  "size": 1920420,
+  "local": "assets/models/incoming/330f70aa-1686-4807-85b9-2138fd29f7bc.glb",
+  "at": "2026-07-31T17:21:50.223Z"
  },
  "Action Idle To Standing Idle.fbx": {
   "id": "1wMHdq_kRwsbBg9dIhBkXm_QWoL3OJpXf",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1841616,
+  "local": "assets/mocap/drive/Action Idle To Standing Idle.fbx",
+  "at": "2026-07-31T17:21:51.713Z"
  },
  "AlternatingForearms.fbx": {
   "id": "147NindMhA2sze7JDwpJf2MAyQCZOG1AW",
   "ok": true,
   "size": 6639376,
-  "at": "2026-07-12T04:52:31.682Z"
+  "local": "assets/mocap/drive/AlternatingForearms.fbx",
+  "at": "2026-07-31T17:32:35.296Z"
  },
  "Andrade_El_Idolo.fbx": {
   "id": "18GhTFgQohTjdTUBB8mO3CezcHKDQwX3d",
   "ok": true,
   "size": 2637952,
-  "at": "2026-07-12T04:52:32.957Z"
+  "local": "assets/mocap/drive/Andrade_El_Idolo.fbx",
+  "at": "2026-07-31T17:32:36.699Z"
  },
  "Andrade_Mask.fbx": {
   "id": "17Im80tsJ_m9VVVFJIccxZ6IGIF3dbJot",
   "ok": true,
   "size": 192320,
-  "at": "2026-07-12T04:52:34.099Z"
+  "local": "assets/mocap/drive/Andrade_Mask.fbx",
+  "at": "2026-07-31T17:32:37.811Z"
  },
  "ApronJayKick.fbx": {
   "id": "1-HsUreKUuSvHSYgSyaufmvE1tYtOH4wS",
   "ok": true,
   "size": 9649008,
-  "at": "2026-07-12T04:52:35.495Z"
+  "local": "assets/mocap/drive/ApronJayKick.fbx",
+  "at": "2026-07-31T17:32:39.454Z"
  },
  "Armada.fbx": {
   "id": "1LCpMROI7XE0Uj0-CTlXGIicxU4YsnHdS",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 43395952,
+  "local": "assets/mocap/drive/Armada.fbx",
+  "at": "2026-07-31T17:21:55.000Z"
  },
  "AssistedCutter.fbx": {
   "id": "1od9zNxbU35kqwWc6xghTxaXmGsQieqJA",
   "ok": true,
   "size": 11816944,
-  "at": "2026-07-12T08:33:52.506Z"
+  "local": "assets/mocap/drive/AssistedCutter.fbx",
+  "at": "2026-07-31T17:32:43.106Z"
  },
  "AssistedDivSenton.fbx": {
   "id": "1HD15HmYfEXHO7Yf92W_AcF-vSRgVUptz",
   "ok": true,
   "size": 12125344,
-  "at": "2026-07-12T04:52:38.915Z"
+  "local": "assets/mocap/drive/AssistedDivSenton.fbx",
+  "at": "2026-07-31T17:32:44.731Z"
  },
  "AssistedReverseGoozleChop.fbx": {
   "id": "1wn_e_I3YTgp75Z2bjk4Rd5GfOZgl0Gfc",
   "ok": true,
   "size": 11099824,
-  "at": "2026-07-12T04:52:40.585Z"
+  "local": "assets/mocap/drive/AssistedReverseGoozleChop.fbx",
+  "at": "2026-07-31T17:32:46.226Z"
  },
  "Au.fbx": {
   "id": "1h-cNLXlYGccT_G0qLqI_SZxuaB-wo6Yw",
   "ok": true,
   "size": 2066688,
-  "at": "2026-07-12T04:08:11.324Z"
+  "local": "assets/mocap/drive/Au.fbx",
+  "at": "2026-07-31T17:21:56.739Z"
  },
  "BANNON_alt_rigready (1).glb": {
   "id": "1J_QjMxpPrj-T1ZkNXbTcEdpQOl4B6w24",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 3341060,
+  "local": "assets/models/incoming/BANNON_alt_rigready (1).glb",
+  "at": "2026-07-31T17:21:58.325Z"
  },
  "BANNON_alt_rigready.glb": {
   "id": "1cYCCnRMlujQMltHhtUGCpVHb6qyNdpfY",
-  "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "ok": false,
+  "reason": "truncated",
+  "at": "2026-07-31T17:21:59.387Z"
  },
  "BANNON_masked_rigready.glb": {
   "id": "10U-laa0Y_ERenBmd7mH7LoIVQmwQ8R1t",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 3091032,
+  "local": "assets/models/incoming/BANNON_masked_rigready.glb",
+  "at": "2026-07-31T17:22:01.114Z"
  },
  "BANNON_v1_clean.glb": {
   "id": "1bFa05CyDxSaXvWyCtfh-ZvZPKenk3xSX",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 3608272,
+  "local": "assets/models/incoming/BANNON_v1_clean.glb",
+  "at": "2026-07-31T17:22:03.113Z"
  },
  "BANNON_v1_rigready.glb": {
   "id": "1lsK7vT6y0ytlj8zYq5-SKsdFiHLP9bfi",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 3656556,
+  "local": "assets/models/incoming/BANNON_v1_rigready.glb",
+  "at": "2026-07-31T17:22:05.307Z"
  },
  "BANNON_v2_split.glb": {
   "id": "1Rj2dVQRn2_6WGsSx8pV7hGzo6RCEtslq",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 4209796,
+  "local": "assets/models/incoming/BANNON_v2_split.glb",
+  "at": "2026-07-31T17:25:51.781Z"
  },
  "BANNON_v3_split.glb": {
   "id": "1ZzT0SfE9K4BrY4OKfmkAxTknuI-1nZSl",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 4516568,
+  "local": "assets/models/incoming/BANNON_v3_split.glb",
+  "at": "2026-07-31T17:25:53.666Z"
  },
  "Barbwire_baseball_bat.glb": {
   "id": "19rFA4eVAKPk8Rm2Vrzn9x9gBxmHsHHRF",
   "ok": true,
   "size": 13871400,
-  "at": "2026-07-13T04:02:12.687Z"
+  "local": "assets/models/incoming/Barbwire_baseball_bat.glb",
+  "at": "2026-07-31T17:25:55.992Z"
  },
  "Baseball Hit.fbx": {
   "id": "1W8E7D5LaGIPcBiYVL0GxrecjkfbANNUT",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1961216,
+  "local": "assets/mocap/drive/Baseball Hit.fbx",
+  "at": "2026-07-31T17:25:57.282Z"
  },
  "Bash.fbx": {
   "id": "1j3WWa9_OzBRT-h9-AmN61Sn_cXvlBZEn",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 43664320,
+  "local": "assets/mocap/drive/Bash.fbx",
+  "at": "2026-07-31T17:26:02.926Z"
  },
  "Big Body Blow.fbx": {
   "id": "1RSTfRIXBgkQfM6QQvudOn9kbTF2Eb_-B",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 2030000,
+  "local": "assets/mocap/drive/Big Body Blow.fbx",
+  "at": "2026-07-31T17:26:04.295Z"
  },
  "Big Jump.fbx": {
   "id": "1La01iOgKHsJ9h_hoFgRuhT1QCwHr8oZj",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1999040,
+  "local": "assets/mocap/drive/Big Jump.fbx",
+  "at": "2026-07-31T17:26:05.811Z"
  },
  "Big Rib Hit.fbx": {
   "id": "1OZY7eW0PPR0tmy8e4QZbEmMoN2GQFjOx",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1865376,
+  "local": "assets/mocap/drive/Big Rib Hit.fbx",
+  "at": "2026-07-31T17:26:07.342Z"
  },
  "Body Block.fbx": {
   "id": "1x5qbE0PT8rzLB78XHZREYFIi2UnolhcW",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 2125120,
+  "local": "assets/mocap/drive/Body Block.fbx",
+  "at": "2026-07-31T17:26:08.945Z"
  },
  "Body Jab Cross.fbx": {
   "id": "1ZHAdvHkV2umwquuFR8Z0Wd7XTMSrvIBv",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1905872,
+  "local": "assets/mocap/drive/Body Jab Cross.fbx",
+  "at": "2026-07-31T17:26:10.335Z"
  },
  "Box Idle.fbx": {
   "id": "1zfUfJjE32tW_RuDuPH9WDINzS9OSoplU",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 2245072,
+  "local": "assets/mocap/drive/Box Idle.fbx",
+  "at": "2026-07-31T17:26:11.682Z"
  },
  "Boxing (1).fbx": {
   "id": "1CqfqIZZBFaxuChHgzFk-fuQkThHaPD7k",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1913984,
+  "local": "assets/mocap/drive/Boxing (1).fbx",
+  "at": "2026-07-31T17:26:13.272Z"
  },
  "Boxing (2).fbx": {
   "id": "1G0fq045qg9O6bFgsTctZ8cZm5c8WJ3JH",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 2119760,
+  "local": "assets/mocap/drive/Boxing (2).fbx",
+  "at": "2026-07-31T17:26:14.581Z"
  },
  "Boxing (3).fbx": {
   "id": "19xyQf4b2jwV0wwtt9-JoKGG-2qauRWOE",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1913984,
+  "local": "assets/mocap/drive/Boxing (3).fbx",
+  "at": "2026-07-31T17:26:15.988Z"
  },
  "Boxing (4).fbx": {
   "id": "1fHZYt-TvESjhn4oeloG-N00n-PxbVLpS",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1905872,
+  "local": "assets/mocap/drive/Boxing (4).fbx",
+  "at": "2026-07-31T17:26:17.382Z"
  },
  "Boxing (5).fbx": {
   "id": "1MQlcuGuuk5dnZ0qB9UCAs9doHvF8pNwj",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 43386224,
+  "local": "assets/mocap/drive/Boxing (5).fbx",
+  "at": "2026-07-31T17:26:21.095Z"
  },
  "Boxing.fbx": {
   "id": "1OtgRydisVNDXe_v02JrYukYjpFo2sWsY",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1876176,
+  "local": "assets/mocap/drive/Boxing.fbx",
+  "at": "2026-07-31T17:26:22.438Z"
  },
  "Braced Hang Hop Up.fbx": {
   "id": "1AEcA_UXP_4sNJ-zU3dmG2-ID6FZ4AQIU",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1904976,
+  "local": "assets/mocap/drive/Braced Hang Hop Up.fbx",
+  "at": "2026-07-31T17:26:23.668Z"
  },
  "BrainBuster.fbx": {
   "id": "1D16l2rB5owYS7MM4z7moFZsvuqYWIYVz",
   "ok": true,
   "size": 7253472,
-  "at": "2026-07-12T08:33:53.629Z"
+  "local": "assets/mocap/drive/BrainBuster.fbx",
+  "at": "2026-07-31T17:32:47.939Z"
  },
  "Breakdance Footwork 3 (1).fbx": {
   "id": "1jjNcKn-1WmP7w7xV5WZlt2pkFSc5oqH6",
   "ok": true,
   "size": 2154976,
-  "at": "2026-07-11T19:24:57.680Z"
+  "local": "assets/mocap/drive/Breakdance Footwork 3 (1).fbx",
+  "at": "2026-07-31T17:26:25.120Z"
  },
  "Breakdance Footwork 3.fbx": {
   "id": "14N6jGbr2UNA4D2jHMh-8W4bwJFRX35by",
   "ok": true,
   "size": 2154976,
-  "at": "2026-07-11T19:24:59.003Z"
+  "local": "assets/mocap/drive/Breakdance Footwork 3.fbx",
+  "at": "2026-07-31T17:26:27.035Z"
  },
  "Breakdance Footwork To Freeze.fbx": {
   "id": "1EpZU4qtPfk60iwr1IUGGsnfBgCm4WzOB",
   "ok": true,
   "size": 43628768,
-  "at": "2026-07-12T03:47:53.870Z"
+  "local": "assets/mocap/drive/Breakdance Footwork To Freeze.fbx",
+  "at": "2026-07-31T17:26:30.480Z"
  },
  "Breakdance Freezes.fbx": {
   "id": "1HMk4ILcCLLkwHzWq1F0Zgpdh-TFWG44-",
   "ok": true,
   "size": 2342944,
-  "at": "2026-07-11T19:25:00.454Z"
+  "local": "assets/mocap/drive/Breakdance Freezes.fbx",
+  "at": "2026-07-31T17:26:32.036Z"
  },
  "Breakdance Ready.fbx": {
   "id": "1i1-wVos7Sp_x6IQfq_mi11e9Z9KXe-Dq",
   "ok": true,
   "size": 1898320,
-  "at": "2026-07-11T19:25:01.776Z"
+  "local": "assets/mocap/drive/Breakdance Ready.fbx",
+  "at": "2026-07-31T17:26:33.333Z"
  },
  "Breakdance Uprock To Ground.fbx": {
   "id": "1go-yNxS2wgZKJPgsPu_g_JOXDhBlR8ZK",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 43622944,
+  "local": "assets/mocap/drive/Breakdance Uprock To Ground.fbx",
+  "at": "2026-07-31T17:26:37.699Z"
  },
  "Brian_Cage.fbx": {
   "id": "1t9pRFskg0rJoBWQL8M2OUiW0j8K0lMgy",
   "ok": true,
   "size": 2429184,
-  "at": "2026-07-12T08:33:54.918Z"
+  "local": "assets/mocap/drive/Brian_Cage.fbx",
+  "at": "2026-07-31T17:32:49.432Z"
  },
  "Brooklyn Uprock.fbx": {
   "id": "1Pk5hdncVxXjdjuZ7dAUTqXMpIz9IsDe9",
   "ok": true,
   "size": 2177408,
-  "at": "2026-07-11T19:25:02.998Z"
+  "local": "assets/mocap/drive/Brooklyn Uprock.fbx",
+  "at": "2026-07-31T17:26:39.093Z"
  },
  "Brutal Assassination.fbx": {
   "id": "1RjuGWUVidt9hCMXk8Z08wM0pOpoGOuFq",
   "ok": true,
   "size": 2119184,
-  "at": "2026-07-11T19:25:04.347Z"
+  "local": "assets/mocap/drive/Brutal Assassination.fbx",
+  "at": "2026-07-31T17:26:40.684Z"
  },
  "BuckleBombEnzugiri.fbx": {
   "id": "1XMHlOu_PrL_nt3b3pCVIlhsto8Q-A5h7",
   "ok": true,
   "size": 11821184,
-  "at": "2026-07-12T04:52:42.386Z"
+  "local": "assets/mocap/drive/BuckleBombEnzugiri.fbx",
+  "at": "2026-07-31T17:32:51.076Z"
  },
  "CIPHER (Blackheart Lio Rush feral black sludge psycho maniac).glb": {
   "id": "1XTR_JP72gmgXQ3NvXJ1gqjGZ47mZKutc",
   "ok": true,
   "size": 60997588,
-  "at": "2026-07-12T04:08:17.174Z"
+  "local": "assets/models/incoming/CIPHER (Blackheart Lio Rush feral black sludge psycho maniac).glb",
+  "at": "2026-07-31T17:27:05.236Z"
  },
  "CIPHER(The god within mode addition teamed with onyx as a minion for onyx) (Blackheart Lio Rush inspired).glb": {
   "id": "1KcRh-vEfqC85oYbRsscjDdHY2kAQgu50",
   "ok": true,
   "size": 59297952,
-  "at": "2026-07-12T04:08:19.904Z"
+  "local": "assets/models/incoming/CIPHER(The god within mode addition teamed with onyx as a minion for onyx) (Blac.glb",
+  "at": "2026-07-31T17:27:09.193Z"
  },
  "Cain Elias 2 ring and entrance and cutscenes gear from book versions, street gear and sometimes ring gear.glb": {
   "id": "1_pDDTaJSBRb14jMCZzf2a4JDbrBwhTCM",
   "ok": true,
   "size": 60662576,
-  "at": "2026-07-12T03:52:42.509Z"
+  "local": "assets/models/incoming/Cain Elias 2 ring and entrance and cutscenes gear from book versions, street gea.glb",
+  "at": "2026-07-31T17:26:45.560Z"
  },
  "Cain Elias 3 snakeskin pants pimp ring and street attire inspired by snakeskin pants undertaker.glb": {
   "id": "1_x95ex7md-ZJX1zdGXejesZWC9aa7Hl5",
   "ok": true,
   "size": 60387640,
-  "at": "2026-07-12T03:52:45.572Z"
+  "local": "assets/models/incoming/Cain Elias 3 snakeskin pants pimp ring and street attire inspired by snakeskin p.glb",
+  "at": "2026-07-31T17:26:50.032Z"
  },
  "Can Can.fbx": {
   "id": "1ftPrO8GAuyFlD90p30pJcZR5GmVA58RW",
   "ok": true,
   "size": 2151584,
-  "at": "2026-07-11T19:25:05.777Z"
+  "local": "assets/mocap/drive/Can Can.fbx",
+  "at": "2026-07-31T17:26:55.208Z"
  },
  "Capoeira (1).fbx": {
   "id": "1Bd5_9WzJK6UdcIKOW-GQAWpLgCRbzKLV",
   "ok": true,
   "size": 2164240,
-  "at": "2026-07-11T19:25:06.489Z"
+  "local": "assets/mocap/drive/Capoeira (1).fbx",
+  "at": "2026-07-31T17:26:56.780Z"
  },
  "Capoeira.fbx": {
   "id": "1zpGM_HJswzExwLNe5xka1kuBqXRTp4Zl",
   "ok": true,
   "size": 2125120,
-  "at": "2026-07-11T19:25:07.827Z"
+  "local": "assets/mocap/drive/Capoeira.fbx",
+  "at": "2026-07-31T17:26:58.527Z"
  },
  "Cartwheel.fbx": {
   "id": "1OCTTpoVRJexqqMUNM6eo_kgIKy_gU8sD",
   "ok": true,
   "size": 3618064,
-  "at": "2026-07-12T08:33:56.151Z"
+  "local": "assets/mocap/drive/Cartwheel.fbx",
+  "at": "2026-07-31T17:32:52.453Z"
  },
  "CemeteryDrive.fbx": {
   "id": "1vX_najc4Hu2PSO8Y4YgH019bdcNyH5Hi",
   "ok": true,
   "size": 8028208,
-  "at": "2026-07-12T04:52:43.845Z"
+  "local": "assets/mocap/drive/CemeteryDrive.fbx",
+  "at": "2026-07-31T17:32:53.996Z"
  },
  "Center Block.fbx": {
   "id": "1gR4vmWgExVBdPrnAPcCo-vuinIUZC8ks",
   "ok": true,
   "size": 1934208,
-  "at": "2026-07-11T19:25:09.103Z"
+  "local": "assets/mocap/drive/Center Block.fbx",
+  "at": "2026-07-31T17:26:59.916Z"
  },
  "Ch06_nonPBR.fbx": {
   "id": "1dQjBUTEUXIXFipV---kJZ1xpG0pUkRkz",
   "ok": true,
   "size": 54671904,
-  "at": "2026-07-12T04:52:47.549Z"
+  "local": "assets/mocap/drive/Ch06_nonPBR.fbx",
+  "at": "2026-07-31T17:32:57.992Z"
  },
  "Ch24_nonPBR.fbx": {
   "id": "1FaSOhumKFV7gAuIuSzpKKdNy1nPj3V4y",
   "ok": true,
   "size": 53356880,
-  "at": "2026-07-12T04:52:51.389Z"
+  "local": "assets/mocap/drive/Ch24_nonPBR.fbx",
+  "at": "2026-07-31T17:33:01.116Z"
  },
  "Ch44_nonPBR.fbx": {
   "id": "1MjHkBk1biOKlvhF2S8LY2IXaAxQEjxIq",
   "ok": true,
   "size": 98272560,
-  "at": "2026-07-12T04:52:56.742Z"
+  "local": "assets/mocap/drive/Ch44_nonPBR.fbx",
+  "at": "2026-07-31T17:33:05.725Z"
  },
  "Chokeslam.fbx": {
   "id": "1v_FdqkvXW11mamUpSNv2K_d0WsSIGR0F",
   "ok": true,
   "size": 7950144,
-  "at": "2026-07-12T04:52:58.308Z"
+  "local": "assets/mocap/drive/Chokeslam.fbx",
+  "at": "2026-07-31T17:33:07.312Z"
  },
  "Chris_Jericho.fbx": {
   "id": "1rQ2U53gM86NEYNlI5BGKQThF_ci2hufT",
   "ok": true,
   "size": 2991360,
-  "at": "2026-07-12T08:33:57.362Z"
+  "local": "assets/mocap/drive/Chris_Jericho.fbx",
+  "at": "2026-07-31T17:33:08.664Z"
  },
  "Ciphwr no hair no mask (feral smeagol mode Blackheart Lio Rush aew 2026 character style gimmick) .glb": {
   "id": "1XojZDCEgx94iv5ZettQ2EYR5YrjDixp0",
   "ok": true,
   "size": 60199332,
-  "at": "2026-07-12T04:08:22.838Z"
+  "local": "assets/models/incoming/Ciphwr no hair no mask (feral smeagol mode Blackheart Lio Rush aew 2026 characte.glb",
+  "at": "2026-07-31T17:27:13.454Z"
  },
  "Climbing A Rope (1).fbx": {
   "id": "1k52ElFDlx4dJpSIHPlEZyTH2yrr3HEDI",
   "ok": true,
   "size": 2006816,
-  "at": "2026-07-11T19:25:10.316Z"
+  "local": "assets/mocap/drive/Climbing A Rope (1).fbx",
+  "at": "2026-07-31T17:27:14.833Z"
  },
  "Climbing A Rope.fbx": {
   "id": "1WKJXlmv75Z7E-VV0xHPHdHFn_26ipSCR",
   "ok": true,
   "size": 2022800,
-  "at": "2026-07-12T04:08:24.346Z"
+  "local": "assets/mocap/drive/Climbing A Rope.fbx",
+  "at": "2026-07-31T17:27:16.226Z"
  },
  "Climbing Up Wall.fbx": {
   "id": "1BnPnn6EhYc_GyS7Ep-e8Z8iLxTR1yIm6",
   "ok": true,
   "size": 1940976,
-  "at": "2026-07-12T04:08:25.679Z"
+  "local": "assets/mocap/drive/Climbing Up Wall.fbx",
+  "at": "2026-07-31T17:27:17.795Z"
  },
  "CodeRed.fbx": {
   "id": "1EKP0neEsk5QWrlJC53JPW5Mpr3G6VL3k",
   "ok": true,
   "size": 8532848,
-  "at": "2026-07-12T04:52:59.770Z"
+  "local": "assets/mocap/drive/CodeRed.fbx",
+  "at": "2026-07-31T17:33:10.177Z"
  },
  "Cody sober.glb": {
   "id": "16IH5uOpwK9yLcGlaXGQRw4iHPq48EEMu",
   "ok": true,
   "size": 61274952,
-  "at": "2026-07-12T04:08:29.712Z"
+  "local": "assets/models/incoming/Cody sober.glb",
+  "at": "2026-07-31T17:27:23.140Z"
  },
  "Cody stressedandcoked.glb": {
   "id": "1wPcZAeKHSPJECQCGPKxlOX2P-eODn1a7",
   "ok": true,
   "size": 61030228,
-  "at": "2026-07-12T04:08:36.640Z"
+  "local": "assets/models/incoming/Cody stressedandcoked.glb",
+  "at": "2026-07-31T17:27:33.493Z"
  },
  "Combo Punch.fbx": {
   "id": "1lsIyIUo8yrSwFGCmNspxsjpcjdADlDtN",
   "ok": true,
   "size": 1969664,
-  "at": "2026-07-12T04:08:38.097Z"
+  "local": "assets/mocap/drive/Combo Punch.fbx",
+  "at": "2026-07-31T17:27:38.921Z"
  },
  "Corkscrew Evade.fbx": {
   "id": "1xq7KXUwVQNe3PhNpDWkT1qvVs0YMYgYt",
   "ok": true,
   "size": 2019280,
-  "at": "2026-07-12T04:08:39.643Z"
+  "local": "assets/mocap/drive/Corkscrew Evade.fbx",
+  "at": "2026-07-31T17:27:40.279Z"
  },
  "Corkscrew Kip Up.fbx": {
   "id": "1t3AkMaxi2kImFjn9dhBJOF1X64DAi7o4",
   "ok": true,
   "size": 43530880,
-  "at": "2026-07-12T04:08:42.322Z"
+  "local": "assets/mocap/drive/Corkscrew Kip Up.fbx",
+  "at": "2026-07-31T17:27:45.034Z"
  },
  "Cross Jumps.fbx": {
   "id": "1yqKebtun2R7LMgWKLCrkBh1HiQeLFivD",
   "ok": true,
   "size": 1961968,
-  "at": "2026-07-12T04:08:46.638Z"
+  "local": "assets/mocap/drive/Cross Jumps.fbx",
+  "at": "2026-07-31T17:27:51.287Z"
  },
  "CrotchChop.fbx": {
   "id": "1EwIvedMITE7ba9WVDfYG4IVpii9PCpNx",
   "ok": true,
   "size": 3564624,
-  "at": "2026-07-12T08:33:58.513Z"
+  "local": "assets/mocap/drive/CrotchChop.fbx",
+  "at": "2026-07-31T17:33:11.588Z"
  },
  "Crouch Idle 02 Looking Around.fbx": {
   "id": "1k6JKGKPqtPIIp3G0ua6YFhpzDi-YkO0u",
   "ok": true,
   "size": 43654208,
-  "at": "2026-07-12T04:08:48.901Z"
+  "local": "assets/mocap/drive/Crouch Idle 02 Looking Around.fbx",
+  "at": "2026-07-31T17:27:54.694Z"
  },
  "Crouch Torch Walk Right.fbx": {
   "id": "1dNPASvYT9u3baKFeHRs2y3b6ce9b02MB",
   "ok": true,
   "size": 1842704,
-  "at": "2026-07-12T04:08:50.304Z"
+  "local": "assets/mocap/drive/Crouch Torch Walk Right.fbx",
+  "at": "2026-07-31T17:27:56.000Z"
  },
  "Crouch Walk Forward.fbx": {
   "id": "16K4iHJmMpSwIKBTqcg1nVbca16uiyXxp",
   "ok": true,
   "size": 1864304,
-  "at": "2026-07-12T04:08:51.641Z"
+  "local": "assets/mocap/drive/Crouch Walk Forward.fbx",
+  "at": "2026-07-31T17:27:57.472Z"
  },
  "CrucifixPin.fbx": {
   "id": "1y_hciTobTj6tLPvrpfyJBE-FAWRlsGw1",
   "ok": true,
   "size": 7648448,
-  "at": "2026-07-12T04:53:01.142Z"
+  "local": "assets/mocap/drive/CrucifixPin.fbx",
+  "at": "2026-07-31T17:33:13.063Z"
  },
  "DDT.fbx": {
   "id": "1skcTj4a7UZvqbJ1yVD5Y6s5fOjbFSg0n",
   "ok": true,
   "size": 8314512,
-  "at": "2026-07-12T08:33:59.754Z"
+  "local": "assets/mocap/drive/DDT.fbx",
+  "at": "2026-07-31T17:33:14.673Z"
  },
  "Dancing (1).fbx": {
   "id": "1SrjW8Rb9IcT20EaVhZVf90T1AkOvSraX",
   "ok": true,
   "size": 43727408,
-  "at": "2026-07-12T04:08:57.038Z"
+  "local": "assets/mocap/drive/Dancing (1).fbx",
+  "at": "2026-07-31T17:28:04.630Z"
  },
  "Dancing (2).fbx": {
   "id": "1GB7Ij0d1cUFFCiiS8oqJahyeuC9CaaQp",
   "ok": true,
   "size": 44181744,
-  "at": "2026-07-12T04:08:59.338Z"
+  "local": "assets/mocap/drive/Dancing (2).fbx",
+  "at": "2026-07-31T17:28:09.395Z"
  },
  "Dancing Running Man.fbx": {
   "id": "1-dLqU-ZyNMX68iIOA8U1xQXGdCSdYzBL",
   "ok": true,
   "size": 2681648,
-  "at": "2026-07-12T04:09:00.616Z"
+  "local": "assets/mocap/drive/Dancing Running Man.fbx",
+  "at": "2026-07-31T17:28:10.929Z"
  },
  "Dancing Twerk.fbx": {
   "id": "1jIs8GZqeAJfen_3b9rZf1nDw9FBrucJW",
   "ok": true,
   "size": 44491104,
-  "at": "2026-07-12T04:09:03.068Z"
+  "local": "assets/mocap/drive/Dancing Twerk.fbx",
+  "at": "2026-07-31T17:28:15.906Z"
  },
  "Dancing.fbx": {
   "id": "1aIkw5zig5lA3wRdy-0PBsLbQyp_rSrH2",
   "ok": true,
   "size": 2252688,
-  "at": "2026-07-12T04:09:04.548Z"
+  "local": "assets/mocap/drive/Dancing.fbx",
+  "at": "2026-07-31T17:28:17.392Z"
  },
  "Death From Back Headshot.fbx": {
   "id": "1r1WdIOIJw34bv5SePx_nYlK4x5xJXom-",
   "ok": true,
   "size": 2095184,
-  "at": "2026-07-12T04:09:05.933Z"
+  "local": "assets/mocap/drive/Death From Back Headshot.fbx",
+  "at": "2026-07-31T17:28:18.878Z"
  },
  "Defeat.fbx": {
   "id": "1s0fhrnJiwuzKLSOWA2M2lzhfWzksoKXD",
   "ok": true,
   "size": 2042672,
-  "at": "2026-07-12T04:09:07.299Z"
+  "local": "assets/mocap/drive/Defeat.fbx",
+  "at": "2026-07-31T17:28:20.192Z"
  },
  "Defender.fbx": {
   "id": "1hj0oiV6RO0LVLK--C1WXD7PHdMdylGSc",
   "ok": true,
   "size": 2145584,
-  "at": "2026-07-12T04:09:08.625Z"
+  "local": "assets/mocap/drive/Defender.fbx",
+  "at": "2026-07-31T17:28:21.963Z"
  },
  "Double Leg Takedown - Victim (1).fbx": {
   "id": "1c8sBsktiO02Jd1MnvJdxAxlRZiXgff8w",
   "ok": true,
   "size": 2132672,
-  "at": "2026-07-12T04:09:09.965Z"
+  "local": "assets/mocap/drive/Double Leg Takedown - Victim (1).fbx",
+  "at": "2026-07-31T17:28:23.512Z"
  },
  "Double Leg Takedown - Victim.fbx": {
   "id": "1UlUR-VVDIQuk0iJLlRNGYzElmvsM41AN",
   "ok": true,
   "size": 2378384,
-  "at": "2026-07-12T04:09:11.277Z"
+  "local": "assets/mocap/drive/Double Leg Takedown - Victim.fbx",
+  "at": "2026-07-31T17:28:24.926Z"
  },
  "DoubleSuplex.fbx": {
   "id": "1kASmYrhczvgI-C7nTyml5io-R0O8Yf6e",
   "ok": true,
   "size": 11612608,
-  "at": "2026-07-12T04:53:02.720Z"
+  "local": "assets/mocap/drive/DoubleSuplex.fbx",
+  "at": "2026-07-31T17:33:16.293Z"
  },
  "DragonScrew.fbx": {
   "id": "1yIAzi3a1TFkQDFZV7x5AxDTC6BcFEkkE",
   "ok": true,
   "size": 7136304,
-  "at": "2026-07-12T08:34:00.927Z"
+  "local": "assets/mocap/drive/DragonScrew.fbx",
+  "at": "2026-07-31T17:33:17.753Z"
  },
  "Drop Kick (1).fbx": {
   "id": "1a42CgA4bAwmtcqLYeg3YkbH_9q5wJcu3",
   "ok": true,
   "size": 43539584,
-  "at": "2026-07-12T04:09:14.076Z"
+  "local": "assets/mocap/drive/Drop Kick (1).fbx",
+  "at": "2026-07-31T17:28:29.309Z"
  },
  "Drop Kick.fbx": {
   "id": "1D2ZvMmIP7gZcmZOX1QMHTh8doyxjJTTk",
   "ok": true,
   "size": 2064640,
-  "at": "2026-07-12T04:09:15.637Z"
+  "local": "assets/mocap/drive/Drop Kick.fbx",
+  "at": "2026-07-31T17:28:30.723Z"
  },
  "Drunk Idle Variation.fbx": {
   "id": "1BIzmt9SryYXLfYSp-63RpWLi_WKN7rfp",
   "ok": true,
   "size": 2185600,
-  "at": "2026-07-12T04:09:17.195Z"
+  "local": "assets/mocap/drive/Drunk Idle Variation.fbx",
+  "at": "2026-07-31T17:28:32.383Z"
  },
  "Drunk Run Forward.fbx": {
   "id": "1ygfGqrLwcoguoiFn_PzLvv5InlUKKc7u",
   "ok": true,
   "size": 1941696,
-  "at": "2026-07-12T04:09:18.524Z"
+  "local": "assets/mocap/drive/Drunk Run Forward.fbx",
+  "at": "2026-07-31T17:28:33.714Z"
  },
  "Drunk Walk.fbx": {
   "id": "1UAiC0EHDNief_ZlhXB00nDTxkVXC2IYs",
   "ok": true,
   "size": 2075984,
-  "at": "2026-07-12T04:09:20.175Z"
+  "local": "assets/mocap/drive/Drunk Walk.fbx",
+  "at": "2026-07-31T17:28:36.387Z"
  },
  "Dwarf Walk.fbx": {
   "id": "1s5NFIzlaYyx0ThPR0r8-h7syDr2wUq33",
   "ok": true,
   "size": 1824880,
-  "at": "2026-07-12T04:09:21.461Z"
+  "local": "assets/mocap/drive/Dwarf Walk.fbx",
+  "at": "2026-07-31T17:28:37.943Z"
  },
  "Dying Backwards.fbx": {
   "id": "1HvQh0SdM6QfX__scIhFSa21ThVdlXOHT",
   "ok": true,
   "size": 2150944,
-  "at": "2026-07-12T04:09:22.788Z"
+  "local": "assets/mocap/drive/Dying Backwards.fbx",
+  "at": "2026-07-31T17:28:39.869Z"
  },
  "ECHO (teamed with onyx and cipher in god within mode , inspired by shotzi Blackheart vs Lio Rush Blackheart).glb": {
   "id": "1NCtLldhV8fbyclxTpwN_l0xJ6yt5FBFA",
   "ok": true,
   "size": 59277400,
-  "at": "2026-07-12T04:09:25.437Z"
+  "local": "assets/models/incoming/ECHO (teamed with onyx and cipher in god within mode , inspired by shotzi Blackh.glb",
+  "at": "2026-07-31T17:28:44.961Z"
  },
  "Edwin Kennedy (Unchained (he's wearing chains) attire 3).glb": {
   "id": "1padxdgVaA84HFqavs1HEULvBFUJhQdIJ",
   "ok": true,
   "size": 59889628,
-  "at": "2026-07-13T04:02:16.306Z"
+  "local": "assets/models/incoming/Edwin Kennedy (Unchained (hes wearing chains) attire 3).glb",
+  "at": "2026-07-31T17:28:54.346Z"
  },
  "Edwin Kennedy ring attire 1 (Mustached Mogul).glb": {
   "id": "1TMx0WWKKXb-mn_oou_hEJFJ4EGxpHdQi",
   "ok": true,
   "size": 61467180,
-  "at": "2026-07-13T04:02:19.098Z"
+  "local": "assets/models/incoming/Edwin Kennedy ring attire 1 (Mustached Mogul).glb",
+  "at": "2026-07-31T17:29:02.167Z"
  },
  "Esquiva 3.fbx": {
   "id": "1u8DE3FfI9HArQSPkqIolFIEnOcH6-Ntu",
   "ok": true,
   "size": 43456432,
-  "at": "2026-07-12T04:09:28.384Z"
+  "local": "assets/mocap/drive/Esquiva 3.fbx",
+  "at": "2026-07-31T17:29:09.243Z"
  },
  "Esquiva 4 (1).fbx": {
   "id": "1bUQEM2F1Q-o8NfUzYKZlZTWn0_v1Nr9m",
   "ok": true,
   "size": 43528240,
-  "at": "2026-07-12T04:09:31.191Z"
+  "local": "assets/mocap/drive/Esquiva 4 (1).fbx",
+  "at": "2026-07-31T17:29:14.626Z"
  },
  "Esquiva 4.fbx": {
   "id": "1DQTNWNvqtIDUJzptMDZxnISyupwNX2sn",
   "ok": true,
   "size": 2053296,
-  "at": "2026-07-12T04:09:32.594Z"
+  "local": "assets/mocap/drive/Esquiva 4.fbx",
+  "at": "2026-07-31T17:29:16.045Z"
  },
  "FaceGouge.fbx": {
   "id": "1y0ab8tQHaOHRkhxDu70PusDZmvpqdby4",
   "ok": true,
   "size": 6729072,
-  "at": "2026-07-12T08:34:02.258Z"
+  "local": "assets/mocap/drive/FaceGouge.fbx",
+  "at": "2026-07-31T17:33:19.364Z"
  },
  "Fall B Loop.fbx": {
   "id": "16LOCr6hKHrt_D-8XGHd2ookmyg_JQBrd",
   "ok": true,
   "size": 43310944,
-  "at": "2026-07-12T04:09:35.007Z"
+  "local": "assets/mocap/drive/Fall B Loop.fbx",
+  "at": "2026-07-31T17:29:20.773Z"
  },
  "Falling Flat Impact.fbx": {
   "id": "1DxzaA_lj-rKYL5gM3ppUfCwQUgQSGDkC",
   "ok": true,
   "size": 1913440,
-  "at": "2026-07-12T04:09:36.344Z"
+  "local": "assets/mocap/drive/Falling Flat Impact.fbx",
+  "at": "2026-07-31T17:29:22.183Z"
  },
  "Falling Forward Death.fbx": {
   "id": "1BrmsDnWl6wf9Z7uipYxLFRaEGyds9TB0",
   "ok": true,
   "size": 1986624,
-  "at": "2026-07-12T04:09:37.715Z"
+  "local": "assets/mocap/drive/Falling Forward Death.fbx",
+  "at": "2026-07-31T17:29:23.530Z"
  },
  "Fatality.fbx": {
   "id": "1Pyk0lvljoeYJq2tDeFNaA0HR5Qw_-xiO",
   "ok": true,
   "size": 11954832,
-  "at": "2026-07-12T08:34:03.676Z"
+  "local": "assets/mocap/drive/Fatality.fbx",
+  "at": "2026-07-31T17:33:21.274Z"
  },
  "FenceM-Kick.fbx": {
   "id": "1weK35DlFgsTi27uCOIjmsWd2xwHr-dNG",
   "ok": true,
   "size": 8527552,
-  "at": "2026-07-12T04:53:04.239Z"
+  "local": "assets/mocap/drive/FenceM-Kick.fbx",
+  "at": "2026-07-31T17:33:22.790Z"
  },
  "FenceThrow.fbx": {
   "id": "1lRYsCCkw6ojqG4LTiTo5FRpN-2zFscwb",
   "ok": true,
   "size": 9174752,
-  "at": "2026-07-12T04:53:05.773Z"
+  "local": "assets/mocap/drive/FenceThrow.fbx",
+  "at": "2026-07-31T17:33:24.350Z"
  },
  "FenceThrow_002.fbx": {
   "id": "1pR9jkncRANnv4EnQWFDOOuCmrxWMcPin",
   "ok": true,
   "size": 9027312,
-  "at": "2026-07-12T04:53:07.444Z"
+  "local": "assets/mocap/drive/FenceThrow_002.fbx",
+  "at": "2026-07-31T17:33:26.367Z"
  },
  "Fin_F10.fbx": {
   "id": "1lk0aINByXTzzC6R7eOs3xVGG-yhyZCN3",
   "ok": true,
   "size": 8823248,
-  "at": "2026-07-12T04:53:09.059Z"
+  "local": "assets/mocap/drive/Fin_F10.fbx",
+  "at": "2026-07-31T17:33:27.902Z"
  },
  "GermanSuplex.fbx": {
   "id": "1mt3l2fPnOSqo89BNLjK3eq8NBA_AQGXg",
   "ok": true,
   "size": 6594672,
-  "at": "2026-07-12T08:34:04.799Z"
+  "local": "assets/mocap/drive/GermanSuplex.fbx",
+  "at": "2026-07-31T17:33:29.570Z"
  },
  "Giantswing.fbx": {
   "id": "1SmehIaOKV8_9LZbwhbMyX8OrLORR0cwR",
   "ok": true,
   "size": 7440064,
-  "at": "2026-07-12T04:53:10.700Z"
+  "local": "assets/mocap/drive/Giantswing.fbx",
+  "at": "2026-07-31T17:33:31.202Z"
  },
  "Ginga Backward.fbx": {
   "id": "1JNjriLrjoMY-x5RHhalrMQJyWQtsQFtO",
   "ok": true,
   "size": 1864304,
-  "at": "2026-07-12T04:09:41.436Z"
+  "local": "assets/mocap/drive/Ginga Backward.fbx",
+  "at": "2026-07-31T17:29:33.831Z"
  },
  "Ginga Forward.fbx": {
   "id": "14dA3ICNEowB0sjFpmoRc6yHo_kisOdu6",
   "ok": true,
   "size": 43350592,
-  "at": "2026-07-12T04:09:43.935Z"
+  "local": "assets/mocap/drive/Ginga Forward.fbx",
+  "at": "2026-07-31T17:29:39.006Z"
  },
  "Ginga Sideways 2.fbx": {
   "id": "1JC_EgJjGuZbQBm2G_reKVYfQXbhhlvvX",
   "ok": true,
   "size": 1992816,
-  "at": "2026-07-12T04:09:45.195Z"
+  "local": "assets/mocap/drive/Ginga Sideways 2.fbx",
+  "at": "2026-07-31T17:29:40.395Z"
  },
  "HOLLOW (based off super dragon, needs super dragon personality and moves, teamed with ONYX, static, echo, cipher, god within mode appearances too).glb": {
   "id": "1Xn19Oxc9RdQA_anwGs85ET4y6ovbeVRB",
   "ok": true,
   "size": 61184224,
-  "at": "2026-07-13T01:47:03.382Z"
+  "local": "assets/models/incoming/HOLLOW (based off super dragon, needs super dragon personality and moves, teamed.glb",
+  "at": "2026-07-31T17:30:00.017Z"
  },
  "HammerThrow.fbx": {
   "id": "1zelNBFghEzfxDikGHceAon2qGNr4-jDm",
   "ok": true,
   "size": 7194336,
-  "at": "2026-07-12T04:53:13.873Z"
+  "local": "assets/mocap/drive/HammerThrow.fbx",
+  "at": "2026-07-31T17:33:34.463Z"
  },
  "HammerlockDDT.fbx": {
   "id": "1150r9UVOClZHNUsHu7sTDZLUy7LgonGs",
   "ok": true,
   "size": 7462784,
-  "at": "2026-07-12T04:53:12.322Z"
+  "local": "assets/mocap/drive/HammerlockDDT.fbx",
+  "at": "2026-07-31T17:33:32.811Z"
  },
  "Heavy Weapon Swing.fbx": {
   "id": "1_LmUojLxdSa0wYAxLzkmlGgqJnYpEa0l",
   "ok": true,
   "size": 2071504,
-  "at": "2026-07-12T04:09:46.579Z"
+  "local": "assets/mocap/drive/Heavy Weapon Swing.fbx",
+  "at": "2026-07-31T17:29:47.439Z"
  },
  "Hit On Side Of Head.fbx": {
   "id": "1Nq6RqKRhWAMJf-yQYS0gLspwatAOc9UQ",
   "ok": true,
   "size": 2110000,
-  "at": "2026-07-12T04:09:48.080Z"
+  "local": "assets/mocap/drive/Hit On Side Of Head.fbx",
+  "at": "2026-07-31T17:29:48.797Z"
  },
  "Hit On The Back.fbx": {
   "id": "1yWSZ-QibKTy0tjNytoFkSb6YspG0cjLd",
   "ok": true,
   "size": 2020896,
-  "at": "2026-07-12T04:09:49.100Z"
+  "local": "assets/mocap/drive/Hit On The Back.fbx",
+  "at": "2026-07-31T17:29:50.142Z"
  },
  "Hit Reaction.fbx": {
   "id": "14pJLJfwhV9EpQI1uIz9hhjb3qstc7FC0",
   "ok": true,
   "size": 1932880,
-  "at": "2026-07-12T04:09:50.548Z"
+  "local": "assets/mocap/drive/Hit Reaction.fbx",
+  "at": "2026-07-31T17:29:51.536Z"
  },
  "Hit To Body.fbx": {
   "id": "1KJiuldnT7m7WJRvlB4Lx7MQMdElvEGKQ",
   "ok": true,
   "size": 1832976,
-  "at": "2026-07-12T04:09:51.886Z"
+  "local": "assets/mocap/drive/Hit To Body.fbx",
+  "at": "2026-07-31T17:29:52.849Z"
  },
  "Hit To Head.fbx": {
   "id": "1ZDrNaolXVdfxVxda8FWG79vPdjVGJaod",
   "ok": true,
   "size": 2023056,
-  "at": "2026-07-12T04:09:53.285Z"
+  "local": "assets/mocap/drive/Hit To Head.fbx",
+  "at": "2026-07-31T17:29:54.235Z"
  },
  "House Dancing.fbx": {
   "id": "1dcNxyaC2HJ2_-sqkCiFplvLeHAH5n2w5",
   "ok": true,
   "size": 44895312,
-  "at": "2026-07-12T04:09:55.757Z"
+  "local": "assets/mocap/drive/House Dancing.fbx",
+  "at": "2026-07-31T17:30:06.187Z"
  },
  "Hurricane Kick.fbx": {
   "id": "1Q6f08Ce8Ctn9cxkyz1B7bRy3ldE15cQF",
   "ok": true,
   "size": 1842704,
-  "at": "2026-07-12T04:09:57.117Z"
+  "local": "assets/mocap/drive/Hurricane Kick.fbx",
+  "at": "2026-07-31T17:30:07.565Z"
  },
  "HurricaneRana.fbx": {
   "id": "1jTQnD2IxDMHRH_s3csKt9C6p4t1BmN5j",
   "ok": true,
   "size": 6951472,
-  "at": "2026-07-12T08:34:06.028Z"
+  "local": "assets/mocap/drive/HurricaneRana.fbx",
+  "at": "2026-07-31T17:33:37.231Z"
  },
  "Idle.fbx": {
   "id": "1mxcVc6-Mr3UkDMCS3UyIHLHi4pfPvpZr",
   "ok": true,
   "size": 2146176,
-  "at": "2026-07-12T04:10:04.452Z"
+  "local": "assets/mocap/drive/Idle.fbx",
+  "at": "2026-07-31T17:30:15.397Z"
  },
  "Illegal Elbow Punch (1).fbx": {
   "id": "18oJvxIz2yiVYb9sYAfjX3QJGHgx0DdNG",
   "ok": true,
   "size": 1900480,
-  "at": "2026-07-12T04:10:05.690Z"
+  "local": "assets/mocap/drive/Illegal Elbow Punch (1).fbx",
+  "at": "2026-07-31T17:30:17.009Z"
  },
  "Illegal Elbow Punch (2).fbx": {
   "id": "1DBmr0I-Gsq-wl44vas-fF3mXeEw5DM2K",
   "ok": true,
   "size": 1900480,
-  "at": "2026-07-12T04:10:06.932Z"
+  "local": "assets/mocap/drive/Illegal Elbow Punch (2).fbx",
+  "at": "2026-07-31T17:30:18.357Z"
  },
  "Illegal Elbow Punch.fbx": {
   "id": "1wirGrx62r_psJiicY5i7Bz2P6OyWB9u2",
   "ok": true,
   "size": 1919376,
-  "at": "2026-07-12T04:10:08.255Z"
+  "local": "assets/mocap/drive/Illegal Elbow Punch.fbx",
+  "at": "2026-07-31T17:30:20.074Z"
  },
  "Illegal Knee.fbx": {
   "id": "1RvNexZtZwMiHOKKUs8wGuT3IAusjJkow",
   "ok": true,
   "size": 1919376,
-  "at": "2026-07-12T04:10:09.509Z"
+  "local": "assets/mocap/drive/Illegal Knee.fbx",
+  "at": "2026-07-31T17:30:21.381Z"
  },
  "Injured Hurting Idle.fbx": {
   "id": "17g9apZcP6SePmI2KmoSNWIOgIz9YHdxc",
   "ok": true,
   "size": 2270864,
-  "at": "2026-07-12T04:10:10.826Z"
+  "local": "assets/mocap/drive/Injured Hurting Idle.fbx",
+  "at": "2026-07-31T17:30:23.012Z"
  },
  "Injured Jog.fbx": {
   "id": "1w9k7fx3W0bU2xPfCeTVr9cXvW-gRoOS6",
   "ok": true,
   "size": 2111984,
-  "at": "2026-07-12T04:10:17.912Z"
+  "local": "assets/mocap/drive/Injured Jog.fbx",
+  "at": "2026-07-31T17:30:24.400Z"
  },
  "Injured Run Backwards Right Turn.fbx": {
   "id": "1na7s930ff7vF5zXcrVr7LjgNRPY_mpIF",
   "ok": true,
   "size": 1793952,
-  "at": "2026-07-12T04:10:19.004Z"
+  "local": "assets/mocap/drive/Injured Run Backwards Right Turn.fbx",
+  "at": "2026-07-31T17:30:26.082Z"
  },
  "Injured Turn Right.fbx": {
   "id": "1CIQAGjHIhdy0oPJEDT4GFWL47vKu8j6L",
   "ok": true,
   "size": 1812464,
-  "at": "2026-07-12T04:10:20.609Z"
+  "local": "assets/mocap/drive/Injured Turn Right.fbx",
+  "at": "2026-07-31T17:30:27.449Z"
  },
  "JayKick.fbx": {
   "id": "11TYNYJ3b2TS_xV5PTQoKE62K_vt6gt5x",
   "ok": true,
   "size": 9497664,
-  "at": "2026-07-12T04:53:16.773Z"
+  "local": "assets/mocap/drive/JayKick.fbx",
+  "at": "2026-07-31T17:33:39.248Z"
  },
  "Kip Up.fbx": {
   "id": "1NrNC6mU4VLN5wVv1r7oqH4dtUJCHDtuH",
   "ok": true,
   "size": 43443760,
-  "at": "2026-07-12T04:10:23.118Z"
+  "local": "assets/mocap/drive/Kip Up.fbx",
+  "at": "2026-07-31T17:30:31.693Z"
  },
  "Lola B Styperek.fbx": {
   "id": "1n9WvZWayC8LPYuQEW0eRgw8AsGnYw4-N",
   "ok": true,
   "size": 4029280,
-  "at": "2026-07-12T04:53:22.068Z"
+  "local": "assets/mocap/drive/Lola B Styperek.fbx",
+  "at": "2026-07-31T17:33:44.458Z"
  },
  "MAIME_v1_clean.glb": {
   "id": "1NCYss2K8OYLengxhcXy57tqQ-RhAdO-X",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 3301184,
+  "local": "assets/models/incoming/MAIME_v1_clean.glb",
+  "at": "2026-07-31T17:30:33.806Z"
  },
  "MAIME_v1_rigready.glb": {
   "id": "1LHABoGaWU-eGqXnArJ60L0_NZ3oro3Q0",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 3341060,
+  "local": "assets/models/incoming/MAIME_v1_rigready.glb",
+  "at": "2026-07-31T17:30:35.429Z"
  },
  "MAIME_v2_rigready.glb": {
   "id": "1eqA8quDjv3hrha0RWLDuAUzl5CDq6Z72",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 3037364,
+  "local": "assets/models/incoming/MAIME_v2_rigready.glb",
+  "at": "2026-07-31T17:30:37.371Z"
  },
  "MAIME_v2_split.glb": {
   "id": "1PICUVHnyzj-9cbG6ETDtN_sG2_ZACNZ-",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 3020844,
+  "local": "assets/models/incoming/MAIME_v2_split.glb",
+  "at": "2026-07-31T17:30:39.237Z"
  },
  "MAIME_v3_rigready.glb": {
   "id": "1VvuiIxivqzz8TvDrUrDcbpZvTz33iZEp",
   "ok": true,
   "size": 3033388,
-  "at": "2026-07-12T04:10:24.737Z"
+  "local": "assets/models/incoming/MAIME_v3_rigready.glb",
+  "at": "2026-07-31T17:30:41.250Z"
  },
  "MAIME_v3_split.glb": {
   "id": "1uPzzWpqNcf6Ghf_8fxF4_u5TkBW6-yoR",
   "ok": true,
   "size": 3016164,
-  "at": "2026-07-12T04:10:26.421Z"
+  "local": "assets/models/incoming/MAIME_v3_split.glb",
+  "at": "2026-07-31T17:30:42.761Z"
  },
  "MAIME_v4_rigready.glb": {
   "id": "1BFAgh7-sMBLeNqoya1fVb7HLYCTETeD2",
   "ok": true,
   "size": 3091032,
-  "at": "2026-07-12T04:10:28.161Z"
+  "local": "assets/models/incoming/MAIME_v4_rigready.glb",
+  "at": "2026-07-31T17:30:45.055Z"
  },
  "MAIME_v4_split.glb": {
   "id": "1pgjoPx7ViRpPYrhflOGXrRkjlgj6hJl_",
   "ok": true,
   "size": 3072440,
-  "at": "2026-07-12T04:10:29.767Z"
+  "local": "assets/models/incoming/MAIME_v4_split.glb",
+  "at": "2026-07-31T17:30:46.609Z"
  },
  "NeckBreaker.fbx": {
   "id": "1kUKcwuCulLzzayNg9OCtP0nHl56JG_I7",
   "ok": true,
   "size": 8280256,
-  "at": "2026-07-12T08:34:07.252Z"
+  "local": "assets/mocap/drive/NeckBreaker.fbx",
+  "at": "2026-07-31T17:33:45.921Z"
  },
  "NoFuture.fbx": {
   "id": "16tpHuE4TR6JDSx44WHwqPwSLfe6tt1ZW",
   "ok": true,
   "size": 7825744,
-  "at": "2026-07-12T04:53:23.622Z"
+  "local": "assets/mocap/drive/NoFuture.fbx",
+  "at": "2026-07-31T17:33:47.544Z"
  },
  "OvreheadPress.fbx": {
   "id": "1ygsf4Rjrz9rm4_Ln9CVNEoxzMLvAPbkK",
   "ok": true,
   "size": 8899872,
-  "at": "2026-07-12T04:53:25.301Z"
+  "local": "assets/mocap/drive/OvreheadPress.fbx",
+  "at": "2026-07-31T17:33:49.103Z"
  },
  "Pablo (the Golden Bull attire, not to be confused with El Toro de oro, those are two different characters) attire 2 gold.glb": {
   "id": "1nx1exHTSEFu8A-q5TGBLY7xyEZLk5KxG",
   "ok": true,
   "size": 59309532,
-  "at": "2026-07-13T04:02:34.819Z"
+  "local": "assets/models/incoming/Pablo (the Golden Bull attire, not to be confused with El Toro de oro, those are.glb",
+  "at": "2026-07-31T17:31:36.403Z"
  },
  "Pablo\"the minotaur\" painted attire 1.glb": {
   "id": "1SxBpT81efHos8d4VZgxGnpNAr92bXn0g",
@@ -898,97 +1080,113 @@
   "id": "1D019YlgfUu8YaL5JWIRghkJ3U_gMebMA",
   "ok": true,
   "size": 9045904,
-  "at": "2026-07-12T04:53:26.963Z"
+  "local": "assets/mocap/drive/Paladin J Nordstrom.fbx",
+  "at": "2026-07-31T17:33:50.910Z"
  },
  "PopUpGermanSuplex.fbx": {
   "id": "1qUtPNGHkSqrQvO3IR8PsPp6g4ySV_yLW",
   "ok": true,
   "size": 10429792,
-  "at": "2026-07-12T08:34:08.543Z"
+  "local": "assets/mocap/drive/PopUpGermanSuplex.fbx",
+  "at": "2026-07-31T17:34:00.268Z"
  },
  "PowerbombWhip.fbx": {
   "id": "1bLap6aAXlyzfx16994jhRdM13a70dM2l",
   "ok": true,
   "size": 7523856,
-  "at": "2026-07-12T04:53:29.647Z"
+  "local": "assets/mocap/drive/PowerbombWhip.fbx",
+  "at": "2026-07-31T17:34:01.812Z"
  },
  "Pumpkinhulk L Shaw.fbx": {
   "id": "175SrCnzIvnNnGUpZOhuvqTGKUB_Q-051",
   "ok": true,
   "size": 13419072,
-  "at": "2026-07-12T04:53:31.686Z"
+  "local": "assets/mocap/drive/Pumpkinhulk L Shaw.fbx",
+  "at": "2026-07-31T17:34:03.632Z"
  },
  "Queen tyneshia wrestling gear 1.glb": {
   "id": "1dzCDdfsog5hlEGUY2rjcnT-mAZalvoPj",
   "ok": true,
   "size": 60899568,
-  "at": "2026-07-13T01:47:23.821Z"
+  "local": "assets/models/incoming/Queen tyneshia wrestling gear 1.glb",
+  "at": "2026-07-31T17:31:40.264Z"
  },
  "Queshada 2.fbx": {
   "id": "172iwrQSCu3L4ldDvtk2rfsS5KQzUtad9",
   "ok": true,
   "size": 43437520,
-  "at": "2026-07-12T04:10:45.461Z"
+  "local": "assets/mocap/drive/Queshada 2.fbx",
+  "at": "2026-07-31T17:31:45.067Z"
  },
  "RainTrigger.fbx": {
   "id": "1_BRXc0jDMLxaOStUlo-_C4uYHyIE40f9",
   "ok": true,
   "size": 6578064,
-  "at": "2026-07-12T04:53:33.203Z"
+  "local": "assets/mocap/drive/RainTrigger.fbx",
+  "at": "2026-07-31T17:34:05.135Z"
  },
  "RapidChestBeating.fbx": {
   "id": "15Q2rrqUrFOm8ba8SmmvwffJQSn-HE4SC",
   "ok": true,
   "size": 3366400,
-  "at": "2026-07-12T04:53:34.483Z"
+  "local": "assets/mocap/drive/RapidChestBeating.fbx",
+  "at": "2026-07-31T17:34:06.651Z"
  },
  "ReverseGoozleDivFootStomp.fbx": {
   "id": "1UZswWDmFNqrr6ygIUxKYHQDTuY6NRdbw",
   "ok": true,
   "size": 12281136,
-  "at": "2026-07-12T04:53:37.475Z"
+  "local": "assets/mocap/drive/ReverseGoozleDivFootStomp.fbx",
+  "at": "2026-07-31T17:34:08.242Z"
  },
  "SchoolBoySuperkick.fbx": {
   "id": "1P4t1sZX1r07ecodtv0hlb8Zc7GKm0m6U",
   "ok": true,
   "size": 7210928,
-  "at": "2026-07-12T08:34:09.658Z"
+  "local": "assets/mocap/drive/SchoolBoySuperkick.fbx",
+  "at": "2026-07-31T17:34:14.352Z"
  },
  "SharpShooter.fbx": {
   "id": "1DLLHv6FUQOQV7pXb06GpdqavVVY-UA31",
   "ok": true,
   "size": 8428208,
-  "at": "2026-07-12T04:53:44.346Z"
+  "local": "assets/mocap/drive/SharpShooter.fbx",
+  "at": "2026-07-31T17:34:15.839Z"
  },
  "ShelbyIKRig arreglado.fbx": {
   "id": "1im-k-hGrBi8CePALH2nPL4CLBvczOGrk",
   "ok": true,
   "size": 4061180,
-  "at": "2026-07-12T04:53:46.047Z"
+  "local": "assets/mocap/drive/ShelbyIKRig arreglado.fbx",
+  "at": "2026-07-31T17:34:17.335Z"
  },
  "ShoulderBag.fbx": {
   "id": "1Sxb_mqp-g5Ey2iWLiNHcU2ZwdcuHwq-W",
   "ok": true,
   "size": 8764864,
-  "at": "2026-07-12T08:34:10.933Z"
+  "local": "assets/mocap/drive/ShoulderBag.fbx",
+  "at": "2026-07-31T17:34:18.876Z"
  },
  "SnapPiledrivers.fbx": {
   "id": "1cGk0JaQTdig1e33EZf0xiU2c1EIsiuyh",
   "ok": true,
   "size": 12095472,
-  "at": "2026-07-12T08:34:12.216Z"
+  "local": "assets/mocap/drive/SnapPiledrivers.fbx",
+  "at": "2026-07-31T17:34:20.470Z"
  },
  "SpinTortureRackBomb.fbx": {
   "id": "1YiLPZES80oQjp-t3fubbq-jlB8xwVqOI",
   "ok": true,
   "size": 8017104,
-  "at": "2026-07-12T04:53:47.446Z"
+  "local": "assets/mocap/drive/SpinTortureRackBomb.fbx",
+  "at": "2026-07-31T17:34:23.731Z"
  },
  "SpinningArmsSpread.fbx": {
   "id": "1qffcODabwaUQGtd8C3NGV222QbAmCZMW",
   "ok": true,
   "size": 3841392,
-  "at": "2026-07-12T08:34:13.446Z"
+  "local": "assets/mocap/drive/SpinningArmsSpread.fbx",
+  "at": "2026-07-31T17:34:21.929Z"
  },
  "Stan\"Honey\"Combs ring gear 1.glb": {
   "id": "1N8DvhthG9e2GvR6F7d9qqFGjqxkEL3ql",
@@ -1001,144 +1199,169 @@
   "id": "1dOBmmU2bdwr5xMtomy0y_sPpys-u_dIa",
   "ok": true,
   "size": 12385856,
-  "at": "2026-07-12T04:53:50.293Z"
+  "local": "assets/mocap/drive/StereoSuperkick.fbx",
+  "at": "2026-07-31T17:34:26.935Z"
  },
  "StrongZero.fbx": {
   "id": "1ZBxXneM6tKz-bCbSRV_GCE5WEU3DbSKU",
   "ok": true,
   "size": 12561232,
-  "at": "2026-07-12T04:53:53.001Z"
+  "local": "assets/mocap/drive/StrongZero.fbx",
+  "at": "2026-07-31T17:34:28.642Z"
  },
  "Suplex.fbx": {
   "id": "1jsIB7RHjBS9cmgluRbg27u9wX-9vF3t8",
   "ok": true,
   "size": 6508560,
-  "at": "2026-07-12T08:34:14.586Z"
+  "local": "assets/mocap/drive/Suplex.fbx",
+  "at": "2026-07-31T17:34:30.193Z"
  },
  "TableImpact.fbx": {
   "id": "1vD9A7NyOClCtg_BBjLoes3MXLmnw7lgi",
   "ok": true,
   "size": 8110240,
-  "at": "2026-07-12T08:34:15.755Z"
+  "local": "assets/mocap/drive/TableImpact.fbx",
+  "at": "2026-07-31T17:34:31.713Z"
  },
  "TagSuperkick.fbx": {
   "id": "1yHR7IWnIGFE9OmRS6PAUEia-D4p8HUWi",
   "ok": true,
   "size": 10820624,
-  "at": "2026-07-12T04:53:54.615Z"
+  "local": "assets/mocap/drive/TagSuperkick.fbx",
+  "at": "2026-07-31T17:34:33.485Z"
  },
  "Tau_ButtSlap.fbx": {
   "id": "1nNZ9VVkLqVOP-MDHj_T2M28bP8wfcb5r",
   "ok": true,
   "size": 3029920,
-  "at": "2026-07-12T08:34:17.084Z"
+  "local": "assets/mocap/drive/Tau_ButtSlap.fbx",
+  "at": "2026-07-31T17:34:34.868Z"
  },
  "Tau_Diva.fbx": {
   "id": "1qX3NS_RwHbTe9OdVlbvuTGHK7yQWyA7f",
   "ok": true,
   "size": 4177712,
-  "at": "2026-07-12T08:34:18.151Z"
+  "local": "assets/mocap/drive/Tau_Diva.fbx",
+  "at": "2026-07-31T17:34:36.379Z"
  },
  "Tau_GameOver.fbx": {
   "id": "1qLhxmr2Jdft1jY83MkBpr50M9rVzwJfa",
   "ok": true,
   "size": 3666512,
-  "at": "2026-07-12T08:34:19.216Z"
+  "local": "assets/mocap/drive/Tau_GameOver.fbx",
+  "at": "2026-07-31T17:34:37.749Z"
  },
  "Tau_GeneralFemale.fbx": {
   "id": "1YmlZ8_yA4YOKGuXhRs_YXEZOlRmtiueJ",
   "ok": true,
   "size": 3042416,
-  "at": "2026-07-12T08:34:20.392Z"
+  "local": "assets/mocap/drive/Tau_GeneralFemale.fbx",
+  "at": "2026-07-31T17:34:39.083Z"
  },
  "Tau_HEADCRACK.fbx": {
   "id": "1crBK53loWMgOZLL_P8fbNhAOp76lNcdq",
   "ok": true,
   "size": 4222416,
-  "at": "2026-07-12T08:34:21.457Z"
+  "local": "assets/mocap/drive/Tau_HEADCRACK.fbx",
+  "at": "2026-07-31T17:34:40.574Z"
  },
  "Taunt.fbx": {
   "id": "1K47K2xMtSdj2sE7DSVCS2A6sCRQK7Y65",
   "ok": true,
   "size": 3644784,
-  "at": "2026-07-12T04:53:56.125Z"
+  "local": "assets/mocap/drive/Taunt.fbx",
+  "at": "2026-07-31T17:34:42.029Z"
  },
  "Taunt2.fbx": {
   "id": "15ql2CIuri1SnQnJq3H1ellsO1gKuD3dD",
   "ok": true,
   "size": 3352336,
-  "at": "2026-07-12T04:53:57.493Z"
+  "local": "assets/mocap/drive/Taunt2.fbx",
+  "at": "2026-07-31T17:34:43.367Z"
  },
  "Taunt_KofiKingston.fbx": {
   "id": "1r-0i2bFH-2hnRtLN-0QNetFNFpGbddT0",
   "ok": true,
   "size": 3269920,
-  "at": "2026-07-12T08:34:22.629Z"
+  "local": "assets/mocap/drive/Taunt_KofiKingston.fbx",
+  "at": "2026-07-31T17:34:44.757Z"
  },
  "Tombstone.fbx": {
   "id": "1LOK4LCtwF8vihWaDfj_F-Jp--uMf6xae",
   "ok": true,
   "size": 6878656,
-  "at": "2026-07-12T04:53:59.274Z"
+  "local": "assets/mocap/drive/Tombstone.fbx",
+  "at": "2026-07-31T17:34:46.368Z"
  },
  "Tyneshia Hall Street Gear_Casual_Manager attire 2.glb": {
   "id": "11fijIQSzBG3VpPT9Hp20aIIVKddaqs71",
   "ok": true,
   "size": 60638768,
-  "at": "2026-07-13T01:47:48.332Z"
+  "local": "assets/models/incoming/Tyneshia Hall Street Gear_Casual_Manager attire 2.glb",
+  "at": "2026-07-31T17:32:27.564Z"
  },
  "VerticalBrainBuster.fbx": {
   "id": "1VdURcuyAMAH1wRkDgoBD2UHNJvCZkRwV",
   "ok": true,
   "size": 9446384,
-  "at": "2026-07-12T08:34:23.903Z"
+  "local": "assets/mocap/drive/VerticalBrainBuster.fbx",
+  "at": "2026-07-31T17:34:48.980Z"
  },
  "ViolenceParty.fbx": {
   "id": "1kTAj4NAc0knC6N8BtYJfxi2ChFY77p5c",
   "ok": true,
   "size": 7123520,
-  "at": "2026-07-12T04:54:02.229Z"
+  "local": "assets/mocap/drive/ViolenceParty.fbx",
+  "at": "2026-07-31T17:34:50.471Z"
  },
  "WBTC.fbx": {
   "id": "1T0kv6sava7XvLAx5WT-tR66ryetcedHV",
   "ok": true,
   "size": 3603440,
-  "at": "2026-07-12T08:34:25.018Z"
+  "local": "assets/mocap/drive/WBTC.fbx",
+  "at": "2026-07-31T17:34:51.825Z"
  },
  "Y Bot.fbx": {
   "id": "1T56IcN3sEgeMNQ5SmZKrjd8uAKzTPGu7",
   "ok": true,
   "size": 1982368,
-  "at": "2026-07-12T04:54:03.475Z"
+  "local": "assets/mocap/drive/Y Bot.fbx",
+  "at": "2026-07-31T17:34:53.272Z"
  },
  "Zombie Dying.fbx": {
   "id": "1WTZHS51CkjmFBK4-dV4H_AqxvNcT2ko2",
   "ok": true,
   "size": 2113776,
-  "at": "2026-07-12T04:10:51.988Z"
+  "local": "assets/mocap/drive/Zombie Dying.fbx",
+  "at": "2026-07-31T17:32:31.703Z"
  },
  "arcee G1.fbx": {
   "id": "1qGUm4eZg-Wl_kJFnM7M1lhpCwNU2C8-T",
   "ok": true,
   "size": 16389788,
-  "at": "2026-07-12T04:52:37.340Z"
+  "local": "assets/mocap/drive/arcee G1.fbx",
+  "at": "2026-07-31T17:32:41.326Z"
  },
  "baseball_bat (1).glb": {
   "id": "1rc-bcI_YZLv5MExLaIU64wwnQl_fFMt2",
   "ok": true,
   "size": 3044304,
-  "at": "2026-07-13T04:02:13.740Z"
+  "local": "assets/models/incoming/baseball_bat (1).glb",
+  "at": "2026-07-31T17:25:59.809Z"
  },
  "cain Elias wrestling gear. 2 models, 1 has logo on chest that one is default cain Elias ring attire, second model is 17 year old cain Elias with no logo on the front of his attire).glb": {
   "id": "1MuPLhtj9q0-eocdGQYWfmqRyFTrH0Esz",
   "ok": true,
   "size": 58101096,
-  "at": "2026-07-12T04:08:14.217Z"
+  "local": "assets/models/incoming/cain Elias wrestling gear. 2 models, 1 has logo on chest that one is default cai.glb",
+  "at": "2026-07-31T17:26:53.782Z"
  },
  "cfa62ce5-4acd-4f1a-b04b-0a2d892fa2d1.glb": {
   "id": "1F7w7N2CwR2Sr5jppcXpmmB53_C4P1Iy_",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 1739952,
+  "local": "assets/models/incoming/cfa62ce5-4acd-4f1a-b04b-0a2d892fa2d1.glb",
+  "at": "2026-07-31T17:27:01.448Z"
  },
  "codedummy (2).zip": {
   "id": "1THTAgfKQMam_BLJW471u4BktbHYoQIq8",
@@ -1149,7 +1372,8 @@
   "id": "17IMrCSbbctBDFI9deCgv8T-g1g2sy6wy",
   "ok": true,
   "size": 61274952,
-  "at": "2026-07-12T04:08:33.206Z"
+  "local": "assets/models/incoming/cody sober.glb",
+  "at": "2026-07-31T17:27:28.535Z"
  },
  "codystressedamdcoked.glb": {
   "id": "1NBfXYbbvezQw5G_jFjZC_qNRJH-_h7P-",
@@ -1160,36 +1384,44 @@
  "codywrestlinggear1.glb": {
   "id": "1MaJ4VlnsnSkgtGDYBCvDDIReos7Vf-ba",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 61229252,
+  "local": "assets/models/incoming/codywrestlinggear1.glb",
+  "at": "2026-07-31T17:27:37.505Z"
  },
  "cover to stand (2).fbx": {
   "id": "1pBkPBFoGKYrTUD9Mtw_Qom8H6Fv9wfhH",
   "ok": true,
   "size": 487309,
-  "at": "2026-07-12T04:52:10.397Z"
+  "local": "assets/mocap/drive/cover to stand (2).fbx",
+  "at": "2026-07-31T17:27:46.522Z"
  },
  "cover to stand.fbx": {
   "id": "1YwPcCGj6YDacmivL_gJUwWi6ZxocbT9z",
   "ok": true,
   "size": 502513,
-  "at": "2026-07-12T04:52:11.658Z"
+  "local": "assets/mocap/drive/cover to stand.fbx",
+  "at": "2026-07-31T17:27:47.671Z"
  },
  "crash_dummy.glb": {
   "id": "14ruqet2plfHkGtxvAbtrIj94nhNtPZsd",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 11664080,
+  "local": "assets/models/incoming/crash_dummy.glb",
+  "at": "2026-07-31T17:27:49.561Z"
  },
  "crouched sneaking left.fbx": {
   "id": "1a56ZRK2OjqPpj0W3nT4wAIYQtCMcLVdK",
   "ok": true,
   "size": 474057,
-  "at": "2026-07-12T04:52:12.959Z"
+  "local": "assets/mocap/drive/crouched sneaking left.fbx",
+  "at": "2026-07-31T17:27:58.646Z"
  },
  "crouched sneaking right.fbx": {
   "id": "1FoPUd6Z9f1did4xkV7saYbGUNBZH14fX",
   "ok": true,
   "size": 450874,
-  "at": "2026-07-12T04:52:14.191Z"
+  "local": "assets/mocap/drive/crouched sneaking right.fbx",
+  "at": "2026-07-31T17:27:59.878Z"
  },
  "el toro de oro (\"the golden bull\" he has a minotaur head but do not get him mixed up with \"the golden bull\" Pablo the minotaur, this is Batista inspired El toro de Oro, a Spanish luchador power matador_minotaur style fighter with batistas evolution personality, a bit snobby and cocky enforce and batistas moveset plus some other moves.glb": {
   "id": "1T7XTt7g7-lvhO_LEg__X_emzxkJB95vX",
@@ -1202,132 +1434,155 @@
   "id": "1bjmVcBEux2enydUTEfEw7fwxYy7esYNE",
   "ok": true,
   "size": 397711,
-  "at": "2026-07-12T04:52:15.242Z"
+  "local": "assets/mocap/drive/falling idle.fbx",
+  "at": "2026-07-31T17:29:24.676Z"
  },
  "falling to roll.fbx": {
   "id": "1YUycGGu8IUksd8kg8T7RaiD5K70MS5UJ",
   "ok": true,
   "size": 545017,
-  "at": "2026-07-12T04:52:16.452Z"
+  "local": "assets/mocap/drive/falling to roll.fbx",
+  "at": "2026-07-31T17:29:26.002Z"
  },
  "fiberglass_step_ladder_6_new.glb": {
   "id": "1stAj_umkjTPp9U1Wlip0BAIaVWgpjbyW",
   "ok": true,
   "size": 11339316,
-  "at": "2026-07-13T04:02:23.357Z"
+  "local": "assets/models/incoming/fiberglass_step_ladder_6_new.glb",
+  "at": "2026-07-31T17:29:28.394Z"
  },
  "foldable_table.glb": {
   "id": "1xDO6joALFlc8ggoEdgmnIBrC2A-opX6n",
   "ok": true,
   "size": 26852076,
-  "at": "2026-07-13T04:02:25.854Z"
+  "local": "assets/models/incoming/foldable_table.glb",
+  "at": "2026-07-31T17:29:32.449Z"
  },
  "hall nighter (canon from Off the top rope books, based on Shawn micheals).glb": {
   "id": "1JhyiChVa-n_3J1HjIabXgmj2eH2J4Q0O",
   "ok": true,
   "size": 59725640,
-  "at": "2026-07-12T19:33:33.780Z"
+  "local": "assets/models/incoming/hall nighter (canon from Off the top rope books, based on Shawn micheals).glb",
+  "at": "2026-07-31T17:29:45.997Z"
  },
  "hard landing.fbx": {
   "id": "1r20IJ6FlJs3kVJJmM8TdFmWrz3vy7O3R",
   "ok": true,
   "size": 578383,
-  "at": "2026-07-12T04:53:15.135Z"
+  "local": "assets/mocap/drive/hard landing.fbx",
+  "at": "2026-07-31T17:33:35.752Z"
  },
  "idle (2).fbx": {
   "id": "1ItaaKPP1XukDIOCzFLCGXsxurdGWN-tq",
   "ok": true,
   "size": 1296771,
-  "at": "2026-07-12T04:52:17.697Z"
+  "local": "assets/mocap/drive/idle (2).fbx",
+  "at": "2026-07-31T17:30:08.874Z"
  },
  "idle (3).fbx": {
   "id": "10mugZVYmdyppo4g298tpAuPWW9S8LT5n",
   "ok": true,
   "size": 724559,
-  "at": "2026-07-12T04:52:18.859Z"
+  "local": "assets/mocap/drive/idle (3).fbx",
+  "at": "2026-07-31T17:30:10.135Z"
  },
  "idle (4).fbx": {
   "id": "1udcHE-gaqJuhMyloNSzCpHHs2KGWTJ_g",
   "ok": true,
   "size": 567778,
-  "at": "2026-07-12T04:52:20.038Z"
+  "local": "assets/mocap/drive/idle (4).fbx",
+  "at": "2026-07-31T17:30:11.349Z"
  },
  "idle (5).fbx": {
   "id": "1xuW9qb7unoviEozrFxpcIS_4-cKG_Oii",
   "ok": true,
   "size": 548856,
-  "at": "2026-07-12T04:52:21.272Z"
+  "local": "assets/mocap/drive/idle (5).fbx",
+  "at": "2026-07-31T17:30:12.463Z"
  },
  "idle.fbx": {
   "id": "1NrF3AqiJ-n8BNSfgxdVSXfDWQZBdqpOj",
   "ok": true,
   "size": 818809,
-  "at": "2026-07-12T04:52:22.468Z"
+  "local": "assets/mocap/drive/idle.fbx",
+  "at": "2026-07-31T17:30:14.042Z"
  },
  "john_cena_svr_2006_-_ps2.glb": {
   "id": "1FGAEZ-83KQt-nF4mxMT2wOhuZkzGIRbv",
   "ok": true,
-  "at": "2026-07-11T19:24:55.387Z"
+  "size": 464812,
+  "local": "assets/models/incoming/john_cena_svr_2006_-_ps2.glb",
+  "at": "2026-07-31T17:30:28.671Z"
  },
  "jumping up.fbx": {
   "id": "1CWshaICQpFWjUAgwePw94Mqetx35ROVw",
   "ok": true,
   "size": 369299,
-  "at": "2026-07-12T04:53:18.082Z"
+  "local": "assets/mocap/drive/jumping up.fbx",
+  "at": "2026-07-31T17:33:40.371Z"
  },
  "left cover sneak.fbx": {
   "id": "1rQSE_xJZW62RKC0aUj78fEB7dtzoO5rU",
   "ok": true,
   "size": 442297,
-  "at": "2026-07-12T04:53:19.331Z"
+  "local": "assets/mocap/drive/left cover sneak.fbx",
+  "at": "2026-07-31T17:33:41.947Z"
  },
  "left turn.fbx": {
   "id": "1NED04awWIplAc3OnQfcILLSIjD7wCNWy",
   "ok": true,
   "size": 423729,
-  "at": "2026-07-12T04:53:20.437Z"
+  "local": "assets/mocap/drive/left turn.fbx",
+  "at": "2026-07-31T17:33:43.043Z"
  },
  "mma_octagon (1).glb": {
   "id": "11CdDUmXdwZivOE_dyoW6zUq13X0WyQhD",
   "ok": true,
   "size": 3990712,
-  "at": "2026-07-12T04:10:31.383Z"
+  "local": "assets/models/incoming/mma_octagon (1).glb",
+  "at": "2026-07-31T17:30:48.897Z"
  },
  "mma_octagon.glb": {
   "id": "1dJCNfLOQs2GrlzHRRrKrbczQHnXxQsxA",
   "ok": true,
   "size": 1779892,
-  "at": "2026-07-12T04:10:32.690Z"
+  "local": "assets/models/incoming/mma_octagon.glb",
+  "at": "2026-07-31T17:30:50.197Z"
  },
  "modly-main.zip": {
   "id": "1xbmCN1dKVxW8h5OtAwV6GvbMUIykg9Wy",
   "ok": true,
   "size": 24457062,
-  "at": "2026-07-13T01:47:07.698Z"
+  "local": "imports/incoming/modly-main.zip",
+  "at": "2026-07-31T17:30:57.885Z"
  },
  "old_shovel.glb": {
   "id": "1Z6LzgF5r4IWr1K7v0idQX13eBsPSJVJe",
   "ok": true,
   "size": 3381672,
-  "at": "2026-07-13T04:02:27.020Z"
+  "local": "assets/models/incoming/old_shovel.glb",
+  "at": "2026-07-31T17:30:59.412Z"
  },
  "onyx straight jacket skirt and tights cutscen, manager, and alt ring attire.glb": {
   "id": "1fsT3e2YUwmqKNc-BQ1m2I5asUVEo3saW",
   "ok": true,
   "size": 64732328,
-  "at": "2026-07-12T04:52:25.508Z"
+  "local": "assets/models/incoming/onyx straight jacket skirt and tights cutscen, manager, and alt ring attire.glb",
+  "at": "2026-07-31T17:31:10.084Z"
  },
  "onyxcholafacepaintans spiked bodysuit.glb": {
   "id": "15smWjyu7Qxrm-C5vwsQyMwOq1mXr4B-4",
   "ok": true,
   "size": 1724980,
-  "at": "2026-07-12T04:10:34.125Z"
+  "local": "assets/models/incoming/onyxcholafacepaintans spiked bodysuit.glb",
+  "at": "2026-07-31T17:31:12.005Z"
  },
  "onyxcorsetandvamppaint.glb": {
   "id": "1JNvhO2gvxkVWd0ojmbHVzz_QnOLz29td",
   "ok": true,
   "size": 1920420,
-  "at": "2026-07-12T04:10:35.446Z"
+  "local": "assets/models/incoming/onyxcorsetandvamppaint.glb",
+  "at": "2026-07-31T17:31:13.371Z"
  },
  "onyxstraightjacketskirt.glb": {
   "id": "1QV5r7S2Y9P832pSeMx4Rj4BZDWUI0ayA",
@@ -1339,25 +1594,29 @@
   "id": "1RszN-jkjxftefXAaC2HCFoEheq6zCma0",
   "ok": true,
   "size": 64732328,
-  "at": "2026-07-13T04:02:29.506Z"
+  "local": "assets/models/incoming/onyxstraightjacketskirtnew.glb",
+  "at": "2026-07-31T17:31:16.509Z"
  },
  "onyxstreetgear.glb": {
   "id": "1E9q_xjeHo7tykfRb-hEx0d-ecvwIXhMX",
   "ok": true,
   "size": 61531888,
-  "at": "2026-07-12T04:10:41.974Z"
+  "local": "assets/models/incoming/onyxstreetgear.glb",
+  "at": "2026-07-31T17:31:26.173Z"
  },
  "pablo (Black reign style) attire 3.glb": {
   "id": "1jrSsR1wyw6B293BNYXUHzV7P54DA_n6m",
   "ok": true,
   "size": 59987376,
-  "at": "2026-07-13T04:02:32.337Z"
+  "local": "assets/models/incoming/pablo (Black reign style) attire 3.glb",
+  "at": "2026-07-31T17:31:29.869Z"
  },
  "passive_marker_man.fbx": {
   "id": "1E33OFf4dW8HCD8ZKIZWi0Qcr8z8S7ho-",
   "ok": true,
   "size": 5677696,
-  "at": "2026-07-12T04:53:28.266Z"
+  "local": "assets/mocap/drive/passive_marker_man.fbx",
+  "at": "2026-07-31T17:33:52.837Z"
  },
  "real 1 enzo amore I'll have to find a chara6his model. style, and personality fits that only in the games and not the books, or make a new character and profile (STATUC. TEAMWD WITH CIPHER AND ECHO AND ONYX AND HOLLOW) we make enzo models into the character STATIC to attach his model to attire 2.glb": {
   "id": "1T3Yh8cMAqlK4LSxuppQmbySZ74kTVnHj",
@@ -1370,49 +1629,57 @@
   "id": "100akL2f45-wvXG8wvM9x5_y5C0KO8fUl",
   "ok": true,
   "size": 60928608,
-  "at": "2026-07-12T19:33:52.940Z"
+  "local": "assets/models/incoming/real 1 enzo amore Ill have to find a chara6his model. style, and personality fit.glb",
+  "at": "2026-07-31T17:31:49.689Z"
  },
  "right cover sneak.fbx": {
   "id": "15u3uCGBLfPvNJYRWyNXnYTYS0X9izr35",
   "ok": true,
   "size": 447227,
-  "at": "2026-07-12T04:53:38.713Z"
+  "local": "assets/mocap/drive/right cover sneak.fbx",
+  "at": "2026-07-31T17:34:09.429Z"
  },
  "right turn.fbx": {
   "id": "1bc2sL4IXA0HHRcyQLhwjZ6wHkSgsZVbE",
   "ok": true,
   "size": 425524,
-  "at": "2026-07-12T04:53:40.010Z"
+  "local": "assets/mocap/drive/right turn.fbx",
+  "at": "2026-07-31T17:34:10.644Z"
  },
  "run to stop.fbx": {
   "id": "12nQqdh8gVm4vIhlFz_k5dfXIpF56otKj",
   "ok": true,
   "size": 405442,
-  "at": "2026-07-12T04:53:41.419Z"
+  "local": "assets/mocap/drive/run to stop.fbx",
+  "at": "2026-07-31T17:34:11.794Z"
  },
  "running.fbx": {
   "id": "1ZCjga7tZYS8LlTl-H37tJW4cAXQSKywI",
   "ok": true,
   "size": 392909,
-  "at": "2026-07-12T04:53:42.876Z"
+  "local": "assets/mocap/drive/running.fbx",
+  "at": "2026-07-31T17:34:12.924Z"
  },
  "rusty_folding_chairs.glb": {
   "id": "1hi1FOvQtUh_En7hvJHWaDSqc0HLxVnZq",
   "ok": true,
   "size": 25745632,
-  "at": "2026-07-13T04:02:41.986Z"
+  "local": "assets/models/incoming/rusty_folding_chairs.glb",
+  "at": "2026-07-31T17:31:53.444Z"
  },
  "stand to cover.fbx": {
   "id": "1EeoELJAfzmj65iMeTQNF8joK5spsP6JE",
   "ok": true,
   "size": 451695,
-  "at": "2026-07-12T04:53:48.662Z"
+  "local": "assets/mocap/drive/stand to cover.fbx",
+  "at": "2026-07-31T17:34:25.163Z"
  },
  "stick up_jackboy model 1.glb": {
   "id": "1zxL89z8Rqxx4g41M71b_CGt3E1rL5NEG",
   "ok": true,
   "size": 61368716,
-  "at": "2026-07-12T04:10:47.938Z"
+  "local": "assets/models/incoming/stick up_jackboy model 1.glb",
+  "at": "2026-07-31T17:31:56.832Z"
  },
  "triple XXX attire 1 (based off triple H, needs Triple h moveset and personality and traits, similar gimmick but more themed around XXX and hedonism than \"the game and cerebral assassin\" gimmicks, still cerebral but more part animal and high class snob, part of Book canon).glb": {
   "id": "1hJ1foTRniJjCOho5IcKfug5EX7faZ7i4",
@@ -1425,37 +1692,43 @@
   "id": "1F3VhoWLDu1qS-khBKehWrPZy3vjK3Lwt",
   "ok": true,
   "size": 60674164,
-  "at": "2026-07-13T04:02:49.741Z"
+  "local": "assets/models/incoming/triple XXX attire 2 blue tights.glb",
+  "at": "2026-07-31T17:32:17.624Z"
  },
  "triple XXX attire 3 blue trunks.glb": {
   "id": "1tch47CS2FpUzKBlKbVGy3Ss9L2zYVJvY",
   "ok": true,
   "size": 60910784,
-  "at": "2026-07-13T04:02:52.499Z"
+  "local": "assets/models/incoming/triple XXX attire 3 blue trunks.glb",
+  "at": "2026-07-31T17:32:20.776Z"
  },
  "triple XXX suit_casual_manager attire 4.glb": {
   "id": "1kmqZO8D9xew0-SlpmERE2p_L7DPcoQb_",
   "ok": true,
   "size": 61188104,
-  "at": "2026-07-13T04:02:55.038Z"
+  "local": "assets/models/incoming/triple XXX suit_casual_manager attire 4.glb",
+  "at": "2026-07-31T17:32:24.357Z"
  },
  "uploads_files_147201_Steel_Steps.zip": {
   "id": "1gXTpQZB3oCuxSy1IezNlvSFcrygUhNPk",
   "ok": true,
-  "reason": "duplicate of the Steel Steps zip already at repo root",
-  "at": "2026-07-12T04:59:42.450Z"
+  "size": 90380,
+  "local": "imports/incoming/uploads_files_147201_Steel_Steps.zip",
+  "at": "2026-07-31T17:34:47.513Z"
  },
  "wwe2k22_announcer_desk.glb": {
   "id": "11dFRGpZ1xToNGYMOOS4-WJoV2EdodMRj",
   "ok": true,
   "size": 1454216,
-  "at": "2026-07-12T04:10:49.247Z"
+  "local": "assets/models/incoming/wwe2k22_announcer_desk.glb",
+  "at": "2026-07-31T17:32:28.835Z"
  },
  "wwe_wrestling_ring.glb": {
   "id": "1oEqPpWuqTMmiHG3sAuvJVJOVPboeEJHe",
   "ok": true,
   "size": 286024,
-  "at": "2026-07-12T04:10:50.539Z"
+  "local": "assets/models/incoming/wwe_wrestling_ring.glb",
+  "at": "2026-07-31T17:32:30.210Z"
  },
  "Brutus (based on Bronson reed and his past personas with his personality and moves stacked on top of Brutus backstory and personality and traits ).glb": {
   "id": "1NkRenisOlWFikN6z_nppUuY_t7FWX5YK",
@@ -1574,13 +1847,13 @@
   "ok": true,
   "size": 62629136,
   "local": "assets/models/incoming/tarzanian devil (based on Tarzan duran indie wrestler).glb",
-  "at": "2026-07-23T08:46:42.741Z"
+  "at": "2026-07-31T17:32:02.268Z"
  },
  "tarzanian devil attire 2.glb": {
   "id": "1lyks5xGmavxwR2oj1gVfv-nS_7UbC_KH",
   "ok": true,
   "size": 62097016,
   "local": "assets/models/incoming/tarzanian devil attire 2.glb",
-  "at": "2026-07-23T08:46:45.849Z"
+  "at": "2026-07-31T17:32:13.617Z"
  }
 }
