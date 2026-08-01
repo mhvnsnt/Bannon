@@ -56,3 +56,6 @@ assets/mocap/social/
 
 # per-match segmentation output (review sheets + JSON) — regenerate from the video
 assets/mocap/segments/
+
+# playtest recordings — regenerate with tools/harness/play_and_record.cjs, don't bloat the repo
+dist/playtest/
