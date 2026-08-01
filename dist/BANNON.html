@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2487"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2488"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -2218,10 +2218,14 @@ let DMG_SCALE = 8.0;          // damage multiplier — was 0.32, ~25x too low: a
                                // clean strike lands ~30-45 hits to KO, a believable wrestling/MMA pace.
                                // Now a real variable (not const) so it can be live-tuned, same pattern
                                // as FIGHT_LEN below.
-let ROUNDS_TO_WIN = 2;       // best-of-3 by default — driven by MATCH_RULES.rounds at startRound
+let ROUNDS_TO_WIN = 1;       // ONE FALL by default — driven by MATCH_RULES.rounds at startRound
 // MATCH RULES (owner spec 2026-07-20): time limit defaults to INFINITE (no countdown — matches end
 // by finish, MDickie flow); the old 90s-style countdown and round counts are OPTIONS. Persisted.
-window.MATCH_RULES = (function(){ try{ return Object.assign({time:'INF',rounds:'BO3'}, JSON.parse(localStorage.getItem('bannon_match_rules')||'{}')); }catch(e){ return {time:'INF',rounds:'BO3'}; } })();
+// ONE FALL IS THE DEFAULT (owner spec). A best-of-3 was never how a wrestling match reads -- WWE and
+// MDickie both open on one fall, and BO3/BO5 are the option, not the norm. `koWin` is the other half:
+// see BANNON_MATCHRULES at the end of the file. Health reaching zero does NOT end a match unless the
+// player asks for it; by default a spent wrestler recovers, the way 2K and MDickie play.
+window.MATCH_RULES = (function(){ try{ return Object.assign({time:'INF',rounds:'SINGLE',koWin:false}, JSON.parse(localStorage.getItem('bannon_match_rules')||'{}')); }catch(e){ return {time:'INF',rounds:'SINGLE',koWin:false}; } })();
 window.saveMatchRules = function(){ try{ localStorage.setItem('bannon_match_rules', JSON.stringify(window.MATCH_RULES)); }catch(e){} };
 
 let scene, camera, renderer, clock;
@@ -14654,7 +14658,7 @@ function startRound(){
   // (MDickie flow). The old countdown (90s-class) + round counts live on as options. IRONMAN keeps
   // its fixed 180s round (match-type rule beats the option).
   const _MR=window.MATCH_RULES||{};
-  ROUNDS_TO_WIN = ({SINGLE:1,BO3:2,BO5:3})[_MR.rounds]||2;
+  ROUNDS_TO_WIN = ({SINGLE:1,BO3:2,BO5:3})[_MR.rounds]||1;   // one fall unless the player picks otherwise
   roundTimer = (window.MATCH_SETUP && MATCH_SETUP.matchType==='IRONMAN') ? 180 :
                ((_MR.time==null||_MR.time==='INF') ? Infinity : (+_MR.time||90));
   document.getElementById('timer').textContent = (roundTimer===Infinity)?'∞':roundTimer;
@@ -37992,7 +37996,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     if(window.saveMatchRules) window.saveMatchRules(); refresh(); });
   document.getElementById('csRounds').addEventListener('click', function(){
     var R=['SINGLE','BO3','BO5'], MR=window.MATCH_RULES||(window.MATCH_RULES={});
-    var i=R.indexOf(MR.rounds||'BO3'); MR.rounds=R[(i+1)%R.length];
+    var i=R.indexOf(MR.rounds||'SINGLE'); MR.rounds=R[(i+1)%R.length];
     if(window.saveMatchRules) window.saveMatchRules(); refresh(); });
   // v155 per-slot PAYBACK + MANAGER cyclers — advance only the ACTIVE slot's value
   document.getElementById('csPayback').addEventListener('click', function(){ var ps=sel.side; sel.payback[ps]=((sel.payback[ps]||0)+1)%PAYBACKS.length; refresh(); });
@@ -55346,6 +55350,199 @@ window.__deriveVariant = async function(key){
     }
   };
   console.log('%c[BANNON_WALKOUT] entrances walk the real ramp; victory has a moment','color:#7CFC00');
+})();
+</script>
+
+<script>
+/* ============================================================================================
+   BANNON_MATCHRULES — health that recovers, and a KO you have to ask for.
+
+   Owner: "make it where health depleting no longer needs the match but can regen like WWE 2k and
+   mdickie games but make it so health depleting to zero can be a win option and stipulation too in
+   match options" -- and "making 1 fall the default option instead of best of 3".
+
+   ONE FALL is now the default (MATCH_RULES.rounds 'SINGLE', ROUNDS_TO_WIN 1). BO3/BO5 remain as
+   options; they were never the right default for a wrestling match.
+
+   THE HEALTH MODEL WAS A FIGHTING GAME'S, NOT A WRESTLING GAME'S. Five separate sites do
+       if (opp.hp<=0 && !opp._koTriggered){ opp._koTriggered=true; declareWinner(...) }
+   so emptying the bar simply ended the match. In WWE 2K and in MDickie the bar is a measure of how
+   much punishment a man is carrying: it sinks, he gets more vulnerable, and he COMES BACK. Falls,
+   submissions and count-outs finish matches -- not the meter.
+
+   TWO CHANGES, and only two:
+     1. RECOVERY. Below a threshold a wrestler regains health, slowly, and only while he is not
+        being hit. Fresh damage resets the clock. He is never healed to full mid-match: the ceiling
+        is a fraction of MAX_HP, so a beaten man stays beaten, he just is not dead.
+     2. KO IS OPT-IN. `MATCH_RULES.koWin` (default OFF) decides whether zero health can win a match.
+        Off, the KO path is refused and the man recovers instead. On, it behaves exactly as before,
+        which is what makes "last man standing" and the hardcore stipulations mean something.
+
+   THE INTERCEPT IS ONE FUNCTION, NOT FIVE EDITS. Every HP-zero site sets `_koTriggered` first and
+   nothing else in the engine does, so that flag is a clean signal for "this win is a KO". Pinfalls,
+   submissions and count-outs never set it and are therefore never blocked -- which matters, because
+   blocking a legitimate three-count would be a far worse bug than the one being fixed.
+
+   ABSOLUTE MATH UNTOUCHED: MAX_HP stays 10000, DMG_SCALE stays 8.0. This changes what ZERO MEANS,
+   not what a punch is worth.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  var ST = { blockedKOs:0, recovered:0, regenTicks:0, lastBlock:null };
+
+  function MR(){ try{ return window.MATCH_RULES || (window.MATCH_RULES = {}); }catch(e){ return {}; } }
+  function koEnabled(){
+    var m = MR();
+    if (m.koWin === true) return true;
+    // Some stipulations ARE a KO contest whatever the menu says -- that is the whole point of them.
+    try{
+      var t = String((window.MATCH_SETUP && window.MATCH_SETUP.matchType) || '').toUpperCase();
+      if (/LAST_?MAN|LMS|IRONMAN|INFERNO|CASKET|FIRST_?BLOOD/.test(t)) return true;
+    }catch(e){}
+    return false;
+  }
+  function maxHP(){ try{ var v = (new Function('try{ return typeof MAX_HP!=="undefined"?MAX_HP:null; }catch(e){ return null; }'))(); return v || 10000; }catch(e){ return 10000; } }
+  function fighters_(){ try{ var f=(new Function('try{ return typeof fighters!=="undefined"?fighters:null; }catch(e){ return null; }'))(); return f||[]; }catch(e){ return []; } }
+
+  // ---- 1. RECOVERY ----------------------------------------------------------------------------
+  // Deliberately slow and deliberately capped. A wrestler who has been destroyed should look
+  // destroyed for a long time; this only stops the bar being a death clock.
+  var REGEN_DELAY = 4.0;          // seconds untouched before anything comes back
+  var REGEN_RATE  = 0.045;        // fraction of MAX_HP per second
+  var REGEN_CEIL  = 0.55;         // never recovers past this fraction on its own
+
+  function regen(dt){
+    if (koEnabled()) return;      // in a KO match the bar IS the win condition; leave it alone
+    var M = maxHP(), F = fighters_();
+    for (var i = 0; i < F.length; i++){
+      var f = F[i]; if (!f) continue;
+      if (f.hp == null) continue;
+      var lastHit = f._lastDamageAt || 0;
+      var now = (performance && performance.now) ? performance.now()/1000 : Date.now()/1000;
+      if (now - lastHit < REGEN_DELAY) continue;
+      var ceil = M * REGEN_CEIL;
+      if (f.hp >= ceil) continue;
+      f.hp = Math.min(ceil, f.hp + M * REGEN_RATE * dt);
+      ST.regenTicks++;
+      // a man on zero who starts recovering has to get up, not lie there forever
+      if (f.hp > M * 0.06 && f._koTriggered){ f._koTriggered = false; ST.recovered++; }
+    }
+  }
+
+  // ---- 2. THE KO INTERCEPT --------------------------------------------------------------------
+  function hookDeclare(tries){
+    tries = tries || 0;
+    try{
+      if (typeof window.declareWinner === 'function' && !window.declareWinner.__rules){
+        var orig = window.declareWinner;
+        var w = function(winner, loser){
+          try{
+            if (!koEnabled()){
+              // find the man this win was called ON
+              var L = loser;
+              if (!L){
+                var F = fighters_();
+                for (var i = 0; i < F.length; i++) if (F[i] && F[i] !== winner) { L = F[i]; break; }
+              }
+              // ONLY a KO is refused. _koTriggered is set by the five hp<=0 sites and by nothing
+              // else, so a pinfall, a submission or a count-out passes straight through.
+              if (L && L._koTriggered && (L.hp == null || L.hp <= 0)){
+                ST.blockedKOs++;
+                ST.lastBlock = (L.opts && L.opts.name) || L.name || '?';
+                L._koTriggered = false;
+                L.hp = Math.max(L.hp || 0, maxHP() * 0.08);   // scraped off the mat, not healed
+                L._lastDamageAt = (performance && performance.now) ? performance.now()/1000 : Date.now()/1000;
+                try{ if (typeof announce === 'function') announce('HE BEATS THE COUNT', 'STILL ALIVE'); }catch(e){}
+                try{ if (window.addEvent) window.addEvent(ST.lastBlock + ' will not stay down.', 'match'); }catch(e){}
+                return;                                        // the match continues
+              }
+            }
+          }catch(e){}
+          return orig.apply(this, arguments);
+        };
+        w.__rules = true;
+        for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) w[k] = orig[k]; }
+        window.declareWinner = w;
+        return true;
+      }
+    }catch(e){}
+    if (tries < 200) setTimeout(function(){ hookDeclare(tries+1); }, 250);
+    return false;
+  }
+
+  // stamp when a fighter was last hurt, so recovery knows to wait
+  function hookDamage(tries){
+    tries = tries || 0;
+    try{
+      if (typeof window.applyDamage === 'function' && !window.applyDamage.__rules){
+        var orig = window.applyDamage;
+        var w = function(victim, dmg, attacker, move, forceDown){
+          try{ if (victim) victim._lastDamageAt = (performance && performance.now) ? performance.now()/1000 : Date.now()/1000; }catch(e){}
+          return orig.apply(this, arguments);
+        };
+        w.__rules = true;
+        for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) w[k] = orig[k]; }
+        window.applyDamage = w;
+        return true;
+      }
+    }catch(e){}
+    if (tries < 200) setTimeout(function(){ hookDamage(tries+1); }, 250);
+    return false;
+  }
+
+  // ---- 3. THE OPTION, in the match-rules row where the player already looks ---------------------
+  function addCycler(){
+    try{
+      var host = document.getElementById('csRounds');
+      if (!host || document.getElementById('csKO')) return;
+      var b = host.cloneNode(false);
+      b.id = 'csKO';
+      b.removeAttribute('onclick');
+      host.parentNode.insertBefore(b, host.nextSibling);
+      var paint = function(){ b.textContent = 'KO WIN: ' + (MR().koWin ? 'ON' : 'OFF'); };
+      b.addEventListener('click', function(){
+        var m = MR(); m.koWin = !m.koWin;
+        try{ if (window.saveMatchRules) window.saveMatchRules(); }catch(e){}
+        paint();
+      });
+      paint();
+      setInterval(paint, 1500);   // stays right if the rules are changed from anywhere else
+    }catch(e){}
+  }
+
+  var last = 0;
+  function tick(){
+    var now = (performance && performance.now) ? performance.now()/1000 : Date.now()/1000;
+    var dt = last ? Math.min(now - last, 0.25) : 0.016; last = now;
+    try{
+      var gs = (new Function('try{ return typeof gameState!=="undefined"?gameState:null; }catch(e){ return null; }'))();
+      if (gs === 'fight') regen(dt);
+    }catch(e){}
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  hookDeclare(); hookDamage();
+  (function armUI(n){ if (document.getElementById('csRounds')){ addCycler(); return; }
+    if (n < 400) setTimeout(function(){ armUI(n+1); }, 250); })(0);
+
+  window.BANNON_MATCHRULES = {
+    koWin: function(on){ var m = MR(); if (on !== undefined){ m.koWin = !!on;
+      try{ if (window.saveMatchRules) window.saveMatchRules(); }catch(e){} } return !!m.koWin; },
+    rounds: function(v){ var m = MR(); if (v) { m.rounds = v;
+      try{ if (window.saveMatchRules) window.saveMatchRules(); }catch(e){} } return m.rounds; },
+    regen: { delay:REGEN_DELAY, rate:REGEN_RATE, ceiling:REGEN_CEIL },
+    stats: function(){
+      return { rounds:MR().rounds, koWin:!!MR().koWin, koActive:koEnabled(),
+               blockedKOs:ST.blockedKOs, recovered:ST.recovered, regenTicks:ST.regenTicks,
+               lastBlock:ST.lastBlock,
+               hp: fighters_().filter(Boolean).map(function(f){
+                 return { n:(f.opts&&f.opts.name)||f.name||'?', hp:Math.round(f.hp||0),
+                          pct:+(100*(f.hp||0)/maxHP()).toFixed(1) }; }) };
+    }
+  };
+  console.log('%c[BANNON_MATCHRULES] one fall by default; health recovers; KO win is opt-in','color:#7CFC00');
 })();
 </script>
 
