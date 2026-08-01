@@ -50,3 +50,9 @@ tools/iso/*key*.bin
 # per-character social video pulled by tools/mocap/scrape_clips.py — provenance lives in each
 # manifest.json; nothing here ships until someone decides it should.
 assets/mocap/social/
+
+# local sessions/tokens for the social scraper — never commit
+.claude/
+
+# per-match segmentation output (review sheets + JSON) — regenerate from the video
+assets/mocap/segments/

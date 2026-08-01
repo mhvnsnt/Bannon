@@ -55,6 +55,34 @@ def slug(s):
     return re.sub(r'[^A-Za-z0-9]+', '_', str(s or '')).strip('_').upper()
 
 
+# ---- SOCIAL SESSIONS ---------------------------------------------------------------------------
+# Instagram/Facebook/TikTok PROFILE listings require a logged-in session. I cannot create accounts —
+# that needs a real identity, phone verification and a human accepting the platform's terms. What
+# this does instead is use a session the OWNER already has: log in once on any browser, export
+# cookies to a Netscape cookies.txt, drop it in .claude/social/, and every future pull finds it.
+# .claude/ is gitignored, so a session token never lands in the repo.
+COOKIE_DIR = os.path.join(ROOT, '.claude', 'social')
+PLATFORMS = [('instagram', 'instagram'), ('facebook', 'facebook'), ('fb.watch', 'facebook'),
+             ('tiktok', 'tiktok'), ('youtube', 'youtube'), ('youtu.be', 'youtube'),
+             ('x.com', 'x'), ('twitter', 'x')]
+
+
+def platform_of(url):
+    u = (url or '').lower()
+    for needle, name in PLATFORMS:
+        if needle in u:
+            return name
+    return 'generic'
+
+
+def cookies_for(url, explicit=None):
+    """Explicit --cookies wins; otherwise look for .claude/social/<platform>.cookies.txt."""
+    if explicit:
+        return explicit
+    p = os.path.join(COOKIE_DIR, platform_of(url) + '.cookies.txt')
+    return p if os.path.exists(p) else None
+
+
 def ydl_opts(char_dir, cookies=None, limit=None, flat=False):
     o = {
         'quiet': True, 'no_warnings': True, 'ignoreerrors': True,
@@ -161,8 +189,15 @@ def main():
     # ---- enumerate ----
     if a.source:
         for src in a.source:
+            ck = cookies_for(src, a.cookies)
+            if ck:
+                print('  using session %s' % os.path.basename(ck))
+            elif platform_of(src) in ('instagram', 'facebook', 'tiktok'):
+                print('  no session for %s — profile listings usually need one.' % platform_of(src))
+                print('  export cookies once to %s/%s.cookies.txt'
+                      % (COOKIE_DIR, platform_of(src)))
             try:
-                found = enumerate_source(src, a.cookies, a.limit)
+                found = enumerate_source(src, ck, a.limit)
             except Exception as e:
                 print('  enumerate failed for %s: %s' % (src, str(e).splitlines()[0][:110]))
                 continue
@@ -173,7 +208,7 @@ def main():
                 print('   %-12s [%d:%02d] %s%s' % (f['id'], m, s, f['title'][:60], flag))
             if a.list:
                 continue
-            new = download(src, char_dir, a.cookies, a.limit)
+            new = download(src, char_dir, ck, a.limit)
             byid = {f['id']: f for f in found}
             for fn in new:
                 vid = os.path.splitext(fn)[0]

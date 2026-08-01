@@ -912,3 +912,40 @@ Individual public post URLs generally work without one.
   AI writeup and appear in NO source I could read (GTS wiki, cagematch, PPW, smacktalks). Owner
   suspected they were invented; so did the research. Left out rather than banked as fact.
 - A SIGNATURE AND A FINISHER ARE ALWAYS DIFFERENT MOVES. Verified in-engine (sigVsFin true).
+
+### SYSTEM DONE: AUTONOMOUS MATCH SEGMENTATION (2026-08-01) — tools/mocap/segment_match.py
+Owner: "cut the match into moves segments and track the wrestler and moves per ai intelligence ...
+cuts properly where moves begin and end ... better if can do it accurately autonomously".
+A scraped match is 11 minutes; video_to_clip wants ONE move. The only bridge was a human scrubbing a
+timeline and typing --start/--end per spot, which is the real bottleneck on per-character movesets
+(one match holds 30-50 usable moves).
+FOUR SIGNALS, all measured, none a fixed timer. Reuses harvest.motion_energy and VC.track rather
+than reimplementing either:
+  * ENERGY — a move is a hump: quiet, burst, quiet. Threshold RELATIVE to the video's own
+    distribution (a mat match and a highspot reel have totally different absolute speeds).
+  * INVERSION — shoulder->hip axis past horizontal. The strongest wrestling-specific cue there is:
+    slams, suplexes, ranas and drivers all invert somebody. This is what separates a move from two
+    men running the ropes.
+  * AIRBORNE — hips well above their own running median, which catches dives and the swanton where
+    nobody inverts.
+  * CONTACT — the two bodies inside a torso-width, which rejects a lone man climbing or posing.
+A candidate needs the energy hump AND at least one wrestling cue. Everything else is still written
+to the JSON and flagged `isMove:false` — nothing is discarded (owner LAW on generated content).
+ALWAYS WRITES A REVIEW SHEET (owner LAW: SEE IT): a 6-frame strip per candidate with index and
+timestamps, so a human names the keepers in one look. `--capture` alone is autonomous and honest
+about it (clips land as <CHAR>_SEGnn); `--names "3=WILD_SWANTON,7=..."` labels them.
+VERIFIED on the owner's Jungle Juice tape: found exactly ONE move, **1.59-3.74s, INV+AIR+CON,
+score 4.20** — the same window I had picked by hand at 1.5-3.3, reached with no human input.
+TRAP, mine: VC tracks hold landmark OBJECTS (.x/.y), not arrays — convert once up front or every
+signal throws `float() argument must be ... not _LM`. And on a tracking gap, HOLD THE LAST POSE;
+injecting zeros reads as an enormous false motion spike and invents a move boundary.
+
+### SOCIAL SESSIONS (2026-08-01) — .claude/social/, used by scrape_clips.py
+I cannot create the game's social accounts: that needs a real identity, phone verification and a
+human accepting platform terms. The plumbing instead uses a session the OWNER already has — log in
+once, export cookies.txt, drop it in `.claude/social/<platform>.cookies.txt`, and every later pull
+finds it automatically (platform detected from the URL). `.claude/` is gitignored so a session token
+never lands in the repo. Public POST urls generally work with no session; PROFILE listings on
+Instagram/Facebook/TikTok generally do not (measured: 429 / "unable to extract" without cookies).
+`--consent "..."` is recorded per character so a permitted capture is distinguishable from found
+footage later.
