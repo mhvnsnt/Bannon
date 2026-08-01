@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2488"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2489"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -25901,7 +25901,9 @@ window.getSceneState = function(){
 };
 
 window.checkPoseSanity = function(fighter){
-  const fs = window.fighters||[];
+  // `fighters` is a top-level `let`, so window.fighters is ALWAYS undefined and this returned
+  // "No fighter" every time it was called -- which, since it had no callers at all, nobody noticed.
+  const fs = fighter ? [fighter] : ((typeof fighters!=='undefined' && fighters) ? fighters : []);
   const f = fighter || fs[0];
   if (!f || !f.J) return 'No fighter';
   const stuck = [];
@@ -25925,7 +25927,8 @@ window.JOINT_ROM = {
 };
 
 window.validateAnatomy = function(fighter){
-  const fs = window.fighters||[];
+  // same window-vs-lexical bug as checkPoseSanity above
+  const fs = fighter ? [fighter] : ((typeof fighters!=='undefined' && fighters) ? fighters : []);
   const f = fighter || fs[0];
   if (!f || !f.J || !f.J.pelvis) return 'No fighter';
   const issues = [];
@@ -55543,6 +55546,164 @@ window.__deriveVariant = async function(key){
     }
   };
   console.log('%c[BANNON_MATCHRULES] one fall by default; health recovers; KO win is opt-in','color:#7CFC00');
+})();
+</script>
+
+<script>
+/* ============================================================================================
+   BANNON_BONELOCK — bones do not stretch. This is the glitch in the owner's screenshots.
+
+   THE HUNT (task #60). The owner photographed a pale sheet of geometry fanning out of a fighter
+   mid-match, and said it happens in play but never in menus. Re-rigging the roster from 16 to 28
+   joints improved the models but did not remove it, and posing them with real baked clips produced
+   ZERO stretched triangles -- so the cause was never the clips or the weights.
+
+   The orphan sweep handed me the detector. `window.validateAnatomy` flags any bone segment more
+   than 35% longer than REST, and it had ZERO CALLERS -- plus a window-vs-lexical bug that made it
+   return "No fighter" even if something had called it. Fixed both, then ran it every frame through
+   a driven match of grapples and throws:
+
+       neck  -> head        3.183 vs REST 0.180    +1665%
+       chest -> neck        2.872 vs REST 0.190    +1410%
+       pelvis-> spineLow    2.296 vs REST 0.150    +1431%
+       worst seen                                  +4970%
+
+   The head ends up nearly three metres from the neck. And it ESCALATES MONOTONICALLY -- 1382,
+   1428, 1476, 1524, 1570, 1617, 1665 -- gaining about 0.086 every frame. That signature is not a
+   bad pose, it is a RUNAWAY INTEGRATOR: something adds to these joints each frame and no
+   constraint ever pulls them back. It fires in `attack` (68 frames), `grab+grappling` (32),
+   `getup+grappling` (32) and `grabbed` (24), which is exactly the grapple/throw window the owner
+   pointed at, and the affected chain is the SPINE -- which is the sheet he photographed.
+
+   THE FIX IS THE MISSING CONSTRAINT. A skeleton needs its segment lengths enforced after the
+   solver has moved everything; nothing was doing it. This is a standard distance-constraint pass,
+   run after _deriveAux (the last thing every joint update calls, before the mesh is synced).
+
+   DESIGN NOTES THAT MATTER:
+     * ONLY EXPANSION IS CORRECTED. A bone that is momentarily shorter than REST is a body folding
+       up, which is a real thing wrestlers do. Only stretching is unphysical.
+     * THE PARENT IS THE ANCHOR. BONES is ordered outward from the pelvis, so moving only the child
+       and iterating in order converges without fighting itself.
+     * A TOLERANCE, NOT A STRAITJACKET. 25% of slack is left so the soft-tissue jiggle, the reach
+       extension (BANNON_REACH deliberately stretches a fighter to land a move) and the struggle
+       teeter all still read. This kills 1665%, not 12%.
+     * IT NEVER MOVES THE ROOT. The pelvis stays where the engine put it -- the same rule
+       BANNON_REACH follows, and what separates a constraint from a warp.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  var TOL = 1.25;          // allow 25% before correcting
+  var ITER = 3;            // passes per frame; the chain is short so this converges fast
+  var ST = { fixed:0, frames:0, worst:0, lastBone:null };
+
+  function lex(n){ try{ return (new Function('try{ return typeof '+n+'!=="undefined"?'+n+':null; }catch(e){ return null; }'))(); }catch(e){ return null; } }
+
+  var BONES_ = null, REST_ = null, restLen = null;
+  function tables(){
+    if (restLen) return true;
+    BONES_ = lex('BONES'); REST_ = lex('REST');
+    if (!BONES_ || !REST_) return false;
+    restLen = [];
+    for (var i = 0; i < BONES_.length; i++){
+      var a = BONES_[i][0], b = BONES_[i][1];
+      var ra = REST_[a], rb = REST_[b];
+      if (!ra || !rb) { restLen.push(null); continue; }
+      restLen.push(Math.hypot(ra[0]-rb[0], ra[1]-rb[1], ra[2]-rb[2]));
+    }
+    return true;
+  }
+
+  function enforce(f){
+    if (!f || !f.J || !tables()) return;
+    for (var pass = 0; pass < ITER; pass++){
+      for (var i = 0; i < BONES_.length; i++){
+        var L = restLen[i]; if (!L) continue;
+        var a = BONES_[i][0], b = BONES_[i][1];
+        var ja = f.J[a], jb = f.J[b];
+        if (!ja || !jb || !ja.pos || !jb.pos) continue;
+        var dx = jb.pos.x - ja.pos.x, dy = jb.pos.y - ja.pos.y, dz = jb.pos.z - ja.pos.z;
+        var d = Math.sqrt(dx*dx + dy*dy + dz*dz);
+        if (!(d > L * TOL)) continue;          // only stretching, never compression
+        if (d < 1e-6) continue;
+        if (pass === 0){
+          var over = d / L;
+          if (over > ST.worst){ ST.worst = over; ST.lastBone = a + '->' + b; }
+          ST.fixed++;
+        }
+        // pull the CHILD back onto the bone's rest length; the parent is the anchor
+        var k = L / d;
+        jb.pos.x = ja.pos.x + dx * k;
+        jb.pos.y = ja.pos.y + dy * k;
+        jb.pos.z = ja.pos.z + dz * k;
+        // Kill the velocity that was driving the runaway, AND rein in the TARGET. A joint here is
+        // {pos, vel, tgt, name}: the solver drives pos toward tgt every frame, so correcting pos
+        // alone is undone on the next tick and the escalation simply resumes. The target is where
+        // the runaway actually lives.
+        if (jb.vel){ jb.vel.x = 0; jb.vel.y = 0; jb.vel.z = 0; }
+        if (jb.prev){ jb.prev.x = jb.pos.x; jb.prev.y = jb.pos.y; jb.prev.z = jb.pos.z; }
+        if (jb.tgt){
+          var tx = jb.tgt.x - ja.pos.x, ty = jb.tgt.y - ja.pos.y, tz = jb.tgt.z - ja.pos.z;
+          var td = Math.sqrt(tx*tx + ty*ty + tz*tz);
+          if (td > L * TOL && td > 1e-6){
+            var tk = L / td;
+            jb.tgt.x = ja.pos.x + tx * tk;
+            jb.tgt.y = ja.pos.y + ty * tk;
+            jb.tgt.z = ja.pos.z + tz * tk;
+          }
+        }
+      }
+    }
+  }
+
+  // WHERE TO HOOK, learned the hard way. My first attempt wrapped _deriveAux -- it armed cleanly
+  // and then reported framesChecked:0, because _deriveAux only runs on the RAGDOLL path and the
+  // stretch happens during `attack`. applyMesh is the right seam: it is called at the end of every
+  // Fighter.update once the solvers have finished, and it is what writes the joints onto the mesh.
+  // Constraining just BEFORE it means the corrected skeleton is what gets drawn, same frame.
+  function arm(n){
+    try{
+      if (typeof Fighter === 'function' && Fighter.prototype && typeof Fighter.prototype.applyMesh === 'function'
+          && !Fighter.prototype.applyMesh.__bonelock){
+        var orig = Fighter.prototype.applyMesh;
+        var w = function(){
+          try{ if (window.BONELOCK !== false){ ST.frames++; enforce(this); } }catch(e){}
+          return orig.apply(this, arguments);
+        };
+        w.__bonelock = true;
+        Fighter.prototype.applyMesh = w;
+        // ALSO the ragdoll path. applyMesh covers standing play, but _deriveAux is what runs while a
+        // body is down or falling, and `falling+grappling` was the one state still showing a stretched
+        // neck after the first fix. Both seams, one constraint.
+        try{
+          if (typeof Fighter.prototype._deriveAux === 'function' && !Fighter.prototype._deriveAux.__bonelock){
+            var od = Fighter.prototype._deriveAux;
+            var wd = function(){
+              var rr = od.apply(this, arguments);
+              try{ if (window.BONELOCK !== false) enforce(this); }catch(e){}
+              return rr;
+            };
+            wd.__bonelock = true;
+            Fighter.prototype._deriveAux = wd;
+          }
+        }catch(e){}
+        console.log('%c[BANNON_BONELOCK] bone-length constraint armed (applyMesh + ragdoll)','color:#7CFC00');
+        return;
+      }
+    }catch(e){}
+    if (n < 300) setTimeout(function(){ arm(n+1); }, 250);
+  }
+  arm(0);
+
+  window.BANNON_BONELOCK = {
+    enforce: enforce,
+    tolerance: function(v){ if (v) TOL = +v; return TOL; },
+    stats: function(){ return { framesChecked:ST.frames, correctionsApplied:ST.fixed,
+                                worstSeen:+ST.worst.toFixed(2)+'x', worstBone:ST.lastBone,
+                                enabled: window.BONELOCK !== false }; },
+    // the detector this was found with, on demand
+    check: function(f){ try{ return window.validateAnatomy(f); }catch(e){ return String(e); } }
+  };
 })();
 </script>
 
