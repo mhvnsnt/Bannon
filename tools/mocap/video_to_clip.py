@@ -440,7 +440,18 @@ def capture_two(path, args):
 
     # trim to where the move actually is, unless the caller stated a window
     lo, hi = 0, n - 1
-    if not (args.start or args.end):
+    if args.start or args.end:
+        # THE CALLER'S WINDOW WAS BEING THROWN AWAY. This branch only ever SKIPPED the auto-trim; it
+        # never applied --start/--end, so lo/hi stayed at the full clip and every two-body capture
+        # with an explicit window banked the WHOLE video. Measured: two different segments of one
+        # 17s reel both came out 17.43s with identical coverage, and the Jungle Juice capture asked
+        # for 1.5-3.3s and banked all 4.3s. The single-body path (t0/t1 above) always honoured it —
+        # only this path did not.
+        lo = max(0, int(round((args.start or 0.0) * fps)))
+        hi = min(n - 1, int(round(args.end * fps)) if args.end else n - 1)
+        if hi - lo < 5:                      # a window too small to be a move: fall back to the clip
+            lo, hi = 0, n - 1
+    else:
         info = VC.analyse(fps, VC.densify(tracks[ai], n))
         lo, hi = info['window']
         # a receiver-dominant capture (the attacker is behind him and occluded) should use the

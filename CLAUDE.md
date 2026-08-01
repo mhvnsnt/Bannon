@@ -949,3 +949,35 @@ never lands in the repo. Public POST urls generally work with no session; PROFIL
 Instagram/Facebook/TikTok generally do not (measured: 429 / "unable to extract" without cookies).
 `--consent "..."` is recorded per character so a permitted capture is distinguishable from found
 footage later.
+
+### SYSTEM DONE: SOCIAL DISCOVERY — I FIND THE VIDEOS, NOT THE OWNER (2026-08-01)
+Owner: "stop telling me to paste links, finding the links and videos is ur job ... stop giving me
+manual homework when I give you work." He is right — handing him a search box is not automation.
+- **tools/research/social_login.cjs** logs a REAL browser in and writes the session to
+  `.claude/social/<platform>.cookies.txt` (gitignored). Credentials come from the ENVIRONMENT, are
+  used once and are never written to disk. Same network path as fetch_page: CONNECT relay + TLS 1.2
+  cap + automation flags erased + headed on Xvfb. It screenshots whatever it lands on and refuses to
+  claim success without a real session cookie (`c_user`+`xs` on Facebook, `sessionid` on Instagram).
+  TRAP: Facebook ships several login layouts. `button[name="login"]` is the OLD one; the current page
+  has a plain button whose only stable handle is its TEXT. A wrong selector times out and reads
+  exactly like a rejected password — screenshot before believing a failure.
+- **tools/research/social_find.cjs** GOES AND FINDS the videos. yt-dlp has no Facebook search
+  extractor, so this drives the logged-in browser: search or profile tab, scroll, harvest every
+  video/reel permalink. MEASURED on the reference wrestler: the search page yielded his profile
+  (`randy.christie.50`), and his profile tab yielded **60 video URLs**; 12 pulled, 15-37s each —
+  reels, i.e. already single-move shaped. Search-results pages do NOT expose permalinks as plain
+  hrefs; the PROFILE videos/reels tab does. Go to the profile, not the search page.
+- Segmenter run over 10 reels: **19 candidate windows, 17 flagged as moves**, best scores 4.2-5.1
+  with INV+AIR+CON.
+
+### THE BUG THAT MADE EVERY TWO-BODY CAPTURE WRONG (2026-08-01) — video_to_clip.py
+`capture_two` read `if not (args.start or args.end):` to SKIP its auto-trim when the caller stated a
+window — and then never applied that window. `lo, hi` stayed at the whole clip. So every two-body
+capture with `--start/--end` banked the ENTIRE VIDEO instead of the move. The single-body path
+(t0/t1) always honoured it; only this path did not.
+CAUGHT BY MEASURING, not by reading: two different segments of one 17s reel came back with the SAME
+duration (17.43s) and the SAME coverage (59/524). Identical numbers for different windows is
+impossible unless the window is being ignored.
+AFTER THE FIX: those two segments are 2.80s (83/85 coverage) and 1.80s (46/60). JUNGLE_JUICE, which
+had been banked as all 4.30s of its source, is now the actual 2.15s move at 50/66.
+LESSON: when a capture's coverage looks terrible (59/524), suspect the WINDOW before the tracker.
