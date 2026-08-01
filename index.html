@@ -55707,6 +55707,159 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script>
+/* ============================================================================================
+   BANNON_RINGRULES — rope breaks and exposed steel, from the orphan sweep.
+
+   THE SWEEP LISTED SEVEN CANDIDATES. Five of them turned out to be FINE, and saying so matters --
+   wiring a working feature "again" is how you break it. The audit flags an EXPORT with no callers,
+   which is not the same as a dead FEATURE, and it labels these "[self-hooking: some are fine]".
+   Measured in a live match over 70 real button presses:
+       __spawnSweat / __updateBlood   live pools of 60 sweat and 36 blood particles. WORKING.
+                                      (my counters read 0 only because internal code calls the LOCAL
+                                      spawnSweat, not the window export -- the sixth time this
+                                      session that wrapping an export missed the real call site)
+       __weaponThrow                  a handle beside a live T-key listener and a startAttack hook
+       moveCarry                      a one-line helper; execGrappleMove carries the real logic
+   Two were GENUINELY DEAD, both real wrestling, both zero calls in play:
+       BANNON_RULES.checkRopeBreak    0 calls
+       BANNON_BUCKLES.isExposed       0 calls
+
+   ROPE BREAK. checkRopeBreak(a,b) and atRopes() were already rebuilt in real ring metres by an
+   earlier pass -- correct code, no consumer. So a submission or a cover under the bottom rope was
+   never broken; the ropes meant nothing. Now polled while a hold is on, and it respects the match
+   type: BANNON_RULES.MATCH_TYPES already declares ropeBreak per stipulation, and hardcore/no-DQ
+   says false. A rope break in a no-DQ match would be a bug, not a feature.
+
+   EXPOSED STEEL. exposeTurnbuckle() rips the pad and announces it; isExposed(x,z) reports a bare
+   buckle within 1.1m. Nothing consumed the answer, so the exposed corner did NOTHING -- the heel
+   tactic was pure decoration. Now a body driven into a bare buckle takes extra, and bleeds.
+
+   Damage goes through the SAME applyDamage funnel as everything else and is expressed as a
+   MULTIPLIER on the incoming hit. DMG_SCALE is not touched.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  var ST = { ropeBreaks:0, exposedHits:0, checks:0, lastBreak:null };
+  var STEEL_MUL = 1.6;          // a bare turnbuckle hurts; it does not one-shot
+
+  function lex(n){ try{ return (new Function('try{ return typeof '+n+'!=="undefined"?'+n+':null; }catch(e){ return null; }'))(); }catch(e){ return null; } }
+  function fighters_(){ var f = lex('fighters'); return f || []; }
+  function nm(f){ try{ return (f.specName || (f.opts&&f.opts.name) || f.name || '?'); }catch(e){ return '?'; } }
+
+  // does THIS match allow a rope break? the stipulation already says so
+  function ropeBreakAllowed(){
+    try{
+      var t = String((window.MATCH_SETUP && window.MATCH_SETUP.matchType) || '').toUpperCase();
+      var MAP = { HARDCORE:'hardcore', NODQ:'hardcore', FALLSANYWHERE:'anywhere', STREETFIGHT:'hardcore' };
+      var R = window.BANNON_RULES && window.BANNON_RULES.MATCH_TYPES;
+      var key = MAP[t] || 'standard';
+      if (R && R[key] && R[key].ropeBreak === false) return false;
+      if (/HARDCORE|NO_?DQ|STREET|ANYWHERE|LADDER|TLC/.test(t)) return false;
+    }catch(e){}
+    return true;
+  }
+
+  // ---- ROPE BREAK: poll while a hold is actually on ----
+  function pollRopes(){
+    var F = fighters_();
+    if (F.length < 2) return;
+    if (!ropeBreakAllowed()) return;
+    for (var i = 0; i < F.length; i++){
+      var a = F[i]; if (!a) continue;
+      var victim = a._pinTarget || a.subTarget || a._subTarget || null;
+      var holding = !!victim || !!a.submitting || !!a._submitting;
+      if (!holding) continue;
+      if (!victim){ for (var j = 0; j < F.length; j++) if (F[j] && F[j] !== a) { victim = F[j]; break; } }
+      ST.checks++;
+      var broke = false;
+      try{ broke = !!(window.BANNON_RULES && window.BANNON_RULES.checkRopeBreak(a, victim)); }catch(e){}
+      if (!broke) continue;
+      // ACTUALLY break it. Announcing a rope break while the hold carries on would be worse than
+      // not having one at all.
+      try{
+        a._pinTarget = null;
+        a.subTarget = null; a._subTarget = null;
+        a.submitting = false; a._submitting = false;
+        if (victim){ victim.submitting = false; victim._submitting = false; victim._pinnedBy = null; }
+        if (typeof announce === 'function') announce('ROPE BREAK', 'the ref calls it off');
+      }catch(e){}
+      ST.ropeBreaks++;
+      ST.lastBreak = nm(a) + ' on ' + nm(victim);
+      break;
+    }
+  }
+
+  // ---- EXPOSED STEEL: a bare buckle has to actually hurt ----
+  function hookDamage(tries){
+    tries = tries || 0;
+    try{
+      if (typeof window.applyDamage === 'function' && !window.applyDamage.__ringrules){
+        var orig = window.applyDamage;
+        var w = function(victim, dmg, attacker, move, forceDown){
+          try{
+            var B = window.BANNON_BUCKLES;
+            if (B && victim && typeof B.isExposed === 'function'
+                && B.isExposed(victim.x || 0, victim.z || 0)){
+              dmg = dmg * STEEL_MUL;
+              ST.exposedHits++;
+              try{ if (typeof announce === 'function') announce('EXPOSED STEEL', nm(victim) + ' eats the bare buckle'); }catch(e){}
+              try{ if (window.addEvent) window.addEvent(nm(victim) + ' is driven into the exposed steel!', 'match'); }catch(e){}
+              // bare metal cuts — use the blood system that is already running
+              try{ if (victim.bleed != null) victim.bleed = Math.min(1, (victim.bleed||0) + 0.35);
+                   else if (window.__spawnBlood) window.__spawnBlood(victim); }catch(e){}
+              try{ if (window.crowdReaction) window.crowdReaction(0.8); }catch(e){}
+            }
+          }catch(e){}
+          return orig.call(this, victim, dmg, attacker, move, forceDown);
+        };
+        w.__ringrules = true;
+        for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) w[k] = orig[k]; }
+        window.applyDamage = w;
+        return true;
+      }
+    }catch(e){}
+    if (tries < 200) setTimeout(function(){ hookDamage(tries+1); }, 250);
+    return false;
+  }
+
+  // pads go back on between matches, or one exposed corner would haunt the whole card
+  function armBell(n){
+    if (typeof window.startFight === 'function' && !window.startFight.__ringrules){
+      var orig = window.startFight;
+      var w = function(){
+        try{ if (window.BANNON_BUCKLES && window.BANNON_BUCKLES.resetPads) window.BANNON_BUCKLES.resetPads(); }catch(e){}
+        return orig.apply(this, arguments);
+      };
+      w.__ringrules = true;
+      for (var k in orig){ if (Object.prototype.hasOwnProperty.call(orig, k)) w[k] = orig[k]; }
+      try{ window.startFight = w; }catch(e){}
+      return;
+    }
+    if (n < 200) setTimeout(function(){ armBell(n+1); }, 250);
+  }
+
+  hookDamage(); armBell(0);
+  setInterval(function(){
+    try{ if (lex('gameState') === 'fight') pollRopes(); }catch(e){}
+  }, 220);
+
+  window.BANNON_RINGRULES = {
+    ropeBreakAllowed: ropeBreakAllowed,
+    poll: pollRopes,
+    expose: function(f){ try{ return window.BANNON_BUCKLES.exposeTurnbuckle(f || fighters_()[0]); }catch(e){ return false; } },
+    steelMultiplier: function(v){ if (v) STEEL_MUL = +v; return STEEL_MUL; },
+    stats: function(){ return { ropeBreaks:ST.ropeBreaks, holdChecks:ST.checks,
+                                exposedSteelHits:ST.exposedHits, lastBreak:ST.lastBreak,
+                                ropeBreakAllowedHere: ropeBreakAllowed(),
+                                pads: (function(){ try{ return window.BANNON_BUCKLES.BUCKLES
+                                  .map(function(b){ return b.label + (b.exposed?':BARE':':padded'); }); }catch(e){ return null; } })() }; }
+  };
+  console.log('%c[BANNON_RINGRULES] rope breaks and exposed steel are live','color:#7CFC00');
+})();
+</script>
+
 </body></html>
 
 
