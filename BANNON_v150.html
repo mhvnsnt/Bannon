@@ -55860,6 +55860,220 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script>
+/* ============================================================================================
+   BANNON_ZONEMOVE — getting in and out of the ring is a MOVE, not a height change.
+
+   Owner: "Zoning should have animations poses too tho we need transitional zoning and sub phases
+   and blending for those... unique and varying ring to apron and ring to floor and apron to floor
+   and floor to apron and floor to ring and climbing to top rope styles like WWE games."
+
+   WHAT IT DOES TODAY, measured: a zone change is a PURE Y LERP on root.position.y. `_smoothZoneY`
+   eases between ZONE_Y.RING 0 and ZONE_Y.FLOOR -0.85 at 8/s down and 6/s up, and that is the whole
+   transition. The body holds whatever pose it already had and GLIDES, like a lift. Nobody ducks
+   through the ropes, nobody drops off the apron, nobody slides back in. The earlier fix in this
+   area was about the FLOOR height being wrong (the waist-deep clip) -- it made the glide correct,
+   it never made it a movement.
+
+   SO: a phased transition per route, each phase with its own duration, its own height curve and its
+   own body language, blended rather than cut.
+
+       RING  -> APRON   duck, step through the ropes, settle
+       APRON -> FLOOR   crouch, drop, absorb the landing
+       RING  -> FLOOR   duck, through the ropes, drop, land
+       FLOOR -> APRON   reach, pull up, settle
+       APRON -> RING    duck, step in, settle
+       FLOOR -> RING    crouch, slide under the bottom rope, rise
+
+   AND THEY VARY BY WRESTLER, which is the part that makes it read as WWE rather than as a state
+   machine. The route is chosen from the fighter's own style bias -- the same 8-axis data
+   BANNON_STYLE resolved. A high-flyer VAULTS the top rope and slides in fast; a powerhouse STEPS
+   OVER and takes his time; everyone else goes through the middle. No new authored data: `air` and
+   `spd` already exist on all 71 styles.
+
+   THE HEIGHT CURVE IS THE POINT. A man dropping off the apron should fall fast and land heavy, not
+   glide at a constant 8/s. Each phase eases its own way -- a slow duck, then a quick drop, then a
+   settle -- which is what sub-phases and blending buy you.
+
+   CLIPS WHERE WE HAVE THEM, PROCEDURAL WHERE WE DO NOT. If a mapped capture is already resident it
+   is played through studioApplyClipPose; otherwise the phase drives `lean` (a field the engine
+   already animates for arcs) so the body still reads. Never blocks on a fetch mid-transition --
+   that is the bug BANNON_PREWARM exists to stop.
+   ============================================================================================ */
+(function(){
+  'use strict';
+
+  var ST = { started:0, completed:0, byRoute:{}, byStyle:{}, clipUsed:0, lastPhase:null };
+
+  function lex(n){ try{ return (new Function('try{ return typeof '+n+'!=="undefined"?'+n+':null; }catch(e){ return null; }'))(); }catch(e){ return null; } }
+  function zoneY(k){ try{ return (window.ZONE_Y && window.ZONE_Y[k] != null) ? window.ZONE_Y[k] : (k==='FLOOR'?-0.85:0); }catch(e){ return 0; } }
+  function floorY(){ try{ var R = lex('RING'); return (R && R.floorY != null) ? R.floorY : 0; }catch(e){ return 0; } }
+
+  // phase = [name, seconds, heightFraction(0..1 of the way to the destination), lean]
+  // Checked against what a wrestler actually DOES, not just against the height numbers.
+  //   * RING <-> APRON is the same height (ZONE_Y.RING and ZONE_Y.APRON are both 0), so a height
+  //     curve alone would render NOTHING. Going through the ropes is a DIP and a duck, not a step
+  //     up -- `dip` below drops the body a few centimetres mid-phase so the duck reads.
+  //   * FLOOR -> RING is a SLIDE UNDER THE BOTTOM ROPE. You stay low all the way across the mat and
+  //     rise at the end; popping up to 85% while still "sliding" is a man levitating onto the apron.
+  //   * APRON -> FLOOR is a DROP. Gravity is fast and the landing absorbs -- a constant-rate glide
+  //     is the single most un-wrestling thing the old lerp did.
+  // phase = [name, seconds, heightFraction(0..1 toward destination), lean, dipMetres]
+  var ROUTES = {
+    // through the ropes, no net height change: dip under the middle rope and come back up
+    'RING>APRON':  [['DUCK',0.22,0.3,0.34,-0.14], ['THROUGH',0.30,0.8,0.20,-0.10], ['SETTLE',0.16,1,0,0]],
+    // off the apron: brief crouch, then FALL, then absorb
+    'APRON>FLOOR': [['CROUCH',0.14,0.04,0.30,0], ['DROP',0.16,0.95,-0.08,0], ['LAND',0.24,1,0.26,-0.06]],
+    // out of the ring to the floor: duck the ropes, then drop off the apron edge
+    'RING>FLOOR':  [['DUCK',0.20,0.05,0.34,-0.12], ['THROUGH',0.22,0.30,0.22,-0.08], ['DROP',0.18,0.94,-0.06,0], ['LAND',0.22,1,0.26,-0.06]],
+    // climbing up: reach for the apron, haul yourself up, stand
+    'FLOOR>APRON': [['REACH',0.20,0.12,-0.26,0], ['PULL_UP',0.34,0.90,0.22,0], ['SETTLE',0.18,1,0,0]],
+    // back in through the ropes: dip again
+    'APRON>RING':  [['DUCK',0.22,0.3,0.32,-0.14], ['STEP_IN',0.28,0.8,0.16,-0.10], ['SETTLE',0.16,1,0,0]],
+    // slide under the bottom rope: LOW across the mat, then get up
+    'FLOOR>RING':  [['CROUCH',0.16,0.10,0.34,0], ['SLIDE',0.34,0.62,0.46,-0.18], ['RISE',0.28,1,0.10,0]]
+  };
+  // route variants, picked from the fighter's own style bias. Same phases, different timing/shape.
+  var VARIANTS = {
+    VAULT:  { scale:0.72, leanMul:1.35, label:'vault' },     // agile: fast and showy
+    STEP:   { scale:1.30, leanMul:0.70, label:'step-over' }, // heavy: deliberate
+    NORMAL: { scale:1.00, leanMul:1.00, label:'through' }
+  };
+
+  function variantFor(f){
+    try{
+      var s = f && f._style;
+      if (!s || !s.bias) return 'NORMAL';
+      var air = +s.bias.air || 0, pow = +s.bias.pow || 0, spd = +s.bias.spd || 0;
+      if (air >= 7 || spd >= 8) return 'VAULT';
+      if (pow >= 8 && air <= 3) return 'STEP';
+    }catch(e){}
+    return 'NORMAL';
+  }
+
+  // a capture for a phase, ONLY if it is already resident. Never fetch mid-move.
+  var PHASE_CLIP = { PULL_UP:'CLIMBING_UP_WALL', REACH:'BRACED_HANG_HOP_UP', SLIDE:'COMBAT_ROLL' };
+  function residentClip(name){
+    try{
+      var S = lex('STUDIO');
+      if (!S || !S.clips || !name) return null;
+      return S.clips[name] || null;
+    }catch(e){ return null; }
+  }
+
+  function begin(f, from, to){
+    var key = from + '>' + to;
+    var phases = ROUTES[key];
+    if (!phases) return false;
+    var v = variantFor(f);
+    var V = VARIANTS[v];
+    f._zt = {
+      key: key, phases: phases, i: 0, t: 0, variant: v,
+      y0: (f._smoothZoneY != null ? f._smoothZoneY : zoneY(from)),
+      y1: zoneY(to),
+      scale: V.scale, leanMul: V.leanMul,
+      lean0: f.lean || 0
+    };
+    ST.started++;
+    ST.byRoute[key] = (ST.byRoute[key] || 0) + 1;
+    ST.byStyle[v] = (ST.byStyle[v] || 0) + 1;
+    return true;
+  }
+
+  function ease(x){ return x < 0.5 ? 2*x*x : 1 - Math.pow(-2*x + 2, 2) / 2; }
+
+  function step(f, dt){
+    var z = f._zt; if (!z) return;
+    var ph = z.phases[z.i];
+    if (!ph){ finish(f); return; }
+    var dur = ph[1] * z.scale;
+    z.t += dt;
+    var k = Math.min(1, z.t / Math.max(dur, 1e-3));
+    var e = ease(k);
+
+    // height: from where the previous phase ended to this phase's fraction of the whole move
+    var prevFrac = z.i > 0 ? z.phases[z.i-1][2] : 0;
+    var frac = prevFrac + (ph[2] - prevFrac) * e;
+    var y = z.y0 + (z.y1 - z.y0) * frac;
+    // DIP: a duck through the ropes or the give in a landing. Rises and falls within the phase
+    // (sin curve) so it never leaves the body offset at the phase boundary.
+    var dip = ph[4] || 0;
+    if (dip) y += dip * Math.sin(Math.PI * k);
+    f._smoothZoneY = y;
+    try{ if (f.root) f.root.position.y = floorY() + y; }catch(e2){}
+
+    // body language: blend toward the phase's lean, scaled by the variant
+    try{ f.lean = (f.lean || 0) + ((ph[3] * z.leanMul) - (f.lean || 0)) * Math.min(1, dt * 9); }catch(e2){}
+
+    // a real capture if one happens to be resident for this phase
+    try{
+      var c = residentClip(PHASE_CLIP[ph[0]]);
+      if (c && typeof window.studioApplyClipPose === 'function'){
+        window.studioApplyClipPose(f, c, k);
+        ST.clipUsed++;
+      }
+    }catch(e2){}
+
+    ST.lastPhase = z.key + ':' + ph[0] + '(' + z.variant + ')';
+    if (k >= 1){ z.i++; z.t = 0; if (z.i >= z.phases.length) finish(f); }
+  }
+
+  function finish(f){
+    if (!f._zt) return;
+    var y1 = f._zt.y1;
+    f._smoothZoneY = y1;
+    try{ if (f.root) f.root.position.y = floorY() + y1; }catch(e){}
+    try{ f.lean = 0; }catch(e){}
+    f._zt = null;
+    ST.completed++;
+  }
+
+  // ---- watch for a zone change and take over the glide ----
+  function arm(n){
+    try{
+      if (typeof Fighter === 'function' && Fighter.prototype
+          && typeof Fighter.prototype.updateProcedural === 'function'
+          && !Fighter.prototype.updateProcedural.__zonemove){
+        var orig = Fighter.prototype.updateProcedural;
+        var w = function(dt){
+          var before = this.zone;
+          var r = orig.call(this, dt);
+          try{
+            if (window.ZONEMOVE !== false && !this.ragdoll && !this.airLift && !this._entering){
+              // a zone that CHANGED starts a transition; TOP ROPE keeps the engine's own climb
+              // machine (startClimb -> midrope/perch), which is already a real animated sequence.
+              if (this._ztLast && this._ztLast !== this.zone && !this._zt){
+                begin(this, this._ztLast, this.zone);
+              }
+              this._ztLast = this.zone;
+              if (this._zt) step(this, Math.min(dt || 0.016, 0.05));
+            }
+          }catch(e){}
+          return r;
+        };
+        w.__zonemove = true;
+        Fighter.prototype.updateProcedural = w;
+        console.log('%c[BANNON_ZONEMOVE] ring/apron/floor transitions are phased moves now','color:#7CFC00');
+        return;
+      }
+    }catch(e){}
+    if (n < 300) setTimeout(function(){ arm(n+1); }, 250);
+  }
+  arm(0);
+
+  window.BANNON_ZONEMOVE = {
+    routes: function(){ return Object.keys(ROUTES); },
+    phasesOf: function(k){ return (ROUTES[k]||[]).map(function(p){ return p[0]; }); },
+    variantFor: variantFor,
+    force: function(f, from, to){ return begin(f, from, to); },
+    active: function(f){ return !!(f && f._zt); },
+    stats: function(){ return { started:ST.started, completed:ST.completed, byRoute:ST.byRoute,
+                                byVariant:ST.byStyle, clipFramesUsed:ST.clipUsed,
+                                lastPhase:ST.lastPhase, enabled: window.ZONEMOVE !== false }; }
+  };
+})();
+</script>
+
 </body></html>
 
 
