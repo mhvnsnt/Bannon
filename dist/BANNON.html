@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2506"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2508"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -14927,6 +14927,16 @@ try{
   // body diversity re-seed (runs AFTER the roster exists — the early block fires too soon for new chars)
   if(window.CHAR_BODY){ if(window.CHAR_BODY.QUEEN_TYNESHIA&&window.CHAR_BODY.QUEEN_TYNESHIA.bust==null) window.CHAR_BODY.QUEEN_TYNESHIA.bust=1.35;
     if(window.CHAR_BODY.KARMA&&window.CHAR_BODY.KARMA.bust==null) window.CHAR_BODY.KARMA.bust=1.0; }
+  // TARZANIAN DEVIL — identity read off the RENDER, not off the filename. The model shows long black
+  // hair, a horned devil facepaint over one eye, tribal ink across the shoulder and tiger striping on
+  // the ribs, a leopard-fur loincloth with matching fur leg wraps over black boots, and a thick,
+  // heavy torso with real mass rather than a cut physique. That is a feral heavyweight brawler, so
+  // 'brawler' (110hp / 190 stam / 1.14 power) rather than 'powerhouse', whose 0.86 speed would fight
+  // the frenzy the look is selling. Colours are sampled from the attire: leopard gold, devil red.
+  _addChar('TARZANIAN_DEVIL', { label:'The Feral One', col:0xb8863b, accent:0xcc2200, skin:0xd9a06a,
+    faction:'Agents of Chaos', canon:true,
+    bio:'Raised by nothing and answering to no one — a horned wildman who fights like the ring is a jungle floor.',
+    archetype:'brawler' }, 'TRUNKS', 'LONG', {musc:0.7,fat:0.34});
   _addChar('AKON_WARRIOR', { label:'Man of Honor',              col:0x8a5a1a, accent:0xffd700, skin:0x7a4a2e, faction:'Free Agent', canon:true, bio:'The ethical challenge — honor as a weapon.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.82,fat:0.2});
   _addChar('HEATH_BROKER', { label:'The London Broker',         col:0x24262e, accent:0x9fb4cc, skin:0xe6c8a8, faction:'Corporate Structure', canon:true, bio:'Corporate technician — every hold is a contract clause.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.5,fat:0.22});
   _addChar('CAPTAIN_UNITY',{ label:'Corporate Propaganda',      col:0x1a3a8a, accent:0xd42a2a, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'A manufactured hero — unity as a slogan, not a promise.', archetype:'brawler' }, 'SINGLET', 'BUZZ', {musc:0.72,fat:0.18});
@@ -15744,6 +15754,15 @@ const CHAR_MODEL_DEFAULTS = {
   MASTER_SENSEI:{url:'assets/models/MASTER_SENSEI.glb',name:'MASTER SENSEI'},
   WRECK_PATTERSON:{url:'assets/models/WRECK_PATTERSON.glb',name:'WRECK PATTERSON'},
   AARON_RUBEN:{url:'assets/models/AARON_RUBEN.glb',name:'AARON RUBEN'},
+  // TARZANIAN DEVIL (2026-08-01). 28-joint UniRig skin, skinqa p95 0.0853 with all four limb bones
+  // mapped — the same band as BANNON_rigged (0.0682), which is the model the game already ships as
+  // the canon default. MEASURED, not assumed: an earlier note claimed he needed a height fix and a
+  // ~90 degree yaw. BOTH WERE WRONG. tools/model_diag/pose_measure.cjs puts his shoulder axis on Z,
+  // identical to BANNON_rigged and VIPER, and rendering all three from the same camera shows all
+  // three in profile — he already faces the way the roster faces. The 0.98m bind height is likewise
+  // a non-issue: the bind path measures true height off the bone world positions and applies
+  // s = 1.78/hgt, then grounds the feet with yBase, so export scale never reaches the ring.
+  TARZANIAN_DEVIL:{url:'assets/models/TARZANIAN_DEVIL_skinned.glb',name:'TARZANIAN DEVIL'},
 
   // REMOVED 2026-07-25 — the "v160 UNIRIG PIPELINE PASS" block wired eight entries (GHOST, PHANTOM,
   // DEMON_X, LUNA_VEGA, SAMI_Z, JAXON_RYKER, BIG_BULL, COSMIC_DUST) that were DOUBLY dead: no GLB was
@@ -15873,8 +15892,32 @@ function _bindFighterGltf(side, url, name, gltf, reqFighter, reqId){
     const box=new THREE.Box3(); const _wp=new THREE.Vector3(); let _meas=false;
     obj.traverse(o=>{ if(o.isBone){ o.getWorldPosition(_wp); box.expandByPoint(_wp); _meas=true; } });
     let hgt;
+    // THE BODY THE PLAYER SEES IS THE THING THAT MUST MEASURE ~1.78m, and normally the bone span is a
+    // good proxy for it. It is NOT a good proxy when a file's SKELETON and its MESH are at different
+    // scales, which is what a weight-transfer re-rig can produce: transfer_weights copies a proven
+    // 1.88m skeleton onto a target mesh, and if the mesh was authored at a different scale the GLB
+    // ships internally inconsistent. Skinning still looks right (the inverse bind matrices absorb it)
+    // and skinqa still passes, so nothing upstream catches it — but the bone-based fit then scales
+    // the RIG to 1.78 and leaves the visible body wherever it was.
+    // MEASURED on TARZANIAN_DEVIL_skinned.glb: bind mesh 0.98m tall, skeleton spanning ~1.90m, so the
+    // fit computed 0.9379 and he bound into the ring 0.92m tall — half a wrestler, next to a 1.78m
+    // opponent. Cross-check the two and, when they disagree badly, believe the MESH.
+    let _meshH = 0;
+    try{
+      const _mb=new THREE.Box3(), _tb=new THREE.Box3();
+      obj.traverse(o=>{ if(o.isMesh && o.geometry){ if(!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+        if(o.geometry.boundingBox){ _tb.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld); _mb.union(_tb); } } });
+      if (isFinite(_mb.max.y-_mb.min.y)) _meshH=_mb.max.y-_mb.min.y;
+    }catch(_e){}
     if (_meas && isFinite(box.max.y-box.min.y) && (box.max.y-box.min.y)>0.001){
       hgt=(box.max.y-box.min.y)*1.18;                      // bones span ankle->neck; pad for feet+skull
+      // A bind-pose mesh box is the BODY (this is before any posing), so when it disagrees with the
+      // rig by more than a third, the rig is the thing that is lying about the body's size.
+      if (_meshH > 0.02 && (hgt/_meshH > 1.35 || _meshH/hgt > 1.35)){
+        try{ console.warn('[model] rig/mesh scale mismatch in '+url+' — bones say '+hgt.toFixed(3)
+          +'m, mesh says '+_meshH.toFixed(3)+'m; sizing to the MESH so the visible body is right'); }catch(_e){}
+        hgt=_meshH;
+      }
     } else {
       const mb=new THREE.Box3(), tmp=new THREE.Box3();
       obj.traverse(o=>{ if(o.isMesh && o.geometry){ if(!o.geometry.boundingBox) o.geometry.computeBoundingBox(); if(o.geometry.boundingBox){ tmp.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld); mb.union(tmp); } } });
