@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2504"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2506"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -12987,6 +12987,20 @@ function updateCamera(dt){
   camPos.lerp(V3(ox, tgtY, oz), clamp(dt*lerpSpeedPos, 0, 1));
   const lookHeight = (lowAction ? 0.7 : 1.05) + RING.floorY + CAM_CFG.height + (window.__camBreathY||0);
   camLook.lerp(V3(midX, lookHeight, midZ), clamp(dt*lerpSpeedLook, 0, 1));
+
+  // BROADCAST SHOT OVERRIDE — an entrance is a DIRECTED shot, not the match framing. BANNON_BROADCAST
+  // publishes window.__camShot while a walkout is running and clears it the instant the entrance ends.
+  // It blends ON TOP of the settled camPos/camLook rather than replacing the camera, so shake, the
+  // punch spring, the dolly and the FOV all keep working exactly as they do in a match. weight 0 = the
+  // normal camera, so a stale shot can never strand the view.
+  try{
+    var _shot = window.__camShot;
+    if (_shot && _shot.w > 0.001){
+      var _w = Math.min(1, _shot.w) * clamp(dt * (_shot.speed || 2.2), 0, 1);
+      camPos.lerp(V3(_shot.px, _shot.py, _shot.pz), _w);
+      camLook.lerp(V3(_shot.lx, _shot.ly, _shot.lz), _w);
+    }
+  }catch(e){}
 
   let sx=0, sy=0;
   if (camShake>0.001){ sx=(Math.random()-0.5)*camShake; sy=(Math.random()-0.5)*camShake; camShake*=0.85; }
@@ -55386,7 +55400,14 @@ window.__deriveVariant = async function(key){
   var last = 0;
   function tick(){
     var now = (performance && performance.now) ? performance.now()/1000 : Date.now()/1000;
-    var dt = last ? Math.min(now - last, 0.1) : 0.016; last = now;
+    // The clamp stops one long frame from teleporting a man down the ramp, but clamping at 0.1
+    // means a device rendering below 10fps advances the WALK slower than the wall clock, and the
+    // 12-second hard ceiling then cuts the entrance off part-way. MEASURED in the headless harness:
+    // at ~1.7fps the entrance reached RAMP and was finished before APRON or RING ever happened.
+    // With the render stubbed (457 frames in 9s) the same code walks STAGE -> RAMP -> APRON -> RING
+    // and completes in 4.7s, which is correct. 0.25 keeps the anti-teleport guard while letting a
+    // slow phone still finish the walk in roughly the intended wall-clock time.
+    var dt = last ? Math.min(now - last, 0.25) : 0.016; last = now;
     if (active){
       var done = true;
       active.fs.forEach(function(f){ if (!step(f, dt)) done = false; });
@@ -56686,6 +56707,254 @@ window.__deriveVariant = async function(key){
                                 resident:flat().filter(function(e){ return !!resident(e.clip); }).length,
                                 poolSize:flat().length,
                                 missingClips:ST.missing, last:ST.last }; }
+  };
+})();
+</script>
+<script>
+/* ==============================================================================================
+   BANNON_BROADCAST — an entrance shot on television, not a man walking past a firework.
+
+   Owner: "full broadcast level entrances and victories and run in chances like WWE and mdickie
+   games."
+
+   WHAT WAS ACTUALLY WRONG, MEASURED. Every piece already existed and none of them were joined:
+     * BANNON_FX.stagePyro / pyroBurst / smokePuff  — real particle pyro, working.
+     * BANNON_TRON.entrance(name)                   — real animated tron, working.
+     * BANNON_WALKOUT                               — real 5-segment walk down a real ramp.
+   But the pyro fired from ONE `setTimeout(... 400)` at match start, so it went off 0.4s after the
+   bell REGARDLESS OF WHERE THE WRESTLER WAS. He could still be behind the curtain, or already at
+   the apron. The tron lit for a flat 6 seconds on the same timer. Nothing was cued to the walk, and
+   the camera never looked at the entrance at all -- it stayed on the match framing (the midpoint of
+   two fighters) while a man walked down a ramp behind it.
+   And `BANNON_ENTRANCES.triggerPyro(fighter)` (the AI-Studio module) only ever printed a log line.
+
+   SO: cue the FX to the PHASE, direct a camera at it, and give a rival a chance to jump him on the
+   ramp. Three things, all built on the systems already here -- no second FX system, no second
+   camera, no second run-in path (BANNON_INTERFERENCE.run() already spawns a real third body).
+
+   THE SHOT LIST is per phase, in the arena's real metres off the ramp geometry:
+     INTRO/STAGE  wide, low, looking back up the ramp at the curtain  -- the reveal
+     RAMP         tracking alongside and slightly ahead, shoulder height
+     APRON        tight, from inside the ring looking out over the ropes
+     RING         hero angle, low and close as he steps through
+   Weight ramps in and out so the cut is a MOVE, not a snap, and the whole override is a blend on
+   top of the settled camera (see __camShot in the camera update) so shake/punch/dolly still apply.
+
+   EVERY BEAT IS BUDGETED. Pyro is particles and this runs on a phone: the FX window is the one
+   BANNON_FX already enforces (`fxAllowed`), beats fire ONCE per phase per fighter, and the whole
+   thing is inert unless a walkout is actually running.
+   ============================================================================================== */
+(function(){
+  'use strict';
+
+  var ST = { entrances:0, beats:0, shots:0, runIns:0, lastBeat:null, lastShot:null, skipped:0 };
+
+  function lex(n){ try{ return (new Function('try{ return typeof '+n+'!=="undefined"?'+n+':null; }catch(e){ return null; }'))(); }catch(e){ return null; } }
+  function fighters_(){ var f = lex('fighters'); return (f && f.length) ? f : []; }
+  function HZ(){ var v = lex('ARENA_HALF_Z'); return (typeof v === 'number') ? v : 2.2; }
+  function floorY(){ try{ var R = lex('RING'); return (R && R.floorY != null) ? R.floorY : 0; }catch(e){ return 0; } }
+  function stageZ(){ return -(HZ() + 8.5); }
+  function nameOf(f){ try{ return (f && ((f.opts && f.opts.name) || f.specName || f.name)) || 'BANNON'; }catch(e){ return 'BANNON'; } }
+  function accent(){ try{ return (window.ARENA_PRESETS[window.ARENA_PRESET]||{}).accent || 0xffaa22; }catch(e){ return 0xffaa22; } }
+
+  // ---- FX BEATS, ONE PER PHASE -----------------------------------------------------------------
+  // Named for the broadcast moment, not for the mechanism.
+  var BEATS = {
+    STAGE: function(f){
+      try{ if (window.BANNON_TRON && window.BANNON_TRON.entrance) window.BANNON_TRON.entrance(nameOf(f)); }catch(e){}
+      try{ if (window.BANNON_FX && window.BANNON_FX.stagePyro){
+        window.BANNON_FX.stagePyro();
+        setTimeout(function(){ try{ window.BANNON_FX.stagePyro(); }catch(e){} }, 620);
+      } }catch(e){}
+    },
+    RAMP: function(f){
+      // a puff at the top of the ramp as he starts walking — reads as haze in the light
+      try{ if (window.BANNON_FX && window.BANNON_FX.smokePuff) window.BANNON_FX.smokePuff(f.x || 0, stageZ() + 1.2); }catch(e){}
+    },
+    APRON: function(f){
+      // ring-post pyro as he reaches the apron: the corners, not the stage
+      try{ if (window.BANNON_FX && window.BANNON_FX.pyroBurst){
+        var hz = HZ(), a = accent();
+        window.BANNON_FX.pyroBurst(-1.9, -hz, a, 70);
+        window.BANNON_FX.pyroBurst( 1.9, -hz, a, 70);
+      } }catch(e){}
+    },
+    RING: function(f){
+      try{ if (typeof window.crowdReaction === 'function') window.crowdReaction(0.75); }catch(e){}
+    }
+  };
+
+  // ---- THE SHOT LIST ---------------------------------------------------------------------------
+  // [ eye x,y,z , look x,y,z ] in metres. y is added to the ring floor.
+  function shotFor(phase, f){
+    var hz = HZ(), fy = floorY(), sz = stageZ();
+    var fx = (f && f.x) || 0, fz = (f && f.z != null) ? f.z : sz;
+    switch(phase){
+      case 'STAGE':
+        // wide and low, from the ring looking back up the ramp at the curtain
+        return { px: 0, py: fy + 1.15, pz: -(hz) + 1.2,
+                 lx: fx, ly: fy + 1.35, lz: sz, speed: 1.6, w: 1 };
+      case 'RAMP':
+        // travelling alongside him, a little ahead, shoulder height
+        return { px: fx + 3.1, py: fy + 1.45, pz: fz + 1.6,
+                 lx: fx, ly: fy + 1.25, lz: fz, speed: 2.6, w: 1 };
+      case 'APRON':
+        // from inside the ring, over the ropes
+        return { px: fx * 0.4, py: fy + 1.5, pz: -(hz) + 2.4,
+                 lx: fx, ly: fy + 1.15, lz: fz, speed: 3.0, w: 1 };
+      case 'RING':
+        // hero angle: low, close, looking up as he comes through
+        return { px: fx + 1.7, py: fy + 0.85, pz: fz + 1.9,
+                 lx: fx, ly: fy + 1.5, lz: fz, speed: 3.2, w: 1 };
+    }
+    return null;
+  }
+
+  // ---- RUN-INS DURING THE ENTRANCE -------------------------------------------------------------
+  // A rival jumping you on the ramp is a real wrestling beat and the machinery is already proven:
+  // BANNON_INTERFERENCE.run() spawns a genuine third body that our AI and physics drive. Rolled
+  // ONCE per entrance, on the ramp (the only phase where there is room for it to read), and never
+  // when the player has opted out.
+  var RUNIN_CHANCE = 0.14;
+  function maybeRunIn(f){
+    if (window.BANNON_ENTRANCE_RUNIN === false) return;
+    if (Math.random() >= RUNIN_CHANCE) return;
+    try{
+      var I = window.BANNON_INTERFERENCE;
+      if (!I || typeof I.run !== 'function') return;
+      I.run();
+      ST.runIns++;
+      try{ if (window.addEvent) window.addEvent('We have got a situation on the ramp!', 'entrance'); }catch(e){}
+      try{ if (typeof announce === 'function') announce('AMBUSH ON THE RAMP', nameOf(f)); }catch(e){}
+    }catch(e){}
+  }
+
+  // ---- DRIVE -----------------------------------------------------------------------------------
+  // BANNON_WALKOUT keeps its own `active` closure-local, so rather than reach into it (or wrap an
+  // export and intercept nothing — the closure-wrap trap that has bitten this file before) this
+  // reads the fields the walkout writes onto the FIGHTERS themselves: _entering and _entryPhase.
+  var seen = {};      // fighter -> last phase we fired a beat for
+  var ridingId = null;
+  var shotW = 0;
+
+  function entering(){
+    var fs = fighters_(), out = [];
+    for (var i = 0; i < fs.length; i++) if (fs[i] && fs[i]._entering) out.push(fs[i]);
+    return out;
+  }
+
+  // ---- THE VICTORY SHOT ------------------------------------------------------------------------
+  // The other half of "broadcast level entrances AND victories". endMatch already fires pyro and the
+  // tron through BANNON_ENTRANCE.victory(); what it never had was a CAMERA. The match framing holds
+  // the midpoint of two men, one of whom is flat on the mat, so the winner's moment was shot as a
+  // wide of a lying body. This pushes in on the winner for a few seconds, then releases.
+  var victory = null;   // { f, until }
+  function victoryShot(f){
+    if (!f) return;
+    victory = { f: f, until: (performance && performance.now ? performance.now() : Date.now()) + 6000 };
+  }
+
+  function tick(){
+    try{
+      var ent = entering();
+      if (!ent.length && victory){
+        var nowMs = (performance && performance.now) ? performance.now() : Date.now();
+        if (nowMs > victory.until){ victory = null; }
+        else {
+          var w = victory.f, fy = floorY();
+          shotW = Math.min(1, shotW + 0.05);
+          window.__camShot = { px:(w.x||0) + 2.2, py: fy + 1.25, pz:(w.z||0) + 2.6,
+                               lx:(w.x||0), ly: fy + 1.45, lz:(w.z||0),
+                               speed: 1.8, w: shotW };
+          ST.shots++; ST.lastShot = 'VICTORY';
+          requestAnimationFrame(tick);
+          return;
+        }
+      }
+      if (ent.length){
+        // the CAMERA follows one man — the player's if he is walking, else the first
+        var lead = null;
+        for (var i = 0; i < ent.length; i++) if (ent[i].isPlayer){ lead = ent[i]; break; }
+        if (!lead) lead = ent[0];
+        if (ridingId !== lead){ ridingId = lead; ST.entrances++; }
+
+        // FX beats: once per phase per fighter
+        for (var j = 0; j < ent.length; j++){
+          var f = ent[j], ph = f._entryPhase;
+          if (!ph) continue;
+          if (!f.__bcSeen) f.__bcSeen = {};
+          if (!f.__bcSeen[ph]){
+            f.__bcSeen[ph] = 1;
+            if (BEATS[ph]){ try{ BEATS[ph](f); ST.beats++; ST.lastBeat = ph + ':' + nameOf(f); }catch(e){} }
+            if (ph === 'RAMP') maybeRunIn(f);
+          }
+        }
+
+        // camera
+        var shot = shotFor(lead._entryPhase, lead);
+        if (shot){
+          shotW = Math.min(1, shotW + 0.06);
+          shot.w = shotW;
+          window.__camShot = shot;
+          ST.shots++; ST.lastShot = lead._entryPhase;
+        }
+      } else if (window.__camShot){
+        // ease OUT rather than cut — and clear completely, so a stale shot can never hold the camera
+        shotW -= 0.08;
+        if (shotW <= 0){ shotW = 0; window.__camShot = null; ridingId = null; }
+        else window.__camShot.w = shotW;
+      }
+    }catch(e){}
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // ---- the old fire-and-forget pyro is now redundant ------------------------------------------
+  // BANNON_ENTRANCE.play() fires stage pyro + tron on a timer with no idea where the wrestler is.
+  // While a walkout is running that is a DOUBLE burst at the wrong moment, so it stands down and
+  // lets the phase beats do it. With walkouts disabled it still works exactly as before.
+  (function arm(n){
+    try{
+      if (window.BANNON_ENTRANCE && typeof window.BANNON_ENTRANCE.play === 'function'
+          && !window.BANNON_ENTRANCE.play.__bc){
+        var orig = window.BANNON_ENTRANCE.play;
+        var w = function(f){
+          try{ if (entering().length) return; }catch(e){}    // the walkout owns the beats
+          return orig.apply(this, arguments);
+        };
+        w.__bc = true;
+        window.BANNON_ENTRANCE.play = w;
+      }
+      // the victory camera. endMatch is a window function, so wrapping it works — but it is also
+      // wrapped by BANNON_WALKOUT, so this must tolerate arriving either side of that.
+      if (typeof window.endMatch === 'function' && !window.endMatch.__bcv){
+        var om = window.endMatch;
+        var wv = function(winner){
+          try{ if (winner) victoryShot(winner); }catch(e){}
+          return om.apply(this, arguments);
+        };
+        wv.__bcv = true;
+        for (var k in om){ if (Object.prototype.hasOwnProperty.call(om, k)) wv[k] = om[k]; }
+        window.endMatch = wv;
+      }
+      if (window.BANNON_ENTRANCE && window.BANNON_ENTRANCE.play && window.BANNON_ENTRANCE.play.__bc
+          && window.endMatch && window.endMatch.__bcv){
+        console.log('%c[BANNON_BROADCAST] entrance FX cue to the walk; camera directs entrance + victory','color:#7CFC00');
+        return;
+      }
+    }catch(e){}
+    if (n < 300) setTimeout(function(){ arm(n+1); }, 250);
+  })(0);
+
+  window.BANNON_BROADCAST = {
+    shotFor: shotFor,
+    beats: function(){ return Object.keys(BEATS); },
+    runInChance: function(v){ if (typeof v === 'number') RUNIN_CHANCE = Math.max(0, Math.min(1, v)); return RUNIN_CHANCE; },
+    victoryShot: victoryShot,
+    forceRunIn: function(){ var e = entering(); maybeRunIn(e[0] || fighters_()[0]); },
+    stats: function(){ return { entrances:ST.entrances, fxBeats:ST.beats, camFrames:ST.shots,
+                                runIns:ST.runIns, lastBeat:ST.lastBeat, lastShot:ST.lastShot,
+                                shotWeight:shotW, shotActive: !!window.__camShot }; }
   };
 })();
 </script>
