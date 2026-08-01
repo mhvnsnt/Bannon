@@ -15229,7 +15229,7 @@ try{
     // FINISHER ONLY. The tiger-feint is his SIGNATURE and lives in CHAR_FINISHERS.sig — a wrestler
     // does not use one move as both, and pairing them was the mistake here. Signature sets it up
     // through the ropes; the finisher ends it from the top.
-    TARZANIAN_DEVIL:  { name:'JUNGLE JUICE',              kind:'dive' },
+    TARZANIAN_DEVIL:  { name:'JUNGLE JUICE',              kind:'grapple', pos:'DDT', deliver:'spike' },
     LUCHADOR_RELAMPAGO:{ name:'EL RELÁMPAGO',             kind:'strike' },
     LUCHADOR_TRUENO:  { name:'EL TRUENO',                 kind:'strike' },
     AUDITOR_PRIME:    { name:'THE FINAL AUDIT',           kind:'grapple', pos:'BRAINBUSTER',  deliver:'spike' },
@@ -15303,14 +15303,17 @@ try{
     // SIGNATURE = the tiger-feint through the ropes. The OWNER CAPTURED THIS MOVE HIMSELF and
     // performed the delivery, so it is his real move driven by his real mocap
     // (assets/moves/clips/TIGER_FEINT_KICK.json, wired in combat_clip_map).
-    // FINISHER = JUNGLE JUICE. That NAME is documented as his finisher. What the move mechanically
-    // IS, is not documented anywhere reachable, so the shape below is our reading of it from the
-    // aerial half of his game and is flagged rather than presented as researched fact.
+    // FINISHER = JUNGLE JUICE, and the MECHANIC is no longer guessed — the owner supplied match
+    // tape and it was captured two-body (assets/moves/clips/JUNGLE_JUICE.json + __RECV). Read off
+    // the frames: reverse cravate with the opponent BEHIND him, flip over the shoulder front-ways
+    // so the opponent arrives inverted, then spiked head-first with a SIT-OUT finish. That is a
+    // sit-out impaler DDT, not the top-rope dive I had assumed. kind 'grapple' + pos DDT +
+    // deliver 'spike' so it resolves through the real grapple physics.
     // AND THEY ARE DIFFERENT MOVES ON PURPOSE — a wrestler does not run the same move as both his
     // signature and his finisher.
     TARZANIAN_DEVIL: { style:'lucha-based deathmatch chaos — stiff chops into sudden aerial bursts, works any style, unpredictable and genuinely nasty; absorbs punishment and keeps coming',
                        sig:'TIGER FEINT KICK — drape-and-swing kick back through the middle rope (owner mocap, his own delivery)',
-                       fin:'JUNGLE JUICE — his documented finisher (delivery shape ours: top-rope dive to a downed opponent, pending the real mechanic)',
+                       fin:'JUNGLE JUICE — sit-out impaler DDT out of a reverse cravate: opponent hooked from behind, flipped over the shoulder to the front, spiked head-first as he drops to a seated finish',
                        weapons:['STEEL CHAIR','KENDO STICK'] }
   });
   // v153 FINISHER WIRING — named finishers resolve through the REAL grapple physics (no cinematic

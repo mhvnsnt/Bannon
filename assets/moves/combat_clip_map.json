@@ -686,6 +686,14 @@
    "traj": "HOOK",
    "score": 99,
    "exact": true
+  },
+  "JUNGLE JUICE": {
+   "clip": "JUNGLE_JUICE",
+   "recv": "JUNGLE_JUICE__RECV",
+   "limb": "BOTH",
+   "traj": "SPIKE",
+   "score": 100,
+   "src": "owner capture of the real move (two-body)"
   }
  }
 }
