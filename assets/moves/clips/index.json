@@ -1214,5 +1214,149 @@
   "keys": 24,
   "bones": 52,
   "src": "Ch44_nonPBR.fbx"
+ },
+ "ZONE_SLIDE_IN_TEST": {
+  "file": "ZONE_SLIDE_IN_TEST.json",
+  "bytes": 52539,
+  "dur": 2.25,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person crouches low and slides forward along the ground then stands up",
+  "bones": 17
+ },
+ "ZONE_SLIDE_IN_A": {
+  "file": "ZONE_SLIDE_IN_A.json",
+  "bytes": 52402,
+  "dur": 2.4,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person crouches low and slides forward along the ground then stands up",
+  "bones": 17
+ },
+ "ZONE_SLIDE_IN_B": {
+  "file": "ZONE_SLIDE_IN_B.json",
+  "bytes": 52486,
+  "dur": 2.4,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person dives forward onto their stomach, slides, and pushes up to their feet",
+  "bones": 17
+ },
+ "ZONE_SLIDE_IN_C": {
+  "file": "ZONE_SLIDE_IN_C.json",
+  "bytes": 52400,
+  "dur": 3.25,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person drops to their knees, scrambles forward on all fours and rises",
+  "bones": 17
+ },
+ "ZONE_DUCK_A": {
+  "file": "ZONE_DUCK_A.json",
+  "bytes": 52472,
+  "dur": 2.1,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person bends forward at the waist and steps through a narrow opening",
+  "bones": 17
+ },
+ "ZONE_DUCK_B": {
+  "file": "ZONE_DUCK_B.json",
+  "bytes": 52236,
+  "dur": 2.15,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person crouches and ducks their head under a low bar, stepping through",
+  "bones": 17
+ },
+ "ZONE_DUCK_C": {
+  "file": "ZONE_DUCK_C.json",
+  "bytes": 52364,
+  "dur": 2.6,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person lifts one leg high over a low barrier and steps across",
+  "bones": 17
+ },
+ "ZONE_DROP_A": {
+  "file": "ZONE_DROP_A.json",
+  "bytes": 52319,
+  "dur": 1.6,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person steps off a low ledge, drops down and lands in a crouch",
+  "bones": 17
+ },
+ "ZONE_DROP_B": {
+  "file": "ZONE_DROP_B.json",
+  "bytes": 52566,
+  "dur": 2.2,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person hops down from a platform and absorbs the landing with bent knees",
+  "bones": 17
+ },
+ "ZONE_DROP_C": {
+  "file": "ZONE_DROP_C.json",
+  "bytes": 52427,
+  "dur": 2.2,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person jumps down backwards from a ledge and steadies themselves",
+  "bones": 17
+ },
+ "ZONE_PULLUP_A": {
+  "file": "ZONE_PULLUP_A.json",
+  "bytes": 52297,
+  "dur": 3.05,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person reaches up, grabs a ledge and pulls themselves up onto it",
+  "bones": 17
+ },
+ "ZONE_PULLUP_B": {
+  "file": "ZONE_PULLUP_B.json",
+  "bytes": 52404,
+  "dur": 3.15,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person climbs up onto a waist-high platform and stands",
+  "bones": 17
+ },
+ "ZONE_PULLUP_C": {
+  "file": "ZONE_PULLUP_C.json",
+  "bytes": 52446,
+  "dur": 2.65,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person steps up onto a raised edge and straightens up",
+  "bones": 17
+ },
+ "ZONE_ROLL_OUT_A": {
+  "file": "ZONE_ROLL_OUT_A.json",
+  "bytes": 52522,
+  "dur": 2.2,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person rolls sideways along the ground and comes up onto their feet",
+  "bones": 17
+ },
+ "ZONE_VAULT_A": {
+  "file": "ZONE_VAULT_A.json",
+  "bytes": 52297,
+  "dur": 1.95,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person vaults over a waist-high obstacle with one hand on top",
+  "bones": 17
+ },
+ "ZONE_CLIMB_A": {
+  "file": "ZONE_CLIMB_A.json",
+  "bytes": 52319,
+  "dur": 3.55,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person climbs up a tall structure hand over hand and stands at the top",
+  "bones": 17
  }
 }
