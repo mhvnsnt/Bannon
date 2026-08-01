@@ -789,3 +789,52 @@ in headless, and it fakes exactly the symptoms of a broken state machine.
 It did expose a real slow-device risk though: the walk dt was clamped at 0.1, so below 10fps the walk
 runs slower than the wall clock and the 12s hard ceiling truncates the entrance. Clamp raised to 0.25
 — still anti-teleport, but a slow phone finishes the walk in roughly the intended time.
+
+### SYSTEM DONE: TARZANIAN DEVIL wired + a whole CLASS of broken models found (2026-08-01)
+The banked note said he needed "a height fix (0.98m vs 1.88m) and a ~90 degree yaw". **The yaw was
+wrong** — new tools/model_diag/pose_measure.cjs derives facing from the SHOULDER AXIS (a human is far
+wider across the shoulders than front-to-back, so the wider horizontal axis is the shoulder line and
+the body faces the other one). His shoulder axis is Z, identical to BANNON_rigged and VIPER, and
+rendering all three from the same camera puts all three in profile. He already faced the right way.
+**The height was real, but not for the reason recorded.**
+- ROOT CAUSE: the GLB is INTERNALLY INCONSISTENT — bind mesh 0.980m, skeleton spanning 1.898m,
+  bone/mesh ratio **1.936**. That is what a weight-transfer re-rig produces when the proven donor
+  skeleton and the target mesh were authored at different scales.
+- NOTHING UPSTREAM CATCHES IT. Bind rendering is exact (the inverse bind matrices cancel the joint
+  transforms), so a viewer looks perfect and skinqa measured a clean 0.0853. The engine's fit-to-1.78m
+  reads the BONE span, so it scaled the RIG to 1.78 and left the visible body at **0.92m** — half a
+  wrestler stood next to a 1.78m opponent. And our engine drives joint POSITIONS (verlet targets, IK,
+  physics), not just rotations: rotation is scale-free, a position in metres is not, so a skeleton at
+  ~2x the body tears the mesh apart the moment physics touches it.
+- FIX AT THE ASSET, new **tools/model_diag/rescale_mesh.cjs**. Scaling POSITION accessors alone is
+  provably correct: skinned(v) = SUM w_i (jointWorld_i * IBM_i) v, and in bind pose jointWorld ==
+  inverse(IBM), so the bracket is the identity and scaling every v by k yields exactly v*k with the
+  skeleton, IBMs, joints and weights untouched. Morph deltas scale with it. Verified by re-reading the
+  written bytes: ratio 1.936 -> 1.000, bone span unchanged, joint count unchanged.
+- **THE SWEEP IS THE POINT.** Running the ratio check across all 73 models found the SAME defect in
+  **CODY_gear_skinned.glb (1.944), a model the game actually ships** — Cody Callahan had it too and
+  nobody had noticed. Fixed; his skinqa went 0.0439-era WEAK to **PASS p95 0.030**. The remaining hits
+  (BANNON_muscular_rig28, ONYX_rig28, ONYX_corset_rig28, TARZANIAN_DEVIL_dec_rig28) are unwired
+  intermediates. Run `rescale_mesh.cjs <glb> --check` on any new re-rig before banking it.
+- ENGINE GUARD kept as defence in depth: the bind now cross-checks the bone-derived height against the
+  BIND MESH box and, when they disagree by more than a third, sizes to the MESH and logs a named
+  warning. Verified it does not fire for any consistent model (BANNON 1.009, VIPER 1.055, CIPHER
+  1.101, HOLLOW 1.066) and that BANNON/VIPER bind heights are unchanged.
+- IDENTITY read off the RENDER, not the filename: long black hair, horned devil facepaint, tribal ink
+  and tiger striping, leopard-fur loincloth and leg wraps, black boots, thick heavy torso. That is a
+  feral heavyweight brawler -> archetype 'brawler' (110hp/190stam/1.14 power), not 'powerhouse' whose
+  0.86 speed fights the frenzy the look sells. Roster 120 -> 121, selectable, HUD reads
+  "TARZANIAN DEVIL · The Feral One", model binds at 1.78 vs BANNON's 1.763, 0 page errors.
+- skinqa p95 0.0853 -> **0.1089** after the rescale. That is not a regression: the residual is
+  normalised by bbox height, and before the fix it was being divided by the INFLATED skeleton-driven
+  box. 0.1089 is the honest number, WEAK (threshold 0.12) and worse than BANNON_rigged's 0.0682 — he
+  is the weakest passing rig we ship, worth a re-rig if the owner ever sees deformation on him.
+- OPEN: he is 9.5MB / 164k tris, the largest in a roster whose median is 3.7MB. Texture optimisation
+  refused him — tools/assets/optimize_gltf.cjs throws "Cannot read properties of null (reading
+  'setMagFilter')" on a texture with a null sampler, from inside gltf-transform. It REJECTED rather
+  than shipping a broken file, which is correct. Worth handling that null-sampler case.
+TEST TRAPS HIT THIS PASS, all mine: skinqa takes a BARE FILENAME (it maps /m/ to assets/models), so
+passing a path 404s and reports "[object ProgressEvent]" on EVERY model including known-good
+references — it looks exactly like every model is corrupt. Normalised in the tool now. And renaming a
+fighter mid-match does NOT rebind his model: `_charModelRequested` is a one-shot guard, so the real
+path is window.MATCH_SETUP + startFight, which is how the select screen does it.

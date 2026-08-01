@@ -15,11 +15,17 @@ const { spawn } = require('child_process');
       fs.readFile(fp,(e,d)=>{if(e){res.writeHead(404);res.end('nf');return;}res.writeHead(200,{'content-type':T[p.extname(fp)]||'application/octet-stream'});res.end(d);});}).listen(8084);
   `], { stdio:'ignore' });
   await new Promise(r=>setTimeout(r,700));
-  const browser = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args:['--use-gl=swiftshader','--no-sandbox'] });
+  const browser = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome', // localhost-only page: keep it off the agent proxy so the fetches cannot be intercepted.
+  args:['--use-gl=swiftshader','--no-sandbox','--no-proxy-server','--proxy-bypass-list=<-loopback>'] });
   const page = await browser.newPage(); const perr=[]; page.on('pageerror',e=>perr.push(String(e)));
   await page.goto('http://localhost:8084/test.html', { waitUntil:'domcontentloaded' });
   await page.waitForTimeout(3500);
-  const models = process.argv.slice(2);
+  // Accept EITHER a bare filename or a path under assets/models/. The server maps /m/ to
+  // assets/models, so passing "assets/models/X.glb" used to request
+  // m/assets/models/X.glb -> 404 -> an opaque "[object ProgressEvent]" that looks exactly like a
+  // corrupt model. Every model, including known-good references, failed identically. Normalise here
+  // so the caller cannot trip on it.
+  const models = process.argv.slice(2).map(m => m.replace(/^.*[\\/]/, ''));
   for(const mf of models){
     const r = await page.evaluate(async (u)=>{
       function load(url){ return new Promise((res,rej)=>{ new THREE.GLTFLoader().load(url, g=>res(g), undefined, e=>rej(e)); }); }
