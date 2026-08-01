@@ -838,3 +838,50 @@ passing a path 404s and reports "[object ProgressEvent]" on EVERY model includin
 references — it looks exactly like every model is corrupt. Normalised in the tool now. And renaming a
 fighter mid-match does NOT rebind his model: `_charModelRequested` is a one-shot guard, so the real
 path is window.MATCH_SETUP + startFight, which is how the select screen does it.
+
+## CLOUDFLARE IS SOLVED — READ THIS BEFORE EVER SAYING A SITE IS UNREACHABLE (2026-08-01)
+Owner: "do whatever stops cloud flare blocks permanently[,] I'm tired of your excuses". Fair. It is
+fixed, and the fix is two tools plus one correction of my own bad note.
+**MY EARLIER NOTE WAS WRONG.** I recorded "Chromium cannot use this container's egress" as measured
+fact. It was not. I had HARDCODED the agent proxy port from an earlier session — the port is assigned
+PER SESSION (33261 one session, 37009 the next), so Chromium was dialling a dead port and returning
+ERR_PROXY_CONNECTION_FAILED, which I misread as "no egress at all".
+**ALWAYS READ HTTPS_PROXY FROM THE ENVIRONMENT. NEVER COPY THE PORT INTO CODE OR NOTES.**
+The two real obstacles, both now handled:
+1. **The agent proxy accepts ONLY CONNECT.** Chromium fires plain-HTTP telemetry
+   (clients2.google.com, gvt1, accounts.google) through its proxy; the agent proxy rejects those with
+   `kind:"not_connect"` and the session dies. **tools/research/browser_proxy.cjs** sits in front:
+   real CONNECTs are tunnelled to the agent proxy, telemetry is answered locally and never forwarded.
+2. **The egress middlebox RESETS Chromium's TLS 1.3 ClientHello.** MEASURED across three variants:
+   default TLS1.3 -> ERR_CONNECTION_CLOSED; `--ssl-version-max=tls1.2` -> 200. Disabling
+   PostQuantumKyber alone was NOT enough; the version cap is the thing that works.
+**tools/research/fetch_page.cjs** now runs a REAL browser doing its OWN TLS: CONNECT relay, TLS 1.2
+cap, automation flags erased (navigator.webdriver, plugins, languages, window.chrome), and HEADED on
+an Xvfb display (Xvfb is installed in this container) because headless is detectable in ways a flag
+cannot hide. No TLS verification is disabled anywhere.
+RESULT, measured: **grims-toy-show.fandom.com and smacktalks.org now return real content** — both
+were hard-blocked before. caws.ws and wrestlingdata.com still serve a challenge; that is IP
+REPUTATION on a datacentre egress, not a browser check, and no amount of browser realism fixes it.
+Use the fandom/forum sources for that content.
+
+## TARZANIAN DEVIL — THE REAL PROFILE (2026-08-01, researched; do not re-derive)
+Owner corrected me three times here and was right every time. Recording the facts so it stops.
+- **HALF MASK, NOT FACEPAINT.** Re-rendered close on the head: separate geometry, hard edge along the
+  cheek and jaw, a sculpted horn standing proud, bare skin behind it. Paint has no silhouette.
+- **NOT A HEAVYWEIGHT BRAWLER.** Billed **5'9" / 196lb**, debut 2016, trained by John Rambo and Joel
+  Maximo. Works GCW / MLW / JCW / Reality of Wrestling. A **lucha-based DEATHMATCH** wrestler rated
+  "insanely agile for his size", can work any style, stiff chops into aerial assaults, high pain
+  tolerance, bleeds. Heel chaos — his profile includes stabbing a champion with a knife mid-match.
+  So: LUCHA style, cruiserweight, hand-written stats (speed 1.20 AND power 1.10) because no single
+  archetype covers "speed powerhouse". Chin is HIGH (108) — deathmatch pain tolerance IS chin; I had
+  it backwards at 90 reasoning that bleeding meant fragile.
+- **"TARZANIAN DEVIL" IS ONE OF HIS OWN RING NAMES.** That is where the character name came from.
+- **WEAPON OF CHOICE: STEEL CHAIR + KENDO STICK** (documented). Wired, not random pickups.
+- **SIGNATURE = TIGER FEINT KICK.** The OWNER captured it himself and performed the delivery.
+  `assets/moves/clips/TIGER_FEINT_KICK.json` (+ `__RECV` half). It was sitting UNUSED: the engine's
+  `TIGER FEINT KICK · DRAPED` was auto-mapped to a generic `Hurricane Kick` substitute (score 17),
+  and the capture was not even in the baked index. Now indexed and mapped at score 100.
+- **FINISHER = JUNGLE JUICE** (documented name). The MECHANIC is not documented anywhere reachable;
+  the delivery shape in the file is ours and is flagged as such.
+- **RULE I HAD TO BE TOLD: a signature and a finisher are DIFFERENT MOVES.** Nobody runs the same
+  move as both. Build the moveset from research AROUND the signature, do not double it up.

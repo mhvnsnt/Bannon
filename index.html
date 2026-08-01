@@ -14927,16 +14927,51 @@ try{
   // body diversity re-seed (runs AFTER the roster exists — the early block fires too soon for new chars)
   if(window.CHAR_BODY){ if(window.CHAR_BODY.QUEEN_TYNESHIA&&window.CHAR_BODY.QUEEN_TYNESHIA.bust==null) window.CHAR_BODY.QUEEN_TYNESHIA.bust=1.35;
     if(window.CHAR_BODY.KARMA&&window.CHAR_BODY.KARMA.bust==null) window.CHAR_BODY.KARMA.bust=1.0; }
-  // TARZANIAN DEVIL — identity read off the RENDER, not off the filename. The model shows long black
-  // hair, a horned devil facepaint over one eye, tribal ink across the shoulder and tiger striping on
-  // the ribs, a leopard-fur loincloth with matching fur leg wraps over black boots, and a thick,
-  // heavy torso with real mass rather than a cut physique. That is a feral heavyweight brawler, so
-  // 'brawler' (110hp / 190 stam / 1.14 power) rather than 'powerhouse', whose 0.86 speed would fight
-  // the frenzy the look is selling. Colours are sampled from the attire: leopard gold, devil red.
-  _addChar('TARZANIAN_DEVIL', { label:'The Feral One', col:0xb8863b, accent:0xcc2200, skin:0xd9a06a,
+  // TARZANIAN DEVIL — CORRECTED 2026-08-01 after the owner pulled me up, and he was right twice.
+  // My first pass called this a heavyweight BRAWLER with "devil facepaint". Both were assumptions
+  // dressed up as observation:
+  //   * IT IS A HALF MASK, NOT PAINT. Re-rendered close on the head: the mask is separate geometry
+  //     sitting on the face with a hard edge along the cheek and jaw, a sculpted red horn standing
+  //     proud of the surface, and bare skin visible below and behind it. Paint has no silhouette.
+  //   * HE IS NOT A HEAVYWEIGHT. Researched off the wrestler this character references: billed
+  //     197lb, "stiff chops and jaw-dropping aerial assaults", a nature/jungle free spirit whose
+  //     whole appeal is unpredictability. That is a lucha chaos build — fast, airborne, and hitting
+  //     far above his weight — not a 0.94-speed bruiser. The thick-torso read was my own low camera
+  //     angle and shading, and it was doing all the work in that decision.
+  // So: LUCHA style, cruiserweight frame, and a HAND-WRITTEN stat block rather than an archetype
+  // default, because no single archetype covers "speed AND power" — highFlyer would hand him 0.86
+  // power and lose the stiff-chop half, powerhouse would hand him 0.86 speed and lose the lucha.
+  // Set MOVESET_DB/ROSTER_SPEC FIRST: _addChar only seeds them when they are absent, so writing
+  // them here is what makes the custom numbers survive.
+  // THE NUMBERS COME FROM THE RESEARCH, not from a vibe:
+  //   5'9" / 196lb (his own profile; cagematch's 6'0" disagrees and the profile wins) -> a COMPACT,
+  //                              densely built cruiserweight. heightScale 0.93 against the roster's
+  //                              1.88m reference. "Speed powerhouse" is the right read either way:
+  //                              196lb packed onto 5'9" moving at lucha pace, rated "insanely agile
+  //                              for his size".
+  //   deathmatch, high pain tolerance, "bleeds buckets" -> CHIN IS HIGH (108). I first wrote 90 on
+  //                              the reasoning that bleeding = fragile. That is backwards; pain
+  //                              tolerance is exactly what chin models.
+  //   "can wrestle basically every style" -> the unpredictability the owner named. Wide move mix
+  //                              rather than a specialist's four.
+  if(typeof MOVESET_DB!=='undefined'){
+    MOVESET_DB.TARZANIAN_DEVIL = { maxHp:100, stamina:230, chin:108,
+      speedMultiplier:1.20, powerMultiplier:1.10,
+      // Built from the researched profile, NOT from the signature. "Stiff chops" -> the heavy
+      // hand strikes; "jaw-dropping aerial assaults" + lucha -> the spinning and leaping kicks and
+      // the low sweep; "wrestles basically every style" -> deliberately mixed rather than a
+      // specialist's four. The tiger-feint is NOT in this list: it is the SIGNATURE slot below.
+      moves:['OVERHAND BOMB','AXE KICK','TORNADO KICK','SPINNING HEEL KICK','FLYING KNEE',
+             'MEIA LUA','RAT SWEEP'] };
+    if(typeof ROSTER_SPEC!=='undefined')
+      ROSTER_SPEC.TARZANIAN_DEVIL = { style:'LUCHA', heightScale:0.93, reachScale:1.0 };
+  }
+  // 197lb on a 6'0" frame is a cruiserweight, and the weight class is read by applyArchetype.
+  try{ if(typeof CHAR_ARCHETYPE!=='undefined') CHAR_ARCHETYPE.TARZANIAN_DEVIL='CRUISERWEIGHT'; }catch(e){}
+  _addChar('TARZANIAN_DEVIL', { label:'The Wildlife', col:0xb8863b, accent:0xcc2200, skin:0xd9a06a,
     faction:'Agents of Chaos', canon:true,
-    bio:'Raised by nothing and answering to no one — a horned wildman who fights like the ring is a jungle floor.',
-    archetype:'brawler' }, 'TRUNKS', 'LONG', {musc:0.7,fat:0.34});
+    bio:'A masked jungle free spirit with no plan and no brakes — stiff chops one moment, a blind dive off the top the next.',
+    archetype:'highFlyer' }, 'TRUNKS', 'LONG', {musc:0.72,fat:0.14});
   _addChar('AKON_WARRIOR', { label:'Man of Honor',              col:0x8a5a1a, accent:0xffd700, skin:0x7a4a2e, faction:'Free Agent', canon:true, bio:'The ethical challenge — honor as a weapon.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.82,fat:0.2});
   _addChar('HEATH_BROKER', { label:'The London Broker',         col:0x24262e, accent:0x9fb4cc, skin:0xe6c8a8, faction:'Corporate Structure', canon:true, bio:'Corporate technician — every hold is a contract clause.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.5,fat:0.22});
   _addChar('CAPTAIN_UNITY',{ label:'Corporate Propaganda',      col:0x1a3a8a, accent:0xd42a2a, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'A manufactured hero — unity as a slogan, not a promise.', archetype:'brawler' }, 'SINGLET', 'BUZZ', {musc:0.72,fat:0.18});
@@ -15191,6 +15226,10 @@ try{
     HAMMER:           { name:'THE NAIL',                  kind:'strike' },
     DICE:             { name:'SNAKE EYES',                kind:'grapple', pos:'DDT',          deliver:'spike' },
     CHIP:             { name:'THE CASH OUT',              kind:'grapple', pos:'BACKBREAKER',  deliver:'drop'  },
+    // FINISHER ONLY. The tiger-feint is his SIGNATURE and lives in CHAR_FINISHERS.sig — a wrestler
+    // does not use one move as both, and pairing them was the mistake here. Signature sets it up
+    // through the ropes; the finisher ends it from the top.
+    TARZANIAN_DEVIL:  { name:'JUNGLE JUICE',              kind:'dive' },
     LUCHADOR_RELAMPAGO:{ name:'EL RELÁMPAGO',             kind:'strike' },
     LUCHADOR_TRUENO:  { name:'EL TRUENO',                 kind:'strike' },
     AUDITOR_PRIME:    { name:'THE FINAL AUDIT',           kind:'grapple', pos:'BRAINBUSTER',  deliver:'spike' },
@@ -15251,7 +15290,28 @@ try{
     // Book 6 canon + stable identities (owner model drops 2026-07-12):
     HALL_NIGHTER: { style:'HBK Showstopper archetype — charismatic showman flyer, sells huge, peaks late; toothpick flick, tunes up the band in the corner before the kick', sig:'FLYING FOREARM + kip-up · diving elbow drop off the top', fin:'THE CURTAIN CALL — tune-up-the-band superkick out of the corner', rivalry:'Triple X ("sold out... went corporate") — prophesied legendary clash', canonNote:'loses to Finxsse at Fight Night in the Banyan Ring, post-match fist bump: NWC respects violence' },
     STATIC:       { style:'Enzo-class motor-mouth spitfire (GAME-ONLY, Onyx stable w/ CIPHER/ECHO/HOLLOW) — undersized swarm offense, talks constantly, baits mistakes, eats bumps huge and pops right back up', sig:'WHITE NOISE RUSH — leaping forearm flurry off the ropes', fin:'DEAD AIR — leaping tornado DDT', voice:'a hundred words a minute, none of them respectful' },
-    CIPHER:       { style:'feral no-mask no-hair mode = Blackheart Lio Rush-class gimmick (owner spec 2026-07-12): explosive short bursts, unhinged pace shifts, sludge-black paint', fin:'non-deterministic — the numerology engine picks the kill move' }
+    CIPHER:       { style:'feral no-mask no-hair mode = Blackheart Lio Rush-class gimmick (owner spec 2026-07-12): explosive short bursts, unhinged pace shifts, sludge-black paint', fin:'non-deterministic — the numerology engine picks the kill move' },
+    // TARZANIAN DEVIL — RESEARCHED, 2026-08-01, off the reference wrestler's own profile rather
+    // than off my impression of the model. Confirmed: billed 5'9" / 196lb, debuted 2016, trained by
+    // John Rambo and Joel Maximo, works GCW / MLW / JCW / Reality of Wrestling, a lucha-based
+    // DEATHMATCH wrestler rated "insanely agile for his size" who can work any style, trades stiff
+    // chops with aerial assaults, has a high pain tolerance and bleeds. Heel chaos, not a babyface
+    // wildman — the profile includes stabbing a champion with a knife mid-match.
+    // "TARZANIAN DEVIL" IS ONE OF HIS OWN RING NAMES, which is where the character name came from.
+    // WEAPON OF CHOICE IS DOCUMENTED: steel chair and kendo stick. Wired below so the weapon system
+    // actually reflects it instead of handing him a random pickup.
+    // SIGNATURE = the tiger-feint through the ropes. The OWNER CAPTURED THIS MOVE HIMSELF and
+    // performed the delivery, so it is his real move driven by his real mocap
+    // (assets/moves/clips/TIGER_FEINT_KICK.json, wired in combat_clip_map).
+    // FINISHER = JUNGLE JUICE. That NAME is documented as his finisher. What the move mechanically
+    // IS, is not documented anywhere reachable, so the shape below is our reading of it from the
+    // aerial half of his game and is flagged rather than presented as researched fact.
+    // AND THEY ARE DIFFERENT MOVES ON PURPOSE — a wrestler does not run the same move as both his
+    // signature and his finisher.
+    TARZANIAN_DEVIL: { style:'lucha-based deathmatch chaos — stiff chops into sudden aerial bursts, works any style, unpredictable and genuinely nasty; absorbs punishment and keeps coming',
+                       sig:'TIGER FEINT KICK — drape-and-swing kick back through the middle rope (owner mocap, his own delivery)',
+                       fin:'JUNGLE JUICE — his documented finisher (delivery shape ours: top-rope dive to a downed opponent, pending the real mechanic)',
+                       weapons:['STEEL CHAIR','KENDO STICK'] }
   });
   // v153 FINISHER WIRING — named finishers resolve through the REAL grapple physics (no cinematic
   // canned path): kind 'grapple' auto-runs grab -> named position lift -> delivery; kind 'strike'
