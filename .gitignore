@@ -46,3 +46,7 @@ tools/iso/*key*.bin
 # discarded. Only derived proprietary output is ever committed.
 /iso_staging/
 /mocap_video/
+
+# per-character social video pulled by tools/mocap/scrape_clips.py — provenance lives in each
+# manifest.json; nothing here ships until someone decides it should.
+assets/mocap/social/

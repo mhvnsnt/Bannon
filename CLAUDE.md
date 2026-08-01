@@ -885,3 +885,30 @@ Owner corrected me three times here and was right every time. Recording the fact
   the delivery shape in the file is ours and is flagged as such.
 - **RULE I HAD TO BE TOLD: a signature and a finisher are DIFFERENT MOVES.** Nobody runs the same
   move as both. Build the moveset from research AROUND the signature, do not double it up.
+
+### PER-CHARACTER MOCAP SCRAPING (2026-08-01) — tools/mocap/scrape_clips.py
+Owner: "create a video scraper to assist with clip collection for mocap from his social ... that will
+help build more characters specific mocap per character as we go."
+Walks a profile or a single post, banks the video under the CHARACTER it belongs to
+(assets/mocap/social/<CHAR>/, GITIGNORED), writes a manifest with source URL / uploader / date /
+duration / a `--consent` provenance note, and optionally pipes each video straight into the EXISTING
+video_to_clip path. It does not reimplement capture — the chain is just
+  scrape -> LOOK AT IT -> video_to_clip -> bake -> map -> in game.
+MEASURED: `--source "ytsearch8:Tarzan Duran wrestling" --list` returns 8 real matches, correctly
+flagged `[long]` (full matches, not single-move clips — trim spots with video_to_clip --start/--end).
+Instagram/Facebook PROFILE listings need a logged-in session: pass `--cookies <cookies.txt>`.
+Individual public post URLs generally work without one.
+
+### TARZANIAN DEVIL — MOVESET, PHASED (owner-supplied + tape, 2026-08-01)
+- **FINISHER — JUNGLE JUICE.** Mechanic read off the owner's tape, captured two-body
+  (JUNGLE_JUICE + JUNGLE_JUICE__RECV, attacker coverage 114/131, receiver 58/131 flagged low).
+  Reverse cravate with the opponent hooked BEHIND him -> flipped over the shoulder to the front,
+  arriving inverted -> spiked head-first with a SIT-OUT finish. A sit-out impaler DDT.
+  My first pass assumed a top-rope dive and said so; the tape corrected it.
+- **SIGNATURES (three, each phased):** TIGER FEINT KICK (owner mocap, his own delivery);
+  WILD SWANTON (rapid, loose, reckless — speed over form); MISDIRECTION RANA (tilt-a-whirl rana
+  that lands into a CROSSBODY instead of a pin — reads as a rana, finishes as a strike).
+- **"TARZAN SCALE" AND THE "SONIC BATTERY COUNTER" ARE NOT IN THE FILE.** They came from an earlier
+  AI writeup and appear in NO source I could read (GTS wiki, cagematch, PPW, smacktalks). Owner
+  suspected they were invented; so did the research. Left out rather than banked as fact.
+- A SIGNATURE AND A FINISHER ARE ALWAYS DIFFERENT MOVES. Verified in-engine (sigVsFin true).

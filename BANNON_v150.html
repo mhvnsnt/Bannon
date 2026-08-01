@@ -15312,7 +15312,13 @@ try{
     // AND THEY ARE DIFFERENT MOVES ON PURPOSE — a wrestler does not run the same move as both his
     // signature and his finisher.
     TARZANIAN_DEVIL: { style:'lucha-based deathmatch chaos — stiff chops into sudden aerial bursts, works any style, unpredictable and genuinely nasty; absorbs punishment and keeps coming',
-                       sig:'TIGER FEINT KICK — drape-and-swing kick back through the middle rope (owner mocap, his own delivery)',
+                       // THREE signatures, phased, because each one is a sequence and the engine
+                       // needs the steps not just a name. Owner-supplied (he knows this man's work
+                       // first-hand); "Tarzan Scale" from an earlier AI writeup is NOT here because
+                       // it appears in no source I could read — it looks invented.
+                       sig:['TIGER FEINT KICK — drape-and-swing kick back through the middle rope (owner mocap, his own delivery). Phases: DRAPE (opponent bent over the middle rope) -> SWING THROUGH (he slips outside and swings back in) -> STRIKE (kick lands to the head) -> RECOVER',
+                            'WILD SWANTON — a rapid, loose-limbed swanton bomb off the top. Phases: SCALE (fast, no posing) -> LAUNCH (early rotation, arms wide) -> ROTATE -> FLATTEN (lands flat across the chest) -> BOUNCE. The read is SPEED and recklessness, not a picture-perfect arc',
+                            'MISDIRECTION RANA — tilt-a-whirl hurricanrana that lands INTO A CROSSBODY instead of a pin. Phases: FEED (opponent catches him on the whirl) -> WHIRL (horizontal rotation) -> RANA (legs scissor the head) -> RELEASE -> CROSSBODY (he carries through into a cross-body landing rather than bridging). The misdirection is that it reads as a rana and finishes as a strike'],
                        fin:'JUNGLE JUICE — sit-out impaler DDT out of a reverse cravate: opponent hooked from behind, flipped over the shoulder to the front, spiked head-first as he drops to a seated finish',
                        weapons:['STEEL CHAIR','KENDO STICK'] }
   });
