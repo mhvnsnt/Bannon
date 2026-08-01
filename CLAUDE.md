@@ -755,3 +755,37 @@ TEST TRAP HIT TWICE THIS PASS, both mine not the game's: `window.Fighter` is und
 class (use the `lex()` probe), and the taunt buttons bind `touchstart`/`mousedown` — dispatching
 PointerEvents at them does nothing. "The first attempt pressed the wrong button" is a recurring
 lesson, not a one-off.
+
+### SYSTEM DONE: BROADCAST ENTRANCES + VICTORIES (2026-08-01)
+Owner: "full broadcast level entrances and victories and run in chances like WWE and mdickie games."
+EVERY PIECE ALREADY EXISTED AND NONE OF THEM WERE JOINED — the recurring shape of this codebase:
+- `BANNON_FX.stagePyro/pyroBurst/smokePuff` real particle pyro; `BANNON_TRON.entrance(name)` a real
+  animated tron; `BANNON_WALKOUT` a real 5-segment walk down the real ramp. But the pyro fired from
+  ONE `setTimeout(..., 400)` at match start, so it went off 0.4s after the bell REGARDLESS OF WHERE
+  THE WRESTLER WAS — possibly still behind the curtain, possibly already at the apron. The tron lit
+  on the same flat timer. Nothing was cued to the walk.
+- **THE CAMERA NEVER LOOKED AT THE ENTRANCE AT ALL.** The broadcast camera frames the MIDPOINT of two
+  fighters, so a man walked down a ramp behind a shot pointed at the ring. Same for the victory: the
+  midpoint of a winner and a man lying on the mat is a wide of a lying body.
+- `BANNON_ENTRANCES.triggerPyro(fighter)` (AI-Studio module) only ever printed a log line.
+**BANNON_BROADCAST** cues FX to the PHASE (STAGE reveal = tron + double stage pyro, RAMP = haze,
+APRON = ring-post pyro at the corners, RING = crowd pop), directs a camera shot per phase (wide low
+reveal / travelling ramp / over-the-ropes / low hero angle), holds a 6s push-in on the winner, and
+rolls a 14% run-in on the ramp through BANNON_INTERFERENCE.run() (already-proven third-body spawn).
+- The camera is a BLEND ON TOP of the settled camPos/camLook via `window.__camShot`, never a
+  replacement, so shake / punch spring / dolly / FOV all keep working. weight 0 = normal camera, so
+  a stale shot can never strand the view; it eases out and clears.
+- BANNON_ENTRANCE.play() stands down while a walkout runs (it would double-fire at the wrong moment)
+  and still works unchanged with walkouts disabled.
+VERIFIED with the render stubbed: all 4 phases, 8 FX beats, 10 pyro + 2 smoke + 3 tron calls, camera
+travels 8.6m and releases, victory shot holds 95 frames, 0 page errors.
+**MEASUREMENT TRAP, MINE NOT THE GAME'S — WRITE THIS DOWN.** First run reported the entrance ending
+after 1.5s with APRON and RING never happening. That was rAF STARVATION IN THE HARNESS: swiftshader
+gave 5 frames in 3 seconds, so the dt-capped walk advanced ~0.1s of walk per real 0.6s and my 200ms
+sampling missed phases entirely. With `renderer.render` stubbed (457 frames in 9s) the SAME code
+walks STAGE -> RAMP -> APRON(-2.75, the exact ramp edge) -> RING and completes in 4.73s. Before
+"fixing" an animation timing bug, CHECK THE FRAME RATE OF THE HARNESS — the render is the bottleneck
+in headless, and it fakes exactly the symptoms of a broken state machine.
+It did expose a real slow-device risk though: the walk dt was clamped at 0.1, so below 10fps the walk
+runs slower than the wall clock and the 12s hard ceiling truncates the entrance. Clamp raised to 0.25
+— still anti-teleport, but a slow phone finishes the walk in roughly the intended time.
