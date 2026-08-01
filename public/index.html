@@ -15897,10 +15897,23 @@ function disposeObject3D(obj){
   });
 }
 window.disposeObject3D = disposeObject3D;
-function removeFighterModel(side){
+// keepHidden=true means "a replacement model is already on its way" — do NOT reveal the procedural
+// body on the way out.
+//
+// THIS IS THE "IT SWITCHES BACK TO PROCEDURAL" BUG, and it is one line.
+// loadFighterModel() opens by calling removeFighterModel() to clear the old model, and this
+// unconditionally did setProcVisible(f,true). So EVERY re-request of a model — entering character
+// select, changing attire, the bell rebuilding the fighters — flashed the procedural tube body back
+// on before the new GLB bound. Combined with the hide-on-bind timing that is exactly the sequence
+// the owner keeps reporting: procedural, then GLB, then procedural again, then GLB. Four identities
+// for one wrestler, none of them chosen.
+// The procedural body is now revealed on exactly two occasions: a deliberate clear (no replacement
+// coming), and a genuine load failure. Never in the gap between two models.
+function removeFighterModel(side, keepHidden){
   const f=fighterFor(side); if(!f) return;
   if(f.model){ try{scene.remove(f.model);}catch(e){} try{ disposeObject3D(f.model); }catch(e){} f.model=null; }
-  f.modelUrl=null; if(f.seg) setProcVisible(f,true);
+  f.modelUrl=null;
+  if(f.seg && !(keepHidden && window.PROC_FLASH!==true)) setProcVisible(f,true);
 }
 function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MODEL&&CHOSEN_MODEL[sd]; var f=fighterFor(sd); if(!f || f.model || !ch || !ch.url) return;
   // NEVER stomp an in-flight character-model load: bumping the ticket makes the stale-load guard
@@ -16033,14 +16046,43 @@ function mdickieBaseFor(charName){
 window.mdickieBaseUrl = mdickieBaseUrl;
 window.mdickieBaseFor = mdickieBaseFor;
 function applyCharModels(){ ['p1','p2','p3','p4'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; if(f._forceProc) return;
-  // NO PROCEDURAL POP: if a GLB is expected for this fighter, HIDE the procedural tube the moment
-  // we kick the async load — you were seeing the ugly procedural body for a beat before the model
-  // bound (_bindFighterGltf reveals the model; a FAILED load restores the procedural body).
-  // DO NOT HIDE THE BODY UNTIL THE MODEL IS ACTUALLY HERE. This used to hide the procedural body the
-  // moment the async load was KICKED. Measured: the GLB bound 64 SECONDS after the bell while
-  // competing with 248 MB of other boot fetches — so you stood in the ring as literally nothing for
-  // a minute. Hiding on BIND (in _bindFighterGltf) is the correct moment; until then you see a body.
-  var _hideProc=function(){ /* deferred to bind — see PROC_HIDE_ON_BIND */ };
+  // ── THE PROCEDURAL BODY MUST NEVER BE SEEN UNLESS IT WAS CHOSEN ──────────────────────────────
+  // OWNER LAW, said repeatedly: "procedural model attires should not appear ever unless chose".
+  // What he sees today: procedural body first, swaps to the GLB somewhere around character select,
+  // swaps BACK to procedural, then back to the GLB once the match starts. Four visible identities
+  // for one wrestler.
+  //
+  // THE HISTORY, because this has been flipped twice and must not be flipped a third time:
+  //   v1 hid the procedural body the moment the async load was KICKED. Correct intent — but the GLB
+  //      was measured binding 64 SECONDS after the bell while competing with 248 MB of other boot
+  //      fetches, so you wrestled as an invisible man for a minute.
+  //   v2 (this line, until now) reverted to hiding on BIND, and left `_hideProc` an EMPTY FUNCTION.
+  //      That trades an invisible fighter for the procedural flash — which is the bug he keeps
+  //      reporting. Neither is acceptable and the argument between them missed the real problem:
+  //      A SIXTY-FOUR SECOND LOAD IS THE BUG. Hiding is not what needs fixing; latency is.
+  //
+  // v3, what this does now:
+  //   * hide the procedural body the moment we know a GLB is coming (v1's correct intent), and
+  //   * arm a WATCHDOG so "invisible forever" is impossible: if the model has not bound within
+  //     PROC_FALLBACK_MS the procedural body comes back and says so in the console, and
+  //   * _bindFighterGltf's failure path already restores it, so a real 404 is covered immediately.
+  // The fighter is therefore either their GLB, or — only after a genuine failure — the procedural
+  // body as a declared fallback. Never a flash of one on the way to the other.
+  // window.PROC_FLASH=true restores the old flashing behaviour if this ever needs bisecting.
+  var _hideProc=function(){
+    if(window.PROC_FLASH===true) return;
+    try{ if(f.seg && typeof setProcVisible==='function') setProcVisible(f,false); }catch(e){}
+    f._procHiddenAt = (typeof performance!=='undefined'?performance.now():Date.now());
+    var _wait = (window.PROC_FALLBACK_MS!=null ? window.PROC_FALLBACK_MS : 12000);
+    if(f._procWatchdog) clearTimeout(f._procWatchdog);
+    f._procWatchdog = setTimeout(function(){
+      f._procWatchdog = null;
+      if(f.model) return;                       // model arrived — nothing to do
+      try{ if(f.seg && typeof setProcVisible==='function') setProcVisible(f,true); }catch(e){}
+      console.warn('[BANNON] model for ' + ((f.opts&&f.opts.name)||'fighter') + ' did not bind within ' +
+                   _wait + 'ms — showing the built-in body as a declared fallback, not as a flash.');
+    }, _wait);
+  };
   if(f._altModelUrl){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
   if(f._mdickieBase){ var mb=mdickieBaseFor(f._mdickieBase); f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, mb, 'MDickie · '+f._mdickieBase); }catch(e){} return; }   // MDickie base attire (falls back to procedural if the base GLB isn't present)
   var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
@@ -16212,6 +16254,11 @@ function _bindFighterGltf(side, url, name, gltf, reqFighter, reqId){
     // before adopting the new one so it can't linger in the scene as an orphan.
     if(f.model && f.model!==container){ try{ scene.remove(f.model); }catch(e){} try{ disposeObject3D(f.model); }catch(e){} }
     f.model=container; f.modelUrl=url; scene.add(container); setProcVisible(f,false);
+    // the model is here — stand the fallback watchdog down so it can never un-hide the tube body
+    // underneath a bound GLB (that was one of the "switches back to procedural" moments).
+    try{ if(f._procWatchdog){ clearTimeout(f._procWatchdog); f._procWatchdog=null; } }catch(e){}
+    // release the network back to clip warming (BANNON_LOADORDER)
+    try{ if(window.__loRelease) window.__loRelease(); }catch(e){}
     try{ if(window.applyShapeMorphs) window.applyShapeMorphs(f); }catch(_){}   // sculpt the fresh mesh to the fighter's current CAW/DNA shape
     _rigSense(side, name, bones, mapped, container, s);
   }catch(e){ setModelStatus(side,'⚠ Bind error. Built-in body kept.'); removeFighterModel(side); }
@@ -16234,7 +16281,11 @@ function loadFighterModel(side, url, name){
   const f=fighterFor(side); if(!f){ setModelStatus(side,'Start a fight first.'); return; }
   if(typeof THREE==='undefined' || !THREE.GLTFLoader){ setModelStatus(side,'⚠ 3D loader unavailable here.'); return; }
   url=(url||'').trim(); if(!url){ setModelStatus(side,'Paste a .glb URL first.'); return; }
-  removeFighterModel(side);
+  // keepHidden: we are about to bind a replacement, so the procedural body must not be flashed back
+  // on in the gap. Every failure path below calls removeFighterModel(side) with NO flag, which does
+  // reveal it — which is correct, because at that point there is no model coming.
+  removeFighterModel(side, true);
+  try{ if(f.seg && window.PROC_FLASH!==true) setProcVisible(f,false); }catch(e){}
   // stamp this request so a later load supersedes any still-in-flight one for this fighter (orphan-clone fix)
   const reqId = (f._modelReqId = (f._modelReqId||0) + 1);
   let loader; try{ loader=new THREE.GLTFLoader(); }catch(e){ setModelStatus(side,'⚠ Loader init failed.'); return; }
@@ -50646,11 +50697,15 @@ window.__deriveVariant = async function(key){
   };
   // Tier 0 is untouched. Each step is cumulative and ordered by how much it buys per unit of ugly.
   var TIERS = [
-    { id:0, name:'FULL',   maxLights:99, shadowLights:99, casters:'all',      pr:2.0 },
-    { id:1, name:'HIGH',   maxLights:8,  shadowLights:2,  casters:'fighters', pr:1.75 },
-    { id:2, name:'MEDIUM', maxLights:5,  shadowLights:1,  casters:'fighters', pr:1.5 },
-    { id:3, name:'LOW',    maxLights:3,  shadowLights:1,  casters:'fighters', pr:1.25 },
-    { id:4, name:'POTATO', maxLights:2,  shadowLights:0,  casters:'none',     pr:1.0 }
+    // cheapMaterials swaps every NON-FIGHTER lit surface from per-fragment PBR to per-vertex
+    // Lambert. It is the single biggest lever on a phone and it was missing entirely — see
+    // applyMaterialTier. It only engages at LOW and below, so a device that never struggles
+    // never sees it.
+    { id:0, name:'FULL',   maxLights:99, shadowLights:99, casters:'all',      pr:2.0,  cheapMaterials:false },
+    { id:1, name:'HIGH',   maxLights:8,  shadowLights:2,  casters:'fighters', pr:1.75, cheapMaterials:false },
+    { id:2, name:'MEDIUM', maxLights:5,  shadowLights:1,  casters:'fighters', pr:1.5,  cheapMaterials:false },
+    { id:3, name:'LOW',    maxLights:3,  shadowLights:1,  casters:'fighters', pr:1.25, cheapMaterials:true  },
+    { id:4, name:'POTATO', maxLights:2,  shadowLights:0,  casters:'none',     pr:1.0,  cheapMaterials:true  }
   ];
 
   function scene_(){ try{ return (typeof scene !== 'undefined') ? scene : null; }catch(e){ return null; } }
@@ -50724,6 +50779,66 @@ window.__deriveVariant = async function(key){
     }
   }
 
+  // ── THE COST THE TIERS NEVER CUT: 815 FULL-PBR MATERIALS ──────────────────────────────────
+  // MEASURED in a live match after the tier system had already walked itself all the way down to
+  // POTATO: still 1.4 FPS, and the census reads 853 meshes / 815 MeshStandardMaterial / 8 lit
+  // lights / 176k visible triangles. The tiers only ever capped LIGHTS, SHADOWS and PIXEL RATIO —
+  // they never touched the shader. So at maximum degradation a phone is STILL being asked to run
+  // full physically-based lighting, per fragment, on 815 surfaces. That is the freeze the owner
+  // keeps reporting: the emergency brake was pulling on three levers and not on the heaviest one.
+  //
+  // MeshLambertMaterial computes lighting PER VERTEX instead of per fragment. On the crowd (181
+  // spheres + 350 cylinders of untextured primitive geometry) and the arena shell it is visually
+  // near-identical and a fraction of the cost. It is NOT applied to:
+  //   * skinned meshes — the wrestlers stay full PBR, they are what you are looking at
+  //   * anything carrying a metalness/roughness/normal map — downgrading those changes the look
+  //   * MeshBasicMaterial — already unlit, already cheap (the tron, the mat decals)
+  // Fully reversible: the original material is cached on the mesh and restored the moment the tier
+  // comes back up, so a strong device never sees it.
+  function isPrincipalMesh(n){
+    if (n.isSkinnedMesh) return true;
+    var p = n;
+    while (p){ if (p.userData && p.userData.__isFighter) return true; p = p.parent; }
+    return false;
+  }
+  function applyMaterialTier(T){
+    var s = scene_(); if (!s || window.PERF_MATERIAL_TIER === false) return { down:0, up:0 };
+    var THREEc = window.THREE; if (!THREEc || !THREEc.MeshLambertMaterial) return { down:0, up:0 };
+    var down = 0, up = 0;
+    s.traverse(function(n){
+      if (!n.isMesh) return;
+      if (isPrincipalMesh(n)) return;
+      var m = n.material;
+      if (Array.isArray(m)) return;                     // multi-material: leave alone, not worth the risk
+      if (!m) return;
+      if (T.cheapMaterials){
+        if (m.type !== 'MeshStandardMaterial') return;
+        // a material carrying PBR maps is carrying them for a reason — swapping it changes the look
+        if (m.metalnessMap || m.roughnessMap || m.normalMap || m.aoMap || m.envMap) return;
+        if (!n.userData.__pbrMat) n.userData.__pbrMat = m;
+        var key = m.uuid;
+        if (!MAT_CACHE[key]){
+          var lm = new THREEc.MeshLambertMaterial({
+            color: m.color ? m.color.clone() : undefined,
+            map: m.map || null,
+            emissive: m.emissive ? m.emissive.clone() : undefined,
+            emissiveMap: m.emissiveMap || null,
+            emissiveIntensity: (m.emissiveIntensity != null ? m.emissiveIntensity : 1),
+            transparent: m.transparent, opacity: m.opacity, side: m.side,
+            alphaTest: m.alphaTest, depthWrite: m.depthWrite, vertexColors: m.vertexColors,
+            fog: m.fog, toneMapped: m.toneMapped
+          });
+          MAT_CACHE[key] = lm;
+        }
+        n.material = MAT_CACHE[key]; down++;
+      } else if (n.userData.__pbrMat){
+        n.material = n.userData.__pbrMat; n.userData.__pbrMat = null; up++;
+      }
+    });
+    return { down: down, up: up };
+  }
+  var MAT_CACHE = {};
+
   function applyTier(t){
     var s = scene_(), r = rend_();
     if (!s || !r) return;
@@ -50775,10 +50890,24 @@ window.__deriveVariant = async function(key){
       s.traverse(function(n){ if (n.isMesh && n.userData.__perfBaseCast !== undefined) n.castShadow = n.userData.__perfBaseCast; });
     }
     try{ r.setPixelRatio(Math.min(T.pr, window.devicePixelRatio || 1)); }catch(e){}
-    try{ if (T.shadowLights === 0) r.shadowMap.enabled = false; else r.shadowMap.enabled = true; }catch(e){}
-    ST.applied.push({ tier:T.name, at:Math.round(performance.now()) });
+    try{
+      if (T.shadowLights === 0) r.shadowMap.enabled = false; else r.shadowMap.enabled = true;
+      // SHADOW TYPE IS A TIER TOO. This only ever toggled shadows on/off and left the map on
+      // PCFSoftShadowMap (type 2) — the most expensive filter three.js has — right down to POTATO.
+      // Below HIGH, drop to plain PCF; the softness is invisible at phone size and the per-sample
+      // cost is not.
+      if (r.shadowMap.enabled && THREE.PCFShadowMap != null){
+        var wantSoft = (T.id <= 1);
+        var want = wantSoft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+        if (r.shadowMap.type !== want){ r.shadowMap.type = want; r.shadowMap.needsUpdate = true; }
+      }
+    }catch(e){}
+    var matMoved = { down:0, up:0 };
+    try{ matMoved = applyMaterialTier(T); }catch(e){}
+    ST.applied.push({ tier:T.name, at:Math.round(performance.now()), matDown:matMoved.down, matUp:matMoved.up });
     console.log('%c[BANNON_PERF] quality tier -> ' + T.name + '  (' + T.maxLights + ' lights, ' +
-      T.shadowLights + ' shadow-casting, casters=' + T.casters + ', pr<=' + T.pr + ')','color:#ffb000');
+      T.shadowLights + ' shadow-casting, casters=' + T.casters + ', pr<=' + T.pr +
+      ', materials ' + (T.cheapMaterials ? ('LAMBERT ' + matMoved.down + ' swapped') : ('PBR ' + matMoved.up + ' restored')) + ')','color:#ffb000');
     try{ if (ST.hud) ST.hud.dataset.tier = T.name; }catch(e){}
   }
 
@@ -57548,5 +57677,131 @@ window.__deriveVariant = async function(key){
     window.BANNON_PERF = API;
     console.log('%c[BANNON_PERF] settle module standing alone (tier system never appeared)','color:#ffcc00');
   })(0);
+})();
+</script>
+<script>
+// ============================================================================================
+// BANNON_LOADORDER — the wrestlers' bodies come FIRST. Everything else waits.
+//
+// OWNER COMPLAINT, repeated many times: "procedural models still appear first and don't change to
+// glb until after u get into choosing character, then they switch back to procedural ... procedural
+// model attires should not appear ever unless chose".
+//
+// Two separate bugs cause that, and only one of them is about visibility:
+//   * removeFighterModel() force-revealed the procedural body on the way out, and loadFighterModel()
+//     calls it at the top of EVERY load — so every re-request flashed the tube body back. Fixed at
+//     the source (see removeFighterModel's keepHidden).
+//   * THE MODELS TAKE FOREVER TO ARRIVE, which is what made the flash long enough to see and what
+//     made an earlier attempt at hiding produce an invisible wrestler instead. THAT is the real bug.
+//
+// MEASURED over a full boot -> character select -> match, watching every network request:
+//   the fighter GLBs are not even REQUESTED until 56.5 SECONDS after boot, and once requested
+//   BANNON_rigged.glb takes 17.3s and VIPER.glb 12.1s TO COME OVER LOCALHOST. That is not bandwidth.
+//   Move-clip fetches start at 14.3s and are still going at 86s; individual clip JSONs were taking
+//   7-17 seconds each. Hundreds of them are saturating the browser's per-host connection pool, and
+//   the two files that decide whether you can SEE YOUR WRESTLER are queued behind all of them.
+//
+// So: a fighter model in flight OWNS the network. Clip warming is a nice-to-have that runs at a
+// lull; a body is not optional. This gates every clip fetch (all the warmers go through
+// loadClipFor) behind an in-flight model count, with a hard ceiling so a genuinely stuck model can
+// never starve the clip system forever.
+// window.LOADORDER=false disables the gate.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_LOADORDER) return;
+
+  var ST = { inFlight:0, deferred:0, released:0, maxWaitMs:20000, peak:0, waitedMs:0 };
+
+  // ── count fighter model loads in flight ──────────────────────────────────────────────────
+  function armCounter(n){
+    n = n || 0;
+    try{
+      if (typeof window.loadFighterModel === 'function' && !window.loadFighterModel.__lo){
+        var lf = window.loadFighterModel;
+        window.loadFighterModel = function(side, url, name){
+          ST.inFlight++; if (ST.inFlight > ST.peak) ST.peak = ST.inFlight;
+          try{ return lf.apply(this, arguments); }
+          finally{
+            // The load is async; the counter is released by the bind/fail hooks below. This is a
+            // safety net only, in case a path returns without ever calling either.
+            setTimeout(function(){ if (ST.inFlight > 0) release('timeout-net'); }, ST.maxWaitMs);
+          }
+        };
+        window.loadFighterModel.__lo = true;
+      }
+      if (typeof window.setProcVisible === 'function' && !window.__loBindHook){
+        window.__loBindHook = true;
+      }
+    }catch(e){}
+    if (n < 200 && (!window.loadFighterModel || !window.loadFighterModel.__lo)) setTimeout(function(){ armCounter(n+1); }, 200);
+  }
+  function release(){ if (ST.inFlight > 0){ ST.inFlight--; ST.released++; } }
+  window.__loRelease = release;
+  armCounter(0);
+
+  // ── gate every clip fetch behind it ──────────────────────────────────────────────────────
+  function armGate(n){
+    n = n || 0;
+    if (typeof window.loadClipFor === 'function' && !window.loadClipFor.__lo){
+      var orig = window.loadClipFor;
+      var gated = function(name){
+        if (window.LOADORDER === false || ST.inFlight <= 0) return orig.apply(this, arguments);
+        var self = this, args = arguments, t0 = Date.now();
+        ST.deferred++;
+        return new Promise(function(resolve){
+          (function wait(){
+            if (ST.inFlight <= 0 || (Date.now() - t0) > ST.maxWaitMs){
+              ST.waitedMs += (Date.now() - t0);
+              try{ resolve(orig.apply(self, args)); }catch(e){ resolve(null); }
+              return;
+            }
+            setTimeout(wait, 120);
+          })();
+        });
+      };
+      // preserve anything an earlier wrapper stamped on the function — BANNON_WARM marks __warm and
+      // reads it back, and losing that flag silently disarms the warmer.
+      for (var k in orig) { try{ gated[k] = orig[k]; }catch(e){} }
+      gated.__lo = true;
+      window.loadClipFor = gated;
+      return;
+    }
+    if (n < 200) setTimeout(function(){ armGate(n+1); }, 200);
+  }
+  armGate(0);
+
+  // ── ask for the bodies EARLY ─────────────────────────────────────────────────────────────
+  // The GLBs were requested at 56s because applyCharModels only runs once the fighters exist, which
+  // is at the bell. The character select screen knows who is wrestling long before that, so warm
+  // their files into the browser cache the moment they are chosen. By the time the bell rings the
+  // bytes are local and the bind is immediate — which is what actually removes the gap the
+  // procedural body used to fill.
+  var warmed = {};
+  function warmModel(nameKey){
+    if (!nameKey || warmed[nameKey]) return;
+    warmed[nameKey] = true;
+    var rec = null;
+    try{ rec = window.charModelFor ? window.charModelFor(String(nameKey).toUpperCase().replace(/[^A-Z0-9]/g,'_')) : null; }catch(e){}
+    var url = rec && rec.url; if (!url) return;
+    try{ fetch(url, { cache:'force-cache' }).then(function(){ ST.released += 0; }).catch(function(){}); }catch(e){}
+  }
+  function warmFromSetup(){
+    var s = window.MATCH_SETUP; if (!s) return;
+    ['p1Name','p2Name','p3Name','p4Name'].forEach(function(k){ if (s[k]) warmModel(s[k]); });
+  }
+  // poll MATCH_SETUP rather than hooking the select screen, so every entry point that sets it —
+  // the select screen, the universe card, career, a console fight() — gets the same head start.
+  setInterval(warmFromSetup, 1000);
+
+  window.BANNON_LOADORDER = {
+    stats: function(){ return { modelsInFlight:ST.inFlight, peakInFlight:ST.peak,
+                                clipFetchesDeferred:ST.deferred, totalWaitMs:ST.waitedMs,
+                                modelsWarmed:Object.keys(warmed).length,
+                                gateArmed: !!(window.loadClipFor && window.loadClipFor.__lo),
+                                counterArmed: !!(window.loadFighterModel && window.loadFighterModel.__lo) }; },
+    warm: warmModel
+  };
+  console.log('%c[BANNON_LOADORDER] fighter models take the network first; clip warming yields','color:#7CFC00');
 })();
 </script>
