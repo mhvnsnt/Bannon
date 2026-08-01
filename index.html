@@ -13287,8 +13287,21 @@ window.performTaunt = function(dir){
   const dist = opp ? Math.hypot(opp.x-p.x,(opp.z||0)-(p.z||0)) : 99;
   const oppInRange = !!(opp && !opp.ragdoll && !(opp.isDown&&opp.isDown()) && dist < 1.9);
   const ML = window.BANNON_MOVE_LIBRARY;
-  const res = ML && ML.tauntOrStrike ? ML.tauntOrStrike(T.clip, oppInRange)
-            : { mode:(oppInRange?'strike':'taunt'), engine:'STRIKE_KICK' };
+  // OWNER CORRECTION 2026-08-01, verbatim: "Impact taunts are ... based on being equipped in
+  // moveset, having that or those specific taunts equipped in that slot, not by distance
+  // triggering." He is right, and distance-as-trigger was wrong twice over: it made the SAME taunt
+  // behave as two different things depending on where you stood, and it meant a wrestler who had
+  // deliberately equipped a capoeira/breakdance impact-taunt got a harmless crowd pose whenever he
+  // used it with space around him. WHAT you equipped decides the mode; distance only ever decides
+  // whether the strike CONNECTS, which registerHit already handles like any other strike.
+  const _TT = window.BANNON_TAUNTS;
+  const _kit = (_TT && _TT.kitOf) ? _TT.kitOf(p) : null;
+  const _entry = _kit ? (_kit[dir] || _kit.up) : null;
+  const res = _entry
+    ? { clip:_entry.clip, mode:(_entry.impact ? 'strike' : 'taunt'),
+        kind:'strike', engine:(_entry.engine || 'STRIKE_KICK') }
+    : (ML && ML.tauntOrStrike ? ML.tauntOrStrike(T.clip, oppInRange)
+                             : { mode:(oppInRange?'strike':'taunt'), engine:'STRIKE_KICK' });
   if (res.mode==='strike'){
     // real strike through the player's own moveset — full physics (registerHit knockback + poise)
     const _pKey=((p.specName||(p.opts&&p.opts.name)||'BANNON')+'').toUpperCase();
@@ -13297,19 +13310,23 @@ window.performTaunt = function(dir){
     let base = punch ? (set.find(m=>m.cat==='STRIKE'&&m.height!=='LOW')||set.find(m=>m.cat==='STRIKE'))
                      : (set.find(m=>m.cat==='KICK')||set.find(m=>m.limb&&m.limb.includes&&m.limb.includes('KICK'))||set.find(m=>m.cat==='STRIKE'));
     base = base || set[0] || {cat:'STRIKE',limb:'RIGHT KICK',power:44};
-    const m = Object.assign({}, base, { name:T.name, cat:base.cat||'STRIKE',
+    // carry the EQUIPPED clip onto the move so the impact-taunt plays the capoeira/breakdance
+    // capture the player actually chose, instead of a generic kick from the moveset.
+    const m = Object.assign({}, base, { name:(_entry?_entry.label:T.name), cat:base.cat||'STRIKE',
       traj: punch?'HOOKING':'SPINNING', height: dir==='down'?'LOW':'HIGH',
       power: Math.round((base.power||44)*1.05), speed:88, follow:'RESET STANCE', _impactTaunt:true });
+    if (res.clip) m.clip = res.clip;
     p.momentum = clamp((p.momentum||0)+5,0,100);   // impact-taunts still build a little momentum
-    try{ announce(T.name+'  [IMPACT-TAUNT]', fname(p)); }catch(e){}
+    try{ announce((_entry?_entry.label:T.name)+'  [IMPACT-TAUNT]', fname(p)); }catch(e){}
     p.startAttack(m);
   } else {
     // pure taunt — crowd pop + momentum + a little composure back
-    p.momentum = clamp((p.momentum||0)+(T.crowd?9:7), 0, 100);
+    const _crowd = _entry ? _entry.crowd : T.crowd;
+    p.momentum = clamp((p.momentum||0)+(_crowd?9:7), 0, 100);
     p.poise = clamp((p.poise||100)+6, 0, 100);
     p._tauntT = 0.8;
-    try{ announce(T.name, fname(p)); }catch(e){}
-    try{ if(window.crowdReaction) window.crowdReaction(T.crowd?0.7:0.4); }catch(e){}
+    try{ announce((_entry?_entry.label:T.name), fname(p)); }catch(e){}
+    try{ if(window.crowdReaction) window.crowdReaction(_crowd?0.7:0.4); }catch(e){}
   }
 };
 
@@ -53960,6 +53977,12 @@ window.__deriveVariant = async function(key){
     try{
       var Z = window.BANNON_ZONEMOVE;
       if (Z && Z.clipPool) Z.clipPool().forEach(function(c){ if(c) out[c] = 1; });
+      var W = window.BANNON_WALKOUT;
+      if (W && W.clipPool) W.clipPool().forEach(function(c){ if(c) out[c] = 1; });
+      // taunts too: an unwarmed taunt is a wrestler standing still, which is exactly the state
+      // BANNON_TAUNTS was written to end.
+      var T = window.BANNON_TAUNTS;
+      if (T && T.clipPool) T.clipPool().forEach(function(c){ if(c) out[c] = 1; });
     }catch(e){}
     try{
       var M = window.BANNON_COMBAT_MOCAP;
@@ -55201,12 +55224,69 @@ window.__deriveVariant = async function(key){
 
   function nameOf(f){ try{ return (f.specName || (f.opts&&f.opts.name) || f.name || 'FIGHTER'); }catch(e){ return 'FIGHTER'; } }
 
+  // ── THE 2K FIVE-SEGMENT ENTRANCE ────────────────────────────────────────────────────────────
+  // Researched, not invented. WWE 2K's entrance creator does not store "an entrance" -- it stores
+  // five INDEPENDENTLY SWAPPABLE SEGMENTS and stitches them: INTRO -> STAGE -> RAMP -> RING_IN ->
+  // RING. That is the whole reason the series can have a recognisable over-the-top ring-in on one
+  // wrestler and a slide on another while sharing everything else, and it is what the owner means
+  // by wanting the variations "throughout WWE games history".
+  // So an entrance here is a COMPOSITION. Each segment carries its own duration, its own clip pool
+  // and its own crowd beat, and the RING_IN segment hands off to BANNON_ZONEMOVE, which already
+  // owns the real ring-in/out style taxonomy. No second implementation of getting into the ring.
+  var SEGMENTS = ['INTRO','STAGE','RAMP','RING_IN','RING'];
+  var SEG_CLIPS = {
+    INTRO: ['TAUNT_ARMS_WIDE','TAUNT_POINT','TAUNT_CALLOUT'],
+    STAGE: ['TAUNT_ARMS_WIDE','TAUNT_FLEX','STANCE_WIDE'],
+    RAMP:  ['LOCO_STALK','LOCO_STRUT','LOCO_PROWL','LOCO_LUMBER','LOCO_LIGHT'],
+    RING:  ['TAUNT_FLEX','TAUNT_CALLOUT','ZONE_PERCH_POSE']
+  };
+  // seconds per segment; RING_IN is not timed here because ZONEMOVE owns its phases
+  var SEG_TIME = { INTRO:1.1, STAGE:1.4, RAMP:3.2, RING:1.6 };
+
+  // pick this wrestler's segment set. The RAMP gait comes from their STYLE's own locomotion field
+  // (HEAVY/STALK/PROWL/STRUT/LIGHT...), which BANNON_STYLE already resolved -- so a powerhouse
+  // lumbers and a high-flyer bounces without any new authored data.
+  var GAIT_CLIP = { HEAVY:'LOCO_LUMBER', LUMBER:'LOCO_LUMBER', STALK:'LOCO_STALK',
+                    PROWL:'LOCO_PROWL', STRUT:'LOCO_STRUT', SWAGGER:'LOCO_STRUT',
+                    LIGHT:'LOCO_LIGHT', BOUNCE:'LOCO_LIGHT', SPRING:'LOCO_LIGHT' };
+  function composeFor(f){
+    var out = {};
+    SEGMENTS.forEach(function(seg){
+      if (seg === 'RING_IN') return;                       // ZONEMOVE's job
+      var pool = SEG_CLIPS[seg] || [];
+      var pick = pool.length ? pool[Math.floor(Math.random()*pool.length)] : null;
+      if (seg === 'RAMP'){
+        var g = f && f._gait;                              // the style's own gait wins on the ramp
+        if (g && GAIT_CLIP[g]) pick = GAIT_CLIP[g];
+      }
+      out[seg] = pick;
+    });
+    return out;
+  }
+
+  // play a segment's capture, if it is resident. Same rule as everywhere: never fetch mid-move.
+  function playSeg(f, seg, k){
+    try{
+      var key = f._entrySegs && f._entrySegs[seg];
+      if (!key) return;
+      var S = (new Function('try{ return typeof STUDIO!=="undefined"?STUDIO:null; }catch(e){ return null; }'))();
+      var c = S && S.clips && S.clips[key];
+      if (c && typeof window.studioApplyClipPose === 'function'){
+        window.studioApplyClipPose(f, c, Math.max(0, Math.min(1, k)));
+        ST.segFrames = (ST.segFrames || 0) + 1;
+        ST.lastSeg = seg + ':' + key;
+      }
+    }catch(e){}
+  }
+
   // ---- place a fighter at the top of the ramp ----
   function begin(f, lane){
     if (!f) return;
     f._entering = true;                       // exempts him from the ring boundary (see updateZone)
     f._entryPhase = 'STAGE';
     f._entryT = 0;
+    f._entrySegs = composeFor(f);             // this wrestler's five-segment composition
+    f._entrySegClip = null;
     f._entryLane = lane || 0;
     f.x = lane * 0.9;
     f.z = stageZ();
@@ -55225,13 +55305,18 @@ window.__deriveVariant = async function(key){
     f._entryT += dt;
     var edge = -(HZ() + 0.55);                       // apron edge, just outside the ropes
     if (f._entryPhase === 'STAGE'){
-      // a beat on the stage to be looked at, then walk
+      // a beat on the stage to be looked at, then walk. INTRO and STAGE share this window: the
+      // intro pose reads first, then the stage taunt.
       try{ f.state = 'idle'; }catch(e){}
+      var half = (SEG_TIME.INTRO || 1.1);
+      if (f._entryT < half) playSeg(f, 'INTRO', f._entryT / half);
+      else playSeg(f, 'STAGE', Math.min(1, (f._entryT - half) / (SEG_TIME.STAGE || 1.4)));
       if (f._entryT > 0.9){ f._entryPhase = 'RAMP'; try{ f.state='walk'; }catch(e){} }
     } else if (f._entryPhase === 'RAMP'){
       f.z += RAMP_SPD * dt;
       f.zone = 'FLOOR'; f.y = zoneY('FLOOR');
       try{ f.state = 'walk'; }catch(e){}
+      playSeg(f, 'RAMP', (f.z - stageZ()) / Math.max(1e-3, (edge - stageZ())));
       if (f.z >= edge){ f.z = edge; f._entryPhase = 'APRON'; }
     } else if (f._entryPhase === 'APRON'){
       f.zone = 'APRON'; f.y = zoneY('APRON');        // climb: the apron and the ring share a floor
@@ -55350,11 +55435,23 @@ window.__deriveVariant = async function(key){
 
   window.BANNON_WALKOUT = {
     run: run,
+    segments: function(){ return SEGMENTS.slice(); },
+    composeFor: composeFor,
+    // every capture any segment might use, for BANNON_WARM. Without this the segments are silent
+    // for exactly the reason the zone phases were: not resident means never played.
+    clipPool: function(){
+      var seen = {}, out = [];
+      var add = function(c){ if(c && !seen[c]){ seen[c]=1; out.push(c); } };
+      for (var k in SEG_CLIPS) SEG_CLIPS[k].forEach(add);
+      for (var g in GAIT_CLIP) add(GAIT_CLIP[g]);
+      return out;
+    },
     skip: function(){ finish('skip'); return true; },
     active: function(){ return !!active; },
     stageZ: stageZ,
     stats: function(){
       return { runs:ST.runs, completed:ST.completed, skipped:ST.skipped, victories:ST.victories,
+               segmentFrames:ST.segFrames||0, lastSegment:ST.lastSeg||null,
                lastPhase:ST.lastPhase, running:!!active,
                entering: fighters_().filter(function(f){ return f && f._entering; })
                  .map(function(f){ return { name:nameOf(f), phase:f._entryPhase,
@@ -55928,6 +56025,63 @@ window.__deriveVariant = async function(key){
   //   * APRON -> FLOOR is a DROP. Gravity is fast and the landing absorbs -- a constant-rate glide
   //     is the single most un-wrestling thing the old lerp did.
   // phase = [name, seconds, heightFraction(0..1 toward destination), lean, dipMetres]
+  // ── THE RING-IN/OUT TAXONOMY, READ OFF REAL MOVESET LISTS ───────────────────────────────────
+  // Owner: "the right source is moves per title in movesets, ring in and ring out and turnbuckle
+  // climb and taunts and all the things I named sections, or lists on the Internet".
+  // He was right and my first pass was wrong twice over. Read off actual published movesets
+  // (SmackDown vs Raw 2011 and WWE '12 entries on thesmackdownhotel's moveset boards), the real
+  // structure is THREE categories, not two, and each entry is a NAMED STYLE FAMILY + A NUMBER:
+  //
+  //     Ring In/Out              floor <-> ring, direct   "Slide Ring-In 1", "Jumping Ring-In 2",
+  //                                                       "Quick Ring-Out", "Roll Down Ring Out"
+  //     Apron Ring In/Out        apron <-> ring           "Normal Ring-In 1", "Normal Ring-In 3",
+  //                                                       "Jumping Ring-In 3", "Normal Ring-Out 2"
+  //     Apron Ringside In/Out    floor <-> apron          "Normal On The Apron 3",
+  //                                                       "Normal Apron Out 1", "Normal Apron Out 2"
+  //
+  // THE APRON IS A FIRST-CLASS WAYPOINT ON BOTH SIDES -- that third category is the one I had
+  // missed, and it is exactly the floor<->apron pair. Our six route keys already cover all three
+  // categories, two routes each, so nothing had to be restructured; CATEGORY names them.
+  //
+  // AND THE CORRECTION THAT MATTERS: THESE ARE EQUIPPED SLOTS, NOT A ROLL. In a real moveset a
+  // wrestler has ONE ring-in and ONE ring-out and uses it every single time -- that is the whole
+  // reason a particular entrance or exit reads as belonging to a particular wrestler. My first pass
+  // re-rolled the style on every transition, which is the opposite: it makes everyone generic
+  // because nobody has a signature. assignFor() now fixes a family AND a numbered variant per
+  // fighter, deterministically from who they are, held for the life of the fighter and overridable
+  // from the moveset store.
+  var CATEGORY = {
+    'FLOOR>RING':  'RING_IN',        'RING>FLOOR':  'RING_OUT',
+    'APRON>RING':  'APRON_RING_IN',  'RING>APRON':  'APRON_RING_OUT',
+    'FLOOR>APRON': 'APRON_ON',       'APRON>FLOOR': 'APRON_OFF'
+  };
+  // how each category's entries read on a moveset screen, in the published naming pattern
+  var CAT_LABEL = {
+    RING_IN:'Ring-In', RING_OUT:'Ring-Out', APRON_RING_IN:'Ring-In', APRON_RING_OUT:'Ring-Out',
+    APRON_ON:'On The Apron', APRON_OFF:'Apron Out'
+  };
+  var FAM_LABEL = { SLIDE:'Slide', JUMPING:'Jumping', RUNNING:'Running', ROLL:'Roll Down',
+                    NORMAL:'Normal', POSED:'Posed', OVER:'Over The Top', QUICK:'Quick' };
+
+  var STYLES = {
+    'FLOOR>RING': { SLIDE:  ['ZONE_SLIDE_IN_A','ZONE_SLIDE_IN_B','ZONE_SLIDE_IN_C'],
+                    JUMPING:['ZONE_VAULT_IN'],
+                    RUNNING:['ZONE_RUN_SLIDE_IN'],
+                    ROLL:   ['ZONE_ROLL_IN'] },
+    'APRON>RING': { NORMAL: ['ZONE_MIDROPE_STEP','ZONE_DUCK_A','ZONE_DUCK_C'],
+                    POSED:  ['ZONE_MIDROPE_POSE'],
+                    OVER:   ['ZONE_OVER_TOP_IN'] },
+    'FLOOR>APRON':{ NORMAL: ['ZONE_PULLUP_A','ZONE_PULLUP_B','ZONE_PULLUP_C'],
+                    JUMPING:['ZONE_APRON_HOP'] },
+    'RING>FLOOR': { QUICK:  ['ZONE_ROLL_OUT_A','ZONE_ROLL_OUT_B'],
+                    SLIDE:  ['ZONE_SLIDE_OUT'],
+                    OVER:   ['ZONE_OVER_TOP_OUT'] },
+    'RING>APRON': { NORMAL: ['ZONE_MIDROPE_STEP','ZONE_DUCK_B'],
+                    OVER:   ['ZONE_OVER_TOP_OUT'] },
+    'APRON>FLOOR':{ NORMAL: ['ZONE_DROP_A','ZONE_DROP_B'],
+                    JUMPING:['ZONE_DROP_C'] }
+  };
+
   var ROUTES = {
     // through the ropes, no net height change: dip under the middle rope and come back up
     'RING>APRON':  [['DUCK',0.22,0.3,0.34,-0.14], ['THROUGH',0.30,0.8,0.20,-0.10], ['SETTLE',0.16,1,0,0]],
@@ -55948,6 +56102,90 @@ window.__deriveVariant = async function(key){
     STEP:   { scale:1.30, leanMul:0.70, label:'step-over' }, // heavy: deliberate
     NORMAL: { scale:1.00, leanMul:1.00, label:'through' }
   };
+
+  // ---- THE EQUIPPED KIT -----------------------------------------------------------------------
+  // One fixed choice per category per fighter: which style FAMILY, and which NUMBERED variant
+  // inside it. Deterministic from the fighter's name so the same man always enters the same way
+  // across matches, saves and reloads -- Math.random() here would undo the entire point.
+  function seed(s){ var h = 2166136261; s = String(s || '');
+    for (var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; }
+    return h >>> 0; }
+
+  // a player-equipped slot beats the derived one. Shares the ONE moveset store the studio, the list
+  // editor and BANNON_PINS already use -- never a second parallel store.
+  function equipped(f, cat){
+    try{
+      var raw = localStorage.getItem('bannon_moveset_slots');
+      if (!raw) return null;
+      var all = JSON.parse(raw) || {};
+      var mine = all[(f && (f.name || f.id)) || ''] || all['_default'] || null;
+      var v = mine && mine.zone && mine.zone[cat];
+      return v || null;   // "SLIDE:1"
+    }catch(e){ return null; }
+  }
+
+  function kitOf(f){
+    if (f && f._zoneKit) return f._zoneKit;
+    var kit = {};
+    var v = variantFor(f);
+    // an aerialist reaches for the jumping/over entries, a powerhouse for the deliberate ones. This
+    // is a PREFERENCE ORDER over the families a route actually offers, not a hard rule.
+    var pref = v === 'VAULT' ? ['JUMPING','OVER','RUNNING','SLIDE','ROLL','POSED','QUICK','NORMAL']
+             : v === 'STEP'  ? ['NORMAL','OVER','QUICK','SLIDE','JUMPING','POSED','ROLL','RUNNING']
+             :                 ['NORMAL','SLIDE','QUICK','JUMPING','POSED','ROLL','OVER','RUNNING'];
+    var base = seed((f && (f.name || f.id)) || 'anon');
+    var n = 0;
+    for (var route in STYLES){
+      var cat = CATEGORY[route] || route;
+      var names = Object.keys(STYLES[route]);
+      var avail = pref.filter(function(x){ return names.indexOf(x) >= 0; });
+      if (!avail.length) avail = names;
+      var fam, idx;
+      var eq = equipped(f, cat);
+      if (eq && STYLES[route][String(eq).split(':')[0]]){
+        fam = String(eq).split(':')[0];
+        idx = parseInt(String(eq).split(':')[1], 10) || 0;
+      } else {
+        // Mixed with a per-category salt: reading low bits of one hash for every category is what
+        // clumped the NPC schedules, and it would clump these the same way.
+        var h = (base ^ (seed(cat) * 2654435761)) >>> 0;
+        // WEIGHT OVER ENTRIES, NOT OVER FAMILIES. Choosing the family first and the variant second
+        // looks equivalent and is not: when the top-preference family holds a single variant, the
+        // whole top-preference share lands on ONE entry. MEASURED over 120 fighters, that put
+        // "Slide Ring-Out 1" on 52% of the roster. Ranking every entry and decaying across the
+        // ranking keeps the preference (an aerialist still leans jumping) while a family with three
+        // variants takes three slots and spreads its own share.
+        var entries = [];
+        for (var ai = 0; ai < avail.length; ai++)
+          for (var vi = 0; vi < STYLES[route][avail[ai]].length; vi++)
+            entries.push([avail[ai], vi]);
+        var w = [], tot = 0;
+        for (var ei = 0; ei < entries.length; ei++){ var q = Math.pow(0.8, ei); w.push(q); tot += q; }
+        var r = ((h >>> 5) % 100000) / 100000 * tot, acc = 0, chosen = entries.length - 1;
+        for (var ci = 0; ci < entries.length; ci++){ acc += w[ci]; if (r <= acc){ chosen = ci; break; } }
+        fam = entries[chosen][0];
+        idx = entries[chosen][1];
+      }
+      kit[cat] = { route: route, family: fam, variant: idx, clip: STYLES[route][fam][idx] };
+      n++;
+    }
+    try{ if (f) f._zoneKit = kit; }catch(e){}
+    return kit;
+  }
+
+  // the moveset-screen name for an equipped entry, in the published pattern: family + section +
+  // 1-based number ("Slide Ring-In 1", "Normal Apron Out 2", "Over The Top Ring-Out 1").
+  function labelOf(cat, fam, idx){
+    return ((FAM_LABEL[fam] || fam) + ' ' + (CAT_LABEL[cat] || cat) + ' ' + ((idx | 0) + 1)).trim();
+  }
+
+  // which named STYLE this wrestler uses on this route -- now a lookup, not a roll.
+  function styleFor(f, routeKey){
+    var tbl = STYLES[routeKey]; if (!tbl) return null;
+    var cat = CATEGORY[routeKey] || routeKey;
+    var k = kitOf(f)[cat];
+    return (k && k.family) || Object.keys(tbl)[0] || null;
+  }
 
   function variantFor(f){
     try{
@@ -55987,8 +56225,18 @@ window.__deriveVariant = async function(key){
   }
   // resolve a phase to ONE resident capture, chosen at random from what is actually warm.
   // Never fetches: a mid-move fetch is the freeze BANNON_PREWARM exists to prevent.
-  function pickPhaseClip(phase){
-    var pool = PHASE_CLIP[phase]; if (!pool) return null;
+  function pickPhaseClip(phase, routeKey, styleName, preferKey){
+    // the wrestler's EQUIPPED entry wins outright -- that is what makes it his. Then the rest of his
+    // style family, so a JUMPING ring-in never quietly plays the slide capture just because the
+    // generic phase pool listed it first. Generic phase pool only when neither is warm.
+    if (preferKey && residentClip(preferKey)) return preferKey;
+    var pool = null;
+    try{
+      if (routeKey && styleName && STYLES[routeKey] && STYLES[routeKey][styleName])
+        pool = STYLES[routeKey][styleName];
+    }catch(e){}
+    if (!pool || !pool.length) pool = PHASE_CLIP[phase];
+    if (!pool) return null;
     var warm = [];
     for (var i = 0; i < pool.length; i++) if (residentClip(pool[i])) warm.push(pool[i]);
     if (!warm.length) return null;
@@ -56001,8 +56249,10 @@ window.__deriveVariant = async function(key){
     if (!phases) return false;
     var v = variantFor(f);
     var V = VARIANTS[v];
+    var kit = kitOf(f)[CATEGORY[key] || key] || null;
     f._zt = {
-      key: key, phases: phases, i: 0, t: 0, variant: v,
+      key: key, phases: phases, i: 0, t: 0, variant: v, style: styleFor(f, key),
+      prefer: kit && kit.clip, label: kit ? labelOf(CATEGORY[key] || key, kit.family, kit.variant) : null,
       y0: (f._smoothZoneY != null ? f._smoothZoneY : zoneY(from)),
       y1: zoneY(to),
       scale: V.scale, leanMul: V.leanMul,
@@ -56042,7 +56292,7 @@ window.__deriveVariant = async function(key){
     // a real capture if one is resident for this phase. Chosen ONCE when the phase begins and held
     // for its duration -- re-rolling every frame would cross-fade three captures into nothing.
     try{
-      if (z.clipFor !== z.i){ z.clipFor = z.i; z.clipKey = pickPhaseClip(ph[0]); }
+      if (z.clipFor !== z.i){ z.clipFor = z.i; z.clipKey = pickPhaseClip(ph[0], z.key, z.style, z.prefer); }
       if (z.clipKey){
         var c = residentClip(z.clipKey);
         if (c && typeof window.studioApplyClipPose === 'function'){
@@ -56052,7 +56302,7 @@ window.__deriveVariant = async function(key){
       }
     }catch(e2){}
 
-    ST.lastPhase = z.key + ':' + ph[0] + '(' + z.variant + ')';
+    ST.lastPhase = z.key + ':' + ph[0] + '(' + (z.label || z.style || z.variant) + ')';
     if (k >= 1){ z.i++; z.t = 0; if (z.i >= z.phases.length) finish(f); }
   }
 
@@ -56104,8 +56354,50 @@ window.__deriveVariant = async function(key){
     // every capture any phase might want, so BANNON_WARM can make them resident before the bell
     clipPool: function(){
       var seen = {}, out = [];
-      for (var k in PHASE_CLIP) PHASE_CLIP[k].forEach(function(c){ if(!seen[c]){ seen[c]=1; out.push(c); } });
+      var add = function(c){ if(c && !seen[c]){ seen[c]=1; out.push(c); } };
+      for (var k in PHASE_CLIP) PHASE_CLIP[k].forEach(add);
+      for (var r in STYLES) for (var st in STYLES[r]) STYLES[r][st].forEach(add);
       return out;
+    },
+    styles: function(){ var o={}; for (var r in STYLES) o[r] = Object.keys(STYLES[r]); return o; },
+    styleFor: styleFor,
+    // ---- the moveset-screen surface ----
+    // Every selectable entry, per category, named the way a moveset list names them. This is what
+    // makes ring-in/ring-out a MOVESET SLOT the player can set rather than something the engine
+    // decides for them.
+    catalogue: function(){
+      var out = {};
+      for (var route in STYLES){
+        var cat = CATEGORY[route] || route;
+        out[cat] = out[cat] || { route: route, entries: [] };
+        for (var fam in STYLES[route])
+          for (var i = 0; i < STYLES[route][fam].length; i++)
+            out[cat].entries.push({ id: fam + ':' + i, label: labelOf(cat, fam, i),
+                                    family: fam, variant: i, clip: STYLES[route][fam][i] });
+      }
+      return out;
+    },
+    categories: function(){ return CATEGORY; },
+    kitOf: kitOf,
+    // what this fighter is currently equipped with, as readable names
+    kitLabels: function(f){
+      var k = kitOf(f), o = {};
+      for (var cat in k) o[cat] = labelOf(cat, k[cat].family, k[cat].variant);
+      return o;
+    },
+    // equip an entry ("SLIDE:1") into a category for one fighter, or '_default' for everyone
+    setStyle: function(who, cat, id){
+      try{
+        var name = (who && (who.name || who.id)) || who || '_default';
+        var raw = localStorage.getItem('bannon_moveset_slots');
+        var all = raw ? (JSON.parse(raw) || {}) : {};
+        all[name] = all[name] || {};
+        all[name].zone = all[name].zone || {};
+        all[name].zone[cat] = id;
+        localStorage.setItem('bannon_moveset_slots', JSON.stringify(all));
+        if (who && typeof who === 'object') who._zoneKit = null;   // re-derive on next transition
+        return true;
+      }catch(e){ return false; }
     },
     phasesOf: function(k){ return (ROUTES[k]||[]).map(function(p){ return p[0]; }); },
     variantFor: variantFor,
@@ -56127,3 +56419,273 @@ window.__deriveVariant = async function(key){
 
 
 
+<script>
+/* ==============================================================================================
+   BANNON_TAUNTS — a taunt is a MOVESET SLOT and it has an animation.
+
+   Owner named taunts as one of the sections to research and deepen, alongside ring-in/ring-out and
+   the turnbuckle climb. Reading real published movesets (SmackDown vs Raw 2011 / WWE '12 entries)
+   the shape is unambiguous and it is the same shape as the ring-in/out entries:
+
+       Taunts:  "Extremer 1;  King of the World 2, 4, 5"
+       Taunts:  "Chavo Guerrero 3;  CM Punk 5;  Santino Marella 4;  Rob Van Dam 1"
+
+   FOUR EQUIPPED SLOTS, each a NAMED FAMILY plus a NUMBER. Our taunt cluster already has exactly
+   four directions, so the slots exist -- what was missing is that they were the SAME four for every
+   wrestler in the game, hard-coded in TAUNT_CLUSTER, with no way for a man to have his own.
+   (Naming law: the families here are named for the MOTION. The published lists name them after
+   whoever the animation was captured from, which is precisely the naming that stops shipping.)
+
+   AND THE BUG UNDERNEATH IT, MEASURED NOT GUESSED. `performTaunt`'s pure-taunt branch -- the one
+   that runs whenever nobody is in range, which is most taunts -- sets `p._tauntT = 0.8` and stops.
+   `_tauntT` is WRITTEN IN EXACTLY ONE PLACE AND READ IN NONE. grep returns a single line for the
+   whole 56,000-line file. So a taunt gave you a crowd pop, momentum, poise and an announce line
+   while the body stood perfectly still. The strike branch animates, because it routes through
+   startAttack; the taunt branch had nothing to route through.
+   That dead write is now the trigger: it is the one signal that says "the pure branch ran", so the
+   wrapper reads it rather than duplicating performTaunt's range test.
+
+   CLIP KEYS ARE NORMALISED BEFORE LOOKUP. TAUNT_CLUSTER asks for 'Ginga Forward' and
+   'Breakdance Freezes'; the baked index holds GINGA_FORWARD and BREAKDANCE_FREEZES. This is the
+   same mismatch that silently did nothing when tag captures were subtracted from the singles pools
+   (DOUBLESUPLEX vs DoubleSuplex). Normalise, then compare.
+   ============================================================================================== */
+(function(){
+  'use strict';
+
+  var ST = { played:0, poseCalls:0, warmed:0, missing:{}, last:null };
+
+  function lex(n){ try{ return (new Function('try{ return typeof '+n+'!=="undefined"?'+n+':null; }catch(e){ return null; }'))(); }catch(e){ return null; } }
+  function norm(k){ return String(k||'').toUpperCase().replace(/[^A-Z0-9]+/g,'_').replace(/^_+|_+$/g,''); }
+
+  function clips(){ try{ var S = lex('STUDIO'); return (S && S.clips) || null; }catch(e){ return null; } }
+  // resolve a wanted key against what is actually baked, normalising both sides
+  function resident(key){
+    var C = clips(); if (!C || !key) return null;
+    if (C[key]) return C[key];
+    var want = norm(key);
+    if (C[want]) return C[want];
+    for (var k in C) if (norm(k) === want) return C[k];
+    return null;
+  }
+
+  // ---- THE CATALOGUE ---------------------------------------------------------------------------
+  // Families of taunt motion, each with numbered variants, named for what the BODY does.
+  // Every key here was checked against assets/moves/clips/index.json -- nothing referenced that is
+  // not baked. CROTCH_CHOP sits in the taunt pool deliberately: it is labelled cat:'strike' in
+  // fbx_move_map and the FRAMES show a taunt with no forward extension and no target (owner LAW --
+  // metadata is a hint, the data is the authority).
+  //
+  // `impact` MARKS AN IMPACT-TAUNT AND IT IS A PROPERTY OF THE ENTRY, NOT OF THE SITUATION.
+  // Owner: "Impact taunts are ... based on being equipped in moveset, having that or those specific
+  // taunts equipped in that slot, not by distance triggering."
+  // WHICH ONES ARE IMPACT-TAUNTS IS READ, NOT DECIDED: assets/moves/fbx_move_map.json carries a
+  // `dualPurpose` flag with `altKind`/`altEngine`, and exactly 15 clips have it -- the capoeira set
+  // (Ginga, Esquiva, Capoeira), the breakdance set, and RapidChestBeating / Tau_ButtSlap /
+  // ViolenceParty. The engine below is that file's own altEngine, so a chest beat lands as a PUNCH
+  // and a ginga lands as a KICK. CROTCHCHOP is deliberately NOT impact: it carries cat:'strike' in
+  // the metadata and the FRAMES show a taunt with no forward extension and no target (owner LAW --
+  // the data is the authority, the label is a hint).
+  var FAMILIES = {
+    CALLOUT:   { label:'Call Out',     crowd:true,  impact:false, clips:['TAUNT_CALLOUT','TAUNT'] },
+    ARMS_WIDE: { label:'Arms Wide',    crowd:true,  impact:false, clips:['TAUNT_ARMS_WIDE','TAUNT2'] },
+    POINT:     { label:'Point Down',   crowd:false, impact:false, clips:['TAUNT_POINT'] },
+    FLEX:      { label:'Flex',         crowd:true,  impact:false, clips:['TAUNT_FLEX','PUMPKINHULK_L_SHAW'] },
+    CHEST:     { label:'Chest Beat',   crowd:true,  impact:true,  engine:'STRIKE_PUNCH',
+                 clips:['RAPIDCHESTBEATING'] },
+    DISRESPECT:{ label:'Disrespect',   crowd:false, impact:true,  engine:'STRIKE_PUNCH',
+                 clips:['TAU_BUTTSLAP'] },
+    CROTCH:    { label:'Crotch Chop',  crowd:true,  impact:false, clips:['CROTCHCHOP'] },
+    GINGA:     { label:'Ginga',        crowd:false, impact:true,  engine:'STRIKE_KICK',
+                 clips:['GINGA_FORWARD','GINGA_SIDEWAYS_2','GINGA_BACKWARD'] },
+    BREAKDANCE:{ label:'Breakdance',   crowd:true,  impact:true,  engine:'STRIKE_KICK',
+                 clips:['BREAKDANCE_FREEZES','BREAKDANCE_FOOTWORK_TO_FREEZE','BREAKDANCE_UPROCK_TO_GROUND'] },
+    STRUT:     { label:'Strut',        crowd:false, impact:false, clips:['LOCO_STRUT'] },
+    POSE:      { label:'Turnbuckle Pose', crowd:true, impact:false, clips:['ZONE_PERCH_POSE','ZONE_MIDROPE_POSE'] }
+  };
+  var SLOTS = ['up','left','right','down'];   // the four cluster directions = the four taunt slots
+
+  function seed(s){ var h = 2166136261; s = String(s||'');
+    for (var i=0;i<s.length;i++){ h ^= s.charCodeAt(i); h = (h*16777619)>>>0; }
+    return h>>>0; }
+
+  function flat(){
+    var out = [];
+    for (var fam in FAMILIES)
+      for (var i=0;i<FAMILIES[fam].clips.length;i++)
+        out.push({ id: fam+':'+i, family: fam, variant: i, clip: FAMILIES[fam].clips[i],
+                   crowd: FAMILIES[fam].crowd,
+                   impact: !!FAMILIES[fam].impact, engine: FAMILIES[fam].engine || 'STRIKE_KICK',
+                   label: FAMILIES[fam].label + ' ' + (i+1) });
+    return out;
+  }
+
+  function equipped(f, slot){
+    try{
+      var raw = localStorage.getItem('bannon_moveset_slots'); if (!raw) return null;
+      var all = JSON.parse(raw) || {};
+      var mine = all[(f && (f.name || f.specName || f.id)) || ''] || all['_default'] || null;
+      return (mine && mine.taunts && mine.taunts[slot]) || null;
+    }catch(e){ return null; }
+  }
+
+  // FOUR DISTINCT taunts per fighter, fixed for that fighter. Distinct matters: drawing each slot
+  // independently would hand somebody the same taunt on two directions, which reads as a bug.
+  function kitOf(f){
+    if (f && f._tauntKit) return f._tauntKit;
+    var all = flat(), kit = {};
+    var base = seed((f && (f.name || f.specName || f.id)) || 'anon');
+    var pool = all.slice();
+    // deterministic shuffle, so the roster spreads instead of everyone taking the first four
+    for (var i = pool.length - 1; i > 0; i--){
+      var j = ((base ^ (i * 2654435761)) >>> 3) % (i + 1);
+      var t = pool[i]; pool[i] = pool[j]; pool[j] = t;
+    }
+    for (var s = 0; s < SLOTS.length; s++){
+      var eq = equipped(f, SLOTS[s]);
+      var chosen = null;
+      if (eq) for (var k = 0; k < all.length; k++) if (all[k].id === eq) chosen = all[k];
+      kit[SLOTS[s]] = chosen || pool[s % pool.length];
+    }
+    try{ if (f) f._tauntKit = kit; }catch(e){}
+    return kit;
+  }
+
+  // ---- READINESS -------------------------------------------------------------------------------
+  // MEASURED: loadClipFor resolves every one of these 19 keys on demand (28/24 keys each), and yet
+  // after a full match none of them were resident -- BANNON_WARM listed all 19 as targets and its
+  // own counters read loaded:0. Rather than depend on another module's scheduler getting to them,
+  // this module warms its own pool: a taunt that has to fetch is a taunt that does not animate.
+  // Bounded concurrency and never on the critical path, which is the rule that keeps the freeze
+  // fixed (BANNON_PREWARM's whole reason for existing).
+  var warming = false;
+  function warmPool(){
+    if (warming || typeof window.loadClipFor !== 'function') return;
+    warming = true;
+    var want = flat().map(function(e){ return e.clip; }).filter(function(k){ return !resident(k); });
+    var i = 0, inflight = 0, MAX = 2;
+    function pump(){
+      while (inflight < MAX && i < want.length){
+        var k = want[i++]; inflight++;
+        Promise.resolve(window.loadClipFor(k))
+          .then(function(){ if (resident(k)) ST.warmed++; })
+          .catch(function(){})
+          .then(function(){ inflight--; pump(); });
+      }
+    }
+    pump();
+  }
+  // at a lull, not at boot: boot is already the busiest moment in the frame budget
+  setTimeout(warmPool, 6000);
+  setTimeout(warmPool, 30000);
+
+  // ---- PLAYBACK --------------------------------------------------------------------------------
+  function begin(f, entry){
+    var c = entry && resident(entry.clip);
+    if (!c){
+      if (entry){
+        ST.missing[entry.clip] = (ST.missing[entry.clip]||0)+1;
+        // fetch it for NEXT time -- never block this taunt on a request
+        try{ if (typeof window.loadClipFor === 'function') window.loadClipFor(entry.clip); }catch(e){}
+      }
+      return false;
+    }
+    var dur = (c.duration || c.dur || 1.2);
+    f._tauntPlay = { clip: c, t: 0, dur: Math.max(0.4, Math.min(dur, 3.2)), label: entry.label };
+    ST.played++; ST.last = entry.label + ' [' + entry.clip + ']';
+    return true;
+  }
+
+  function step(f, dt){
+    var p = f._tauntPlay; if (!p) return;
+    p.t += dt;
+    var k = Math.min(1, p.t / p.dur);
+    try{
+      if (typeof window.studioApplyClipPose === 'function'){
+        window.studioApplyClipPose(f, p.clip, k);
+        ST.poseCalls++;
+      }
+    }catch(e){}
+    // keep the engine's own taunt timer honest so anything else reading it sees a live taunt
+    try{ f._tauntT = Math.max(0, p.dur - p.t); }catch(e){}
+    if (k >= 1) f._tauntPlay = null;
+  }
+
+  // ---- ARM -------------------------------------------------------------------------------------
+  function arm(n){
+    var ok = 0;
+    try{
+      // 1. the trigger. Wrap performTaunt and use its own dead `_tauntT` write as the signal that
+      //    the PURE branch ran -- the strike branch already animates through startAttack and must
+      //    not be touched.
+      if (typeof window.performTaunt === 'function' && !window.performTaunt.__bt){
+        var orig = window.performTaunt;
+        var w = function(dir){
+          var fs = lex('fighters') || [];
+          var p = fs[0] || null;
+          if (p) try{ p._tauntT = 0; }catch(e){}
+          var r = orig.apply(this, arguments);
+          try{
+            if (p && p._tauntT > 0){                       // pure taunt, not the impact-taunt strike
+              var kit = kitOf(p);
+              begin(p, kit[dir] || kit.up);
+            }
+          }catch(e){}
+          return r;
+        };
+        w.__bt = true;
+        window.performTaunt = w;
+        ok++;
+      }
+      // 2. the ticker
+      if (typeof Fighter === 'function' && Fighter.prototype
+          && typeof Fighter.prototype.updateProcedural === 'function'
+          && !Fighter.prototype.updateProcedural.__bt){
+        var o2 = Fighter.prototype.updateProcedural;
+        var w2 = function(dt){
+          var r = o2.call(this, dt);
+          try{ if (this._tauntPlay && !this.ragdoll) step(this, Math.min(dt || 0.016, 0.05)); }catch(e){}
+          return r;
+        };
+        w2.__bt = true;
+        Fighter.prototype.updateProcedural = w2;
+        ok++;
+      }
+    }catch(e){}
+    if (ok >= 2){
+      console.log('%c[BANNON_TAUNTS] taunts are equipped slots and they animate now','color:#7CFC00');
+      return;
+    }
+    if (n < 300) setTimeout(function(){ arm(n+1); }, 250);
+  }
+  arm(0);
+
+  window.BANNON_TAUNTS = {
+    families: function(){ return FAMILIES; },
+    slots: function(){ return SLOTS.slice(); },
+    catalogue: flat,
+    clipPool: function(){ return flat().map(function(e){ return e.clip; }); },
+    kitOf: kitOf,
+    kitLabels: function(f){ var k = kitOf(f), o = {};
+      for (var s in k) o[s] = k[s] ? k[s].label : null; return o; },
+    setSlot: function(who, slot, id){
+      try{
+        var name = (who && (who.name || who.specName || who.id)) || who || '_default';
+        var raw = localStorage.getItem('bannon_moveset_slots');
+        var all = raw ? (JSON.parse(raw) || {}) : {};
+        all[name] = all[name] || {};
+        all[name].taunts = all[name].taunts || {};
+        all[name].taunts[slot] = id;
+        localStorage.setItem('bannon_moveset_slots', JSON.stringify(all));
+        if (who && typeof who === 'object') who._tauntKit = null;
+        return true;
+      }catch(e){ return false; }
+    },
+    play: function(f, dir){ return begin(f, kitOf(f)[dir || 'up']); },
+    stats: function(){ return { played:ST.played, poseCalls:ST.poseCalls, warmed:ST.warmed,
+                                resident:flat().filter(function(e){ return !!resident(e.clip); }).length,
+                                poolSize:flat().length,
+                                missingClips:ST.missing, last:ST.last }; }
+  };
+})();
+</script>

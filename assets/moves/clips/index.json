@@ -1358,5 +1358,239 @@
   "via": "text_to_clip/momask",
   "prompt": "a person climbs up a tall structure hand over hand and stands at the top",
   "bones": 17
+ },
+ "ZONE_MIDROPE_STEP": {
+  "file": "ZONE_MIDROPE_STEP.json",
+  "bytes": 52561,
+  "dur": 2.6,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person pushes two horizontal bars apart and steps between them",
+  "bones": 17
+ },
+ "ZONE_MIDROPE_POSE": {
+  "file": "ZONE_MIDROPE_POSE.json",
+  "bytes": 52549,
+  "dur": 3.85,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person steps through a gap, turns and raises both arms above their head",
+  "bones": 17
+ },
+ "ZONE_OVER_TOP_IN": {
+  "file": "ZONE_OVER_TOP_IN.json",
+  "bytes": 52514,
+  "dur": 1.55,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person lifts one leg high over a chest-high barrier and climbs across",
+  "bones": 17
+ },
+ "ZONE_APRON_HOP": {
+  "file": "ZONE_APRON_HOP.json",
+  "bytes": 52430,
+  "dur": 3.1,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person hops up onto a low platform and stands facing forward",
+  "bones": 17
+ },
+ "ZONE_VAULT_IN": {
+  "file": "ZONE_VAULT_IN.json",
+  "bytes": 52334,
+  "dur": 1.7,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person places both hands on a barrier and vaults over it feet first",
+  "bones": 17
+ },
+ "ZONE_ROLL_IN": {
+  "file": "ZONE_ROLL_IN.json",
+  "bytes": 52345,
+  "dur": 2.75,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person dives forward into a shoulder roll and comes up kneeling",
+  "bones": 17
+ },
+ "ZONE_RUN_SLIDE_IN": {
+  "file": "ZONE_RUN_SLIDE_IN.json",
+  "bytes": 52548,
+  "dur": 3.8,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person runs forward then drops and slides along the ground",
+  "bones": 17
+ },
+ "ZONE_OVER_TOP_OUT": {
+  "file": "ZONE_OVER_TOP_OUT.json",
+  "bytes": 52439,
+  "dur": 2.1,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person swings one leg over a chest-high barrier and drops to the ground",
+  "bones": 17
+ },
+ "ZONE_ROLL_OUT_B": {
+  "file": "ZONE_ROLL_OUT_B.json",
+  "bytes": 52376,
+  "dur": 2.1,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person rolls forward off a low edge and lands on their feet",
+  "bones": 17
+ },
+ "ZONE_SLIDE_OUT": {
+  "file": "ZONE_SLIDE_OUT.json",
+  "bytes": 52586,
+  "dur": 3.0,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person lies down and slides backwards off a low platform",
+  "bones": 17
+ },
+ "ZONE_CLIMB_B": {
+  "file": "ZONE_CLIMB_B.json",
+  "bytes": 52353,
+  "dur": 4.3,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person climbs up three steps of a ladder and balances at the top",
+  "bones": 17
+ },
+ "ZONE_PERCH_POSE": {
+  "file": "ZONE_PERCH_POSE.json",
+  "bytes": 52518,
+  "dur": 3.45,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person stands on a high narrow platform and raises both fists",
+  "bones": 17
+ },
+ "LOCO_STALK": {
+  "file": "LOCO_STALK.json",
+  "bytes": 52414,
+  "dur": 2.35,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person walks forward slowly and heavily with shoulders hunched",
+  "bones": 17
+ },
+ "LOCO_STRUT": {
+  "file": "LOCO_STRUT.json",
+  "bytes": 52532,
+  "dur": 2.9,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person walks forward with an arrogant swagger, chest out",
+  "bones": 17
+ },
+ "LOCO_PROWL": {
+  "file": "LOCO_PROWL.json",
+  "bytes": 52370,
+  "dur": 2.55,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person paces forward in a low crouch like a hunting animal",
+  "bones": 17
+ },
+ "LOCO_LIGHT": {
+  "file": "LOCO_LIGHT.json",
+  "bytes": 52354,
+  "dur": 2.2,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person bounces forward on the balls of their feet",
+  "bones": 17
+ },
+ "LOCO_LUMBER": {
+  "file": "LOCO_LUMBER.json",
+  "bytes": 52353,
+  "dur": 2.7,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a very heavy person walks forward with slow ponderous steps",
+  "bones": 17
+ },
+ "STANCE_WIDE": {
+  "file": "STANCE_WIDE.json",
+  "bytes": 52598,
+  "dur": 2.8,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person stands with feet wide apart and arms held out from the body",
+  "bones": 17
+ },
+ "STANCE_CROUCH": {
+  "file": "STANCE_CROUCH.json",
+  "bytes": 52299,
+  "dur": 2.15,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person crouches low with knees bent and hands forward ready to grapple",
+  "bones": 17
+ },
+ "STANCE_BLADED": {
+  "file": "STANCE_BLADED.json",
+  "bytes": 52301,
+  "dur": 2.8,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person stands side on with one shoulder forward and fists raised",
+  "bones": 17
+ },
+ "GUARD_HIGH": {
+  "file": "GUARD_HIGH.json",
+  "bytes": 52320,
+  "dur": 2.2,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person raises both fists beside their head and tucks their chin",
+  "bones": 17
+ },
+ "GUARD_LOW": {
+  "file": "GUARD_LOW.json",
+  "bytes": 52540,
+  "dur": 2.8,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person holds both hands low in front of their waist, knees bent",
+  "bones": 17
+ },
+ "TAUNT_CALLOUT": {
+  "file": "TAUNT_CALLOUT.json",
+  "bytes": 52519,
+  "dur": 3.25,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person beckons someone forward with both hands, shouting",
+  "bones": 17
+ },
+ "TAUNT_ARMS_WIDE": {
+  "file": "TAUNT_ARMS_WIDE.json",
+  "bytes": 52509,
+  "dur": 3.6,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person spreads both arms wide and tilts their head back",
+  "bones": 17
+ },
+ "TAUNT_POINT": {
+  "file": "TAUNT_POINT.json",
+  "bytes": 52463,
+  "dur": 3.1,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person points forward aggressively with one arm extended",
+  "bones": 17
+ },
+ "TAUNT_FLEX": {
+  "file": "TAUNT_FLEX.json",
+  "bytes": 52473,
+  "dur": 3.6,
+  "keys": 28,
+  "via": "text_to_clip/momask",
+  "prompt": "a person flexes both arms in a bodybuilder pose",
+  "bones": 17
  }
 }

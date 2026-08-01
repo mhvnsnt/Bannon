@@ -570,3 +570,188 @@ REACH-for-the-hanging-objective win condition — all written, complete, and nev
 1. **More mocap clips from the owner** — Cipher's Lio Rush feral beast run, plus dive/grapple/strike
    captures. He is handing them over; ingest through video_to_clip / harvest and map into combat.
 2. Still open from before: motion datasets install (task 43), model deformation jank (task 45).
+
+## HOW TO RESEARCH WRESTLING-GAME CONTENT (owner correction, 2026-08-01 — REMEMBER THIS)
+Owner, after I searched badly twice: "U didn't search deep enough or by game title" ... "the right
+source is moves per title in movesets, ring in and ring out and turnbuckle climb and taunts and all
+the things I named sections, or lists on the Internet, ur searching wrong" ... "remember that kind
+of stuff and resources for future use and the way to actually search remember that".
+
+WHAT DOES NOT WORK: generic YouTube search ("WWE ring entry animations"). It returns entrance
+VIDEOS and highlight reels, never a catalogue. I burned four queries on it and got nothing usable.
+
+WHAT WORKS — SEARCH THE MOVESET LISTS, PER GAME TITLE, BY SECTION NAME:
+  * query shape:  "WWE 2K<NN> moves list" + the SECTION you want
+    sections that actually exist: Ring-In/Out, Apron Ring-In/Out, Turnbuckle, Taunts, Signatures,
+    Finishers, Skills, OMG Moments, Preset Movesets, Fighting Styles, Preset Entrances
+  * always name a TITLE (2K19, 2K22, 2K26, SmackDown vs Raw 2011, Here Comes The Pain) — the lists
+    are published per game, never as one master list.
+
+THE RESOURCES (use these domains, they carry the actual catalogues):
+  * thesmackdownhotel.com  — preset ENTRANCES lists per title, full MOVES lists, skills/OMG lists,
+                             preset movesets + fighting styles. The single best source.
+  * smacktalks.org         — the modding community; animation/asset internals.
+  * gamefaqs.gamespot.com  — user-compiled full move lists per title.
+  * caws.ws                — CAW/moveset community.
+  (WebSearch with allowed_domains set to these cuts straight through the noise. reddit.com is
+   blocked to our agent — do not include it or the call errors.)
+
+WHAT THIS ALREADY BOUGHT US (both now built, do not re-derive):
+  1. AN ENTRANCE IS FIVE SWAPPABLE SEGMENTS, not one animation:
+       INTRO -> STAGE -> RAMP -> RING_IN -> RING
+     2K stores them separately and stitches them, which is exactly why the series can give one
+     wrestler an over-the-top ring-in and another a slide while sharing the rest. BANNON_WALKOUT is
+     built on this shape; RING_IN hands off to BANNON_ZONEMOVE rather than reimplementing entry.
+  2. RING-IN/OUT IS A TWO-CATEGORY TAXONOMY WITH NAMED STYLES AND NUMBERED VARIANTS:
+       Ring-In/Out        (direct, floor<->ring)  Slide Ring-In 1, Jumping Ring-In 2,
+                                                  Quick Ring-Out, Slide Ring-Out
+       Apron Ring-In/Out  (via the apron)         Normal Ring-In 1, Jumping Ring-In 3,
+                                                  Normal Ring-Out 2, Jumping Ring-Out
+     Also confirmed as real moveset entries: "Expose The Turnbuckle" (wired in BANNON_RINGRULES),
+     "Ring Escape", "Top Rope Diver", "Springboard Diver", and Show Off allowing 4 taunts.
+
+NAMING LAW STILL APPLIES ON TOP OF ALL OF IT. Research the real animation, then name the asset for
+the MOTION, never the wrestler: OVER_THE_TOP_OUT, not a real person's name. A trademarked name in
+the asset tree is a shipping problem; the animation itself is not.
+
+## OWNER LAW 2026-08-01 — REAL WRESTLER NAMES AS REFERENCE ARE FINE. STOP BEING A STICKLER.
+Owner, verbatim: "u don't have to worry about when I mention WWE and real wrestler names because just
+like WWE they use archetypes and no. Proprietary ways of naming animations fir when wrestlers leaves
+or are not in the company anymore and we can do the same instead of bullheadedly and bluntly skipping
+and disregarding Everytime I say real wrestler names fir reference, ur being a dumb stickler when
+there's no other way to describe things to you without saying the wrestler name, I'm not telling you
+to use the wrestler names at all any of the times I have mentioned real names, I have always changed
+things to not be copyright from other companies."
+
+HE IS RIGHT AND HE HAS SAID IT MORE THAN ONCE. THE RULE:
+- When the owner names a real wrestler he is telling me WHICH MOTION he means. It is the only
+  vocabulary that exists for "the one where he steps over the top rope and stares at the crowd".
+  TAKE THE REFERENCE. Find the animation. Build it.
+- DO NOT stop, hedge, lecture, or re-explain the naming rule back to him. He already applies it.
+- The rule was only ever about the ASSET TREE: the shipped key is named for the MOTION
+  (`OVER_THE_TOP_OUT`), never for a person. That is exactly what 2K itself does when a wrestler
+  leaves — the animation stays, the label changes. Nothing more is required of me.
+- This costs him time every single occurrence. Treat any further lecture on it as a defect.
+
+## THE WRESTLING-CONTENT RESEARCH FILE (2026-08-01) — SOURCES + WHAT THE MOVESETS ACTUALLY LOOK LIKE
+Owner: "those sites and resources and places for moves and wrestlers and movesets and information
+wrestling wise, remember them, especially remember the movesets of each that u saw for reference in
+building each wrestler in games moveset and building the moveset library WWE 2k style and moveset
+Editor per fighter."
+
+### THE SOURCES, RANKED BY WHAT THEY ACTUALLY YIELD
+1. **thesmackdownhotel.com/forum** — `/forum/topic/<id>-<wrestler>-moveset/`. THE BEST SOURCE. Each
+   topic is ONE WRESTLER'S COMPLETE MOVESET with every section heading and every entry name. This is
+   what the owner meant by "moves per title in movesets". Readable through WebFetch.
+2. **thesmackdownhotel.com** news/guides — preset ENTRANCES lists, paybacks, OMG moments, skills,
+   abilities, controls, per title.
+3. **caws.ws** — `/hctp/view/moves/<wrestler>-<id>`, `/svr2011/view/moves/...`, `/svr/...`. Structured
+   per-title moveset database. **BEHIND CLOUDFLARE** — curl and WebFetch both get 403.
+4. **gamefaqs.gamespot.com** — user-compiled full move lists per title.
+5. **smacktalks.org** — modding community, animation/asset internals. Also 403s to WebFetch.
+
+### HOW TO SEARCH (the method the owner had to correct me on twice)
+- NEVER a generic search ("WWE ring entry animations") — that returns entrance VIDEOS, never a
+  catalogue. Four wasted queries proved it.
+- ALWAYS name a TITLE and a SECTION: `"WWE 2K22 moves list" Turnbuckle`, `"Here Comes The Pain"
+  moveset "Ring In"`. The lists are published per game, never as one master list.
+- BEST OF ALL: search for the SECTION HEADINGS THEMSELVES in quotes —
+  `"Ring In/Out" "Apron Ring In/Out" "Apron Ringside"` — that lands directly on real moveset posts.
+- reddit.com is blocked to this agent; do not put it in allowed_domains or the call errors.
+- **tools/research/fetch_page.cjs** (new) drives the pre-installed Chromium for pages plain HTTP
+  cannot read. NOTE, measured: Chromium cannot use this container's egress (ERR_CONNECTION_RESET via
+  the agent proxy, ERR_QUIC_PROTOCOL_ERROR direct), so the tool routes every request through Node's
+  fetch and uses the browser only as a JS engine. It reaches ordinary blocked pages; it does NOT beat
+  caws.ws's Cloudflare interstitial. Use the forum posts for that content instead.
+
+### THE MOVESET STRUCTURE, READ OFF REAL POSTS (do not re-derive — this is measured, not guessed)
+Confirmed across four movesets and two engine generations (SmackDown vs Raw 2011 and WWE '12).
+
+**RING TRANSITIONS ARE THREE CATEGORIES, NOT TWO.** The apron is a first-class waypoint on BOTH
+sides, so there is a category for floor<->ring, one for apron<->ring, and one for floor<->apron:
+```
+Ring In/Out            floor <-> ring    "Slide Ring-In 1"  "Jumping Ring-In 2"
+                                         "Quick Ring-Out"   "Roll Down Ring Out"
+Apron Ring In/Out      apron <-> ring    "Normal Ring-In 1" "Normal Ring-In 3" "Jumping Ring-In 3"
+                                         "Normal Ring-Out 2" "Jumping Ring-Out"
+Apron Ringside In/Out  floor <-> apron   "Normal On The Apron 3"
+                                         "Normal Apron Out 1" "Normal Apron Out 2"
+```
+**EVERY ENTRY IS A NAMED STYLE FAMILY + A NUMBER.** Not one animation per route — a family (Normal /
+Jumping / Slide / Quick / Roll Down / Over The Top) with numbered variants inside it.
+
+**AND THEY ARE EQUIPPED SLOTS, NOT A ROLL PER USE.** A wrestler has ONE ring-in and uses it every
+single time. That is the entire reason a particular entry reads as belonging to a particular
+wrestler. Rolling per transition makes everyone generic because nobody has a signature.
+(I built it as a roll first. Fixed — BANNON_ZONEMOVE.kitOf now fixes family+variant per fighter,
+deterministically from their name, overridable from the moveset store.)
+
+**TAUNTS ARE FOUR EQUIPPED SLOTS**, same family+number shape:
+```
+Taunts:  "Extremer 1;  King of the World 2, 4, 5"
+Taunts:  "Chavo Guerrero 3;  CM Punk 5;  Santino Marella 4;  Rob Van Dam 1"
+```
+Our taunt cluster already has exactly four directions = the four slots.
+
+**ABILITIES seen on real movesets** (several are already ours): Leverage Pin, Springboard Dives,
+Outside Dives, Ring Escape, Resiliency, Expose The Turnbuckle, Top Rope Diver, Show Off (4 taunts).
+
+**OTHER SECTIONS a full moveset carries**, for the per-fighter editor: Standing Strikes &
+Combinations, Chain Grapples (Front Facelock / Side Headlock / Wrist Lock / Waist Lock transitions),
+Signatures, Finishers, Corner/Turnbuckle, Rope work, Royal Rumble, Ladder, Cell, Match-specific.
+
+### WHAT THIS BOUGHT, ALREADY BUILT (do not re-derive)
+- AN ENTRANCE IS FIVE SWAPPABLE SEGMENTS: INTRO -> STAGE -> RAMP -> RING_IN -> RING. 2K stores them
+  separately and stitches them, which is why one wrestler gets an over-the-top ring-in and another a
+  slide while sharing the rest. BANNON_WALKOUT is built on this; RING_IN hands off to
+  BANNON_ZONEMOVE rather than reimplementing entry. **Owner confirmed: "that entrance part is
+  perfect for entrances".**
+- BANNON_ZONEMOVE: the three categories, six routes, named families, numbered variants, equipped per
+  fighter, `catalogue()` / `kitLabels()` / `setStyle()` for the moveset editor.
+- BANNON_TAUNTS: four equipped slots from a 19-entry catalogue, and taunts now ANIMATE (see below).
+
+NAMING LAW STILL APPLIES ON TOP OF ALL OF IT: research the real animation, name the asset for the
+MOTION. `OVER_THE_TOP_OUT`, never a person's name.
+
+### SYSTEM DONE: RING TRANSITIONS + TAUNTS ARE EQUIPPED MOVESET SLOTS (2026-08-01)
+Built off the moveset research above. Three things were wrong and all three are measured, not guessed.
+1. **RING-IN/OUT WAS A ROLL, NOT A SLOT.** Fixed: `BANNON_ZONEMOVE.kitOf(f)` assigns a style FAMILY
+   and a NUMBERED VARIANT per category per fighter, deterministic from their name (120/120 stable
+   across fresh objects), overridable via `setStyle()` through the ONE `bannon_moveset_slots` store
+   the studio / list editor / BANNON_PINS already share. `catalogue()` + `kitLabels()` give the
+   moveset editor real entries: "Slide Ring-In 1", "Over The Top Ring-Out 1", "Normal Apron Out 2".
+   NEAR MISS WORTH KEEPING: choosing the FAMILY first and the variant second looks equivalent to
+   ranking every entry and is not — when the top-preference family holds a single variant the entire
+   top share lands on ONE entry. Measured across 120 fighters that put "Slide Ring-Out 1" on **52%**
+   of the roster. Weighting over the flat ENTRY ranking instead: **52% -> 28%**.
+2. **TAUNTS PLAYED NO ANIMATION AT ALL.** `performTaunt`'s pure branch set `p._tauntT = 0.8` and
+   stopped — grep returned ONE line for the whole file, a write with no reader anywhere. So every
+   taunt with nobody in range gave a crowd pop, momentum and an announce line while the body stood
+   still. New **BANNON_TAUNTS**: 4 equipped slots (the taunt cluster's four directions), a 19-entry
+   catalogue, and real playback through `studioApplyClipPose`. Measured **poseCalls 0 -> 23**.
+   That dead write is now the trigger — it is the one signal that says the pure branch ran, so the
+   wrapper reads it instead of duplicating performTaunt's range test.
+3. **IMPACT-TAUNTS WERE TRIGGERED BY DISTANCE** (owner correction, and he was right): "Impact taunts
+   are ... based on being equipped in moveset, having that or those specific taunts equipped in that
+   slot, not by distance triggering." Distance-as-trigger made the SAME taunt behave as two
+   different things depending on where you stood, and a wrestler who deliberately equipped a
+   capoeira impact-taunt got a harmless pose whenever he had space. Now the ENTRY carries `impact`.
+   WHICH entries is READ, not decided: `assets/moves/fbx_move_map.json` carries `dualPurpose` +
+   `altKind`/`altEngine` on exactly 15 clips (capoeira/Ginga/Esquiva, breakdance, RapidChestBeating,
+   Tau_ButtSlap, ViolenceParty) — 8 of ours are impact, 11 pure, and the engine (KICK vs PUNCH) comes
+   from that file too. VERIFIED: Ginga strikes at range 8 AND at 0.7; Arms Wide taunts at both;
+   Crotch Chop stays a taunt at 0.7 where distance used to make it a strike.
+   CROTCHCHOP is deliberately NOT impact — cat:'strike' in the metadata, but the FRAMES show a taunt.
+4. **A MODULE OWNS ITS OWN READINESS.** BANNON_WARM listed all 19 taunt clips as targets and its own
+   counter still read `loaded:0`, so nothing was resident and every taunt would have fallen back to
+   nothing. BANNON_TAUNTS now warms its own pool (concurrency 2, at a lull, never on the critical
+   path) and fetches-for-next-time on a miss rather than blocking the current taunt. 19/19 resident.
+   Also worth writing down: `file://` blocks the clip fetches entirely (0 resident, warm failed:60).
+   MEASURE ANIMATION OVER HTTP, never off the filesystem, or every clip system looks broken.
+GENERATED THIS PASS (tools/mocap/gen_ring_styles.sh, MoMask, prompts describe HUMAN MOVEMENT never
+wrestling jargon): 26 new clips — ring entry/exit styles, turnbuckle climb + perch pose, 5 locomotion
+gaits, 3 stances, 2 guards, 4 taunts.
+TEST TRAP HIT TWICE THIS PASS, both mine not the game's: `window.Fighter` is undefined for a lexical
+class (use the `lex()` probe), and the taunt buttons bind `touchstart`/`mousedown` — dispatching
+PointerEvents at them does nothing. "The first attempt pressed the wrong button" is a recurring
+lesson, not a one-off.
