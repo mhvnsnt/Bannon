@@ -33,9 +33,11 @@ lights were sitting at intensity 0 still costing full per-fragment work, now hid
 973 files, median 103 KB, 50 over 1 MB. A move not yet thrown is fetched *at the moment it fires*
 and `JSON.parse`d **on the main thread**. Network trace of a real match: 112 clip requests still
 arriving 86 s after boot, individual clips taking 7–17 s. Parsing a megabyte blocks the frame.
-- FIXED (partial): `BANNON_CLIPWORKER` moves fetch+parse into a Worker. Measured 76 clips / 6.9 MB
-  off-thread. **218 still fall back to the main thread** — names that don't resolve to
-  `assets/moves/clips/<name>.json`. Finishing that is the next step on this item.
+- FIXED: `BANNON_CLIPWORKER` moves fetch+parse into a Worker. First pass got 76 clips / 6.9 MB
+  off-thread with 218 fallbacks — because my wrapper used the RAW name while the real loader
+  uppercases and underscores it (`STRONGZERO_SNAP`) and derives variants with no file at all.
+  Speaking the loader's own naming: **271 clips / 70.6 MB now parse off the main thread** (10x the
+  bytes), 122 fallbacks of which 85 are derived variants that correctly need no network.
 - REJECTED, and correctly: I nearly stripped the ~92% of bone tracks our 28-joint rigs can't drive
   (269.7 MB → 69.3 MB). Owner: *"our rigs physically can have all those give them to them."* Those
   channels are finger curl and facial performance. **Do not strip them — upgrade the rigs.** (See #9.)
@@ -67,7 +69,11 @@ Four independent root causes, all measured in the live game:
 
 `attackPhase` runs 0→1 in ~0.45 s and that phase was mapped onto the WHOLE capture:
 JUNGLE_JUICE 2.15 s → **4.8×**, TIGER_FEINT_KICK 4.22 s → **9.4×**, DOUBLESUPLEX 11 s → **24×**.
-FIXED for strikes — phase now advances at the clip's own rate. **Grapple path not yet done.**
+FIXED for strikes AND grapples. The grapple had the same defect in four more places, each with its
+own hardcoded window: stage entry/lift `stateTime/0.55`, carry loop `(stateTime%1.2)/1.2`, victim
+`grabTimer/0.6`. `window.__clipPhase` derives the window from the clip. MEASURED, playback speed:
+  JUNGLE_JUICE 3.9x -> **1.00x**  ·  TIGER_FEINT_KICK 7.7x -> 1.91x  ·  DOUBLESUPLEX 20x -> 4.98x
+  a short 0.40s jab 0.7x -> 0.89x (no longer stretched)
 
 ## 4. PROCEDURAL BODIES APPEAR WHEN NOT CHOSEN  ·  repeated 3+ times  ·  FIXED
 
@@ -103,11 +109,15 @@ Roster was collapsing to one name (`BANNON_ROSTER` assigned twice) — FIXED. **
 > 2, 3, gutwrench powerbomb, suplex, snap suplex, ddt, butterfly ddt, dragon suplex ... so we don't
 > replace old animations we add new ones on top like WWE 2k"
 
-## 9. RIGS SHOULD CARRY EVERY BONE THE CAPTURES DRIVE  ·  NEW, OPEN
+## 9. RIGS SHOULD CARRY EVERY BONE THE CAPTURES DRIVE  ·  FINGERS DONE, FACE OPEN
 > "our rigs physically can have all those give them to them"
 
-Captures carry 500–888 bone tracks (fingers, face, tongue, eyelids, cloth, toes); our rigs have 28
-joints, so only **7.6%** of tracks can drive anything. Upgrade the rigs rather than strip the clips.
+Captures carry 500–888 bone tracks; rigs had 28 joints, so only **7.6%** of tracks could drive
+anything. Audited: **1 of 61 rigs had fingers, 0 of 61 had face bones.**
+FINGERS DONE — `tools/model_diag/graft_fingers.cjs` grafts five chains per hand onto the EXISTING
+skeleton (replacing it wholesale was tried and the gate refused it: VIPER 0.0241 PASS -> 0.0677 WEAK).
+60 models grafted, 28 -> 58 joints, and every sampled skinqa verdict is identical to before:
+VIPER 0.0241, CIPHER 0.0281, CODY 0.030, BANNON 0.0682, TARZANIAN 0.1089. **Face bones still open.**
 
 ## 10. MUSIC CHANGES ON EVERY MENU / ATTIRE CHANGE  ·  OPEN
 > "music keeps changing song anytime you change menus, or attire"

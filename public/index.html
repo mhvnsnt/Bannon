@@ -9718,7 +9718,12 @@ Fighter.prototype.poseGrab = function(dt){
     const _mcStage = (st===1?'SNATCH':(st===2?'LIFT':(st===3?'CARRY':null)));
     if (_mcStage && typeof STUDIO!=='undefined' && STUDIO.clips && STUDIO.clips[_mcb[_mcStage]] && window.studioApplyClipPose){
       try{
-        const _ph = (st===3) ? ((this.stateTime%1.2)/1.2) : clamp(this.stateTime/0.55,0,1);   // carry loops; entry/lift play through
+        // PHASE FROM THE CAPTURE, not from 0.55s / 1.2s constants that know nothing about it.
+        // A 2.15s snatch through the old 0.55s window played at 3.9x; an 11s bake at 20x.
+        const _mcClip = STUDIO.clips[_mcb[_mcStage]];
+        const _ph = window.__clipPhase
+          ? window.__clipPhase(_mcClip, this.stateTime, (st===3?1.2:0.55), st===3, 0.45, 2.2)
+          : ((st===3) ? ((this.stateTime%1.2)/1.2) : clamp(this.stateTime/0.55,0,1));   // carry loops; entry/lift play through
         window.studioApplyClipPose(this, STUDIO.clips[_mcb[_mcStage]], _ph);
         if (opp && this._gripOpp) this._gripOpp(opp, gType);                                   // hands grip the REAL body over the clip
         this.solveFootIK(dt,false);
@@ -10485,7 +10490,13 @@ Fighter.prototype.poseGrabbed = function(dt){
     let _vDone=false;
     try{ const _vS=(GRAPPLE_POSITIONS[by.grapplePos]||{}).mocap, _vN=(st===2?'LIFT':'CARRY');
       if (_vS && _vS.v && _vS.v[_vN] && typeof STUDIO!=='undefined' && STUDIO.clips && STUDIO.clips[_vS.v[_vN]] && window.studioApplyClipPose){
-        window.studioApplyClipPose(this, STUDIO.clips[_vS.v[_vN]], (st===3)?((this.grabTimer%1.2)/1.2):clamp(this.grabTimer/0.6,0,1)); _vDone=true; } }catch(e){}
+        // same clip-rate rule for the VICTIM's half of the hold — otherwise the two bodies in one
+        // grapple play the same move at two different speeds, which is its own kind of wrong.
+        var _vClip = STUDIO.clips[_vS.v[_vN]];
+        var _vPh = window.__clipPhase
+          ? window.__clipPhase(_vClip, this.grabTimer, (st===3?1.2:0.6), st===3, 0.45, 2.2)
+          : ((st===3)?((this.grabTimer%1.2)/1.2):clamp(this.grabTimer/0.6,0,1));
+        window.studioApplyClipPose(this, _vClip, _vPh); _vDone=true; } }catch(e){}
     const sp_static = pos.slave;
     // v74: MULTI-PHASE LIFT — when a position defines liftPoses (currently POWERBOMB/CROSS_POWERBOMB), the held
     // body moves through real named sub-poses (tuck -> belly-to-belly -> shoulder) keyed by hoist progress,
@@ -18696,6 +18707,27 @@ init();
     return w * w * (3 - 2 * w);            // smoothstep — no linear ramp edges
   }
   window.__clipFadeWeight = clipFadeWeight;
+
+  // ── PHASE FROM THE CLIP'S OWN LENGTH, for the GRAPPLE sites ──────────────────────────────
+  // The strike path was fixed by advancing attackPhase at the capture's rate. The grapple path has
+  // the same defect in four more places, each with its own hardcoded window that knows nothing
+  // about the animation it is playing:
+  //     stage entry / lift   clamp(stateTime / 0.55, 0, 1)      the WHOLE capture in 0.55s
+  //     carry loop           (stateTime % 1.2) / 1.2            the WHOLE capture in 1.2s
+  //     victim carry/deliver (grabTimer % 1.2)/1.2, /0.6        0.6s
+  // A 2.15s capture through a 0.55s window plays at 3.9x; an 11s FBX bake at 20x. Same blur as the
+  // strikes, in the half of the game that is supposed to look heaviest.
+  // clipPhase() derives the window from the clip and clamps it to something that still reads as
+  // wrestling. LOOPING clips (the carry) wrap; one-shots clamp at 1.
+  window.__clipPhase = function(clip, elapsed, fallbackWindow, loop, lo, hi){
+    var dur = (clip && clip.dur) || 0;
+    var win = (window.CLIP_RATE === false || dur <= 0.05)
+      ? (fallbackWindow || 1)
+      : Math.max(lo != null ? lo : 0.45, Math.min(hi != null ? hi : 2.2, dur));
+    var p = (elapsed || 0) / win;
+    if (loop) return p - Math.floor(p);
+    return p < 0 ? 0 : (p > 1 ? 1 : p);
+  };
 
   window.studioApplyClipPose = function(f, clip, phase, weight){
     const tt = phase*(clip.dur||1);
@@ -57999,9 +58031,24 @@ window.__deriveVariant = async function(key){
       var orig = window.loadClipFor;
       var wrapped = function(name){
         if (window.CLIP_WORKER === false || !name){ ST.viaMain++; return orig.apply(this, arguments); }
+        // SPEAK THE LOADER'S OWN NAMING. The real loadClipFor does
+        //     base = name without .fbx ;  key = base.toUpperCase().replace(/[^A-Z0-9]/g,'_')
+        // and fetches assets/moves/clips/<KEY>.json. My first version fetched the RAW name, so every
+        // name not already in KEY form 404'd and fell through to the main thread. MEASURED: 76 clips
+        // off-thread, 218 fallbacks. Same class of bug as the bone-name lookup — two components, two
+        // spellings, no translation.
+        var raw  = String(name).replace(/\.fbx$/i, '');
+        var key  = raw.toUpperCase().replace(/[^A-Z0-9]/g, '_');
         var S = null;
         try{ S = new Function('return typeof STUDIO!=="undefined"?STUDIO:null')(); }catch(e){}
-        if (S && S.clips && S.clips[name]) return Promise.resolve(S.clips[name]);   // already resident
+        if (S && S.clips && (S.clips[raw] || S.clips[key])) return Promise.resolve(S.clips[raw] || S.clips[key]);
+        // A DERIVED VARIANT HAS NO FILE. __deriveVariant builds e.g. STRONGZERO_SNAP from its base in
+        // memory — asking the network for it is a guaranteed 404 and a guaranteed fallback. Hand
+        // those straight to the original loader, which owns that path.
+        if (window.__deriveVariant && /_(SNAP|HARD|SLOW|DELAYED|MIRROR|KNEELING|SITOUT|SPIN|RUNNING|CORNER)$/.test(key)){
+          ST.viaMain++; return orig.apply(this, arguments);
+        }
+        name = key;
         var base = (window.CLIP_BASE || 'assets/moves/clips/');
         // ABSOLUTE URL, resolved HERE. A Worker built from a Blob has the blob as its base URL, so a
         // relative path inside it resolves against blob:... and every single fetch 404s. MEASURED
