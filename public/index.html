@@ -4366,6 +4366,27 @@ if (this.J && !this.ragdoll){
 
 // ---- GUARD / IDLE / WALK ----
 Fighter.prototype.poseGuard = function(dt, walking){
+  // ── THE WALK ANIMATION HAS NEVER RUN. NOT ONCE. ─────────────────────────────────────────────
+  // OWNER: "there's no arm sway on locomotion or any movement above the waist".
+  // MEASURED in a live match, holding the walk key, histogramming this very argument against the
+  // fighter's own state at the moment of the call:
+  //        { "undefined/walk": 51 }
+  // Fifty-one calls, the fighter's state is 'walk', and `walking` arrives UNDEFINED every time. So
+  // `if (walking)` below has never been true, and the ENTIRE walking branch — hip sway, the
+  // three-segment spine wave, stride, foot placement, arm swing — has never executed. What you have
+  // been watching is the static guard pose set at the top of this function, sliding around the ring.
+  // That is the "detached puppet with no arm sway" in one word: undefined.
+  //
+  // Every call site passes it (`case 'walk': this.poseGuard(dt, true)`) and all fourteen poseGuard
+  // wrappers declare `(dt, walking)` and forward it. It is being dropped somewhere inside a stack of
+  // 14 poseGuard wrappers sitting under 11 updateProcedural wrappers, and chasing it through that is
+  // both slow and fragile — the next wrapper anyone adds can drop it again.
+  // So: the argument is now a HINT, and the fighter's own state is the authority. A body that is in
+  // the 'walk' state, or has locomotion intent, or is running, IS walking. That cannot be silently
+  // undone by a wrapper.
+  if (walking === undefined || walking === null){
+    walking = (this.state === 'walk') || (Math.abs(this.wantMove || 0) > 0.05) || !!this.running;
+  }
   const t = this.stateTime || 0;
   this.breathPhase += dt * 2.2;
   
@@ -4526,9 +4547,54 @@ Fighter.prototype.poseGuard = function(dt, walking){
     // Clavicle rides with shoulder
     this.J.clavL.set(0.02, 1.345 - hipDrop*0.3, 0.13 + spineYaw*0.05);
     this.J.clavR.set(0.02, 1.345 - hipDrop*0.3,-0.13 + spineYaw*0.05);
-    // guard hands stay at chin level, sway slightly with stride rhythm
-    this.J.haL.set(0.22 + armSwing*0.5, 1.52 - hipDrop*0.3, 0.13);
-    this.J.haR.set(0.18 - armSwing*0.5, 1.50 - hipDrop*0.3, -0.10);
+    // ── REAL ARM SWING, NOT A HELD GUARD ─────────────────────────────────────────────────────
+    // OWNER: "there's no arm sway on locomotion or any movement above the waist". Correct, and this
+    // is the line. The walk pinned both hands at CHIN HEIGHT in a boxer's guard and moved them
+    // 0.05m sideways — armSwing = sin(p) * 0.10, applied at *0.5, on the X axis only. The comment
+    // said as much: "guard hands stay at chin level, sway slightly with stride rhythm". So the legs
+    // walked and everything above the waist was a statue holding its fists up. No shoulder rotation,
+    // no elbow travel, nothing front-to-back — which is the axis an arm actually swings on.
+    //
+    // A real gait swings the arm FORE AND AFT at the shoulder, contralateral to the legs, with the
+    // hands down around waist/hip height. A fighter squared up on an opponent does hold a guard —
+    // that part was right, it was just being applied all the time. So blend between the two:
+    //   GUARD  when an opponent is close enough to hit you (the guard is correct there)
+    //   STRIDE when walking the ring, the ramp, or the world with nobody on you
+    // The blend is smoothed so closing distance raises the hands instead of snapping them up.
+    var _opp = null;
+    try{ _opp = (typeof fighters!=='undefined' && fighters) ? (fighters[0]===this ? fighters[1] : fighters[0]) : null; }catch(e){}
+    var _oppD = 99; try{ if(_opp) _oppD = Math.hypot((_opp.x||0)-(this.x||0), (_opp.z||0)-(this.z||0)); }catch(e){}
+    var _guardWant = (_oppD < (window.GUARD_RANGE!=null?window.GUARD_RANGE:2.6)) ? 1 : 0;
+    this._guardBlend = (this._guardBlend==null) ? _guardWant
+                     : this._guardBlend + (_guardWant - this._guardBlend) * Math.min(1, dt*4.5);
+    var _g = this._guardBlend, _s = 1 - _g;
+
+    // STRIDE pose: hands low, swinging front-to-back. Amplitude scales with how hard you are moving,
+    // so a slow walk is a gentle swing and a run is a real drive. Contralateral to the legs — the
+    // same sin(p) the feet use, negated, which is what armSwing already carried.
+    var _drive = Math.min(1, Math.abs(this.wantMove||0) + (this.running?0.5:0));
+    var _sw    = (window.ARM_SWING!=null?window.ARM_SWING:0.30) * (0.55 + 0.45*_drive);
+    var _swing = Math.sin(p) * _sw * ((AW.contra===false)?1:-1);
+    var _lowY  = 1.06 - hipDrop*0.5;                     // hands at waist/hip, not at the chin
+
+    // GUARD pose: exactly what this line used to do, untouched, so a squared-up fighter is unchanged.
+    var _gLx = 0.22 + armSwing*0.5, _gLy = 1.52 - hipDrop*0.3, _gLz = 0.13;
+    var _gRx = 0.18 - armSwing*0.5, _gRy = 1.50 - hipDrop*0.3, _gRz = -0.10;
+    // STRIDE targets. Z is the fore/aft axis in this rig's local space — that is where a swing lives.
+    var _sLx = 0.06 + Math.abs(_swing)*0.10, _sLy = _lowY + Math.max(0,_swing)*0.10, _sLz = 0.19 + _swing;
+    var _sRx = 0.04 + Math.abs(_swing)*0.10, _sRy = _lowY + Math.max(0,-_swing)*0.10, _sRz = -0.19 - _swing;
+
+    this.J.haL.set(_g*_gLx + _s*_sLx, _g*_gLy + _s*_sLy, _g*_gLz + _s*_sLz);
+    this.J.haR.set(_g*_gRx + _s*_sRx, _g*_gRy + _s*_sRy, _g*_gRz + _s*_sRz);
+    // THE ELBOWS HAVE TO COME WITH THEM. The base pose parks elL/elR at a fixed hint above and never
+    // moves them in the walk, so even a correct hand target bent the arm at the wrist and left the
+    // upper arm dead. Carry them at roughly half the hand's swing, which is where an elbow sits.
+    if (this.J.elL) this.J.elL.set(_g*0.06 + _s*0.05, _g*1.20 + _s*(_lowY+0.26), _g*0.20 + _s*(0.16 + _swing*0.55));
+    if (this.J.elR) this.J.elR.set(_g*0.04 + _s*0.03, _g*1.18 + _s*(_lowY+0.26), _g*(-0.20) + _s*(-0.16 - _swing*0.55));
+    // and the shoulders counter-rotate with the swing, which is what sells it as a body walking
+    // rather than two arms flapping off a fixed torso
+    if (this.J.shL) this.J.shL.pos && this.J.shL.set(0.04, 1.36 - hipDrop*0.5, 0.22 + spineYaw*0.10 + _s*_swing*0.16);
+    if (this.J.shR) this.J.shR.pos && this.J.shR.set(0.04, 1.36 - hipDrop*0.5, -0.22 + spineYaw*0.10 + _s*_swing*0.16);
   } else {
     this.walkPhase += dt * 2.0; // subtle idle weight shift
     // v7: set spine chain in idle too
@@ -4844,7 +4910,39 @@ Fighter.prototype.poseAttack = function(dt){
   // recovery is allowed to be a touch faster/slower per throw
   const _adr = (window.ADRENALINE===false)?1:(1 + (this.adrenaline||0)/100*0.22);
   const _crash = (this._adrCrash>0)?0.72:1;
-  const phaseStep = dt * spd * 2.2 * _adr * _crash * (this.attackPhase>0.55 ? vary.recover*STRIKE.recover : 1);
+  let phaseStep = dt * spd * 2.2 * _adr * _crash * (this.attackPhase>0.55 ? vary.recover*STRIKE.recover : 1);
+  // ── A CAPTURE PLAYS AT ITS OWN SPEED, NOT THE MOVE TIMER'S ────────────────────────────────
+  // OWNER: "the animations are happening at so fast speeds that u can't see the animations on
+  // strikes happening". He is exactly right and this line is why.
+  //
+  // attackPhase runs 0 -> 1 in about 0.45s (dt * 2.2), which is the correct life of a PROCEDURAL
+  // jab. But `p` is then handed straight to studioApplyClipPose as the clip's phase, which maps the
+  // WHOLE CAPTURE onto that 0.45s window. So the capture plays at (clip.dur / 0.45)x:
+  //     a 2.15s capture (JUNGLE_JUICE)      -> 4.8x speed
+  //     a 4.22s capture (TIGER_FEINT_KICK)  -> 9.4x speed
+  //     an 11s FBX bake (DOUBLESUPLEX)      -> 24x  = a single-frame blur
+  // Every mocap capture we own has been fast-forwarded into invisibility. Fixing the bone-name
+  // resolution earlier made the clips REACH the skeleton; it could not make them watchable, because
+  // they were still being played at up to twenty-four times speed.
+  //
+  // When a move carries a clip, the phase now advances at the CLIP's rate instead: one playback over
+  // the capture's own duration, clamped into a window that still reads as a wrestling move (a 0.2s
+  // capture is not stretched to a crawl, an 11s one is not allowed to stop the match). The strike's
+  // own speed stats still scale it, so a fast fighter still throws faster — only the BASE rate now
+  // comes from the animation rather than from a constant that knows nothing about it.
+  // window.CLIP_RATE=false reverts to the old constant.
+  try{
+    if (window.CLIP_RATE !== false && m && m.clip && typeof STUDIO !== 'undefined' && STUDIO.clips && STUDIO.clips[m.clip]){
+      const _cd = STUDIO.clips[m.clip].dur || 0;
+      if (_cd > 0.05){
+        const _lo = (window.CLIP_MIN_DUR != null ? window.CLIP_MIN_DUR : 0.34);
+        const _hi = (window.CLIP_MAX_DUR != null ? window.CLIP_MAX_DUR : 1.50);
+        const _play = Math.max(_lo, Math.min(_hi, _cd));
+        // keep the per-fighter speed feel: spd is ~1 for an average striker, so this stays honest
+        phaseStep = dt * (spd * _adr * _crash) / _play;
+      }
+    }
+  }catch(_e){}
   this.attackPhase = Math.min(1, Math.max(0, this.attackPhase + phaseStep)); // v101 guard NaN/neg
   const p = this.attackPhase;
   // phases: windup (0-0.3), strike (0.3-0.55), recover (0.55-1)
