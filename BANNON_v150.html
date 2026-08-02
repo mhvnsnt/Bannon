@@ -57903,3 +57903,149 @@ window.__deriveVariant = async function(key){
   console.log('%c[BANNON_LOADORDER] fighter models take the network first; clip warming yields','color:#7CFC00');
 })();
 </script>
+<script>
+// ============================================================================================
+// BANNON_CLIPWORKER — the mid-combat freeze, and it is not the GPU.
+//
+// OWNER, many times over many sessions: "the game keeps freezing mid match", "the game still
+// freezes mid combat". Every previous answer of mine has been about frame RATE, which is a GPU
+// question I cannot settle from this container. This is a different thing and it reproduces
+// anywhere: a HITCH, on the frame a move is first thrown.
+//
+// MEASURED:
+//   * assets/moves/clips is 269.7 MB across 973 files. Median 103 KB, fifty of them over 1 MB.
+//   * a move that has not been played yet is fetched by loadClipFor AT THE MOMENT IT FIRES, and the
+//     response is JSON.parse'd ON THE MAIN THREAD.
+//   * watching the network across a real match: 112 clip requests, still arriving 86 s after boot,
+//     individual clips taking 7-17 s while they fight each other for the connection pool.
+//   JSON.parse of a megabyte blocks the main thread outright — hundreds of milliseconds on a phone —
+//   and it lands exactly when you throw a move you have not thrown yet. That is the freeze.
+//
+// THE FIX KEEPS EVERY BYTE OF EVERY CLIP. I very nearly shipped the other fix — stripping the ~92%
+// of bone tracks (fingers, face, tongue, eyelids, cloth, toes) that our current 28-joint rigs cannot
+// drive, which would have taken the bank 269.7 MB -> 69.3 MB. The owner's call was: "our rigs
+// physically can have all those, give them to them." He is right — those channels are finger curl
+// and facial performance, which is the direction this game is going, and throwing them away to buy
+// frame time would have been the lazy trade. So nothing is stripped. Instead the parse moves OFF the
+// main thread, where its cost stops being a dropped frame.
+//
+// A Worker fetches and parses; the main thread receives a finished object. The worker is built from
+// a Blob so it stays inside the single-file build (no second file to ship, works from file:// as
+// well as http). If Workers or Blob URLs are unavailable the original loader is used unchanged, so
+// this can only ever be a speed-up, never a new failure mode.
+// window.CLIP_WORKER=false forces the old path.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_CLIPWORKER) return;
+
+  var ST = { viaWorker:0, viaMain:0, failed:0, bytes:0, msTotal:0, peakMs:0, workerOk:null };
+  var worker = null, seq = 0, pending = {};
+
+  function makeWorker(){
+    if (worker !== null) return worker;
+    if (window.CLIP_WORKER === false || typeof Worker === 'undefined' || typeof Blob === 'undefined'){
+      worker = false; ST.workerOk = false; return worker;
+    }
+    try{
+      var src = [
+        'self.onmessage = function(e){',
+        '  var d = e.data, id = d.id, url = d.url;',
+        '  fetch(url).then(function(r){',
+        '    if (!r.ok) throw new Error("HTTP " + r.status);',
+        '    return r.text();',
+        '  }).then(function(t){',
+        // parse HERE, in the worker. this is the whole point: the main thread never sees the string.
+        '    var clip = JSON.parse(t);',
+        '    self.postMessage({ id:id, ok:true, clip:clip, bytes:t.length });',
+        '  }).catch(function(err){',
+        '    self.postMessage({ id:id, ok:false, err:String(err && err.message || err) });',
+        '  });',
+        '};'
+      ].join('\n');
+      var url = URL.createObjectURL(new Blob([src], { type:'text/javascript' }));
+      worker = new Worker(url);
+      worker.onmessage = function(e){
+        var d = e.data, p = pending[d.id];
+        if (!p) return;
+        delete pending[d.id];
+        var ms = (typeof performance!=='undefined' ? performance.now() : Date.now()) - p.t0;
+        ST.msTotal += ms; if (ms > ST.peakMs) ST.peakMs = ms;
+        if (d.ok){ ST.viaWorker++; ST.bytes += (d.bytes||0); p.resolve(d.clip); }
+        else { ST.failed++; p.reject(new Error(d.err || 'clip worker failed')); }
+      };
+      worker.onerror = function(){ ST.workerOk = false; };
+      ST.workerOk = true;
+    }catch(e){ worker = false; ST.workerOk = false; }
+    return worker;
+  }
+
+  function fetchClipOffThread(url){
+    var w = makeWorker();
+    if (!w) return null;
+    var id = ++seq;
+    return new Promise(function(resolve, reject){
+      pending[id] = { resolve:resolve, reject:reject, t0:(typeof performance!=='undefined'?performance.now():Date.now()) };
+      try{ w.postMessage({ id:id, url:url }); }
+      catch(e){ delete pending[id]; reject(e); }
+    });
+  }
+  window.__fetchClipOffThread = fetchClipOffThread;
+
+  // ── wrap loadClipFor so every warmer and every lazy in-combat load goes off-thread ────────
+  function arm(n){
+    n = n || 0;
+    if (typeof window.loadClipFor === 'function' && !window.loadClipFor.__cw){
+      var orig = window.loadClipFor;
+      var wrapped = function(name){
+        if (window.CLIP_WORKER === false || !name){ ST.viaMain++; return orig.apply(this, arguments); }
+        var S = null;
+        try{ S = new Function('return typeof STUDIO!=="undefined"?STUDIO:null')(); }catch(e){}
+        if (S && S.clips && S.clips[name]) return Promise.resolve(S.clips[name]);   // already resident
+        var base = (window.CLIP_BASE || 'assets/moves/clips/');
+        // ABSOLUTE URL, resolved HERE. A Worker built from a Blob has the blob as its base URL, so a
+        // relative path inside it resolves against blob:... and every single fetch 404s. MEASURED
+        // before this line existed: 252 attempts, 252 failures, 0 clips loaded off-thread — the
+        // fallback quietly carried the whole game, which is exactly the kind of silent no-op this
+        // codebase is full of. Resolve against location.href on the main thread and post the finished
+        // URL across.
+        var abs;
+        try{ abs = new URL(base + name + '.json', location.href).href; }
+        catch(e){ abs = base + name + '.json'; }
+        var self = this, args = arguments;
+        var p = fetchClipOffThread(abs);
+        if (!p){ ST.viaMain++; return orig.apply(self, args); }
+        return p.then(function(clip){
+          if (!clip || !clip.keys) throw new Error('empty clip');
+          try{ if (S){ S.clips = S.clips || {}; S.clips[name] = clip; } }catch(e){}
+          return clip;
+        }).catch(function(){
+          // any miss at all — a renamed file, a CDN path, an offline build — falls straight back to
+          // the loader that was already here. This layer can never be the reason a clip fails.
+          ST.viaMain++;
+          try{ return orig.apply(self, args); }catch(e){ return null; }
+        });
+      };
+      // carry any flags an earlier wrapper stamped (BANNON_WARM marks __warm and reads it back;
+      // BANNON_LOADORDER marks __lo). Losing those silently disarms those systems.
+      for (var k in orig){ try{ wrapped[k] = orig[k]; }catch(e){} }
+      wrapped.__cw = true;
+      window.loadClipFor = wrapped;
+      console.log('%c[BANNON_CLIPWORKER] clip parsing moved off the main thread','color:#7CFC00');
+      return;
+    }
+    if (n < 300) setTimeout(function(){ arm(n+1); }, 200);
+  }
+  arm(0);
+
+  window.BANNON_CLIPWORKER = {
+    stats: function(){
+      return { workerAvailable: ST.workerOk, loadedOffThread: ST.viaWorker, fellBackToMain: ST.viaMain,
+               failed: ST.failed, megabytesParsedOffThread: +(ST.bytes/1e6).toFixed(2),
+               avgMsPerClip: ST.viaWorker ? +(ST.msTotal/ST.viaWorker).toFixed(0) : 0,
+               slowestClipMs: +ST.peakMs.toFixed(0),
+               armed: !!(window.loadClipFor && window.loadClipFor.__cw) };
+    }
+  };
+})();
+</script>
