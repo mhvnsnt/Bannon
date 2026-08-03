@@ -4932,8 +4932,9 @@ Fighter.prototype.poseAttack = function(dt){
   // comes from the animation rather than from a constant that knows nothing about it.
   // window.CLIP_RATE=false reverts to the old constant.
   try{
-    if (window.CLIP_RATE !== false && m && m.clip && typeof STUDIO !== 'undefined' && STUDIO.clips && STUDIO.clips[m.clip]){
-      const _cd = STUDIO.clips[m.clip].dur || 0;
+    var _rc = (m && m.clip && window.__studioClip) ? window.__studioClip(m.clip) : null;
+    if (window.CLIP_RATE !== false && _rc){
+      const _cd = _rc.dur || 0;
       if (_cd > 0.05){
         const _lo = (window.CLIP_MIN_DUR != null ? window.CLIP_MIN_DUR : 0.34);
         const _hi = (window.CLIP_MAX_DUR != null ? window.CLIP_MAX_DUR : 1.50);
@@ -5035,9 +5036,12 @@ Fighter.prototype.poseAttack = function(dt){
   if (m && m.name && window.__slotClipRotate){ try{ var _rc=window.__slotClipRotate(this, m); if(_rc) m.clip=_rc; }catch(_e){} }
   // LAZY-LOAD a mapped clip that isn't in STUDIO yet (the #1 reason mapped moves fell back to
   // procedural: the clip was named on the move but never loaded). Next rep plays the real mocap.
-  if (m && m.clip && window.loadClipFor && typeof STUDIO!=='undefined' && !(STUDIO.clips&&(STUDIO.clips[m.clip]))){ try{ window.loadClipFor(m.clip); }catch(_e){} }
+  if (m && m.clip && window.loadClipFor && !(window.__studioClip && window.__studioClip(m.clip))){ try{ window.loadClipFor(m.clip); }catch(_e){} }
   // BANNON STUDIO: custom clip drives the body while hit/damage above stays as-is
-  if (m && typeof STUDIO!=='undefined' && m.clip && STUDIO.clips[m.clip]) { studioApplyClipPose(this, STUDIO.clips[m.clip], p); return; }
+  // resolve through __studioClip, never verbatim — the combat map hands us "Drop Kick (1)" and the
+  // clip is banked as DROP_KICK_1. Verbatim missed on 100% of moves (measured: 72 fired, 0 played).
+  var _mc = (m && m.clip && window.__studioClip) ? window.__studioClip(m.clip) : null;
+  if (_mc) { studioApplyClipPose(this, _mc, p); return; }
 
   // KINETIC CHAIN — UFC/MMA grade: hips fire first (weight transfer), torso whips after,
   // then the shoulder drives through, arm extends last. The OFF-HAND TUCKS TO JAW as power fires.
@@ -15894,6 +15898,42 @@ const modelStatusText = { p1:'', p2:'' };
 // character that is not a letter or a digit. "mixamorig:LeftArm", "mixamorigLeftArm",
 // "MIXAMORIG_left_arm" and "mixamorig left arm" all collapse to "mixamorigleftarm".
 window.__normBoneKey = function(n){ return String(n==null?'':n).toLowerCase().replace(/[^a-z0-9]/g,''); };
+
+// ── ONE CLIP RESOLVER, for the same reason there is one bone resolver ────────────────────────
+// THIS IS THE THIRD TIME THE SAME DEFECT HAS COST US THE ANIMATIONS: two components spelling the
+// same thing differently, with no translation layer between them.
+//   1. clip BONE tracks wrote "mixamorig:LeftArm", boneByName held "mixamorigleftarm"  -> 0 of 79,493 resolved
+//   2. the clip WORKER asked for the raw name, the loader wanted KEY form               -> 218 fell back
+//   3. and here: __combatClipFor returns a HUMAN-READABLE name — measured, BODY KICK maps to
+//      "Drop Kick (1)" — while STUDIO.clips is keyed in KEY form, DROP_KICK_1. So the verbatim
+//      lookup `STUDIO.clips[m.clip]` misses on every single move.
+// MEASURED in a live match: 72 moves fired, __combatClipFor resolved a name for them, 285 clips were
+// resident, and withClip / residentWhenFired were BOTH ZERO. Not one capture played. Every bit of
+// motion you were seeing was the procedural fallback — which is exactly why fixing the bone resolver,
+// the playback rate and the blending still did not make combat look captured.
+window.__studioClip = function(name){
+  if (!name) return null;
+  var S = null;
+  try{ S = (typeof STUDIO !== 'undefined') ? STUDIO : null; }catch(e){}
+  if (!S || !S.clips) return null;
+  if (S.clips[name]) return S.clips[name];
+  var base = String(name).replace(/\.fbx$/i, '');
+  if (S.clips[base]) return S.clips[base];
+  var key = base.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  if (S.clips[key]) return S.clips[key];
+  // collapse runs of underscores too: "Drop Kick (1)" -> DROP_KICK__1_ -> DROP_KICK_1
+  var tight = key.replace(/_+/g, '_').replace(/^_|_$/g, '');
+  if (S.clips[tight]) return S.clips[tight];
+  // last resort: a case/punctuation-insensitive sweep, cached so it costs once per name
+  var C = window.__clipAliasCache || (window.__clipAliasCache = {});
+  if (name in C) return C[name] ? S.clips[C[name]] : null;
+  var want = base.toLowerCase().replace(/[^a-z0-9]/g, '');
+  for (var k in S.clips){
+    if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === want){ C[name] = k; return S.clips[k]; }
+  }
+  C[name] = null;
+  return null;
+};
 // Build the index from an already-lowercased boneByName map. Also files a SUFFIX alias with the
 // rig prefix removed, so a capture named "mixamorig:LeftArm" still finds a bone plainly called
 // "LeftArm" on a non-Mixamo rig (and vice versa). Exact match always wins over the alias.
@@ -29872,8 +29912,9 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
     }
 
     // Studio clip override
-    if(typeof STUDIO !== 'undefined' && mv.clip && STUDIO.clips[mv.clip]){
-      studioApplyClipPose(this, STUDIO.clips[mv.clip], p);
+    var _mvc = (mv.clip && window.__studioClip) ? window.__studioClip(mv.clip) : null;
+    if(_mvc){
+      studioApplyClipPose(this, _mvc, p);
       return;
     }
 
