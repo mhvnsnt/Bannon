@@ -41,6 +41,13 @@ jobs:
           # with the package; the delivery was the problem. Pages serves it over plain HTTPS with a
           # proper filename and a real download page beside it.
           cp dist/BANNON.apk _site/BANNON.apk || true
+          # BOTH APKs, because the normal one can be refused on IDENTITY. When an install of the
+          # same package name signed with a different key is already on the phone, Android rejects
+          # the upgrade — and some OEM installers report that refusal as "problem parsing the
+          # package" rather than as a signature error, which sends you hunting a corrupt file that
+          # is not corrupt. com.bannon.game.fresh installs ALONGSIDE instead of over, so it cannot
+          # hit that. It was gitignored until today and had never reached any delivery path.
+          cp dist/BANNON-fresh.apk _site/BANNON-fresh.apk || true
           cp dist/version.json _site/version.json || true
           APKSZ=$(du -h dist/BANNON.apk 2>/dev/null | cut -f1)
           VC=$(grep -o '"build":[0-9]*' dist/version.json 2>/dev/null | head -1 | cut -d: -f2)
@@ -56,6 +63,7 @@ jobs:
           <h1>BANNON</h1>
           <p>build <b>${VC}</b> &middot; ${APKSZ}</p>
           <a class="btn" href="BANNON.apk" download="BANNON.apk">DOWNLOAD APK</a>
+          <a class="btn alt" href="BANNON-fresh.apk" download="BANNON-fresh.apk">SIDE-BY-SIDE APK &mdash; use this if the one above will not install</a>
           <a class="btn alt" href="./">OR PLAY IN THE BROWSER (no install)</a>
           <h3>If Android says "problem parsing the package"</h3>
           <ol>
