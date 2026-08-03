@@ -1,6 +1,11 @@
 node_modules/
 dist/*
 !dist/BANNON.apk
+# The side-by-side "fresh id" APK — the one that installs when the normal package will not upgrade
+# over what is already on the phone. android.yml publishes it next to BANNON.apk, so it has to be
+# tracked. It was NOT, and `git add` on an ignored path exits 1, which killed the publish step of
+# thirty consecutive builds before it could commit BANNON.apk, BANNON.html or version.json.
+!dist/BANNON-fresh.apk
 # OTA payload the installed app fetches to self-update (published by android.yml on each main push).
 # These MUST be tracked or the phone can never see a new build.
 !dist/BANNON.html

@@ -237,7 +237,18 @@ jobs:
           git config user.name  "Claude"
           git config user.email "noreply@anthropic.com"
           git add dist/BANNON.apk dist/BANNON.html dist/version.json
-          [ -f dist/BANNON-fresh.apk ] && git add dist/BANNON-fresh.apk
+          # THIS LINE KILLED THIRTY CONSECUTIVE BUILDS. `dist/BANNON-fresh.apk` matches `dist/*` in
+          # .gitignore and has no `!` exception, so `git add` REFUSES it and exits 1 — and a GitHub
+          # Actions `run:` block is `bash -e`, so the step died right here, AFTER version.json was
+          # written and BEFORE `git commit` and `git push`. The APK built fine every time and was
+          # then thrown away. Measured: the last successful publish is build 2508 / commit 3f32626
+          # (2026-08-01 13:05); every push to main since has failed with
+          #     The following paths are ignored by one of your .gitignore files: dist/BANNON-fresh.apk
+          #     ##[error]Process completed with exit code 1
+          # so the phone's OTA check has seen the same version.json for every fix since.
+          # .gitignore now un-ignores it, and this add can never be fatal again regardless.
+          [ -f dist/BANNON-fresh.apk ] && { git add -f dist/BANNON-fresh.apk || echo "::warning::could not stage the fresh-id APK; publishing without it"; }
+          true   # the optional artifact must never decide whether the OTA payload ships
           if git diff --cached --quiet; then echo "dist unchanged"; exit 0; fi
           git commit -m "ci: rebuild dist/BANNON.apk + OTA payload from ${GITHUB_SHA::7} [skip ci]"
           # PUSH RACE: this job checked out an older sha, so main has usually moved on by the time the
