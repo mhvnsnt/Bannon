@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2508"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2535"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -463,6 +463,38 @@ window.BANNON_BUILD = (function(){ var s="2508"; var n=parseInt(s,10); return (i
 <script src="assets/vendor/GLTFLoader.js"></script>
 <script>if(typeof THREE!=='undefined'&&!THREE.GLTFLoader){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');}</script>
 <script>if(typeof THREE!=='undefined'&&!THREE.GLTFLoader){document.write('<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');}</script>
+<!-- MESHOPT DECODER (meshoptimizer, MIT, vendored — never a CDN, same reason as three.js).
+     Our character rigs are the single biggest thing the phone has to move: 361 MB of GLB across the
+     roster, and BANNON_rigged alone was 11.5 MB of which only 1% is texture — the rest is raw
+     float32 geometry that GLTFLoader fetches, parses and uploads ON THE MAIN THREAD at the exact
+     moment a match starts. EXT_meshopt_compression quantizes and entropy-codes that data (measured
+     on VIPER: 5.63 -> 1.11 MB, 80% smaller) and decodes in WASM at hundreds of MB/s.
+     GLTFLoader already ships the plugin; it just needs a decoder handed to it. -->
+<script src="assets/vendor/meshopt_decoder.js"></script>
+<script>
+/* Register the decoder on EVERY GLTFLoader, not at the 17 call sites.
+   There are seventeen separate `new THREE.GLTFLoader()` in this file and more will be written; a
+   compressed model reaching a loader that was never given a decoder throws
+   "setMeshoptDecoder must be called before loading compressed files" and the character silently
+   falls back to the procedural body — which is precisely the bug class the owner keeps reporting.
+   Patch the prototype once so it is impossible to get wrong. */
+(function(){
+  try{
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    var P = THREE.GLTFLoader.prototype;
+    ['load','parse','loadAsync','parseAsync'].forEach(function(m){
+      var o = P[m];
+      if (typeof o !== 'function' || o.__meshopt) return;
+      var w = function(){
+        if (!this.meshoptDecoder && window.MeshoptDecoder) { try{ this.setMeshoptDecoder(window.MeshoptDecoder); }catch(e){} }
+        return o.apply(this, arguments);
+      };
+      w.__meshopt = 1; P[m] = w;
+    });
+    window.__MESHOPT_READY = !!window.MeshoptDecoder;
+  }catch(e){}
+})();
+</script>
 <!-- FBXLoader + fflate — VENDORED LOCALLY so the offline APK (file://) can load mocap animation.
      This is THE reason combat looked marionette: FBXLoader was CDN-only and never loaded on the APK,
      so STUDIO.clips stayed empty and every move fell back to procedural spring poses. Local-first;
@@ -4185,6 +4217,17 @@ if (this.state==='ropeclimb'){ this.poseRopeClimb(dt); this.stateTime+=dt; retur
   else if (this.state==='getup') hl = 0.11;
   else if (this.state==='idle' || this.state==='walk') hl = 0.065;
 
+  // MOCAP IS NOT A SUGGESTION. Every joint target goes through a critically damped spring, which is
+  // right for procedural poses (they are goals for a body with mass) and wrong for a capture, where
+  // the keys ARE the body's real positions. A 0.3s strike run through a 0.045-0.11s half-life never
+  // reaches its own extremes — the punch lands short, the slam never fully folds, and what you see is
+  // a smeared approximation of the capture. While a clip is driving this fighter, tighten the spring
+  // so the body actually arrives where the mocap says it is. Still a spring (so nothing snaps or
+  // explodes on a dropped frame), just a fast one. window.CLIP_HL_MUL tunes it; 1 = old behaviour.
+  if (this._clipDriveAt && (performance.now() - this._clipDriveAt) < 120){
+    hl *= (window.CLIP_HL_MUL != null ? window.CLIP_HL_MUL : 0.30);
+  }
+
   if (this.state==='idle' && typeof DIRECTOR!=='undefined' && DIRECTOR.combat){
     const _amp=DIRECTOR.combat.bounce||0, _g=DIRECTOR.combat.guard||0, _sw=DIRECTOR.combat.sway||0;
     if(_amp>0||_g>0||_sw>0){
@@ -4355,6 +4398,27 @@ if (this.J && !this.ragdoll){
 
 // ---- GUARD / IDLE / WALK ----
 Fighter.prototype.poseGuard = function(dt, walking){
+  // ── THE WALK ANIMATION HAS NEVER RUN. NOT ONCE. ─────────────────────────────────────────────
+  // OWNER: "there's no arm sway on locomotion or any movement above the waist".
+  // MEASURED in a live match, holding the walk key, histogramming this very argument against the
+  // fighter's own state at the moment of the call:
+  //        { "undefined/walk": 51 }
+  // Fifty-one calls, the fighter's state is 'walk', and `walking` arrives UNDEFINED every time. So
+  // `if (walking)` below has never been true, and the ENTIRE walking branch — hip sway, the
+  // three-segment spine wave, stride, foot placement, arm swing — has never executed. What you have
+  // been watching is the static guard pose set at the top of this function, sliding around the ring.
+  // That is the "detached puppet with no arm sway" in one word: undefined.
+  //
+  // Every call site passes it (`case 'walk': this.poseGuard(dt, true)`) and all fourteen poseGuard
+  // wrappers declare `(dt, walking)` and forward it. It is being dropped somewhere inside a stack of
+  // 14 poseGuard wrappers sitting under 11 updateProcedural wrappers, and chasing it through that is
+  // both slow and fragile — the next wrapper anyone adds can drop it again.
+  // So: the argument is now a HINT, and the fighter's own state is the authority. A body that is in
+  // the 'walk' state, or has locomotion intent, or is running, IS walking. That cannot be silently
+  // undone by a wrapper.
+  if (walking === undefined || walking === null){
+    walking = (this.state === 'walk') || (Math.abs(this.wantMove || 0) > 0.05) || !!this.running;
+  }
   const t = this.stateTime || 0;
   this.breathPhase += dt * 2.2;
   
@@ -4515,9 +4579,54 @@ Fighter.prototype.poseGuard = function(dt, walking){
     // Clavicle rides with shoulder
     this.J.clavL.set(0.02, 1.345 - hipDrop*0.3, 0.13 + spineYaw*0.05);
     this.J.clavR.set(0.02, 1.345 - hipDrop*0.3,-0.13 + spineYaw*0.05);
-    // guard hands stay at chin level, sway slightly with stride rhythm
-    this.J.haL.set(0.22 + armSwing*0.5, 1.52 - hipDrop*0.3, 0.13);
-    this.J.haR.set(0.18 - armSwing*0.5, 1.50 - hipDrop*0.3, -0.10);
+    // ── REAL ARM SWING, NOT A HELD GUARD ─────────────────────────────────────────────────────
+    // OWNER: "there's no arm sway on locomotion or any movement above the waist". Correct, and this
+    // is the line. The walk pinned both hands at CHIN HEIGHT in a boxer's guard and moved them
+    // 0.05m sideways — armSwing = sin(p) * 0.10, applied at *0.5, on the X axis only. The comment
+    // said as much: "guard hands stay at chin level, sway slightly with stride rhythm". So the legs
+    // walked and everything above the waist was a statue holding its fists up. No shoulder rotation,
+    // no elbow travel, nothing front-to-back — which is the axis an arm actually swings on.
+    //
+    // A real gait swings the arm FORE AND AFT at the shoulder, contralateral to the legs, with the
+    // hands down around waist/hip height. A fighter squared up on an opponent does hold a guard —
+    // that part was right, it was just being applied all the time. So blend between the two:
+    //   GUARD  when an opponent is close enough to hit you (the guard is correct there)
+    //   STRIDE when walking the ring, the ramp, or the world with nobody on you
+    // The blend is smoothed so closing distance raises the hands instead of snapping them up.
+    var _opp = null;
+    try{ _opp = (typeof fighters!=='undefined' && fighters) ? (fighters[0]===this ? fighters[1] : fighters[0]) : null; }catch(e){}
+    var _oppD = 99; try{ if(_opp) _oppD = Math.hypot((_opp.x||0)-(this.x||0), (_opp.z||0)-(this.z||0)); }catch(e){}
+    var _guardWant = (_oppD < (window.GUARD_RANGE!=null?window.GUARD_RANGE:2.6)) ? 1 : 0;
+    this._guardBlend = (this._guardBlend==null) ? _guardWant
+                     : this._guardBlend + (_guardWant - this._guardBlend) * Math.min(1, dt*4.5);
+    var _g = this._guardBlend, _s = 1 - _g;
+
+    // STRIDE pose: hands low, swinging front-to-back. Amplitude scales with how hard you are moving,
+    // so a slow walk is a gentle swing and a run is a real drive. Contralateral to the legs — the
+    // same sin(p) the feet use, negated, which is what armSwing already carried.
+    var _drive = Math.min(1, Math.abs(this.wantMove||0) + (this.running?0.5:0));
+    var _sw    = (window.ARM_SWING!=null?window.ARM_SWING:0.30) * (0.55 + 0.45*_drive);
+    var _swing = Math.sin(p) * _sw * ((AW.contra===false)?1:-1);
+    var _lowY  = 1.06 - hipDrop*0.5;                     // hands at waist/hip, not at the chin
+
+    // GUARD pose: exactly what this line used to do, untouched, so a squared-up fighter is unchanged.
+    var _gLx = 0.22 + armSwing*0.5, _gLy = 1.52 - hipDrop*0.3, _gLz = 0.13;
+    var _gRx = 0.18 - armSwing*0.5, _gRy = 1.50 - hipDrop*0.3, _gRz = -0.10;
+    // STRIDE targets. Z is the fore/aft axis in this rig's local space — that is where a swing lives.
+    var _sLx = 0.06 + Math.abs(_swing)*0.10, _sLy = _lowY + Math.max(0,_swing)*0.10, _sLz = 0.19 + _swing;
+    var _sRx = 0.04 + Math.abs(_swing)*0.10, _sRy = _lowY + Math.max(0,-_swing)*0.10, _sRz = -0.19 - _swing;
+
+    this.J.haL.set(_g*_gLx + _s*_sLx, _g*_gLy + _s*_sLy, _g*_gLz + _s*_sLz);
+    this.J.haR.set(_g*_gRx + _s*_sRx, _g*_gRy + _s*_sRy, _g*_gRz + _s*_sRz);
+    // THE ELBOWS HAVE TO COME WITH THEM. The base pose parks elL/elR at a fixed hint above and never
+    // moves them in the walk, so even a correct hand target bent the arm at the wrist and left the
+    // upper arm dead. Carry them at roughly half the hand's swing, which is where an elbow sits.
+    if (this.J.elL) this.J.elL.set(_g*0.06 + _s*0.05, _g*1.20 + _s*(_lowY+0.26), _g*0.20 + _s*(0.16 + _swing*0.55));
+    if (this.J.elR) this.J.elR.set(_g*0.04 + _s*0.03, _g*1.18 + _s*(_lowY+0.26), _g*(-0.20) + _s*(-0.16 - _swing*0.55));
+    // and the shoulders counter-rotate with the swing, which is what sells it as a body walking
+    // rather than two arms flapping off a fixed torso
+    if (this.J.shL) this.J.shL.pos && this.J.shL.set(0.04, 1.36 - hipDrop*0.5, 0.22 + spineYaw*0.10 + _s*_swing*0.16);
+    if (this.J.shR) this.J.shR.pos && this.J.shR.set(0.04, 1.36 - hipDrop*0.5, -0.22 + spineYaw*0.10 + _s*_swing*0.16);
   } else {
     this.walkPhase += dt * 2.0; // subtle idle weight shift
     // v7: set spine chain in idle too
@@ -4833,7 +4942,40 @@ Fighter.prototype.poseAttack = function(dt){
   // recovery is allowed to be a touch faster/slower per throw
   const _adr = (window.ADRENALINE===false)?1:(1 + (this.adrenaline||0)/100*0.22);
   const _crash = (this._adrCrash>0)?0.72:1;
-  const phaseStep = dt * spd * 2.2 * _adr * _crash * (this.attackPhase>0.55 ? vary.recover*STRIKE.recover : 1);
+  let phaseStep = dt * spd * 2.2 * _adr * _crash * (this.attackPhase>0.55 ? vary.recover*STRIKE.recover : 1);
+  // ── A CAPTURE PLAYS AT ITS OWN SPEED, NOT THE MOVE TIMER'S ────────────────────────────────
+  // OWNER: "the animations are happening at so fast speeds that u can't see the animations on
+  // strikes happening". He is exactly right and this line is why.
+  //
+  // attackPhase runs 0 -> 1 in about 0.45s (dt * 2.2), which is the correct life of a PROCEDURAL
+  // jab. But `p` is then handed straight to studioApplyClipPose as the clip's phase, which maps the
+  // WHOLE CAPTURE onto that 0.45s window. So the capture plays at (clip.dur / 0.45)x:
+  //     a 2.15s capture (JUNGLE_JUICE)      -> 4.8x speed
+  //     a 4.22s capture (TIGER_FEINT_KICK)  -> 9.4x speed
+  //     an 11s FBX bake (DOUBLESUPLEX)      -> 24x  = a single-frame blur
+  // Every mocap capture we own has been fast-forwarded into invisibility. Fixing the bone-name
+  // resolution earlier made the clips REACH the skeleton; it could not make them watchable, because
+  // they were still being played at up to twenty-four times speed.
+  //
+  // When a move carries a clip, the phase now advances at the CLIP's rate instead: one playback over
+  // the capture's own duration, clamped into a window that still reads as a wrestling move (a 0.2s
+  // capture is not stretched to a crawl, an 11s one is not allowed to stop the match). The strike's
+  // own speed stats still scale it, so a fast fighter still throws faster — only the BASE rate now
+  // comes from the animation rather than from a constant that knows nothing about it.
+  // window.CLIP_RATE=false reverts to the old constant.
+  try{
+    var _rc = (m && m.clip && window.__studioClip) ? window.__studioClip(m.clip) : null;
+    if (window.CLIP_RATE !== false && _rc){
+      const _cd = _rc.dur || 0;
+      if (_cd > 0.05){
+        const _lo = (window.CLIP_MIN_DUR != null ? window.CLIP_MIN_DUR : 0.34);
+        const _hi = (window.CLIP_MAX_DUR != null ? window.CLIP_MAX_DUR : 1.50);
+        const _play = Math.max(_lo, Math.min(_hi, _cd));
+        // keep the per-fighter speed feel: spd is ~1 for an average striker, so this stays honest
+        phaseStep = dt * (spd * _adr * _crash) / _play;
+      }
+    }
+  }catch(_e){}
   this.attackPhase = Math.min(1, Math.max(0, this.attackPhase + phaseStep)); // v101 guard NaN/neg
   const p = this.attackPhase;
   // phases: windup (0-0.3), strike (0.3-0.55), recover (0.55-1)
@@ -4900,35 +5042,31 @@ Fighter.prototype.poseAttack = function(dt){
     if(window.PHYS_STRIKE && window.RK_BODY && window.BPHYS && window.BPHYS.physStrike) window.BPHYS.physStrike(this, m);
     registerHit(this, m);
   }
-  // MOVESET -> COMBAT: if this move has NO clip but the fighter EQUIPPED one for this position in
-  // the MOVESET editor, adopt it (bridges the moveset lib to live combat). Loads lazily.
-  if (m && !m.clip && window.equippedClipFor){ try{
-    var _ck=(this.opts&&this.opts.name)||this.specName;
-    var _pos=m.pos||m.grapplePos||(window.resolveGrapPos?window.resolveGrapPos(m):null);
-    var _eq=_pos?window.equippedClipFor(_ck,_pos):null;
-    if(_eq) m.clip=_eq;
-  }catch(_e){} }
-  // COMBAT TABLE -> MOCAP. The move_clip_map only ever decorated the MOVE LIBRARY; the combat tables
-  // these strikes come from (FIRE JAB, LEO CROSS, SCORPIO HOOK…) shared ZERO names with it, so no
-  // strike in the game ever carried a clip and studioApplyClipPose was measured at 0 calls across a
-  // full match. combat_clip_map.json maps them by limb/trajectory/style; this stamps it on.
-  if (m && !m.clip && m.name && window.__combatClipFor){ try{ var _cc=window.__combatClipFor(m.name); if(_cc) m.clip=_cc; }catch(_e){} }
-  // VARIETY. STRIKE_MAP[kind][dir] resolves to exactly ONE move name, so a given button + direction
-  // always produced the same move and therefore the same capture. MEASURED: 24 driven attacks across
-  // four buttons played 3 distinct clips — HURRICANE_KICK x15, VAR_PILEDRIVER_2 x11,
-  // BANNON_STRONG_STRIKE_COMBO x6. It animates; it just animates identically every time, which is
-  // what reads as "the animations aren't working".
+  // ── WHICH CAPTURE THIS MOVE PLAYS ────────────────────────────────────────────────────────────
+  // Three separate lines used to do this — the moveset editor's equipped clip, then
+  // combat_clip_map.json, then __slotClipRotate — and the LAST one won unconditionally, so a
+  // variety layer overwrote a limb-matched choice with whatever the fighter happened to have in a
+  // coarse slot. MEASURED: FIRE JAB (a LEFT JAB) played CrotchChop / HurricaneRana / FaceGouge on
+  // three consecutive throws, RIP UPPERCUT played Drop Kick, OVERHAND LEFT played
+  // SchoolBoySuperkick, and LEO CROSS played NOTHING five times running even though
+  // __combatClipFor('LEO CROSS') returns 'Combo Punch' on demand and that capture was resident.
   //
-  // The fighter already OWNS a set of clips for this slot — 84,593 assignments across the roster,
-  // chosen from their own fighting style. Rotate through them instead of replaying one. Damage,
-  // timing and tuning are untouched: only the CAPTURE the body plays changes, so the combat maths
-  // stays exactly as authored.
-  if (m && m.name && window.__slotClipRotate){ try{ var _rc=window.__slotClipRotate(this, m); if(_rc) m.clip=_rc; }catch(_e){} }
+  // One call now, one order of authority (player's equipped choice > the limb/trajectory map >
+  // variety), and variety may only substitute a capture whose ENGINE fits the move's own limb.
+  // See BANNON_CLIP_FIT. Damage, timing, reach and every other tuned number are untouched — only
+  // which capture the body plays changes.
+  if (m && window.__resolveMoveClip){ try{ var _rv = window.__resolveMoveClip(this, m); if (_rv) m.clip = _rv; }catch(_e){} }
+  // (VARIETY still happens — __slotClipRotate is step 3 inside __resolveMoveClip above. It used to
+  // be a fourth, unconditional line here, which is precisely how it came to overwrite the map's
+  // limb-matched pick with a kick on a jab.)
   // LAZY-LOAD a mapped clip that isn't in STUDIO yet (the #1 reason mapped moves fell back to
   // procedural: the clip was named on the move but never loaded). Next rep plays the real mocap.
-  if (m && m.clip && window.loadClipFor && typeof STUDIO!=='undefined' && !(STUDIO.clips&&(STUDIO.clips[m.clip]))){ try{ window.loadClipFor(m.clip); }catch(_e){} }
+  if (m && m.clip && window.loadClipFor && !(window.__studioClip && window.__studioClip(m.clip))){ try{ window.loadClipFor(m.clip); }catch(_e){} }
   // BANNON STUDIO: custom clip drives the body while hit/damage above stays as-is
-  if (m && typeof STUDIO!=='undefined' && m.clip && STUDIO.clips[m.clip]) { studioApplyClipPose(this, STUDIO.clips[m.clip], p); return; }
+  // resolve through __studioClip, never verbatim — the combat map hands us "Drop Kick (1)" and the
+  // clip is banked as DROP_KICK_1. Verbatim missed on 100% of moves (measured: 72 fired, 0 played).
+  var _mc = (m && m.clip && window.__studioClip) ? window.__studioClip(m.clip) : null;
+  if (_mc) { studioApplyClipPose(this, _mc, p); return; }
 
   // KINETIC CHAIN — UFC/MMA grade: hips fire first (weight transfer), torso whips after,
   // then the shoulder drives through, arm extends last. The OFF-HAND TUCKS TO JAW as power fires.
@@ -9609,7 +9747,12 @@ Fighter.prototype.poseGrab = function(dt){
     const _mcStage = (st===1?'SNATCH':(st===2?'LIFT':(st===3?'CARRY':null)));
     if (_mcStage && typeof STUDIO!=='undefined' && STUDIO.clips && STUDIO.clips[_mcb[_mcStage]] && window.studioApplyClipPose){
       try{
-        const _ph = (st===3) ? ((this.stateTime%1.2)/1.2) : clamp(this.stateTime/0.55,0,1);   // carry loops; entry/lift play through
+        // PHASE FROM THE CAPTURE, not from 0.55s / 1.2s constants that know nothing about it.
+        // A 2.15s snatch through the old 0.55s window played at 3.9x; an 11s bake at 20x.
+        const _mcClip = STUDIO.clips[_mcb[_mcStage]];
+        const _ph = window.__clipPhase
+          ? window.__clipPhase(_mcClip, this.stateTime, (st===3?1.2:0.55), st===3, 0.45, 2.2)
+          : ((st===3) ? ((this.stateTime%1.2)/1.2) : clamp(this.stateTime/0.55,0,1));   // carry loops; entry/lift play through
         window.studioApplyClipPose(this, STUDIO.clips[_mcb[_mcStage]], _ph);
         if (opp && this._gripOpp) this._gripOpp(opp, gType);                                   // hands grip the REAL body over the clip
         this.solveFootIK(dt,false);
@@ -10376,7 +10519,13 @@ Fighter.prototype.poseGrabbed = function(dt){
     let _vDone=false;
     try{ const _vS=(GRAPPLE_POSITIONS[by.grapplePos]||{}).mocap, _vN=(st===2?'LIFT':'CARRY');
       if (_vS && _vS.v && _vS.v[_vN] && typeof STUDIO!=='undefined' && STUDIO.clips && STUDIO.clips[_vS.v[_vN]] && window.studioApplyClipPose){
-        window.studioApplyClipPose(this, STUDIO.clips[_vS.v[_vN]], (st===3)?((this.grabTimer%1.2)/1.2):clamp(this.grabTimer/0.6,0,1)); _vDone=true; } }catch(e){}
+        // same clip-rate rule for the VICTIM's half of the hold — otherwise the two bodies in one
+        // grapple play the same move at two different speeds, which is its own kind of wrong.
+        var _vClip = STUDIO.clips[_vS.v[_vN]];
+        var _vPh = window.__clipPhase
+          ? window.__clipPhase(_vClip, this.grabTimer, (st===3?1.2:0.6), st===3, 0.45, 2.2)
+          : ((st===3)?((this.grabTimer%1.2)/1.2):clamp(this.grabTimer/0.6,0,1));
+        window.studioApplyClipPose(this, _vClip, _vPh); _vDone=true; } }catch(e){}
     const sp_static = pos.slave;
     // v74: MULTI-PHASE LIFT — when a position defines liftPoses (currently POWERBOMB/CROSS_POWERBOMB), the held
     // body moves through real named sub-poses (tuck -> belly-to-belly -> shoulder) keyed by hoist progress,
@@ -14927,16 +15076,51 @@ try{
   // body diversity re-seed (runs AFTER the roster exists — the early block fires too soon for new chars)
   if(window.CHAR_BODY){ if(window.CHAR_BODY.QUEEN_TYNESHIA&&window.CHAR_BODY.QUEEN_TYNESHIA.bust==null) window.CHAR_BODY.QUEEN_TYNESHIA.bust=1.35;
     if(window.CHAR_BODY.KARMA&&window.CHAR_BODY.KARMA.bust==null) window.CHAR_BODY.KARMA.bust=1.0; }
-  // TARZANIAN DEVIL — identity read off the RENDER, not off the filename. The model shows long black
-  // hair, a horned devil facepaint over one eye, tribal ink across the shoulder and tiger striping on
-  // the ribs, a leopard-fur loincloth with matching fur leg wraps over black boots, and a thick,
-  // heavy torso with real mass rather than a cut physique. That is a feral heavyweight brawler, so
-  // 'brawler' (110hp / 190 stam / 1.14 power) rather than 'powerhouse', whose 0.86 speed would fight
-  // the frenzy the look is selling. Colours are sampled from the attire: leopard gold, devil red.
-  _addChar('TARZANIAN_DEVIL', { label:'The Feral One', col:0xb8863b, accent:0xcc2200, skin:0xd9a06a,
+  // TARZANIAN DEVIL — CORRECTED 2026-08-01 after the owner pulled me up, and he was right twice.
+  // My first pass called this a heavyweight BRAWLER with "devil facepaint". Both were assumptions
+  // dressed up as observation:
+  //   * IT IS A HALF MASK, NOT PAINT. Re-rendered close on the head: the mask is separate geometry
+  //     sitting on the face with a hard edge along the cheek and jaw, a sculpted red horn standing
+  //     proud of the surface, and bare skin visible below and behind it. Paint has no silhouette.
+  //   * HE IS NOT A HEAVYWEIGHT. Researched off the wrestler this character references: billed
+  //     197lb, "stiff chops and jaw-dropping aerial assaults", a nature/jungle free spirit whose
+  //     whole appeal is unpredictability. That is a lucha chaos build — fast, airborne, and hitting
+  //     far above his weight — not a 0.94-speed bruiser. The thick-torso read was my own low camera
+  //     angle and shading, and it was doing all the work in that decision.
+  // So: LUCHA style, cruiserweight frame, and a HAND-WRITTEN stat block rather than an archetype
+  // default, because no single archetype covers "speed AND power" — highFlyer would hand him 0.86
+  // power and lose the stiff-chop half, powerhouse would hand him 0.86 speed and lose the lucha.
+  // Set MOVESET_DB/ROSTER_SPEC FIRST: _addChar only seeds them when they are absent, so writing
+  // them here is what makes the custom numbers survive.
+  // THE NUMBERS COME FROM THE RESEARCH, not from a vibe:
+  //   5'9" / 196lb (his own profile; cagematch's 6'0" disagrees and the profile wins) -> a COMPACT,
+  //                              densely built cruiserweight. heightScale 0.93 against the roster's
+  //                              1.88m reference. "Speed powerhouse" is the right read either way:
+  //                              196lb packed onto 5'9" moving at lucha pace, rated "insanely agile
+  //                              for his size".
+  //   deathmatch, high pain tolerance, "bleeds buckets" -> CHIN IS HIGH (108). I first wrote 90 on
+  //                              the reasoning that bleeding = fragile. That is backwards; pain
+  //                              tolerance is exactly what chin models.
+  //   "can wrestle basically every style" -> the unpredictability the owner named. Wide move mix
+  //                              rather than a specialist's four.
+  if(typeof MOVESET_DB!=='undefined'){
+    MOVESET_DB.TARZANIAN_DEVIL = { maxHp:100, stamina:230, chin:108,
+      speedMultiplier:1.20, powerMultiplier:1.10,
+      // Built from the researched profile, NOT from the signature. "Stiff chops" -> the heavy
+      // hand strikes; "jaw-dropping aerial assaults" + lucha -> the spinning and leaping kicks and
+      // the low sweep; "wrestles basically every style" -> deliberately mixed rather than a
+      // specialist's four. The tiger-feint is NOT in this list: it is the SIGNATURE slot below.
+      moves:['OVERHAND BOMB','AXE KICK','TORNADO KICK','SPINNING HEEL KICK','FLYING KNEE',
+             'MEIA LUA','RAT SWEEP'] };
+    if(typeof ROSTER_SPEC!=='undefined')
+      ROSTER_SPEC.TARZANIAN_DEVIL = { style:'LUCHA', heightScale:0.93, reachScale:1.0 };
+  }
+  // 197lb on a 6'0" frame is a cruiserweight, and the weight class is read by applyArchetype.
+  try{ if(typeof CHAR_ARCHETYPE!=='undefined') CHAR_ARCHETYPE.TARZANIAN_DEVIL='CRUISERWEIGHT'; }catch(e){}
+  _addChar('TARZANIAN_DEVIL', { label:'The Wildlife', col:0xb8863b, accent:0xcc2200, skin:0xd9a06a,
     faction:'Agents of Chaos', canon:true,
-    bio:'Raised by nothing and answering to no one — a horned wildman who fights like the ring is a jungle floor.',
-    archetype:'brawler' }, 'TRUNKS', 'LONG', {musc:0.7,fat:0.34});
+    bio:'A masked jungle free spirit with no plan and no brakes — stiff chops one moment, a blind dive off the top the next.',
+    archetype:'highFlyer' }, 'TRUNKS', 'LONG', {musc:0.72,fat:0.14});
   _addChar('AKON_WARRIOR', { label:'Man of Honor',              col:0x8a5a1a, accent:0xffd700, skin:0x7a4a2e, faction:'Free Agent', canon:true, bio:'The ethical challenge — honor as a weapon.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.82,fat:0.2});
   _addChar('HEATH_BROKER', { label:'The London Broker',         col:0x24262e, accent:0x9fb4cc, skin:0xe6c8a8, faction:'Corporate Structure', canon:true, bio:'Corporate technician — every hold is a contract clause.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.5,fat:0.22});
   _addChar('CAPTAIN_UNITY',{ label:'Corporate Propaganda',      col:0x1a3a8a, accent:0xd42a2a, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'A manufactured hero — unity as a slogan, not a promise.', archetype:'brawler' }, 'SINGLET', 'BUZZ', {musc:0.72,fat:0.18});
@@ -15191,6 +15375,10 @@ try{
     HAMMER:           { name:'THE NAIL',                  kind:'strike' },
     DICE:             { name:'SNAKE EYES',                kind:'grapple', pos:'DDT',          deliver:'spike' },
     CHIP:             { name:'THE CASH OUT',              kind:'grapple', pos:'BACKBREAKER',  deliver:'drop'  },
+    // FINISHER ONLY. The tiger-feint is his SIGNATURE and lives in CHAR_FINISHERS.sig — a wrestler
+    // does not use one move as both, and pairing them was the mistake here. Signature sets it up
+    // through the ropes; the finisher ends it from the top.
+    TARZANIAN_DEVIL:  { name:'JUNGLE JUICE',              kind:'grapple', pos:'DDT', deliver:'spike' },
     LUCHADOR_RELAMPAGO:{ name:'EL RELÁMPAGO',             kind:'strike' },
     LUCHADOR_TRUENO:  { name:'EL TRUENO',                 kind:'strike' },
     AUDITOR_PRIME:    { name:'THE FINAL AUDIT',           kind:'grapple', pos:'BRAINBUSTER',  deliver:'spike' },
@@ -15251,7 +15439,37 @@ try{
     // Book 6 canon + stable identities (owner model drops 2026-07-12):
     HALL_NIGHTER: { style:'HBK Showstopper archetype — charismatic showman flyer, sells huge, peaks late; toothpick flick, tunes up the band in the corner before the kick', sig:'FLYING FOREARM + kip-up · diving elbow drop off the top', fin:'THE CURTAIN CALL — tune-up-the-band superkick out of the corner', rivalry:'Triple X ("sold out... went corporate") — prophesied legendary clash', canonNote:'loses to Finxsse at Fight Night in the Banyan Ring, post-match fist bump: NWC respects violence' },
     STATIC:       { style:'Enzo-class motor-mouth spitfire (GAME-ONLY, Onyx stable w/ CIPHER/ECHO/HOLLOW) — undersized swarm offense, talks constantly, baits mistakes, eats bumps huge and pops right back up', sig:'WHITE NOISE RUSH — leaping forearm flurry off the ropes', fin:'DEAD AIR — leaping tornado DDT', voice:'a hundred words a minute, none of them respectful' },
-    CIPHER:       { style:'feral no-mask no-hair mode = Blackheart Lio Rush-class gimmick (owner spec 2026-07-12): explosive short bursts, unhinged pace shifts, sludge-black paint', fin:'non-deterministic — the numerology engine picks the kill move' }
+    CIPHER:       { style:'feral no-mask no-hair mode = Blackheart Lio Rush-class gimmick (owner spec 2026-07-12): explosive short bursts, unhinged pace shifts, sludge-black paint', fin:'non-deterministic — the numerology engine picks the kill move' },
+    // TARZANIAN DEVIL — RESEARCHED, 2026-08-01, off the reference wrestler's own profile rather
+    // than off my impression of the model. Confirmed: billed 5'9" / 196lb, debuted 2016, trained by
+    // John Rambo and Joel Maximo, works GCW / MLW / JCW / Reality of Wrestling, a lucha-based
+    // DEATHMATCH wrestler rated "insanely agile for his size" who can work any style, trades stiff
+    // chops with aerial assaults, has a high pain tolerance and bleeds. Heel chaos, not a babyface
+    // wildman — the profile includes stabbing a champion with a knife mid-match.
+    // "TARZANIAN DEVIL" IS ONE OF HIS OWN RING NAMES, which is where the character name came from.
+    // WEAPON OF CHOICE IS DOCUMENTED: steel chair and kendo stick. Wired below so the weapon system
+    // actually reflects it instead of handing him a random pickup.
+    // SIGNATURE = the tiger-feint through the ropes. The OWNER CAPTURED THIS MOVE HIMSELF and
+    // performed the delivery, so it is his real move driven by his real mocap
+    // (assets/moves/clips/TIGER_FEINT_KICK.json, wired in combat_clip_map).
+    // FINISHER = JUNGLE JUICE, and the MECHANIC is no longer guessed — the owner supplied match
+    // tape and it was captured two-body (assets/moves/clips/JUNGLE_JUICE.json + __RECV). Read off
+    // the frames: reverse cravate with the opponent BEHIND him, flip over the shoulder front-ways
+    // so the opponent arrives inverted, then spiked head-first with a SIT-OUT finish. That is a
+    // sit-out impaler DDT, not the top-rope dive I had assumed. kind 'grapple' + pos DDT +
+    // deliver 'spike' so it resolves through the real grapple physics.
+    // AND THEY ARE DIFFERENT MOVES ON PURPOSE — a wrestler does not run the same move as both his
+    // signature and his finisher.
+    TARZANIAN_DEVIL: { style:'lucha-based deathmatch chaos — stiff chops into sudden aerial bursts, works any style, unpredictable and genuinely nasty; absorbs punishment and keeps coming',
+                       // THREE signatures, phased, because each one is a sequence and the engine
+                       // needs the steps not just a name. Owner-supplied (he knows this man's work
+                       // first-hand); "Tarzan Scale" from an earlier AI writeup is NOT here because
+                       // it appears in no source I could read — it looks invented.
+                       sig:['TIGER FEINT KICK — drape-and-swing kick back through the middle rope (owner mocap, his own delivery). Phases: DRAPE (opponent bent over the middle rope) -> SWING THROUGH (he slips outside and swings back in) -> STRIKE (kick lands to the head) -> RECOVER',
+                            'WILD SWANTON — a rapid, loose-limbed swanton bomb off the top. Phases: SCALE (fast, no posing) -> LAUNCH (early rotation, arms wide) -> ROTATE -> FLATTEN (lands flat across the chest) -> BOUNCE. The read is SPEED and recklessness, not a picture-perfect arc',
+                            'MISDIRECTION RANA — tilt-a-whirl hurricanrana that lands INTO A CROSSBODY instead of a pin. Phases: FEED (opponent catches him on the whirl) -> WHIRL (horizontal rotation) -> RANA (legs scissor the head) -> RELEASE -> CROSSBODY (he carries through into a cross-body landing rather than bridging). The misdirection is that it reads as a rana and finishes as a strike'],
+                       fin:'JUNGLE JUICE — sit-out impaler DDT out of a reverse cravate: opponent hooked from behind, flipped over the shoulder to the front, spiked head-first as he drops to a seated finish',
+                       weapons:['STEEL CHAIR','KENDO STICK'] }
   });
   // v153 FINISHER WIRING — named finishers resolve through the REAL grapple physics (no cinematic
   // canned path): kind 'grapple' auto-runs grab -> named position lift -> delivery; kind 'strike'
@@ -15439,6 +15657,55 @@ function exitCreatePreview(){
   window.__cawPrevState=undefined;
 }
 window.enterCreatePreview=enterCreatePreview; window.exitCreatePreview=exitCreatePreview;
+
+// ── STEP 1 OF THE EDITOR: SELECTING A WRESTLER HAS TO ACTUALLY SELECT THEM ─────────────────────
+// The CAW front door drew a 121-name roster grid, and picking a name did this:
+//     window.MATCH_SETUP.p1Name = name;  window.__cawEditTarget = name;  startEditor();
+// __cawEditTarget is READ NOWHERE in this file, and MATCH_SETUP.p1Name is only consumed by
+// startFight() — i.e. the next match, not the editor. MEASURED: clicked VIPER out of the grid; the
+// live p1 fighter was still BANNON, no model rebound, the model lab did not even open. So the
+// character select was 121 buttons wired to a dead variable, which is exactly the broken flow the
+// owner described: there was no Step 1.
+//
+// This is the missing bind. It goes through MATCH_SETUP + startFight because that is the ONE proven
+// path that rebuilds a fighter with the right identity, moveset, spec, attire and GLB — renaming a
+// live fighter does not rebind their model (_charModelRequested is a one-shot guard, banked lesson).
+// enterCreatePreview then freezes it in 'caw' state, so this spawns a MANNEQUIN, never a match.
+//   bindEditTarget('VIPER')            -> edit Viper, his own default attire
+//   bindEditTarget('VIPER','MDICKIE')  -> edit Viper wearing the MDickie base (Step 2, attire)
+function bindEditTarget(name, altKey){
+  if(!name) return null;
+  var key = String(name).toUpperCase().replace(/[^A-Z0-9]/g,'_');
+  var cur = null;
+  try{ cur = (fighters && fighters[0] && fighters[0].opts && fighters[0].opts.name) || null; }catch(e){}
+  var curAlt = (window.MATCH_SETUP && window.MATCH_SETUP.p1Alt) || null;
+  var wantAlt = altKey || null;
+  // already the right man in the right gear -> just re-enter the preview, don't rebuild the world
+  if(cur === key && curAlt === wantAlt){ try{ enterCreatePreview(0); }catch(e){} return fighters[0]; }
+  var prev = window.MATCH_SETUP || {};
+  window.MATCH_SETUP = {
+    p1Name: key,
+    p2Name: prev.p2Name || 'VIPER',
+    p1Alt:  wantAlt,
+    p2Alt:  prev.p2Alt || null,
+    p1Control: 'YOU', p2Control: 'CPU'
+  };
+  window.__cawEditTarget = key;                     // now a real value with a real reader (below)
+  try{ if(typeof startFight==='function') startFight(); }catch(e){}
+  try{ if(typeof roundTimerInterval!=='undefined' && roundTimerInterval){ clearInterval(roundTimerInterval); roundTimerInterval=null; } }catch(e){}
+  try{ enterCreatePreview(0); }catch(e){}
+  try{ if(typeof refreshModelUI==='function') refreshModelUI(); }catch(e){}
+  return (typeof fighters!=='undefined' && fighters) ? fighters[0] : null;
+}
+// STEP 2: put the selected wrestler in a different set of gear, keeping their name and moves.
+// Reads the SAME __cawEditTarget the select step wrote, so the two steps are genuinely chained.
+function setEditAttire(altKey){
+  var who = window.__cawEditTarget ||
+            (typeof fighters!=='undefined' && fighters && fighters[0] && fighters[0].opts && fighters[0].opts.name) || 'BANNON';
+  return bindEditTarget(who, altKey || null);
+}
+window.bindEditTarget = bindEditTarget;
+window.setEditAttire  = setEditAttire;
 
 // ============================================================================
 // MOVE CREATOR
@@ -15647,6 +15914,113 @@ let modelSel = 'p1';   // which fighter the menu is editing
 // every fighter stayed procedural on every fresh device. (Root cause of "only seeing three.js".)
 let CHOSEN_MODEL = (function(){ try{ var r=localStorage.getItem('bannonChosenModels'); if(r) return JSON.parse(r); }catch(e){} return {}; })();
 const modelStatusText = { p1:'', p2:'' };
+// ── ONE BONE-NAME RESOLVER FOR THE WHOLE ENGINE ──────────────────────────────────────────────
+// Bone names arrive from four places that do not agree with each other: our own UniRig batch
+// ("mixamorig:LeftArm" authored, "mixamorigLeftArm" after three.js strips the colon), Mixamo FBX
+// captures ("mixamorig:LeftArm"), MDickie/Tripo imports ("J_Hips", "Bip01 L UpperArm") and the
+// text-to-motion pipeline ("LeftArm"). Every consumer used to invent its own matching rule, and the
+// clip-bone consumer used none at all. Normalise once, in one place: lowercase, then drop every
+// character that is not a letter or a digit. "mixamorig:LeftArm", "mixamorigLeftArm",
+// "MIXAMORIG_left_arm" and "mixamorig left arm" all collapse to "mixamorigleftarm".
+window.__normBoneKey = function(n){ return String(n==null?'':n).toLowerCase().replace(/[^a-z0-9]/g,''); };
+
+// ── ONE CLIP RESOLVER, for the same reason there is one bone resolver ────────────────────────
+// THIS IS THE THIRD TIME THE SAME DEFECT HAS COST US THE ANIMATIONS: two components spelling the
+// same thing differently, with no translation layer between them.
+//   1. clip BONE tracks wrote "mixamorig:LeftArm", boneByName held "mixamorigleftarm"  -> 0 of 79,493 resolved
+//   2. the clip WORKER asked for the raw name, the loader wanted KEY form               -> 218 fell back
+//   3. and here: __combatClipFor returns a HUMAN-READABLE name — measured, BODY KICK maps to
+//      "Drop Kick (1)" — while STUDIO.clips is keyed in KEY form, DROP_KICK_1. So the verbatim
+//      lookup `STUDIO.clips[m.clip]` misses on every single move.
+// MEASURED in a live match: 72 moves fired, __combatClipFor resolved a name for them, 285 clips were
+// resident, and withClip / residentWhenFired were BOTH ZERO. Not one capture played. Every bit of
+// motion you were seeing was the procedural fallback — which is exactly why fixing the bone resolver,
+// the playback rate and the blending still did not make combat look captured.
+window.__studioClip = function(name){
+  if (!name) return null;
+  var S = null;
+  try{ S = (typeof STUDIO !== 'undefined') ? STUDIO : null; }catch(e){}
+  if (!S || !S.clips) return null;
+  if (S.clips[name]) return S.clips[name];
+  var base = String(name).replace(/\.fbx$/i, '');
+  if (S.clips[base]) return S.clips[base];
+  var key = base.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+  if (S.clips[key]) return S.clips[key];
+  // collapse runs of underscores too: "Drop Kick (1)" -> DROP_KICK__1_ -> DROP_KICK_1
+  var tight = key.replace(/_+/g, '_').replace(/^_|_$/g, '');
+  if (S.clips[tight]) return S.clips[tight];
+  // last resort: a case/punctuation-insensitive sweep, cached so it costs once per name
+  var C = window.__clipAliasCache || (window.__clipAliasCache = {});
+  if (name in C) return C[name] ? S.clips[C[name]] : null;
+  var want = base.toLowerCase().replace(/[^a-z0-9]/g, '');
+  for (var k in S.clips){
+    if (k.toLowerCase().replace(/[^a-z0-9]/g, '') === want){ C[name] = k; return S.clips[k]; }
+  }
+  C[name] = null;
+  return null;
+};
+// Build the index from an already-lowercased boneByName map. Also files a SUFFIX alias with the
+// rig prefix removed, so a capture named "mixamorig:LeftArm" still finds a bone plainly called
+// "LeftArm" on a non-Mixamo rig (and vice versa). Exact match always wins over the alias.
+window.__buildBoneNorm = function(bones){
+  var NX = {}, ALIAS = {}, k, nk, st;
+  for(k in bones){
+    nk = window.__normBoneKey(k);
+    if(!NX[nk]) NX[nk] = bones[k];
+    st = nk.replace(/^(mixamorig|bip0?1|armature|root|rig|j|c|def|org|mch)/,'');
+    if(st && st!==nk && !ALIAS[st]) ALIAS[st] = bones[k];
+  }
+  for(k in ALIAS){ if(!NX[k]) NX[k] = ALIAS[k]; }
+  return NX;
+};
+// Resolve a clip/track bone name against a bound model. Returns the THREE.Bone or null.
+window.__boneOf = function(model, name){
+  if(!model || !model.userData) return null;
+  var NX = model.userData.boneNorm;
+  if(!NX){
+    var BN = model.userData.boneByName; if(!BN) return null;
+    NX = model.userData.boneNorm = window.__buildBoneNorm(BN);
+  }
+  // MEMO, positive AND negative. A capture carries ~50 finger tracks per key that our 28-joint rigs
+  // will never have, and this is called for every track of every key of every clip on every frame —
+  // measured 20,878 lookups in a 45s match. Without the negative half we would re-run two regex
+  // passes per miss forever. `false` means "known miss", so `in` is the test, not truthiness.
+  var C = model.userData.__boneMemo || (model.userData.__boneMemo = {});
+  if(name in C) return C[name] || null;
+  var nk = window.__normBoneKey(name);
+  var hit = NX[nk] || NX[nk.replace(/^(mixamorig|bip0?1|armature|root|rig|j|c|def|org|mch)/,'')] || null;
+  C[name] = hit || false;
+  return hit;
+};
+// EXACT-NAME BONE MAP, tried BEFORE the substring table below.
+// The substring table can only ever be as good as its first hit: 'lefthand' also matches
+// "mixamorigLeftHandThumb1", 'head' also matches "N_Forehead_C_01". Those collisions are why the
+// map was kept down to twelve safe tokens — and twelve tokens is why, MEASURED across idle, walk and
+// attack, the HANDS, FEET, CLAVICLES and HEAD of every fighter showed a rotation change of exactly
+// 0.00000 in every state. They were never wired to anything. A body whose hands, feet and head never
+// move while the limbs swing is the action-figure look, precisely.
+// Each row is [ [candidate names...], fromJoint, toJoint ]; the bone points from -> to.
+const BONE_MAP_EXACT = [
+  [['mixamorigLeftShoulder','LeftShoulder','shoulder_l','clavicle_l','L_Clavicle'],   'chest','shL'],
+  [['mixamorigRightShoulder','RightShoulder','shoulder_r','clavicle_r','R_Clavicle'], 'chest','shR'],
+  [['mixamorigLeftArm','LeftArm','upperarm_l','UpperArm_L'],     'shL','elL'],
+  [['mixamorigRightArm','RightArm','upperarm_r','UpperArm_R'],   'shR','elR'],
+  [['mixamorigLeftForeArm','LeftForeArm','lowerarm_l','ForeArm_L'],   'elL','haL'],
+  [['mixamorigRightForeArm','RightForeArm','lowerarm_r','ForeArm_R'], 'elR','haR'],
+  [['mixamorigLeftHand','LeftHand','hand_l','Hand_L'],   'wrL','haL'],
+  [['mixamorigRightHand','RightHand','hand_r','Hand_R'], 'wrR','haR'],
+  [['mixamorigLeftUpLeg','LeftUpLeg','thigh_l','UpLeg_L'],   'hipL','knL'],
+  [['mixamorigRightUpLeg','RightUpLeg','thigh_r','UpLeg_R'], 'hipR','knR'],
+  [['mixamorigLeftLeg','LeftLeg','calf_l','Leg_L'],   'knL','ftL'],
+  [['mixamorigRightLeg','RightLeg','calf_r','Leg_R'], 'knR','ftR'],
+  [['mixamorigLeftFoot','LeftFoot','foot_l','Foot_L'],   'ankL','ftL'],
+  [['mixamorigRightFoot','RightFoot','foot_r','Foot_R'], 'ankR','ftR'],
+  [['mixamorigSpine','Spine','spine_01'],   'pelvis','spineMid'],
+  [['mixamorigSpine1','Spine1','spine_02'], 'spineLow','chest'],
+  [['mixamorigSpine2','Spine2','spine_03'], 'spineMid','chest'],
+  [['mixamorigNeck','Neck','neck_01'],      'chest','head'],
+  [['mixamorigHead','Head','head_01'],      'neck','head']
+];
 const BONE_MAP = [
   ['leftarm','shL','elL'], ['leftforearm','elL','haL'],
   ['rightarm','shR','elR'], ['rightforearm','elR','haR'],
@@ -15681,7 +16055,28 @@ const BONE_MAP_OVERRIDES = {
     ['spine','pelvis','chest'], ['neck','chest','head']
   ]
 };
-function fighterFor(side){ return (side==='p1')?fighters[0]:(side==='p2')?fighters[1]:(side==='p3')?fighters[2]:(side==='p4')?fighters[3]:null; }
+// 'p1'..'p4' are the named slots; 'pN' generally is fighters[N-1] so bodies that arrive AFTER the
+// bell — a run-in, a Royal Rumble entrant, a passer-by in the world — can use the same model path
+// instead of being stuck with the procedural body. (They were: the only caller of the loader keyed
+// off these four strings, so entrant five onwards never even requested a GLB.)
+function fighterFor(side){
+  if (side==='p1') return fighters[0];
+  if (side==='p2') return fighters[1];
+  if (side==='p3') return fighters[2];
+  if (side==='p4') return fighters[3];
+  var m = /^p(\d+)$/.exec(String(side||''));
+  return m ? (fighters[(+m[1])-1] || null) : null;
+}
+/** Ask for THIS fighter's GLB, whoever they are and however late they arrived. */
+function requestCharModel(f){
+  try{
+    if (!f || f.model || f._forceProc) return false;
+    var i = fighters.indexOf(f); if (i < 0) return false;
+    if (typeof applyCharModels !== 'function') return false;
+    return applyCharModels('p' + (i+1)) !== false;
+  }catch(e){ return false; }
+}
+window.requestCharModel = requestCharModel;
 function setModelStatus(side,t){ modelStatusText[side]=t; if(side===modelSel){ const el=document.getElementById('modelStatus'); if(el) el.textContent=t; } refreshModelUI(); }
 function setProcVisible(f,vis){ for(const k in f.seg){ if(k==='aura')continue; if(f.seg[k]) f.seg[k].visible=vis; } }
 // Fully free a model's GPU memory (geometry + materials + textures + skeleton). Without this, every
@@ -15697,10 +16092,26 @@ function disposeObject3D(obj){
   });
 }
 window.disposeObject3D = disposeObject3D;
-function removeFighterModel(side){
+// keepHidden=true means "a replacement model is already on its way" — do NOT reveal the procedural
+// body on the way out.
+//
+// THIS IS THE "IT SWITCHES BACK TO PROCEDURAL" BUG, and it is one line.
+// loadFighterModel() opens by calling removeFighterModel() to clear the old model, and this
+// unconditionally did setProcVisible(f,true). So EVERY re-request of a model — entering character
+// select, changing attire, the bell rebuilding the fighters — flashed the procedural tube body back
+// on before the new GLB bound. Combined with the hide-on-bind timing that is exactly the sequence
+// the owner keeps reporting: procedural, then GLB, then procedural again, then GLB. Four identities
+// for one wrestler, none of them chosen.
+// The procedural body is now revealed on exactly two occasions: a deliberate clear (no replacement
+// coming), and a genuine load failure. Never in the gap between two models.
+function removeFighterModel(side, keepHidden){
   const f=fighterFor(side); if(!f) return;
+  // a clear with no replacement coming also clears the in-flight dedupe marker, so a later
+  // deliberate re-request is never refused
+  if(!keepHidden){ try{ f._modelInFlight=null; f._modelInFlightAt=0; }catch(e){} }
   if(f.model){ try{scene.remove(f.model);}catch(e){} try{ disposeObject3D(f.model); }catch(e){} f.model=null; }
-  f.modelUrl=null; if(f.seg) setProcVisible(f,true);
+  f.modelUrl=null;
+  if(f.seg && !(keepHidden && window.PROC_FLASH!==true)) setProcVisible(f,true);
 }
 function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MODEL&&CHOSEN_MODEL[sd]; var f=fighterFor(sd); if(!f || f.model || !ch || !ch.url) return;
   // NEVER stomp an in-flight character-model load: bumping the ticket makes the stale-load guard
@@ -15832,15 +16243,44 @@ function mdickieBaseFor(charName){
 }
 window.mdickieBaseUrl = mdickieBaseUrl;
 window.mdickieBaseFor = mdickieBaseFor;
-function applyCharModels(){ ['p1','p2','p3','p4'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; if(f._forceProc) return;
-  // NO PROCEDURAL POP: if a GLB is expected for this fighter, HIDE the procedural tube the moment
-  // we kick the async load — you were seeing the ugly procedural body for a beat before the model
-  // bound (_bindFighterGltf reveals the model; a FAILED load restores the procedural body).
-  // DO NOT HIDE THE BODY UNTIL THE MODEL IS ACTUALLY HERE. This used to hide the procedural body the
-  // moment the async load was KICKED. Measured: the GLB bound 64 SECONDS after the bell while
-  // competing with 248 MB of other boot fetches — so you stood in the ring as literally nothing for
-  // a minute. Hiding on BIND (in _bindFighterGltf) is the correct moment; until then you see a body.
-  var _hideProc=function(){ /* deferred to bind — see PROC_HIDE_ON_BIND */ };
+function applyCharModels(only){ (only ? [only] : ['p1','p2','p3','p4']).forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; if(f._forceProc) return;
+  // ── THE PROCEDURAL BODY MUST NEVER BE SEEN UNLESS IT WAS CHOSEN ──────────────────────────────
+  // OWNER LAW, said repeatedly: "procedural model attires should not appear ever unless chose".
+  // What he sees today: procedural body first, swaps to the GLB somewhere around character select,
+  // swaps BACK to procedural, then back to the GLB once the match starts. Four visible identities
+  // for one wrestler.
+  //
+  // THE HISTORY, because this has been flipped twice and must not be flipped a third time:
+  //   v1 hid the procedural body the moment the async load was KICKED. Correct intent — but the GLB
+  //      was measured binding 64 SECONDS after the bell while competing with 248 MB of other boot
+  //      fetches, so you wrestled as an invisible man for a minute.
+  //   v2 (this line, until now) reverted to hiding on BIND, and left `_hideProc` an EMPTY FUNCTION.
+  //      That trades an invisible fighter for the procedural flash — which is the bug he keeps
+  //      reporting. Neither is acceptable and the argument between them missed the real problem:
+  //      A SIXTY-FOUR SECOND LOAD IS THE BUG. Hiding is not what needs fixing; latency is.
+  //
+  // v3, what this does now:
+  //   * hide the procedural body the moment we know a GLB is coming (v1's correct intent), and
+  //   * arm a WATCHDOG so "invisible forever" is impossible: if the model has not bound within
+  //     PROC_FALLBACK_MS the procedural body comes back and says so in the console, and
+  //   * _bindFighterGltf's failure path already restores it, so a real 404 is covered immediately.
+  // The fighter is therefore either their GLB, or — only after a genuine failure — the procedural
+  // body as a declared fallback. Never a flash of one on the way to the other.
+  // window.PROC_FLASH=true restores the old flashing behaviour if this ever needs bisecting.
+  var _hideProc=function(){
+    if(window.PROC_FLASH===true) return;
+    try{ if(f.seg && typeof setProcVisible==='function') setProcVisible(f,false); }catch(e){}
+    f._procHiddenAt = (typeof performance!=='undefined'?performance.now():Date.now());
+    var _wait = (window.PROC_FALLBACK_MS!=null ? window.PROC_FALLBACK_MS : 12000);
+    if(f._procWatchdog) clearTimeout(f._procWatchdog);
+    f._procWatchdog = setTimeout(function(){
+      f._procWatchdog = null;
+      if(f.model) return;                       // model arrived — nothing to do
+      try{ if(f.seg && typeof setProcVisible==='function') setProcVisible(f,true); }catch(e){}
+      console.warn('[BANNON] model for ' + ((f.opts&&f.opts.name)||'fighter') + ' did not bind within ' +
+                   _wait + 'ms — showing the built-in body as a declared fallback, not as a flash.');
+    }, _wait);
+  };
   if(f._altModelUrl){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
   if(f._mdickieBase){ var mb=mdickieBaseFor(f._mdickieBase); f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, mb, 'MDickie · '+f._mdickieBase); }catch(e){} return; }   // MDickie base attire (falls back to procedural if the base GLB isn't present)
   var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
@@ -15883,7 +16323,21 @@ function _bindFighterGltf(side, url, name, gltf, reqFighter, reqId){
     const mapped=[];
     const key = (url.indexOf('embedded:')===0)?url.slice(9):null;
     const useMap = (key && BONE_MAP_OVERRIDES[key]) ? BONE_MAP_OVERRIDES[key] : BONE_MAP;
-    for(const [tok,fromJ,toJ] of useMap){ let b=null; for(const nm in bones){ if(nm.includes(tok)){ b=bones[nm]; break; } } if(b) mapped.push({bone:b, fromJ, toJ}); }
+    // PASS 1 — exact normalised names. Unambiguous, so it can safely reach the bones the substring
+    // pass never dared to (hands, feet, clavicles, head) without a finger bone or a "forehead" hijack.
+    // Skipped for a model with a hand-authored BONE_MAP_OVERRIDES entry: that override is the answer.
+    const _taken = new Set();
+    if(useMap === BONE_MAP){
+      const _nrm = window.__buildBoneNorm(bones);
+      for(const [cands, fromJ, toJ] of BONE_MAP_EXACT){
+        let b=null;
+        for(const cn of cands){ const hit=_nrm[window.__normBoneKey(cn)]; if(hit && !_taken.has(hit)){ b=hit; break; } }
+        if(b){ _taken.add(b); mapped.push({bone:b, fromJ, toJ}); }
+      }
+    }
+    // PASS 2 — the original substring table, filling anything pass 1 did not claim. Unchanged
+    // behaviour for every non-Mixamo skeleton (MDickie J_*, Bip01, Tripo autorigs).
+    for(const [tok,fromJ,toJ] of useMap){ let b=null; for(const nm in bones){ if(nm.includes(tok) && !_taken.has(bones[nm])){ b=bones[nm]; break; } } if(b){ _taken.add(b); mapped.push({bone:b, fromJ, toJ}); } }
     // robust size: union each mesh's geometry box (works for skinned meshes; setFromObject returns
     // a degenerate box for skinned meshes -> runaway scale -> the "giant" bug)
     obj.updateMatrixWorld(true);
@@ -15977,6 +16431,16 @@ function _bindFighterGltf(side, url, name, gltf, reqFighter, reqId){
     container.userData.mapped = mapped; container.userData.url=url;
     try{ mapped.forEach(function(mp){ var _cs=mp.bone.children, _ch=null; for(var _i=0;_i<_cs.length;_i++){ if(_cs[_i].isBone){_ch=_cs[_i];break;} } if(!_ch&&_cs.length)_ch=_cs[0]; if(_ch){ var _lf=_ch.position.clone(); if(_lf.lengthSq()>1e-9) mp.localFwd=_lf.normalize(); } mp.isLimb=(mp.toJ!=='chest'&&mp.toJ!=='head'); }); }catch(e){}
     try{ container.userData.boneByName=bones; container.userData.mappedSet=new Set(mapped.map(x=>x.bone));
+      // NORMALISED BONE INDEX. `bones` above is keyed by the LOWERCASED node name, and three.js has
+      // already stripped the ':' out of a glTF node name — so a bone authored as "mixamorig:LeftArm"
+      // is filed here as "mixamorigleftarm". Our baked captures write their tracks under the ORIGINAL
+      // Mixamo spelling. Looking a clip's name up in `bones` verbatim therefore missed EVERY TIME.
+      // MEASURED over a live match before this index existed: 79,493 clip-bone references, 0 resolved.
+      // With the normalise-both-sides lookup below, 19,269 resolve — the remainder are finger bones
+      // ("mixamorigLeftHandThumb1"...) which our 28-joint rigs genuinely do not have, so that is full
+      // coverage of the skeleton we actually ship. This is THE reason mocap looked like a marionette:
+      // the 17-point stick figure was reaching the body and the real bone rotations never were.
+      container.userData.boneNorm = window.__buildBoneNorm(bones);
       for(var _bk in bones){ bones[_bk].userData.restQuat=bones[_bk].quaternion.clone(); bones[_bk].userData.restScale=bones[_bk].scale.clone(); }
       container.userData.boneOverrides=(typeof DIRECTOR!=='undefined' && DIRECTOR.boneStore && DIRECTOR.boneStore[url]) ? DIRECTOR.boneStore[url] : {};
       var _mMap={}, _mNames=[]; obj.traverse(function(o){ if(o.isMesh && o.morphTargetDictionary && o.morphTargetInfluences){ for(var _nm in o.morphTargetDictionary){ var _ix=o.morphTargetDictionary[_nm]; if(!_mMap[_nm]){_mMap[_nm]=[];_mNames.push(_nm);} _mMap[_nm].push({mesh:o,idx:_ix}); } } });
@@ -15988,6 +16452,12 @@ function _bindFighterGltf(side, url, name, gltf, reqFighter, reqId){
     // before adopting the new one so it can't linger in the scene as an orphan.
     if(f.model && f.model!==container){ try{ scene.remove(f.model); }catch(e){} try{ disposeObject3D(f.model); }catch(e){} }
     f.model=container; f.modelUrl=url; scene.add(container); setProcVisible(f,false);
+    // the model is here — stand the fallback watchdog down so it can never un-hide the tube body
+    // underneath a bound GLB (that was one of the "switches back to procedural" moments).
+    try{ if(f._procWatchdog){ clearTimeout(f._procWatchdog); f._procWatchdog=null; } }catch(e){}
+    // release the network back to clip warming (BANNON_LOADORDER)
+    try{ if(window.__loRelease) window.__loRelease(); }catch(e){}
+    try{ f._modelInFlight = null; f._modelInFlightAt = 0; }catch(e){}   // in-flight dedupe: this one landed
     try{ if(window.applyShapeMorphs) window.applyShapeMorphs(f); }catch(_){}   // sculpt the fresh mesh to the fighter's current CAW/DNA shape
     _rigSense(side, name, bones, mapped, container, s);
   }catch(e){ setModelStatus(side,'⚠ Bind error. Built-in body kept.'); removeFighterModel(side); }
@@ -16010,7 +16480,25 @@ function loadFighterModel(side, url, name){
   const f=fighterFor(side); if(!f){ setModelStatus(side,'Start a fight first.'); return; }
   if(typeof THREE==='undefined' || !THREE.GLTFLoader){ setModelStatus(side,'⚠ 3D loader unavailable here.'); return; }
   url=(url||'').trim(); if(!url){ setModelStatus(side,'Paste a .glb URL first.'); return; }
-  removeFighterModel(side);
+  // ── DO NOT RE-REQUEST A MODEL THAT IS ALREADY ON ITS WAY ────────────────────────────────────
+  // MEASURED by logging every request/remove for p1 through a real boot: the SAME url is requested
+  // TWICE AT THE IDENTICAL MILLISECOND (t=38807 x2, then t=44892 x2), and the whole cycle repeats
+  // because applyCharModels runs again a few seconds later. Each request bumps _modelReqId, and the
+  // stale-load guard in _bindFighterGltf then THROWS AWAY the finished parse of the earlier one —
+  // so the duplicate does not just waste a download of a multi-megabyte GLB, it cancels the request
+  // that was about to succeed. First successful bind was at 62.9 SECONDS, which is why the 12s
+  // watchdog fires and you see the built-in body standing in for half a minute.
+  // If the same url is already in flight for this side, let it finish.
+  if (f._modelInFlight === url && f._modelInFlightAt && (Date.now() - f._modelInFlightAt) < 45000){
+    setModelStatus(side, '⏳ already loading "' + (name||'model') + '"…');
+    return;
+  }
+  f._modelInFlight = url; f._modelInFlightAt = Date.now();
+  // keepHidden: we are about to bind a replacement, so the procedural body must not be flashed back
+  // on in the gap. Every failure path below calls removeFighterModel(side) with NO flag, which does
+  // reveal it — which is correct, because at that point there is no model coming.
+  removeFighterModel(side, true);
+  try{ if(f.seg && window.PROC_FLASH!==true) setProcVisible(f,false); }catch(e){}
   // stamp this request so a later load supersedes any still-in-flight one for this fighter (orphan-clone fix)
   const reqId = (f._modelReqId = (f._modelReqId||0) + 1);
   let loader; try{ loader=new THREE.GLTFLoader(); }catch(e){ setModelStatus(side,'⚠ Loader init failed.'); return; }
@@ -16046,6 +16534,7 @@ function loadFighterModel(side, url, name){
 }
 const _mUp=new THREE.Vector3(0,1,0), _mDir=new THREE.Vector3(), _mQ=new THREE.Quaternion(), _mPQ=new THREE.Quaternion();
 const _invP=new THREE.Quaternion(), _dl=new THREE.Vector3(), _rfl=new THREE.Vector3(), _qd=new THREE.Quaternion(), _qw=new THREE.Quaternion(), _idQ=new THREE.Quaternion();
+const _qw2=new THREE.Quaternion();   // scratch for the clip-vs-procedural blend (see the clip authority block)
 const _DEG=Math.PI/180, LIM_LIMB=170*_DEG, LIM_SPINE=88*_DEG;
 // clamp a target local quaternion to within maxRad of the bone's rest pose (kills 360-degree spin/flip artifacts; real poses never exceed this)
 function _clampQ(t, r, maxRad){ let d=t.x*r.x+t.y*r.y+t.z*r.z+t.w*r.w; if(d<0)d=-d; if(d>1)d=1; const ang=2*Math.acos(d); if(ang>maxRad && ang>1e-3) t.slerp(r, 1-maxRad/ang); }
@@ -16117,15 +16606,34 @@ function updateFighterModel(f){
   if(!_nativePose && modelCfg.animate && m.userData.mapped && !(typeof FREEPOSE!=='undefined'&&FREEPOSE)){
     try{
       for(const mp of m.userData.mapped){
-        // ARM-HOLD (window.GLB_ARM_HOLD, default on): the physics arm-aim is unstable for near-horizontal
-        // guard arms — it reverses the guard / crosses arms behind the body (measured). Legs + spine
-        // retarget cleanly; arms don't. So OUTSIDE of actual attacks, hold the arms in the model's own
-        // clean rest pose (symmetric, at the sides) instead of the buggy aim — models stop being mutant
-        // when standing/moving. During a strike/grab the aim runs so arms still swing.
-        if(window.GLB_ARM_HOLD!==false && mp.bone.userData.restQuat){
-          const _isArm=(mp.toJ==='elL'||mp.toJ==='haL'||mp.toJ==='elR'||mp.toJ==='haR');
-          const _attacking=(f.state==='attack'||f.state==='grab'||f.state==='grabbed'||f.state==='deliver');
-          if(_isArm && !_attacking){ mp.bone.quaternion.slerp(mp.bone.userData.restQuat, 0.35); continue; }
+        // ARM-HOLD, REWRITTEN AS A FALLBACK RATHER THAN A GATE.
+        //
+        // It used to `continue` — skip the aim entirely and slerp the arm to its bind rest — for
+        // elL/haL/elR/haR on any frame the fighter was not attacking. MEASURED in a live match:
+        // that branch was taken on 361 of 361 idle frames and 335 of 335 WALK frames. 100%. The
+        // engine computes a real contralateral arm swing in poseGuard and it was thrown away one
+        // line before it reached the skeleton — which is exactly why the walk had no arm sway and
+        // the body read as a puppet sliding around.
+        //
+        // The instability it was written for was the OLD setFromUnitVectors aim, whose roll is
+        // ambiguous for a near-horizontal guard arm (that is the arm-reversal). STABLE_LIMB_AIM /
+        // _aimLocal was added afterwards and fixes precisely that, so the blanket hold has been a
+        // stale band-aid for a bug that no longer exists. Now:
+        //   - a bone the CLIP drives this frame is left alone; the clip block below is its authority
+        //   - otherwise the arm gets the real roll-stable aim, then a SANITY LEASH back toward rest
+        //     (a partial blend, not a replacement) so it sways without ever being able to invert
+        //   - the leash relaxes to nothing during an attack/grab so strikes commit fully
+        // window.GLB_ARM_HOLD=false disables the leash entirely; ='hard' restores the old freeze.
+        var _isArm=(mp.toJ==='elL'||mp.toJ==='haL'||mp.toJ==='elR'||mp.toJ==='haR');
+        var _attacking=(f.state==='attack'||f.state==='grab'||f.state==='grabbed'||f.state==='deliver');
+        var _armLeash=0;
+        if(_isArm && mp.bone.userData.restQuat && window.GLB_ARM_HOLD!==false){
+          if(window.GLB_ARM_HOLD==='hard' && !_attacking){ mp.bone.quaternion.slerp(mp.bone.userData.restQuat, 0.35); continue; }
+          // __driven is stamped by the clip block at the END of the previous frame. A clip runs over
+          // many frames, so last frame's ownership is this frame's ownership — and reading it costs one
+          // property lookup instead of re-normalising every track name four times per fighter per frame.
+          if(m.userData.__driven && m.userData.__driven[mp.bone.uuid] > 0.5) continue;
+          _armLeash = _attacking ? 0 : (window.GLB_ARM_LEASH!=null ? window.GLB_ARM_LEASH : 0.25);
         }
         const a=f.worldJoint(mp.fromJ), b=f.worldJoint(mp.toJ);
         _mDir.set(b.x-a.x, b.y-a.y, b.z-a.z); if(_mDir.lengthSq()<1e-6) continue; _mDir.normalize();
@@ -16151,6 +16659,11 @@ function updateFighterModel(f){
           // during a hold/throw, let the model COMMIT to the rig's slam/fold pose: wider bend + faster catch-up,
           // so the body actually lays back / folds instead of staying upright and re-facing (the 'spin' look).
           _clampQ(_qw, _rlq, _grapPose ? Math.min(168*_DEG, (mp.isLimb?LIM_LIMB:LIM_SPINE)+50*_DEG) : (mp.isLimb ? LIM_LIMB : LIM_SPINE));
+          // SANITY LEASH (arms only, and only when no clip owns them): pull the aimed pose a fraction
+          // of the way back toward rest. At 0.25 the arm keeps three quarters of its real swing — a
+          // visible walk sway — while being structurally unable to end up behind the body. This is
+          // what replaced the old all-or-nothing freeze.
+          if(_armLeash > 0) _qw.slerp(_rlq, _armLeash);
           mp.bone.quaternion.slerp(_qw, _grapPose ? (mp.isLimb?0.7:0.62) : (mp.isLimb ? 0.4 : 0.3));
         } else if(mp.bone.userData.restQuat){
           // no child bone defines an axis -> hold the rest pose (never world-lock/twist)
@@ -16191,7 +16704,22 @@ function updateFighterModel(f){
     var _ov=m.userData.boneOverrides, _cb=m.userData.clipBones, _keys={};
     if(typeof FREEPOSE!=='undefined'&&FREEPOSE){ for(var _fk in _bb){ var _fb=_bb[_fk]; if(_fb.userData.restQuat)_fb.quaternion.copy(_fb.userData.restQuat); if(_fb.userData.restScale)_fb.scale.copy(_fb.userData.restScale); } }
     if(_ov)for(var _k1 in _ov)_keys[_k1]=1; if(_cb)for(var _k2 in _cb)_keys[_k2]=1;
-    for(var _bn in _keys){ var _b=_bb[_bn]; if(!_b) continue; var _o=(_ov&&_ov[_bn])||{}, _c=(_cb&&_cb[_bn])||{};
+    // CLIP BLEND WEIGHT — the clip fades IN at the head of a move and OUT at the tail instead of
+    // hard-cutting to and from the procedural pose. studioApplyClipPose stamps clipW; anything that
+    // forgets to (a manual boneOverride, the studio scrubber) reads as full authority, which is the
+    // old behaviour. This is the follow-through that was missing: a strike used to snap back to guard
+    // on the frame the clip ended.
+    var _cw = (m.userData.clipW==null) ? 1 : Math.max(0, Math.min(1, m.userData.clipW));
+    // Bones the CLIP owns this frame. Downstream passes (secondary motion, inertia, fatigue offsets)
+    // read this so they layer on the clip instead of overwriting it.
+    var _driven = m.userData.__driven || (m.userData.__driven = {});
+    for(var _dk in _driven) delete _driven[_dk];
+    for(var _bn in _keys){
+      // NORMALISED LOOKUP, not a verbatim one. boneByName is keyed lowercased-and-colon-stripped;
+      // clip tracks carry the original Mixamo spelling. The verbatim `_bb[_bn]` here resolved ZERO of
+      // 79,493 clip-bone references in a measured match — every mocap rotation we have ever baked was
+      // silently dropped on this line. See __buildBoneNorm above.
+      var _b=_bb[_bn] || window.__boneOf(m, _bn); if(!_b) continue; var _o=(_ov&&_ov[_bn])||{}, _c=(_cb&&_cb[_bn])||{};
       var _eu=new THREE.Euler((_o.rx||0)+(_c.rx||0),(_o.ry||0)+(_c.ry||0),(_o.rz||0)+(_c.rz||0),'XYZ'); var _qq=new THREE.Quaternion().setFromEuler(_eu);
       // CLIP AUTHORITY. This used to be `_b.quaternion.multiply(_qq)` for any bone the physics
       // retarget also drives — so a mocap clip was COMPOUNDED on top of the procedural aim and the
@@ -16201,7 +16729,15 @@ function updateFighterModel(f){
       // on the same bone keep the old additive behaviour, because those are authored offsets and are
       // meant to layer.
       var _clipDrives = !!(_c && (_c.rx||_c.ry||_c.rz));
-      if(_clipDrives && _b.userData.restQuat){ _b.quaternion.copy(_b.userData.restQuat).multiply(_qq); }
+      if(_clipDrives && _b.userData.restQuat){
+        // rest * clip is the clip's own pose for this bone. _b.quaternion currently holds whatever the
+        // procedural retarget put there this frame, so slerping toward the clip target BY THE WEIGHT is
+        // a true per-bone crossfade between physics-aim and mocap — not a switch. At w=1 it is pure
+        // clip (the old behaviour); at w=0 the procedural pose is untouched.
+        _qw2.copy(_b.userData.restQuat).multiply(_qq);
+        if(_cw >= 0.999) _b.quaternion.copy(_qw2); else _b.quaternion.slerp(_qw2, _cw);
+        _driven[_b.uuid] = _cw;
+      }
       else if(_rt && _ms && _ms.has(_b)){ _b.quaternion.multiply(_qq); }
       else if(_b.userData.restQuat){ _b.quaternion.copy(_b.userData.restQuat).multiply(_qq); }
       else { _b.quaternion.setFromEuler(_eu); }
@@ -18258,11 +18794,59 @@ init();
     }catch(err){ if(cb) cb(false,'Loader init failed: '+err.message); }
   };
 
-  window.studioApplyClipPose = function(f, clip, phase){
+  // CLIP FADE. A move used to appear and vanish on a single frame: full clip authority at phase 0,
+  // nothing at phase 1, with the procedural guard pose snapping back underneath it. That hard cut at
+  // both ends is what reads as "the animations aren't firing fully the whole time" — the strike has
+  // no wind-up into it and no follow-through out of it. Ease in over the first ~12% and out over the
+  // last ~18% (out is longer on purpose: recovery is slower than commitment in every real strike).
+  // window.CLIP_FADE=false restores the hard cut.
+  function clipFadeWeight(phase){
+    if(window.CLIP_FADE === false) return 1;
+    var p = phase < 0 ? 0 : (phase > 1 ? 1 : phase);
+    var IN = (window.CLIP_FADE_IN != null ? window.CLIP_FADE_IN : 0.12);
+    var OUT = (window.CLIP_FADE_OUT != null ? window.CLIP_FADE_OUT : 0.18);
+    var w = 1;
+    if(IN > 0 && p < IN) w = p / IN;
+    if(OUT > 0 && p > 1 - OUT) w = Math.min(w, (1 - p) / OUT);
+    return w * w * (3 - 2 * w);            // smoothstep — no linear ramp edges
+  }
+  window.__clipFadeWeight = clipFadeWeight;
+
+  // ── PHASE FROM THE CLIP'S OWN LENGTH, for the GRAPPLE sites ──────────────────────────────
+  // The strike path was fixed by advancing attackPhase at the capture's rate. The grapple path has
+  // the same defect in four more places, each with its own hardcoded window that knows nothing
+  // about the animation it is playing:
+  //     stage entry / lift   clamp(stateTime / 0.55, 0, 1)      the WHOLE capture in 0.55s
+  //     carry loop           (stateTime % 1.2) / 1.2            the WHOLE capture in 1.2s
+  //     victim carry/deliver (grabTimer % 1.2)/1.2, /0.6        0.6s
+  // A 2.15s capture through a 0.55s window plays at 3.9x; an 11s FBX bake at 20x. Same blur as the
+  // strikes, in the half of the game that is supposed to look heaviest.
+  // clipPhase() derives the window from the clip and clamps it to something that still reads as
+  // wrestling. LOOPING clips (the carry) wrap; one-shots clamp at 1.
+  window.__clipPhase = function(clip, elapsed, fallbackWindow, loop, lo, hi){
+    var dur = (clip && clip.dur) || 0;
+    var win = (window.CLIP_RATE === false || dur <= 0.05)
+      ? (fallbackWindow || 1)
+      : Math.max(lo != null ? lo : 0.45, Math.min(hi != null ? hi : 2.2, dur));
+    var p = (elapsed || 0) / win;
+    if (loop) return p - Math.floor(p);
+    return p < 0 ? 0 : (p > 1 ? 1 : p);
+  };
+
+  window.studioApplyClipPose = function(f, clip, phase, weight){
     const tt = phase*(clip.dur||1);
     const pose = samplePose(clip, tt);
-    if(pose) for(const j in pose){ if(f.J[j]) f.J[j].set(pose[j][0],pose[j][1],pose[j][2]); }
-    if(f.model){ const _b=sampleBones(clip, tt); if(_b) f.model.userData.clipBones=_b; const _mph=sampleMorphs(clip, tt); if(_mph) f.model.userData.clipMorphs=_mph; }
+    // A caller may state its own weight (the studio scrubber wants 1 and no fade); otherwise the
+    // phase decides. The joint targets AND the bone rotations share one weight so the stick figure
+    // and the skeleton never disagree about how much of this move is playing.
+    const w = (weight == null) ? clipFadeWeight(phase) : Math.max(0, Math.min(1, weight));
+    if(pose) for(const j in pose){ const J=f.J[j]; if(!J) continue;
+      if(w >= 0.999) J.set(pose[j][0],pose[j][1],pose[j][2]);
+      else J.set(J.tgt.x+(pose[j][0]-J.tgt.x)*w, J.tgt.y+(pose[j][1]-J.tgt.y)*w, J.tgt.z+(pose[j][2]-J.tgt.z)*w);
+    }
+    f._clipDriveAt = (typeof performance!=='undefined' ? performance.now() : Date.now());
+    if(f.model){ const _b=sampleBones(clip, tt); if(_b) f.model.userData.clipBones=_b; f.model.userData.clipW=w;
+      const _mph=sampleMorphs(clip, tt); if(_mph) f.model.userData.clipMorphs=_mph; }
   };
 
   /* ---------- live preview on fighters[0] ---------- */
@@ -18276,7 +18860,7 @@ init();
       const tl=document.getElementById('stTimeline'); if(tl) tl.value=STUDIO.scrub.toFixed(2);
       lblTime();
     } else { pose = STUDIO.work; }
-    if(this.model && STUDIO.playing && STUDIO.keys.length){ const _b=sampleBones({keys:STUDIO.keys,dur:STUDIO.dur}, STUDIO.playT); if(_b) this.model.userData.clipBones=_b; const _mph=sampleMorphs({keys:STUDIO.keys,dur:STUDIO.dur}, STUDIO.playT); if(_mph) this.model.userData.clipMorphs=_mph; }
+    if(this.model && STUDIO.playing && STUDIO.keys.length){ const _b=sampleBones({keys:STUDIO.keys,dur:STUDIO.dur}, STUDIO.playT); if(_b) this.model.userData.clipBones=_b; this.model.userData.clipW=1; const _mph=sampleMorphs({keys:STUDIO.keys,dur:STUDIO.dur}, STUDIO.playT); if(_mph) this.model.userData.clipMorphs=_mph; }
     for(const j in pose){ if(this.J[j]) this.J[j].set(pose[j][0],pose[j][1],pose[j][2]); }
   };
 
@@ -29392,8 +29976,9 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
     }
 
     // Studio clip override
-    if(typeof STUDIO !== 'undefined' && mv.clip && STUDIO.clips[mv.clip]){
-      studioApplyClipPose(this, STUDIO.clips[mv.clip], p);
+    var _mvc = (mv.clip && window.__studioClip) ? window.__studioClip(mv.clip) : null;
+    if(_mvc){
+      studioApplyClipPose(this, _mvc, p);
       return;
     }
 
@@ -29657,24 +30242,20 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
       this._lastState = this.state;
     }
 
+    // TIMER ONLY — the blend itself now runs AFTER the pose, not before it.
+    //
+    // This block used to do the lerp right here, and that made the entire state-transition crossfade
+    // a NO-OP for its whole life. It writes this.J[j].tgt; the base updateProcedural is not called
+    // until ~90 lines below, and every pose function starts by calling J.set(), which overwrites .tgt
+    // wholesale (Spring3.set, :2439). So each frame this carefully lerped a target that was thrown
+    // away microseconds later. That is why moves hard-cut into and out of every state instead of
+    // easing — the one crossfade in the fighter stack never blended anything.
     if (this._blendTimer && this._blendTimer > 0) {
       this._blendTimer -= dt;
       if (this._blendTimer < 0) this._blendTimer = 0;
-      const blendRatio = 1 - (this._blendTimer / 0.18);
-      const jointsList = [
-        'pelvis','spineLow','spineMid','chest','neck','head',
-        'clavL','clavR','shL','shR','scapL','scapR',
-        'elL','elR','faTwL','faTwR','wrL','wrR','haL','haR',
-        'hipL','hipR','knL','knR','ankL','ankR','ftL','ftR'
-      ];
-      for (const j of jointsList) {
-        if (this.J && this.J[j] && this._poseBuffer && this._poseBuffer[j]) {
-          const hist = this._poseBuffer[j];
-          this.J[j].tgt.x = lerp(hist.x, this.J[j].tgt.x, blendRatio);
-          this.J[j].tgt.y = lerp(hist.y, this.J[j].tgt.y, blendRatio);
-          this.J[j].tgt.z = lerp(hist.z, this.J[j].tgt.z, blendRatio);
-        }
-      }
+      this._blendRatio = 1 - (this._blendTimer / 0.18);
+    } else {
+      this._blendRatio = 1;
     }
 
     if (this.state === 'ringIn') {
@@ -29746,6 +30327,40 @@ console.log('%c[BANNON v93] sim FX + vignette crush + deeper panic + linger guar
     }
 
     if (_origUpdateProcedural) _origUpdateProcedural.call(this, dt);
+  };
+
+  // ── THE CROSSFADE, APPLIED WHERE IT ACTUALLY SURVIVES ──────────────────────────────────────
+  // Outer wrapper, so it runs after EVERY path through the pose stack — including the ringIn /
+  // ringOut / turnbuckleClimb branches above that return early, which the old in-place version
+  // could never reach either. By this point .tgt holds the new state's pose, so lerping it back
+  // toward the joint's real position at the moment the state changed is a genuine 0.18s ease
+  // between the outgoing and incoming pose.
+  // A clip owns its own fade (studioApplyClipPose's clipFadeWeight), so skip this while one is
+  // driving or the two smoothers stack and the move goes soft.
+  const _JLIST = [
+    'pelvis','spineLow','spineMid','chest','neck','head',
+    'clavL','clavR','shL','shR','scapL','scapR',
+    'elL','elR','faTwL','faTwR','wrL','wrR','haL','haR',
+    'hipL','hipR','knL','knR','ankL','ankR','ftL','ftR'
+  ];
+  const _upBlend = Fighter.prototype.updateProcedural;
+  Fighter.prototype.updateProcedural = function(dt){
+    const r = _upBlend.call(this, dt);
+    try{
+      const br = this._blendRatio;
+      if (br != null && br < 1 && !this.ragdoll && this._poseBuffer && window.POSE_BLEND !== false){
+        if (!(this._clipDriveAt && (performance.now() - this._clipDriveAt) < 60)){
+          for (let i = 0; i < _JLIST.length; i++){
+            const j = _JLIST[i], J = this.J && this.J[j], hist = this._poseBuffer[j];
+            if (!J || !hist) continue;
+            J.tgt.x = lerp(hist.x, J.tgt.x, br);
+            J.tgt.y = lerp(hist.y, J.tgt.y, br);
+            J.tgt.z = lerp(hist.z, J.tgt.z, br);
+          }
+        }
+      }
+    }catch(e){}
+    return r;
   };
 
   // The custom transition pose logic
@@ -37976,20 +38591,39 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       // color plate visible); live-swaps via the 'bannonPortrait' event when the GLB finishes.
       var key=String(c.name).toUpperCase().replace(/[^A-Z0-9_]/g,'_');
       var grad='linear-gradient(135deg,'+hx(c.col)+','+hx(c.accent)+')';
-      var uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(c.name):null; }catch(e){}
+      var uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(c.name,0):null; }catch(e){}
       d.innerHTML = '<div class="swatch" data-porbg="'+key+'" data-porgrad="'+grad+'" style="background-image:'+(uri?('url('+uri+'),'):'')+grad+'"></div>'+
                     '<div class="nm">'+c.name.replace(/_/g,' ')+'</div>'+
                     (c.canon?'<div class="tag">C</div>':(c.forged?'<div class="tag">F</div>':''));
       d.addEventListener('click', function(){ assign(c.name); });
+      d.dataset.porname = c.name;
       grid.appendChild(d);
     });
+    observeCards(grid);
+  }
+
+  // ONLY THE CARDS YOU CAN SEE GET A PORTRAIT. The roster is 121 characters and every one of them
+  // owns a multi-megabyte GLB; asking for all of them the instant the screen opens is 361 MB of
+  // downloads racing the two bodies about to wrestle. An IntersectionObserver bumps a card's
+  // priority as it scrolls into view, so the eight on screen render first and the rest never load
+  // unless you scroll to them.
+  var _cardObs = null;
+  function observeCards(grid){
+    if (!window.IntersectionObserver || !window.BANNON_PORTRAITS || !BANNON_PORTRAITS.prioritise) return;
+    if (!_cardObs) _cardObs = new IntersectionObserver(function(entries){
+      var names = [];
+      entries.forEach(function(en){ if (en.isIntersecting && en.target.dataset.porname) names.push(en.target.dataset.porname); });
+      if (names.length) BANNON_PORTRAITS.prioritise(names, 1);
+    }, { root:grid, rootMargin:'220px' });
+    _cardObs.disconnect();
+    Array.prototype.forEach.call(grid.children, function(el){ _cardObs.observe(el); });
   }
 
   function plateHTML(c, role){
     function stat(n,v,max){ var p=Math.max(4,Math.min(100,Math.round(v/max*100))); return '<div class="csStat"><span class="bn">'+n+'</span><span class="bar"><i style="width:'+p+'%"></i></span></div>'; }
     var key=String(c.name).toUpperCase().replace(/[^A-Z0-9_]/g,'_');
     var grad='linear-gradient(135deg,'+hx(c.col)+','+hx(c.accent)+')';
-    var uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(c.name):null; }catch(e){}
+    var uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(c.name,2):null; }catch(e){}
     return '<div class="cspor" data-porbg="'+key+'" data-porgrad="'+grad+'" style="background-image:'+(uri?('url('+uri+'),'):'')+grad+'"></div>'+
       '<div class="role">'+role+'</div><div class="pnm">'+c.name.replace(/_/g,' ')+'</div>'+
       '<div class="plb">'+c.label+'</div><div class="pfc">'+c.faction+(c.canon?' · CANON':'')+' · '+c.style+'</div>'+
@@ -38186,6 +38820,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
           f._lookKey=name; f.isPlayer=false;
           const s=spots[(i-2)%spots.length]; f.x=s[0]; f.z=s[1];
           fighters.push(f);
+          try{ if(typeof requestCharModel==='function') requestCharModel(f); }catch(_){}   // entrant 3+ got no GLB either
           try{ if(typeof dressFighter==='function') dressFighter(f); }catch(_){}
           try{ if(typeof applyForgeMorphs==='function') applyForgeMorphs(f); }catch(_){}
         }
@@ -42329,30 +42964,93 @@ window.BANNON_PORTRAITS = (function(){
     return g;
   }
   function clearScene(){ for(let i=scene.children.length-1;i>=0;i--){ const c=scene.children[i]; if(!c.isLight){ scene.remove(c); c.traverse&&c.traverse(x=>{ if(x.geometry)x.geometry.dispose&&x.geometry.dispose(); if(x.material)x.material.dispose&&x.material.dispose(); }); } } }
-  function get(name){ const key=String(name||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_');
-    if(cache[key]===undefined){
-      if(!init()){ cache[key]=null; }
-      else { try{
-        const o=(window.fighterOptsFor?window.fighterOptsFor(key):null)||{};
-        const fg=(window.CHAR_FACEGEAR&&(window.CHAR_FACEGEAR[key]||window.CHAR_FACEGEAR[name]))||null;
-        clearScene(); scene.add(buildBust(o,fg)); R.render(scene,cam);
-        const uri=R.domElement.toDataURL('image/png'); cache[key]=(uri&&uri.length>200)?uri:null;
-      }catch(e){ cache[key]=null; } }
-    }
-    // GLB RENDER CARDS: if this character has a banked GLB model, render THAT over the procedural bust
-    // (async, one at a time) and swap it into the card via the 'bannonPortrait' event. Falls back to bust.
-    try{ if(glbCache[key]===undefined){
+  // ============================================================================================
+  // THE 12-SECOND FREEZE ON "QUICK FIGHT" LIVED HERE. Measured, not guessed:
+  //   CPU profile of the click -> openSelect 11,267ms -> renderRoster 11,168ms -> this get()
+  //   11,122ms, of which toDataURL is 9,095ms SELF and shader linking another 2,345ms.
+  // renderRoster draws 121 cards in one synchronous forEach and every card called get(), and get()
+  // built a bust, rendered it to a WebGL canvas and did a BLOCKING GPU readback + PNG encode. 121
+  // readbacks back to back with nothing yielding in between. It also enqueued a GLB portrait load
+  // for all 121 characters at once — 361 MB of roster models racing the two bodies you are about to
+  // wrestle with, which is the other half of "the model glbs are rendering slowly".
+  //
+  // Now: get() NEVER renders. It returns what it has (or null, and the card shows its colour
+  // gradient, which it already did as the fallback) and registers the key as wanted. A pump drains
+  // that queue one portrait per animation frame, nearest-to-the-viewport first, and pushes each
+  // finished render into the card through the SAME 'bannonPortrait' event the GLB path already used.
+  // A character who HAS a model skips the bust entirely — the GLB render is about to replace it, so
+  // rendering the placeholder is pure cost.
+  // ============================================================================================
+  const want = {};            // key -> { name, pri }  (pri: 2 = on a plate, 1 = visible card, 0 = idle)
+  let pumping = false;
+  function renderBust(key, name){
+    if (!init()){ cache[key]=null; return; }
+    try{
+      const o=(window.fighterOptsFor?window.fighterOptsFor(key):null)||{};
+      const fg=(window.CHAR_FACEGEAR&&(window.CHAR_FACEGEAR[key]||window.CHAR_FACEGEAR[name]))||null;
+      clearScene(); scene.add(buildBust(o,fg)); R.render(scene,cam);
+      const uri=R.domElement.toDataURL('image/png'); cache[key]=(uri&&uri.length>200)?uri:null;
+      if (cache[key]) try{ window.dispatchEvent(new CustomEvent('bannonPortrait',{detail:{key,uri:cache[key]}})); }catch(e){}
+    }catch(e){ cache[key]=null; }
+  }
+  function modelUrlFor(key){
+    try{
       // portrait-model override first (e.g. MDickie's assembled-but-unrigged WR3D body shows on his
       // CARD without being his in-match fighter), else the character's real fighter GLB.
       var pm=(window.CHAR_PORTRAIT_MODEL&&window.CHAR_PORTRAIT_MODEL[key])||null;
-      var cm=pm?{url:pm}:(window.charModelFor?window.charModelFor(key):null);
-      if(cm&&cm.url){ glbCache[key]=null; enqueueGLB(key, cm.url); } } }catch(e){}
-    return glbCache[key] || cache[key];
+      if (pm) return pm;
+      var cm=(window.charModelFor?window.charModelFor(key):null);
+      return (cm&&cm.url)||null;
+    }catch(e){ return null; }
+  }
+  function pump(){
+    pumping = false;
+    // ONE portrait per frame. A bust is a blocking readback; doing two is a dropped frame.
+    // PRIORITY 0 IS PARKED, NOT QUEUED. Every one of the 121 cards asks for a portrait as it is
+    // built, but only the ones the IntersectionObserver says are on screen (1) or that a P1/P2 plate
+    // asked for (2) are worth a frame. Draining priority 0 as well just moved the same 121 blocking
+    // readbacks from one 11-second block into 121 dropped frames — measured at 21.5s of renderBust
+    // spread across the screen. Parked entries wake the moment you scroll to them.
+    let bestK=null, bestP=0;
+    for (const k in want){ const w=want[k]; if (w.pri > bestP){ bestP=w.pri; bestK=k; } }
+    if (bestK == null) return;
+    const w = want[bestK]; delete want[bestK];
+    const url = modelUrlFor(bestK);
+    if (url && glbCache[bestK] === undefined){ glbCache[bestK] = null; enqueueGLB(bestK, url); }
+    else if (cache[bestK] === undefined) renderBust(bestK, w.name);
+    schedule();
+  }
+  function schedule(){ if (pumping) return; pumping = true;
+    try{ requestAnimationFrame(pump); }catch(e){ setTimeout(pump, 32); } }
+
+  function get(name, pri){ const key=String(name||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_');
+    const have = glbCache[key] || cache[key];
+    if (have) return have;
+    if (cache[key] === undefined || glbCache[key] === undefined){
+      const p = pri|0;
+      if (!want[key] || want[key].pri < p) want[key] = { name:name, pri:p };
+      schedule();
+    }
+    return null;
+  }
+  /** The select screen tells us which cards the player can actually SEE. */
+  function prioritise(names, pri){
+    (Array.isArray(names)?names:[names]).forEach(function(n){
+      const key=String(n||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_');
+      if (glbCache[key] || cache[key]) return;
+      const p = (pri==null?1:pri)|0;
+      if (!want[key] || want[key].pri < p) want[key] = { name:n, pri:p };
+    });
+    schedule();
   }
   // ---- GLB portrait pipeline (async, serialized so we never thrash the GPU) ----
   const glbCache={}; const glbQ=[]; let glbBusy=false;
   function enqueueGLB(key,url){ glbQ.push([key,url]); pumpGLB(); }
   function pumpGLB(){ if(glbBusy || !glbQ.length) return; if(typeof THREE==='undefined'||!THREE.GLTFLoader||!init()) return;
+    // A WRESTLER'S OWN BODY OUTRANKS A CARD THUMBNAIL. BANNON_LOADORDER already makes clip fetches
+    // yield to an in-flight fighter model; portraits were the one downloader that did not, and they
+    // are the heaviest (a portrait GLB is the same multi-megabyte file as the fighter's).
+    try{ var lo=window.BANNON_LOADORDER; if(lo && lo.busy && lo.busy()){ setTimeout(pumpGLB, 250); return; } }catch(e){}
     glbBusy=true; const [key,url]=glbQ.shift();
     let L; try{ L=new THREE.GLTFLoader(); }catch(e){ glbBusy=false; return; }
     const cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
@@ -42375,7 +43073,9 @@ window.BANNON_PORTRAITS = (function(){
     }catch(e){} done(); };
     L.load(url, render, undefined, ()=>{ L.load(cdn+url, render, undefined, done); });
   }
-  return { get, cache, glbCache };
+  return { get, prioritise, cache, glbCache,
+           pending: function(){ return Object.keys(want).length; },
+           queued:  function(){ return glbQ.length; } };
 })();
 // GLB render cards: when a GLB portrait finishes, swap it into any card <img data-por="KEY"> live.
 try{ window.addEventListener('bannonPortrait', function(e){ try{ var k=e.detail.key, u=e.detail.uri;
@@ -43686,11 +44386,44 @@ window.BANNON_CAW_FRONT=(function(){
       if(f){ f.shape=Object.assign(f.shape||{}, tpl); if(window.restyleFighter) window.restyleFighter(f); if(window.enterCreatePreview) window.enterCreatePreview(0); } }catch(e){}
     startEditor();
   }
-  function editExisting(name){ // set the edit target to this character then open the editor
-    try{ if(window.MATCH_SETUP){ window.MATCH_SETUP.p1Name=name; } window.__cawEditTarget=name;
-      if(typeof enterCreatePreview==='function'){ /* the drawer reads the current p1 */ }
+  // STEP 1 -> STEP 2. Picking a name out of the grid now BINDS that wrestler — real identity, real
+  // moveset, real GLB, standing in the preview — and then offers their attires. It used to write
+  // __cawEditTarget, a variable with no reader anywhere, and open the slider lab on whoever happened
+  // to be in the p1 slot (measured: always BANNON). See bindEditTarget().
+  function editExisting(name){
+    var f = null;
+    try{ if(window.bindEditTarget) f = window.bindEditTarget(name, null); }catch(e){}
+    if(!f){ try{ if(window.MATCH_SETUP){ window.MATCH_SETUP.p1Name=name; } window.__cawEditTarget=name; }catch(e){} startEditor(); return; }
+    renderAttire(name);
+  }
+  // STEP 2 — ATTIRE. A wrestler's own gear, the MDickie base body, the retro procedural body, and
+  // any banked alternate-attire GLB the game actually holds for them. Picking one rebinds through the
+  // same proven path, so what you see standing there is what walks out.
+  function attiresFor(name){
+    var out = [['DEFAULT', null, 'Their own gear']];
+    try{
+      var alts = (window.ALT_ATTIRE && window.ALT_ATTIRE[String(name).toUpperCase().replace(/[^A-Z0-9]/g,'_')]) || null;
+      if(alts) for(var i=0;i<alts.length;i++) out.push([String(alts[i]).replace(/_/g,' '), alts[i], 'Alternate attire']);
     }catch(e){}
-    startEditor();
+    out.push(['MDICKIE BASE', 'MDICKIE', 'Shared MDickie-style base body']);
+    out.push(['RETRO BODY',  'PROCEDURAL', 'The original Three.js body']);
+    return out;
+  }
+  function renderAttire(name){
+    var h='<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid #ff7a1a55">'+
+      '<b style="color:#7CFC00;font-size:15px;letter-spacing:2px">② ATTIRE · '+esc(String(name).replace(/_/g,' '))+'</b>'+
+      '<span><button data-cf="back" style="background:#14100c;border:1px solid #543;color:#ffd9a8;padding:6px 10px;border-radius:6px;cursor:pointer">◀ ROSTER</button> '+
+      '<button data-cf="close" style="background:none;border:none;color:#ffd9a8;font-size:19px;cursor:pointer">✕</button></span></div>'+
+      '<div style="padding:8px 14px;color:#9a8;font-size:10px;letter-spacing:1px">STEP 1 SELECTED THE WRESTLER · STEP 2 PICKS WHAT THEY WEAR</div>'+
+      '<div style="flex:1;overflow-y:auto;min-height:0;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">';
+    attiresFor(name).forEach(function(a){
+      h+='<button data-cf="attire" data-alt="'+esc(a[1]==null?'':a[1])+'" data-name="'+esc(name)+'" '+
+         'style="background:linear-gradient(160deg,#1e2416,#12180c);border:1px solid #7CFC0055;border-radius:9px;padding:16px 10px;cursor:pointer;color:#dfffcf;font:bold 12px ui-var(--f-mono);min-height:66px">'+
+         esc(a[0])+'<div style="color:#8a9a7a;font-weight:400;font-size:9px;margin-top:5px">'+esc(a[2])+'</div></button>';
+    });
+    h+='</div><div style="padding:10px 14px;border-top:1px solid #ff7a1a33">'+
+       '<button data-cf="sculpt" style="width:100%;background:linear-gradient(160deg,#2a1a3a,#180e26);border:1px solid #c084fc66;color:#e9d6ff;padding:11px;border-radius:8px;cursor:pointer;font:bold 12px ui-var(--f-mono)">③ SCULPT / EDIT THIS BODY ▶</button></div>';
+    panel.innerHTML=h; wireGrid();
   }
   function wireGrid(){
     panel.querySelectorAll('[data-cf="close"]').forEach(b=>b.onclick=close);
@@ -43698,6 +44431,10 @@ window.BANNON_CAW_FRONT=(function(){
     panel.querySelectorAll('[data-cf="new"]').forEach(b=>b.onclick=renderTemplates);
     panel.querySelectorAll('[data-cf="tpl"]').forEach(b=>b.onclick=()=>applyTemplate(TEMPLATES[+b.dataset.i][1]));
     panel.querySelectorAll('[data-cf="edit"]').forEach(b=>b.onclick=()=>editExisting(b.dataset.name));
+    panel.querySelectorAll('[data-cf="attire"]').forEach(b=>b.onclick=()=>{
+      try{ window.bindEditTarget && window.bindEditTarget(b.dataset.name, b.dataset.alt || null); }catch(e){}
+    });
+    panel.querySelectorAll('[data-cf="sculpt"]').forEach(b=>b.onclick=()=>startEditor());
   }
   window.openCawFront=open;
   // INTERCEPT the SUPERSTAR/CAW hub tile so it opens the front door, not the raw slider lab
@@ -45796,6 +46533,11 @@ console.log('%c[BANNON_MOVEPOOL] 104 MDickie moves now reachable by position —
     try{ f.zone='FLOOR'; f.zoneY=(window.ZONE_Y?window.ZONE_Y.FLOOR:-0.85); }catch(e){}
     try{ if(f._autoZoneFromPosition) f._autoZoneFromPosition(); }catch(e){}
     fighters.push(f);
+    // HIS BODY, NOT A TUBE. The run-in spawned through dressFighter alone, and dressFighter only
+    // styles the procedural segments — nothing ever asked for his GLB, because the only thing that
+    // did was applyCharModels' hardcoded p1..p4 list which runs at the bell, before he exists.
+    // Measured in the harness: a run-in reached the ring as a procedural body every time.
+    try{ if(typeof requestCharModel==='function') requestCharModel(f); }catch(e){}
     try{ if(typeof dressFighter==='function') dressFighter(f); }catch(e){}
     try{ if(typeof applyForgeMorphs==='function') applyForgeMorphs(f); }catch(e){}
     // slide in: a short scripted approach, then OUR AI + OUR physics take the wheel
@@ -49163,10 +49905,15 @@ window.__deriveVariant = async function(key){
   }
 
   function roster(){
-    try{
-      var r = (window.BANNON_ROSTER || []).map(function(x){ return x.name; });
-      return r.length ? r : ['BANNON'];
-    }catch(e){ return ['BANNON']; }
+    // ROSTER_ALL is the full 121-character registry every other screen reads; BANNON_ROSTER is the
+    // 20-odd starter-template array. Prefer the full one, fall back, and NEVER silently collapse to a
+    // one-name list again — that fallback is what hid the other 120 wrestlers from this editor for its
+    // whole life, because BANNON_ROSTER had been clobbered by an object and `.map` threw in here.
+    var r = [];
+    try{ r = (window.ROSTER_ALL ? window.ROSTER_ALL() : []).map(function(c){ return c.name; }).filter(Boolean); }catch(e){}
+    if(!r.length){ try{ var b=window.BANNON_ROSTER; if(Array.isArray(b)) r=b.map(function(x){ return x.name; }).filter(Boolean); }catch(e){} }
+    if(!r.length){ console.warn('[BANNON_MOVESET_STUDIO] no roster source resolved — falling back to BANNON only'); return ['BANNON']; }
+    return r;
   }
   // Which captures can legally fill this slot. Position first (a top-rope dive cannot go in a
   // standing light-attack slot), then the slot's KIND as a keyword filter over the clip names, so a
@@ -50275,11 +51022,15 @@ window.__deriveVariant = async function(key){
   };
   // Tier 0 is untouched. Each step is cumulative and ordered by how much it buys per unit of ugly.
   var TIERS = [
-    { id:0, name:'FULL',   maxLights:99, shadowLights:99, casters:'all',      pr:2.0 },
-    { id:1, name:'HIGH',   maxLights:8,  shadowLights:2,  casters:'fighters', pr:1.75 },
-    { id:2, name:'MEDIUM', maxLights:5,  shadowLights:1,  casters:'fighters', pr:1.5 },
-    { id:3, name:'LOW',    maxLights:3,  shadowLights:1,  casters:'fighters', pr:1.25 },
-    { id:4, name:'POTATO', maxLights:2,  shadowLights:0,  casters:'none',     pr:1.0 }
+    // cheapMaterials swaps every NON-FIGHTER lit surface from per-fragment PBR to per-vertex
+    // Lambert. It is the single biggest lever on a phone and it was missing entirely — see
+    // applyMaterialTier. It only engages at LOW and below, so a device that never struggles
+    // never sees it.
+    { id:0, name:'FULL',   maxLights:99, shadowLights:99, casters:'all',      pr:2.0,  cheapMaterials:false },
+    { id:1, name:'HIGH',   maxLights:8,  shadowLights:2,  casters:'fighters', pr:1.75, cheapMaterials:false },
+    { id:2, name:'MEDIUM', maxLights:5,  shadowLights:1,  casters:'fighters', pr:1.5,  cheapMaterials:false },
+    { id:3, name:'LOW',    maxLights:3,  shadowLights:1,  casters:'fighters', pr:1.25, cheapMaterials:true  },
+    { id:4, name:'POTATO', maxLights:2,  shadowLights:0,  casters:'none',     pr:1.0,  cheapMaterials:true  }
   ];
 
   function scene_(){ try{ return (typeof scene !== 'undefined') ? scene : null; }catch(e){ return null; } }
@@ -50353,6 +51104,66 @@ window.__deriveVariant = async function(key){
     }
   }
 
+  // ── THE COST THE TIERS NEVER CUT: 815 FULL-PBR MATERIALS ──────────────────────────────────
+  // MEASURED in a live match after the tier system had already walked itself all the way down to
+  // POTATO: still 1.4 FPS, and the census reads 853 meshes / 815 MeshStandardMaterial / 8 lit
+  // lights / 176k visible triangles. The tiers only ever capped LIGHTS, SHADOWS and PIXEL RATIO —
+  // they never touched the shader. So at maximum degradation a phone is STILL being asked to run
+  // full physically-based lighting, per fragment, on 815 surfaces. That is the freeze the owner
+  // keeps reporting: the emergency brake was pulling on three levers and not on the heaviest one.
+  //
+  // MeshLambertMaterial computes lighting PER VERTEX instead of per fragment. On the crowd (181
+  // spheres + 350 cylinders of untextured primitive geometry) and the arena shell it is visually
+  // near-identical and a fraction of the cost. It is NOT applied to:
+  //   * skinned meshes — the wrestlers stay full PBR, they are what you are looking at
+  //   * anything carrying a metalness/roughness/normal map — downgrading those changes the look
+  //   * MeshBasicMaterial — already unlit, already cheap (the tron, the mat decals)
+  // Fully reversible: the original material is cached on the mesh and restored the moment the tier
+  // comes back up, so a strong device never sees it.
+  function isPrincipalMesh(n){
+    if (n.isSkinnedMesh) return true;
+    var p = n;
+    while (p){ if (p.userData && p.userData.__isFighter) return true; p = p.parent; }
+    return false;
+  }
+  function applyMaterialTier(T){
+    var s = scene_(); if (!s || window.PERF_MATERIAL_TIER === false) return { down:0, up:0 };
+    var THREEc = window.THREE; if (!THREEc || !THREEc.MeshLambertMaterial) return { down:0, up:0 };
+    var down = 0, up = 0;
+    s.traverse(function(n){
+      if (!n.isMesh) return;
+      if (isPrincipalMesh(n)) return;
+      var m = n.material;
+      if (Array.isArray(m)) return;                     // multi-material: leave alone, not worth the risk
+      if (!m) return;
+      if (T.cheapMaterials){
+        if (m.type !== 'MeshStandardMaterial') return;
+        // a material carrying PBR maps is carrying them for a reason — swapping it changes the look
+        if (m.metalnessMap || m.roughnessMap || m.normalMap || m.aoMap || m.envMap) return;
+        if (!n.userData.__pbrMat) n.userData.__pbrMat = m;
+        var key = m.uuid;
+        if (!MAT_CACHE[key]){
+          var lm = new THREEc.MeshLambertMaterial({
+            color: m.color ? m.color.clone() : undefined,
+            map: m.map || null,
+            emissive: m.emissive ? m.emissive.clone() : undefined,
+            emissiveMap: m.emissiveMap || null,
+            emissiveIntensity: (m.emissiveIntensity != null ? m.emissiveIntensity : 1),
+            transparent: m.transparent, opacity: m.opacity, side: m.side,
+            alphaTest: m.alphaTest, depthWrite: m.depthWrite, vertexColors: m.vertexColors,
+            fog: m.fog, toneMapped: m.toneMapped
+          });
+          MAT_CACHE[key] = lm;
+        }
+        n.material = MAT_CACHE[key]; down++;
+      } else if (n.userData.__pbrMat){
+        n.material = n.userData.__pbrMat; n.userData.__pbrMat = null; up++;
+      }
+    });
+    return { down: down, up: up };
+  }
+  var MAT_CACHE = {};
+
   function applyTier(t){
     var s = scene_(), r = rend_();
     if (!s || !r) return;
@@ -50404,10 +51215,24 @@ window.__deriveVariant = async function(key){
       s.traverse(function(n){ if (n.isMesh && n.userData.__perfBaseCast !== undefined) n.castShadow = n.userData.__perfBaseCast; });
     }
     try{ r.setPixelRatio(Math.min(T.pr, window.devicePixelRatio || 1)); }catch(e){}
-    try{ if (T.shadowLights === 0) r.shadowMap.enabled = false; else r.shadowMap.enabled = true; }catch(e){}
-    ST.applied.push({ tier:T.name, at:Math.round(performance.now()) });
+    try{
+      if (T.shadowLights === 0) r.shadowMap.enabled = false; else r.shadowMap.enabled = true;
+      // SHADOW TYPE IS A TIER TOO. This only ever toggled shadows on/off and left the map on
+      // PCFSoftShadowMap (type 2) — the most expensive filter three.js has — right down to POTATO.
+      // Below HIGH, drop to plain PCF; the softness is invisible at phone size and the per-sample
+      // cost is not.
+      if (r.shadowMap.enabled && THREE.PCFShadowMap != null){
+        var wantSoft = (T.id <= 1);
+        var want = wantSoft ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
+        if (r.shadowMap.type !== want){ r.shadowMap.type = want; r.shadowMap.needsUpdate = true; }
+      }
+    }catch(e){}
+    var matMoved = { down:0, up:0 };
+    try{ matMoved = applyMaterialTier(T); }catch(e){}
+    ST.applied.push({ tier:T.name, at:Math.round(performance.now()), matDown:matMoved.down, matUp:matMoved.up });
     console.log('%c[BANNON_PERF] quality tier -> ' + T.name + '  (' + T.maxLights + ' lights, ' +
-      T.shadowLights + ' shadow-casting, casters=' + T.casters + ', pr<=' + T.pr + ')','color:#ffb000');
+      T.shadowLights + ' shadow-casting, casters=' + T.casters + ', pr<=' + T.pr +
+      ', materials ' + (T.cheapMaterials ? ('LAMBERT ' + matMoved.down + ' swapped') : ('PBR ' + matMoved.up + ' restored')) + ')','color:#ffb000');
     try{ if (ST.hud) ST.hud.dataset.tier = T.name; }catch(e){}
   }
 
@@ -51082,10 +51907,153 @@ window.__deriveVariant = async function(key){
     return pick;
   };
 
+  // ============================================================================================
+  // BANNON_CLIP_FIT — A JAB DOES NOT PLAY A DROP KICK.
+  //
+  // Owner: "the animations still are not correct". They were not dead — they were WRONG, which
+  // looks worse. Measured over a driven session with every attack button in every direction:
+  //     FIRE JAB          (LEFT JAB)     played CrotchChop, then HurricaneRana, then FaceGouge
+  //     RIP UPPERCUT      (punch)        played Drop Kick (1)
+  //     STRAIGHT LEFT     (punch)        played Drop Kick (1)
+  //     OVERHAND LEFT     (punch)        played SchoolBoySuperkick
+  //     LEAD BACKFIST     (RIGHT CROSS)  played HurricaneRana
+  //     OVER-THE-ROPE FOREARM            played CrotchChop  (a TAUNT)
+  // Every one of those captures is real, resident and animating perfectly. It is the wrong motion
+  // for the move. __slotClipRotate buckets a move into a COARSE slot (ST_F_LIGHT) and rotates
+  // through whatever the fighter has there, and those pools were filled off the clip's `cat` — so a
+  // punch slot legitimately contains kicks, a rana and a taunt.
+  //
+  // fbx_move_map.json already carries the discriminator: every clip has an `engine`
+  // (STRIKE_PUNCH / STRIKE_KICK / VERTICAL_SUPLEX / TAUNT / LOCO / SELL …) and a `cat`. Read it,
+  // and refuse a capture whose engine contradicts the move's own limb. Metadata is a hint and not
+  // an authority (owner LAW) — which is exactly why CrotchChop, labelled cat:'strike' by whoever
+  // wrote the file, has now been relabelled in the DATA to what its frames actually show.
+  // ============================================================================================
+  var FIT = { byClip:null, checked:0, refused:0, allowedUnknown:0 };
+  (function loadFit(){
+    var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    var urls = ['assets/moves/fbx_move_map.json', cdn + 'assets/moves/fbx_move_map.json'];
+    (function next(i){
+      if (i >= urls.length) return;
+      fetch(urls[i]).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        .then(function(j){
+          var ix = {};
+          (j.clips || []).forEach(function(e){ if (e && e.clip) ix[e.clip] = e; });
+          FIT.byClip = ix;
+          try{ console.log('%c[BANNON_CLIP_FIT] ' + Object.keys(ix).length + ' captures indexed by engine — a punch will not play a kick','color:#7CFC00'); }catch(e){}
+        }).catch(function(){ next(i+1); });
+    })(0);
+  })();
+
+  // What KIND of motion does this move need? Read off the move's own authored fields.
+  function needOf(m){
+    var cat  = String(m.cat || '').toUpperCase();
+    var limb = String(m.limb || '').toUpperCase();
+    if (cat === 'GRAPPLE' || cat === 'THROW') return 'GRAPPLE';
+    if (cat === 'SUBMISSION') return 'SUBMISSION';
+    if (cat === 'DIVE' || m.traj === 'FLYING') return 'AERIAL';
+    if (cat === 'GROUND') return 'GROUND';
+    if (limb.indexOf('KICK') >= 0 || limb.indexOf('KNEE') >= 0 || limb.indexOf('SHIN') >= 0) return 'KICK';
+    return 'PUNCH';                      // jab / cross / hook / uppercut / elbow / forearm / chop
+  }
+  var GRAPPLE_ENGINES = /^(VERTICAL_SUPLEX|BACK_SUPLEX|BRAINBUSTER|DDT|REVERSE_DDT|CHOKESLAM|POWERBOMB|CROSS_POWERBOMB|GORILLA_PRESS|WHIP)$/;
+  function fits(m, clip){
+    if (!clip) return false;
+    if (!FIT.byClip) return true;                       // index not in yet — never block on a race
+    var e = FIT.byClip[clip];
+    FIT.checked++;
+    if (!e){ FIT.allowedUnknown++; return true; }        // an owner capture we have no metadata for
+    var cat = String(e.cat || '').toLowerCase();
+    var eng = String(e.engine || '').toUpperCase();
+    // a dual-purpose impact-taunt is a real strike when the entry says so, and only then
+    if (cat === 'taunt' || cat === 'style_stance'){
+      if (!(e.dualPurpose && String(e.altKind||'').toLowerCase() === 'strike')) return false;
+      eng = String(e.altEngine || eng).toUpperCase();
+    }
+    // nothing that is a fall, a getup, a walk cycle or a rig test is ever somebody's offence
+    if (/^(locomotion|reaction|knockdown|getup|character_rig|defense|rope_transition|misc|weapon)$/.test(cat)) return false;
+    var need = needOf(m);
+    if (need === 'PUNCH')   return eng === 'STRIKE_PUNCH' || eng === 'STRIKE_RUN';
+    if (need === 'KICK')    return eng === 'STRIKE_KICK'  || eng === 'STRIKE_RUN' || eng === 'DIVING_LEG_DROP';
+    if (need === 'GRAPPLE') return cat === 'grapple' || GRAPPLE_ENGINES.test(eng);
+    if (need === 'SUBMISSION') return cat === 'submission' || eng === 'SUBMISSION';
+    if (need === 'AERIAL')  return cat === 'dive' || cat === 'aerial_transition' || eng === 'SWANTON' || eng === 'DIVING_LEG_DROP';
+    return cat === 'strike' || cat === 'grapple';
+  }
+
+  // ── ONE DECISION, ONE ORDER OF AUTHORITY ─────────────────────────────────────────────────────
+  // These three sources used to be three independent lines in poseAttack, and the last one won
+  // unconditionally. Now: what the PLAYER equipped beats what the map derived, which beats variety
+  // — and variety may only substitute a capture that FITS the same move.
+  window.__resolveMoveClip = function(f, m){
+    if (!f || !m) return null;
+    var picked = null, src = '';
+    // 1. the player's own equipped choice for this position
+    try{
+      if (window.equippedClipFor){
+        var ck = (f.opts && f.opts.name) || f.specName;
+        var pos = m.pos || m.grapplePos || (window.resolveGrapPos ? window.resolveGrapPos(m) : null);
+        var eq = pos ? window.equippedClipFor(ck, pos) : null;
+        if (eq){ picked = eq; src = 'equipped'; }
+      }
+    }catch(e){}
+    // 2. combat_clip_map.json — derived by limb + trajectory, so it is the RIGHT SHAPE by construction
+    if (!picked) try{
+      var cc = (m.name && window.__combatClipFor) ? window.__combatClipFor(m.name) : null;
+      if (cc){ picked = cc; src = 'map'; }
+    }catch(e){}
+    // 3. variety, but only among captures that fit
+    try{
+      var rot = window.__slotClipRotate ? window.__slotClipRotate(f, m) : null;
+      if (rot && fits(m, rot)){ picked = rot; src = 'rotate'; }
+      else if (rot) FIT.refused++;
+    }catch(e){}
+    // 4. LAST RESORT. A move whose limb we know should never play NOTHING — that is the procedural
+    //    fallback, and "the animations still look procedural" is the complaint. MEASURED before this
+    //    step: 17 of 33 attacks in a driven session ended with no capture at all, including moves
+    //    combat_clip_map.json has an entry for. Rather than chase every reason a name can miss,
+    //    choose from the captures whose ENGINE fits this move and that are resident RIGHT NOW —
+    //    deterministically from the move's own name, so a given move always looks like itself
+    //    instead of flickering between captures.
+    if (!picked && FIT.byClip) try{
+      var pool = fitPool(m);
+      if (pool.length){
+        var h = 0, nm2 = String(m.name || '');
+        for (var i = 0; i < nm2.length; i++) h = ((h << 5) - h + nm2.charCodeAt(i)) | 0;
+        picked = pool[Math.abs(h) % pool.length]; src = 'fit-fallback';
+      }
+    }catch(e){}
+    if (picked){ ST.chose = (ST.chose||0) + 1; ST.bySrc = ST.bySrc || {}; ST.bySrc[src] = (ST.bySrc[src]||0) + 1; }
+    return picked;
+  };
+
+  // Resident captures that FIT this move, cached per need-kind (the set only grows as clips load).
+  var _fitPool = {}, _fitPoolAt = {};
+  function fitPool(m){
+    var need = needOf(m);
+    var now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    if (_fitPool[need] && (now - (_fitPoolAt[need] || 0)) < 4000) return _fitPool[need];
+    var out = [];
+    try{
+      var C = (typeof STUDIO !== 'undefined' && STUDIO.clips) ? STUDIO.clips : null;
+      for (var name in FIT.byClip){
+        if (!fits(m, name)) continue;
+        if (C && !(window.__studioClip ? window.__studioClip(name) : C[name])) continue;   // not resident
+        out.push(name);
+      }
+      out.sort();                                    // stable order, so the hash is stable too
+    }catch(e){}
+    _fitPool[need] = out; _fitPoolAt[need] = now;
+    return out;
+  }
+
   window.BANNON_CLIP_ROTATE = {
-    slotFor: slotFor, poolFor: poolFor,
-    stats: function(){ return { rotated:ST.hits, noPool:ST.misses, slotsInUse:Object.keys(ST.rot).length }; },
-    reset: function(){ ST.rot = {}; ST.hits = 0; ST.misses = 0; }
+    slotFor: slotFor, poolFor: poolFor, fits: fits, needOf: needOf,
+    stats: function(){ return { rotated:ST.hits, noPool:ST.misses, slotsInUse:Object.keys(ST.rot).length,
+      resolved:ST.chose||0, bySource:ST.bySrc||{},
+      fitIndexed: FIT.byClip ? Object.keys(FIT.byClip).length : 0,
+      fitChecked:FIT.checked, fitRefused:FIT.refused, fitUnknown:FIT.allowedUnknown }; },
+    reset: function(){ ST.rot = {}; ST.hits = 0; ST.misses = 0; ST.chose = 0; ST.bySrc = {}; }
   };
   console.log('%c[BANNON_CLIP_ROTATE] strikes rotate through each fighter\u2019s own equipped captures','color:#7CFC00');
 })();
@@ -52826,7 +53794,15 @@ window.__deriveVariant = async function(key){
     if(!did && n < 80) setTimeout(function(){ doors(n+1); }, 300);
   })(0);
 
-  window.BANNON_ROSTER = {
+  // NAMESPACED, because this used to be `window.BANNON_ROSTER = {...}` and clobbered the 121-fighter
+  // ARRAY defined ~46,000 lines earlier. Nothing threw — every consumer reads it as
+  // `(window.BANNON_ROSTER||[]).map(r=>r.name)` inside a try/catch, so six callers silently fell back
+  // to a one-name list. MEASURED: Array.isArray(window.BANNON_ROSTER) === false, and
+  // "(R||[]).map is not a function", which is why the MOVESET STUDIO opened with exactly one
+  // character (BANNON) and no picker — the per-fighter moveset editor was unreachable for the other
+  // 120. Same defect class as the BANNON_MDICKIE double-assignment already documented in CLAUDE.md;
+  // scripts/verify_modules.cjs now gates on it so a third one fails the build instead of five screens.
+  window.BANNON_ROSTER_UI = {
     open: open, close: close, render: render,
     setPromo: setPromo, setAlign: setAlign, setTitle: setTitle,
     makeTeam: makeTeam, splitTeam: splitTeam,
@@ -56998,6 +57974,466 @@ window.__deriveVariant = async function(key){
     stats: function(){ return { entrances:ST.entrances, fxBeats:ST.beats, camFrames:ST.shots,
                                 runIns:ST.runIns, lastBeat:ST.lastBeat, lastShot:ST.lastShot,
                                 shotWeight:shotW, shotActive: !!window.__camShot }; }
+  };
+})();
+</script>
+<script>
+// ============================================================================================
+// BANNON_PERF_SETTLE — MERGES onto the existing BANNON_PERF tier system (defined ~7,000 lines
+// above). It does NOT reassign window.BANNON_PERF: that is the exact double-`=` defect that killed
+// BANNON_MDICKIE's career-sim half and BANNON_ROSTER's 121-fighter array, both fixed this pass.
+//
+// Two costs, both MEASURED in a real running match with tools/harness/play_and_record.cjs plus a
+// Chrome CPU profile.
+//
+// 1. TWELVE OF THE SIXTEEN LIGHTS SIT AT INTENSITY 0 — and they are the TIER SYSTEM'S OWN OUTPUT.
+//    applyTier() drops a light by zeroing its intensity while deliberately keeping it VISIBLE, with
+//    a comment saying so: hiding a light changes three.js's light COUNT, which forces a full
+//    material recompile. That reasoning is correct, and the tradeoff it settled on is the wrong way
+//    round for a long match. A zero-intensity light is not free — NUM_DIR_LIGHTS / NUM_SPOT_LIGHTS /
+//    NUM_POINT_LIGHTS are compiled into the shader and every one is evaluated per fragment whatever
+//    its intensity. Measured: 4 dead DirectionalLights, 4 dead SpotLights, 4 dead PointLights across
+//    925 MeshStandardMaterial meshes. So the old policy pays ten dead light evaluations on every lit
+//    pixel for the WHOLE MATCH to avoid a single one-off recompile.
+//    This flips it, but only once the set has genuinely settled: a light must have been dark for
+//    LIGHT_SETTLE_MS continuously before it is hidden, and it comes back the instant it lights up.
+//    Entrance pyro, the tron and stipulation lighting flick on and off in well under that window, so
+//    they never trigger a recompile — only the tier system's permanent culls do, once.
+//
+// 2. SHADERS WERE STILL COMPILING DURING THE MATCH.
+//    The CPU profile showed getProgramInfoLog / getShaderInfoLog / getProgramCacheKey still firing
+//    nineteen seconds after the bell, with 42-47 programs in flight. Every first-use compile is a
+//    synchronous stall — on a phone that is hundreds of milliseconds, and it lands exactly when a
+//    new material first becomes visible, i.e. mid-move. That is what a freeze FEELS like: not a
+//    steady low frame rate, a hitch. renderer.compile() builds the whole scene's programs in ONE
+//    place we choose (boot, arena build, behind the entrance) instead of scattered through the
+//    fight. It also means the recompile this module's light cull causes is paid there too.
+//
+// HONEST SCOPE: the 1.3 fps the harness reports is this container's SOFTWARE rasterizer — 95% of
+// profiled time lands in V8's "(program)" bucket, i.e. outside JS in the driver, which is the same
+// thing the tier system's own notes recorded. It is NOT evidence about the owner's phone and is not
+// quoted as one. Both fixes stand on their own: dead per-fragment work and mid-match compile stalls
+// are real costs on any device.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_PERF && window.BANNON_PERF.__settle) return;
+  var LIGHT_SETTLE_MS = 2500;
+
+  var ST = { lightsHidden:0, lightsRestored:0, scans:0, prewarmed:false, prewarmMs:0, lastCount:null };
+  var EPS = 0.001;
+  var every = 20, tick = 0;
+
+  function sceneOf(){ try{ return new Function('return typeof scene!=="undefined"?scene:null')(); }catch(e){ return null; } }
+  function rendererOf(){ try{ return new Function('return typeof renderer!=="undefined"?renderer:null')(); }catch(e){ return null; } }
+  function cameraOf(){ try{ return new Function('return typeof camera!=="undefined"?camera:null')(); }catch(e){ return null; } }
+
+  // ── 1. SETTLED DARK-LIGHT CULL ────────────────────────────────────────────────────────────
+  // Hiding is debounced; RESTORING never is. A light that comes back on is visible on the very next
+  // scan, because a missing pyro flash is a visible bug and one extra recompile is not.
+  function cullDarkLights(){
+    if (window.PERF_LIGHT_CULL === false) return;
+    var S = sceneOf(); if (!S) return;
+    ST.scans++;
+    var now = (typeof performance!=='undefined' ? performance.now() : Date.now());
+    var settle = (window.PERF_LIGHT_SETTLE_MS != null ? window.PERF_LIGHT_SETTLE_MS : LIGHT_SETTLE_MS);
+    var live = 0, hidden = 0, pending = 0;
+    S.traverse(function(o){
+      if (!o.isLight) return;
+      // Ambient and hemisphere are single cheap terms, and they are what stops the arena going black
+      // if anything else mis-sets an intensity. Never touch them.
+      if (o.isAmbientLight || o.isHemisphereLight){ live++; return; }
+      var dark = !(o.intensity > EPS);
+      if (!dark){
+        o.userData.__darkSince = 0;
+        if (o.userData.__perfHidden){ o.visible = true; o.userData.__perfHidden = false; ST.lightsRestored++; }
+        live++; return;
+      }
+      if (o.userData.__perfHidden){ hidden++; return; }
+      if (!o.userData.__darkSince){ o.userData.__darkSince = now; pending++; live++; return; }
+      if (now - o.userData.__darkSince >= settle){
+        o.visible = false; o.userData.__perfHidden = true; ST.lightsHidden++; hidden++;
+      } else { pending++; live++; }
+    });
+    ST.lastCount = { live: live, hidden: hidden, pending: pending };
+  }
+
+  // ── 2. SHADER PRE-WARM ────────────────────────────────────────────────────────────────────
+  // renderer.compile walks the scene and builds every program it would need, so the first frame
+  // that shows a given material does not have to stop and compile it. Run once per built world.
+  function prewarm(why){
+    if (window.PERF_PREWARM === false) return false;
+    var R = rendererOf(), S = sceneOf(), C = cameraOf();
+    if (!R || !S || !C || typeof R.compile !== 'function') return false;
+    var t = (typeof performance!=='undefined' ? performance.now() : Date.now());
+    try{ R.compile(S, C); }catch(e){ return false; }
+    ST.prewarmMs += ((typeof performance!=='undefined' ? performance.now() : Date.now()) - t);
+    ST.prewarmed = true;
+    try{ console.log('%c[BANNON_PERF] shaders pre-warmed (' + why + ') in ' + ST.prewarmMs.toFixed(0) +
+                     'ms — ' + ((R.info.programs||[]).length) + ' programs', 'color:#7CFC00'); }catch(e){}
+    return true;
+  }
+  // Re-warm whenever the world is rebuilt (new arena, new stipulation dressing, entrance props),
+  // because those introduce materials the last compile never saw.
+  function armWorldHooks(n){
+    n = n || 0;
+    var did = false;
+    try{
+      if (typeof window.buildArena === 'function' && !window.buildArena.__perf){
+        var ba = window.buildArena;
+        window.buildArena = function(){ var r = ba.apply(this, arguments);
+          setTimeout(function(){ cullDarkLights(); prewarm('arena built'); }, 60); return r; };
+        window.buildArena.__perf = true; did = true;
+      }
+      if (typeof window.startFight === 'function' && !window.startFight.__perf){
+        var sf = window.startFight;
+        window.startFight = function(){ var r = sf.apply(this, arguments);
+          // after the bodies and their GLBs exist, but before the first strike needs their program
+          setTimeout(function(){ cullDarkLights(); prewarm('match start'); }, 400);
+          setTimeout(function(){ cullDarkLights(); prewarm('models settled'); }, 4000);
+          return r; };
+        window.startFight.__perf = true; did = true;
+      }
+    }catch(e){}
+    if (!did && n < 200) setTimeout(function(){ armWorldHooks(n+1); }, 250);
+  }
+  armWorldHooks(0);
+
+  // throttled per-frame scan: cheap (a traverse every 20 frames) and self-correcting, so a light
+  // that is animated up for pyro is back within a third of a second.
+  (function watch(){
+    requestAnimationFrame(watch);
+    if ((++tick % every) !== 0) return;
+    cullDarkLights();
+  })();
+
+  // first pass once the world exists at all
+  setTimeout(function(){ cullDarkLights(); prewarm('boot'); }, 6000);
+
+  // MERGE, never reassign — the tier system's hud() / report() / setTier() must survive.
+  var API = {
+    __settle: true,
+    cull: cullDarkLights,
+    prewarm: function(){ return prewarm('manual'); },
+    settleStats: function(){
+      var R = rendererOf(), S = sceneOf();
+      var lights = 0, dark = 0, visible = 0, std = 0;
+      if (S) S.traverse(function(o){
+        if (o.isLight){ lights++; if (!(o.intensity > EPS)) dark++; if (o.visible !== false) visible++; }
+        if (o.isMesh){ var m=o.material; (Array.isArray(m)?m:[m]).forEach(function(mm){ if (mm && mm.type==='MeshStandardMaterial') std++; }); }
+      });
+      return { lightsTotal:lights, lightsDark:dark, lightsRendered:visible,
+               standardMaterials:std,
+               hidden:ST.lightsHidden, restored:ST.lightsRestored, scans:ST.scans,
+               prewarmed:ST.prewarmed, prewarmMs:+ST.prewarmMs.toFixed(0),
+               programs: R && R.info && R.info.programs ? R.info.programs.length : null,
+               drawCalls: R && R.info ? R.info.render.calls : null,
+               triangles: R && R.info ? R.info.render.triangles : null };
+    }
+  };
+  (function attach(n){
+    n = n || 0;
+    // The tier system is defined earlier in the file, so it is normally already here. If some future
+    // reorder puts it after us, wait for it rather than clobbering — and if it never turns up, stand
+    // up on our own so the cull and the pre-warm still run.
+    if (window.BANNON_PERF){
+      for (var k in API) if (!(k in window.BANNON_PERF) || k === '__settle') window.BANNON_PERF[k] = API[k];
+      console.log('%c[BANNON_PERF] settled-dark-light cull + shader pre-warm merged in','color:#7CFC00');
+      return;
+    }
+    if (n < 40) return void setTimeout(function(){ attach(n+1); }, 250);
+    window.BANNON_PERF = API;
+    console.log('%c[BANNON_PERF] settle module standing alone (tier system never appeared)','color:#ffcc00');
+  })(0);
+})();
+</script>
+<script>
+// ============================================================================================
+// BANNON_LOADORDER — the wrestlers' bodies come FIRST. Everything else waits.
+//
+// OWNER COMPLAINT, repeated many times: "procedural models still appear first and don't change to
+// glb until after u get into choosing character, then they switch back to procedural ... procedural
+// model attires should not appear ever unless chose".
+//
+// Two separate bugs cause that, and only one of them is about visibility:
+//   * removeFighterModel() force-revealed the procedural body on the way out, and loadFighterModel()
+//     calls it at the top of EVERY load — so every re-request flashed the tube body back. Fixed at
+//     the source (see removeFighterModel's keepHidden).
+//   * THE MODELS TAKE FOREVER TO ARRIVE, which is what made the flash long enough to see and what
+//     made an earlier attempt at hiding produce an invisible wrestler instead. THAT is the real bug.
+//
+// MEASURED over a full boot -> character select -> match, watching every network request:
+//   the fighter GLBs are not even REQUESTED until 56.5 SECONDS after boot, and once requested
+//   BANNON_rigged.glb takes 17.3s and VIPER.glb 12.1s TO COME OVER LOCALHOST. That is not bandwidth.
+//   Move-clip fetches start at 14.3s and are still going at 86s; individual clip JSONs were taking
+//   7-17 seconds each. Hundreds of them are saturating the browser's per-host connection pool, and
+//   the two files that decide whether you can SEE YOUR WRESTLER are queued behind all of them.
+//
+// So: a fighter model in flight OWNS the network. Clip warming is a nice-to-have that runs at a
+// lull; a body is not optional. This gates every clip fetch (all the warmers go through
+// loadClipFor) behind an in-flight model count, with a hard ceiling so a genuinely stuck model can
+// never starve the clip system forever.
+// window.LOADORDER=false disables the gate.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_LOADORDER) return;
+
+  var ST = { inFlight:0, deferred:0, released:0, maxWaitMs:20000, peak:0, waitedMs:0 };
+
+  // ── count fighter model loads in flight ──────────────────────────────────────────────────
+  function armCounter(n){
+    n = n || 0;
+    try{
+      if (typeof window.loadFighterModel === 'function' && !window.loadFighterModel.__lo){
+        var lf = window.loadFighterModel;
+        window.loadFighterModel = function(side, url, name){
+          ST.inFlight++; if (ST.inFlight > ST.peak) ST.peak = ST.inFlight;
+          try{ return lf.apply(this, arguments); }
+          finally{
+            // The load is async; the counter is released by the bind/fail hooks below. This is a
+            // safety net only, in case a path returns without ever calling either.
+            setTimeout(function(){ if (ST.inFlight > 0) release('timeout-net'); }, ST.maxWaitMs);
+          }
+        };
+        window.loadFighterModel.__lo = true;
+      }
+      if (typeof window.setProcVisible === 'function' && !window.__loBindHook){
+        window.__loBindHook = true;
+      }
+    }catch(e){}
+    if (n < 200 && (!window.loadFighterModel || !window.loadFighterModel.__lo)) setTimeout(function(){ armCounter(n+1); }, 200);
+  }
+  function release(){ if (ST.inFlight > 0){ ST.inFlight--; ST.released++; } }
+  window.__loRelease = release;
+  armCounter(0);
+
+  // ── gate every clip fetch behind it ──────────────────────────────────────────────────────
+  function armGate(n){
+    n = n || 0;
+    if (typeof window.loadClipFor === 'function' && !window.loadClipFor.__lo){
+      var orig = window.loadClipFor;
+      var gated = function(name){
+        if (window.LOADORDER === false || ST.inFlight <= 0) return orig.apply(this, arguments);
+        var self = this, args = arguments, t0 = Date.now();
+        ST.deferred++;
+        return new Promise(function(resolve){
+          (function wait(){
+            if (ST.inFlight <= 0 || (Date.now() - t0) > ST.maxWaitMs){
+              ST.waitedMs += (Date.now() - t0);
+              try{ resolve(orig.apply(self, args)); }catch(e){ resolve(null); }
+              return;
+            }
+            setTimeout(wait, 120);
+          })();
+        });
+      };
+      // preserve anything an earlier wrapper stamped on the function — BANNON_WARM marks __warm and
+      // reads it back, and losing that flag silently disarms the warmer.
+      for (var k in orig) { try{ gated[k] = orig[k]; }catch(e){} }
+      gated.__lo = true;
+      window.loadClipFor = gated;
+      return;
+    }
+    if (n < 200) setTimeout(function(){ armGate(n+1); }, 200);
+  }
+  armGate(0);
+
+  // ── ask for the bodies EARLY ─────────────────────────────────────────────────────────────
+  // The GLBs were requested at 56s because applyCharModels only runs once the fighters exist, which
+  // is at the bell. The character select screen knows who is wrestling long before that, so warm
+  // their files into the browser cache the moment they are chosen. By the time the bell rings the
+  // bytes are local and the bind is immediate — which is what actually removes the gap the
+  // procedural body used to fill.
+  var warmed = {};
+  function warmModel(nameKey){
+    if (!nameKey || warmed[nameKey]) return;
+    warmed[nameKey] = true;
+    var rec = null;
+    try{ rec = window.charModelFor ? window.charModelFor(String(nameKey).toUpperCase().replace(/[^A-Z0-9]/g,'_')) : null; }catch(e){}
+    var url = rec && rec.url; if (!url) return;
+    try{ fetch(url, { cache:'force-cache' }).then(function(){ ST.released += 0; }).catch(function(){}); }catch(e){}
+  }
+  function warmFromSetup(){
+    var s = window.MATCH_SETUP; if (!s) return;
+    ['p1Name','p2Name','p3Name','p4Name'].forEach(function(k){ if (s[k]) warmModel(s[k]); });
+  }
+  // poll MATCH_SETUP rather than hooking the select screen, so every entry point that sets it —
+  // the select screen, the universe card, career, a console fight() — gets the same head start.
+  setInterval(warmFromSetup, 1000);
+
+  window.BANNON_LOADORDER = {
+    stats: function(){ return { modelsInFlight:ST.inFlight, peakInFlight:ST.peak,
+                                clipFetchesDeferred:ST.deferred, totalWaitMs:ST.waitedMs,
+                                modelsWarmed:Object.keys(warmed).length,
+                                gateArmed: !!(window.loadClipFor && window.loadClipFor.__lo),
+                                counterArmed: !!(window.loadFighterModel && window.loadFighterModel.__lo) }; },
+    // "is a wrestler's own body on the wire right now?" — BANNON_PORTRAITS asks before it downloads
+    // a card thumbnail, which is the same multi-megabyte GLB and was racing the fighters for it.
+    busy: function(){ return ST.inFlight > 0; },
+    warm: warmModel
+  };
+  console.log('%c[BANNON_LOADORDER] fighter models take the network first; clip warming yields','color:#7CFC00');
+})();
+</script>
+<script>
+// ============================================================================================
+// BANNON_CLIPWORKER — the mid-combat freeze, and it is not the GPU.
+//
+// OWNER, many times over many sessions: "the game keeps freezing mid match", "the game still
+// freezes mid combat". Every previous answer of mine has been about frame RATE, which is a GPU
+// question I cannot settle from this container. This is a different thing and it reproduces
+// anywhere: a HITCH, on the frame a move is first thrown.
+//
+// MEASURED:
+//   * assets/moves/clips is 269.7 MB across 973 files. Median 103 KB, fifty of them over 1 MB.
+//   * a move that has not been played yet is fetched by loadClipFor AT THE MOMENT IT FIRES, and the
+//     response is JSON.parse'd ON THE MAIN THREAD.
+//   * watching the network across a real match: 112 clip requests, still arriving 86 s after boot,
+//     individual clips taking 7-17 s while they fight each other for the connection pool.
+//   JSON.parse of a megabyte blocks the main thread outright — hundreds of milliseconds on a phone —
+//   and it lands exactly when you throw a move you have not thrown yet. That is the freeze.
+//
+// THE FIX KEEPS EVERY BYTE OF EVERY CLIP. I very nearly shipped the other fix — stripping the ~92%
+// of bone tracks (fingers, face, tongue, eyelids, cloth, toes) that our current 28-joint rigs cannot
+// drive, which would have taken the bank 269.7 MB -> 69.3 MB. The owner's call was: "our rigs
+// physically can have all those, give them to them." He is right — those channels are finger curl
+// and facial performance, which is the direction this game is going, and throwing them away to buy
+// frame time would have been the lazy trade. So nothing is stripped. Instead the parse moves OFF the
+// main thread, where its cost stops being a dropped frame.
+//
+// A Worker fetches and parses; the main thread receives a finished object. The worker is built from
+// a Blob so it stays inside the single-file build (no second file to ship, works from file:// as
+// well as http). If Workers or Blob URLs are unavailable the original loader is used unchanged, so
+// this can only ever be a speed-up, never a new failure mode.
+// window.CLIP_WORKER=false forces the old path.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_CLIPWORKER) return;
+
+  var ST = { viaWorker:0, viaMain:0, failed:0, bytes:0, msTotal:0, peakMs:0, workerOk:null };
+  var worker = null, seq = 0, pending = {};
+
+  function makeWorker(){
+    if (worker !== null) return worker;
+    if (window.CLIP_WORKER === false || typeof Worker === 'undefined' || typeof Blob === 'undefined'){
+      worker = false; ST.workerOk = false; return worker;
+    }
+    try{
+      var src = [
+        'self.onmessage = function(e){',
+        '  var d = e.data, id = d.id, url = d.url;',
+        '  fetch(url).then(function(r){',
+        '    if (!r.ok) throw new Error("HTTP " + r.status);',
+        '    return r.text();',
+        '  }).then(function(t){',
+        // parse HERE, in the worker. this is the whole point: the main thread never sees the string.
+        '    var clip = JSON.parse(t);',
+        '    self.postMessage({ id:id, ok:true, clip:clip, bytes:t.length });',
+        '  }).catch(function(err){',
+        '    self.postMessage({ id:id, ok:false, err:String(err && err.message || err) });',
+        '  });',
+        '};'
+      ].join('\n');
+      var url = URL.createObjectURL(new Blob([src], { type:'text/javascript' }));
+      worker = new Worker(url);
+      worker.onmessage = function(e){
+        var d = e.data, p = pending[d.id];
+        if (!p) return;
+        delete pending[d.id];
+        var ms = (typeof performance!=='undefined' ? performance.now() : Date.now()) - p.t0;
+        ST.msTotal += ms; if (ms > ST.peakMs) ST.peakMs = ms;
+        if (d.ok){ ST.viaWorker++; ST.bytes += (d.bytes||0); p.resolve(d.clip); }
+        else { ST.failed++; p.reject(new Error(d.err || 'clip worker failed')); }
+      };
+      worker.onerror = function(){ ST.workerOk = false; };
+      ST.workerOk = true;
+    }catch(e){ worker = false; ST.workerOk = false; }
+    return worker;
+  }
+
+  function fetchClipOffThread(url){
+    var w = makeWorker();
+    if (!w) return null;
+    var id = ++seq;
+    return new Promise(function(resolve, reject){
+      pending[id] = { resolve:resolve, reject:reject, t0:(typeof performance!=='undefined'?performance.now():Date.now()) };
+      try{ w.postMessage({ id:id, url:url }); }
+      catch(e){ delete pending[id]; reject(e); }
+    });
+  }
+  window.__fetchClipOffThread = fetchClipOffThread;
+
+  // ── wrap loadClipFor so every warmer and every lazy in-combat load goes off-thread ────────
+  function arm(n){
+    n = n || 0;
+    if (typeof window.loadClipFor === 'function' && !window.loadClipFor.__cw){
+      var orig = window.loadClipFor;
+      var wrapped = function(name){
+        if (window.CLIP_WORKER === false || !name){ ST.viaMain++; return orig.apply(this, arguments); }
+        // SPEAK THE LOADER'S OWN NAMING. The real loadClipFor does
+        //     base = name without .fbx ;  key = base.toUpperCase().replace(/[^A-Z0-9]/g,'_')
+        // and fetches assets/moves/clips/<KEY>.json. My first version fetched the RAW name, so every
+        // name not already in KEY form 404'd and fell through to the main thread. MEASURED: 76 clips
+        // off-thread, 218 fallbacks. Same class of bug as the bone-name lookup — two components, two
+        // spellings, no translation.
+        var raw  = String(name).replace(/\.fbx$/i, '');
+        var key  = raw.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+        var S = null;
+        try{ S = new Function('return typeof STUDIO!=="undefined"?STUDIO:null')(); }catch(e){}
+        if (S && S.clips && (S.clips[raw] || S.clips[key])) return Promise.resolve(S.clips[raw] || S.clips[key]);
+        // A DERIVED VARIANT HAS NO FILE. __deriveVariant builds e.g. STRONGZERO_SNAP from its base in
+        // memory — asking the network for it is a guaranteed 404 and a guaranteed fallback. Hand
+        // those straight to the original loader, which owns that path.
+        if (window.__deriveVariant && /_(SNAP|HARD|SLOW|DELAYED|MIRROR|KNEELING|SITOUT|SPIN|RUNNING|CORNER)$/.test(key)){
+          ST.viaMain++; return orig.apply(this, arguments);
+        }
+        name = key;
+        var base = (window.CLIP_BASE || 'assets/moves/clips/');
+        // ABSOLUTE URL, resolved HERE. A Worker built from a Blob has the blob as its base URL, so a
+        // relative path inside it resolves against blob:... and every single fetch 404s. MEASURED
+        // before this line existed: 252 attempts, 252 failures, 0 clips loaded off-thread — the
+        // fallback quietly carried the whole game, which is exactly the kind of silent no-op this
+        // codebase is full of. Resolve against location.href on the main thread and post the finished
+        // URL across.
+        var abs;
+        try{ abs = new URL(base + name + '.json', location.href).href; }
+        catch(e){ abs = base + name + '.json'; }
+        var self = this, args = arguments;
+        var p = fetchClipOffThread(abs);
+        if (!p){ ST.viaMain++; return orig.apply(self, args); }
+        return p.then(function(clip){
+          if (!clip || !clip.keys) throw new Error('empty clip');
+          try{ if (S){ S.clips = S.clips || {}; S.clips[name] = clip; } }catch(e){}
+          return clip;
+        }).catch(function(){
+          // any miss at all — a renamed file, a CDN path, an offline build — falls straight back to
+          // the loader that was already here. This layer can never be the reason a clip fails.
+          ST.viaMain++;
+          try{ return orig.apply(self, args); }catch(e){ return null; }
+        });
+      };
+      // carry any flags an earlier wrapper stamped (BANNON_WARM marks __warm and reads it back;
+      // BANNON_LOADORDER marks __lo). Losing those silently disarms those systems.
+      for (var k in orig){ try{ wrapped[k] = orig[k]; }catch(e){} }
+      wrapped.__cw = true;
+      window.loadClipFor = wrapped;
+      console.log('%c[BANNON_CLIPWORKER] clip parsing moved off the main thread','color:#7CFC00');
+      return;
+    }
+    if (n < 300) setTimeout(function(){ arm(n+1); }, 200);
+  }
+  arm(0);
+
+  window.BANNON_CLIPWORKER = {
+    stats: function(){
+      return { workerAvailable: ST.workerOk, loadedOffThread: ST.viaWorker, fellBackToMain: ST.viaMain,
+               failed: ST.failed, megabytesParsedOffThread: +(ST.bytes/1e6).toFixed(2),
+               avgMsPerClip: ST.viaWorker ? +(ST.msTotal/ST.viaWorker).toFixed(0) : 0,
+               slowestClipMs: +ST.peakMs.toFixed(0),
+               armed: !!(window.loadClipFor && window.loadClipFor.__cw) };
+    }
   };
 })();
 </script>
