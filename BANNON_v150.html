@@ -524,7 +524,9 @@ window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10
 // serves plain .json and has no .gz) pays exactly ONE wasted request for the whole session.
 // ============================================================================================
 window.__clipJsonFetch = async function(key, cdn){
-  var gz = 'assets/moves/clips/' + key + '.json.gz';
+  // .jgz, NOT .gz — Android's asset merger strips a .gz extension and then reports X.json and
+  // X.json.gz as duplicate resources, which failed the APK build outright (one error per clip).
+  var gz = 'assets/moves/clips/' + key + '.json.jgz';
   if (window.__CLIP_GZ !== false && window.fflate && window.fflate.gunzipSync){
     try{
       var r = await fetch(gz).catch(function(){ return null; });

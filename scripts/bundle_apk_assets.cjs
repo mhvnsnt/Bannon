@@ -105,11 +105,21 @@ if (!REPORT){
   if (fs.existsSync(dir)){
     const outDir = path.join(DEST, 'assets/moves/clips');
     fs.mkdirSync(outDir, { recursive:true });
+    // A handful of clip files are named LITERALLY in the HTML (core.json, index.json, and the two
+    // owner captures) and are fetched directly rather than through the clip helper, so they are
+    // already being copied uncompressed. Do not also write a .jgz for those: one basename, one
+    // file, and aapt cannot possibly consider them duplicates however it treats the extension.
+    const literal = new Set(picks.filter(x => x.rel.startsWith('assets/moves/clips/'))
+                                 .map(x => path.basename(x.rel)));
     for (const f of fs.readdirSync(dir)){
-      if (!f.endsWith('.json')) continue;
+      if (!f.endsWith('.json') || literal.has(f)) continue;
       const raw = fs.readFileSync(path.join(dir, f));
       const gz = zlib.gzipSync(raw, { level: 9 });
-      fs.writeFileSync(path.join(outDir, f + '.gz'), gz);
+      // ── NOT ".gz". ANDROID'S ASSET MERGER TREATS IT AS A COMPRESSION MARKER ─────────────
+      // Measured, build 199 failed on it: aapt strips the .gz and then sees X.json and X.json.gz
+      // as the SAME asset — "Resource and asset merger: Duplicate resources", one error per clip.
+      // .jgz is not a compression extension anybody special-cases, so the bytes ship untouched.
+      fs.writeFileSync(path.join(outDir, f + '.jgz'), gz);
       gzCount++; gzRaw += raw.length; gzOut += gz.length;
     }
   }
@@ -122,30 +132,10 @@ if (!REPORT){
   }
 }
 
-// clips: the hot combat set only, ALSO shipped uncompressed so the very first strike of a match
-// never waits on an inflate on a cold main thread
+// The hot combat set used to ALSO be shipped uncompressed, to spare the first strike of a match an
+// inflate. That is what collided with the gzipped copy in Android's asset merger, and it was never
+// worth much: gunzipSync on a clip this size is about a millisecond. ONE file per clip, compressed.
 let clipCount = 0, clipBytes = 0;
-{
-  const dir = R('assets/moves/clips');
-  const mapPath = R('assets/moves/combat_clip_map.json');
-  if (fs.existsSync(dir) && fs.existsSync(mapPath)){
-    const have = {};
-    for (const f of fs.readdirSync(dir)) if (f.endsWith('.json')) have[key(f.slice(0,-5))] = f;
-    const want = new Set();
-    (function walk(o){
-      if (typeof o === 'string') want.add(o);
-      else if (Array.isArray(o)) o.forEach(walk);
-      else if (o && typeof o === 'object') Object.values(o).forEach(walk);
-    })(JSON.parse(fs.readFileSync(mapPath, 'utf8')));
-    const seen = new Set();
-    for (const w of want){
-      const f = have[key(w)];
-      if (!f || seen.has(f)) continue;
-      seen.add(f); add('assets/moves/clips/' + f);
-      clipCount++; clipBytes += fs.statSync(path.join(dir, f)).size;
-    }
-  }
-}
 
 const total = picks.reduce((n, p) => n + p.bytes, 0);
 
@@ -153,7 +143,6 @@ if (REPORT){
   console.log('\n===== APK ASSET BUNDLE =====');
   console.log('  vendor + ring   ' + picks.filter(p=>/^assets\/(vendor|ring)/.test(p.rel)).length + ' files');
   console.log('  models          ' + modelCount + ' wired GLBs        ' + MB(modelBytes));
-  console.log('  combat clips    ' + clipCount + ' captures          ' + MB(clipBytes));
   console.log('  ---------------------------------------------');
   console.log('  all captures    ' + gzCount + ' gzipped          ' + MB(gzRaw) + ' -> ' + MB(gzOut) +
               '  (' + (100*gzOut/Math.max(1,gzRaw)).toFixed(0) + '%)');

@@ -1128,7 +1128,13 @@ the session — so the web build pays exactly ONE wasted request.
 BOTH clip fetch sites go through it. Fixing only one would have left every boot-warmed capture on
 the network path. VERIFIED serving only the bundle: gz mode active, captures inflate through the
 real loader, 0 page errors, external requests 90 -> 3.
-TRAP IF YOU TEST THIS: do NOT serve the .gz with `Content-Encoding: gzip`. The browser would then
+**DO NOT NAME THE FILES `.gz`** — build 199 failed outright on it. Android's asset merger treats
+`.gz` as a COMPRESSION MARKER, strips it, and then reports `X.json` and `X.json.gz` as
+"Resource and asset merger: Duplicate resources", one error per clip. The suffix is `.jgz`, which
+nothing special-cases. And ship exactly ONE file per clip: the hot set used to also be copied
+uncompressed to spare the first strike an inflate, and that was the other half of the collision —
+`gunzipSync` on a clip this size is about a millisecond, so it bought nothing.
+TRAP IF YOU TEST THIS: do NOT serve the .jgz with `Content-Encoding: gzip`. The browser would then
 inflate it transparently and fflate would be handed already-plain JSON and throw — which a real
 file:// APK will never do, so that would test the wrong thing.
 ### 2. EVERY WRESTLER GETS A REAL BODY — the archetype layer was pointed at a folder that never existed
@@ -1149,3 +1155,10 @@ FOUND BY THE SMOKE HARNESS, not by reading: "ZEPHYR has no GLB bound (run-in)". 
 character with a full profile (maxHp 85, CAPOEIRA) and no model anywhere.
 VERIFIED: ZEPHYR->KOBRA, GOLEM->TITAN, MORTUS->WRECK_PATTERSON, KAGE/RONIN->AARON_RUBEN,
 LADY_RHIANNON->TYNESHIA, REY_FUEGO->EL_TORO_DE_ORO, THE_BOULDER->BRUTUS — every file present.
+
+## THE CONTAINER DISK FILLS AND IT LOOKS LIKE A CODE BUG (2026-08-03)
+`page.goto: Page crashed` on a harness that had worked minutes earlier. Not the code — `df` showed
+**252G, 38M available, 100%**, and my own scratchpad was 6.8 GB of test bundles, model backups and
+cloned repos. Chromium cannot start without scratch space, and it reports that as a page crash.
+CHECK `df -h /` BEFORE DEBUGGING A HARNESS THAT SUDDENLY STOPPED WORKING. Deleting still succeeds
+while writes fail, so clean up (test bundles, clones, .apk/.zip downloads) and re-run.
