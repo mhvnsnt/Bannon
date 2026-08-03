@@ -44785,6 +44785,37 @@ console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot
   if (document.readyState !== 'loading') arm(); else document.addEventListener('DOMContentLoaded', arm);
   setTimeout(arm, 1500);
   window.BANNON_BUILD_INFO = function(){ return { web: window.BANNON_BUILD || 0, apk: nativeBuild() }; };
+
+  // ── THE APK DOWNLOADED THE UPDATE AND TOLD NOBODY ──────────────────────────────────────────
+  // OWNER: "the apk app game did not auto update."
+  // MainActivity.checkForUpdate() works. It fetches dist/version.json, downloads dist/BANNON.html
+  // into filesDir, stamps the build, and then calls
+  //     window.BANNON_OTA_NOTIFY(<build>)
+  // to tell the running game. THAT FUNCTION DID NOT EXIST. Zero occurrences in this file. So the
+  // update landed on the phone, the call hit nothing, and the new build sat on disk waiting for a
+  // relaunch the player had no reason to make — while the game kept running the old one and looking
+  // exactly like a broken updater. He was on 2547 with 2553 already downloaded.
+  //
+  // Note it applies on the NEXT launch by design (a WebView cannot swap its own document mid-match
+  // without losing state), so the only thing missing was saying so.
+  window.BANNON_OTA_NOTIFY = function(build){
+    try{
+      window.__BANNON_UPDATE_READY = build;
+      paint('BUILD ' + (window.BANNON_BUILD||0) + ' · UPDATE ' + build + ' DOWNLOADED — REOPEN THE APP', '#ff9d2e');
+      var b = el(); if (b){ b.style.fontSize = '12px'; b.style.fontWeight = '800'; }
+      // and say it once where it cannot be missed, not only in a badge under the logo
+      var t = document.createElement('div');
+      t.textContent = 'UPDATE ' + build + ' READY — close and reopen BANNON to apply';
+      t.style.cssText = 'position:fixed;left:12px;right:12px;bottom:16px;z-index:99999;background:#ff9d2e;' +
+        'color:#101010;font:800 14px/1.4 system-ui,sans-serif;padding:14px 16px;border-radius:12px;' +
+        'text-align:center;box-shadow:0 6px 24px #0009';
+      t.addEventListener('click', function(){ try{ t.remove(); }catch(e){} });
+      document.body.appendChild(t);
+      setTimeout(function(){ try{ t.remove(); }catch(e){} }, 15000);
+    }catch(e){}
+  };
+  // the native side may have fired before this file finished parsing — it sets the flag either way
+  try{ if (window.__BANNON_UPDATE_READY) window.BANNON_OTA_NOTIFY(window.__BANNON_UPDATE_READY); }catch(e){}
 })();
 </script>
 
