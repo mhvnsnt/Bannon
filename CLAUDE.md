@@ -1052,3 +1052,27 @@ owner's word is "freezing", and a 2,200ms frame at t+6.1s that compiled 10 shade
 while the same total spread evenly is just a low frame rate.
 CAVEAT KEPT HONEST: swiftshader compiles shaders on the CPU and is pathologically slow at it, so the
 absolute milliseconds here say nothing about the owner's phone. The A/B direction is still valid.
+
+## THE HARNESS CANNOT MEASURE FRAME RATE (2026-08-03) — I NEARLY SHIPPED A FIX FOR A WARMUP CURVE
+Chasing the owner's freeze, I ranked four render conditions back to back in one live match:
+    baseline 3.10 fps | post-processing OFF 13.60 | spotlights OFF 26.40 | shadows OFF 39.60
+and read it as "post-processing costs 339%". I wrote the tier change to disable the composer below
+MEDIUM. Then I noticed the numbers only ever go UP, in that order, in BOTH runs of the probe — the
+shape of a warmup curve, not four independent measurements.
+**A-B-A-B settled it:** post ON 7.44 -> 24.33 -> 42.22, post OFF 10.22 -> 21.33 -> 31.33. Both climb;
+ON finishes FASTER than OFF. The entire effect was the harness still warming up FORTY SECONDS into
+the match. Change reverted before it shipped.
+THE RULE: **any A/B where the conditions run in sequence must re-test the first condition at the end.**
+If condition 1 does not reproduce, the experiment measured time, not the variable. swiftshader is a
+SOFTWARE rasterizer — it warms for tens of seconds and compiles shaders on the CPU, so it says
+nothing about a phone GPU in absolute terms and, as shown here, can invert a ranking outright.
+ALSO TESTED AND FOUND NOT TO BE THE CAUSE (so nobody re-derives it): the settled dark-light cull.
+Hypothesis was that toggling `.visible` changes three.js's light COUNTS and invalidates every
+material's program — which is TRUE and is why applyTier deliberately zeroes INTENSITY instead — but
+measured ON vs OFF it changes nothing: programs 132 vs 137, hitches-with-compile 7 vs 7.
+WHAT IS STILL TRUE AND UNEXPLAINED: specific 1.8-2.9s frames a few seconds into combat, each
+compiling 25-31 shaders. ~85-90 programs have to be built and swiftshader is pathologically slow at
+it. Whether that is what the owner feels CANNOT be established from here.
+SO THE DEVICE IS THE INSTRUMENT NOW: the build badge under the menu logo shows live FPS and the
+active quality tier next to the build number. `BANNON_PERF.report()` gives the full picture from the
+phone. Ask for that number instead of inferring one.
