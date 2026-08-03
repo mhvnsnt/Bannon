@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* verify_shipping.cjs — THE FIVE BUGS THAT COST A WEEK, CHECKED ON EVERY PUSH.
+/* verify_shipping.cjs — THE SILENT-SHIPPING BUGS THAT COST A WEEK, CHECKED ON EVERY PUSH.
  *
  *   node scripts/verify_shipping.cjs
  *
@@ -135,6 +135,36 @@ const html = fs.readFileSync(GAME, 'utf8');
   else ok('VENDORED SCRIPTS', 'every local <script src> resolves');
 }
 
+// ── 6. no WIRED character model may be a severed action figure ────────────────────────────────
+// The owner said "the animations still are not correct cause the animation are still looking
+// procedural" for weeks. It was not the procedural rig — measured, 0 visible procedural triangles.
+// BANNON_rigged.glb, the DEFAULT PLAYER MODEL, was fifteen loose skinned pieces cut at every joint:
+// chest elL elR ftL ftR haL haR head hipL hipR knL knR pelvis shL shR. No surface across the elbow,
+// so nothing bends. skinqa scored it fine because a piece welded to one bone never drifts — a
+// severed rig is the one defect that looks PERFECT to a deformation test. Only this check sees it.
+{
+  const dir = R('assets/models');
+  if (fs.existsSync(dir)){
+    const wired = fs.readdirSync(dir).filter(f => f.endsWith('.glb') && html.includes(f));
+    if (!wired.length) notes.push('RIG CONTINUITY: skipped (no model filename appears in the game)');
+    else {
+      const r = require('child_process').spawnSync(process.execPath,
+        [R('tools/model_diag/rig_continuity.cjs'), '--json'].concat(wired),
+        { encoding:'utf8', maxBuffer: 64*1024*1024 });
+      let rows = []; try{ rows = JSON.parse(r.stdout); }catch(e){}
+      if (!rows.length) notes.push('RIG CONTINUITY: skipped (rig_continuity.cjs did not report)');
+      else {
+        const bad = rows.filter(x => x.verdict === 'SEVERED');
+        if (bad.length) fail('RIG CONTINUITY', bad.length + ' WIRED model(s) are cut into loose pieces at the ' +
+          'joints and cannot bend: ' + bad.map(x => x.file + ' (' + x.skinnedPrims + ' pieces, widest spans ' +
+          x.maxSpread + '/' + x.joints + ' joints)').join(', ') + '. They animate as action figures. ' +
+          'Sew with tools/model_diag/sew_rig.cjs --weld.');
+        else ok('RIG CONTINUITY', rows.length + ' wired model(s), none severed');
+      }
+    }
+  }
+}
+
 console.log('\n===== SHIPPING GATE =====');
 notes.forEach(n => console.log('  ok   ' + n));
 fails.forEach(f => console.log('  FAIL ' + f));
@@ -143,4 +173,4 @@ if (fails.length){
   console.log('  ' + fails.length + ' failure(s). Each of these has already shipped once and cost days.');
   process.exit(1);
 }
-console.log('  all clear — none of the five silent-shipping bugs are present.');
+console.log('  all clear — none of the silent-shipping bugs are present.');
