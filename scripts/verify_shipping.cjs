@@ -165,6 +165,52 @@ const html = fs.readFileSync(GAME, 'utf8');
   }
 }
 
+// ── 7. every asset directory the game fetches must be IN the APK, or declared as streamed ─────
+// OWNER: "I'm still seeing the procedural three js models that aren't ever supposed to appear".
+// The cause was not code. assets/models was never copied into the APK, so every character GLB was
+// a raw.githubusercontent.com fetch on mobile data at match start, and a slow one falls back to
+// the procedural body. assets/vendor — three.js itself — was missing too, so the offline app fell
+// back to CDN script tags just to boot. Both had been that way for as long as the APK has existed,
+// and nothing anywhere would have said so.
+{
+  const wf = R('.github/workflows/android.yml');
+  // Directories that are DELIBERATELY streamed: too big to bundle, and not needed in the first ten
+  // seconds. Listed explicitly so "not bundled" is always a decision, never an oversight.
+  // sizes measured, not assumed: env 200 MB (one file), mocap/drive 1.2 GB, clips 257 MB.
+  const STREAMED = new Set(['assets/moves/clips', 'assets/environments', 'assets/props',
+                            'assets/reference', 'assets/dialogue', 'assets/mocap/social',
+                            'assets/models/env', 'assets/models/face', 'assets/mocap/drive']);
+  if (fs.existsSync(wf)){
+    const yml = fs.readFileSync(wf, 'utf8');
+    const bundler = fs.existsSync(R('scripts/bundle_apk_assets.cjs'))
+      ? fs.readFileSync(R('scripts/bundle_apk_assets.cjs'), 'utf8') : '';
+    const dirs = new Set();
+    for (const m of html.matchAll(/assets\/[a-z_]+(?:\/[a-z_]+)?\//g)) dirs.add(m[0].replace(/\/$/, ''));
+    const missing = [];
+    // A directory is covered when IT or any ANCESTOR is bundled or declared streamed —
+    // scripts/bundle_apk_assets.cjs copies assets/vendor recursively, so assets/vendor/pp is in
+    // the APK even though that exact string appears nowhere.
+    const covered = d => { let p = d;
+      while (p && p !== '.' && p !== 'assets'){
+        if (STREAMED.has(p) || yml.includes(p) || bundler.includes(p)) return true;
+        p = path.dirname(p);
+      } return false; };
+    for (const d of dirs){
+      if (!fs.existsSync(R(d))) continue;                 // referenced but not in the repo at all
+      if (!fs.readdirSync(R(d)).length) continue;         // empty (mdickie_bases never existed)
+      if (covered(d)) continue;
+      missing.push(d);
+    }
+    if (missing.length) fail('APK ASSETS', missing.join(', ') + ' — the game fetches ' +
+      (missing.length > 1 ? 'these' : 'this') + ' at runtime and the APK build never copies ' +
+      (missing.length > 1 ? 'them' : 'it') + ' in. On the phone every one of those requests goes to ' +
+      'the CDN over mobile data; when it is slow or refused the game silently falls back (procedural ' +
+      'bodies, missing animations, CDN three.js). Add to scripts/bundle_apk_assets.cjs, or to the ' +
+      'STREAMED list in this check if that is a deliberate choice.');
+    else ok('APK ASSETS', dirs.size + ' referenced asset dir(s): bundled or explicitly streamed');
+  }
+}
+
 console.log('\n===== SHIPPING GATE =====');
 notes.forEach(n => console.log('  ok   ' + n));
 fails.forEach(f => console.log('  FAIL ' + f));

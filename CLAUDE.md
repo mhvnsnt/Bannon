@@ -1076,3 +1076,37 @@ it. Whether that is what the owner feels CANNOT be established from here.
 SO THE DEVICE IS THE INSTRUMENT NOW: the build badge under the menu logo shows live FPS and the
 active quality tier next to the build number. `BANNON_PERF.report()` gives the full picture from the
 phone. Ask for that number instead of inferring one.
+
+## THE APK HAD NO MODELS IN IT (2026-08-03) — "still seeing the procedural three js models"
+Owner: "I'm still seeing the procedural three js models that aren't ever supposed to appear unless
+selected." I had spent the previous pass fixing the procedural BAN and the loader watchdog. Both
+were the wrong place. **The models were never on the phone.**
+The APK bundle step copied index.html, manifest.json, icons, assets/moves, assets/mocap and
+assets/audio, and nothing else. **assets/models was never in the list.** Every character GLB was a
+multi-megabyte raw.githubusercontent.com fetch on mobile data at the instant a match starts; slow or
+refused, and the loader correctly falls back to the procedural body. That is what he was looking at,
+and it has been that way for as long as the APK has existed.
+**assets/vendor was missing too, which is worse** — three.js, GLTFLoader, FBXLoader, the
+post-processing chain, the meshopt decoder. Vendored specifically so the engine is not hostage to
+the network, then shipped in an APK that did not contain them, so every launch fell back to the CDN
+`<script>` tags just to boot.
+**IT WAS NEVER A SIZE PROBLEM.** The 59 WIRED models total **36.6 MB**. The 3.6 GB in assets/models
+is intermediates, backups and re-rig attempts — not what the game loads. Wiring (does the filename
+appear in the shipped HTML?) is the test, never the directory listing.
+`scripts/bundle_apk_assets.cjs` now bundles engine + ring art + wired models + the 27 captures named
+by combat_clip_map + every JSON manifest named literally in the HTML = **59 MB**. The ~950 remaining
+captures (257 MB), tag captures (77 MB), environments (200 MB) stay streamed on purpose.
+**MANIFESTS ARE NOT BULK.** Running the bundle OFFLINE with the internet blocked and reading the
+404s found the second half of this: the models loaded and the game still asked for fbx_move_map,
+bannon_move_library, mdickie_weapons, procedural_clips, bannon_dialogue and venues.json. Several
+live INSIDE deliberately-streamed directories (assets/models/env is 200 MB of GLB plus one small
+venues.json). Streaming the bulk is right; streaming the INDEX of the bulk makes the system that
+reads it go quiet with no error.
+VERIFIED by serving ONLY the bundle with all external requests aborted — the owner's phone with no
+signal: both fighters bind their real GLB, **PROCEDURAL TRIANGLES ON SCREEN: 0**.
+Check 7 in `scripts/verify_shipping.cjs` gates it: every `assets/<dir>` the HTML fetches must be
+bundled or listed in STREAMED, so "not in the APK" is always a decision and never an oversight.
+A directory counts as covered if IT or an ANCESTOR is handled (vendor/pp rides on vendor).
+LESSON, and it is the same one as the severed rig: I keep debugging the CODE around an asset when
+the asset itself is absent or wrong. **Check that the file is on the device before theorising about
+why the loader is misbehaving.**
