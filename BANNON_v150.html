@@ -52092,11 +52092,49 @@ window.__deriveVariant = async function(key){
   function nameOf(f){
     try{ return String((f.opts && f.opts.name) || (f.who && f.who()) || 'BANNON').toUpperCase().replace(/[^A-Z0-9]/g,'_'); }catch(e){ return 'BANNON'; }
   }
+  // ── A SLOT CANNOT EQUIP A CLIP THAT DOES NOT EXIST ─────────────────────────────────────────
+  // MEASURED against the filesystem: roster_movesets.json equips 277 distinct clips and 68 OF THEM
+  // HAVE NO FILE. Not a naming mismatch — no file at all, in any form. And they are not rare:
+  //     jumping up          574 slots        Body Block       320 slots
+  //     hard landing        221 slots        falling idle     203 slots
+  //     running             201 slots        cover to stand    180 slots
+  //     PN_LATERAL / PN_LEG_HOOK / PN_DBL_LEG / ...  120 slots each
+  // Every time one of those wins a rotation the body plays the procedural spring rig, at any frame
+  // rate, forever. That is the owner's "none of the hundreds of animations are showing". It also
+  // explains BANNON_WARM's failed:732 — the warmer dutifully fetching names that can never resolve.
+  // clips_available.json is generated from the actual contents of assets/moves/clips/.
+  var AVAIL = null;
+  (function loadAvail(){
+    var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    [ 'assets/moves/clips_available.json', cdn + 'assets/moves/clips_available.json' ].forEach(function(u, i){
+      if (AVAIL) return;
+      fetch(u).then(function(r){ return r.ok ? r.json() : Promise.reject(); }).then(function(j){
+        if (AVAIL) return;
+        AVAIL = {}; (j.names||[]).forEach(function(n){ AVAIL[n] = 1; });
+        (j.keys||[]).forEach(function(n){ AVAIL[n] = 1; });
+        try{ console.log('%c[BANNON_CLIP_ROTATE] ' + (j.count||0) + ' clips exist on disk — phantom slots will be skipped','color:#7CFC00'); }catch(e){}
+      }).catch(function(){});
+    });
+  })();
+  var KEYF = function(n){ return String(n||'').toUpperCase().replace(/[^A-Z0-9]/g, '_'); };
+  function clipExists(c){
+    if (!AVAIL) return true;                       // manifest not in yet — never block on a race
+    return !!(AVAIL[c] || AVAIL[KEYF(c)]);
+  }
+  window.__clipExists = clipExists;
+
   function poolFor(f, slot){
     var who = nameOf(f), v = null;
     try{ if (window.BANNON_ROSTER_MOVESETS) v = window.BANNON_ROSTER_MOVESETS.slot(who, slot); }catch(e){}
     if (!v) return null;
     var list = Array.isArray(v) ? v.slice() : [v];
+    // drop the phantoms BEFORE anything else looks at the pool, so they can neither be picked nor
+    // fetched. If a slot is nothing but phantoms it now returns null and the caller falls through
+    // to the combat map and the fit-fallback, both of which only offer clips that are resident.
+    var real = list.filter(clipExists);
+    if (real.length !== list.length){ ST.phantom = (ST.phantom || 0) + (list.length - real.length); }
+    list = real;
+    if (!list.length) return null;
     // only offer captures that are actually resident, so rotation never downgrades a move to
     // procedural just for the sake of being different
     try{
@@ -58657,6 +58695,56 @@ window.__deriveVariant = async function(key){
                armed: !!(window.loadClipFor && window.loadClipFor.__cw) };
     }
   };
+})();
+</script>
+<script>
+// ================================================================================================
+// DO NOT FETCH A CLIP THAT DOES NOT EXIST. Last script in the file, so it wraps whatever
+// loadClipFor finally ended up being after every earlier module had its turn.
+//
+// MEASURED: BANNON_WARM reports failed:732 against loaded:407. Those are not flaky downloads —
+// roster_movesets.json equips 68 distinct clip names with NO FILE anywhere under
+// assets/moves/clips/ ('jumping up' in 574 slots, 'Body Block' in 320, the whole PN_* pin family
+// at 120 each). Every warm pass, every lazy load and every rotation miss fires a request for them
+// again, and each one is a round trip that can only 404 — on a phone, competing with the fighter
+// GLBs for the same connection pool.
+//
+// clips_available.json is generated from the actual directory listing. A name that is not in it is
+// refused here, once, without a network request. Names not yet in the manifest (a clip added at
+// runtime, an owner import) are allowed through unchanged — the manifest can only ever remove a
+// request that was provably going to fail.
+// window.CLIP_MANIFEST=false disables the filter.
+// ================================================================================================
+(function(){
+  'use strict';
+  function arm(n){
+    n = n || 0;
+    if (typeof window.loadClipFor !== 'function'){ if (n < 200) setTimeout(function(){ arm(n+1); }, 200); return; }
+    if (window.loadClipFor.__manifest) return;
+    var orig = window.loadClipFor;
+    var ST = { refused:0, allowed:0, byName:{} };
+    var gated = function(name){
+      try{
+        if (window.CLIP_MANIFEST !== false && window.__clipExists && !window.__clipExists(name)){
+          ST.refused++; ST.byName[name] = (ST.byName[name]||0) + 1;
+          return Promise.resolve(null);           // same shape the loader returns on a miss
+        }
+      }catch(e){}
+      ST.allowed++;
+      return orig.apply(this, arguments);
+    };
+    // carry every flag an earlier wrapper stamped on — BANNON_WARM reads __warm and
+    // BANNON_LOADORDER reads __lo, and losing either silently disarms that system.
+    for (var k in orig){ try{ gated[k] = orig[k]; }catch(e){} }
+    gated.__manifest = true;
+    window.loadClipFor = gated;
+    window.BANNON_CLIP_MANIFEST = { stats: function(){
+      var top = Object.keys(ST.byName).sort(function(a,b){ return ST.byName[b]-ST.byName[a]; }).slice(0,10);
+      return { refused:ST.refused, allowed:ST.allowed,
+               worst: top.map(function(t){ return t + ' x' + ST.byName[t]; }) }; } };
+    try{ console.log('%c[BANNON_CLIP_MANIFEST] clip fetches are checked against the real directory first','color:#7CFC00'); }catch(e){}
+  }
+  arm(0);
 })();
 </script>
 </html>
