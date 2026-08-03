@@ -1209,3 +1209,39 @@ screenshot and a clear message rather than a silent wrong answer.
 WHICH TO USE: generate locally for the long tail (free, 25s, no queue); spend account credits on
 hero characters where the quality is worth it. Both land in the same place and go through the same
 rig-and-gate chain.
+
+## NOTHING IN THIS GAME COULD BREAK (2026-08-03) — BANNON_BREAK
+Owner, on a TripoSR test that reconstructed a dining chair: "that's not a wrestling chair, or a
+folding chair, so it's pointless unless it's breakable furniture." He was right about the bigger
+thing: **MEASURED, `breakTable` / `tableBreak` / `breakProp` / `_broken` returned ZERO hits across
+the whole file.** Nothing had ever broken. BANNON_PROPS had a real state machine — standing /
+stacked / leaned / onFire — and no BROKEN state, so a table put through by a powerbomb just stood
+there. TABLES and TLC were `live:false` in the match list for exactly that reason; both are live now.
+WHAT BREAKS, read off what the objects actually are:
+  table SHATTERS (gone, standHeight 0) · chair FOLDS and stays a weapon · ladder BUCKLES and stays
+  climbable · steel steps never break, and their absence from the table is a decision, not an omission.
+IT BREAKS ON PHYSICS, NOT A BUTTON — downward speed x mass past a threshold expressed as a fraction
+of MAX_BODY_VEL, so every existing slam, powerbomb, splash and dive lights it up at once and no
+"break move" was added. Damage goes through the ENGINE'S applyDamage so DMG_SCALE and MAX_HP still
+own the numbers.
+### FOUR BUGS THE TEST CAUGHT THAT READING WOULD NOT HAVE
+1. **`applyDamage(victim, dmg, attacker, move, forceDown)` — I passed an OPTIONS OBJECT as the third
+   argument.** The engine read `{source,noBlock}` as the ATTACKER and the damage silently did
+   nothing: **hp -0 on a table that had visibly shattered.** The mechanic looked finished and the
+   only wrong number in the whole report was a zero. READ THE SIGNATURE, never assume an options bag.
+   After: table hp -179, chair hp -62.
+2. **Sampling `f.vy` cannot catch an impact.** The engine rewrites it every frame and ZEROES IT ON
+   LANDING, so by the time the check ran a body that fell at 3.2 m/s read 0 — the first version broke
+   a chair and left a table standing under the same slam, which is backwards (a table needs LESS
+   force). Fixed with a decaying PEAK HOLD of fall speed. An impact is an EVENT; sampling a velocity
+   hoping to catch the frame it is large is a coin flip.
+3. **standHeight() had to be wrapped.** It is what every climb, stand and dive-off reads; a broken
+   table still reporting 1.0m leaves a man standing in mid-air on splinters.
+4. **MY TEST WAS WRONG TWICE and both times blamed the code.** It counted 6 frames on a harness
+   running at ~3 fps and read the table's state one frame BEFORE it broke; then it let a ragdoll
+   slide off the table (dz 0.59 -> 1.65) and measured the drift instead of the break. Wait for the
+   EVENT, and keep the prop under the body. `BANNON_BREAK.probe(p,f)` returns every number the test
+   uses so a failure is read, not guessed — that is what settled it.
+VERIFIED: slam through a table breaks it at speed 4.53; WALKING on it does not (a table you can break
+by standing on it is not a table); table -> broken/standHeight 0/hp -179; chair -> bent/0.55/-62;
+ladder -> bent/2.4; steps not breakable. 0 page errors, smoke PASS.

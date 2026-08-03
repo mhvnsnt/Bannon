@@ -38698,8 +38698,10 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
     { id:'TRIPLE',       label:'TRIPLE THREAT',       live:true  },   // v152: multi-man engine (elimination rules)
     { id:'FOURWAY',      label:'FOUR-WAY',            live:true  },   // v152
     { id:'LADDER',       label:'LADDER MATCH',        live:false },
-    { id:'TABLES',       label:'TABLES MATCH',        live:false },
-    { id:'TLC',          label:'TABLES LADDERS CHAIRS', live:false },
+    // live:false since they were added, because nothing in the game could break. BANNON_BREAK
+    // fixes that, so they are real match types now.
+    { id:'TABLES',       label:'TABLES MATCH',        live:true  },
+    { id:'TLC',          label:'TABLES LADDERS CHAIRS', live:true  },
     { id:'CAGE',         label:'STEEL CAGE',          live:true  },   // MDickie legacy cage panels (BANNON_CAGE) + meshPhys cage-wall friction
     { id:'LMS',          label:'LAST ONE STANDING',   live:true  },   // v152: 10-count ref over any downed fighter
     { id:'SUBMISSION',   label:'SUBMISSION',          live:true  },   // v152: landed submission = tapout finish
@@ -59122,6 +59124,223 @@ window.__deriveVariant = async function(key){
 
   window.BANNON_FOOTIK = { stats: function(){ return Object.assign({}, ST); },
                            reset: function(){ for (var k in ST) ST[k] = 0; } };
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_BREAK — FURNITURE THAT BREAKS. The thing that makes a table worth putting in the ring.
+//
+// OWNER: "that's not a wrestling chair, or a folding chair, so it's pointless unless it's
+// breakable furniture."
+//
+// He is right, and the gap is bigger than the model. MEASURED: `breakTable`, `tableBreak`,
+// `breakProp` and `_broken` return ZERO hits across the whole 58k-line file. Nothing in this game
+// has ever broken. BANNON_PROPS has a real state machine — standing / stacked / leaned / onFire —
+// and no BROKEN state at all, so a table put through by a powerbomb just stood there and the man
+// bounced off it. TABLES and TLC are still `live:false` in the match list for that reason.
+//
+// WHAT BREAKS AND WHAT DOES NOT — read off the real objects, not invented:
+//   table   SHATTERS. It is the one prop whose whole purpose is to be destroyed.
+//   chair   FOLDS/BENDS. A steel chair does not shatter; it deforms and stays a weapon.
+//   ladder  BENDS at extreme force only, and stays climbable — a bent ladder is still a ladder.
+//   steps   never break. They are steel steps.
+//
+// IT BREAKS ON PHYSICS, NOT ON A BUTTON. A prop breaks when a BODY arrives on it with enough
+// downward speed and mass — which is what a powerbomb, a chokeslam, a splash off the top and a
+// dive all produce, and what walking into it does not. No new "break move" is needed and none is
+// added: every existing slam already generates the velocity, so this lights up the entire moveset
+// at once.
+//
+// ABSOLUTE MATH IS UNTOUCHED (owner LAW). The impact damage goes through the ENGINE'S OWN
+// applyDamage funnel so DMG_SCALE and MAX_HP still own the numbers; nothing here invents a damage
+// path, and no impulse is applied that could breach MAX_BODY_VEL.
+//
+// THE ONE THAT WOULD HAVE BITTEN: standHeight() is what every climb, stand and dive-off reads. A
+// broken table that still reported 1.0m would leave a man standing in mid-air on a pile of
+// splinters. BANNON_PROPS.standHeight is wrapped so a broken prop reports the floor.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_BREAK) return;
+
+  // force needed, in downward metres/second, scaled by the attacker's mass. Tuned so a slam breaks
+  // a table and a stumble does not — the engine caps body velocity at MAX_BODY_VEL 3.8, so these
+  // are read as a fraction of that ceiling, never as free-floating magic numbers.
+  var CAP = (window.MAX_BODY_VEL != null ? window.MAX_BODY_VEL : 3.8);
+  var RULES = {
+    table:  { verb:'SHATTERS',   need: CAP * 0.42, dmg: 260, stays:false, shards:14 },
+    chair:  { verb:'FOLDS UP',   need: CAP * 0.62, dmg:  90, stays:true,  shards:0  },
+    ladder: { verb:'BUCKLES',    need: CAP * 0.85, dmg: 140, stays:true,  shards:0  }
+    // steps deliberately absent — steel steps do not break, and a list is a decision.
+  };
+
+  var ST = { checks:0, breaks:0, byType:{}, last:null };
+
+  function propsOf(){ try{ return (window.BANNON_PROPS && window.BANNON_PROPS.props) || []; }catch(e){ return []; } }
+  function fightersOf(){ try{ return new Function('return typeof fighters!=="undefined"?fighters:[]')(); }catch(e){ return []; } }
+
+  // ── the visual. A broken table is not a hidden table: it collapses and leaves debris, because a
+  //    prop that simply vanishes reads as a bug even when the mechanic worked.
+  function collapse(p, rule){
+    try{
+      var g = p.obj; if (!g || typeof THREE === 'undefined') return;
+      if (p.type === 'table'){
+        g.scale.y *= 0.12;                       // top pancakes to the mat
+        g.position.y = Math.max(0, (g.position.y || 0) - 0.45);
+        g.rotation.z += (Math.random() - 0.5) * 0.5;
+      } else {
+        g.rotation.z += (Math.random() < 0.5 ? -1 : 1) * (0.6 + Math.random() * 0.5);
+        g.scale.x *= 0.9;                        // a folded chair is narrower and crooked
+      }
+      if (rule.shards && typeof scene !== 'undefined'){
+        // ONE InstancedMesh for the debris, and count is the live shard total. An InstancedMesh
+        // rasterises `count` regardless of what the matrices say — the blood buffer cost 41% of a
+        // frame that way. Not repeating it.
+        var geo = new THREE.BoxGeometry(0.20, 0.03, 0.16);
+        var mat = new THREE.MeshLambertMaterial({ color: 0x9c7a4d });
+        var im = new THREE.InstancedMesh(geo, mat, rule.shards);
+        im.count = rule.shards;
+        var d = new THREE.Object3D();
+        for (var i = 0; i < rule.shards; i++){
+          d.position.set(p.x + (Math.random()-0.5)*1.6, 0.03 + Math.random()*0.05, p.z + (Math.random()-0.5)*1.6);
+          d.rotation.set(Math.random()*3, Math.random()*3, Math.random()*3);
+          d.updateMatrix(); im.setMatrixAt(i, d.matrix);
+        }
+        im.instanceMatrix.needsUpdate = true;
+        scene.add(im);
+        p._debris = im;
+      }
+    }catch(e){}
+  }
+
+  function breakProp(p, f, speed){
+    var rule = RULES[p.type]; if (!rule) return false;
+    if (p.state === 'broken' || p.state === 'bent') return false;
+
+    try{ window.BANNON_PROPS.setState(p, rule.stays ? 'bent' : 'broken'); }catch(e){ p.state = 'broken'; }
+    p._broken = true;
+    collapse(p, rule);
+
+    // DAMAGE THROUGH THE ENGINE'S OWN FUNNEL. Everything tuned — DMG_SCALE, MAX_HP, poise, the
+    // limb model, the announce line — lives behind applyDamage. A second damage path here would be
+    // a second set of numbers to keep in sync, which is exactly the trap the move tables fell into.
+    // The real signature is applyDamage(victim, dmg, attacker, move, forceDown). My first version
+    // passed an options object as the THIRD argument, so the engine read {source,noBlock} as the
+    // ATTACKER and the damage silently did nothing — measured hp -0 on a table that had visibly
+    // shattered. The mechanic looked finished and the only wrong number in the report was a zero.
+    // READ THE SIGNATURE; do not assume an options bag.
+    try{
+      if (f && typeof applyDamage === 'function'){
+        var scale = Math.min(1.6, speed / Math.max(0.001, rule.need));
+        applyDamage(f, rule.dmg * scale, (p._breaker || null),
+                    { name: p.type.toUpperCase() + ' BREAK', kind: 'ENVIRONMENT', power: rule.dmg },
+                    true);
+      }
+    }catch(e){}
+
+    try{ if (typeof announce === 'function')
+      announce('THROUGH THE ' + p.type.toUpperCase() + ' — IT ' + rule.verb + '!',
+               (f && typeof fname === 'function') ? fname(f) : ''); }catch(e){}
+    try{ if (window.BANNON_FX && window.BANNON_FX.smokePuff) window.BANNON_FX.smokePuff(p.x, 0.4, p.z); }catch(e){}
+    try{ if (typeof crowdPop === 'function') crowdPop(p.type === 'table' ? 1.0 : 0.5); }catch(e){}
+    try{ if (typeof shakeCamera === 'function') shakeCamera(p.type === 'table' ? 0.55 : 0.3); }catch(e){}
+
+    ST.breaks++; ST.byType[p.type] = (ST.byType[p.type] || 0) + 1;
+    ST.last = { type: p.type, speed: +speed.toFixed(2), by: (f && f.opts && f.opts.name) || '' };
+    return true;
+  }
+
+  // ── the per-frame test. Cheap: it only runs while an unbroken breakable exists.
+  var _last = 0;
+  function tick(){
+    var F0 = fightersOf();
+    // peak-hold the fall speed for every fighter, ALWAYS — even with no props in the room, because
+    // a prop can be registered mid-fall and the peak has to already be there when it is.
+    var now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    var dt = _last ? Math.min(0.1, (now - _last) / 1000) : 0.016; _last = now;
+    for (var k = 0; k < F0.length; k++){
+      var ff = F0[k]; if (!ff) continue;
+      var down = Math.max(0, -(ff.vy || 0));
+      ff.__fallPeak = Math.max(down, (ff.__fallPeak || 0) - dt * 6);   // holds ~0.5s at slam speed
+    }
+    var P = propsOf(); if (!P.length) return;
+    var F = F0; if (!F.length) return;
+    ST.checks++;
+    for (var i = 0; i < P.length; i++){
+      var p = P[i], rule = RULES[p.type];
+      if (!rule || p._broken) continue;
+      for (var j = 0; j < F.length; j++){
+        var f = F[j]; if (!f) continue;
+        // footprint of the prop, generous on a table because a body lands across it
+        var r = (p.type === 'table') ? 1.25 : 0.75;
+        if (Math.abs(f.x - p.x) > r || Math.abs(f.z - p.z) > r) continue;
+        // DOWNWARD speed is the whole test — but NOT the instantaneous value. MEASURED, and it is
+        // why the first version of this broke a chair and left a table standing under the same
+        // slam: the engine rewrites vy every frame and ZEROES IT ON LANDING, so by the time this
+        // loop samples it the impact is already over. A body that fell at 3.2 m/s reads 0.
+        // Track the PEAK of the last few frames instead and let it decay. The impact is an event;
+        // sampling a velocity hoping to catch the one frame it is large is a coin flip.
+        var vy = f.__fallPeak || 0;
+        var lift = (typeof f.airLift === 'number') ? f.airLift : 0;
+        // a ragdolling or slammed body counts even if vy has already been clamped this frame
+        var slammed = !!(f.ragdoll || f.state === 'falling' || f.state === 'dive' || f._beingSlammed);
+        var speed = vy + (slammed ? CAP * 0.35 : 0);
+        if (lift > 0.35) continue;                       // still in the air ABOVE it, not on it yet
+        if (speed < rule.need) continue;
+        var mass = (f.weight || f.mass || 100) / 100;    // a heavyweight breaks what a cruiser will not
+        if (speed * mass < rule.need) continue;
+        try{ p._breaker = (f.grabbedBy || f._lastAttacker || null); }catch(e){}
+        breakProp(p, f, speed * mass);
+        break;
+      }
+    }
+  }
+
+  function arm(n){
+    n = n || 0;
+    try{
+      if (window.BANNON_PROPS && window.BANNON_PROPS.standHeight && !window.BANNON_PROPS.__breakWrapped){
+        // A BROKEN TABLE IS NOT A PLATFORM. standHeight is what every climb, stand and dive-off
+        // reads; leaving it at 1.0 would stand a man in mid-air on a pile of splinters.
+        var sh = window.BANNON_PROPS.standHeight;
+        window.BANNON_PROPS.standHeight = function(p){
+          if (p && p._broken && !RULES[p.type].stays) return 0;
+          return sh.apply(this, arguments);
+        };
+        window.BANNON_PROPS.__breakWrapped = true;
+        (function loop(){ requestAnimationFrame(loop); try{ tick(); }catch(e){} })();
+        try{ console.log('%c[BANNON_BREAK] furniture can break — tables shatter, chairs fold, ladders buckle','color:#7CFC00'); }catch(e){}
+        return;
+      }
+    }catch(e){}
+    if (n < 400) setTimeout(function(){ arm(n + 1); }, 120);
+  }
+  arm(0);
+
+  window.BANNON_BREAK = {
+    stats: function(){ return JSON.parse(JSON.stringify(ST)); },
+    // why did (or did not) this prop break for this fighter? Returns every number the test uses,
+    // so a failure is read rather than guessed at.
+    probe: function(p, f){
+      var rule = RULES[p.type];
+      if (!rule) return { verdict: 'type not breakable' };
+      var r = (p.type === 'table') ? 1.25 : 0.75;
+      var dx = Math.abs(f.x - p.x), dz = Math.abs(f.z - p.z);
+      var slammed = !!(f.ragdoll || f.state === 'falling' || f.state === 'dive' || f._beingSlammed);
+      var speed = (f.__fallPeak || 0) + (slammed ? CAP * 0.35 : 0);
+      var mass = (f.weight || f.mass || 100) / 100;
+      return { need: +rule.need.toFixed(3), fallPeak: +(f.__fallPeak || 0).toFixed(3), vy: +(f.vy||0).toFixed(3),
+               slammed: slammed, state: f.state, airLift: f.airLift, mass: mass,
+               effective: +(speed * mass).toFixed(3), inFootprint: (dx <= r && dz <= r),
+               dx: +dx.toFixed(2), dz: +dz.toFixed(2),
+               blockedByLift: ((typeof f.airLift === 'number' ? f.airLift : 0) > 0.35),
+               wouldBreak: (dx <= r && dz <= r) && !((typeof f.airLift === 'number' ? f.airLift : 0) > 0.35) && (speed * mass >= rule.need) };
+    },
+    rules: RULES,
+    // exposed so a scripted spot (or a test) can put someone through a table on purpose
+    force: function(p, f){ return breakProp(p, f, RULES[p.type] ? RULES[p.type].need : 1); }
+  };
 })();
 </script>
 </html>
