@@ -16060,6 +16060,9 @@ window.disposeObject3D = disposeObject3D;
 // coming), and a genuine load failure. Never in the gap between two models.
 function removeFighterModel(side, keepHidden){
   const f=fighterFor(side); if(!f) return;
+  // a clear with no replacement coming also clears the in-flight dedupe marker, so a later
+  // deliberate re-request is never refused
+  if(!keepHidden){ try{ f._modelInFlight=null; f._modelInFlightAt=0; }catch(e){} }
   if(f.model){ try{scene.remove(f.model);}catch(e){} try{ disposeObject3D(f.model); }catch(e){} f.model=null; }
   f.modelUrl=null;
   if(f.seg && !(keepHidden && window.PROC_FLASH!==true)) setProcVisible(f,true);
@@ -16408,6 +16411,7 @@ function _bindFighterGltf(side, url, name, gltf, reqFighter, reqId){
     try{ if(f._procWatchdog){ clearTimeout(f._procWatchdog); f._procWatchdog=null; } }catch(e){}
     // release the network back to clip warming (BANNON_LOADORDER)
     try{ if(window.__loRelease) window.__loRelease(); }catch(e){}
+    try{ f._modelInFlight = null; f._modelInFlightAt = 0; }catch(e){}   // in-flight dedupe: this one landed
     try{ if(window.applyShapeMorphs) window.applyShapeMorphs(f); }catch(_){}   // sculpt the fresh mesh to the fighter's current CAW/DNA shape
     _rigSense(side, name, bones, mapped, container, s);
   }catch(e){ setModelStatus(side,'⚠ Bind error. Built-in body kept.'); removeFighterModel(side); }
@@ -16430,6 +16434,20 @@ function loadFighterModel(side, url, name){
   const f=fighterFor(side); if(!f){ setModelStatus(side,'Start a fight first.'); return; }
   if(typeof THREE==='undefined' || !THREE.GLTFLoader){ setModelStatus(side,'⚠ 3D loader unavailable here.'); return; }
   url=(url||'').trim(); if(!url){ setModelStatus(side,'Paste a .glb URL first.'); return; }
+  // ── DO NOT RE-REQUEST A MODEL THAT IS ALREADY ON ITS WAY ────────────────────────────────────
+  // MEASURED by logging every request/remove for p1 through a real boot: the SAME url is requested
+  // TWICE AT THE IDENTICAL MILLISECOND (t=38807 x2, then t=44892 x2), and the whole cycle repeats
+  // because applyCharModels runs again a few seconds later. Each request bumps _modelReqId, and the
+  // stale-load guard in _bindFighterGltf then THROWS AWAY the finished parse of the earlier one —
+  // so the duplicate does not just waste a download of a multi-megabyte GLB, it cancels the request
+  // that was about to succeed. First successful bind was at 62.9 SECONDS, which is why the 12s
+  // watchdog fires and you see the built-in body standing in for half a minute.
+  // If the same url is already in flight for this side, let it finish.
+  if (f._modelInFlight === url && f._modelInFlightAt && (Date.now() - f._modelInFlightAt) < 45000){
+    setModelStatus(side, '⏳ already loading "' + (name||'model') + '"…');
+    return;
+  }
+  f._modelInFlight = url; f._modelInFlightAt = Date.now();
   // keepHidden: we are about to bind a replacement, so the procedural body must not be flashed back
   // on in the gap. Every failure path below calls removeFighterModel(side) with NO flag, which does
   // reveal it — which is correct, because at that point there is no model coming.
