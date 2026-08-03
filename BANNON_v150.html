@@ -15612,12 +15612,30 @@ function startFight(){
   document.getElementById('p1-name').textContent = o1.name.replace(/_/g,' ');
   var _p1s=document.getElementById('p1-style'); if(_p1s) _p1s.textContent = (window.CHAR_META[o1.name] && window.CHAR_META[o1.name].label) || o1.style;
   try{ document.body.classList.add('match-live'); }catch(e){}   // hide floating creation/dev buttons during a match (reachable via PAUSE)
-  try{ if(window.BANNON_ENTRANCE) setTimeout(()=>window.BANNON_ENTRANCE.play(p1), 400); }catch(e){}   // Phase D: entrance pyro + tron name
+  // ── AN ENTRANCE IS NOT A PREVIEW ────────────────────────────────────────────────────────────
+  // OWNER, and this is his exact wording: "entrances are happening wrong and during character
+  // select and not separate character entrances."
+  // He is describing this line. The character-select screen builds its two standing fighters by
+  // calling spawnPreview(), and spawnPreview() calls startFight() — the WHOLE match start. So
+  // opening the select screen fires a real entrance, and every tap on a different wrestler fires
+  // ANOTHER one, because assign() calls spawnPreview() again. Then pressing FIGHT runs startFight
+  // a second time and a third entrance begins on top of the ones still running.
+  // That also explains two other things he has reported for weeks: the procedural body appearing,
+  // then swapping to the GLB, then going back to procedural (two complete fighter builds, the
+  // first one thrown away), and the models loading slowly (every build re-requests them).
+  // __PREVIEW_BUILD is set by spawnPreview around its call. A preview builds bodies and nothing else.
+  if (!window.__PREVIEW_BUILD){
+    try{ if(window.BANNON_ENTRANCE) setTimeout(()=>{ if(!window.__PREVIEW_BUILD) window.BANNON_ENTRANCE.play(p1); }, 400); }catch(e){}   // Phase D: entrance pyro + tron name
+  }
   document.getElementById('p2-name').textContent = o2.name.replace(/_/g,' ');
   document.getElementById('p2-style').textContent = (window.CHAR_META[o2.name] && window.CHAR_META[o2.name].label) || o2.style;
   gameState='fight';
   hideAll();
-  startRound();
+  // A PREVIEW DOES NOT START A ROUND. startRound() rings the bell, starts the round clock and the
+  // match-state machine; the select screen then cleared the interval a moment later, so a timer had
+  // already ticked, a bell had already rung, and whatever else hangs off startRound was left half
+  // armed while you were still picking a wrestler.
+  if (!window.__PREVIEW_BUILD) startRound();
 }
 </script>
 
@@ -38677,7 +38695,14 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
   function spawnPreview(){
     try{
       window.MATCH_SETUP = { p1Name:sel.p1, p2Name:sel.p2, p1Alt:sel.p1Alt, p2Alt:sel.p2Alt, p1Control:'YOU', p2Control:'CPU' };
-      if(typeof startFight==='function') startFight();
+      // TELL startFight THIS IS A PREVIEW, NOT A MATCH. Every side effect that belongs to a real
+      // bell — the entrance, the round clock, the match-state machine — is skipped while this is
+      // set. Without it, opening the select screen ran a complete match start, which is what the
+      // owner sees as an entrance playing during character select. Cleared in a finally so an
+      // exception mid-build can never leave the flag on and silently kill the next real match.
+      window.__PREVIEW_BUILD = true;
+      try{ if(typeof startFight==='function') startFight(); }
+      finally{ window.__PREVIEW_BUILD = false; }
       try{ if(typeof roundTimerInterval!=='undefined' && roundTimerInterval){ clearInterval(roundTimerInterval); roundTimerInterval=null; } }catch(_){}
       if(typeof gameState!=='undefined') gameState='menu_select';
       if(typeof fighters!=='undefined'){ fighters.forEach(function(f){ try{ if(typeof POSE!=='undefined'&&POSE.stance){ for(var i=0;i<JOINTS.length;i++){ var j=JOINTS[i]; f.J[j].snap(POSE.stance[j][0],POSE.stance[j][1],POSE.stance[j][2]); } } f.state='idle'; f.stateTime=0; f.vx=0; f.vz=0; f.momentum=0; }catch(_){}}); }
