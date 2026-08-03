@@ -296,4 +296,24 @@ jobs:
             --data-binary @/tmp/BANNON.apk -o /tmp/asset.json
           URL=$(python3 -c "import json;print(json.load(open('/tmp/asset.json')).get('browser_download_url',''))" 2>/dev/null)
           echo "release asset: ${URL:-upload failed}"
+          # THE SIDE-BY-SIDE BUILD BELONGS IN THE RELEASE TOO. com.bannon.game.fresh installs ALONGSIDE
+          # whatever is already on the phone, so it is the answer whenever the normal package refuses
+          # to upgrade — and "problem parsing the package" is one of the ways Android reports that.
+          # It was only ever written to dist/, and dist/BANNON-fresh.apk was gitignored, so it never
+          # actually shipped anywhere: the same ignored path that killed thirty publish steps also
+          # meant the one APK guaranteed to install was never reachable. A raw blob URL is the
+          # documented cause of phone parse failures, so it goes out as a release asset like the
+          # other one, with the correct content type.
+          if [ -s /tmp/freshapk/BANNON-fresh.apk ]; then
+            curl -sS -X POST "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/$ID/assets?name=BANNON-fresh.apk" \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/vnd.android.package-archive" \
+              --data-binary @/tmp/freshapk/BANNON-fresh.apk -o /tmp/asset2.json || true
+            echo "side-by-side asset: $(python3 -c "import json;print(json.load(open('/tmp/asset2.json')).get('browser_download_url',''))" 2>/dev/null)"
+          else
+            echo "::warning::no side-by-side APK to upload"
+          fi
+          # NOTE: release-notes decoration deliberately left out. A multi-line python heredoc inside a
+          # YAML block scalar breaks the workflow file (content lines fall outside the block), and a
+          # broken workflow means nothing ships at all — which is the whole problem this session.
           echo "latest install link: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/BANNON.apk"
+          echo "side-by-side link:   https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/BANNON-fresh.apk"
