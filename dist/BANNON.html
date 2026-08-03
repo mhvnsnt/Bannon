@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2574"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2576"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -44818,9 +44818,29 @@ console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot
     // build. Say so rather than printing a meaningless "BUILD 0".
     var s = web ? ('BUILD ' + web) : 'BUILD — (unstamped source)';
     if (apk) s += ' · APK ' + apk;
+    // ── THE DEVICE IS THE ONLY HONEST INSTRUMENT ──────────────────────────────────────────────
+    // Everything I can measure about frame rate in the headless harness runs on swiftshader, a
+    // SOFTWARE rasterizer. Proved this pass, and it cost a whole wrong conclusion: four render
+    // conditions measured back to back showed post-processing "costing 339%", and an A-B-A-B
+    // retest showed the frame rate climbing on BOTH settings (post ON 7.4 -> 24.3 -> 42.2, post
+    // OFF 10.2 -> 21.3 -> 31.3) with ON ending up FASTER. The whole "effect" was the harness
+    // still warming up forty seconds into the match. I nearly shipped a renderer change on it.
+    // OWNER LAW: if a fact can be OBSERVED, observe it. So the real number goes on the real screen
+    // of the real phone, next to the build it belongs to, and he can read it to me in one line
+    // instead of me inferring it from a rasterizer that behaves nothing like his GPU.
+    try{
+      if (window.BANNON_PERF && window.BANNON_PERF.fps){
+        var f = window.BANNON_PERF.fps(), t = window.BANNON_PERF.tier();
+        if (f) s += ' · ' + f.toFixed(0) + ' FPS' + (t ? ' ' + t : '');
+      }
+    }catch(e){}
     return s;
   }
   function refresh(){ paint(label(), '#8a7f6a'); }
+  // repaint once a second so the number is live rather than a snapshot from load time
+  setInterval(function(){ try{ var b = el();
+    if (b && b.__armed && !/checking|UPDATE|up to date|could not/.test(b.textContent)) refresh();
+  }catch(e){} }, 1000);
 
   async function checkNow(){
     paint(label() + ' · checking…', '#c9a227');
