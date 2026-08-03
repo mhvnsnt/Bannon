@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2588"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2590"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -16460,9 +16460,22 @@ function applyCharModels(only){ (only ? [only] : ['p1','p2','p3','p4']).forEach(
     if(f._procWatchdog) clearInterval(f._procWatchdog);
     f._procWatchdog = setInterval(function(){
       try{
-        if(f.model){ clearInterval(f._procWatchdog); f._procWatchdog=null; return; }
+        if(f.model){ f._modelFailed = false; clearInterval(f._procWatchdog); f._procWatchdog=null; return; }
         var now = (typeof performance!=='undefined'?performance.now():Date.now());
-        var lastByte = (f._modelProgress && f._modelProgress.at) || f._procHiddenAt || now;
+        var P = f._modelProgress;
+        // ── DOWNLOADED-AND-PARSING IS NOT STALLED ─────────────────────────────────────────────
+        // MEASURED, and this is the last way a procedural body was still reaching the screen:
+        // 2 frames out of 158, at t+10.75s, with the GLB arriving at t+12.6s and _modelFailed
+        // left TRUE on a fighter who HAD his model. The download finished in under a second from
+        // LOCAL files — and then onProgress went silent, because there are no progress events for
+        // PARSING. GLTFLoader spreads a multi-megabyte parse across frames, which took 12.6s at
+        // this frame rate. "No bytes for 9 seconds" is exactly what that looks like from outside.
+        // Once loaded >= total the bytes are all here and nothing is hung; only the hard ceiling
+        // applies from that point.
+        if (P && P.total > 0 && P.loaded >= P.total){
+          if (now - (f._procHiddenAt||now) < _ceiling) return;
+        }
+        var lastByte = (P && P.at) || f._procHiddenAt || now;
         var quiet = now - lastByte, total = now - (f._procHiddenAt||now);
         if(quiet < _stall && total < _ceiling) return;          // still downloading — slow is fine
         clearInterval(f._procWatchdog); f._procWatchdog = null;
@@ -59793,6 +59806,254 @@ window.__deriveVariant = async function(key){
     },
     stats: function(){ return Object.assign({}, ST); }
   };
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_LATE_BODIES — the last way a procedural body still reached the screen.
+//
+// OWNER, as the standing priority: "never seeing procedural three js models unless specific
+// attires for that are selected."
+//
+// MEASURED, sampling EVERY FRAME of a full match. On a normal connection: 0 procedural frames out
+// of 208. On a slow one (4s per model, i.e. his phone on bad data): 31 frames out of 167, starting
+// at t+17.9s — and every one of them was the RUN-IN. The two competitors bound at ~15s; the
+// intruder at 24.2s, and the procedural frames run exactly between.
+//
+// WHY THE BAN DID NOT COVER HIM: setProcVisible only blocks the built-in body when
+// `f._charModelRequested` is set, and that flag is set by applyCharModels — which only ever runs
+// for the SIDES p1..p4. An interferer is built with a bare `new Fighter(...)` and pushed onto
+// `fighters`, so nobody ever asked for his model. He had no model REQUEST, therefore no ban,
+// therefore a tube. (He eventually got a model at 24s from a later pass, which is why this looked
+// like slowness rather than a missing call.)
+//
+// THE FIX IS NOT A NEW LOADER. A fighter at index 2 IS p3 — fighterFor('p3') returns fighters[2] —
+// so the whole existing machinery already covers him and was simply never asked. Ask it, and hold
+// him invisible until he is actually himself: a run-in that appears a second late is a run-in; a
+// run-in that appears as a grey tube is the bug he has been reporting for weeks.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_LATE_BODIES) return;
+
+  var SIDES = ['p1', 'p2', 'p3', 'p4'];
+  var ST = { adopted:0, hidden:0, revealed:0, timedOut:0, last:null };
+
+  function fighters_(){ try{ return new Function('return typeof fighters!=="undefined"?fighters:[]')(); }catch(e){ return []; } }
+
+  function tick(){
+    var F = fighters_();
+    for (var i = 0; i < F.length; i++){
+      var f = F[i]; if (!f || f._forceProc) continue;
+
+      // 1. ANY fighter without a model request gets one, through the normal path.
+      if (!f._charModelRequested && !f.model && !f.__lateAsked){
+        f.__lateAsked = true;
+        try{
+          if (i < SIDES.length && typeof applyCharModels === 'function'){
+            ST.adopted++; ST.last = (f.opts && f.opts.name) || ('#' + i);
+            applyCharModels(SIDES[i]);
+          }
+        }catch(e){}
+      }
+
+      // 2. Until he has one, he is NOT on screen. The procedural ban already refuses to show the
+      //    built-in body once a request is in flight; this covers the window before that and any
+      //    path that sets no flag at all.
+      var waiting = (!f.model && !f._modelFailed && (f._charModelRequested || f.__lateAsked));
+      if (waiting){
+        if (!f.__lateHiddenAt){ f.__lateHiddenAt = (performance.now ? performance.now() : Date.now()); ST.hidden++; }
+        try{ if (f.seg && typeof setProcVisible === 'function') setProcVisible(f, false); }catch(e){}
+        // A ceiling, because an invisible attacker is its own bug. If his model genuinely never
+        // arrives the engine's own failure path (_modelFailed) shows the built-in body, which is
+        // the ONE case the owner allows: a real failure, not a slow load.
+        var wait = (performance.now ? performance.now() : Date.now()) - f.__lateHiddenAt;
+        if (wait > 20000 && !f.__lateGaveUp){ f.__lateGaveUp = true; ST.timedOut++; }
+      } else if (f.__lateHiddenAt && f.model){
+        f.__lateHiddenAt = 0; ST.revealed++;
+      }
+    }
+  }
+
+  (function loop(){ requestAnimationFrame(loop); try{ tick(); }catch(e){} })();
+  window.BANNON_LATE_BODIES = { stats: function(){ return Object.assign({}, ST); } };
+  try{ console.log('%c[BANNON_LATE_BODIES] every fighter asks for a model, and waits off-screen for it','color:#7CFC00'); }catch(e){}
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_TRON_STUDIO — make and assign a tron IN THE GAME, on the phone.
+//
+// OWNER: "we need a way to add and make custom trons in game", alongside "tron selection for
+// Titan tron and mini trons and lighting and smoke and pyro options".
+//
+// This is the front end for the entrance kit BANNON_ENTRANCE_SEQ already reads. Pick a video off
+// the device, it is stored in IndexedDB and assigned to a wrestler as his titantron; the lighting,
+// smoke, pyro and mini-tron choices write to the same kit. Nothing here re-implements playback —
+// BANNON_TRONVIDEO draws it, and PREVIEW plays it on the real arena screen so what you pick is what
+// you get.
+//
+// IT REUSES BLIB, THE EXISTING IndexedDB LIBRARY, rather than opening a second store. That is the
+// same place device-imported MODELS already live, so a custom tron survives a reload and an OTA
+// content swap for exactly the same reason a custom model does — and there is one storage story to
+// reason about instead of two. A blob: URL is minted per session from the stored bytes.
+//
+// SIZE IS CHECKED AND SAID OUT LOUD. A phone video is typically 1080p and tens of megabytes; the
+// tron screen is 512x256. There is no ffmpeg on a phone, so this cannot transcode — instead it
+// REFUSES anything over the cap with the real number, because silently storing 60 MB in IndexedDB
+// to draw it at 512x256 is how a save file becomes unrecoverable. The baked trons that ship with
+// the game go through tools/tron/bake_tron.sh and are 0.38 MB.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_TRON_STUDIO) return;
+
+  var MAX_MB = 24;
+  var KEYP = 'tron:';                 // BLIB key prefix, so trons and models never collide
+  var ST = { imported:0, assigned:0, refused:0, last:null };
+
+  var key = function(n){ return String(n || '').toUpperCase().replace(/[^A-Z0-9]/g, '_'); };
+
+  function roster(){
+    var out = [];
+    try{
+      var F = new Function('return typeof fighters!=="undefined"?fighters:[]')();
+      F.forEach(function(f){ var n = f && f.opts && f.opts.name; if (n && out.indexOf(n) < 0) out.push(n); });
+    }catch(e){}
+    try{ for (var k in (window.CHAR_META || {})) if (out.indexOf(k) < 0) out.push(k); }catch(e){}
+    return out;
+  }
+
+  // ── storage ────────────────────────────────────────────────────────────────────────────────
+  function saveVideo(name, file){
+    return new Promise(function(res, rej){
+      if (!window.BLIB || !window.BLIB.available) return rej('no IndexedDB on this browser');
+      var mb = file.size / 1048576;
+      if (mb > MAX_MB){ ST.refused++;
+        return rej('that file is ' + mb.toFixed(1) + ' MB. The tron screen is 512x256 and this cannot '
+                 + 'transcode on a phone, so the cap is ' + MAX_MB + ' MB. Trim it or shrink it first '
+                 + '(the trons that ship with the game are 0.38 MB).'); }
+      var fr = new FileReader();
+      fr.onload = function(){
+        window.BLIB.put(KEYP + key(name), fr.result)
+          .then(function(){ ST.imported++; ST.last = key(name); res(true); })
+          .catch(rej);
+      };
+      fr.onerror = function(){ rej('could not read the file'); };
+      fr.readAsArrayBuffer(file);
+    });
+  }
+
+  // mint a blob: URL for a stored tron and hand it to the player
+  function activate(name){
+    var k = key(name);
+    if (!window.BLIB || !window.BLIB.available) return Promise.resolve(false);
+    return window.BLIB.get(KEYP + k).then(function(buf){
+      if (!buf) return false;
+      var url = URL.createObjectURL(new Blob([buf], { type: 'video/mp4' }));
+      try{ if (window.BANNON_TRONVIDEO) window.BANNON_TRONVIDEO.add(k, url); }catch(e){}
+      return true;
+    }).catch(function(){ return false; });
+  }
+
+  // On boot, re-attach every custom tron. A blob: URL does not survive a reload, so the bytes are
+  // re-read and a fresh URL minted — the assignment lives in the kit, the media lives in BLIB.
+  function restore(){
+    if (!window.BLIB || !window.BLIB.available) return;
+    window.BLIB.list().then(function(keys){
+      (keys || []).filter(function(k){ return String(k).indexOf(KEYP) === 0; })
+                  .forEach(function(k){ activate(String(k).slice(KEYP.length)); });
+    }).catch(function(){});
+  }
+  setTimeout(restore, 2500);
+
+  // ── the screen ─────────────────────────────────────────────────────────────────────────────
+  function panel(){
+    var old = document.getElementById('tronStudio'); if (old){ old.remove(); return; }
+    var SEQ = window.BANNON_ENTRANCE_SEQ;
+    var names = roster();
+    var who = names[0] || 'BANNON';
+    var kit = SEQ ? SEQ.kitFor(who) : {};
+
+    var d = document.createElement('div');
+    d.id = 'tronStudio';
+    d.style.cssText = 'position:fixed;inset:0;z-index:100060;background:rgba(6,8,12,.96);color:#f0e6d2;'
+      + 'font:13px/1.45 system-ui,sans-serif;overflow:auto;padding:14px calc(14px + env(safe-area-inset-left,0px)) '
+      + 'calc(24px + env(safe-area-inset-bottom,0px));';
+    var sel = function(id, label, opts, cur){
+      return '<div style="margin:10px 0"><div style="opacity:.7;font-size:11px;letter-spacing:1px">' + label + '</div>'
+        + '<select id="' + id + '" style="width:100%;padding:9px;background:#12151d;color:#f0e6d2;'
+        + 'border:1px solid #3a3f4b;border-radius:9px;font-size:14px">'
+        + opts.map(function(o){ return '<option' + (o === cur ? ' selected' : '') + '>' + o + '</option>'; }).join('')
+        + '</select></div>';
+    };
+    d.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+      + '<b style="font-size:16px;letter-spacing:2px;color:#e8c33a">TRON STUDIO</b>'
+      + '<span style="flex:1"></span>'
+      + '<button id="tsClose" style="background:#22262f;color:#f0e6d2;border:1px solid #3a3f4b;'
+      + 'border-radius:9px;padding:8px 14px;font-size:14px">CLOSE</button></div>'
+      + '<div style="opacity:.65;font-size:11px;margin-bottom:8px">Trons are silent by design — your entrance song plays over them.</div>'
+      + sel('tsWho', 'WRESTLER', names, who)
+      + '<div style="margin:12px 0"><div style="opacity:.7;font-size:11px;letter-spacing:1px">CUSTOM TITANTRON VIDEO</div>'
+      + '<input id="tsFile" type="file" accept="video/*" style="width:100%;padding:9px;background:#12151d;'
+      + 'border:1px solid #3a3f4b;border-radius:9px;color:#f0e6d2;font-size:13px"></div>'
+      + sel('tsTron', 'TITANTRON', (SEQ && SEQ.options.titantron) || ['AUTO'], kit.titantron)
+      + sel('tsLight', 'LIGHTING', (SEQ && SEQ.options.lighting) || ['ARENA'], kit.lighting)
+      + sel('tsSmoke', 'SMOKE', (SEQ && SEQ.options.smoke) || ['NONE'], kit.smoke)
+      + sel('tsPyro', 'PYRO', (SEQ && SEQ.options.pyro) || ['STAGE'], kit.pyro)
+      + '<label style="display:flex;gap:9px;align-items:center;margin:12px 0"><input id="tsMini" type="checkbox"'
+      + (kit.minitrons ? ' checked' : '') + ' style="width:20px;height:20px"> MINI-TRONS MIRROR THE TITANTRON</label>'
+      + '<div id="tsMsg" style="min-height:20px;margin:8px 0;color:#e8c33a;font-size:12px"></div>'
+      + '<div style="display:flex;gap:9px;flex-wrap:wrap">'
+      + '<button id="tsPreview" style="flex:1;min-width:120px;background:#2a2f3a;color:#f0e6d2;border:1px solid #5a6270;'
+      + 'border-radius:10px;padding:13px;font-size:14px;font-weight:700">PREVIEW ON TRON</button>'
+      + '<button id="tsSave" style="flex:1;min-width:120px;background:#d8a24a;color:#151515;border:0;'
+      + 'border-radius:10px;padding:13px;font-size:14px;font-weight:800">SAVE</button></div>';
+    (document.body || document.documentElement).appendChild(d);
+
+    var $ = function(id){ return document.getElementById(id); };
+    var msg = function(t, bad){ var m = $('tsMsg'); if (m){ m.textContent = t || ''; m.style.color = bad ? '#ff9d7a' : '#e8c33a'; } };
+    $('tsClose').onclick = function(){ d.remove(); };
+    $('tsWho').onchange = function(){
+      var k2 = SEQ ? SEQ.kitFor($('tsWho').value) : {};
+      $('tsTron').value = k2.titantron; $('tsLight').value = k2.lighting;
+      $('tsSmoke').value = k2.smoke; $('tsPyro').value = k2.pyro; $('tsMini').checked = !!k2.minitrons;
+      msg('');
+    };
+    $('tsPreview').onclick = function(){
+      var n = $('tsWho').value;
+      try{
+        if (window.BANNON_TRON && window.BANNON_TRON.entrance) window.BANNON_TRON.entrance(n);
+        if ($('tsTron').value !== 'NAME' && window.BANNON_TRONVIDEO) window.BANNON_TRONVIDEO.play(n, 9000);
+        msg('playing on the arena tron — close this to watch it');
+      }catch(e){ msg('preview failed: ' + e.message, true); }
+    };
+    $('tsSave').onclick = function(){
+      var n = $('tsWho').value;
+      var f = $('tsFile').files && $('tsFile').files[0];
+      var write = function(){
+        if (SEQ) SEQ.setKit(n, { titantron:$('tsTron').value, lighting:$('tsLight').value,
+                                 smoke:$('tsSmoke').value, pyro:$('tsPyro').value,
+                                 minitrons: $('tsMini').checked });
+        ST.assigned++;
+        msg('saved for ' + n.replace(/_/g, ' '));
+      };
+      if (!f) return write();
+      msg('storing video…');
+      saveVideo(n, f).then(function(){ return activate(n); })
+        .then(function(){ write(); msg('video stored and assigned to ' + n.replace(/_/g, ' ')); })
+        .catch(function(e){ msg(String(e && e.message || e), true); });
+    };
+  }
+
+  window.BANNON_TRON_STUDIO = {
+    open: panel, save: saveVideo, activate: activate, restore: restore,
+    MAX_MB: MAX_MB, stats: function(){ return Object.assign({}, ST); }
+  };
+  try{ console.log('%c[BANNON_TRON_STUDIO] BANNON_TRON_STUDIO.open() — custom trons + entrance FX per wrestler','color:#7CFC00'); }catch(e){}
 })();
 </script>
 </html>
