@@ -981,3 +981,74 @@ impossible unless the window is being ignored.
 AFTER THE FIX: those two segments are 2.80s (83/85 coverage) and 1.80s (46/60). JUNGLE_JUICE, which
 had been banked as all 4.30s of its source, is now the actual 2.15s move at 50/66.
 LESSON: when a capture's coverage looks terrible (59/524), suspect the WINDOW before the tracker.
+
+## THE "PROCEDURAL PUPPET" WAS THE GLB (2026-08-03) — SEVERED RIGS, AND WHY skinqa CANNOT SEE THEM
+Owner, for weeks: "the animations still are not correct cause the animation are still looking
+procedural" ... "like procedural puppets in strings" ... "yr a liar". He was right and I was looking
+in the wrong place the entire time.
+
+I kept proving the PROCEDURAL RIG was not on screen, and it never was — measured again this pass,
+0 visible procedural triangles on both fighters, the ban holds. **The puppet was the GLB.**
+
+`BANNON_rigged.glb`, the DEFAULT PLAYER MODEL, was **fifteen separate skinned primitives** named
+after our own joint keys: `chest elL elR ftL ftR haL haR head hipL hipR knL knR pelvis shL shR`.
+The body is CUT AT EVERY JOINT. No surface across the elbow, the knee, the shoulder or the neck, so
+nothing bends — the pieces rotate past each other and gap. That is an action figure.
+
+**WHY NOTHING CAUGHT IT — THE PART WORTH REMEMBERING.** skinqa measures how far a vertex drifts
+from where its weights predict it should be. A piece welded rigidly to ONE bone never drifts, so a
+severed rig scores a PERFECT deformation result. It is the one defect that looks ideal to a
+deformation test while being physically unable to deform. It read WEAK 0.0802 and I took that as
+"acceptable" instead of "wrong question". **A PASSING METRIC IS NOT A PASSING MODEL — ask whether
+the metric can even express the failure you are looking for.**
+
+**THE MEASURE THAT DOES SEE IT — `tools/model_diag/rig_continuity.cjs`.** Reads the actual
+JOINTS_0/WEIGHTS_0 and counts how many distinct joints carry real weight PER PRIMITIVE. Naming is a
+hint, the weights are the fact (OWNER LAW). A continuous body = 1 primitive influenced by most of
+the skeleton. An action figure = many primitives spanning 1-3 joints each.
+Sweep of all 73 models: **59 whole, 1 mixed, 12 unskinned, exactly ONE severed** — and it was the
+one he plays as. Now check 6 in `scripts/verify_shipping.cjs`, gated on every push.
+
+**THE CUT WAS REVERSIBLE — MEASURED BEFORE WRITING ANY CODE.** 1,244 positions shared EXACTLY
+between pieces, pairs anatomical: chest~head 131, chest~shR 120, chest~shL 115, hipL~pelvis 62,
+ftL~knL 40, ftR~knR 35. One body, cut at the joints, boundary ring duplicated. All fifteen shared
+ONE material and identical semantics, so they concatenate exactly.
+**`tools/model_diag/sew_rig.cjs`** concatenates the primitives into one and `--weld` fuses vertices
+sharing a position AND agreeing on normal. **Position alone is NOT enough** — in bind pose a hand
+rests against a hip and 32 of those pairs are coincidental, not a seam; welding them glues the arm
+to the hip. Every write is re-read from the shipped bytes and checked against triangles, vertices
+(may only shrink), joints, skins, morph targets and the bind bounding box.
+
+**THE WEIGHTS WERE NEVER THE PROBLEM** — measured, not assumed. New metric, the BEND BAND: the share
+of vertices influenced by BOTH sides of a real parent/child joint, which is what lets a surface fold.
+Sewn 41.5% vs VIPER 34.9% and TITAN 37.6% — higher than models that already look right. So no re-rig
+was done. **Measure before reaching for the expensive fix.**
+
+BANNON_rigged.glb end to end: SEVERED -> WHOLE (widest piece 22 -> 48 of 58 joints);
+143,847 -> 29,732 verts; **48,088 -> 17,998 tris**; skinqa **0.0802 WEAK -> 0.0110 PASS**, the best
+rig we ship; bend band 41.2% -> 43.8%.
+SIDE FINDING: it was fully unwelded (3 verts per triangle), which is ALSO why the decimation pass
+could never touch it — with no shared edges the simplifier has nothing to collapse. Same lesson as
+the Tripo note above: **weld before you simplify, and check whether a "skip" was really a failure.**
+
+## AN InstancedMesh DRAWS `count`, NOT WHAT YOU CAN SEE (2026-08-03)
+The blood/sweat particle system allocates 700 spheres and hides unused ones by scaling them to zero.
+An InstancedMesh rasterises `count` instances regardless of their matrices — scale 0 hides a particle
+and still pays for its 80 triangles. **Measured: 56,000 triangles, 41% OF THE WHOLE FRAME, in a match
+with zero blood and zero sweat on screen.** `count` now tracks the live high-water mark and the mesh
+hides entirely at zero. Check every InstancedMesh in the file for the same thing before adding one.
+LIVE MATCH ACROSS THIS ARC: **176,640 -> 80,072 visible triangles.**
+
+## A CHANGE THAT MEASURED WORSE, AND WAS REVERTED (2026-08-03) — WRITE THE FAILURES DOWN TOO
+13 shader programs were still compiling mid-match, so I hooked `loadFighterModel` to re-run
+`renderer.compile` 1.2s after every model bind. **It made things worse: programs 136 -> 210, hitches
+containing a compile 6 -> 12.** Reason: the perf module calls `cullDarkLights()` before each warm,
+hiding/showing a light changes three.js's light COUNTS, and that invalidates the program cache for
+every material — so each extra warm minted ~28 NEW program variants instead of hitting the cache.
+Reverted. **Changing the visible light set is not free; it is a full shader recompile of the scene.**
+THE PROBE THAT SETTLED IT (`hitch.cjs` pattern, worth reusing): count frames over 250ms DURING THE
+FIGHT and record whether the program count rose inside each one. Averages hide this completely — the
+owner's word is "freezing", and a 2,200ms frame at t+6.1s that compiled 10 shaders is a freeze,
+while the same total spread evenly is just a low frame rate.
+CAVEAT KEPT HONEST: swiftshader compiles shaders on the CPU and is pathologically slow at it, so the
+absolute milliseconds here say nothing about the owner's phone. The A/B direction is still valid.
