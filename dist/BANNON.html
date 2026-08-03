@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2543"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2547"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -516,14 +516,30 @@ window.BANNON_BUILD = (function(){ var s="2543"; var n=parseInt(s,10); return (i
 })();
 </script>
 <!-- POST-PROCESSING (bloom) — r128-matched. If any fail to load, the game renders directly with no errors. -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/GammaCorrectionShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/MaskPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+<!-- POST-PROCESSING — VENDORED, same treatment three.js, GLTFLoader and FBXLoader already got, and
+     for a reason that cost this project weeks: these eight were CDN-ONLY, so the offline APK and any
+     sandboxed browser silently fell back to a DIRECT render with no composer, while a phone with
+     working internet got the full bloom chain. THE GAME RENDERED TWO COMPLETELY DIFFERENT WAYS
+     depending on the network, and every performance measurement I took was on the cheap path the
+     owner was not running. That is why nothing I measured ever matched what he saw.
+     Local first; the CDN stays as a fallback so a stripped single-file copy still works. -->
+<script src="assets/vendor/pp/CopyShader.js"></script>
+<script src="assets/vendor/pp/LuminosityHighPassShader.js"></script>
+<script src="assets/vendor/pp/GammaCorrectionShader.js"></script>
+<script src="assets/vendor/pp/EffectComposer.js"></script>
+<script src="assets/vendor/pp/ShaderPass.js"></script>
+<script src="assets/vendor/pp/MaskPass.js"></script>
+<script src="assets/vendor/pp/RenderPass.js"></script>
+<script src="assets/vendor/pp/UnrealBloomPass.js"></script>
+<script>
+(function(){ if (typeof THREE === 'undefined' || THREE.UnrealBloomPass) return;
+  var b='https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/';
+  ['shaders/CopyShader.js','shaders/LuminosityHighPassShader.js','shaders/GammaCorrectionShader.js',
+   'postprocessing/EffectComposer.js','postprocessing/ShaderPass.js','postprocessing/MaskPass.js',
+   'postprocessing/RenderPass.js','postprocessing/UnrealBloomPass.js']
+  .forEach(function(f){ document.write('<script src="'+b+f+'"><\/script>'); });
+})();
+</script>
 <!-- REAL PHYSICS (optional): Rapier loads only over http(s)/localhost. On a double-click it stays off and the game runs exactly as before. -->
 <script type="module">
   try{
@@ -18304,7 +18320,14 @@ init();
       return false;
     }
     try{
-      const pxRatio = Math.min(window.devicePixelRatio||1, /Android|iPhone|iPad/i.test(navigator.userAgent)?2.5:2.0);
+      // A PHONE IS THE ONE PLACE THIS SHOULD BE LOWEST, AND IT WAS THE HIGHEST. This read
+      //     Math.min(devicePixelRatio, isMobile ? 2.5 : 2.0)
+      // so a handset — the device with the weakest GPU and the smallest screen, where extra pixels
+      // are least visible — got a BIGGER post-processing buffer than a desktop. At dpr 2.5 that is
+      // 6.25x the screen's pixels through the whole chain, five bloom mips included.
+      // 1.5 on mobile, and BANNON_PERF lowers it further per tier from here (it now owns the
+      // composer's ratio, which it never did before).
+      const pxRatio = Math.min(window.devicePixelRatio||1, /Android|iPhone|iPad/i.test(navigator.userAgent)?1.5:2.0);
       const composer=new THREE.EffectComposer(renderer);
       composer.setPixelRatio(pxRatio);
       composer.setSize(window.innerWidth, window.innerHeight);
@@ -51111,11 +51134,11 @@ window.__deriveVariant = async function(key){
     // Lambert. It is the single biggest lever on a phone and it was missing entirely — see
     // applyMaterialTier. It only engages at LOW and below, so a device that never struggles
     // never sees it.
-    { id:0, name:'FULL',   maxLights:99, shadowLights:99, casters:'all',      pr:2.0,  cheapMaterials:false },
-    { id:1, name:'HIGH',   maxLights:8,  shadowLights:2,  casters:'fighters', pr:1.75, cheapMaterials:false },
-    { id:2, name:'MEDIUM', maxLights:5,  shadowLights:1,  casters:'fighters', pr:1.5,  cheapMaterials:false },
-    { id:3, name:'LOW',    maxLights:3,  shadowLights:1,  casters:'fighters', pr:1.25, cheapMaterials:true  },
-    { id:4, name:'POTATO', maxLights:2,  shadowLights:0,  casters:'none',     pr:1.0,  cheapMaterials:true  }
+    { id:0, name:'FULL',   maxLights:99, shadowLights:99, casters:'all',      pr:2.0,  cheapMaterials:false, bloom:true  },
+    { id:1, name:'HIGH',   maxLights:8,  shadowLights:2,  casters:'fighters', pr:1.75, cheapMaterials:false, bloom:true  },
+    { id:2, name:'MEDIUM', maxLights:5,  shadowLights:1,  casters:'fighters', pr:1.5,  cheapMaterials:false, bloom:false },
+    { id:3, name:'LOW',    maxLights:3,  shadowLights:1,  casters:'fighters', pr:1.25, cheapMaterials:true,  bloom:false },
+    { id:4, name:'POTATO', maxLights:2,  shadowLights:0,  casters:'none',     pr:1.0,  cheapMaterials:true,  bloom:false }
   ];
 
   function scene_(){ try{ return (typeof scene !== 'undefined') ? scene : null; }catch(e){ return null; } }
@@ -51300,6 +51323,32 @@ window.__deriveVariant = async function(key){
       s.traverse(function(n){ if (n.isMesh && n.userData.__perfBaseCast !== undefined) n.castShadow = n.userData.__perfBaseCast; });
     }
     try{ r.setPixelRatio(Math.min(T.pr, window.devicePixelRatio || 1)); }catch(e){}
+    // ── THE TIER SYSTEM WAS BEING BYPASSED BY THE THING IT MOST NEEDED TO CONTROL ───────────────
+    // Every frame goes through window.__composer, and EffectComposer owns its OWN render targets
+    // with its OWN pixel ratio. That ratio is set once at setup to
+    //     Math.min(devicePixelRatio, /Android|iPhone|iPad/ ? 2.5 : 2.0)
+    // and nothing ever touched it again. So on a phone reporting devicePixelRatio 2.5-3.5 the post
+    // chain renders at 2.5x LINEAR = 6.25x the pixels of the screen — and UnrealBloomPass then
+    // allocates five mip targets at that size and blurs each of them twice, horizontally and
+    // vertically, every single frame. Dropping the renderer to pr 1.0 at POTATO did nothing at all,
+    // because the renderer is not what draws the frame; the composer is.
+    // That is the frame rate. Low fps is what makes a 1.75 Hz stride read as a puppet and what
+    // makes a GLB take ten seconds to bind instead of one and a half — both measured, both moving
+    // with fps and nothing else (tools/harness/gait_and_bind.cjs).
+    try{
+      var C = window.__composer;
+      if (C){
+        var want = Math.min(T.pr, window.devicePixelRatio || 1);
+        if (C.setPixelRatio && C.__pr !== want){ C.setPixelRatio(want); C.__pr = want;
+          try{ C.setSize(window.innerWidth, window.innerHeight); }catch(e){} }
+        // BLOOM IS THE MULTI-MIP BLUR. It is a look, not a mechanic — off below HIGH. Disabling the
+        // PASS keeps the composer (and the cheap single-pass broadcast grade) intact, so the frame
+        // still gets its tone curve and vignette; only the five blurred mip levels go away.
+        (C.passes || []).forEach(function(p){
+          if (p && p.constructor && /BloomPass/.test(p.constructor.name || '')) p.enabled = !!T.bloom;
+        });
+      }
+    }catch(e){}
     try{
       if (T.shadowLights === 0) r.shadowMap.enabled = false; else r.shadowMap.enabled = true;
       // SHADOW TYPE IS A TIER TOO. This only ever toggled shadows on/off and left the map on
