@@ -500,6 +500,60 @@ window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10
      so STUDIO.clips stayed empty and every move fell back to procedural spring poses. Local-first;
      CDN fallback only if the relative file is missing (web build served from a different root). -->
 <script src="assets/vendor/fflate.min.js"></script>
+<script>
+// ============================================================================================
+// BANNON_CLIP_GZ — SHIP EVERY ANIMATION INSIDE THE APK.
+//
+// OWNER, repeatedly: "none of the hundreds of animations are showing or legible or happening".
+//
+// After the APK asset fix only 27 captures were bundled — the hot strike/grapple path. The other
+// 946 were still a raw.githubusercontent.com round trip EACH, on mobile data, at the moment a move
+// fires. A move takes a fraction of a second; a multi-hundred-kilobyte fetch does not. So the body
+// played nothing and the move looked procedural, exactly as reported.
+//
+// MEASURED: the 973 clips are 257.2 MB of JSON and gzip to 8-9% of that — about 22 MB, which fits
+// in the APK with room to spare. Keyframe JSON is nearly all repeated numeric text; this is what
+// gzip is best at. NOTHING IS RE-ENCODED OR ROUNDED: rounding to 4 decimals first only bought
+// another 1% and it changes the data, so the bytes shipped are the exact bytes we bake.
+//
+// fflate is ALREADY VENDORED and already loads before the engine — it is what FBXLoader uses. So
+// this needs no new dependency and no new <script>: window.fflate.gunzipSync, which is synchronous
+// and takes about a millisecond on a clip this size.
+//
+// The .gz is tried FIRST and only on the first miss does it stop trying, so the web build (which
+// serves plain .json and has no .gz) pays exactly ONE wasted request for the whole session.
+// ============================================================================================
+window.__clipJsonFetch = async function(key, cdn){
+  var gz = 'assets/moves/clips/' + key + '.json.gz';
+  if (window.__CLIP_GZ !== false && window.fflate && window.fflate.gunzipSync){
+    try{
+      var r = await fetch(gz).catch(function(){ return null; });
+      if (r && r.ok){
+        window.__CLIP_GZ = true;
+        var buf = new Uint8Array(await r.arrayBuffer());
+        var txt = new TextDecoder().decode(window.fflate.gunzipSync(buf));
+        var j = JSON.parse(txt);
+        if (j && j.keys && j.keys.length) return j;
+      } else if (window.__CLIP_GZ !== true){
+        // first miss on a build with no .gz — stop asking for the rest of the session
+        window.__CLIP_GZ = false;
+      }
+    }catch(e){ if (window.__CLIP_GZ !== true) window.__CLIP_GZ = false; }
+  }
+  var urls = ['assets/moves/clips/' + key + '.json',
+              (cdn || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/') + 'assets/moves/clips/' + key + '.json'];
+  for (var i = 0; i < urls.length; i++){
+    try{
+      var jr = await fetch(urls[i]).catch(function(){ return null; });
+      if (!jr || !jr.ok) continue;
+      var jc = await jr.json();
+      if (jc && jc.keys && jc.keys.length) return jc;
+    }catch(e){}
+  }
+  return null;
+};
+</script>
+
 <script src="assets/vendor/FBXLoader.js"></script>
 <!-- BVHLoader — BVH is the format essentially every FREE/CC0 mocap library ships in (CMU, Truebones
      free packs, 100STYLE, most open sets). The game could only ever load FBX, so none of it was
@@ -16399,7 +16453,53 @@ function applyCharModels(only){ (only ? [only] : ['p1','p2','p3','p4']).forEach(
   };
   if(f._altModelUrl){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
   if(f._mdickieBase){ var mb=mdickieBaseFor(f._mdickieBase); f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, mb, 'MDickie · '+f._mdickieBase); }catch(e){} return; }   // MDickie base attire (falls back to procedural if the base GLB isn't present)
-  var ck=charModelKey(f); var cm=charModelFor(ck); if(cm&&cm.url){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
+  var ck=charModelKey(f); var cm=charModelFor(ck) || archetypeBodyFor(f, ck);
+  if(cm&&cm.url){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, cm.url, cm.name||ck); }catch(e){} } }); }
+
+// ── EVERY WRESTLER GETS A REAL BODY ───────────────────────────────────────────────────────────
+// OWNER: "procedural models are still appearing when not selected."
+// CHAR_MODEL_DEFAULTS binds 27 characters. The roster is ~121. Everyone else — ZEPHYR, caught by
+// the smoke harness as "has no GLB bound (run-in)", and ~90 more — fell straight through to the
+// procedural body, in matches, run-ins, Universe and God Within. That is most of the roster.
+// The layer meant to catch exactly this already existed and was DEAD: the MDickie base-attire
+// system resolves to assets/models/mdickie_bases/<BASE>.glb, and that directory has never existed
+// in this repo, so every archetype fallback 404'd back to procedural. It was written against
+// assets that were never going to arrive.
+// So point it at bodies we ACTUALLY SHIP. Each of these is a wired, rig-continuity-WHOLE, skinqa-
+// PASSING model already bundled in the APK, chosen so the silhouette matches the archetype. This
+// is precisely what MDickie itself does — a shared base body per build, reskinned per wrestler —
+// and a real rigged body that plays real mocap beats a procedural one every time.
+// Specific characters still win: this only ever runs when nothing else resolved.
+window.ARCHETYPE_BODY = window.ARCHETYPE_BODY || {
+  powerhouse: 'assets/models/BRUTUS.glb',
+  monster:    'assets/models/TITAN.glb',
+  brawler:    'assets/models/WRECK_PATTERSON.glb',
+  striker:    'assets/models/KOBRA.glb',
+  technician: 'assets/models/AARON_RUBEN.glb',
+  cruiser:    'assets/models/CIPHER_rigged.glb',
+  luchador:   'assets/models/EL_TORO_DE_ORO.glb',
+  enigma:     'assets/models/HOLLOW.glb',
+  female:     'assets/models/TYNESHIA.glb',
+  suit:       'assets/models/STAN_COMBS_gear.glb'
+};
+function archetypeBodyFor(f, ck){
+  try{
+    if (window.AUTO_CHAR_MODELS === false) return null;
+    var A = window.ARCHETYPE_BODY || {};
+    // gender first — putting every unmapped woman in a male body is worse than the procedural rig
+    var g = (f && (f.gender || (f.opts && f.opts.gender) || '')).toString().toLowerCase();
+    if (g === 'f' || g === 'female' || g === 'w') return { url: A.female, name: 'Base · Female' };
+    // the MDickie override table already names a base for the characters it knows
+    var named = (window.MDICKIE_MAP && ck && window.MDICKIE_MAP[ck]) || '';
+    var k = String(named).toLowerCase();
+    if (k === 'female_athletic') k = 'female';
+    if (A[k]) return { url: A[k], name: 'Base · ' + named };
+    var a = ((f && (f.archetype || (f.opts && f.opts.archetype) || f.style || '')) || '').toString().toLowerCase();
+    for (var key in A) if (a.indexOf(key) >= 0) return { url: A[key], name: 'Base · ' + key };
+    return { url: A.brawler, name: 'Base · default' };
+  }catch(e){ return null; }
+}
+window.archetypeBodyFor = archetypeBodyFor;
 function assignCharModel(charKey, url, name){ if(!charKey) return; charKey=charKey.toUpperCase(); try{ if(url){ CHAR_MODEL[charKey]={url:url,name:name||charKey}; } else { delete CHAR_MODEL[charKey]; } localStorage.setItem('bannonCharModels',JSON.stringify(CHAR_MODEL)); }catch(e){} }
 // Bind the model currently shown on a side to that side's CHARACTER so it persists as theirs.
 function assignCurrentModelToChar(side){ var f=fighterFor(side); if(!f) return; var ck=charModelKey(f);
@@ -33891,17 +33991,15 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
           // 0. a VARIANT is derived from its base, not fetched — no request, no stored file
           if(window.__deriveVariant){ const dv=await window.__deriveVariant(key); if(dv) return dv; }
           // 1. the baked clip — this is the path that should always win
-          const jsonUrls = ['assets/moves/clips/'+key+'.json', cdn+'assets/moves/clips/'+key+'.json'];
-          for(const u of jsonUrls){
-            try{
-              const r=await fetch(u).catch(()=>null); if(!r||!r.ok) continue;
-              const clip=await r.json();
-              if(clip && clip.keys && clip.keys.length){
-                if(typeof STUDIO!=='undefined'){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=clip; STUDIO.clips[base]=clip; }
-                return clip;
-              }
-            }catch(e){}
-          }
+          // gzipped-first (BANNON_CLIP_GZ). BOTH clip fetch sites go through the one helper —
+          // this is the second, and the one loadCore() drives at boot. Fixing only the other one
+          // would have left every boot-warmed capture on the network path.
+          try{ const clip = await window.__clipJsonFetch(key, cdn);
+            if(clip){
+              if(typeof STUDIO!=='undefined'){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=clip; STUDIO.clips[base]=clip; }
+              return clip;
+            }
+          }catch(e){}
           // 2. raw FBX, for authoring only. Off by default because this is what froze the game.
           if(window.ALLOW_RUNTIME_FBX===true && typeof THREE!=='undefined' && THREE.FBXLoader){
             const urls = ['assets/mocap/drive/'+encodeURIComponent(base)+'.fbx','assets/mocap/'+encodeURIComponent(base)+'.fbx',
@@ -44205,15 +44303,12 @@ console.log('%c[GNM FACE LAB] scan-grade parametric face studio — hub tile �
       // because this one had not been.
       // a VARIANT is derived from its base — no request, no stored file
       if(window.__deriveVariant){ try{ var dvv=await window.__deriveVariant(key); if(dvv) return dvv; }catch(e){} }
-      var jsonUrls=['assets/moves/clips/'+key+'.json', cdn+'assets/moves/clips/'+key+'.json'];
-      for(var ji=0;ji<jsonUrls.length;ji++){
-        try{ var jr=await fetch(jsonUrls[ji]).catch(function(){return null;}); if(!jr||!jr.ok) continue;
-          var jc=await jr.json();
-          if(jc && jc.keys && jc.keys.length){
-            if(window.STUDIO){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=jc; STUDIO.clips[base]=jc; }
-            return jc; }
-        }catch(e){}
-      }
+      // gzipped-first (see BANNON_CLIP_GZ): the APK ships all 973 captures at 8% of their size,
+      // so a move no longer waits on a CDN round trip to play its mocap.
+      try{ var jc = await window.__clipJsonFetch(key, cdn);
+        if (jc){ if(window.STUDIO){ STUDIO.clips=STUDIO.clips||{}; STUDIO.clips[key]=jc; STUDIO.clips[base]=jc; }
+          return jc; }
+      }catch(e){}
       if(typeof THREE==='undefined' || (!THREE.FBXLoader && !THREE.BVHLoader)) return null;
       if(window.ALLOW_RUNTIME_FBX!==true) return null;   // authoring only; this is what froze the game
       var urls=['assets/mocap/drive/'+enc+'.fbx','assets/mocap/'+enc+'.fbx',

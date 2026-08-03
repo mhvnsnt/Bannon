@@ -1110,3 +1110,42 @@ A directory counts as covered if IT or an ANCESTOR is handled (vendor/pp rides o
 LESSON, and it is the same one as the severed rig: I keep debugging the CODE around an asset when
 the asset itself is absent or wrong. **Check that the file is on the device before theorising about
 why the loader is misbehaving.**
+
+## EVERY ANIMATION AND EVERY BODY NOW SHIP IN THE PACKAGE (2026-08-03)
+Owner corrected my framing and was right: **his phone HAS internet.** The problem was never offline
+capability — it is that a multi-megabyte download AT THE MOMENT A MATCH STARTS is slow and
+unreliable on any connection, and the game correctly falls back while it waits. Bundling means
+there is no download to wait on. Say that, not "offline".
+### 1. ALL 973 CAPTURES, GZIPPED — 257.2 MB -> 22.3 MB (9%)
+"None of the hundreds of animations are showing" — after the model fix only 27 captures were
+bundled; the other 946 were still a CDN round trip EACH, fired when a move plays. A move lasts a
+fraction of a second and the fetch does not, so the body played nothing.
+Keyframe JSON is repeated numeric text and gzips to 8-9%. **Nothing is rounded or re-encoded** —
+rounding to 4dp first bought only another 1% and it changes the data. `window.fflate.gunzipSync` is
+ALREADY vendored (FBXLoader uses it) and already loads before the engine, so this needed no new
+dependency. `window.__clipJsonFetch` tries `.json.gz` first and, on the first miss, stops asking for
+the session — so the web build pays exactly ONE wasted request.
+BOTH clip fetch sites go through it. Fixing only one would have left every boot-warmed capture on
+the network path. VERIFIED serving only the bundle: gz mode active, captures inflate through the
+real loader, 0 page errors, external requests 90 -> 3.
+TRAP IF YOU TEST THIS: do NOT serve the .gz with `Content-Encoding: gzip`. The browser would then
+inflate it transparently and fflate would be handed already-plain JSON and throw — which a real
+file:// APK will never do, so that would test the wrong thing.
+### 2. EVERY WRESTLER GETS A REAL BODY — the archetype layer was pointed at a folder that never existed
+`CHAR_MODEL_DEFAULTS` binds **27** characters. The roster is ~121. Everyone else fell through to the
+procedural rig in matches, run-ins, Universe and God Within — which is most of the roster, and is
+exactly "procedural models are still appearing when not selected".
+The layer written to catch this was DEAD: the MDickie base-attire system resolves to
+`assets/models/mdickie_bases/<BASE>.glb` and **that directory has never existed in this repo**, so
+every archetype fallback 404'd back to procedural. It was written against assets that were never
+going to arrive.
+`window.ARCHETYPE_BODY` now points at bodies WE ACTUALLY SHIP — each one wired, rig-continuity
+WHOLE and skinqa PASS, already in the APK, chosen so the silhouette matches: powerhouse->BRUTUS,
+monster->TITAN, brawler->WRECK_PATTERSON, striker->KOBRA, technician->AARON_RUBEN,
+cruiser->CIPHER_rigged, luchador->EL_TORO_DE_ORO, enigma->HOLLOW, female->TYNESHIA, suit->STAN_COMBS.
+Gender is checked FIRST — putting every unmapped woman in a male body is worse than the procedural
+rig. Specific models still win; this only runs when nothing else resolved.
+FOUND BY THE SMOKE HARNESS, not by reading: "ZEPHYR has no GLB bound (run-in)". A real roster
+character with a full profile (maxHp 85, CAPOEIRA) and no model anywhere.
+VERIFIED: ZEPHYR->KOBRA, GOLEM->TITAN, MORTUS->WRECK_PATTERSON, KAGE/RONIN->AARON_RUBEN,
+LADY_RHIANNON->TYNESHIA, REY_FUEGO->EL_TORO_DE_ORO, THE_BOULDER->BRUTUS — every file present.

@@ -32,6 +32,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const zlib = require('zlib');
 
 const ROOT = path.dirname(__dirname);
 const REPORT = process.argv.includes('--report');
@@ -91,7 +92,38 @@ if (fs.existsSync(R('assets/models'))){
   }
 }
 
-// clips: the hot combat set only
+// ── EVERY CAPTURE, GZIPPED ────────────────────────────────────────────────────────────────────
+// Owner, repeatedly: "none of the hundreds of animations are showing or legible or happening".
+// Bundling only the 27 hot ones left 946 captures a CDN round trip away, fired at the instant a
+// move plays — and a move lasts a fraction of a second while the fetch does not, so the body
+// played nothing and the move looked procedural. MEASURED: 257.2 MB of keyframe JSON gzips to
+// 8-9%, about 22 MB, which fits. Nothing is rounded or re-encoded; these are the exact baked bytes,
+// just compressed. The game inflates them with fflate, which is already vendored for FBXLoader.
+let gzCount = 0, gzRaw = 0, gzOut = 0;
+if (!REPORT){
+  const dir = R('assets/moves/clips');
+  if (fs.existsSync(dir)){
+    const outDir = path.join(DEST, 'assets/moves/clips');
+    fs.mkdirSync(outDir, { recursive:true });
+    for (const f of fs.readdirSync(dir)){
+      if (!f.endsWith('.json')) continue;
+      const raw = fs.readFileSync(path.join(dir, f));
+      const gz = zlib.gzipSync(raw, { level: 9 });
+      fs.writeFileSync(path.join(outDir, f + '.gz'), gz);
+      gzCount++; gzRaw += raw.length; gzOut += gz.length;
+    }
+  }
+} else {
+  const dir = R('assets/moves/clips');
+  if (fs.existsSync(dir)) for (const f of fs.readdirSync(dir)){
+    if (!f.endsWith('.json')) continue;
+    const raw = fs.readFileSync(path.join(dir, f));
+    gzCount++; gzRaw += raw.length; gzOut += zlib.gzipSync(raw, { level: 9 }).length;
+  }
+}
+
+// clips: the hot combat set only, ALSO shipped uncompressed so the very first strike of a match
+// never waits on an inflate on a cold main thread
 let clipCount = 0, clipBytes = 0;
 {
   const dir = R('assets/moves/clips');
@@ -123,10 +155,12 @@ if (REPORT){
   console.log('  models          ' + modelCount + ' wired GLBs        ' + MB(modelBytes));
   console.log('  combat clips    ' + clipCount + ' captures          ' + MB(clipBytes));
   console.log('  ---------------------------------------------');
-  console.log('  TOTAL           ' + picks.length + ' files            ' + MB(total));
-  console.log('\n  still streamed from the CDN (opt-in content, not the first ten seconds):');
-  const allClips = fs.existsSync(R('assets/moves/clips')) ? fs.readdirSync(R('assets/moves/clips')).filter(f=>f.endsWith('.json')).length : 0;
-  console.log('    ' + (allClips - clipCount) + ' further mocap captures, environments, props');
+  console.log('  all captures    ' + gzCount + ' gzipped          ' + MB(gzRaw) + ' -> ' + MB(gzOut) +
+              '  (' + (100*gzOut/Math.max(1,gzRaw)).toFixed(0) + '%)');
+  console.log('  ---------------------------------------------');
+  console.log('  TOTAL           ' + (picks.length + gzCount) + ' files            ' + MB(total + gzOut));
+  console.log('\n  still streamed from the CDN: environments (200 MB), raw mocap FBX (1.2 GB),');
+  console.log('  reference art. Every ANIMATION now ships in the package.');
   process.exit(0);
 }
 
@@ -138,5 +172,6 @@ for (const p of picks){
   fs.copyFileSync(R(p.rel), dst);
   copied++;
 }
-console.log('bundled ' + copied + ' asset files into the APK (' + MB(total) + '): ' +
-            modelCount + ' wired models, ' + clipCount + ' combat captures, engine vendor + ring art');
+console.log('bundled ' + (copied + gzCount) + ' asset files into the APK (' + MB(total + gzOut) + '): ' +
+            modelCount + ' wired models, ' + gzCount + ' captures gzipped ' + MB(gzRaw) + ' -> ' + MB(gzOut) +
+            ', engine vendor + ring art');
