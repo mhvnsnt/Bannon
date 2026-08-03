@@ -211,8 +211,52 @@ to `BANNON_LOADORDER.busy()` whenever a wrestler's own body is on the wire.
 
 **Still open:** the skip-fighter-selection race.
 
-## 6. APK WON'T PARSE / INSTALL, NO IN-APP UPDATE PROMPT  ·  repeated 4+ times  ·  OPEN
+## 0. THE FIXES NEVER REACHED HIM  ·  2026-08-03  ·  **FIXED — AND IT INVALIDATES EVERY "STILL PERSISTING"**
+
+> "the game is still freezing as soon as I start fighting, the animations still are not correct ...,
+> and the model glbs are rendering slowly ... Those are game breaking and still persisting"
+
+**He was right, and none of it was because the fixes don't work. HE HAD NEVER RUN THEM.** This
+belongs at the top of the file because it silently invalidated the close on several entries below —
+they were fixed in the repo and never delivered.
+
+Two independent breaks in the delivery chain, both measured:
+
+1. **13 commits sat on `claude/grapple-solver-model-fixes-oar0pg`, never merged.** Both publishers
+   (`android.yml`, `pages.yml`) fire ONLY on a push to `main`. Nothing on a branch can reach a phone.
+2. **The Android build had failed 30 runs in a row**, so even what WAS on main never shipped. From
+   the job log:
+   ```
+   version.json: build=2514 apkMin=2446
+   The following paths are ignored by one of your .gitignore files:
+   dist/BANNON-fresh.apk
+   ##[error]Process completed with exit code 1
+   ```
+   `dist/BANNON-fresh.apk` matches `dist/*` in .gitignore with no `!` exception. `git add` on an
+   ignored path exits 1, and an Actions `run:` block is `bash -e` — so the publish step died on that
+   line, AFTER version.json was written and BEFORE `git commit`/`git push`. The APK built correctly
+   every time and was thrown away, along with `dist/BANNON.html`, which is the file the phone
+   actually fetches. Reproduced locally against the real .gitignore under `bash -e`: old step → the
+   exact CI error, exit 1, commit never reached; fixed step → exit 0, all four files staged.
+
+**DELIVERED AND VERIFIED 2026-08-03:**
+- `dist/version.json` **build 2508 → 2535**, commit `3f32626` → `74045d5`
+- `dist/BANNON.html` (what the phone downloads) is stamped `BANNON_BUILD = 2535` and contains
+  `BANNON_CLIP_FIT`, `__resolveMoveClip`, `meshopt_decoder.js`, the portrait parking fix,
+  `observeCards`, `requestCharModel`
+- `android.yml` success — first in 30+ runs. `pages.yml` success.
+- `apkMin` 2446, so an installed build ≥ 2446 self-updates with no reinstall.
+
+**THE RULE THIS BUYS: a fix is not fixed until `dist/version.json` moves.** Check the published
+build number before ever telling him something is done, and check the last CI conclusion on main.
+
+## 6. APK WON'T PARSE / INSTALL, NO IN-APP UPDATE PROMPT  ·  repeated 4+ times  ·  UPDATE PROMPT FIXED
 > "the apk won't parse or install" · "my app is not saying (has an update would u like to install)"
+
+**The missing update prompt is #0.** The app polls `dist/version.json`; it had read the same build
+2508 since 2026-08-01 because the publish step died before committing it, so there was never a newer
+build to prompt about. Now publishing again (2535). The parse/install half stays open until he
+confirms an install.
 
 ## 7. MOVESET EDITOR — WWE 2K LAYOUT  ·  repeated 3+ times  ·  PARTIAL
 > "fighter-select-first → categorized positions/taunts/locomotion" · "the 3d viewport that takes up
