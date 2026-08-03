@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2535"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2539"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -1344,6 +1344,14 @@ body.match-live #movesBtn { display:none !important; }
   <div class="menu-inner">
     <div class="menu-logo">BANNON</div>
     <div class="menu-sub">FIRE RAT · SCORPIO REIGN · LP3</div>
+    <!-- WHICH BUILD AM I ACTUALLY PLAYING? Nothing in the game has ever answered that, and it is
+         the reason a whole round trip could be spent on "it's still broken" / "it's fixed" without
+         either of us knowing whether the fix was even on the device. window.BANNON_BUILD is stamped
+         into the file by CI and was only ever read by the OTA checker. Put it on the screen.
+         Tap it to force an update check instead of waiting for the hourly one. -->
+    <div id="buildBadge" title="tap to check for an update"
+         style="text-align:center;font:600 10px/1.5 ui-monospace,Menlo,monospace;letter-spacing:.08em;
+                color:#8a7f6a;margin:-4px 0 8px;cursor:pointer;user-select:none;">BUILD …</div>
     <div class="menu-btn-grid">
       <button class="menu-btn gold" id="btnPlay">▶ PLAY</button>
     </div>
@@ -44628,6 +44636,58 @@ console.log('%c[BANNON_VENUES] MDickie venue picker — STAGE option / openVenue
   window.BANNON_OTA_CHECK = check;   // manual "check for updates" hook (settings button can call this)
 })();
 console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot-swaps dist/BANNON.html','color:#7CFC00');
+
+// ============================================================================================
+// THE BUILD BADGE — so neither of us ever has to guess which build is on the phone again.
+//
+// This cost a full round trip. Thirty CI builds had been failing on one ignored path, so every fix
+// for two days was measured green in the harness and never published; the owner kept reporting the
+// same three bugs and was RIGHT, because dist/version.json had read the same build the whole time.
+// Nothing in the game showed its own version, so there was no way to tell "the fix does not work"
+// apart from "the fix is not installed" — two completely different problems with the same symptom.
+//
+// Now: the build number sits under the logo. Tap it to force an update check instead of waiting for
+// the hourly one. If a newer build exists it says so, in the badge, in a colour you cannot miss.
+// ============================================================================================
+(function(){
+  'use strict';
+  function el(){ return document.getElementById('buildBadge'); }
+  function nativeBuild(){ try{ return (window.BannonNative && window.BannonNative.getApkBuild) ? (window.BannonNative.getApkBuild()|0) : 0; }catch(e){ return 0; } }
+  function paint(txt, colour){ var b = el(); if (!b) return; b.textContent = txt; if (colour) b.style.color = colour; }
+  function label(){
+    var web = window.BANNON_BUILD || 0, apk = nativeBuild();
+    // 0 means the file was never stamped by CI — i.e. this is the raw repo source, not a published
+    // build. Say so rather than printing a meaningless "BUILD 0".
+    var s = web ? ('BUILD ' + web) : 'BUILD — (unstamped source)';
+    if (apk) s += ' · APK ' + apk;
+    return s;
+  }
+  function refresh(){ paint(label(), '#8a7f6a'); }
+
+  async function checkNow(){
+    paint(label() + ' · checking…', '#c9a227');
+    try{ if (window.BANNON_OTA_CHECK) await window.BANNON_OTA_CHECK(); }catch(e){}
+    try{
+      var base = (window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/');
+      var r = await fetch(base + 'dist/version.json?t=' + Date.now(), { cache:'no-store' });
+      if (!r || !r.ok) throw 0;
+      var v = await r.json(), cur = window.BANNON_BUILD || 0, remote = (v.build|0);
+      if (remote > cur) paint(label() + ' · UPDATE ' + remote + ' READY — REOPEN THE APP', '#ff9d2e');
+      else paint(label() + ' · up to date', '#5fa860');
+    }catch(e){ paint(label() + ' · could not reach the update server', '#a86a5f'); }
+    setTimeout(refresh, 12000);
+  }
+
+  function arm(){
+    var b = el(); if (!b || b.__armed) return;
+    b.__armed = 1; refresh();
+    b.addEventListener('click', checkNow);
+    b.addEventListener('touchstart', function(e){ e.preventDefault(); checkNow(); }, { passive:false });
+  }
+  if (document.readyState !== 'loading') arm(); else document.addEventListener('DOMContentLoaded', arm);
+  setTimeout(arm, 1500);
+  window.BANNON_BUILD_INFO = function(){ return { web: window.BANNON_BUILD || 0, apk: nativeBuild() }; };
+})();
 </script>
 
 <script>
