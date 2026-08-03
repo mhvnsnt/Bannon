@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2547"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2553"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -16120,7 +16120,37 @@ function requestCharModel(f){
 }
 window.requestCharModel = requestCharModel;
 function setModelStatus(side,t){ modelStatusText[side]=t; if(side===modelSel){ const el=document.getElementById('modelStatus'); if(el) el.textContent=t; } refreshModelUI(); }
-function setProcVisible(f,vis){ for(const k in f.seg){ if(k==='aura')continue; if(f.seg[k]) f.seg[k].visible=vis; } }
+// ================================================================================================
+// THE PROCEDURAL BODY IS NOT ALLOWED ON SCREEN UNLESS IT WAS CHOSEN. ONE RULE, ONE PLACE.
+//
+// OWNER, more times than any other complaint: "I keep saying I don't want to see procedural models
+// unless that attire is selected but the procedural models keep appearing first and sometimes are
+// the only thing that appear."
+//
+// I have fixed individual callers three separate times — removeFighterModel's keepHidden, the
+// load-order gate, the select-screen double build — and he still sees it, because there is always
+// one more caller. There are many places that show a body and only ONE function that does the
+// showing. So the rule lives here and nothing above it can break it:
+//
+//   if a GLB has been REQUESTED for this fighter and has not FAILED, the procedural body stays
+//   hidden. Full stop. No timeout reveals it, no re-request flashes it, no wrapper overrides it.
+//
+// The only things that may show it: a fighter with no model requested at all, PROCEDURAL attire
+// chosen deliberately (_forceProc), or a load that genuinely failed (_modelFailed, set by the
+// error paths in loadFighterModel / _bindFighterGltf).
+// window.PROC_FLASH=true restores the old behaviour for bisecting.
+// ================================================================================================
+function setProcVisible(f,vis){
+  if (vis && window.PROC_FLASH !== true){
+    try{
+      if (f && f._charModelRequested && !f._forceProc && !f._modelFailed){
+        f.__procBlocked = (f.__procBlocked || 0) + 1;
+        return;                       // his model is coming. He waits as himself, not as a tube.
+      }
+    }catch(e){}
+  }
+  for(const k in f.seg){ if(k==='aura')continue; if(f.seg[k]) f.seg[k].visible=vis; }
+}
 // Fully free a model's GPU memory (geometry + materials + textures + skeleton). Without this, every
 // character/attire switch orphaned a 5-10MB GLB's buffers/textures -> GPU memory piled up -> the hard
 // freeze + stray leftover meshes the owner saw on repeated select changes.
@@ -16153,6 +16183,14 @@ function removeFighterModel(side, keepHidden){
   if(!keepHidden){ try{ f._modelInFlight=null; f._modelInFlightAt=0; }catch(e){} }
   if(f.model){ try{scene.remove(f.model);}catch(e){} try{ disposeObject3D(f.model); }catch(e){} f.model=null; }
   f.modelUrl=null;
+  // A CLEAR WITH NO REPLACEMENT COMING IS THE FAILURE SIGNAL, and it is the ONLY thing that earns
+  // the procedural body its way back on screen now that setProcVisible refuses while a GLB is in
+  // flight. Every failure path in loadFighterModel / _bindFighterGltf routes through here without
+  // keepHidden, so a real 404 still gets a visible fighter instead of an invisible one — which is
+  // the failure mode the old 12-second watchdog existed to prevent, and it is now handled by the
+  // thing that actually knows the load failed rather than by a timer that only knows it is slow.
+  if(!keepHidden){ try{ f._modelFailed = true; }catch(e){} }
+  else { try{ f._modelFailed = false; }catch(e){} }
   if(f.seg && !(keepHidden && window.PROC_FLASH!==true)) setProcVisible(f,true);
 }
 function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MODEL&&CHOSEN_MODEL[sd]; var f=fighterFor(sd); if(!f || f.model || !ch || !ch.url) return;
@@ -16313,14 +16351,26 @@ function applyCharModels(only){ (only ? [only] : ['p1','p2','p3','p4']).forEach(
     if(window.PROC_FLASH===true) return;
     try{ if(f.seg && typeof setProcVisible==='function') setProcVisible(f,false); }catch(e){}
     f._procHiddenAt = (typeof performance!=='undefined'?performance.now():Date.now());
+    // ── THE WATCHDOG WAS THE BUG, NOT THE SAFETY NET ─────────────────────────────────────────
+    // OWNER: "sometimes [the procedural models] are the only thing that appear."
+    // This is why. It revealed the tube after 12 SECONDS OF SLOWNESS — and slowness is exactly
+    // what his phone has. Measured: a GLB binds in 1.4s at 49 fps and 10.5s at 1.7 fps, because
+    // GLTFLoader spreads its parse across frames. At the frame rate he was getting, the model
+    // routinely crossed 12s, the watchdog fired, and the procedural body came up and STAYED up —
+    // it never hid again once revealed. A timer cannot tell "slow" from "failed", and it was
+    // making the call on the one it cannot see.
+    // A REAL FAILURE is what should reveal the body, and removeFighterModel already knows about
+    // those — every error path calls it without keepHidden, which now sets _modelFailed and lets
+    // setProcVisible through. So this no longer reveals anything. It only reports, so a genuinely
+    // stuck load is still visible in the console instead of being silent.
     var _wait = (window.PROC_FALLBACK_MS!=null ? window.PROC_FALLBACK_MS : 12000);
     if(f._procWatchdog) clearTimeout(f._procWatchdog);
     f._procWatchdog = setTimeout(function(){
       f._procWatchdog = null;
       if(f.model) return;                       // model arrived — nothing to do
-      try{ if(f.seg && typeof setProcVisible==='function') setProcVisible(f,true); }catch(e){}
-      console.warn('[BANNON] model for ' + ((f.opts&&f.opts.name)||'fighter') + ' did not bind within ' +
-                   _wait + 'ms — showing the built-in body as a declared fallback, not as a flash.');
+      console.warn('[BANNON] model for ' + ((f.opts&&f.opts.name)||'fighter') + ' still loading after ' +
+                   _wait + 'ms — WAITING, not falling back. Slow is not failed; only a real load ' +
+                   'error shows the built-in body.');
     }, _wait);
   };
   if(f._altModelUrl){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
@@ -51338,9 +51388,16 @@ window.__deriveVariant = async function(key){
     try{
       var C = window.__composer;
       if (C){
+        // RESIZING THE COMPOSER REALLOCATES EVERY RENDER TARGET, and the frame drawn while that
+        // happens is black. The owner reports "the screen is flashing black" — if the auto-tuner
+        // steps tiers back and forth, this reallocates on every step and each one is a black frame.
+        // So: at most one resize per second, and never for a ratio change too small to be worth it.
         var want = Math.min(T.pr, window.devicePixelRatio || 1);
-        if (C.setPixelRatio && C.__pr !== want){ C.setPixelRatio(want); C.__pr = want;
-          try{ C.setSize(window.innerWidth, window.innerHeight); }catch(e){} }
+        var now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+        if (C.setPixelRatio && Math.abs((C.__pr || 0) - want) > 0.01 && (now - (C.__prAt || -9999)) > 1000){
+          C.setPixelRatio(want); C.__pr = want; C.__prAt = now;
+          try{ C.setSize(window.innerWidth, window.innerHeight); }catch(e){}
+        }
         // BLOOM IS THE MULTI-MIP BLUR. It is a look, not a mechanic — off below HIGH. Disabling the
         // PASS keeps the composer (and the cheap single-pass broadcast grade) intact, so the frame
         // still gets its tone curve and vignette; only the five blurred mip levels go away.
