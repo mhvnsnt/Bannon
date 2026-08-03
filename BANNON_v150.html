@@ -5042,30 +5042,23 @@ Fighter.prototype.poseAttack = function(dt){
     if(window.PHYS_STRIKE && window.RK_BODY && window.BPHYS && window.BPHYS.physStrike) window.BPHYS.physStrike(this, m);
     registerHit(this, m);
   }
-  // MOVESET -> COMBAT: if this move has NO clip but the fighter EQUIPPED one for this position in
-  // the MOVESET editor, adopt it (bridges the moveset lib to live combat). Loads lazily.
-  if (m && !m.clip && window.equippedClipFor){ try{
-    var _ck=(this.opts&&this.opts.name)||this.specName;
-    var _pos=m.pos||m.grapplePos||(window.resolveGrapPos?window.resolveGrapPos(m):null);
-    var _eq=_pos?window.equippedClipFor(_ck,_pos):null;
-    if(_eq) m.clip=_eq;
-  }catch(_e){} }
-  // COMBAT TABLE -> MOCAP. The move_clip_map only ever decorated the MOVE LIBRARY; the combat tables
-  // these strikes come from (FIRE JAB, LEO CROSS, SCORPIO HOOK…) shared ZERO names with it, so no
-  // strike in the game ever carried a clip and studioApplyClipPose was measured at 0 calls across a
-  // full match. combat_clip_map.json maps them by limb/trajectory/style; this stamps it on.
-  if (m && !m.clip && m.name && window.__combatClipFor){ try{ var _cc=window.__combatClipFor(m.name); if(_cc) m.clip=_cc; }catch(_e){} }
-  // VARIETY. STRIKE_MAP[kind][dir] resolves to exactly ONE move name, so a given button + direction
-  // always produced the same move and therefore the same capture. MEASURED: 24 driven attacks across
-  // four buttons played 3 distinct clips — HURRICANE_KICK x15, VAR_PILEDRIVER_2 x11,
-  // BANNON_STRONG_STRIKE_COMBO x6. It animates; it just animates identically every time, which is
-  // what reads as "the animations aren't working".
+  // ── WHICH CAPTURE THIS MOVE PLAYS ────────────────────────────────────────────────────────────
+  // Three separate lines used to do this — the moveset editor's equipped clip, then
+  // combat_clip_map.json, then __slotClipRotate — and the LAST one won unconditionally, so a
+  // variety layer overwrote a limb-matched choice with whatever the fighter happened to have in a
+  // coarse slot. MEASURED: FIRE JAB (a LEFT JAB) played CrotchChop / HurricaneRana / FaceGouge on
+  // three consecutive throws, RIP UPPERCUT played Drop Kick, OVERHAND LEFT played
+  // SchoolBoySuperkick, and LEO CROSS played NOTHING five times running even though
+  // __combatClipFor('LEO CROSS') returns 'Combo Punch' on demand and that capture was resident.
   //
-  // The fighter already OWNS a set of clips for this slot — 84,593 assignments across the roster,
-  // chosen from their own fighting style. Rotate through them instead of replaying one. Damage,
-  // timing and tuning are untouched: only the CAPTURE the body plays changes, so the combat maths
-  // stays exactly as authored.
-  if (m && m.name && window.__slotClipRotate){ try{ var _rc=window.__slotClipRotate(this, m); if(_rc) m.clip=_rc; }catch(_e){} }
+  // One call now, one order of authority (player's equipped choice > the limb/trajectory map >
+  // variety), and variety may only substitute a capture whose ENGINE fits the move's own limb.
+  // See BANNON_CLIP_FIT. Damage, timing, reach and every other tuned number are untouched — only
+  // which capture the body plays changes.
+  if (m && window.__resolveMoveClip){ try{ var _rv = window.__resolveMoveClip(this, m); if (_rv) m.clip = _rv; }catch(_e){} }
+  // (VARIETY still happens — __slotClipRotate is step 3 inside __resolveMoveClip above. It used to
+  // be a fourth, unconditional line here, which is precisely how it came to overwrite the map's
+  // limb-matched pick with a kick on a jab.)
   // LAZY-LOAD a mapped clip that isn't in STUDIO yet (the #1 reason mapped moves fell back to
   // procedural: the clip was named on the move but never loaded). Next rep plays the real mocap.
   if (m && m.clip && window.loadClipFor && !(window.__studioClip && window.__studioClip(m.clip))){ try{ window.loadClipFor(m.clip); }catch(_e){} }
@@ -51914,10 +51907,153 @@ window.__deriveVariant = async function(key){
     return pick;
   };
 
+  // ============================================================================================
+  // BANNON_CLIP_FIT — A JAB DOES NOT PLAY A DROP KICK.
+  //
+  // Owner: "the animations still are not correct". They were not dead — they were WRONG, which
+  // looks worse. Measured over a driven session with every attack button in every direction:
+  //     FIRE JAB          (LEFT JAB)     played CrotchChop, then HurricaneRana, then FaceGouge
+  //     RIP UPPERCUT      (punch)        played Drop Kick (1)
+  //     STRAIGHT LEFT     (punch)        played Drop Kick (1)
+  //     OVERHAND LEFT     (punch)        played SchoolBoySuperkick
+  //     LEAD BACKFIST     (RIGHT CROSS)  played HurricaneRana
+  //     OVER-THE-ROPE FOREARM            played CrotchChop  (a TAUNT)
+  // Every one of those captures is real, resident and animating perfectly. It is the wrong motion
+  // for the move. __slotClipRotate buckets a move into a COARSE slot (ST_F_LIGHT) and rotates
+  // through whatever the fighter has there, and those pools were filled off the clip's `cat` — so a
+  // punch slot legitimately contains kicks, a rana and a taunt.
+  //
+  // fbx_move_map.json already carries the discriminator: every clip has an `engine`
+  // (STRIKE_PUNCH / STRIKE_KICK / VERTICAL_SUPLEX / TAUNT / LOCO / SELL …) and a `cat`. Read it,
+  // and refuse a capture whose engine contradicts the move's own limb. Metadata is a hint and not
+  // an authority (owner LAW) — which is exactly why CrotchChop, labelled cat:'strike' by whoever
+  // wrote the file, has now been relabelled in the DATA to what its frames actually show.
+  // ============================================================================================
+  var FIT = { byClip:null, checked:0, refused:0, allowedUnknown:0 };
+  (function loadFit(){
+    var cdn = window.MODEL_CDN_BASE || 'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
+    var urls = ['assets/moves/fbx_move_map.json', cdn + 'assets/moves/fbx_move_map.json'];
+    (function next(i){
+      if (i >= urls.length) return;
+      fetch(urls[i]).then(function(r){ return r.ok ? r.json() : Promise.reject(); })
+        .then(function(j){
+          var ix = {};
+          (j.clips || []).forEach(function(e){ if (e && e.clip) ix[e.clip] = e; });
+          FIT.byClip = ix;
+          try{ console.log('%c[BANNON_CLIP_FIT] ' + Object.keys(ix).length + ' captures indexed by engine — a punch will not play a kick','color:#7CFC00'); }catch(e){}
+        }).catch(function(){ next(i+1); });
+    })(0);
+  })();
+
+  // What KIND of motion does this move need? Read off the move's own authored fields.
+  function needOf(m){
+    var cat  = String(m.cat || '').toUpperCase();
+    var limb = String(m.limb || '').toUpperCase();
+    if (cat === 'GRAPPLE' || cat === 'THROW') return 'GRAPPLE';
+    if (cat === 'SUBMISSION') return 'SUBMISSION';
+    if (cat === 'DIVE' || m.traj === 'FLYING') return 'AERIAL';
+    if (cat === 'GROUND') return 'GROUND';
+    if (limb.indexOf('KICK') >= 0 || limb.indexOf('KNEE') >= 0 || limb.indexOf('SHIN') >= 0) return 'KICK';
+    return 'PUNCH';                      // jab / cross / hook / uppercut / elbow / forearm / chop
+  }
+  var GRAPPLE_ENGINES = /^(VERTICAL_SUPLEX|BACK_SUPLEX|BRAINBUSTER|DDT|REVERSE_DDT|CHOKESLAM|POWERBOMB|CROSS_POWERBOMB|GORILLA_PRESS|WHIP)$/;
+  function fits(m, clip){
+    if (!clip) return false;
+    if (!FIT.byClip) return true;                       // index not in yet — never block on a race
+    var e = FIT.byClip[clip];
+    FIT.checked++;
+    if (!e){ FIT.allowedUnknown++; return true; }        // an owner capture we have no metadata for
+    var cat = String(e.cat || '').toLowerCase();
+    var eng = String(e.engine || '').toUpperCase();
+    // a dual-purpose impact-taunt is a real strike when the entry says so, and only then
+    if (cat === 'taunt' || cat === 'style_stance'){
+      if (!(e.dualPurpose && String(e.altKind||'').toLowerCase() === 'strike')) return false;
+      eng = String(e.altEngine || eng).toUpperCase();
+    }
+    // nothing that is a fall, a getup, a walk cycle or a rig test is ever somebody's offence
+    if (/^(locomotion|reaction|knockdown|getup|character_rig|defense|rope_transition|misc|weapon)$/.test(cat)) return false;
+    var need = needOf(m);
+    if (need === 'PUNCH')   return eng === 'STRIKE_PUNCH' || eng === 'STRIKE_RUN';
+    if (need === 'KICK')    return eng === 'STRIKE_KICK'  || eng === 'STRIKE_RUN' || eng === 'DIVING_LEG_DROP';
+    if (need === 'GRAPPLE') return cat === 'grapple' || GRAPPLE_ENGINES.test(eng);
+    if (need === 'SUBMISSION') return cat === 'submission' || eng === 'SUBMISSION';
+    if (need === 'AERIAL')  return cat === 'dive' || cat === 'aerial_transition' || eng === 'SWANTON' || eng === 'DIVING_LEG_DROP';
+    return cat === 'strike' || cat === 'grapple';
+  }
+
+  // ── ONE DECISION, ONE ORDER OF AUTHORITY ─────────────────────────────────────────────────────
+  // These three sources used to be three independent lines in poseAttack, and the last one won
+  // unconditionally. Now: what the PLAYER equipped beats what the map derived, which beats variety
+  // — and variety may only substitute a capture that FITS the same move.
+  window.__resolveMoveClip = function(f, m){
+    if (!f || !m) return null;
+    var picked = null, src = '';
+    // 1. the player's own equipped choice for this position
+    try{
+      if (window.equippedClipFor){
+        var ck = (f.opts && f.opts.name) || f.specName;
+        var pos = m.pos || m.grapplePos || (window.resolveGrapPos ? window.resolveGrapPos(m) : null);
+        var eq = pos ? window.equippedClipFor(ck, pos) : null;
+        if (eq){ picked = eq; src = 'equipped'; }
+      }
+    }catch(e){}
+    // 2. combat_clip_map.json — derived by limb + trajectory, so it is the RIGHT SHAPE by construction
+    if (!picked) try{
+      var cc = (m.name && window.__combatClipFor) ? window.__combatClipFor(m.name) : null;
+      if (cc){ picked = cc; src = 'map'; }
+    }catch(e){}
+    // 3. variety, but only among captures that fit
+    try{
+      var rot = window.__slotClipRotate ? window.__slotClipRotate(f, m) : null;
+      if (rot && fits(m, rot)){ picked = rot; src = 'rotate'; }
+      else if (rot) FIT.refused++;
+    }catch(e){}
+    // 4. LAST RESORT. A move whose limb we know should never play NOTHING — that is the procedural
+    //    fallback, and "the animations still look procedural" is the complaint. MEASURED before this
+    //    step: 17 of 33 attacks in a driven session ended with no capture at all, including moves
+    //    combat_clip_map.json has an entry for. Rather than chase every reason a name can miss,
+    //    choose from the captures whose ENGINE fits this move and that are resident RIGHT NOW —
+    //    deterministically from the move's own name, so a given move always looks like itself
+    //    instead of flickering between captures.
+    if (!picked && FIT.byClip) try{
+      var pool = fitPool(m);
+      if (pool.length){
+        var h = 0, nm2 = String(m.name || '');
+        for (var i = 0; i < nm2.length; i++) h = ((h << 5) - h + nm2.charCodeAt(i)) | 0;
+        picked = pool[Math.abs(h) % pool.length]; src = 'fit-fallback';
+      }
+    }catch(e){}
+    if (picked){ ST.chose = (ST.chose||0) + 1; ST.bySrc = ST.bySrc || {}; ST.bySrc[src] = (ST.bySrc[src]||0) + 1; }
+    return picked;
+  };
+
+  // Resident captures that FIT this move, cached per need-kind (the set only grows as clips load).
+  var _fitPool = {}, _fitPoolAt = {};
+  function fitPool(m){
+    var need = needOf(m);
+    var now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    if (_fitPool[need] && (now - (_fitPoolAt[need] || 0)) < 4000) return _fitPool[need];
+    var out = [];
+    try{
+      var C = (typeof STUDIO !== 'undefined' && STUDIO.clips) ? STUDIO.clips : null;
+      for (var name in FIT.byClip){
+        if (!fits(m, name)) continue;
+        if (C && !(window.__studioClip ? window.__studioClip(name) : C[name])) continue;   // not resident
+        out.push(name);
+      }
+      out.sort();                                    // stable order, so the hash is stable too
+    }catch(e){}
+    _fitPool[need] = out; _fitPoolAt[need] = now;
+    return out;
+  }
+
   window.BANNON_CLIP_ROTATE = {
-    slotFor: slotFor, poolFor: poolFor,
-    stats: function(){ return { rotated:ST.hits, noPool:ST.misses, slotsInUse:Object.keys(ST.rot).length }; },
-    reset: function(){ ST.rot = {}; ST.hits = 0; ST.misses = 0; }
+    slotFor: slotFor, poolFor: poolFor, fits: fits, needOf: needOf,
+    stats: function(){ return { rotated:ST.hits, noPool:ST.misses, slotsInUse:Object.keys(ST.rot).length,
+      resolved:ST.chose||0, bySource:ST.bySrc||{},
+      fitIndexed: FIT.byClip ? Object.keys(FIT.byClip).length : 0,
+      fitChecked:FIT.checked, fitRefused:FIT.refused, fitUnknown:FIT.allowedUnknown }; },
+    reset: function(){ ST.rot = {}; ST.hits = 0; ST.misses = 0; ST.chose = 0; ST.bySrc = {}; }
   };
   console.log('%c[BANNON_CLIP_ROTATE] strikes rotate through each fighter\u2019s own equipped captures','color:#7CFC00');
 })();

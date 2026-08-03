@@ -105,6 +105,51 @@ Four independent root causes, all measured in the live game:
   every state. FIXED via exact-name map.
 - **No blending anywhere** — the one crossfade wrote `.tgt` before the pose overwrote it. FIXED.
 
+## 2b. THE CAPTURE THAT PLAYED WAS THE WRONG MOTION  ·  2026-08-02  ·  FIXED, ONE OUTLIER LEFT
+
+> "the animations still are not correct cause the animation are still looking procedural"
+
+Two different failures were hiding under one sentence, and only one of them is "procedural".
+
+New `tools/harness/clip_residency.cjs` drives every attack button in every direction and records,
+per attack, whether it carried a capture and whether that capture was resident. What it found:
+
+```
+FIRE JAB          (LEFT JAB)     played CrotchChop, then HurricaneRana, then FaceGouge
+RIP UPPERCUT      (punch)        played Drop Kick (1)
+STRAIGHT LEFT     (punch)        played Drop Kick (1)
+OVERHAND LEFT     (punch)        played SchoolBoySuperkick
+LEAD BACKFIST     (RIGHT CROSS)  played HurricaneRana
+OVER-THE-ROPE FOREARM            played CrotchChop   — a TAUNT
+```
+Those captures are real, resident and animating perfectly. **They are the wrong motion for the
+move**, which looks worse than no animation. Cause: `__slotClipRotate` buckets a move into a coarse
+slot (`ST_F_LIGHT`) and rotates through whatever the fighter has there — and those pools were built
+off each clip's `cat`, so a punch slot legitimately held kicks, a rana and a taunt. It also ran LAST
+and unconditionally, so it overwrote `combat_clip_map.json`'s limb-matched choice every time.
+
+- **`BANNON_CLIP_FIT`** reads `engine` and `cat` out of `fbx_move_map.json` (STRIKE_PUNCH /
+  STRIKE_KICK / VERTICAL_SUPLEX / TAUNT / LOCO / SELL …) and refuses a capture whose engine
+  contradicts the move's own limb. Nothing that is a fall, a getup, a walk cycle or a rig test can
+  be anyone's offence. A dual-purpose impact-taunt is still a strike when the entry says so.
+- **`__resolveMoveClip`** replaces the three competing lines in `poseAttack` with ONE order of
+  authority: what the player EQUIPPED > the limb/trajectory map > variety — and variety may only
+  substitute a capture that fits. A final fit-filtered fallback means a move whose limb we know
+  never plays nothing.
+- **`CrotchChop` relabelled in the DATA.** It was `cat:'strike'`, `engine:'STRIKE_PUNCH'` — a label
+  CLAUDE.md's own OWNER LAW cites as the headline example of a guess: the frames show both hands
+  crossing at the pelvis with no forward extension and no target. It is a taunt. It is now recorded
+  as one, with the reasoning in the file. Nothing deleted; it stays available as a taunt.
+
+MEASURED after: **fit refused 59–70 of every ~94 rotation picks** — that refusal rate IS the
+mismatch that used to ship. `resolved 84 of 84` (map 37, fit-fallback 33, rotate 14), and 13 of 14
+sampled attacks played a capture matching their own limb.
+
+**STILL OPEN, honestly:** `LEO CROSS` alone ends with no capture, 6–10 times per session, even
+though `__combatClipFor('LEO CROSS')` returns `Combo Punch` on demand, that capture is resident, and
+`poseAttack` neither throws nor returns early for it. Every other move in the same table resolves.
+Not yet explained; not claimed as fixed.
+
 ## 3. STRIKE / GRAPPLE ANIMATIONS TOO FAST TO SEE  ·  OPEN (strike fixed, grapple not)
 
 > "the animations are happening at so fast speeds that u can't see the animations on strikes"

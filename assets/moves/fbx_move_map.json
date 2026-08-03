@@ -1,6 +1,6 @@
 {
- "_note": "FBX/Drive clip -> WWE-2K move library map. 182 mocap clips (assets/mocap/(drive/)) classified to category + WWE-2K POSITION (primary/secondary/tertiary incl. GROUND_TO_STANDING_WAKEUP + CORNER_TO_GROUND) + engine target. Loaded via BANNON_LOAD_FBX_LIBRARY->STUDIO.clips; moveset editor equips a clip as the ANIMATION BASE, resolveGrapPos drives OUR physics. character_rig = a character skeleton/rig (Andrade/Cage/Jericho/etc.) — NOT skipped: a potential playable character to retexture + import, and it carries bundled animations to harvest into the library.",
- "_dualPurpose": "WWE-2K impact-taunt contract: entries with dualPurpose:true are BOTH a taunt (default engine, e.g. STANCE/TAUNT/DODGE — crowd/momentum, no contact) AND a real strike when an opponent is in range. altKind='strike' + altEngine (STRIKE_KICK / STRIKE_PUNCH) routes the same clip through the OUR-physics strike path (registerHit power/knockback, poise) instead of the taunt path. Covers capoeira (Ginga/Esquiva/Capoeira), breakdance spinaroony family (Breakdance Footwork/Freezes), and showman impact-taunts (RapidChestBeating/Tau_ButtSlap/ViolenceParty). Engine picks strike-mode when opp within STRIKE range at trigger, else taunt-mode.",
+ "_note": "FBX/Drive clip -> WWE-2K move library map. 182 mocap clips (assets/mocap/(drive/)) classified to category + WWE-2K POSITION (primary/secondary/tertiary incl. GROUND_TO_STANDING_WAKEUP + CORNER_TO_GROUND) + engine target. Loaded via BANNON_LOAD_FBX_LIBRARY->STUDIO.clips; moveset editor equips a clip as the ANIMATION BASE, resolveGrapPos drives OUR physics. character_rig = a character skeleton/rig (Andrade/Cage/Jericho/etc.) \u2014 NOT skipped: a potential playable character to retexture + import, and it carries bundled animations to harvest into the library.",
+ "_dualPurpose": "WWE-2K impact-taunt contract: entries with dualPurpose:true are BOTH a taunt (default engine, e.g. STANCE/TAUNT/DODGE \u2014 crowd/momentum, no contact) AND a real strike when an opponent is in range. altKind='strike' + altEngine (STRIKE_KICK / STRIKE_PUNCH) routes the same clip through the OUR-physics strike path (registerHit power/knockback, poise) instead of the taunt path. Covers capoeira (Ginga/Esquiva/Capoeira), breakdance spinaroony family (Breakdance Footwork/Freezes), and showman impact-taunts (RapidChestBeating/Tau_ButtSlap/ViolenceParty). Engine picks strike-mode when opp within STRIKE range at trigger, else taunt-mode.",
  "positions": {
   "primary": [
    "STANDING_FRONT",
@@ -74,7 +74,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Andrade_Mask",
@@ -83,7 +83,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "ApronJayKick",
@@ -101,7 +101,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "AssistedCutter",
@@ -139,7 +139,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Baseball Hit",
@@ -157,7 +157,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Big Body Blow",
@@ -327,7 +327,7 @@
    "dualPurpose": true,
    "altKind": "strike",
    "altEngine": "STRIKE_KICK",
-   "note": "breakdance footwork into freeze — taunt or spin-through low kick"
+   "note": "breakdance footwork into freeze \u2014 taunt or spin-through low kick"
   },
   {
    "clip": "Breakdance Freezes",
@@ -366,7 +366,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Brooklyn Uprock",
@@ -459,7 +459,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Ch06_nonPBR",
@@ -468,7 +468,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Ch24_nonPBR",
@@ -477,7 +477,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Ch44_nonPBR",
@@ -486,7 +486,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Chokeslam",
@@ -505,7 +505,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Climbing A Rope",
@@ -585,13 +585,14 @@
   },
   {
    "clip": "CrotchChop",
-   "cat": "strike",
-   "pos": "STANDING_FRONT",
-   "engine": "STRIKE_PUNCH",
+   "cat": "taunt",
+   "pos": "TAUNT",
+   "engine": "TAUNT",
    "style": [
     "striker",
     "brawler"
-   ]
+   ],
+   "note": "RELABELLED from cat:'strike'/STRIKE_PUNCH. The label was a guess; the FRAMES show both hands crossing at the pelvis with no forward extension and no target \u2014 it is a DX-style taunt, not a strike. Recorded in CLAUDE.md as the headline example of the OWNER LAW 'metadata is a HINT, never an authority'. Leaving it labelled a strike put it in ST_F_LIGHT for the whole roster, and it was measured playing as FIRE JAB, RIP UPPERCUT, OVER-THE-ROPE FOREARM and RELAMPAGO in one session."
   },
   {
    "clip": "Crouch Idle 02 Looking Around",
@@ -702,7 +703,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Double Leg Takedown - Victim",
@@ -911,7 +912,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "GermanSuplex",
@@ -1161,7 +1162,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "NeckBreaker",
@@ -1180,7 +1181,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "OvreheadPress",
@@ -1199,7 +1200,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "PopUpGermanSuplex",
@@ -1228,7 +1229,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Queshada 2",
@@ -1294,7 +1295,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "ShoulderBag",
@@ -1349,7 +1350,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Suplex",
@@ -1492,7 +1493,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "X Bot",
@@ -1501,7 +1502,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Y Bot",
@@ -1510,7 +1511,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "Zombie Dying",
@@ -1526,7 +1527,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "cover to stand",
@@ -1643,7 +1644,7 @@
    "engine": null,
    "style": [],
    "usable": true,
-   "note": "character skeleton/rig — potential book character to retexture + import; carries its own bundled animations"
+   "note": "character skeleton/rig \u2014 potential book character to retexture + import; carries its own bundled animations"
   },
   {
    "clip": "right cover sneak",
