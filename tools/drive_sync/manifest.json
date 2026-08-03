@@ -1855,5 +1855,12 @@
   "size": 62097016,
   "local": "assets/models/incoming/tarzanian devil attire 2.glb",
   "at": "2026-08-03T10:09:56.530Z"
+ },
+ "jager model 1.glb": {
+  "id": "130TAqyMIAXVNhYQcAaxvaJ6XTCs5XaLr",
+  "ok": true,
+  "size": 62058288,
+  "local": "assets/models/incoming/jager model 1.glb",
+  "at": "2026-08-03T22:07:12.240Z"
  }
 }

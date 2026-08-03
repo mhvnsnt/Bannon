@@ -66,8 +66,11 @@ const add = rel => { const abs = R(rel);
 // assets/models/props are the weapons and furniture a stipulation match spawns (chair, ladder,
 // table); assets/models/mdickie_char are base attires. Both are small and both appear DURING a
 // match, which is the worst possible moment to discover they are a CDN round trip away.
+// assets/tron are the per-character entrance videos — baked silent and tron-sized, 0.38 MB for a
+// 21-second clip. They play at the exact moment an entrance starts, which is the worst possible
+// time to be waiting on a download.
 for (const dir of ['assets/vendor', 'assets/ring', 'assets/models/props',
-                   'assets/models/mdickie_char', 'assets/mocap/open'])
+                   'assets/models/mdickie_char', 'assets/mocap/open', 'assets/tron'])
   for (const f of walkFiles(R(dir))) add(path.relative(ROOT, f));
 
 // ── EVERY JSON MANIFEST THE GAME NAMES OUT LOUD ───────────────────────────────────────────────

@@ -1245,3 +1245,51 @@ own the numbers.
 VERIFIED: slam through a table breaks it at speed 4.53; WALKING on it does not (a table you can break
 by standing on it is not a table); table -> broken/standHeight 0/hp -179; chair -> bent/0.55/-62;
 ladder -> bent/2.4; steps not breakable. 0 page errors, smoke PASS.
+
+## JAGER + THE ENTRANCE TRON (2026-08-03) — and the tool bug that faked a success
+Owner supplied a Tripo model, two reference shots and an entrance video for **Fredrico Hunter, "Young
+Jager"**, with one instruction that shaped the whole tron system: *"I will add a song that will play
+instead of the video audio during entrance and victory, since trons have no audio."*
+### THE TRON — BANNON_TRONVIDEO
+BANNON_TRON drew a procedural text tron into a 512x256 canvas bound to the arena screen. It now also
+plays VIDEO into that same canvas, then hands the screen straight back — one texture, no second
+material, no extra draw call. **Silent by design and by necessity:** the audio track is stripped from
+the FILE at bake time, the element is muted + playsInline, and music stays the theme system's job for
+both entrance and victory. An unmuted video cannot autoplay on a phone anyway, so the requirement and
+the browser agree.
+26.8 MB 1080p -> **0.38 MB** h264 at 512x256, the exact tron size. **Pillarboxed, never cropped** —
+16:9 into 2:1 cropped to fill would cut the head and boots off a standing figure.
+**TWO ENCODES PER TRON, and it is not belt-and-braces.** h264 is what an Android WebView decodes, so
+the mp4 ships. But **Playwright's bundled Chromium has no proprietary codecs**, so with mp4 alone the
+tron cannot be tested here at all — readyState 0, videoWidth 0x0, play() rejected. VP9/WebM decodes in
+both. `srcFor()` picks by `canPlayType`.
+**THE MEASUREMENT TRAP I ALMOST FELL FOR:** my first test sampled the tron canvas and reported
+"PIXELS CHANGING: true" — while `frames: 0` and `failed: 1`. **The canvas always changes, because the
+PROCEDURAL tron animates** (pulse + scanline sweep). The honest signal is frames drawn BY THE VIDEO
+PATH. After the webm: **15 frames drawn, 0 failed, muted=true, no audio track.**
+### THE JAGER MODEL — and transfer_weights printing SUCCESS on garbage
+62 MB / 1,997,902 tris / unskinned from Tripo -> 38,820 tris / 4.5 MB / 58 joints / WHOLE.
+**transfer_weights.cjs COULD NOT READ ANY OF OUR RIGS AND DID NOT SAY SO.** It has its own minimal
+GLB reader — fast, dependency-light, and completely ignorant of EXT_meshopt_compression, which EVERY
+model in assets/models now uses. Fed VIPER it read compressed bytes as float32, computed
+**src height 6.74e+38**, and then printed *"wrote ... 58 joints ... texture preserved"* and exited 0.
+A TOTAL SUCCESS MESSAGE ON PURE GARBAGE. It now decompresses to a temp file first and REFUSES loudly
+if it cannot. Any future re-rig would have hit this.
+**PRE-SCALE THE MESH BEFORE TRANSFERRING.** transfer_weights aligns with a single uniform yScale, so
+a 0.98m Tripo body against a 1.8m rig does every nearest-neighbour lookup in a stretched space:
+mean correspondence **0.0506m**, widest piece spanning only 20 joints. Scaling the unrigged mesh to
+1.799m FIRST: **0.0182m** (better than BANNON's proven 0.0206m) and 35 joints. Then rescale_mesh
+fixes the bone/mesh ratio (1.941 -> 1.000), the same defect as TARZANIAN_DEVIL 1.936 and CODY 1.944.
+**HONEST STATUS: skinqa p95 0.1361 = FAIL** (threshold 0.12), worse than anything else we ship,
+while rig_continuity is WHOLE and the RENDER is clean — chains, cuffs, rings, studded ripped denim,
+boots and the physique all correct with no shredding. Correspondence is excellent, so the residual is
+most likely his bind POSE differing from VIPER's rather than bad weights. He is banked and wired
+because the owner wants him in, but he is on the list for a proper re-rig and the number is stated,
+not buried. DO NOT record him as a PASS.
+OWNER FLAGGED ON THE MODEL ITSELF: the beard is far thicker than his, and the broken-heart tattoo is
+wrong — both need the facial-hair / tattoo customisation pass in the creation suite.
+### OPEN, NAMED BY THE OWNER THIS PASS
+1. **ENTRANCES ARE WRONG.** Both competitors enter AT THE SAME TIME, SIDE BY SIDE, and it happens
+   DURING CHARACTER SELECT. Neither MDickie nor WWE 2K does either of those. Entrances must be
+   SEQUENTIAL and must run after the select screen, with the tron cued per wrestler.
+2. Facial hair add/remove + tattoo editing in character customisation.
