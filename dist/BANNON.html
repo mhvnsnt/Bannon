@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2571"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2574"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -16363,15 +16363,39 @@ function applyCharModels(only){ (only ? [only] : ['p1','p2','p3','p4']).forEach(
     // those — every error path calls it without keepHidden, which now sets _modelFailed and lets
     // setProcVisible through. So this no longer reveals anything. It only reports, so a genuinely
     // stuck load is still visible in the console instead of being silent.
-    var _wait = (window.PROC_FALLBACK_MS!=null ? window.PROC_FALLBACK_MS : 12000);
-    if(f._procWatchdog) clearTimeout(f._procWatchdog);
-    f._procWatchdog = setTimeout(function(){
-      f._procWatchdog = null;
-      if(f.model) return;                       // model arrived — nothing to do
-      console.warn('[BANNON] model for ' + ((f.opts&&f.opts.name)||'fighter') + ' still loading after ' +
-                   _wait + 'ms — WAITING, not falling back. Slow is not failed; only a real load ' +
-                   'error shows the built-in body.');
-    }, _wait);
+    // ── ...AND REPORT-ONLY WAS ALSO WRONG. OWNER, ON A BUILD WITH THIS CODE:
+    //    "the glb models are not showing or rendering".
+    // The claim above — "every error path calls removeFighterModel, so a real failure is covered" —
+    // is only true of requests that FINISH. A request that HANGS never errors: no onError, no
+    // onLoad, no _modelFailed, and because the ban above refuses to show the procedural body while
+    // a model is "coming", the fighter is INVISIBLE FOR THE REST OF THE MATCH. On a phone on mobile
+    // data a stalled connection is ordinary. I removed the safety net and left nothing behind it.
+    //
+    // A TIMER CANNOT TELL SLOW FROM FAILED — that part was right, and it is why the old 12s cutoff
+    // fired on his phone. But PROGRESS can. GLTFLoader reports bytes as they arrive, so:
+    //     bytes still arriving  -> slow. keep waiting, however long it takes.
+    //     no bytes for STALL_MS -> hung. show the body so the game is playable, and say so.
+    // The check re-arms instead of firing once, so a load that stalls at 30s is caught too, and a
+    // model that arrives late still supersedes the fallback (binding hides the procedural body).
+    var _stall = (window.PROC_STALL_MS!=null ? window.PROC_STALL_MS : 9000);
+    var _ceiling = (window.PROC_CEILING_MS!=null ? window.PROC_CEILING_MS : 60000);
+    if(f._procWatchdog) clearInterval(f._procWatchdog);
+    f._procWatchdog = setInterval(function(){
+      try{
+        if(f.model){ clearInterval(f._procWatchdog); f._procWatchdog=null; return; }
+        var now = (typeof performance!=='undefined'?performance.now():Date.now());
+        var lastByte = (f._modelProgress && f._modelProgress.at) || f._procHiddenAt || now;
+        var quiet = now - lastByte, total = now - (f._procHiddenAt||now);
+        if(quiet < _stall && total < _ceiling) return;          // still downloading — slow is fine
+        clearInterval(f._procWatchdog); f._procWatchdog = null;
+        f._modelFailed = true;                                   // unblocks setProcVisible
+        try{ if(f.seg && typeof setProcVisible==='function') setProcVisible(f,true); }catch(e){}
+        console.warn('[BANNON] model for ' + ((f.opts&&f.opts.name)||'fighter') + ' STALLED — ' +
+                     Math.round(quiet) + 'ms with no bytes (' + Math.round(total) + 'ms total). ' +
+                     'Showing the built-in body so the match is playable. If the download finishes ' +
+                     'it will still take over.');
+      }catch(e){}
+    }, 3000);
   };
   if(f._altModelUrl){ f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, f._altModelUrl, 'Attire'); }catch(e){} return; }   // GLB alternate attire wins over the default model
   if(f._mdickieBase){ var mb=mdickieBaseFor(f._mdickieBase); f._charModelRequested=true; _hideProc(); try{ loadFighterModel(sd, mb, 'MDickie · '+f._mdickieBase); }catch(e){} return; }   // MDickie base attire (falls back to procedural if the base GLB isn't present)
@@ -16546,7 +16570,7 @@ function _bindFighterGltf(side, url, name, gltf, reqFighter, reqId){
     f.model=container; f.modelUrl=url; scene.add(container); setProcVisible(f,false);
     // the model is here — stand the fallback watchdog down so it can never un-hide the tube body
     // underneath a bound GLB (that was one of the "switches back to procedural" moments).
-    try{ if(f._procWatchdog){ clearTimeout(f._procWatchdog); f._procWatchdog=null; } }catch(e){}
+    try{ if(f._procWatchdog){ clearInterval(f._procWatchdog); f._procWatchdog=null; } }catch(e){}
     // release the network back to clip warming (BANNON_LOADORDER)
     try{ if(window.__loRelease) window.__loRelease(); }catch(e){}
     try{ f._modelInFlight = null; f._modelInFlightAt = 0; }catch(e){}   // in-flight dedupe: this one landed
@@ -16611,7 +16635,11 @@ function loadFighterModel(side, url, name){
     return;
   }
   loader.load(url, (gltf)=>_bindFighterGltf(side,url,name,gltf,f,reqId),
-    undefined,
+    // onProgress was `undefined` here. That threw away the ONLY signal that distinguishes a slow
+    // download from a hung one, which is exactly what the procedural-body watchdog needs to decide
+    // whether waiting longer is reasonable. Every byte now stamps a timestamp.
+    (ev)=>{ try{ f._modelProgress = { loaded:(ev&&ev.loaded)||0, total:(ev&&ev.total)||0,
+              at:(typeof performance!=='undefined'?performance.now():Date.now()) }; }catch(e){} },
     (err)=>{
       // CDN FALLBACK: a downloaded single-file HTML has no assets/ folder next to it — retry
       // relative asset URLs against the repo CDN so canon models load anywhere with internet.
@@ -58777,6 +58805,206 @@ window.__deriveVariant = async function(key){
     try{ console.log('%c[BANNON_CLIP_MANIFEST] clip fetches are checked against the real directory first','color:#7CFC00'); }catch(e){}
   }
   arm(0);
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_FOOTIK — TWO-BONE FOOT IK WITH PLANT LOCKING. The fix for "it glides".
+//
+// OWNER, on his own open-source list and never delivered: "Pull real open-source (UniRig,
+// Mixamo/AccuRIG, mocap libs, foot-IK)". This is the foot-IK half.
+//
+// MEASURED FIRST, in a live match, walking on the real control (held ArrowRight, render stubbed so
+// the harness is not rAF-starved):
+//     planted foot world speed  1.778 m/s
+//     body speed                0.276 m/s
+//     SLIDE RATIO               6.45x
+// A planted foot is stationary IN THE WORLD while the body travels over it. Ours moved six and a
+// half times FASTER than the body. The legs were cycling and nothing was gripping the mat — the
+// definition of skating, and a large part of what reads as "procedural puppet" even after the mesh
+// itself was fixed. No amount of better mocap fixes this: a capture's stride length is whatever the
+// performer walked at, and the engine moves the body at whatever the stick says, so the two can
+// only agree by accident.
+//
+// WHY A HAND-WRITTEN TWO-BONE SOLVER AND NOT three.js's CCDIKSolver: CCDIKSolver is real and it is
+// in three.js, but it requires every IK TARGET to be a Bone INSIDE the same skeleton, indexed into
+// skeleton.bones. Adding four target bones to a 58-joint rig means rewriting skeleton.bones and
+// boneInverses on a live skinned mesh — the exact operation that has broken rigs in this project
+// before. A leg is a 2-bone chain, and for 2 bones the analytic law-of-cosines solution is EXACT,
+// non-iterative and the standard one (it is what UE's TwoBoneIK and Unity's leg IK both use).
+// Iterating toward an answer we can compute directly would be slower AND less accurate. Using the
+// right algorithm beats using the nearest library.
+//
+// WHAT IT DOES, per fighter, per leg, per frame:
+//   1. SUPPORT FOOT = the lower ankle. When it changes, the new support foot's world XZ is LOCKED.
+//   2. While locked, solve the hip/knee/ankle chain so the ankle sits at the locked XZ, keeping the
+//      gait's own vertical motion — we fix the sliding, we do not flatten the step.
+//   3. The lock RELEASES the moment the target moves outside the leg's reach (0.97 of full
+//      extension), and re-plants where the foot naturally is. A lock that cannot break is a
+//      character nailed to the floor.
+//   4. Weight eases in over 120ms and out over 90ms, so a plant is never a snap.
+//
+// GATED HARD. It runs only in ordinary locomotion (idle / walk / run) on a bound GLB. Ragdoll, any
+// attack, grapples, pins, dives, climbs, the apron and anything airborne are all excluded — in
+// those the feet are SUPPOSED to leave the ground, and locking them would be the bug.
+// window.FOOT_IK = false disables it completely.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_FOOTIK) return;
+
+  var ST = { solved:0, plants:0, releases:0, skipped:0, legs:0 };
+  var OK_STATE = { idle:1, walk:1, run:1, block:1, taunt:1 };
+  var EASE_IN = 0.12, EASE_OUT = 0.09, REACH = 0.97;
+
+  // scratch — allocated once. This runs 4 times a frame per fighter; per-frame `new` here is how a
+  // helper becomes the garbage-collector hitch it was written to prevent.
+  var A = null, B = null, C = null, T = null, TT = null, ax = null, v1 = null, v2 = null, q1 = null, q2 = null, pq = null, qs = null;
+  function scratch(){
+    if (A) return true;
+    if (typeof THREE === 'undefined') return false;
+    A=new THREE.Vector3(); B=new THREE.Vector3(); C=new THREE.Vector3(); T=new THREE.Vector3();
+    ax=new THREE.Vector3(); v1=new THREE.Vector3(); v2=new THREE.Vector3(); TT=new THREE.Vector3();
+    q1=new THREE.Quaternion(); q2=new THREE.Quaternion(); pq=new THREE.Quaternion(); qs=new THREE.Quaternion();
+    return true;
+  }
+
+  // rotate a bone by a WORLD-space quaternion: local = inverse(parentWorld) * q * boneWorld.
+  // `qs` and `q1` are PRIVATE to this function. Callers pass q2, and reusing q2 here would make
+  // `q2.copy(q)` a self-copy that only works by accident — the kind of aliasing that survives every
+  // test until someone reorders two lines.
+  function spin(bone, q){
+    qs.copy(q);
+    bone.getWorldQuaternion(q1);
+    if (bone.parent) bone.parent.getWorldQuaternion(pq); else pq.set(0,0,0,1);
+    qs.multiply(q1);
+    bone.quaternion.copy(pq.invert().multiply(qs));
+    bone.updateMatrixWorld(true);
+  }
+
+  // ── the solver. hip -> knee -> ankle, ankle driven to `target`. ────────────────────────────
+  function twoBone(hip, knee, ankle, target, w){
+    hip.updateMatrixWorld(true);
+    hip.getWorldPosition(A); knee.getWorldPosition(B); ankle.getWorldPosition(C);
+    var L1 = A.distanceTo(B), L2 = B.distanceTo(C);
+    if (L1 < 1e-4 || L2 < 1e-4) return false;
+
+    // `T` is PRIVATE scratch and `target` is the caller's. They were the same vector in the first
+    // version, which made this line `T.copy(C).lerp(T, w)` — the target collapsed onto the foot's
+    // CURRENT position, so want===have, the hip swing was an identity rotation, and the whole solver
+    // was an expensive no-op. It measured as "barely any improvement" rather than as an error.
+    // Same aliasing class as the quaternion note in spin(). Vectors deserve the same discipline.
+    T.copy(C).lerp(target, w);                       // partial authority = a real blend, not a switch
+    var d = A.distanceTo(T);
+    var min = Math.abs(L1 - L2) + 1e-3, max = (L1 + L2) * REACH;
+    if (d > max || d < min) return false;            // out of reach — the caller releases the lock
+
+    // KNEE: law of cosines. The interior angle at the knee that puts the ankle exactly d from the hip.
+    var want = Math.acos(Math.max(-1, Math.min(1, (L1*L1 + L2*L2 - d*d) / (2*L1*L2))));
+    var have = Math.acos(Math.max(-1, Math.min(1, (L1*L1 + L2*L2 - A.distanceToSquared(C)) / (2*L1*L2))));
+    var delta = want - have;
+    if (Math.abs(delta) > 1e-4){
+      v1.copy(A).sub(B); v2.copy(C).sub(B);
+      ax.crossVectors(v1, v2);
+      // straight leg = degenerate plane. Bend about the hip's own lateral axis so the knee still
+      // goes FORWARD; without this a fully extended leg picks an arbitrary axis and snaps sideways.
+      if (ax.lengthSq() < 1e-8){ ax.set(1,0,0).applyQuaternion(hip.getWorldQuaternion(q1)); }
+      ax.normalize();
+      spin(knee, q2.setFromAxisAngle(ax, delta));
+      ankle.getWorldPosition(C);
+    }
+
+    // HIP: swing the whole leg so the ankle lands on the target line.
+    v1.copy(C).sub(A); v2.copy(T).sub(A);
+    if (v1.lengthSq() > 1e-8 && v2.lengthSq() > 1e-8){
+      v1.normalize(); v2.normalize();
+      spin(hip, q2.setFromUnitVectors(v1, v2));
+    }
+    ST.solved++;
+    return true;
+  }
+
+  function legOf(model, side){
+    var up = window.__boneOf(model, side + 'UpLeg') || window.__boneOf(model, side + 'Thigh');
+    var lo = window.__boneOf(model, side + 'Leg')   || window.__boneOf(model, side + 'Shin');
+    var ft = window.__boneOf(model, side + 'Foot')  || window.__boneOf(model, side + 'Ankle');
+    return (up && lo && ft && lo.parent === up && ft.parent === lo) ? { up:up, lo:lo, ft:ft } : null;
+  }
+
+  function eligible(f){
+    if (window.FOOT_IK === false) return false;
+    if (!f || !f.model || !f.model.userData) return false;
+    if (f.ragdoll || f._ragdoll) return false;
+    if (!OK_STATE[f.state]) return false;
+    if (f.grappling || f.grabbedBy || f._pinning || f._climbing || f.airborne) return false;
+    // in the air on purpose (a dive, a hop, a bump) — the feet belong to the arc, not the mat
+    if (typeof f.y === 'number' && f.y > 0.08) return false;
+    return true;
+  }
+
+  function step(f, dt){
+    if (!scratch()) return;
+    if (!eligible(f)){ if (f.__ik) { f.__ik.L.w = f.__ik.R.w = 0; } ST.skipped++; return; }
+    var m = f.model;
+    var legs = m.userData.__ikLegs;
+    if (legs === undefined){
+      legs = m.userData.__ikLegs = { L: legOf(m, 'Left'), R: legOf(m, 'Right') };
+      if (legs.L && legs.R) ST.legs++;
+    }
+    if (!legs.L || !legs.R) return;
+
+    var S = f.__ik || (f.__ik = { L:{w:0,x:0,z:0,on:false}, R:{w:0,x:0,z:0,on:false}, sup:null });
+    legs.L.ft.getWorldPosition(v1); var ly = v1.y, lx = v1.x, lz = v1.z;
+    legs.R.ft.getWorldPosition(v2); var ry = v2.y, rx = v2.x, rz = v2.z;
+    var sup = (ly <= ry) ? 'L' : 'R';
+
+    if (S.sup !== sup){                       // weight transferred — plant the new support foot
+      S.sup = sup;
+      var s = S[sup];
+      s.x = (sup === 'L') ? lx : rx; s.z = (sup === 'L') ? lz : rz;
+      s.on = true; s.w = 0; ST.plants++;
+      S[sup === 'L' ? 'R' : 'L'].on = false;  // the other leg is swinging now — hands off
+    }
+
+    for (var k in S){
+      if (k === 'sup') continue;
+      var st = S[k], leg = legs[k];
+      var want = (st.on && k === sup) ? 1 : 0;
+      st.w += (want > st.w ? dt / EASE_IN : -dt / EASE_OUT);
+      st.w = Math.max(0, Math.min(1, st.w));
+      if (st.w <= 0.001 || !leg) continue;
+      leg.ft.getWorldPosition(v1);
+      TT.set(st.x, v1.y, st.z);               // LOCK XZ, KEEP THE GAIT'S OWN Y
+      if (!twoBone(leg.up, leg.lo, leg.ft, TT, st.w)){
+        st.on = false; st.x = v1.x; st.z = v1.z; ST.releases++;   // out of reach: re-plant here
+      }
+    }
+  }
+
+  function arm(n){
+    n = n || 0;
+    try{
+      if (typeof Fighter !== 'undefined' && Fighter.prototype.update && !Fighter.prototype.__footIK){
+        var u = Fighter.prototype.update;
+        // LAST wrapper wins = runs after every other pose pass (clip, retarget, secondary motion),
+        // which is the only place foot IK can correctly live: it must see the final skeleton.
+        Fighter.prototype.update = function(dt){
+          var r = u.apply(this, arguments);
+          try{ step(this, (typeof dt === 'number' && dt > 0 && dt < 0.25) ? dt : 0.016); }catch(e){}
+          return r;
+        };
+        Fighter.prototype.__footIK = true;
+        try{ console.log('%c[BANNON_FOOTIK] foot planting armed — feet grip the mat instead of sliding','color:#7CFC00'); }catch(e){}
+        return;
+      }
+    }catch(e){}
+    if (n < 400) setTimeout(function(){ arm(n+1); }, 120);
+  }
+  arm(0);
+
+  window.BANNON_FOOTIK = { stats: function(){ return Object.assign({}, ST); },
+                           reset: function(){ for (var k in ST) ST[k] = 0; } };
 })();
 </script>
 </html>
