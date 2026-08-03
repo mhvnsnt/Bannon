@@ -1363,3 +1363,37 @@ unrecoverable. The trons that ship with the game are 0.38 MB via tools/tron/bake
 VERIFIED by driving the real UI: 9/9 controls, video stored + assigned, and **after a full page
 reload the kit and the custom video are both still there** — which is the only proof that matters,
 since a blob URL cannot survive one.
+
+## JAGER: CLEAN-SHAVEN IS THE DEFAULT NOW (2026-08-03) + tools/models/ingest_character.sh
+Owner supplied the no-beard body as the DEFAULT after flagging the first model's beard as far thicker
+than his. It also MEASURES better on the identical pipeline and donor rig:
+    JAGER.glb (no beard)  skinqa p95 0.1133 WEAK — passes    33,917 verts / 34,708 tris
+    JAGER_beard.glb       skinqa p95 0.1361 FAIL             37,780 verts / 38,820 tris
+The bearded one is KEPT as a GLB attire under CHAR_ALT_MODELS.JAGER (owner LAW: never drop generated
+content), so it is selectable rather than deleted.
+### THE PIPELINE IS A TOOL NOW — tools/models/ingest_character.sh
+Written after running the same chain by hand three times and hitting the SAME four traps each time.
+`bash tools/models/ingest_character.sh <raw.glb> <KEY> [donor] [tris]`:
+1. DECIMATE FIRST AND ITERATE — 2.0M triangles will not reach 18k in one pass, meshoptimizer's error
+   bound stops it (2.0M -> 143k -> 71k -> 50k measured). Also 25x cheaper than transferring onto 1.1M.
+2. PRE-SCALE TO THE DONOR'S HEIGHT BEFORE TRANSFER — a single uniform yScale means a 0.98m body against
+   a 1.8m rig does every lookup in a stretched space: 0.0506m mean correspondence and 20/58 joints,
+   versus 0.0182m and 35 joints pre-scaled.
+3. RESCALE MESH TO SKELETON AFTER — the transfer leaves bone/mesh ~1.94 and the engine sizes by the
+   BONE span, so the visible body ends up half height (TARZANIAN_DEVIL 1.936, CODY_gear 1.944).
+4. SNAPSHOT AND LOOK. The first mesh generated here came out lying on its back with a perfect vertex
+   count, and skinqa cannot see a severed rig at all.
+## AN INSTRUMENT OF MINE THAT READ ZERO, AND WHY IT WAS WRONG (2026-08-03)
+Building a per-STATE animation audit I wrapped `window.studioApplyClipPose`, bucketed calls by the
+fighter's state and measured bone travel per bucket. It reported **1,342 calls and 0.000 bone travel
+across every state**. That is not a finding, it is a broken instrument, and it is worth writing down
+because it is the SAME trap already in this file:
+  * the engine calls `studioApplyClipPose(this, _mc, p)` as a **LEXICAL identifier** at its main
+    combat sites. Wrapping `window.studioApplyClipPose` intercepts only the module call sites
+    (taunts, zone moves), not the combat path — so the calls counted were not the calls that matter.
+  * verified separately that `window.__boneOf` resolves all 58 bones on a live fighter, so the bone
+    lookup was fine; the wrapper was in the wrong place.
+`tools/harness/smoke.cjs` already measures this CORRECTLY and reports real per-category deltas
+(strike / grapple / walk, with named bone travel). Extend THAT rather than building a fourth
+instrument. A per-category audit covering zoning, dives, pins and ring transitions is still OPEN and
+should be added to smoke, not written fresh.

@@ -7048,6 +7048,11 @@ window.CHAR_ALT_MODELS = {
   // into the GLB were STRIPPED (tools/model_diag/strip_satellites.cjs keeps the largest welded
   // component, preserving the 16-bone skin + texture); this now loads the clean single body.
   BANNON:          [ {id:'BANNON_HEAVYWEIGHT',label:'Heavyweight',url:'assets/models/BANNON_muscular_skinned.glb'} ],
+  // JAGER — owner supplied the CLEAN-SHAVEN body as his DEFAULT after flagging that the first
+  // model's beard was far thicker than his. The bearded one is kept as an attire rather than
+  // deleted (owner LAW: never drop generated content), and it also measures worse: skinqa 0.1361
+  // FAIL against the no-beard body's 0.1133 WEAK, same donor rig, same pipeline.
+  JAGER:           [ {id:'JAGER_beard',label:'Bearded',url:'assets/models/JAGER_beard.glb'} ],
   CAIN_ELIAS:      [ {id:'CAIN_ELIAS_ring',label:'Ring Gear',url:'assets/models/CAIN_ELIAS_ring.glb'}, {id:'CAIN_ELIAS_snakeskin',label:'Snakeskin',url:'assets/models/CAIN_ELIAS_snakeskin.glb'}, {id:'CAIN_ELIAS_godwithin',label:'God Within',url:'assets/models/CAIN_ELIAS_godwithin.glb'} ],
   CIPHER:          [ {id:'CIPHER_minion',label:'Minion',url:'assets/models/CIPHER_minion.glb'}, {id:'CIPHER_feral',label:'Feral',url:'assets/models/CIPHER_feral.glb'} ],
   CODY:            [ {id:'CODY_sober',label:'Sober',url:'assets/models/CODY_sober.glb'}, {id:'CODY_stressed',label:'Stressed',url:'assets/models/CODY_stressed.glb'} ],

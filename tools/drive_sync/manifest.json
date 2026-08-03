@@ -1861,6 +1861,13 @@
   "ok": true,
   "size": 62058288,
   "local": "assets/models/incoming/jager model 1.glb",
-  "at": "2026-08-03T22:07:12.240Z"
+  "at": "2026-08-03T22:47:16.851Z"
+ },
+ "jager default no beard.glb": {
+  "id": "1WQM5gn5jrhooIkTvC7-Ym_qdvoBmJHg3",
+  "ok": true,
+  "size": 61352316,
+  "local": "assets/models/incoming/jager default no beard.glb",
+  "at": "2026-08-03T22:47:13.042Z"
  }
 }
