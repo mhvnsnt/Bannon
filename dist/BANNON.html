@@ -261,7 +261,7 @@ NEVER rename existing functions or variables.
   the guaranteed-running BANNON_OTA module at the end of the file.
 ════════════════════════════════════════════════════════════════════════════════════════════ -->
 <script>
-window.BANNON_BUILD = (function(){ var s="2584"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
+window.BANNON_BUILD = (function(){ var s="2586"; var n=parseInt(s,10); return (isFinite(n)&&String(n)===s)?n:0; })();
 (function(){
   try{
     var b = parseInt(localStorage.getItem('BANNON_OTA_B')||'0',10);
@@ -15201,6 +15201,26 @@ try{
     faction:'Agents of Chaos', canon:true,
     bio:'A masked jungle free spirit with no plan and no brakes — stiff chops one moment, a blind dive off the top the next.',
     archetype:'highFlyer' }, 'TRUNKS', 'LONG', {musc:0.72,fat:0.14});
+  // ── JAGER — Fredrico Hunter, "Young Jager". Owner-supplied model + entrance tron. ───────────
+  // Read off HIS OWN reference shots, not invented: bleached-blonde curled top over a dark fade, a
+  // small tattoo under the left eye, layered silver chains, leather cuffs on both wrists, rings,
+  // black distressed jeans with studs and a wallet chain, worn combat boots. Lean and cut rather
+  // than heavy — visible abs, narrow waist, no mass on the shoulders. That is a striker's frame,
+  // so he is a CRUISERWEIGHT with speed over power, not a brawler.
+  // OPEN, and the owner flagged it: the generated model's beard is much thicker than his, and the
+  // broken-heart tattoo is wrong. Both want the facial-hair / tattoo customisation pass.
+  if(typeof MOVESET_DB!=='undefined'){
+    MOVESET_DB.JAGER = { maxHp:96, stamina:245, chin:96,
+      speedMultiplier:1.22, powerMultiplier:1.02,
+      moves:['FIRE JAB','SPINNING HEEL KICK','FLYING KNEE','LEO CROSS','RAT SWEEP','AXE KICK'] };
+    if(typeof ROSTER_SPEC!=='undefined')
+      ROSTER_SPEC.JAGER = { style:'STRIKER', heightScale:0.99, reachScale:1.0 };
+  }
+  try{ if(typeof CHAR_ARCHETYPE!=='undefined') CHAR_ARCHETYPE.JAGER='CRUISERWEIGHT'; }catch(e){}
+  _addChar('JAGER', { label:'Young Jager', col:0x1b1b20, accent:0xe8c33a, skin:0x6b4630,
+    faction:'Free Agent', canon:true,
+    bio:'Fredrico Hunter. Chains, ripped denim and bleached curls — a street striker who fights on the front foot and never sets his feet.',
+    archetype:'striker' }, 'LONG_TIGHTS', 'SHORT', {musc:0.68,fat:0.12});
   _addChar('AKON_WARRIOR', { label:'Man of Honor',              col:0x8a5a1a, accent:0xffd700, skin:0x7a4a2e, faction:'Free Agent', canon:true, bio:'The ethical challenge — honor as a weapon.', archetype:'powerhouse' }, 'TRUNKS', 'BALD', {musc:0.82,fat:0.2});
   _addChar('HEATH_BROKER', { label:'The London Broker',         col:0x24262e, accent:0x9fb4cc, skin:0xe6c8a8, faction:'Corporate Structure', canon:true, bio:'Corporate technician — every hold is a contract clause.', archetype:'technician' }, 'LONG_TIGHTS', 'CAESAR', {musc:0.5,fat:0.22});
   _addChar('CAPTAIN_UNITY',{ label:'Corporate Propaganda',      col:0x1a3a8a, accent:0xd42a2a, skin:0xd9a066, faction:'Corporate Structure', canon:true, bio:'A manufactured hero — unity as a slogan, not a promise.', archetype:'brawler' }, 'SINGLET', 'BUZZ', {musc:0.72,fat:0.18});
@@ -16269,6 +16289,8 @@ function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MO
 // a banked skinned GLB (16-bone, geodesic + anatomical clamps). A user pick in the model menu still
 // overrides (localStorage CHAR_MODEL wins). Add a row when a new canon model banks.
 const CHAR_MODEL_DEFAULTS = {
+  // owner-supplied Tripo model, rigged here by weight transfer from VIPER's 58-joint skeleton
+  JAGER: { url:'assets/models/JAGER.glb', name:'Young Jager' },
   // BANNON: UniRig-rigged skinned mesh. Renders PERFECT (proven raw); the engine retarget was what
   // mangled it, so GLB_NATIVE_POSE now holds the model's own correct pose while calm (no bone-mangling)
   // and only physics-drives during action. Standing/idle/walking look right.
@@ -59340,6 +59362,183 @@ window.__deriveVariant = async function(key){
     rules: RULES,
     // exposed so a scripted spot (or a test) can put someone through a table on purpose
     force: function(p, f){ return breakProp(p, f, RULES[p.type] ? RULES[p.type].need : 1); }
+  };
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_TRONVIDEO — a REAL entrance video on the tron. Silent, by design.
+//
+// OWNER: "here a video for his entrance tron, but I will add a song that will play instead of the
+// video audio during entrance and victory, since trons have no audio."
+//
+// That is exactly how a broadcast tron works and it is also how the browser works, so the two agree:
+// a <video> that is not muted CANNOT autoplay on a phone, and an unmuted tron would fight the
+// entrance theme anyway. The audio track is stripped from the FILE at bake time (26.8 MB -> 0.38 MB,
+// h264 baseline, 512x256, the exact size of the tron canvas the arena already builds), the element
+// is muted AND playsInline, and music stays entirely the theme system's job for both entrance and
+// victory.
+//
+// BANNON_TRON draws a procedural text tron into a 512x256 canvas that is already bound to the
+// arena's tron texture. This does not replace it — it draws VIDEO FRAMES into that same canvas
+// while a clip is playing and hands the tron straight back afterwards, so one screen, one texture,
+// no second material and no extra draw call.
+//
+// PILLARBOXED, NOT CROPPED. The source is 16:9 and the tron is 2:1. Cropping to fill would cut the
+// top and bottom off a standing figure — i.e. his head and his boots. Fitting by height and
+// centring leaves narrow black bars, which is what a real tron looks like anyway.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_TRONVIDEO) return;
+
+  // per-character tron clips. assets/tron/<KEY>.mp4, baked silent by tools/tron/bake_tron.sh
+  // TWO ENCODES PER TRON, and this is not belt-and-braces — it is measured.
+  // h264 is what an Android WebView decodes everywhere, so the .mp4 is the SHIPPING file. But
+  // Playwright's bundled Chromium has NO proprietary codecs, so with mp4 alone the tron cannot be
+  // tested here at all: readyState stayed 0, videoWidth 0x0, and play() rejected. VP9/WebM decodes
+  // in both. Ship both, prefer whichever the engine says it can actually play.
+  var CLIPS = window.TRON_VIDEOS = Object.assign({
+    JAGER: { webm: 'assets/tron/JAGER.webm', mp4: 'assets/tron/JAGER.mp4' }
+  }, window.TRON_VIDEOS || {});
+
+  function srcFor(entry){
+    if (!entry) return null;
+    if (typeof entry === 'string') return entry;
+    try{
+      var probe = document.createElement('video');
+      if (entry.webm && probe.canPlayType('video/webm; codecs="vp9"')) return entry.webm;
+      if (entry.mp4 && probe.canPlayType('video/mp4; codecs="avc1.42E01E"')) return entry.mp4;
+    }catch(e){}
+    return entry.mp4 || entry.webm || null;
+  }
+
+  var ST = { plays:0, frames:0, failed:0, last:null, active:false };
+  var vid = null, playing = false, endsAt = 0;
+
+  function element(){
+    if (vid) return vid;
+    try{
+      vid = document.createElement('video');
+      vid.muted = true;                 // NEVER unmuted: a tron has no audio, and an unmuted video
+      vid.defaultMuted = true;          // cannot autoplay on a phone. Both flags — the attribute is
+      vid.setAttribute('muted', '');    // what some engines actually check.
+      vid.setAttribute('playsinline', '');
+      vid.playsInline = true;
+      vid.loop = true;
+      vid.preload = 'auto';
+      vid.crossOrigin = 'anonymous';
+      vid.style.display = 'none';
+      document.body.appendChild(vid);
+    }catch(e){ vid = null; }
+    return vid;
+  }
+
+  function keyFor(name){
+    var k = String(name || '').toUpperCase().replace(/[^A-Z0-9]/g, '_');
+    return CLIPS[k] ? k : null;
+  }
+
+  // play a character's tron clip for `ms` (the entrance/victory window)
+  function play(name, ms){
+    var k = keyFor(name); if (!k) return false;
+    var v = element(); if (!v) return false;
+    var url = srcFor(CLIPS[k]); if (!url) return false;
+    try{
+      if (v.src.indexOf(url) < 0) v.src = url;
+      v.currentTime = 0;
+      var pr = v.play();
+      if (pr && pr.catch) pr.catch(function(){ ST.failed++; playing = false; });
+      playing = true; ST.active = true; ST.plays++; ST.last = k;
+      endsAt = (performance.now ? performance.now() : Date.now()) + (ms || 6000);
+      return true;
+    }catch(e){ ST.failed++; return false; }
+  }
+
+  function stop(){
+    playing = false; ST.active = false;
+    try{ if (vid) vid.pause(); }catch(e){}
+  }
+
+  // Draw one frame into the tron canvas. Called from BANNON_TRON.draw's wrapper below, so it lands
+  // in the SAME texture the arena screen already samples.
+  function drawInto(ctx, tex){
+    if (!playing || !vid) return false;
+    var now = (performance.now ? performance.now() : Date.now());
+    if (now > endsAt){ stop(); return false; }
+    if (vid.readyState < 2) return false;               // no frame decoded yet — leave the tron up
+    try{
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, 512, 256);
+      ctx.drawImage(vid, 0, 0, 512, 256);
+      if (tex) tex.needsUpdate = true;
+      ST.frames++;
+      return true;
+    }catch(e){ ST.failed++; stop(); return false; }
+  }
+
+  // ── wrap BANNON_TRON so the video takes the screen while it is playing ──────────────────────
+  function arm(n){
+    n = n || 0;
+    try{
+      if (window.BANNON_TRON && !window.BANNON_TRON.__videoWrapped){
+        var T = window.BANNON_TRON;
+        var origDraw = T.draw, origEntrance = T.entrance;
+
+        T.draw = function(t){
+          // The video needs the SAME ctx/tex BANNON_TRON drew into. bind() populates them, so ask
+          // it first and read them off the module rather than re-deriving the arena texture here —
+          // two paths to one texture is how a screen ends up half-updated.
+          try{
+            if (playing){
+              var tex = window.__arenaTronTexObj;
+              var ctx = tex && tex.image && tex.image.getContext ? tex.image.getContext('2d') : null;
+              if (ctx && drawInto(ctx, tex)) return;       // video owns the screen this frame
+            }
+          }catch(e){}
+          return origDraw.apply(this, arguments);
+        };
+
+        // An entrance with a clip plays the clip; everyone else keeps the procedural name tron.
+        T.entrance = function(name){
+          var r = origEntrance.apply(this, arguments);
+          try{ play(name, 6000); }catch(e){}
+          return r;
+        };
+
+        window.BANNON_TRON.__videoWrapped = true;
+        try{ console.log('%c[BANNON_TRONVIDEO] entrance trons can play video (silent — music stays the theme system\'s job)','color:#7CFC00'); }catch(e){}
+        return;
+      }
+    }catch(e){}
+    if (n < 400) setTimeout(function(){ arm(n + 1); }, 120);
+  }
+  arm(0);
+
+  // VICTORY gets the tron too — he asked for the song on entrance AND victory, and a tron that goes
+  // dark the moment a man wins is the one moment a real broadcast would be playing his video.
+  (function armVictory(n){
+    n = n || 0;
+    try{
+      if (window.BANNON_ENTRANCE && window.BANNON_ENTRANCE.victory && !window.BANNON_ENTRANCE.__tronVid){
+        var ov = window.BANNON_ENTRANCE.victory;
+        window.BANNON_ENTRANCE.victory = function(w){
+          var r = ov.apply(this, arguments);
+          try{ play((w && w.opts && w.opts.name) || '', 8000); }catch(e){}
+          return r;
+        };
+        window.BANNON_ENTRANCE.__tronVid = true;
+        return;
+      }
+    }catch(e){}
+    if (n < 400) setTimeout(function(){ armVictory(n + 1); }, 150);
+  })(0);
+
+  window.BANNON_TRONVIDEO = {
+    play: play, stop: stop, clips: CLIPS,
+    add: function(key, url){ CLIPS[String(key).toUpperCase().replace(/[^A-Z0-9]/g,'_')] = url; },
+    srcFor: srcFor,
+    stats: function(){ return Object.assign({}, ST); }
   };
 })();
 </script>
