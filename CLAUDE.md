@@ -1325,3 +1325,41 @@ share the SAME MILLISECOND — that is ONE call passing through nine nested wrap
 probe re-armed on `setInterval` and BANNON_PERF re-wraps `window.startFight` after it, producing a
 new unguarded function each time. **A repeated instrument stacks; check the timestamps before
 believing a count.**
+
+## THE LAST TWO WAYS A PROCEDURAL BODY REACHED THE SCREEN (2026-08-03)
+Owner's standing priority: "never seeing procedural three js models unless specific attires for that
+are selected." Measured by sampling EVERY FRAME of a full match, not by reasoning about the code.
+### 1. "DOWNLOADED AND PARSING" LOOKED EXACTLY LIKE "HUNG"
+Normal connection: **2 procedural frames of 158**, at t+10.75s — with the GLB arriving at t+12.6s and
+`_modelFailed` left TRUE on a fighter who HAD his model. The download finished in under a second from
+LOCAL files, then onProgress went silent, because **there are no progress events for PARSING**.
+GLTFLoader spreads a multi-megabyte parse across frames (12.6s at harness frame rate). My own stall
+detector read that silence as a hang, declared failure and revealed the body — 1.9 seconds before the
+model landed. Fixed: once `loaded >= total` the bytes are all here and only the hard ceiling applies.
+A late arrival also clears `_modelFailed` instead of leaving a fighter marked failed forever.
+**0 procedural frames of 208** after.
+### 2. RUN-INS NEVER ASKED FOR A MODEL AT ALL
+On a slow connection (4s per model — his phone on bad data): **31 frames of 167**, all of them the
+interferer. The two competitors bound at ~15s; the intruder at 24.2s, and the procedural frames run
+exactly between. `setProcVisible` only blocks the built-in body when `_charModelRequested` is set, and
+that flag comes from applyCharModels, **which only ever runs for the SIDES p1..p4**. An interferer is
+built with a bare `new Fighter(...)` and pushed onto `fighters` — no request, no ban, a tube.
+THE FIX IS NOT A NEW LOADER: a fighter at index 2 IS p3 (`fighterFor('p3')` returns `fighters[2]`), so
+the existing machinery already covered him and was simply never asked. BANNON_LATE_BODIES asks for
+every fighter's model and holds him invisible until he is himself. A run-in a second late is a run-in;
+a run-in as a grey tube is the bug. **0 procedural frames of 199 on the slow network** after.
+LESSON, third time this session: a flag that gates a rule is only as good as the paths that SET it.
+## BANNON_TRON_STUDIO — custom trons on the phone (2026-08-03)
+"we need a way to add and make custom trons in game." Front end for the entrance kit
+BANNON_ENTRANCE_SEQ already reads: pick a video off the device, set titantron / mini-trons / lighting
+/ smoke / pyro per wrestler, PREVIEW on the real arena screen. `BANNON_TRON_STUDIO.open()`.
+Reuses **BLIB**, the IndexedDB library device-imported MODELS already use, rather than opening a
+second store — so a custom tron survives a reload and an OTA swap for the same reason a custom model
+does, and there is one storage story instead of two. A blob: URL dies on reload, so the bytes are
+re-read and a fresh URL minted at boot; the ASSIGNMENT lives in the kit, the MEDIA lives in BLIB.
+**Refuses files over 24 MB and says the real number.** There is no ffmpeg on a phone so it cannot
+transcode, and silently storing 60 MB in IndexedDB to draw it at 512x256 is how a save becomes
+unrecoverable. The trons that ship with the game are 0.38 MB via tools/tron/bake_tron.sh.
+VERIFIED by driving the real UI: 9/9 controls, video stored + assigned, and **after a full page
+reload the kit and the custom video are both still there** — which is the only proof that matters,
+since a blob URL cannot survive one.
