@@ -163,6 +163,7 @@ function WATCH(){
           name:(f.opts&&f.opts.name)||'?', hasModel:!!f.model, state:f.state,
           x:+(f.x||0).toFixed(2), z:+(f.z||0).toFixed(2), y:+((f.zoneY)||0).toFixed(2),
           hp:+(f.hp||0).toFixed(0), finite: isFinite(f.x)&&isFinite(f.z)&&isFinite(f.facing),
+          interferer: !!f._interferer, forceProc: !!f._forceProc,
           procVisible: !!(f.seg && f.seg.head && f.seg.head.visible) })),
         arenaHalf: lex('ARENA_HALF'), arenaHalfZ: lex('ARENA_HALF_Z') };
     });
@@ -172,10 +173,16 @@ function WATCH(){
       if (basics.count < 2) fail('ENGINE', 'only ' + basics.count + ' fighter(s) in the match');
       for (const f of (basics.fighters||[])){
         if (!f.finite) fail('NaN', f.name + ' has a non-finite position/facing: ' + JSON.stringify(f));
-        if (!f.hasModel) fail('MODEL', f.name + ' has no GLB bound');
+        if (!f.hasModel && !f.forceProc) fail('MODEL', f.name + ' has no GLB bound' + (f.interferer ? ' (run-in)' : ''));
         if (f.procVisible && f.hasModel) fail('MODEL', f.name + ' is showing the procedural body UNDER a bound model');
-        const AH = basics.arenaHalf || 3.2, AZ = basics.arenaHalfZ || 2.4;
-        if (Math.abs(f.x) > AH + 4 || Math.abs(f.z) > AZ + 4) fail('OUT OF BOUNDS', f.name + ' at x=' + f.x + ' z=' + f.z);
+        // ARENA_HALF/ARENA_HALF_Z are the RING mat (3.2 x 2.2), not the world. Ringside, the apron
+        // and the entrance ramp are all legitimately outside it, and a run-in enters from the floor
+        // at ring-half + 0.9 by design — an earlier version of this check failed on all three,
+        // which was my test being wrong, not the game. Fail only on genuinely off-the-map.
+        const AH = basics.arenaHalf || 3.2, AZ = basics.arenaHalfZ || 2.2;
+        if (Math.abs(f.x) > AH + 9 || Math.abs(f.z) > AZ + 9) fail('OUT OF BOUNDS', f.name + ' at x=' + f.x + ' z=' + f.z);
+        else if (Math.abs(f.x) > AH + 0.6 || Math.abs(f.z) > AZ + 0.6)
+          note('OUTSIDE THE RING', f.name + ' at x=' + f.x + ' z=' + f.z + (f.interferer ? ' (run-in — expected)' : ''));
       }
     }
 

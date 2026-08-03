@@ -13,10 +13,52 @@ Rules for this file:
 
 ---
 
-## 1. THE GAME FREEZES MID-MATCH  ·  repeated 5+ times  ·  OPEN
+## 1. THE GAME FREEZES MID-MATCH  ·  repeated 6+ times  ·  **FOUND AND FIXED (2026-08-02)**
 
 > "the game keeps freezing mid match" · "the game still freezes mid match" · "now u have not fixed
-> the freeze" · "the game still freezes mid combat"
+> the freeze" · "the game still freezes mid combat" · "the game is still freezing as soon as I start
+> fighting"
+
+**(c) THE ACTUAL FREEZE. I had been looking in the wrong place for weeks.** "As soon as I start
+fighting" was literal: it is the QUICK FIGHT press, and it is one function.
+
+New tool `tools/harness/stall_autopsy.cjs` wraps every candidate blocker before any game code loads
+and snapshots the totals once per frame, which splits a stalled frame into IN-JS vs OUTSIDE-JS.
+Result:
+
+```
+t=14.72s menu_select dt=11937ms   JS 11703ms   OUTSIDE-JS 234ms
+SINGLE CALLS OVER THRESHOLD:
+   11689ms  EVENT click on BUTTON#btnFight.menu-btn  ->  function openSelect(){ … }
+```
+
+Not the GPU. Not the GLB parse (35 ms total). Not shader compile (2.7 s of it, inside the same
+call). **A click handler that owns the main thread for 11.7 seconds.**
+
+`tools/harness/profile_click.cjs` (V8 CPU profile of one button press) named the line:
+
+```
+11267ms  openSelect      BANNON_v150.html:38723
+11168ms  renderRoster    BANNON_v150.html:38570
+11122ms  get             BANNON_v150.html:42933      <- window.BANNON_PORTRAITS.get
+ 9095ms  toDataURL       (self)
+```
+
+`renderRoster` draws all **121** roster cards in one synchronous `forEach`, and every card called
+`BANNON_PORTRAITS.get()`, which built a 3D bust, rendered it to a WebGL canvas and did a **blocking
+GPU readback + PNG encode**. 121 readbacks back to back with nothing yielding between them. It also
+queued a GLB portrait download for all 121 characters at once — **361 MB of roster models racing the
+two bodies you are about to wrestle with**, which is the other half of "the model glbs are rendering
+slowly".
+
+FIXED: `get()` never renders now. It returns what it has (or null — the card already had a colour
+gradient as its fallback) and parks the request. A pump does at most ONE portrait per animation
+frame, and only for cards an `IntersectionObserver` says are on screen or that a P1/P2 plate asked
+for. A character who has a GLB skips the bust entirely, because the GLB render is about to replace
+it. Portraits still arrive through the same `bannonPortrait` event that was already there.
+
+**MEASURED, same harness, before → after: worst stall 11,308 ms → 1,933 ms.** `openSelect`,
+`renderRoster` and `click` no longer appear anywhere in the profile's top 20.
 
 **Two different things were being confused, by me.**
 
@@ -87,13 +129,42 @@ FIXED: `keepHidden`, a load-order gate (VIPER.glb 12.1 s → 2.7 s), select-scre
 watchdog so "invisible wrestler" cannot return. Sampled every 250 ms boot→select→match:
 **0 violations.**
 
-## 5. SLOW LOADS / THINGS RENDER AFTER YOU ARE ALREADY IN GAME  ·  repeated 3+ times  ·  PARTIAL
+## 5. SLOW LOADS / THINGS RENDER AFTER YOU ARE ALREADY IN GAME  ·  repeated 4+ times  ·  MOSTLY FIXED
 
 > "we need better wait and load times" · "the slow load on models and things are still broken" ·
 > "it lets me press play, then exhibition, then sometimes drops me straight into a match and skips
-> fighter selection"
+> fighter selection" · "the model glbs are rendering slowly like I mentioned before"
 
-Load order fixed for fighter models (#4). **The skip-fighter-selection race is NOT fixed.**
+Load order fixed for fighter models (#4). Two more causes found and fixed 2026-08-02:
+
+**(a) THE FILES WERE ENORMOUS AND UNCOMPRESSED.** `BANNON_rigged.glb` was 11.50 MB of which only
+**1% is texture** — the other 11.4 MB is raw float32 geometry, fetched, parsed and uploaded by
+`GLTFLoader` **on the main thread** at the moment the match starts. Now EXT_meshopt_compression
+(meshoptimizer, MIT, open source — `tools/assets/compress_rigs.cjs`), decoder vendored locally and
+registered on the GLTFLoader *prototype* so all seventeen `new THREE.GLTFLoader()` sites get it.
+**59 rigs, 345.7 MB → 96.8 MB (72% smaller)**, every one re-read from the written bytes and gated
+through `skinqa` before and after, with automatic revert (1 model reverted itself).
+BANNON_rigged 11.50 → 3.70 MB, VIPER 5.63 → 1.59 MB, TARZANIAN_DEVIL 13.19 → 3.42 MB.
+  - **NEVER QUANTIZE POSITION ON A SKINNED MESH.** Measured through the real gate:
+    quantize-including-POSITION is 1.10 MB and **p95 282,517 = destroyed**; quantize-everything-else
+    is 1.59 MB and p95 0.0256 (baseline 0.0241). `quantize()` puts the compensating scale on the
+    mesh NODE, and a SkinnedMesh does not use its node transform.
+  - THE BLOCKER THAT HELD THIS UP FOR MONTHS was diagnosed at the same time. Every gltf-transform
+    run died with `Cannot read properties of null (reading 'setMagFilter')`, logged in CLAUDE.md as
+    a null sampler. **It is not a sampler.** 54 of our 73 character GLBs carry
+    `extensions:{EXT_texture_webp}` on their textures and declare **nothing** in `extensionsUsed`,
+    and the reader only runs an extension's preread hook for extensions the file declares — that
+    hook is what copies the webp source down to `textureDef.source`. Without it the reader indexes
+    `context.textures[undefined]`, the material gets an undefined texture, and
+    `getBaseColorTextureInfo()` returns the null. three.js survived it because r128 registers the
+    WebP plugin unconditionally, which is why nobody ever noticed. `tools/model_diag/fix_extensions_used.cjs`
+    repairs it (and exports an in-memory normaliser the compressor uses).
+
+**(b) THE ROSTER SCREEN WAS DOWNLOADING ALL 121 CHARACTER MODELS AT ONCE**, racing the two fighters
+you actually picked. See #1 — portraits are now visibility-gated, and the portrait downloader yields
+to `BANNON_LOADORDER.busy()` whenever a wrestler's own body is on the wire.
+
+**Still open:** the skip-fighter-selection race.
 
 ## 6. APK WON'T PARSE / INSTALL, NO IN-APP UPDATE PROMPT  ·  repeated 4+ times  ·  OPEN
 > "the apk won't parse or install" · "my app is not saying (has an update would u like to install)"

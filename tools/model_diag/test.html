@@ -6,5 +6,22 @@
      the gate runs offline and pins three r128 — the same build the game ships. -->
 <script src="vendor/three.min.js"></script>
 <script src="vendor/GLTFLoader.js"></script>
-<script>window.__SKINQA_READY = (typeof THREE !== 'undefined') && !!THREE.GLTFLoader;</script>
+<!-- The gate has to be able to read what the game reads. Our rigs are EXT_meshopt_compression now,
+     and a loader with no decoder throws "setMeshoptDecoder must be called before loading compressed
+     files" — which would make every compressed model look corrupt to the gate. Same prototype patch
+     the game uses, for the same reason: there is more than one place a loader gets constructed. -->
+<script src="vendor/meshopt_decoder.js"></script>
+<script>
+(function(){ try{
+  if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+  var P = THREE.GLTFLoader.prototype;
+  ['load','parse','loadAsync','parseAsync'].forEach(function(m){
+    var o = P[m]; if (typeof o !== 'function' || o.__meshopt) return;
+    var w = function(){ if (!this.meshoptDecoder && window.MeshoptDecoder){ try{ this.setMeshoptDecoder(window.MeshoptDecoder); }catch(e){} }
+      return o.apply(this, arguments); };
+    w.__meshopt = 1; P[m] = w;
+  });
+}catch(e){} })();
+window.__SKINQA_READY = (typeof THREE !== 'undefined') && !!THREE.GLTFLoader;
+</script>
 </body></html>

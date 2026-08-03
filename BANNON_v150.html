@@ -463,6 +463,38 @@ window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10
 <script src="assets/vendor/GLTFLoader.js"></script>
 <script>if(typeof THREE!=='undefined'&&!THREE.GLTFLoader){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');}</script>
 <script>if(typeof THREE!=='undefined'&&!THREE.GLTFLoader){document.write('<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');}</script>
+<!-- MESHOPT DECODER (meshoptimizer, MIT, vendored — never a CDN, same reason as three.js).
+     Our character rigs are the single biggest thing the phone has to move: 361 MB of GLB across the
+     roster, and BANNON_rigged alone was 11.5 MB of which only 1% is texture — the rest is raw
+     float32 geometry that GLTFLoader fetches, parses and uploads ON THE MAIN THREAD at the exact
+     moment a match starts. EXT_meshopt_compression quantizes and entropy-codes that data (measured
+     on VIPER: 5.63 -> 1.11 MB, 80% smaller) and decodes in WASM at hundreds of MB/s.
+     GLTFLoader already ships the plugin; it just needs a decoder handed to it. -->
+<script src="assets/vendor/meshopt_decoder.js"></script>
+<script>
+/* Register the decoder on EVERY GLTFLoader, not at the 17 call sites.
+   There are seventeen separate `new THREE.GLTFLoader()` in this file and more will be written; a
+   compressed model reaching a loader that was never given a decoder throws
+   "setMeshoptDecoder must be called before loading compressed files" and the character silently
+   falls back to the procedural body — which is precisely the bug class the owner keeps reporting.
+   Patch the prototype once so it is impossible to get wrong. */
+(function(){
+  try{
+    if (typeof THREE === 'undefined' || !THREE.GLTFLoader) return;
+    var P = THREE.GLTFLoader.prototype;
+    ['load','parse','loadAsync','parseAsync'].forEach(function(m){
+      var o = P[m];
+      if (typeof o !== 'function' || o.__meshopt) return;
+      var w = function(){
+        if (!this.meshoptDecoder && window.MeshoptDecoder) { try{ this.setMeshoptDecoder(window.MeshoptDecoder); }catch(e){} }
+        return o.apply(this, arguments);
+      };
+      w.__meshopt = 1; P[m] = w;
+    });
+    window.__MESHOPT_READY = !!window.MeshoptDecoder;
+  }catch(e){}
+})();
+</script>
 <!-- FBXLoader + fflate — VENDORED LOCALLY so the offline APK (file://) can load mocap animation.
      This is THE reason combat looked marionette: FBXLoader was CDN-only and never loaded on the APK,
      so STUDIO.clips stayed empty and every move fell back to procedural spring poses. Local-first;
@@ -16030,7 +16062,28 @@ const BONE_MAP_OVERRIDES = {
     ['spine','pelvis','chest'], ['neck','chest','head']
   ]
 };
-function fighterFor(side){ return (side==='p1')?fighters[0]:(side==='p2')?fighters[1]:(side==='p3')?fighters[2]:(side==='p4')?fighters[3]:null; }
+// 'p1'..'p4' are the named slots; 'pN' generally is fighters[N-1] so bodies that arrive AFTER the
+// bell — a run-in, a Royal Rumble entrant, a passer-by in the world — can use the same model path
+// instead of being stuck with the procedural body. (They were: the only caller of the loader keyed
+// off these four strings, so entrant five onwards never even requested a GLB.)
+function fighterFor(side){
+  if (side==='p1') return fighters[0];
+  if (side==='p2') return fighters[1];
+  if (side==='p3') return fighters[2];
+  if (side==='p4') return fighters[3];
+  var m = /^p(\d+)$/.exec(String(side||''));
+  return m ? (fighters[(+m[1])-1] || null) : null;
+}
+/** Ask for THIS fighter's GLB, whoever they are and however late they arrived. */
+function requestCharModel(f){
+  try{
+    if (!f || f.model || f._forceProc) return false;
+    var i = fighters.indexOf(f); if (i < 0) return false;
+    if (typeof applyCharModels !== 'function') return false;
+    return applyCharModels('p' + (i+1)) !== false;
+  }catch(e){ return false; }
+}
+window.requestCharModel = requestCharModel;
 function setModelStatus(side,t){ modelStatusText[side]=t; if(side===modelSel){ const el=document.getElementById('modelStatus'); if(el) el.textContent=t; } refreshModelUI(); }
 function setProcVisible(f,vis){ for(const k in f.seg){ if(k==='aura')continue; if(f.seg[k]) f.seg[k].visible=vis; } }
 // Fully free a model's GPU memory (geometry + materials + textures + skeleton). Without this, every
@@ -16197,7 +16250,7 @@ function mdickieBaseFor(charName){
 }
 window.mdickieBaseUrl = mdickieBaseUrl;
 window.mdickieBaseFor = mdickieBaseFor;
-function applyCharModels(){ ['p1','p2','p3','p4'].forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; if(f._forceProc) return;
+function applyCharModels(only){ (only ? [only] : ['p1','p2','p3','p4']).forEach(function(sd){ var f=fighterFor(sd); if(!f||f.model) return; if(f._forceProc) return;
   // ── THE PROCEDURAL BODY MUST NEVER BE SEEN UNLESS IT WAS CHOSEN ──────────────────────────────
   // OWNER LAW, said repeatedly: "procedural model attires should not appear ever unless chose".
   // What he sees today: procedural body first, swaps to the GLB somewhere around character select,
@@ -38545,20 +38598,39 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
       // color plate visible); live-swaps via the 'bannonPortrait' event when the GLB finishes.
       var key=String(c.name).toUpperCase().replace(/[^A-Z0-9_]/g,'_');
       var grad='linear-gradient(135deg,'+hx(c.col)+','+hx(c.accent)+')';
-      var uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(c.name):null; }catch(e){}
+      var uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(c.name,0):null; }catch(e){}
       d.innerHTML = '<div class="swatch" data-porbg="'+key+'" data-porgrad="'+grad+'" style="background-image:'+(uri?('url('+uri+'),'):'')+grad+'"></div>'+
                     '<div class="nm">'+c.name.replace(/_/g,' ')+'</div>'+
                     (c.canon?'<div class="tag">C</div>':(c.forged?'<div class="tag">F</div>':''));
       d.addEventListener('click', function(){ assign(c.name); });
+      d.dataset.porname = c.name;
       grid.appendChild(d);
     });
+    observeCards(grid);
+  }
+
+  // ONLY THE CARDS YOU CAN SEE GET A PORTRAIT. The roster is 121 characters and every one of them
+  // owns a multi-megabyte GLB; asking for all of them the instant the screen opens is 361 MB of
+  // downloads racing the two bodies about to wrestle. An IntersectionObserver bumps a card's
+  // priority as it scrolls into view, so the eight on screen render first and the rest never load
+  // unless you scroll to them.
+  var _cardObs = null;
+  function observeCards(grid){
+    if (!window.IntersectionObserver || !window.BANNON_PORTRAITS || !BANNON_PORTRAITS.prioritise) return;
+    if (!_cardObs) _cardObs = new IntersectionObserver(function(entries){
+      var names = [];
+      entries.forEach(function(en){ if (en.isIntersecting && en.target.dataset.porname) names.push(en.target.dataset.porname); });
+      if (names.length) BANNON_PORTRAITS.prioritise(names, 1);
+    }, { root:grid, rootMargin:'220px' });
+    _cardObs.disconnect();
+    Array.prototype.forEach.call(grid.children, function(el){ _cardObs.observe(el); });
   }
 
   function plateHTML(c, role){
     function stat(n,v,max){ var p=Math.max(4,Math.min(100,Math.round(v/max*100))); return '<div class="csStat"><span class="bn">'+n+'</span><span class="bar"><i style="width:'+p+'%"></i></span></div>'; }
     var key=String(c.name).toUpperCase().replace(/[^A-Z0-9_]/g,'_');
     var grad='linear-gradient(135deg,'+hx(c.col)+','+hx(c.accent)+')';
-    var uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(c.name):null; }catch(e){}
+    var uri=null; try{ uri=window.BANNON_PORTRAITS?window.BANNON_PORTRAITS.get(c.name,2):null; }catch(e){}
     return '<div class="cspor" data-porbg="'+key+'" data-porgrad="'+grad+'" style="background-image:'+(uri?('url('+uri+'),'):'')+grad+'"></div>'+
       '<div class="role">'+role+'</div><div class="pnm">'+c.name.replace(/_/g,' ')+'</div>'+
       '<div class="plb">'+c.label+'</div><div class="pfc">'+c.faction+(c.canon?' · CANON':'')+' · '+c.style+'</div>'+
@@ -38755,6 +38827,7 @@ try{ window.MANIFESTO && window.MANIFESTO.register({ key:'v114.biomech',kind:'lo
           f._lookKey=name; f.isPlayer=false;
           const s=spots[(i-2)%spots.length]; f.x=s[0]; f.z=s[1];
           fighters.push(f);
+          try{ if(typeof requestCharModel==='function') requestCharModel(f); }catch(_){}   // entrant 3+ got no GLB either
           try{ if(typeof dressFighter==='function') dressFighter(f); }catch(_){}
           try{ if(typeof applyForgeMorphs==='function') applyForgeMorphs(f); }catch(_){}
         }
@@ -42898,30 +42971,93 @@ window.BANNON_PORTRAITS = (function(){
     return g;
   }
   function clearScene(){ for(let i=scene.children.length-1;i>=0;i--){ const c=scene.children[i]; if(!c.isLight){ scene.remove(c); c.traverse&&c.traverse(x=>{ if(x.geometry)x.geometry.dispose&&x.geometry.dispose(); if(x.material)x.material.dispose&&x.material.dispose(); }); } } }
-  function get(name){ const key=String(name||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_');
-    if(cache[key]===undefined){
-      if(!init()){ cache[key]=null; }
-      else { try{
-        const o=(window.fighterOptsFor?window.fighterOptsFor(key):null)||{};
-        const fg=(window.CHAR_FACEGEAR&&(window.CHAR_FACEGEAR[key]||window.CHAR_FACEGEAR[name]))||null;
-        clearScene(); scene.add(buildBust(o,fg)); R.render(scene,cam);
-        const uri=R.domElement.toDataURL('image/png'); cache[key]=(uri&&uri.length>200)?uri:null;
-      }catch(e){ cache[key]=null; } }
-    }
-    // GLB RENDER CARDS: if this character has a banked GLB model, render THAT over the procedural bust
-    // (async, one at a time) and swap it into the card via the 'bannonPortrait' event. Falls back to bust.
-    try{ if(glbCache[key]===undefined){
+  // ============================================================================================
+  // THE 12-SECOND FREEZE ON "QUICK FIGHT" LIVED HERE. Measured, not guessed:
+  //   CPU profile of the click -> openSelect 11,267ms -> renderRoster 11,168ms -> this get()
+  //   11,122ms, of which toDataURL is 9,095ms SELF and shader linking another 2,345ms.
+  // renderRoster draws 121 cards in one synchronous forEach and every card called get(), and get()
+  // built a bust, rendered it to a WebGL canvas and did a BLOCKING GPU readback + PNG encode. 121
+  // readbacks back to back with nothing yielding in between. It also enqueued a GLB portrait load
+  // for all 121 characters at once — 361 MB of roster models racing the two bodies you are about to
+  // wrestle with, which is the other half of "the model glbs are rendering slowly".
+  //
+  // Now: get() NEVER renders. It returns what it has (or null, and the card shows its colour
+  // gradient, which it already did as the fallback) and registers the key as wanted. A pump drains
+  // that queue one portrait per animation frame, nearest-to-the-viewport first, and pushes each
+  // finished render into the card through the SAME 'bannonPortrait' event the GLB path already used.
+  // A character who HAS a model skips the bust entirely — the GLB render is about to replace it, so
+  // rendering the placeholder is pure cost.
+  // ============================================================================================
+  const want = {};            // key -> { name, pri }  (pri: 2 = on a plate, 1 = visible card, 0 = idle)
+  let pumping = false;
+  function renderBust(key, name){
+    if (!init()){ cache[key]=null; return; }
+    try{
+      const o=(window.fighterOptsFor?window.fighterOptsFor(key):null)||{};
+      const fg=(window.CHAR_FACEGEAR&&(window.CHAR_FACEGEAR[key]||window.CHAR_FACEGEAR[name]))||null;
+      clearScene(); scene.add(buildBust(o,fg)); R.render(scene,cam);
+      const uri=R.domElement.toDataURL('image/png'); cache[key]=(uri&&uri.length>200)?uri:null;
+      if (cache[key]) try{ window.dispatchEvent(new CustomEvent('bannonPortrait',{detail:{key,uri:cache[key]}})); }catch(e){}
+    }catch(e){ cache[key]=null; }
+  }
+  function modelUrlFor(key){
+    try{
       // portrait-model override first (e.g. MDickie's assembled-but-unrigged WR3D body shows on his
       // CARD without being his in-match fighter), else the character's real fighter GLB.
       var pm=(window.CHAR_PORTRAIT_MODEL&&window.CHAR_PORTRAIT_MODEL[key])||null;
-      var cm=pm?{url:pm}:(window.charModelFor?window.charModelFor(key):null);
-      if(cm&&cm.url){ glbCache[key]=null; enqueueGLB(key, cm.url); } } }catch(e){}
-    return glbCache[key] || cache[key];
+      if (pm) return pm;
+      var cm=(window.charModelFor?window.charModelFor(key):null);
+      return (cm&&cm.url)||null;
+    }catch(e){ return null; }
+  }
+  function pump(){
+    pumping = false;
+    // ONE portrait per frame. A bust is a blocking readback; doing two is a dropped frame.
+    // PRIORITY 0 IS PARKED, NOT QUEUED. Every one of the 121 cards asks for a portrait as it is
+    // built, but only the ones the IntersectionObserver says are on screen (1) or that a P1/P2 plate
+    // asked for (2) are worth a frame. Draining priority 0 as well just moved the same 121 blocking
+    // readbacks from one 11-second block into 121 dropped frames — measured at 21.5s of renderBust
+    // spread across the screen. Parked entries wake the moment you scroll to them.
+    let bestK=null, bestP=0;
+    for (const k in want){ const w=want[k]; if (w.pri > bestP){ bestP=w.pri; bestK=k; } }
+    if (bestK == null) return;
+    const w = want[bestK]; delete want[bestK];
+    const url = modelUrlFor(bestK);
+    if (url && glbCache[bestK] === undefined){ glbCache[bestK] = null; enqueueGLB(bestK, url); }
+    else if (cache[bestK] === undefined) renderBust(bestK, w.name);
+    schedule();
+  }
+  function schedule(){ if (pumping) return; pumping = true;
+    try{ requestAnimationFrame(pump); }catch(e){ setTimeout(pump, 32); } }
+
+  function get(name, pri){ const key=String(name||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_');
+    const have = glbCache[key] || cache[key];
+    if (have) return have;
+    if (cache[key] === undefined || glbCache[key] === undefined){
+      const p = pri|0;
+      if (!want[key] || want[key].pri < p) want[key] = { name:name, pri:p };
+      schedule();
+    }
+    return null;
+  }
+  /** The select screen tells us which cards the player can actually SEE. */
+  function prioritise(names, pri){
+    (Array.isArray(names)?names:[names]).forEach(function(n){
+      const key=String(n||'').toUpperCase().replace(/[^A-Z0-9_]/g,'_');
+      if (glbCache[key] || cache[key]) return;
+      const p = (pri==null?1:pri)|0;
+      if (!want[key] || want[key].pri < p) want[key] = { name:n, pri:p };
+    });
+    schedule();
   }
   // ---- GLB portrait pipeline (async, serialized so we never thrash the GPU) ----
   const glbCache={}; const glbQ=[]; let glbBusy=false;
   function enqueueGLB(key,url){ glbQ.push([key,url]); pumpGLB(); }
   function pumpGLB(){ if(glbBusy || !glbQ.length) return; if(typeof THREE==='undefined'||!THREE.GLTFLoader||!init()) return;
+    // A WRESTLER'S OWN BODY OUTRANKS A CARD THUMBNAIL. BANNON_LOADORDER already makes clip fetches
+    // yield to an in-flight fighter model; portraits were the one downloader that did not, and they
+    // are the heaviest (a portrait GLB is the same multi-megabyte file as the fighter's).
+    try{ var lo=window.BANNON_LOADORDER; if(lo && lo.busy && lo.busy()){ setTimeout(pumpGLB, 250); return; } }catch(e){}
     glbBusy=true; const [key,url]=glbQ.shift();
     let L; try{ L=new THREE.GLTFLoader(); }catch(e){ glbBusy=false; return; }
     const cdn=window.MODEL_CDN_BASE||'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/';
@@ -42944,7 +43080,9 @@ window.BANNON_PORTRAITS = (function(){
     }catch(e){} done(); };
     L.load(url, render, undefined, ()=>{ L.load(cdn+url, render, undefined, done); });
   }
-  return { get, cache, glbCache };
+  return { get, prioritise, cache, glbCache,
+           pending: function(){ return Object.keys(want).length; },
+           queued:  function(){ return glbQ.length; } };
 })();
 // GLB render cards: when a GLB portrait finishes, swap it into any card <img data-por="KEY"> live.
 try{ window.addEventListener('bannonPortrait', function(e){ try{ var k=e.detail.key, u=e.detail.uri;
@@ -46402,6 +46540,11 @@ console.log('%c[BANNON_MOVEPOOL] 104 MDickie moves now reachable by position —
     try{ f.zone='FLOOR'; f.zoneY=(window.ZONE_Y?window.ZONE_Y.FLOOR:-0.85); }catch(e){}
     try{ if(f._autoZoneFromPosition) f._autoZoneFromPosition(); }catch(e){}
     fighters.push(f);
+    // HIS BODY, NOT A TUBE. The run-in spawned through dressFighter alone, and dressFighter only
+    // styles the procedural segments — nothing ever asked for his GLB, because the only thing that
+    // did was applyCharModels' hardcoded p1..p4 list which runs at the bell, before he exists.
+    // Measured in the harness: a run-in reached the ring as a procedural body every time.
+    try{ if(typeof requestCharModel==='function') requestCharModel(f); }catch(e){}
     try{ if(typeof dressFighter==='function') dressFighter(f); }catch(e){}
     try{ if(typeof applyForgeMorphs==='function') applyForgeMorphs(f); }catch(e){}
     // slide in: a short scripted approach, then OUR AI + OUR physics take the wheel
@@ -57989,6 +58132,9 @@ window.__deriveVariant = async function(key){
                                 modelsWarmed:Object.keys(warmed).length,
                                 gateArmed: !!(window.loadClipFor && window.loadClipFor.__lo),
                                 counterArmed: !!(window.loadFighterModel && window.loadFighterModel.__lo) }; },
+    // "is a wrestler's own body on the wire right now?" — BANNON_PORTRAITS asks before it downloads
+    // a card thumbnail, which is the same multi-megabyte GLB and was racing the fighters for it.
+    busy: function(){ return ST.inFlight > 0; },
     warm: warmModel
   };
   console.log('%c[BANNON_LOADORDER] fighter models take the network first; clip warming yields','color:#7CFC00');
