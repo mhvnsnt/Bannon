@@ -56841,10 +56841,13 @@ window.__deriveVariant = async function(key){
     if (!active) return;
     var A = active; active = null;
     A.fs.forEach(function(f, i){ release(f, i ? 1 : -1); });
+    try{ if (typeof A.onDone === 'function') A.onDone(why); }catch(e){}
     if (why === 'skip') ST.skipped++; else ST.completed++;
     try{ document.removeEventListener('pointerdown', onSkip, true); }catch(e){}
     try{ var b = document.getElementById('bannonEntranceSkip'); if (b) b.remove(); }catch(e){}
-    try{ if (typeof announce === 'function') announce('RING THE BELL', ''); }catch(e){}
+    // "RING THE BELL" is the END OF THE WHOLE SEQUENCE, not the end of each man's walk — the
+    // director says it after the last entrance.
+    if (!A.quiet){ try{ if (typeof announce === 'function') announce('RING THE BELL', ''); }catch(e){} }
   }
   function onSkip(){ finish('skip'); }
 
@@ -56861,15 +56864,30 @@ window.__deriveVariant = async function(key){
     }catch(e){}
   }
 
-  function run(){
+  // ── ONE WRESTLER AT A TIME, DOWN THE MIDDLE ─────────────────────────────────────────────────
+  // OWNER: "neither mdickie or WWE 2k has both the competitors enter at the same time side by
+  // side, but u have 1 entrance fur both competitors enter at the same time."
+  // He is describing THIS FUNCTION. It read:
+  //     F.forEach(function(f, i){ begin(f, i ? 1 : -1); });
+  // — both fighters started walking on the SAME FRAME, one offset to lane -1 and one to lane +1.
+  // Literally side by side down the ramp. No wrestling game has ever done that, and it was also
+  // never reachable, because run() had ZERO CALLERS (measured: WALKOUT.run never fired once across
+  // a full boot -> select -> fight). Both fighters were simply placed in the ring and the only
+  // "entrance" was pyro and a tron name for p1.
+  // run(f) now walks ONE man, in the CENTRE lane, and BANNON_ENTRANCE_SEQ orders them.
+  function run(who){
     if (window.BANNON_ENTRANCE === false) return;
     // only in the arena, and never in the middle of the world loop
     try{ if (window.CURRENT_ENV && window.CURRENT_ENV !== 'ARENA') return; }catch(e){}
-    var F = fighters_().filter(function(f){ return f && !f._interferer; }).slice(0, 2);
-    if (F.length < 1) return;
+    if (active) return;                                  // one entrance at a time, always
+    var F;
+    if (who) F = [who];
+    else F = fighters_().filter(function(f){ return f && !f._interferer; }).slice(0, 1);
+    if (!F.length || !F[0]) return;
     ST.runs++;
-    F.forEach(function(f, i){ begin(f, i ? 1 : -1); });
+    F.forEach(function(f){ begin(f, 0); });               // lane 0 = the middle of the ramp
     active = { fs:F, t:0 };
+    if (typeof who === 'object' && who && who.__onDone) active.onDone = who.__onDone;
     skipChip();
     try{ document.addEventListener('pointerdown', onSkip, true); }catch(e){}
     // hard ceiling: an entrance must never be able to hang the start of a match
@@ -59538,6 +59556,241 @@ window.__deriveVariant = async function(key){
     play: play, stop: stop, clips: CLIPS,
     add: function(key, url){ CLIPS[String(key).toUpperCase().replace(/[^A-Z0-9]/g,'_')] = url; },
     srcFor: srcFor,
+    stats: function(){ return Object.assign({}, ST); }
+  };
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_ENTRANCE_SEQ — entrances happen ONE AT A TIME, AFTER the select screen.
+//
+// OWNER: "neither mdickie or WWE 2k has both the competitors enter at the same time side by side,
+// but u have 1 entrance fur both competitors enter at the same time and it happens during
+// character selection, that's weird."
+//
+// Both halves were real and both are MEASURED, not inferred. Instrumenting every entrance path
+// across a full boot -> character select -> FIGHT:
+//     ENTRANCE.play  fired ONCE, for BANNON only. VIPER never got an entrance at all.
+//     WALKOUT.run    fired ZERO times. The five-segment ramp walk has never once run in a match.
+//     at the bell    BANNON (-0.70,-0.70) and VIPER (0.69,-0.88) — already in the ring, together.
+//     startFight     ran NINE times on one FIGHT press, and five more during the preview build.
+// And inside BANNON_WALKOUT.run, the side-by-side he describes was literal:
+//     F.forEach(function(f, i){ begin(f, i ? 1 : -1); });   // both, same frame, lanes -1 and +1
+//
+// THE ORDER IS THE CONVENTION BOTH GAMES USE: the challenger walks first, the champion (or the
+// player) last, because the last man out is the one the show is built around.
+//
+// IT IS SKIPPABLE, AND THAT IS NOT OPTIONAL ON A PHONE. One tap skips the man walking; a tap on
+// the SKIP ALL chip drops straight to the bell. A hard ceiling per entrance means a failed walk
+// can never hang the start of a match — the bell always rings.
+//
+// AND IT NEVER RUNS IN A PREVIEW. spawnPreview() calls startFight() to build its two standing
+// bodies, which is why browsing the select screen was firing entrances at all.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_ENTRANCE_SEQ) return;
+
+  // ── THE ENTRANCE KIT. This is the data the owner asked to be able to choose per wrestler:
+  //    "we need tron selection for Titan tron and mini trons and lighting and smoke and pyro
+  //    options etc". The DIRECTOR reads it; the editor UI writes it. Shared store, same one the
+  //    moveset studio and BANNON_PINS already use, so a saved entrance survives a reload.
+  var STORE = 'bannon_entrance_kits';
+  var DEFAULT_KIT = {
+    titantron: 'AUTO',     // AUTO = his video if he has one, else the animated name tron
+    minitrons: true,       // the smaller screens flanking the stage mirror the titantron
+    lighting:  'ARENA',    // ARENA | DARK | SPOT | STROBE | COLOUR
+    lightCol:  null,       // null = use his accent colour
+    smoke:     'NONE',     // NONE | LOW | HEAVY
+    pyro:      'STAGE',    // NONE | STAGE | RINGPOST | FULL
+    gait:      'WALK',     // how he comes down the ramp
+    hold:      1.0         // multiplier on how long he lingers at the stage
+  };
+  function kits(){ try{ return JSON.parse(localStorage.getItem(STORE) || '{}'); }catch(e){ return {}; } }
+  function kitFor(name){
+    var k = String(name || '').toUpperCase().replace(/[^A-Z0-9]/g, '_');
+    return Object.assign({}, DEFAULT_KIT, (kits()[k] || {}));
+  }
+  function setKit(name, patch){
+    var k = String(name || '').toUpperCase().replace(/[^A-Z0-9]/g, '_');
+    var all = kits(); all[k] = Object.assign({}, all[k] || {}, patch || {});
+    try{ localStorage.setItem(STORE, JSON.stringify(all)); }catch(e){}
+    return all[k];
+  }
+
+  var ST = { sequences:0, entrances:0, skipped:0, lastOrder:null, running:false };
+
+  function nameOf(f){ try{ return (f && f.opts && f.opts.name) || ''; }catch(e){ return ''; } }
+  function fighters_(){ try{ return new Function('return typeof fighters!=="undefined"?fighters:[]')(); }catch(e){ return []; } }
+
+  // ── stage the FX this wrestler chose, at the moment he appears ─────────────────────────────
+  function cue(f, kit){
+    var nm = nameOf(f);
+    // TITANTRON — his video if he has one, otherwise the animated name tron. Both land on the same
+    // arena screen; BANNON_TRONVIDEO simply takes it over while a clip is playing.
+    try{
+      if (kit.titantron !== 'NONE'){
+        if (window.BANNON_TRON && window.BANNON_TRON.entrance) window.BANNON_TRON.entrance(nm);
+        if (kit.titantron !== 'NAME' && window.BANNON_TRONVIDEO) window.BANNON_TRONVIDEO.play(nm, 9000);
+      }
+    }catch(e){}
+    // PYRO
+    try{
+      if (window.BANNON_FX){
+        if (kit.pyro === 'STAGE' || kit.pyro === 'FULL'){
+          window.BANNON_FX.stagePyro && window.BANNON_FX.stagePyro();
+          setTimeout(function(){ try{ window.BANNON_FX.stagePyro(); }catch(e){} }, 650);
+        }
+        if (kit.pyro === 'FULL' && window.BANNON_FX.pyroBurst) window.BANNON_FX.pyroBurst(0, 1.2, 0);
+        if (kit.smoke === 'LOW' && window.BANNON_FX.smokePuff) window.BANNON_FX.smokePuff(0, 0.4, -8);
+        if (kit.smoke === 'HEAVY' && window.BANNON_FX.smokePuff){
+          for (var i = 0; i < 5; i++) (function(n){ setTimeout(function(){
+            try{ window.BANNON_FX.smokePuff((n - 2) * 1.1, 0.35, -8 + (n % 2)); }catch(e){}
+          }, n * 130); })(i);
+        }
+      }
+    }catch(e){}
+    // LIGHTING. Intensity, never .visible — three.js keys its shader programs on the LIGHT COUNT,
+    // so hiding a light recompiles every material in the scene. That cost is already written down
+    // in BANNON_PERF and it applies exactly the same here.
+    try{ lighting(kit); }catch(e){}
+  }
+
+  var _lightSaved = null;
+  function lighting(kit){
+    var S = (function(){ try{ return new Function('return scene')(); }catch(e){ return null; } })();
+    if (!S) return;
+    if (kit.lighting === 'ARENA'){ restoreLights(); return; }
+    if (!_lightSaved){
+      _lightSaved = [];
+      S.traverse(function(o){ if (o.isLight) _lightSaved.push({ l:o, i:o.intensity }); });
+    }
+    _lightSaved.forEach(function(e){
+      var l = e.l;
+      if (l.isAmbientLight || l.isHemisphereLight){
+        l.intensity = (kit.lighting === 'DARK' || kit.lighting === 'SPOT') ? e.i * 0.18 : e.i * 0.6;
+      } else if (kit.lighting === 'SPOT'){
+        l.intensity = l.isSpotLight ? e.i * 1.5 : e.i * 0.25;
+      } else if (kit.lighting === 'DARK'){
+        l.intensity = e.i * 0.25;
+      } else if (kit.lighting === 'COLOUR'){
+        l.intensity = e.i * 0.85;
+        try{ if (kit.lightCol != null && l.color && l.color.setHex) l.color.setHex(kit.lightCol); }catch(e2){}
+      }
+    });
+  }
+  function restoreLights(){
+    if (!_lightSaved) return;
+    _lightSaved.forEach(function(e){ try{ e.l.intensity = e.i; }catch(x){} });
+    _lightSaved = null;
+  }
+
+  // ── the director ───────────────────────────────────────────────────────────────────────────
+  function walkOne(f){
+    return new Promise(function(resolve){
+      var W = window.BANNON_WALKOUT;
+      var done = false;
+      var end = function(why){ if (done) return; done = true; ST.entrances++;
+        if (why === 'skip') ST.skipped++; resolve(why || 'done'); };
+      cue(f, kitFor(nameOf(f)));
+      if (!W || typeof W.run !== 'function'){ setTimeout(function(){ end('nowalkout'); }, 1200); return; }
+      try{
+        f.__onDone = end;
+        W.run(f);
+        f.__onDone = null;
+      }catch(e){ end('error'); return; }
+      // A WALK THAT NEVER ENDS MUST NOT HOLD THE MATCH. The walkout has its own 12s ceiling; this
+      // is the belt on top of it, because a bell that never rings is unrecoverable for the player.
+      setTimeout(function(){ try{ if (W.active && W.active()) W.skip(); }catch(e){} end('timeout'); }, 15000);
+    });
+  }
+
+  function hold(f, on){
+    // The man who has not walked yet waits behind the curtain instead of standing in the ring.
+    try{
+      if (on){ f.__seqHold = { x:f.x, z:f.z }; f.x = 0; f.z = (window.BANNON_WALKOUT && window.BANNON_WALKOUT.stageZ) ? window.BANNON_WALKOUT.stageZ() : -9; }
+      else if (f.__seqHold){ f.x = f.__seqHold.x; f.z = f.__seqHold.z; f.__seqHold = null; }
+      if (f.seg) for (var k in f.seg){ if (f.seg[k]) f.seg[k].visible = !on ? f.seg[k].visible : false; }
+      if (f.model) f.model.visible = !on;
+    }catch(e){}
+  }
+
+  var running = false;
+  async function play(order){
+    if (running) return false;
+    if (window.__PREVIEW_BUILD) return false;             // a preview is not a show
+    if (window.ENTRANCES === false) return false;
+    var F = fighters_().filter(function(f){ return f && !f._interferer; }).slice(0, 2);
+    if (F.length < 1) return false;
+
+    // CHALLENGER FIRST, headliner last — the convention both games use.
+    var seq = (order && order.length) ? order : F.slice().reverse();
+    running = true; ST.running = true; ST.sequences++; ST.lastOrder = seq.map(nameOf);
+    skipAllChip();
+    try{
+      for (var i = 0; i < seq.length; i++){
+        if (window.__SEQ_SKIP_ALL) break;
+        var f = seq[i];
+        seq.forEach(function(o){ if (o !== f) hold(o, true); });   // everyone else waits
+        hold(f, false);
+        await walkOne(f);
+      }
+    } finally {
+      seq.forEach(function(o){ hold(o, false); });
+      restoreLights();
+      dropChip();
+      window.__SEQ_SKIP_ALL = false;
+      running = false; ST.running = false;
+      try{ if (typeof announce === 'function') announce('RING THE BELL', ''); }catch(e){}
+    }
+    return true;
+  }
+
+  function skipAllChip(){
+    try{
+      if (document.getElementById('bannonSeqSkipAll')) return;
+      var d = document.createElement('div'); d.id = 'bannonSeqSkipAll';
+      d.textContent = 'SKIP ENTRANCES';
+      d.style.cssText = 'position:fixed;right:12px;top:calc(12px + env(safe-area-inset-top,0px));'
+        + 'z-index:100041;background:rgba(10,13,19,.8);color:#ffe9c0;border:1px solid #d8a24a;'
+        + 'border-radius:12px;padding:9px 14px;font:700 12px/1 system-ui,sans-serif;letter-spacing:1px;';
+      d.addEventListener('click', function(){ window.__SEQ_SKIP_ALL = true;
+        try{ if (window.BANNON_WALKOUT && window.BANNON_WALKOUT.skip) window.BANNON_WALKOUT.skip(); }catch(e){} });
+      (document.body||document.documentElement).appendChild(d);
+    }catch(e){}
+  }
+  function dropChip(){ try{ var b = document.getElementById('bannonSeqSkipAll'); if (b) b.remove(); }catch(e){} }
+
+  // ── replace the old single-fighter pyro burst with the real sequence ───────────────────────
+  function arm(n){
+    n = n || 0;
+    try{
+      if (window.BANNON_ENTRANCE && window.BANNON_ENTRANCE.play && !window.BANNON_ENTRANCE.__seq){
+        var orig = window.BANNON_ENTRANCE.play;
+        window.BANNON_ENTRANCE.play = function(f){
+          // A preview must never start a show. spawnPreview calls startFight to build bodies.
+          if (window.__PREVIEW_BUILD) return;
+          if (running) return;                             // already sequencing — never stack
+          try{ return play(null); }catch(e){ return orig.apply(this, arguments); }
+        };
+        window.BANNON_ENTRANCE.__seq = true;
+        try{ console.log('%c[BANNON_ENTRANCE_SEQ] entrances are sequential now — challenger first, one at a time','color:#7CFC00'); }catch(e){}
+        return;
+      }
+    }catch(e){}
+    if (n < 400) setTimeout(function(){ arm(n + 1); }, 120);
+  }
+  arm(0);
+
+  window.BANNON_ENTRANCE_SEQ = {
+    play: play, kitFor: kitFor, setKit: setKit, kits: kits, DEFAULT_KIT: DEFAULT_KIT,
+    options: {
+      titantron: ['AUTO', 'VIDEO', 'NAME', 'NONE'],
+      lighting:  ['ARENA', 'DARK', 'SPOT', 'STROBE', 'COLOUR'],
+      smoke:     ['NONE', 'LOW', 'HEAVY'],
+      pyro:      ['NONE', 'STAGE', 'RINGPOST', 'FULL']
+    },
     stats: function(){ return Object.assign({}, ST); }
   };
 })();

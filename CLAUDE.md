@@ -1293,3 +1293,35 @@ wrong — both need the facial-hair / tattoo customisation pass in the creation 
    DURING CHARACTER SELECT. Neither MDickie nor WWE 2K does either of those. Entrances must be
    SEQUENTIAL and must run after the select screen, with the tron cued per wrestler.
 2. Facial hair add/remove + tattoo editing in character customisation.
+
+## ENTRANCES WERE BOTH BUGS HE SAID THEY WERE (2026-08-03) — BANNON_ENTRANCE_SEQ
+Owner: "neither mdickie or WWE 2k has both the competitors enter at the same time side by side, but
+u have 1 entrance fur both competitors enter at the same time and it happens during character
+selection." Both halves true, both MEASURED across a full boot -> select -> FIGHT:
+    ENTRANCE.play  fired ONCE, for p1 only. p2 NEVER GOT AN ENTRANCE AT ALL.
+    WALKOUT.run    fired ZERO times. The five-segment ramp walk had never run in a match.
+    at the bell    BANNON (-0.70,-0.70) and VIPER (0.69,-0.88) — already in the ring, together.
+And the side-by-side was LITERAL, inside BANNON_WALKOUT.run:
+    F.forEach(function(f, i){ begin(f, i ? 1 : -1); });   // both, same frame, lanes -1 and +1
+run() now takes ONE fighter and walks him in the CENTRE lane; BANNON_ENTRANCE_SEQ orders them,
+challenger first and headliner last (the convention both games use). It never runs under
+__PREVIEW_BUILD, which is what was firing entrances while browsing the select screen — spawnPreview
+calls startFight to build its standing bodies. Skippable per entrance AND a SKIP ENTRANCES chip, with
+a 15s ceiling per man on top of the walkout's own 12s, because a bell that never rings is
+unrecoverable.
+AFTER: `WALKOUT.run VIPER t+20.5s`, `WALKOUT.run BANNON t+36.0s` — 15 seconds apart, sequential,
+0 entrances during select. SEQ stats {sequences:1, entrances:2, lastOrder:["VIPER","BANNON"]}.
+### THE ENTRANCE KIT — the options he asked for, per wrestler
+`window.BANNON_ENTRANCE_SEQ.setKit(name, {...})`, stored in localStorage under
+`bannon_entrance_kits`, read by the director at cue time:
+  titantron AUTO|VIDEO|NAME|NONE · minitrons · lighting ARENA|DARK|SPOT|STROBE|COLOUR (+lightCol)
+  smoke NONE|LOW|HEAVY · pyro NONE|STAGE|RINGPOST|FULL · gait · hold
+LIGHTING CHANGES INTENSITY, NEVER `.visible` — three.js keys its shader programs on the LIGHT COUNT,
+so hiding a light recompiles every material in the scene. That is already written down in
+BANNON_PERF and it applies identically here. The editor UI on top of this is the next piece.
+### A MEASUREMENT OF MINE THAT WAS WRONG, CORRECTED IN THE SAME PASS
+The probe reported `startFight` running NINE times per FIGHT press. It does not. All nine stamps
+share the SAME MILLISECOND — that is ONE call passing through nine nested wrappers, because the
+probe re-armed on `setInterval` and BANNON_PERF re-wraps `window.startFight` after it, producing a
+new unguarded function each time. **A repeated instrument stacks; check the timestamps before
+believing a count.**
