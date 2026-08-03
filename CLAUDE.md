@@ -1162,3 +1162,50 @@ LADY_RHIANNON->TYNESHIA, REY_FUEGO->EL_TORO_DE_ORO, THE_BOULDER->BRUTUS — ever
 cloned repos. Chromium cannot start without scratch space, and it reports that as a page crash.
 CHECK `df -h /` BEFORE DEBUGGING A HARNESS THAT SUDDENLY STOPPED WORKING. Deleting still succeeds
 while writes fail, so clean up (test bundles, clones, .apk/.zip downloads) and re-run.
+
+## OUR OWN MODEL GENERATOR — TripoSR RUNS HERE, ON CPU (2026-08-03)
+Owner: "We would have more models if u had got a good tripo 3d alternative working, or could hook
+up my tripo 3d account to this through logins and not API keys." Both are built.
+### tools/models/image_to_3d.py — the generator. No account, no credits, no queue.
+The alternative to Tripo IS Tripo: **stabilityai/TripoSR**, built by Stability AI WITH Tripo AI,
+weights MIT, 167k downloads. Chosen over TRELLIS / Hunyuan3D / InstantMesh — all better models, all
+requiring CUDA — because it is the one that runs GPU-less, which is what this box is.
+**MEASURED, CPU ONLY: 19s to load, 23-25s to reconstruct, 45,108 verts / 90,224 faces, and the
+render is unmistakably the input object.** `bash tools/models/setup_image_to_3d.sh` installs it.
+FIVE PINS, EACH ONE A DEBUGGING ROUND. Do not "modernise" them:
+1. **transformers PINNED TO 4.x.** v5 renamed the ViT internals (`encoder.layer.N.attention.
+   attention.query` -> `layers.N.attention.q_proj`), so the 2024 checkpoint stops matching the model
+   it builds and load_state_dict fails with 192 missing keys.
+2. **torchvision must be the `+cpu` build from PyTorch's own index.** A plain `pip install
+   torchvision` takes the PyPI wheel, built against a different torch ABI, which dies at import with
+   `operator torchvision::nms does not exist` — and pip then says "already satisfied" and refuses to
+   replace it, so it needs `--force-reinstall`. `--index-url`, NEVER `--extra-index-url` (that pulls
+   ~3 GB of CUDA onto a GPU-less box; it has happened twice).
+3. **torchmcubes shimmed with PyMCubes** — the real one is a compiled CUDA extension with no wheel.
+   **THE AXIS FLIP IS THE WHOLE POINT:** torchmcubes returns verts (x,y,z), PyMCubes (z,y,x).
+   Unflipped you get a mesh that looks completely plausible and is MIRRORED.
+4. **rembg is stubbed** — it drags in the broken torchvision and TripoSR's own run.py imports it at
+   module scope, so the stock script is unusable for a reason unrelated to the model. Background
+   removal is a border flood fill instead, which is what a reference photo actually needs.
+5. **THE MESH COMES OUT Z-UP AND MUST BE ROTATED -90 ABOUT X.** Caught by RENDERING it, never by a
+   number: the first chair reconstructed perfectly with bbox x 0.58, y 0.56, **z 1.01** — the height
+   was on Z, so it was lying on its back. A wrestler would arrive face-down and the engine's
+   fit-to-1.78m would size him by his DEPTH. Vertex count, face count and file size were all
+   perfect. OWNER LAW, again: SEE IT.
+THE OUTPUT IS UNRIGGED, and that is already solved — `transfer_weights.cjs` copies a proven
+58-joint rig onto it by spatial correspondence (the fix that took the Heavyweight p95 0.3131 FAIL ->
+0.0284 PASS). Full chain: image -> TripoSR -> transfer_weights -> skinqa -> rig_continuity ->
+decimate --gate -> snapshot AND LOOK AT IT.
+### tools/models/tripo_session.cjs — his OWN account, by LOGIN, not an API key
+Same proven stack as social_login.cjs: CONNECT relay in front (the agent proxy accepts only
+CONNECT), TLS capped at 1.2 (the middlebox resets a 1.3 ClientHello), automation flags erased,
+HEADED on Xvfb. Credentials come from TRIPO_EMAIL / TRIPO_PASSWORD, are used once and are NEVER
+written to disk; only the session lands in `.claude/tripo/session.json` (0600, gitignored).
+It REFUSES to claim success without a real auth cookie and screenshots whatever it landed on —
+because a wrong selector times out and reads exactly like a rejected password.
+HONEST LIMIT: Tripo's web app is a private, unversioned interface. Endpoints are read off the live
+page at run time rather than hardcoded, but a redesign will break it, and the failure mode is a
+screenshot and a clear message rather than a silent wrong answer.
+WHICH TO USE: generate locally for the long tail (free, 25s, no queue); spend account credits on
+hero characters where the quality is worth it. Both land in the same place and go through the same
+rig-and-gate chain.
