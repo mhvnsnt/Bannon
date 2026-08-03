@@ -44684,14 +44684,20 @@ console.log('%c[BANNON_VENUES] MDickie venue picker — STAGE option / openVenue
   }
 
   function apply(html){
-    try{
-      // cache for the cold-apply bootstrap, then reload so it swaps pre-init (no double boot); if the
-      // HTML is too big for localStorage, swap it straight from memory instead.
-      localStorage.setItem('BANNON_OTA_H', html); localStorage.setItem('BANNON_OTA_B', String(window.__OTA_NEXT__||0));
-      location.reload();
-    }catch(e){
-      try{ document.open(); document.write(html); document.close(); }catch(_e){}
+    // IN THE APP, SWAP FROM MEMORY. The localStorage-then-reload route is right in a browser, but
+    // inside the APK it is both futile and risky: a 3.8 MB page blows the WebView quota so the write
+    // throws anyway, and location.reload() re-fetches whatever MainActivity picked at LAUNCH — which
+    // is the OLD bundled asset until the next cold start. That is precisely the "it downloaded and
+    // nothing changed" the owner has been living with. document.write swaps the live document on the
+    // same file:// origin, so every save (creations, movesets, universe) survives untouched.
+    var native = false; try{ native = !!(window.BannonNative && window.BannonNative.getApkBuild); }catch(e){}
+    if (!native){
+      try{
+        localStorage.setItem('BANNON_OTA_H', html); localStorage.setItem('BANNON_OTA_B', String(window.__OTA_NEXT__||0));
+        location.reload(); return;
+      }catch(e){ /* over quota — fall through to the in-memory swap */ }
     }
+    try{ document.open(); document.write(html); document.close(); }catch(_e){}
   }
 
   var applied=false;
@@ -44708,9 +44714,17 @@ console.log('%c[BANNON_VENUES] MDickie venue picker — STAGE option / openVenue
       }
       var remote=(v.build|0);
       if(remote<=cur) return;                        // content already newest
-      // NATIVE OWNS UPDATES when the bridge is present: MainActivity downloads into filesDir (no 5MB
-      // localStorage ceiling) and loads the newest build on launch. Nothing to ask, nothing to cache.
-      if(window.BannonNative && window.BannonNative.getApkBuild){ return; }
+      // ── THE APP MUST UPDATE ITSELF, NOT WAIT FOR A RELAUNCH ───────────────────────────────
+      // OWNER: "actually make the app update on my phone automatically."
+      // This used to hand the whole job to MainActivity and return. MainActivity does download the
+      // new build correctly — into filesDir, which has no 5MB localStorage ceiling — but it only
+      // LOADS it on the next launch, because that is when it picks newestGameUrl(). So the player
+      // sits on the old build until they happen to close and reopen the app, and from where he is
+      // standing that is simply an updater that does not work.
+      // The native download still runs and still persists the file for next launch; that is the
+      // belt. This is the braces: fetch it here too and SWAP IT LIVE the moment we are not in a
+      // match. Same-origin document.write, so every save survives (see apply()).
+      var NATIVE = !!(window.BannonNative && window.BannonNative.getApkBuild);
       // NEVER NAG. The old build asked "APPLY / not now" on EVERY launch, because caching a 2.7MB page in
       // localStorage exceeds the WebView quota: the write threw, the swap lasted only that session, and
       // the next launch booted the stale bundle and asked again. Remember the build we already handled so
@@ -44731,6 +44745,16 @@ console.log('%c[BANNON_VENUES] MDickie venue picker — STAGE option / openVenue
   // check a few seconds after boot (let the match menu settle), then hourly while the app stays open
   setTimeout(check, 6000);
   setInterval(check, 60*60*1000);
+  // AND EVERY TIME THE APP COMES BACK TO THE FOREGROUND. On a phone the app is almost never "left
+  // open for an hour" — it is opened, played, backgrounded, opened again. Boot-plus-hourly meant a
+  // build published while the app sat in the background was not noticed until the next cold start,
+  // which is most of why an update that had already downloaded still appeared not to exist.
+  try{
+    document.addEventListener('visibilitychange', function(){
+      if (!document.hidden) setTimeout(check, 1200);
+    });
+    addEventListener('focus', function(){ setTimeout(check, 1200); });
+  }catch(e){}
   window.BANNON_OTA_CHECK = check;   // manual "check for updates" hook (settings button can call this)
 })();
 console.log('%c[BANNON_OTA] auto-update online — checks dist/version.json, hot-swaps dist/BANNON.html','color:#7CFC00');
