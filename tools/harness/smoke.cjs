@@ -194,10 +194,19 @@ function WATCH(){
         for (const k in S.boneDelta) o[k] = +S.boneDelta[k].max.toFixed(4);
         return { label:l, poseCalls:S.poseCalls, bones:o }; }, label);
     };
-    report.strike  = await segment('strike',  async () => { await close(); await key('j',40); await sleep(400); await key('k',40); }, 4000);
-    report.grapple = await segment('grapple', async () => { await close(); await key('g',60); }, 5000);
+    // ORDER MATTERS, and getting it wrong cost me a false failure. Running the grapple before the
+    // walk left the fighter STILL IN THE HOLD when the walk was measured (the run showed 34 frames
+    // each of grab/grabbed at the end), so the legs were locked by the grapple and the walk reported
+    // "legs moved less than 0.01" — a bug in my test, not in the game. Walk first, and force a clean
+    // idle before the grapple so neither segment contaminates the other.
+    const idle = () => page.evaluate(() => { try{ const F = new Function('return fighters')();
+      for (const f of (F||[])) if (f){ f.grappling=false; f.grabTimer=0; f.state='idle'; f.stateTime=0; } }catch(e){} });
+    report.strike  = await segment('strike',  async () => { await idle(); await close(); await key('j',40); await sleep(400); await key('k',40); }, 4000);
+    await idle();
     report.walk    = await segment('walk',    async () => { await page.evaluate(() => dispatchEvent(new KeyboardEvent('keydown',{key:'d',bubbles:true}))); }, 4000);
     await page.evaluate(() => dispatchEvent(new KeyboardEvent('keyup',{key:'d',bubbles:true})));
+    await idle();
+    report.grapple = await segment('grapple', async () => { await close(); await key('g',60); }, 5000);
     await shot('4_combat');
 
     const moved = (seg, bone) => (seg.bones && seg.bones[bone] != null) ? seg.bones[bone] : 0;
