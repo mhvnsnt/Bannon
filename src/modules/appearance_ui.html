@@ -1,0 +1,222 @@
+<script>
+// ============================================================================================
+// BANNON_APPEARANCE_STUDIO — the front end for the grooming layer. Phone-first: one scrolling
+// column, fat targets, no drag-and-drop (the ROSTER TAB lesson — `dragstart` never fires on a
+// touchscreen, so a screen built on it is a screen the owner cannot use on the device he plays on).
+// Everything writes through BANNON_APPEARANCE, which is the ONE store. No parallel state.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_APPEARANCE_STUDIO) return;
+
+  var A = function(){ return window.BANNON_APPEARANCE; };
+  var panel = null, who = 'BANNON', tab = 'HAIR';
+  var esc = function(s){ return String(s==null?'':s).replace(/[<>&"]/g, function(c){
+    return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]; }); };
+  var hex = function(n){ return '#' + ((n>>>0)&0xffffff).toString(16).padStart(6,'0'); };
+  var int = function(s){ return parseInt(String(s).slice(1), 16); };
+
+  function roster(){
+    try{ var r=(window.ROSTER_ALL?window.ROSTER_ALL():[]).map(function(c){return c.name;}); if(r.length) return r; }catch(e){}
+    return ['BANNON'];
+  }
+  // Prefer whoever is on screen — editing the man you are looking at is the point of a live preview.
+  function liveNames(){
+    try{ var F=new Function('return typeof fighters!=="undefined"?fighters:[]')();
+      return F.map(function(f){ try{ return (typeof fname==='function'?fname(f):'')||''; }catch(e){ return ''; } }).filter(Boolean);
+    }catch(e){ return []; }
+  }
+
+  var CSS = 'position:fixed;inset:0;z-index:100000;background:#0b0806f7;color:#ffd9a8;'
+          + 'font:12px var(--f-ui,system-ui);overflow-y:auto;-webkit-overflow-scrolling:touch;'
+          + 'padding:0 12px calc(env(safe-area-inset-bottom,0px) + 30px);';
+  var BTN = 'background:#1c1109;color:#ffd9a8;border:1px solid #ff7a1a66;border-radius:7px;'
+          + 'padding:9px 10px;cursor:pointer;font:bold 11px var(--f-ui,system-ui);letter-spacing:.5px;';
+  var ON  = 'background:#3a2a08;border-color:#ffb648;color:#ffe9c0;';
+  var TABS = ['HAIR','BEARD','TATTOOS','GEAR','KIT'];
+
+  function build(){
+    if (panel) return;
+    panel = document.createElement('div');
+    panel.id = 'appStudio'; panel.style.cssText = CSS;
+    document.body.appendChild(panel);
+  }
+  function look(){ return (A() && A().get(who)) || {}; }
+  function msg(t){ var e = document.getElementById('apMsg'); if (e) e.textContent = t || ''; }
+
+  function row(label, inner){
+    return '<div style="display:flex;align-items:center;gap:8px;margin-top:6px">'
+         + '<span style="width:66px;color:#c98;font-size:10px;flex:none">'+label+'</span>' + inner + '</div>';
+  }
+  function slider(kind, i, label, lo, hi, step, val){
+    return row(label, '<input data-ap="'+kind+'"'+(i==null?'':' data-i="'+i+'"')
+      +' type="range" min="'+lo+'" max="'+hi+'" step="'+step+'" value="'+(val==null?(lo+hi)/2:val)+'" style="flex:1">');
+  }
+  function colour(kind, i, label, val){
+    return row(label, '<input data-ap="'+kind+'"'+(i==null?'':' data-i="'+i+'"')
+      +' type="color" value="'+hex(val)+'" style="flex:1;height:30px;background:none;border:1px solid #ff7a1a55;border-radius:6px">');
+  }
+  function chips(kind, list, active, extra){
+    var h = '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">';
+    list.forEach(function(s){
+      h += '<button data-ap="'+kind+'" data-s="'+esc(s)+'"'+(extra||'')+' style="'+BTN+(s===active||(active&&active.indexOf&&active.indexOf(s)>=0)?ON:'')+'">'
+         + esc(String(s).replace(/_/g,' ')) + '</button>';
+    });
+    return h + '</div>';
+  }
+
+  function render(){
+    var L = look(), a = A(); if (!a) return;
+    var live = liveNames(), all = roster();
+    var h = '';
+
+    h += '<div style="position:sticky;top:0;background:#0b0806;padding:12px 0 8px;z-index:5;'
+       + 'border-bottom:1px solid #ff7a1a44">'
+       + '<div style="display:flex;align-items:center;justify-content:space-between">'
+       + '<div style="color:#ff7a1a;font:bold 13px var(--f-ui);letter-spacing:1px">✂ APPEARANCE'
+       + '<div style="color:#c98;font:normal 9px var(--f-ui);margin-top:2px">'+esc(who.replace(/_/g,' '))
+       + ' · rides the skeleton · works on any model</div></div>'
+       + '<button data-ap="close" style="'+BTN+'">✕ DONE</button></div>'
+       + chips('tab', TABS, tab) + '</div>';
+
+    if (tab === 'WHO' || !who){ /* handled below */ }
+
+    if (tab === 'HAIR'){
+      var hair = L.hair || { style:'KEEP', density:0.8, colour:0x1c1410 };
+      h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:14px 0 0">HAIRSTYLE</div>';
+      h += chips('hair', a.HAIR_STYLES, hair.style || 'KEEP');
+      h += slider('hdens', null, 'VOLUME', 0.15, 1, 0.05, hair.density == null ? 0.8 : hair.density);
+      h += colour('hcol', null, 'COLOUR', hair.colour == null ? 0x1c1410 : hair.colour);
+      h += '<div style="color:#8a7f6a;font-size:9px;margin-top:6px;line-height:1.5">'
+         + 'KEEP leaves the model\'s own hair alone. Any other choice HIDES it first, so a new style '
+         + 'replaces rather than grows through. BALD hides it and adds nothing.</div>';
+    }
+
+    if (tab === 'BEARD'){
+      var b = L.beard || { style:'NONE', density:0.7, colour:0x241a12 };
+      h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:14px 0 0">FACIAL HAIR</div>';
+      h += chips('beard', a.BEARD_STYLES, b.style || 'NONE');
+      h += slider('dens', null, 'THICKNESS', 0.15, 1, 0.05, b.density == null ? 0.7 : b.density);
+      h += colour('bcol', null, 'COLOUR', b.colour == null ? 0x241a12 : b.colour);
+      h += '<div style="color:#8a7f6a;font-size:9px;margin-top:6px;line-height:1.5">'
+         + 'THICKNESS is VOLUME, not just shade — a stubble and a full beard are different sizes. '
+         + 'A beard painted into the model itself cannot be removed here; pick the clean-shaven attire for that.</div>';
+    }
+
+    if (tab === 'TATTOOS'){
+      var tats = L.tattoos || [];
+      h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:14px 0 6px">TATTOOS ('+tats.length+')</div>';
+      tats.forEach(function(t, i){
+        h += '<div style="border:1px solid #ff7a1a33;border-radius:8px;padding:9px;margin-bottom:8px;background:#150e0a">'
+           + '<div style="display:flex;justify-content:space-between;align-items:center">'
+           + '<b style="color:#ffb648;font-size:11px">'+esc(t.design.replace(/_/g,' '))+' · '+esc(t.slot.replace(/_/g,' '))+'</b>'
+           + '<button data-ap="rmtat" data-i="'+i+'" style="'+BTN+'background:#2a0e0e;border-color:#c05">✕</button></div>';
+        h += chips('tslot', a.SLOTS, t.slot, ' data-i="'+i+'"');
+        h += chips('tdes',  a.DESIGNS, t.design, ' data-i="'+i+'"');
+        if (t.design === 'TEXT')
+          h += row('WORD', '<input data-ap="ttext" data-i="'+i+'" value="'+esc(t.text||'')+'" maxlength="14" placeholder="BANNON" '
+                 + 'style="flex:1;background:#1c1109;color:#ffd9a8;border:1px solid #ff7a1a55;border-radius:6px;padding:7px">');
+        h += slider('tscale', i, 'SIZE',    0.3, 2.5, 0.05, t.scale==null?1:t.scale);
+        h += slider('trot',   i, 'ROTATE', -3.14, 3.14, 0.05, t.rot==null?0:t.rot);
+        h += slider('talong', i, 'SLIDE',  -0.30, 0.30, 0.01, t.along==null?0.06:t.along);
+        h += slider('topac',  i, 'FADE',    0.15, 1, 0.05, t.opacity==null?0.85:t.opacity);
+        h += colour('tcol', i, 'INK', t.colour==null?0x1a1410:t.colour);
+        h += '</div>';
+      });
+      h += '<button data-ap="addtat" style="'+BTN+'width:100%;padding:12px;border-style:dashed;border-color:#7CFC00;color:#7CFC00">✚ ADD A TATTOO</button>';
+    }
+
+    if (tab === 'GEAR'){
+      var worn = (L.gear || []).map(function(g){ return g.id; });
+      h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:14px 0 0">GEAR · tap to wear or remove</div>';
+      h += chips('gear', a.GEAR_IDS, worn);
+      (L.gear || []).forEach(function(g){ h += colour('gcol', null, g.id.replace(/_/g,' ').slice(0,10),
+        g.colour == null ? 0x181818 : g.colour).replace('data-ap="gcol"', 'data-ap="gcol" data-s="'+esc(g.id)+'"'); });
+      h += '<div style="color:#8a7f6a;font-size:9px;margin-top:6px;line-height:1.5">'
+         + 'Each piece hangs on its own bone, so it rides the animation. Pads and tape are small; '
+         + 'a coat is a big shell and will read better on a lean body than a heavyweight.</div>';
+    }
+
+    if (tab === 'KIT'){
+      var kit = L.kit || {};
+      var avail = {}; try{ avail = a.partsAvailable(); }catch(e){}
+      h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:14px 0 0">KIT COLOURS</div>';
+      h += '<div style="color:#8a7f6a;font-size:9px;margin:5px 0 0;line-height:1.5">'
+         + 'Recolours the MODEL\'S OWN meshes. Only parts this model actually has are listed — the '
+         + 'names are read off the file, so a body with no separate trunks mesh gets no trunks knob.</div>';
+      var any = false;
+      a.KIT_PARTS.forEach(function(p){
+        if (!avail[p]) return; any = true;
+        h += colour('kit', null, p, kit[p] == null ? 0x888888 : kit[p]).replace('data-ap="kit"', 'data-ap="kit" data-s="'+p+'"');
+        if (kit[p] != null) h += '<div style="text-align:right"><button data-ap="kitclr" data-s="'+p+'" style="'+BTN+'font-size:9px;padding:4px 8px">reset '+p+'</button></div>';
+      });
+      if (!any) h += '<div style="color:#c05;font-size:11px;margin-top:10px">This model has no separately named parts — nothing to recolour. Use an alternate attire instead.</div>';
+      h += '<div style="color:#8a7f6a;font-size:9px;margin-top:10px">detected: '+esc(JSON.stringify(avail))+'</div>';
+    }
+
+    // WHO — always at the bottom so the controls are under the thumb, the roster is a scroll away
+    h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:18px 0 0">WRESTLER</div>';
+    if (live.length){
+      h += '<div style="color:#7CFC00;font-size:9px;letter-spacing:1px;margin-top:6px">IN THE RING NOW</div>';
+      h += chips('who', live, who);
+    }
+    h += '<div style="color:#c98;font-size:9px;letter-spacing:1px;margin-top:6px">ROSTER</div>';
+    h += chips('who', all.slice(0,140), who);
+
+    h += '<div style="display:flex;gap:6px;margin:16px 0 0">'
+       + '<button data-ap="reset" style="'+BTN+'flex:1;background:#2a0e0e;border-color:#c05">RESET '+esc(who.replace(/_/g,' '))+'</button>'
+       + '<button data-ap="close" style="'+BTN+'flex:1;background:#16300f;border-color:#7CFC00;color:#dfffcf">DONE</button></div>';
+    h += '<div id="apMsg" style="color:#7CFC00;font-size:10px;margin-top:8px;min-height:14px"></div>';
+
+    panel.innerHTML = h; wire();
+  }
+
+  function wire(){
+    var a = A();
+    // A live-preview edit must not rebuild the DOM under the finger — that kills a drag on a
+    // touchscreen mid-gesture. Sliders and colour pickers write THROUGH without re-rendering;
+    // only structural changes (tab, style, add/remove) redraw.
+    panel.querySelectorAll('[data-ap]').forEach(function(el){
+      var k = el.getAttribute('data-ap');
+      var i = el.hasAttribute('data-i') ? +el.getAttribute('data-i') : null;
+      var s = el.getAttribute('data-s');
+      if (k === 'close')  el.onclick  = close;
+      if (k === 'tab')    el.onclick  = function(){ tab = s; render(); };
+      if (k === 'who')    el.onclick  = function(){ who = String(s).toUpperCase().replace(/[^A-Z0-9]/g,'_'); render(); };
+      if (k === 'hair')   el.onclick  = function(){ var H = look().hair||{}; a.setHair(who, s, H.colour, H.density); render(); msg('hair: '+s.replace(/_/g,' ')); };
+      if (k === 'hdens')  el.oninput  = function(){ var H = look().hair||{}; a.setHair(who, H.style||'BUZZ', H.colour, +el.value); };
+      if (k === 'hcol')   el.oninput  = function(){ var H = look().hair||{}; a.setHair(who, H.style||'BUZZ', int(el.value), H.density); };
+      if (k === 'beard')  el.onclick  = function(){ var B = look().beard||{}; a.setBeard(who, s, B.colour, B.density); render(); msg('facial hair: '+s.replace(/_/g,' ')); };
+      if (k === 'dens')   el.oninput  = function(){ var B = look().beard||{}; a.setBeard(who, B.style||'STUBBLE', B.colour, +el.value); };
+      if (k === 'bcol')   el.oninput  = function(){ var B = look().beard||{}; a.setBeard(who, B.style||'STUBBLE', int(el.value), B.density); };
+      if (k === 'addtat') el.onclick  = function(){ a.addTattoo(who, {}); render(); msg('tattoo added'); };
+      if (k === 'rmtat')  el.onclick  = function(){ a.removeTattoo(who, i); render(); msg('tattoo removed'); };
+      if (k === 'tslot')  el.onclick  = function(){ a.updateTattoo(who, i, { slot:s, along:null }); render(); };
+      if (k === 'tdes')   el.onclick  = function(){ a.updateTattoo(who, i, { design:s }); render(); };
+      if (k === 'ttext')  el.oninput  = function(){ a.updateTattoo(who, i, { text:el.value }); };
+      if (k === 'tscale') el.oninput  = function(){ a.updateTattoo(who, i, { scale:+el.value }); };
+      if (k === 'trot')   el.oninput  = function(){ a.updateTattoo(who, i, { rot:+el.value }); };
+      if (k === 'talong') el.oninput  = function(){ a.updateTattoo(who, i, { along:+el.value }); };
+      if (k === 'topac')  el.oninput  = function(){ a.updateTattoo(who, i, { opacity:+el.value }); };
+      if (k === 'tcol')   el.oninput  = function(){ a.updateTattoo(who, i, { colour:int(el.value) }); };
+      if (k === 'gear')   el.onclick  = function(){ a.toggleGear(who, s); render(); msg(s.replace(/_/g,' ')); };
+      if (k === 'gcol')   el.oninput  = function(){ a.setGearColour(who, s, int(el.value)); };
+      if (k === 'kit')    el.oninput  = function(){ a.setKit(who, s, int(el.value)); };
+      if (k === 'kitclr') el.onclick  = function(){ a.setKit(who, s, null); render(); };
+      if (k === 'reset')  el.onclick  = function(){ a.reset(who); render(); msg('reset '+who.replace(/_/g,' ')); };
+    });
+  }
+
+  function open(name){
+    if (!A()){ try{ console.warn('[APPEARANCE] core module not loaded'); }catch(e){} return; }
+    build();
+    var live = liveNames();
+    who = String(name || live[0] || who || 'BANNON').toUpperCase().replace(/[^A-Z0-9]/g,'_');
+    panel.style.display = 'block'; panel.scrollTop = 0; render();
+  }
+  function close(){ if (panel) panel.style.display = 'none'; }
+
+  window.BANNON_APPEARANCE_STUDIO = { open:open, close:close, render:render };
+  try{ console.log('%c[BANNON_APPEARANCE_STUDIO] BANNON_APPEARANCE_STUDIO.open() — hair · beard · ink · gear · kit','color:#7CFC00'); }catch(e){}
+})();
+</script>
