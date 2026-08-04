@@ -51381,7 +51381,29 @@ window.__deriveVariant = async function(key){
   function frame(){
     requestAnimationFrame(frame);
     var n = performance.now(), d = n - ST.last; ST.last = n;
-    if (d > 0 && d < 5000){
+
+    // ── THE WORSE THE FREEZE, THE MORE INVISIBLE IT WAS TO THE SYSTEM BUILT TO FIX IT ──────────
+    // This read `d > 0 && d < 5000`, discarding any frame longer than five seconds as noise. On a
+    // phone that is exactly backwards: a device running at 0.2 fps produces a 5,000 ms frame EVERY
+    // FRAME, so ST.acc never grew, ST.fps never updated, autoTier() was never called, and the game
+    // sat at its opening tier while completely frozen. The frames that most needed to be counted
+    // were the only ones thrown away. A long frame is now DATA — clamped, not discarded, because a
+    // backgrounded tab really can produce a minute-long gap and that is not a rendering verdict.
+    if (d > 0){
+      if (document.hidden){ return; }                    // a hidden tab is not a slow device
+      if (d > 20000){ return; }                          // came back from sleep — no verdict
+      var hard = (window.PERF_HARD_STALL_MS != null ? window.PERF_HARD_STALL_MS : 1200);
+      if (d >= hard){
+        // ONE frame this long is a freeze the player already felt. Averaging it away over the next
+        // three half-second windows means the response arrives seconds after the damage. Drop now.
+        ST.stalls = (ST.stalls || 0) + 1; ST.worstFrame = Math.max(ST.worstFrame || 0, Math.round(d));
+        if (window.BANNON_PERF_AUTO !== false && ST.tier != null && ST.tier < TIERS.length - 1
+            && !document.hidden){
+          ST.everDropped = true; ST.hardDrops = (ST.hardDrops || 0) + 1;
+          try{ console.log('%c[BANNON_PERF] ' + Math.round(d) + 'ms frame — dropping a tier on the spot','color:#ff6b6b'); }catch(e){}
+          applyTier(ST.tier + 1);
+        }
+      }
       ST.acc += d; ST.frames++;
       if (ST.acc >= 500){
         ST.fps = ST.frames / (ST.acc / 1000);
@@ -51404,7 +51426,11 @@ window.__deriveVariant = async function(key){
   function autoTier(){
     if (window.BANNON_PERF_AUTO === false) return;
     if (ST.tier == null) return;
-    if (typeof gameState !== 'undefined' && gameState !== 'fight') return;
+    // WAS `gameState !== 'fight'` — so the menu, the character select, the entrance, free roam and
+    // God Within could crawl indefinitely and the tier never moved. The owner plays in all of them,
+    // and the entrance is the single heaviest moment in a match (arena + both bodies + pyro + tron).
+    // The only place a verdict is meaningless is a hidden tab.
+    if (document.hidden) return;
     if (ST.fps < ST.target) lowRun++; else lowRun = 0;
     if (lowRun >= 3 && ST.tier < TIERS.length - 1){ lowRun = 0; highRun = 0; ST.everDropped = true; applyTier(ST.tier + 1); }
     // step UP only if we have never had to drop, and only while comfortably clear of target, so a
@@ -51497,6 +51523,11 @@ window.__deriveVariant = async function(key){
         fpsWorst: s.length ? +s[0].toFixed(1) : null,
         tier: (TIERS[ST.tier || 0] || {}).name,
         tierChanges: ST.applied,
+        // THE FREEZE, AS A NUMBER. fpsMedian hides a hitch by definition — a 1.5s stall inside an
+        // otherwise smooth second still reads as a respectable average. These three do not.
+        hardStalls: ST.stalls || 0,
+        worstFrameMs: ST.worstFrame || 0,
+        tierDropsFromStalls: ST.hardDrops || 0,
         scene: census(),
         devicePixelRatio: window.devicePixelRatio,
         ua: navigator.userAgent.slice(0, 90)
