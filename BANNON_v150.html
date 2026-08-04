@@ -51346,8 +51346,19 @@ window.__deriveVariant = async function(key){
       var C = window.__composer;
       if (C){
         var want = Math.min(T.pr, window.devicePixelRatio || 1);
-        if (C.setPixelRatio && C.__pr !== want){ C.setPixelRatio(want); C.__pr = want;
-          try{ C.setSize(window.innerWidth, window.innerHeight); }catch(e){} }
+        // ONE reallocation, not two. EffectComposer.setPixelRatio already ends with
+        // `this.setSize(this._width, this._height)`, so the explicit setSize that followed it
+        // reallocated the main target AND all five bloom mip targets a SECOND time. Measured with
+        // tools/harness/black_frames.cjs: four tier steps produced twelve resize events in six
+        // seconds. Reallocating every render target is the most plausible way to put a blank frame
+        // on screen, which is the "screen flashing black" the owner has reported repeatedly — not
+        // reproduced on this box (0 black frames in 205 sampled), so this is halving a known churn
+        // rather than a confirmed fix, and it is written down that way.
+        if (C.setPixelRatio && C.__pr !== want){ C.setPixelRatio(want); C.__pr = want; }
+        else if (C.__sizedFor !== window.innerWidth + 'x' + window.innerHeight){
+          try{ C.setSize(window.innerWidth, window.innerHeight); }catch(e){}
+        }
+        C.__sizedFor = window.innerWidth + 'x' + window.innerHeight;
         // BLOOM IS THE MULTI-MIP BLUR. It is a look, not a mechanic — off below HIGH. Disabling the
         // PASS keeps the composer (and the cheap single-pass broadcast grade) intact, so the frame
         // still gets its tone curve and vignette; only the five blurred mip levels go away.
@@ -51398,10 +51409,15 @@ window.__deriveVariant = async function(key){
         // three half-second windows means the response arrives seconds after the damage. Drop now.
         ST.stalls = (ST.stalls || 0) + 1; ST.worstFrame = Math.max(ST.worstFrame || 0, Math.round(d));
         if (window.BANNON_PERF_AUTO !== false && ST.tier != null && ST.tier < TIERS.length - 1
-            && !document.hidden){
-          ST.everDropped = true; ST.hardDrops = (ST.hardDrops || 0) + 1;
-          try{ console.log('%c[BANNON_PERF] ' + Math.round(d) + 'ms frame — dropping a tier on the spot','color:#ff6b6b'); }catch(e){}
-          applyTier(ST.tier + 1);
+            && !document.hidden && (n - (ST.lastHardDrop || 0)) > 1000){
+          // JUMP AS FAR AS THE EVIDENCE JUSTIFIES, IN ONE STEP. Stepping down one tier at a time
+          // made four separate applyTier calls in six seconds, and every one of those reallocates
+          // the whole post chain. How bad the frame was already says how far to go.
+          var steps = Math.min(TIERS.length - 1 - ST.tier, Math.max(1, Math.floor(d / hard)));
+          ST.lastHardDrop = n; ST.everDropped = true; ST.hardDrops = (ST.hardDrops || 0) + 1;
+          try{ console.log('%c[BANNON_PERF] ' + Math.round(d) + 'ms frame — dropping ' + steps +
+            ' tier(s) on the spot','color:#ff6b6b'); }catch(e){}
+          applyTier(ST.tier + steps);
         }
       }
       ST.acc += d; ST.frames++;

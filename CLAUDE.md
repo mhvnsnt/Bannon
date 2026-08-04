@@ -981,3 +981,74 @@ impossible unless the window is being ignored.
 AFTER THE FIX: those two segments are 2.80s (83/85 coverage) and 1.80s (46/60). JUNGLE_JUICE, which
 had been banked as all 4.30s of its source, is now the actual 2.15s move at 50/66.
 LESSON: when a capture's coverage looks terrible (59/524), suspect the WINDOW before the tracker.
+
+
+## THE FREEZE, MEASURED (2026-08-04) — read this before touching performance again
+Owner: "the game still freezes, it's broken and unplayable I'm tired of telling to the same shit."
+Four harnesses, no guesses. Numbers on a 412x915 phone viewport at dpr 2.5, software rasteriser —
+the ABSOLUTE fps means nothing about his phone, the RATIOS and the COUNTS do.
+
+- **82% OF WALL CLOCK IS NOT IN JAVASCRIPT.** stall_autopsy: `__outsideJS` 23,714 ms of 28,906 ms.
+  `js.raf` is 3,786 ms. Game logic is not the freeze. It is the draw.
+- **THE AUTO-TIER COULD NOT SEE A FREEZE.** `if (d > 0 && d < 5000)` DISCARDED any frame over five
+  seconds as noise. A device at 0.2 fps produces a 5,000 ms frame every frame, so ST.acc never grew,
+  ST.fps never updated and autoTier() was never called — the game sat on its opening guess while
+  frozen solid. The frames that most needed counting were the only ones thrown away. FIXED.
+- **AND IT ONLY RAN DURING A MATCH.** `if (gameState !== 'fight') return` — menu, select, ENTRANCE,
+  free roam and God Within could crawl forever with no response. The entrance is the heaviest moment
+  in a match (arena + both bodies + pyro + tron + camera). FIXED; only a hidden tab is exempt now.
+- **AVERAGES HIDE HITCHES BY CONSTRUCTION.** A 1.5 s stall inside an otherwise smooth second still
+  reads as a fine fps. One frame over 1,200 ms now drops a tier immediately, jumping as many steps
+  as `floor(d / 1200)` justifies, with a 1 s cooldown so it cannot thrash. VERIFIED: 2 hard-stall
+  drops fired during boot in tier_response.cjs.
+- **`BANNON_PERF.report()` NOW RETURNS `hardStalls`, `worstFrameMs`, `tierDropsFromStalls`.** THAT is
+  what to read off the owner's actual phone. fpsMedian is the wrong instrument for this complaint.
+- **19 SHADER PROGRAMS FIRST LINK AFTER THE BELL**, still arriving 54 s into the match; gl.linkWait
+  1,762 ms total with 731 ms in ONE frame. Both existing pre-warm systems watch MESH COUNT, and a
+  new program does not need a new mesh — a shadow-depth (MeshDepthMaterial) variant, a PointsMaterial
+  particle and a texture swap on an existing mesh all slip past. STILL OPEN — the next thing to fix.
+  NOTE: `linkProgram` itself measures 0 ms because drivers link ASYNCHRONOUSLY; the cost lands later
+  at first draw, which is what stall_autopsy calls `gl.linkWait`. Do not conclude "linking is free".
+- **BLACK FLASHING: NOT REPRODUCED HERE.** black_frames.cjs samples the drawing buffer every frame
+  and got 0 black frames out of 205, twice. What it DID find was 12 composer render-target
+  reallocations in six seconds — `setPixelRatio` already ends in `setSize`, so the explicit setSize
+  after it reallocated the main target and all five bloom mips a SECOND time. Halved to 8, and drops
+  now coalesce. That is a plausible cause hardened, NOT a confirmed fix. Say so.
+
+### HARNESSES ADDED THIS PASS (use these; do not write a fifth instrument)
+- `tools/harness/late_programs.cjs` — which shader programs link after the bell, and their feature flags
+- `tools/harness/tier_response.cjs` — does the tier actually step down under load, on a phone viewport
+- `tools/harness/black_frames.cjs` — reads the CANVAS every frame; a flash is invisible to fps and to
+  a screenshot, so it must be sampled, and each black frame is stamped with what happened in the
+  preceding 250 ms (tier change, composer resize, arena rebuild) so the report names a CAUSE
+- `tools/harness/appearance.cjs` — beard/tattoo placement, with an INDEPENDENT facing check
+
+## OWNER LAW 2026-08-04 — CUSTOMIZATION MUST TOUCH THE GLB, NOT THE PROCEDURAL BODY
+Owner: "we also need to be able to change caw and model hairstyles, clothes, etc, just like mdickie
+and WWE 2k", after: "we will need a way in character customization to add remove facial hair."
+The ⛹ CREATE editor's 90 controls all drive `f.seg`, the PROCEDURAL segment body. Every fighter now
+binds a GLB and a GLB has no `f.seg` — so that entire editor edits a body he is never meant to see.
+`BANNON_APPEARANCE` is the layer that actually reaches a GLB: hair (11), facial hair (10), tattoos
+(9 designs x 10 slots), gear (10 pieces), kit colours. It parents to BONES via `window.__boneOf`,
+the same path `BANNON_MDICKIE.wearOn` already proved on the 64 MDickie headwear props.
+**THE BODY FRAME IS THE MODEL CONTAINER'S OWN BASIS: +Z the way he faces, +Y up, +X his LEFT.**
+Do NOT derive it from the skeleton. The first version used UP = Head->HeadTop_End and RIGHT =
+LeftArm->RightArm and was NINETY DEGREES WRONG while every number looked healthy — unit length,
+orthogonal, a 0.1176 m head radius, beard 0.17 head-radii from the "chin" vs 1.13 from the "back".
+The check could not see it because the check computed the chin with the SAME forward vector.
+A TEST THAT REUSES THE ASSUMPTION IT IS TESTING ALWAYS PASSES. The screenshot caught it.
+    container local +Z  vs  the engine's (sin(facing),0,cos(facing))  ->  dot 1.000
+    the BIND arm axis   vs  that same facing                          ->  dot 0.000
+These rigs are NOT BOUND IN A T-POSE — the arm bones are staggered front-to-back in a fighting
+stance, so LeftArm->RightArm runs ALONG the facing. On BANNON_rigged it is the exact negative of it.
++X is his LEFT because (right, up, forward) is a LEFT-handed triple for a human and a left-handed
+basis cannot become a quaternion; the container's axes are orthonormal and right-handed already.
+Everything is authored against the BIND pose (`skeleton.boneInverses`), never the live one, or a
+head that happens to be turned at that instant bakes a crooked beard that stays crooked forever.
+Tattoos are BONE-PARENTED PROJECTED DECALS drawn with canvas paths — we do not author the UV layout
+of 60 models from a dozen generators, and this costs ZERO apk bytes and cannot 404 mid-match.
+
+## LESSON 2026-08-04 — COMMIT BEFORE THE CONTAINER TAKES IT
+A full pass of work (the appearance module, two harnesses, the world shrink) was lost when this
+session's container was reclaimed and restarted on a newer branch head. Nothing was committed yet.
+COMMIT EACH PIECE AS IT PASSES ITS GATE. A working tree is not storage.
