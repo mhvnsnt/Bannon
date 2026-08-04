@@ -981,3 +981,489 @@ impossible unless the window is being ignored.
 AFTER THE FIX: those two segments are 2.80s (83/85 coverage) and 1.80s (46/60). JUNGLE_JUICE, which
 had been banked as all 4.30s of its source, is now the actual 2.15s move at 50/66.
 LESSON: when a capture's coverage looks terrible (59/524), suspect the WINDOW before the tracker.
+
+
+## THE FREEZE, MEASURED (2026-08-04) — read this before touching performance again
+Owner: "the game still freezes, it's broken and unplayable I'm tired of telling to the same shit."
+Four harnesses, no guesses. Numbers on a 412x915 phone viewport at dpr 2.5, software rasteriser —
+the ABSOLUTE fps means nothing about his phone, the RATIOS and the COUNTS do.
+
+- **82% OF WALL CLOCK IS NOT IN JAVASCRIPT.** stall_autopsy: `__outsideJS` 23,714 ms of 28,906 ms.
+  `js.raf` is 3,786 ms. Game logic is not the freeze. It is the draw.
+- **THE AUTO-TIER COULD NOT SEE A FREEZE.** `if (d > 0 && d < 5000)` DISCARDED any frame over five
+  seconds as noise. A device at 0.2 fps produces a 5,000 ms frame every frame, so ST.acc never grew,
+  ST.fps never updated and autoTier() was never called — the game sat on its opening guess while
+  frozen solid. The frames that most needed counting were the only ones thrown away. FIXED.
+- **AND IT ONLY RAN DURING A MATCH.** `if (gameState !== 'fight') return` — menu, select, ENTRANCE,
+  free roam and God Within could crawl forever with no response. The entrance is the heaviest moment
+  in a match (arena + both bodies + pyro + tron + camera). FIXED; only a hidden tab is exempt now.
+- **AVERAGES HIDE HITCHES BY CONSTRUCTION.** A 1.5 s stall inside an otherwise smooth second still
+  reads as a fine fps. One frame over 1,200 ms now drops a tier immediately, jumping as many steps
+  as `floor(d / 1200)` justifies, with a 1 s cooldown so it cannot thrash. VERIFIED: 2 hard-stall
+  drops fired during boot in tier_response.cjs.
+- **`BANNON_PERF.report()` NOW RETURNS `hardStalls`, `worstFrameMs`, `tierDropsFromStalls`.** THAT is
+  what to read off the owner's actual phone. fpsMedian is the wrong instrument for this complaint.
+- **19 SHADER PROGRAMS FIRST LINK AFTER THE BELL**, still arriving 54 s into the match; gl.linkWait
+  1,762 ms total with 731 ms in ONE frame. Both existing pre-warm systems watch MESH COUNT, and a
+  new program does not need a new mesh — a shadow-depth (MeshDepthMaterial) variant, a PointsMaterial
+  particle and a texture swap on an existing mesh all slip past. STILL OPEN — the next thing to fix.
+  NOTE: `linkProgram` itself measures 0 ms because drivers link ASYNCHRONOUSLY; the cost lands later
+  at first draw, which is what stall_autopsy calls `gl.linkWait`. Do not conclude "linking is free".
+- **BLACK FLASHING: NOT REPRODUCED HERE.** black_frames.cjs samples the drawing buffer every frame
+  and got 0 black frames out of 205, twice. What it DID find was 12 composer render-target
+  reallocations in six seconds — `setPixelRatio` already ends in `setSize`, so the explicit setSize
+  after it reallocated the main target and all five bloom mips a SECOND time. Halved to 8, and drops
+  now coalesce. That is a plausible cause hardened, NOT a confirmed fix. Say so.
+
+### HARNESSES ADDED THIS PASS (use these; do not write a fifth instrument)
+- `tools/harness/late_programs.cjs` — which shader programs link after the bell, and their feature flags
+- `tools/harness/tier_response.cjs` — does the tier actually step down under load, on a phone viewport
+- `tools/harness/black_frames.cjs` — reads the CANVAS every frame; a flash is invisible to fps and to
+  a screenshot, so it must be sampled, and each black frame is stamped with what happened in the
+  preceding 250 ms (tier change, composer resize, arena rebuild) so the report names a CAUSE
+- `tools/harness/appearance.cjs` — beard/tattoo placement, with an INDEPENDENT facing check
+
+## OWNER LAW 2026-08-04 — CUSTOMIZATION MUST TOUCH THE GLB, NOT THE PROCEDURAL BODY
+Owner: "we also need to be able to change caw and model hairstyles, clothes, etc, just like mdickie
+and WWE 2k", after: "we will need a way in character customization to add remove facial hair."
+The ⛹ CREATE editor's 90 controls all drive `f.seg`, the PROCEDURAL segment body. Every fighter now
+binds a GLB and a GLB has no `f.seg` — so that entire editor edits a body he is never meant to see.
+`BANNON_APPEARANCE` is the layer that actually reaches a GLB: hair (11), facial hair (10), tattoos
+(9 designs x 10 slots), gear (10 pieces), kit colours. It parents to BONES via `window.__boneOf`,
+the same path `BANNON_MDICKIE.wearOn` already proved on the 64 MDickie headwear props.
+**THE BODY FRAME IS THE MODEL CONTAINER'S OWN BASIS: +Z the way he faces, +Y up, +X his LEFT.**
+Do NOT derive it from the skeleton. The first version used UP = Head->HeadTop_End and RIGHT =
+LeftArm->RightArm and was NINETY DEGREES WRONG while every number looked healthy — unit length,
+orthogonal, a 0.1176 m head radius, beard 0.17 head-radii from the "chin" vs 1.13 from the "back".
+The check could not see it because the check computed the chin with the SAME forward vector.
+A TEST THAT REUSES THE ASSUMPTION IT IS TESTING ALWAYS PASSES. The screenshot caught it.
+    container local +Z  vs  the engine's (sin(facing),0,cos(facing))  ->  dot 1.000
+    the BIND arm axis   vs  that same facing                          ->  dot 0.000
+These rigs are NOT BOUND IN A T-POSE — the arm bones are staggered front-to-back in a fighting
+stance, so LeftArm->RightArm runs ALONG the facing. On BANNON_rigged it is the exact negative of it.
++X is his LEFT because (right, up, forward) is a LEFT-handed triple for a human and a left-handed
+basis cannot become a quaternion; the container's axes are orthonormal and right-handed already.
+Everything is authored against the BIND pose (`skeleton.boneInverses`), never the live one, or a
+head that happens to be turned at that instant bakes a crooked beard that stays crooked forever.
+Tattoos are BONE-PARENTED PROJECTED DECALS drawn with canvas paths — we do not author the UV layout
+of 60 models from a dozen generators, and this costs ZERO apk bytes and cannot 404 mid-match.
+
+## LESSON 2026-08-04 — COMMIT BEFORE THE CONTAINER TAKES IT
+A full pass of work (the appearance module, two harnesses, the world shrink) was lost when this
+session's container was reclaimed and restarted on a newer branch head. Nothing was committed yet.
+COMMIT EACH PIECE AS IT PASSES ITS GATE. A working tree is not storage.
+## THE "PROCEDURAL PUPPET" WAS THE GLB (2026-08-03) — SEVERED RIGS, AND WHY skinqa CANNOT SEE THEM
+Owner, for weeks: "the animations still are not correct cause the animation are still looking
+procedural" ... "like procedural puppets in strings" ... "yr a liar". He was right and I was looking
+in the wrong place the entire time.
+
+I kept proving the PROCEDURAL RIG was not on screen, and it never was — measured again this pass,
+0 visible procedural triangles on both fighters, the ban holds. **The puppet was the GLB.**
+
+`BANNON_rigged.glb`, the DEFAULT PLAYER MODEL, was **fifteen separate skinned primitives** named
+after our own joint keys: `chest elL elR ftL ftR haL haR head hipL hipR knL knR pelvis shL shR`.
+The body is CUT AT EVERY JOINT. No surface across the elbow, the knee, the shoulder or the neck, so
+nothing bends — the pieces rotate past each other and gap. That is an action figure.
+
+**WHY NOTHING CAUGHT IT — THE PART WORTH REMEMBERING.** skinqa measures how far a vertex drifts
+from where its weights predict it should be. A piece welded rigidly to ONE bone never drifts, so a
+severed rig scores a PERFECT deformation result. It is the one defect that looks ideal to a
+deformation test while being physically unable to deform. It read WEAK 0.0802 and I took that as
+"acceptable" instead of "wrong question". **A PASSING METRIC IS NOT A PASSING MODEL — ask whether
+the metric can even express the failure you are looking for.**
+
+**THE MEASURE THAT DOES SEE IT — `tools/model_diag/rig_continuity.cjs`.** Reads the actual
+JOINTS_0/WEIGHTS_0 and counts how many distinct joints carry real weight PER PRIMITIVE. Naming is a
+hint, the weights are the fact (OWNER LAW). A continuous body = 1 primitive influenced by most of
+the skeleton. An action figure = many primitives spanning 1-3 joints each.
+Sweep of all 73 models: **59 whole, 1 mixed, 12 unskinned, exactly ONE severed** — and it was the
+one he plays as. Now check 6 in `scripts/verify_shipping.cjs`, gated on every push.
+
+**THE CUT WAS REVERSIBLE — MEASURED BEFORE WRITING ANY CODE.** 1,244 positions shared EXACTLY
+between pieces, pairs anatomical: chest~head 131, chest~shR 120, chest~shL 115, hipL~pelvis 62,
+ftL~knL 40, ftR~knR 35. One body, cut at the joints, boundary ring duplicated. All fifteen shared
+ONE material and identical semantics, so they concatenate exactly.
+**`tools/model_diag/sew_rig.cjs`** concatenates the primitives into one and `--weld` fuses vertices
+sharing a position AND agreeing on normal. **Position alone is NOT enough** — in bind pose a hand
+rests against a hip and 32 of those pairs are coincidental, not a seam; welding them glues the arm
+to the hip. Every write is re-read from the shipped bytes and checked against triangles, vertices
+(may only shrink), joints, skins, morph targets and the bind bounding box.
+
+**THE WEIGHTS WERE NEVER THE PROBLEM** — measured, not assumed. New metric, the BEND BAND: the share
+of vertices influenced by BOTH sides of a real parent/child joint, which is what lets a surface fold.
+Sewn 41.5% vs VIPER 34.9% and TITAN 37.6% — higher than models that already look right. So no re-rig
+was done. **Measure before reaching for the expensive fix.**
+
+BANNON_rigged.glb end to end: SEVERED -> WHOLE (widest piece 22 -> 48 of 58 joints);
+143,847 -> 29,732 verts; **48,088 -> 17,998 tris**; skinqa **0.0802 WEAK -> 0.0110 PASS**, the best
+rig we ship; bend band 41.2% -> 43.8%.
+SIDE FINDING: it was fully unwelded (3 verts per triangle), which is ALSO why the decimation pass
+could never touch it — with no shared edges the simplifier has nothing to collapse. Same lesson as
+the Tripo note above: **weld before you simplify, and check whether a "skip" was really a failure.**
+
+## AN InstancedMesh DRAWS `count`, NOT WHAT YOU CAN SEE (2026-08-03)
+The blood/sweat particle system allocates 700 spheres and hides unused ones by scaling them to zero.
+An InstancedMesh rasterises `count` instances regardless of their matrices — scale 0 hides a particle
+and still pays for its 80 triangles. **Measured: 56,000 triangles, 41% OF THE WHOLE FRAME, in a match
+with zero blood and zero sweat on screen.** `count` now tracks the live high-water mark and the mesh
+hides entirely at zero. Check every InstancedMesh in the file for the same thing before adding one.
+LIVE MATCH ACROSS THIS ARC: **176,640 -> 80,072 visible triangles.**
+
+## A CHANGE THAT MEASURED WORSE, AND WAS REVERTED (2026-08-03) — WRITE THE FAILURES DOWN TOO
+13 shader programs were still compiling mid-match, so I hooked `loadFighterModel` to re-run
+`renderer.compile` 1.2s after every model bind. **It made things worse: programs 136 -> 210, hitches
+containing a compile 6 -> 12.** Reason: the perf module calls `cullDarkLights()` before each warm,
+hiding/showing a light changes three.js's light COUNTS, and that invalidates the program cache for
+every material — so each extra warm minted ~28 NEW program variants instead of hitting the cache.
+Reverted. **Changing the visible light set is not free; it is a full shader recompile of the scene.**
+THE PROBE THAT SETTLED IT (`hitch.cjs` pattern, worth reusing): count frames over 250ms DURING THE
+FIGHT and record whether the program count rose inside each one. Averages hide this completely — the
+owner's word is "freezing", and a 2,200ms frame at t+6.1s that compiled 10 shaders is a freeze,
+while the same total spread evenly is just a low frame rate.
+CAVEAT KEPT HONEST: swiftshader compiles shaders on the CPU and is pathologically slow at it, so the
+absolute milliseconds here say nothing about the owner's phone. The A/B direction is still valid.
+
+## THE HARNESS CANNOT MEASURE FRAME RATE (2026-08-03) — I NEARLY SHIPPED A FIX FOR A WARMUP CURVE
+Chasing the owner's freeze, I ranked four render conditions back to back in one live match:
+    baseline 3.10 fps | post-processing OFF 13.60 | spotlights OFF 26.40 | shadows OFF 39.60
+and read it as "post-processing costs 339%". I wrote the tier change to disable the composer below
+MEDIUM. Then I noticed the numbers only ever go UP, in that order, in BOTH runs of the probe — the
+shape of a warmup curve, not four independent measurements.
+**A-B-A-B settled it:** post ON 7.44 -> 24.33 -> 42.22, post OFF 10.22 -> 21.33 -> 31.33. Both climb;
+ON finishes FASTER than OFF. The entire effect was the harness still warming up FORTY SECONDS into
+the match. Change reverted before it shipped.
+THE RULE: **any A/B where the conditions run in sequence must re-test the first condition at the end.**
+If condition 1 does not reproduce, the experiment measured time, not the variable. swiftshader is a
+SOFTWARE rasterizer — it warms for tens of seconds and compiles shaders on the CPU, so it says
+nothing about a phone GPU in absolute terms and, as shown here, can invert a ranking outright.
+ALSO TESTED AND FOUND NOT TO BE THE CAUSE (so nobody re-derives it): the settled dark-light cull.
+Hypothesis was that toggling `.visible` changes three.js's light COUNTS and invalidates every
+material's program — which is TRUE and is why applyTier deliberately zeroes INTENSITY instead — but
+measured ON vs OFF it changes nothing: programs 132 vs 137, hitches-with-compile 7 vs 7.
+WHAT IS STILL TRUE AND UNEXPLAINED: specific 1.8-2.9s frames a few seconds into combat, each
+compiling 25-31 shaders. ~85-90 programs have to be built and swiftshader is pathologically slow at
+it. Whether that is what the owner feels CANNOT be established from here.
+SO THE DEVICE IS THE INSTRUMENT NOW: the build badge under the menu logo shows live FPS and the
+active quality tier next to the build number. `BANNON_PERF.report()` gives the full picture from the
+phone. Ask for that number instead of inferring one.
+
+## THE APK HAD NO MODELS IN IT (2026-08-03) — "still seeing the procedural three js models"
+Owner: "I'm still seeing the procedural three js models that aren't ever supposed to appear unless
+selected." I had spent the previous pass fixing the procedural BAN and the loader watchdog. Both
+were the wrong place. **The models were never on the phone.**
+The APK bundle step copied index.html, manifest.json, icons, assets/moves, assets/mocap and
+assets/audio, and nothing else. **assets/models was never in the list.** Every character GLB was a
+multi-megabyte raw.githubusercontent.com fetch on mobile data at the instant a match starts; slow or
+refused, and the loader correctly falls back to the procedural body. That is what he was looking at,
+and it has been that way for as long as the APK has existed.
+**assets/vendor was missing too, which is worse** — three.js, GLTFLoader, FBXLoader, the
+post-processing chain, the meshopt decoder. Vendored specifically so the engine is not hostage to
+the network, then shipped in an APK that did not contain them, so every launch fell back to the CDN
+`<script>` tags just to boot.
+**IT WAS NEVER A SIZE PROBLEM.** The 59 WIRED models total **36.6 MB**. The 3.6 GB in assets/models
+is intermediates, backups and re-rig attempts — not what the game loads. Wiring (does the filename
+appear in the shipped HTML?) is the test, never the directory listing.
+`scripts/bundle_apk_assets.cjs` now bundles engine + ring art + wired models + the 27 captures named
+by combat_clip_map + every JSON manifest named literally in the HTML = **59 MB**. The ~950 remaining
+captures (257 MB), tag captures (77 MB), environments (200 MB) stay streamed on purpose.
+**MANIFESTS ARE NOT BULK.** Running the bundle OFFLINE with the internet blocked and reading the
+404s found the second half of this: the models loaded and the game still asked for fbx_move_map,
+bannon_move_library, mdickie_weapons, procedural_clips, bannon_dialogue and venues.json. Several
+live INSIDE deliberately-streamed directories (assets/models/env is 200 MB of GLB plus one small
+venues.json). Streaming the bulk is right; streaming the INDEX of the bulk makes the system that
+reads it go quiet with no error.
+VERIFIED by serving ONLY the bundle with all external requests aborted — the owner's phone with no
+signal: both fighters bind their real GLB, **PROCEDURAL TRIANGLES ON SCREEN: 0**.
+Check 7 in `scripts/verify_shipping.cjs` gates it: every `assets/<dir>` the HTML fetches must be
+bundled or listed in STREAMED, so "not in the APK" is always a decision and never an oversight.
+A directory counts as covered if IT or an ANCESTOR is handled (vendor/pp rides on vendor).
+LESSON, and it is the same one as the severed rig: I keep debugging the CODE around an asset when
+the asset itself is absent or wrong. **Check that the file is on the device before theorising about
+why the loader is misbehaving.**
+
+## EVERY ANIMATION AND EVERY BODY NOW SHIP IN THE PACKAGE (2026-08-03)
+Owner corrected my framing and was right: **his phone HAS internet.** The problem was never offline
+capability — it is that a multi-megabyte download AT THE MOMENT A MATCH STARTS is slow and
+unreliable on any connection, and the game correctly falls back while it waits. Bundling means
+there is no download to wait on. Say that, not "offline".
+### 1. ALL 973 CAPTURES, GZIPPED — 257.2 MB -> 22.3 MB (9%)
+"None of the hundreds of animations are showing" — after the model fix only 27 captures were
+bundled; the other 946 were still a CDN round trip EACH, fired when a move plays. A move lasts a
+fraction of a second and the fetch does not, so the body played nothing.
+Keyframe JSON is repeated numeric text and gzips to 8-9%. **Nothing is rounded or re-encoded** —
+rounding to 4dp first bought only another 1% and it changes the data. `window.fflate.gunzipSync` is
+ALREADY vendored (FBXLoader uses it) and already loads before the engine, so this needed no new
+dependency. `window.__clipJsonFetch` tries `.json.gz` first and, on the first miss, stops asking for
+the session — so the web build pays exactly ONE wasted request.
+BOTH clip fetch sites go through it. Fixing only one would have left every boot-warmed capture on
+the network path. VERIFIED serving only the bundle: gz mode active, captures inflate through the
+real loader, 0 page errors, external requests 90 -> 3.
+**DO NOT NAME THE FILES `.gz`** — build 199 failed outright on it. Android's asset merger treats
+`.gz` as a COMPRESSION MARKER, strips it, and then reports `X.json` and `X.json.gz` as
+"Resource and asset merger: Duplicate resources", one error per clip. The suffix is `.jgz`, which
+nothing special-cases. And ship exactly ONE file per clip: the hot set used to also be copied
+uncompressed to spare the first strike an inflate, and that was the other half of the collision —
+`gunzipSync` on a clip this size is about a millisecond, so it bought nothing.
+TRAP IF YOU TEST THIS: do NOT serve the .jgz with `Content-Encoding: gzip`. The browser would then
+inflate it transparently and fflate would be handed already-plain JSON and throw — which a real
+file:// APK will never do, so that would test the wrong thing.
+### 2. EVERY WRESTLER GETS A REAL BODY — the archetype layer was pointed at a folder that never existed
+`CHAR_MODEL_DEFAULTS` binds **27** characters. The roster is ~121. Everyone else fell through to the
+procedural rig in matches, run-ins, Universe and God Within — which is most of the roster, and is
+exactly "procedural models are still appearing when not selected".
+The layer written to catch this was DEAD: the MDickie base-attire system resolves to
+`assets/models/mdickie_bases/<BASE>.glb` and **that directory has never existed in this repo**, so
+every archetype fallback 404'd back to procedural. It was written against assets that were never
+going to arrive.
+`window.ARCHETYPE_BODY` now points at bodies WE ACTUALLY SHIP — each one wired, rig-continuity
+WHOLE and skinqa PASS, already in the APK, chosen so the silhouette matches: powerhouse->BRUTUS,
+monster->TITAN, brawler->WRECK_PATTERSON, striker->KOBRA, technician->AARON_RUBEN,
+cruiser->CIPHER_rigged, luchador->EL_TORO_DE_ORO, enigma->HOLLOW, female->TYNESHIA, suit->STAN_COMBS.
+Gender is checked FIRST — putting every unmapped woman in a male body is worse than the procedural
+rig. Specific models still win; this only runs when nothing else resolved.
+FOUND BY THE SMOKE HARNESS, not by reading: "ZEPHYR has no GLB bound (run-in)". A real roster
+character with a full profile (maxHp 85, CAPOEIRA) and no model anywhere.
+VERIFIED: ZEPHYR->KOBRA, GOLEM->TITAN, MORTUS->WRECK_PATTERSON, KAGE/RONIN->AARON_RUBEN,
+LADY_RHIANNON->TYNESHIA, REY_FUEGO->EL_TORO_DE_ORO, THE_BOULDER->BRUTUS — every file present.
+
+## THE CONTAINER DISK FILLS AND IT LOOKS LIKE A CODE BUG (2026-08-03)
+`page.goto: Page crashed` on a harness that had worked minutes earlier. Not the code — `df` showed
+**252G, 38M available, 100%**, and my own scratchpad was 6.8 GB of test bundles, model backups and
+cloned repos. Chromium cannot start without scratch space, and it reports that as a page crash.
+CHECK `df -h /` BEFORE DEBUGGING A HARNESS THAT SUDDENLY STOPPED WORKING. Deleting still succeeds
+while writes fail, so clean up (test bundles, clones, .apk/.zip downloads) and re-run.
+
+## OUR OWN MODEL GENERATOR — TripoSR RUNS HERE, ON CPU (2026-08-03)
+Owner: "We would have more models if u had got a good tripo 3d alternative working, or could hook
+up my tripo 3d account to this through logins and not API keys." Both are built.
+### tools/models/image_to_3d.py — the generator. No account, no credits, no queue.
+The alternative to Tripo IS Tripo: **stabilityai/TripoSR**, built by Stability AI WITH Tripo AI,
+weights MIT, 167k downloads. Chosen over TRELLIS / Hunyuan3D / InstantMesh — all better models, all
+requiring CUDA — because it is the one that runs GPU-less, which is what this box is.
+**MEASURED, CPU ONLY: 19s to load, 23-25s to reconstruct, 45,108 verts / 90,224 faces, and the
+render is unmistakably the input object.** `bash tools/models/setup_image_to_3d.sh` installs it.
+FIVE PINS, EACH ONE A DEBUGGING ROUND. Do not "modernise" them:
+1. **transformers PINNED TO 4.x.** v5 renamed the ViT internals (`encoder.layer.N.attention.
+   attention.query` -> `layers.N.attention.q_proj`), so the 2024 checkpoint stops matching the model
+   it builds and load_state_dict fails with 192 missing keys.
+2. **torchvision must be the `+cpu` build from PyTorch's own index.** A plain `pip install
+   torchvision` takes the PyPI wheel, built against a different torch ABI, which dies at import with
+   `operator torchvision::nms does not exist` — and pip then says "already satisfied" and refuses to
+   replace it, so it needs `--force-reinstall`. `--index-url`, NEVER `--extra-index-url` (that pulls
+   ~3 GB of CUDA onto a GPU-less box; it has happened twice).
+3. **torchmcubes shimmed with PyMCubes** — the real one is a compiled CUDA extension with no wheel.
+   **THE AXIS FLIP IS THE WHOLE POINT:** torchmcubes returns verts (x,y,z), PyMCubes (z,y,x).
+   Unflipped you get a mesh that looks completely plausible and is MIRRORED.
+4. **rembg is stubbed** — it drags in the broken torchvision and TripoSR's own run.py imports it at
+   module scope, so the stock script is unusable for a reason unrelated to the model. Background
+   removal is a border flood fill instead, which is what a reference photo actually needs.
+5. **THE MESH COMES OUT Z-UP AND MUST BE ROTATED -90 ABOUT X.** Caught by RENDERING it, never by a
+   number: the first chair reconstructed perfectly with bbox x 0.58, y 0.56, **z 1.01** — the height
+   was on Z, so it was lying on its back. A wrestler would arrive face-down and the engine's
+   fit-to-1.78m would size him by his DEPTH. Vertex count, face count and file size were all
+   perfect. OWNER LAW, again: SEE IT.
+THE OUTPUT IS UNRIGGED, and that is already solved — `transfer_weights.cjs` copies a proven
+58-joint rig onto it by spatial correspondence (the fix that took the Heavyweight p95 0.3131 FAIL ->
+0.0284 PASS). Full chain: image -> TripoSR -> transfer_weights -> skinqa -> rig_continuity ->
+decimate --gate -> snapshot AND LOOK AT IT.
+### tools/models/tripo_session.cjs — his OWN account, by LOGIN, not an API key
+Same proven stack as social_login.cjs: CONNECT relay in front (the agent proxy accepts only
+CONNECT), TLS capped at 1.2 (the middlebox resets a 1.3 ClientHello), automation flags erased,
+HEADED on Xvfb. Credentials come from TRIPO_EMAIL / TRIPO_PASSWORD, are used once and are NEVER
+written to disk; only the session lands in `.claude/tripo/session.json` (0600, gitignored).
+It REFUSES to claim success without a real auth cookie and screenshots whatever it landed on —
+because a wrong selector times out and reads exactly like a rejected password.
+HONEST LIMIT: Tripo's web app is a private, unversioned interface. Endpoints are read off the live
+page at run time rather than hardcoded, but a redesign will break it, and the failure mode is a
+screenshot and a clear message rather than a silent wrong answer.
+WHICH TO USE: generate locally for the long tail (free, 25s, no queue); spend account credits on
+hero characters where the quality is worth it. Both land in the same place and go through the same
+rig-and-gate chain.
+
+## NOTHING IN THIS GAME COULD BREAK (2026-08-03) — BANNON_BREAK
+Owner, on a TripoSR test that reconstructed a dining chair: "that's not a wrestling chair, or a
+folding chair, so it's pointless unless it's breakable furniture." He was right about the bigger
+thing: **MEASURED, `breakTable` / `tableBreak` / `breakProp` / `_broken` returned ZERO hits across
+the whole file.** Nothing had ever broken. BANNON_PROPS had a real state machine — standing /
+stacked / leaned / onFire — and no BROKEN state, so a table put through by a powerbomb just stood
+there. TABLES and TLC were `live:false` in the match list for exactly that reason; both are live now.
+WHAT BREAKS, read off what the objects actually are:
+  table SHATTERS (gone, standHeight 0) · chair FOLDS and stays a weapon · ladder BUCKLES and stays
+  climbable · steel steps never break, and their absence from the table is a decision, not an omission.
+IT BREAKS ON PHYSICS, NOT A BUTTON — downward speed x mass past a threshold expressed as a fraction
+of MAX_BODY_VEL, so every existing slam, powerbomb, splash and dive lights it up at once and no
+"break move" was added. Damage goes through the ENGINE'S applyDamage so DMG_SCALE and MAX_HP still
+own the numbers.
+### FOUR BUGS THE TEST CAUGHT THAT READING WOULD NOT HAVE
+1. **`applyDamage(victim, dmg, attacker, move, forceDown)` — I passed an OPTIONS OBJECT as the third
+   argument.** The engine read `{source,noBlock}` as the ATTACKER and the damage silently did
+   nothing: **hp -0 on a table that had visibly shattered.** The mechanic looked finished and the
+   only wrong number in the whole report was a zero. READ THE SIGNATURE, never assume an options bag.
+   After: table hp -179, chair hp -62.
+2. **Sampling `f.vy` cannot catch an impact.** The engine rewrites it every frame and ZEROES IT ON
+   LANDING, so by the time the check ran a body that fell at 3.2 m/s read 0 — the first version broke
+   a chair and left a table standing under the same slam, which is backwards (a table needs LESS
+   force). Fixed with a decaying PEAK HOLD of fall speed. An impact is an EVENT; sampling a velocity
+   hoping to catch the frame it is large is a coin flip.
+3. **standHeight() had to be wrapped.** It is what every climb, stand and dive-off reads; a broken
+   table still reporting 1.0m leaves a man standing in mid-air on splinters.
+4. **MY TEST WAS WRONG TWICE and both times blamed the code.** It counted 6 frames on a harness
+   running at ~3 fps and read the table's state one frame BEFORE it broke; then it let a ragdoll
+   slide off the table (dz 0.59 -> 1.65) and measured the drift instead of the break. Wait for the
+   EVENT, and keep the prop under the body. `BANNON_BREAK.probe(p,f)` returns every number the test
+   uses so a failure is read, not guessed — that is what settled it.
+VERIFIED: slam through a table breaks it at speed 4.53; WALKING on it does not (a table you can break
+by standing on it is not a table); table -> broken/standHeight 0/hp -179; chair -> bent/0.55/-62;
+ladder -> bent/2.4; steps not breakable. 0 page errors, smoke PASS.
+
+## JAGER + THE ENTRANCE TRON (2026-08-03) — and the tool bug that faked a success
+Owner supplied a Tripo model, two reference shots and an entrance video for **Fredrico Hunter, "Young
+Jager"**, with one instruction that shaped the whole tron system: *"I will add a song that will play
+instead of the video audio during entrance and victory, since trons have no audio."*
+### THE TRON — BANNON_TRONVIDEO
+BANNON_TRON drew a procedural text tron into a 512x256 canvas bound to the arena screen. It now also
+plays VIDEO into that same canvas, then hands the screen straight back — one texture, no second
+material, no extra draw call. **Silent by design and by necessity:** the audio track is stripped from
+the FILE at bake time, the element is muted + playsInline, and music stays the theme system's job for
+both entrance and victory. An unmuted video cannot autoplay on a phone anyway, so the requirement and
+the browser agree.
+26.8 MB 1080p -> **0.38 MB** h264 at 512x256, the exact tron size. **Pillarboxed, never cropped** —
+16:9 into 2:1 cropped to fill would cut the head and boots off a standing figure.
+**TWO ENCODES PER TRON, and it is not belt-and-braces.** h264 is what an Android WebView decodes, so
+the mp4 ships. But **Playwright's bundled Chromium has no proprietary codecs**, so with mp4 alone the
+tron cannot be tested here at all — readyState 0, videoWidth 0x0, play() rejected. VP9/WebM decodes in
+both. `srcFor()` picks by `canPlayType`.
+**THE MEASUREMENT TRAP I ALMOST FELL FOR:** my first test sampled the tron canvas and reported
+"PIXELS CHANGING: true" — while `frames: 0` and `failed: 1`. **The canvas always changes, because the
+PROCEDURAL tron animates** (pulse + scanline sweep). The honest signal is frames drawn BY THE VIDEO
+PATH. After the webm: **15 frames drawn, 0 failed, muted=true, no audio track.**
+### THE JAGER MODEL — and transfer_weights printing SUCCESS on garbage
+62 MB / 1,997,902 tris / unskinned from Tripo -> 38,820 tris / 4.5 MB / 58 joints / WHOLE.
+**transfer_weights.cjs COULD NOT READ ANY OF OUR RIGS AND DID NOT SAY SO.** It has its own minimal
+GLB reader — fast, dependency-light, and completely ignorant of EXT_meshopt_compression, which EVERY
+model in assets/models now uses. Fed VIPER it read compressed bytes as float32, computed
+**src height 6.74e+38**, and then printed *"wrote ... 58 joints ... texture preserved"* and exited 0.
+A TOTAL SUCCESS MESSAGE ON PURE GARBAGE. It now decompresses to a temp file first and REFUSES loudly
+if it cannot. Any future re-rig would have hit this.
+**PRE-SCALE THE MESH BEFORE TRANSFERRING.** transfer_weights aligns with a single uniform yScale, so
+a 0.98m Tripo body against a 1.8m rig does every nearest-neighbour lookup in a stretched space:
+mean correspondence **0.0506m**, widest piece spanning only 20 joints. Scaling the unrigged mesh to
+1.799m FIRST: **0.0182m** (better than BANNON's proven 0.0206m) and 35 joints. Then rescale_mesh
+fixes the bone/mesh ratio (1.941 -> 1.000), the same defect as TARZANIAN_DEVIL 1.936 and CODY 1.944.
+**HONEST STATUS: skinqa p95 0.1361 = FAIL** (threshold 0.12), worse than anything else we ship,
+while rig_continuity is WHOLE and the RENDER is clean — chains, cuffs, rings, studded ripped denim,
+boots and the physique all correct with no shredding. Correspondence is excellent, so the residual is
+most likely his bind POSE differing from VIPER's rather than bad weights. He is banked and wired
+because the owner wants him in, but he is on the list for a proper re-rig and the number is stated,
+not buried. DO NOT record him as a PASS.
+OWNER FLAGGED ON THE MODEL ITSELF: the beard is far thicker than his, and the broken-heart tattoo is
+wrong — both need the facial-hair / tattoo customisation pass in the creation suite.
+### OPEN, NAMED BY THE OWNER THIS PASS
+1. **ENTRANCES ARE WRONG.** Both competitors enter AT THE SAME TIME, SIDE BY SIDE, and it happens
+   DURING CHARACTER SELECT. Neither MDickie nor WWE 2K does either of those. Entrances must be
+   SEQUENTIAL and must run after the select screen, with the tron cued per wrestler.
+2. Facial hair add/remove + tattoo editing in character customisation.
+
+## ENTRANCES WERE BOTH BUGS HE SAID THEY WERE (2026-08-03) — BANNON_ENTRANCE_SEQ
+Owner: "neither mdickie or WWE 2k has both the competitors enter at the same time side by side, but
+u have 1 entrance fur both competitors enter at the same time and it happens during character
+selection." Both halves true, both MEASURED across a full boot -> select -> FIGHT:
+    ENTRANCE.play  fired ONCE, for p1 only. p2 NEVER GOT AN ENTRANCE AT ALL.
+    WALKOUT.run    fired ZERO times. The five-segment ramp walk had never run in a match.
+    at the bell    BANNON (-0.70,-0.70) and VIPER (0.69,-0.88) — already in the ring, together.
+And the side-by-side was LITERAL, inside BANNON_WALKOUT.run:
+    F.forEach(function(f, i){ begin(f, i ? 1 : -1); });   // both, same frame, lanes -1 and +1
+run() now takes ONE fighter and walks him in the CENTRE lane; BANNON_ENTRANCE_SEQ orders them,
+challenger first and headliner last (the convention both games use). It never runs under
+__PREVIEW_BUILD, which is what was firing entrances while browsing the select screen — spawnPreview
+calls startFight to build its standing bodies. Skippable per entrance AND a SKIP ENTRANCES chip, with
+a 15s ceiling per man on top of the walkout's own 12s, because a bell that never rings is
+unrecoverable.
+AFTER: `WALKOUT.run VIPER t+20.5s`, `WALKOUT.run BANNON t+36.0s` — 15 seconds apart, sequential,
+0 entrances during select. SEQ stats {sequences:1, entrances:2, lastOrder:["VIPER","BANNON"]}.
+### THE ENTRANCE KIT — the options he asked for, per wrestler
+`window.BANNON_ENTRANCE_SEQ.setKit(name, {...})`, stored in localStorage under
+`bannon_entrance_kits`, read by the director at cue time:
+  titantron AUTO|VIDEO|NAME|NONE · minitrons · lighting ARENA|DARK|SPOT|STROBE|COLOUR (+lightCol)
+  smoke NONE|LOW|HEAVY · pyro NONE|STAGE|RINGPOST|FULL · gait · hold
+LIGHTING CHANGES INTENSITY, NEVER `.visible` — three.js keys its shader programs on the LIGHT COUNT,
+so hiding a light recompiles every material in the scene. That is already written down in
+BANNON_PERF and it applies identically here. The editor UI on top of this is the next piece.
+### A MEASUREMENT OF MINE THAT WAS WRONG, CORRECTED IN THE SAME PASS
+The probe reported `startFight` running NINE times per FIGHT press. It does not. All nine stamps
+share the SAME MILLISECOND — that is ONE call passing through nine nested wrappers, because the
+probe re-armed on `setInterval` and BANNON_PERF re-wraps `window.startFight` after it, producing a
+new unguarded function each time. **A repeated instrument stacks; check the timestamps before
+believing a count.**
+
+## THE LAST TWO WAYS A PROCEDURAL BODY REACHED THE SCREEN (2026-08-03)
+Owner's standing priority: "never seeing procedural three js models unless specific attires for that
+are selected." Measured by sampling EVERY FRAME of a full match, not by reasoning about the code.
+### 1. "DOWNLOADED AND PARSING" LOOKED EXACTLY LIKE "HUNG"
+Normal connection: **2 procedural frames of 158**, at t+10.75s — with the GLB arriving at t+12.6s and
+`_modelFailed` left TRUE on a fighter who HAD his model. The download finished in under a second from
+LOCAL files, then onProgress went silent, because **there are no progress events for PARSING**.
+GLTFLoader spreads a multi-megabyte parse across frames (12.6s at harness frame rate). My own stall
+detector read that silence as a hang, declared failure and revealed the body — 1.9 seconds before the
+model landed. Fixed: once `loaded >= total` the bytes are all here and only the hard ceiling applies.
+A late arrival also clears `_modelFailed` instead of leaving a fighter marked failed forever.
+**0 procedural frames of 208** after.
+### 2. RUN-INS NEVER ASKED FOR A MODEL AT ALL
+On a slow connection (4s per model — his phone on bad data): **31 frames of 167**, all of them the
+interferer. The two competitors bound at ~15s; the intruder at 24.2s, and the procedural frames run
+exactly between. `setProcVisible` only blocks the built-in body when `_charModelRequested` is set, and
+that flag comes from applyCharModels, **which only ever runs for the SIDES p1..p4**. An interferer is
+built with a bare `new Fighter(...)` and pushed onto `fighters` — no request, no ban, a tube.
+THE FIX IS NOT A NEW LOADER: a fighter at index 2 IS p3 (`fighterFor('p3')` returns `fighters[2]`), so
+the existing machinery already covered him and was simply never asked. BANNON_LATE_BODIES asks for
+every fighter's model and holds him invisible until he is himself. A run-in a second late is a run-in;
+a run-in as a grey tube is the bug. **0 procedural frames of 199 on the slow network** after.
+LESSON, third time this session: a flag that gates a rule is only as good as the paths that SET it.
+## BANNON_TRON_STUDIO — custom trons on the phone (2026-08-03)
+"we need a way to add and make custom trons in game." Front end for the entrance kit
+BANNON_ENTRANCE_SEQ already reads: pick a video off the device, set titantron / mini-trons / lighting
+/ smoke / pyro per wrestler, PREVIEW on the real arena screen. `BANNON_TRON_STUDIO.open()`.
+Reuses **BLIB**, the IndexedDB library device-imported MODELS already use, rather than opening a
+second store — so a custom tron survives a reload and an OTA swap for the same reason a custom model
+does, and there is one storage story instead of two. A blob: URL dies on reload, so the bytes are
+re-read and a fresh URL minted at boot; the ASSIGNMENT lives in the kit, the MEDIA lives in BLIB.
+**Refuses files over 24 MB and says the real number.** There is no ffmpeg on a phone so it cannot
+transcode, and silently storing 60 MB in IndexedDB to draw it at 512x256 is how a save becomes
+unrecoverable. The trons that ship with the game are 0.38 MB via tools/tron/bake_tron.sh.
+VERIFIED by driving the real UI: 9/9 controls, video stored + assigned, and **after a full page
+reload the kit and the custom video are both still there** — which is the only proof that matters,
+since a blob URL cannot survive one.
+
+## JAGER: CLEAN-SHAVEN IS THE DEFAULT NOW (2026-08-03) + tools/models/ingest_character.sh
+Owner supplied the no-beard body as the DEFAULT after flagging the first model's beard as far thicker
+than his. It also MEASURES better on the identical pipeline and donor rig:
+    JAGER.glb (no beard)  skinqa p95 0.1133 WEAK — passes    33,917 verts / 34,708 tris
+    JAGER_beard.glb       skinqa p95 0.1361 FAIL             37,780 verts / 38,820 tris
+The bearded one is KEPT as a GLB attire under CHAR_ALT_MODELS.JAGER (owner LAW: never drop generated
+content), so it is selectable rather than deleted.
+### THE PIPELINE IS A TOOL NOW — tools/models/ingest_character.sh
+Written after running the same chain by hand three times and hitting the SAME four traps each time.
+`bash tools/models/ingest_character.sh <raw.glb> <KEY> [donor] [tris]`:
+1. DECIMATE FIRST AND ITERATE — 2.0M triangles will not reach 18k in one pass, meshoptimizer's error
+   bound stops it (2.0M -> 143k -> 71k -> 50k measured). Also 25x cheaper than transferring onto 1.1M.
+2. PRE-SCALE TO THE DONOR'S HEIGHT BEFORE TRANSFER — a single uniform yScale means a 0.98m body against
+   a 1.8m rig does every lookup in a stretched space: 0.0506m mean correspondence and 20/58 joints,
+   versus 0.0182m and 35 joints pre-scaled.
+3. RESCALE MESH TO SKELETON AFTER — the transfer leaves bone/mesh ~1.94 and the engine sizes by the
+   BONE span, so the visible body ends up half height (TARZANIAN_DEVIL 1.936, CODY_gear 1.944).
+4. SNAPSHOT AND LOOK. The first mesh generated here came out lying on its back with a perfect vertex
+   count, and skinqa cannot see a severed rig at all.
+## AN INSTRUMENT OF MINE THAT READ ZERO, AND WHY IT WAS WRONG (2026-08-03)
+Building a per-STATE animation audit I wrapped `window.studioApplyClipPose`, bucketed calls by the
+fighter's state and measured bone travel per bucket. It reported **1,342 calls and 0.000 bone travel
+across every state**. That is not a finding, it is a broken instrument, and it is worth writing down
+because it is the SAME trap already in this file:
+  * the engine calls `studioApplyClipPose(this, _mc, p)` as a **LEXICAL identifier** at its main
+    combat sites. Wrapping `window.studioApplyClipPose` intercepts only the module call sites
+    (taunts, zone moves), not the combat path — so the calls counted were not the calls that matter.
+  * verified separately that `window.__boneOf` resolves all 58 bones on a live fighter, so the bone
+    lookup was fine; the wrapper was in the wrong place.
+`tools/harness/smoke.cjs` already measures this CORRECTLY and reports real per-category deltas
+(strike / grapple / walk, with named bone travel). Extend THAT rather than building a fourth
+instrument. A per-category audit covering zoning, dives, pins and ring transitions is still OPEN and
+should be added to smoke, not written fresh.
