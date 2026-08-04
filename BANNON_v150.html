@@ -6994,6 +6994,9 @@ window.CHAR_ALT_MODELS = {
   BANNON:          [ {id:'BANNON_HEAVYWEIGHT',label:'Heavyweight',url:'assets/models/BANNON_muscular_skinned.glb'} ],
   CAIN_ELIAS:      [ {id:'CAIN_ELIAS_ring',label:'Ring Gear',url:'assets/models/CAIN_ELIAS_ring.glb'}, {id:'CAIN_ELIAS_snakeskin',label:'Snakeskin',url:'assets/models/CAIN_ELIAS_snakeskin.glb'}, {id:'CAIN_ELIAS_godwithin',label:'God Within',url:'assets/models/CAIN_ELIAS_godwithin.glb'} ],
   CIPHER:          [ {id:'CIPHER_minion',label:'Minion',url:'assets/models/CIPHER_minion.glb'}, {id:'CIPHER_feral',label:'Feral',url:'assets/models/CIPHER_feral.glb'} ],
+  // JAGER casual/manager/street attire — trench coat, shaved. The owner uploaded it as a SEPARATE
+  // body rather than a costume swap, so it is an alt MODEL, not a tint.
+  JAGER:           [ {id:'JAGER_coat',label:'Street / Manager',url:'assets/models/JAGER_coat.glb'} ],
   CODY:            [ {id:'CODY_sober',label:'Sober',url:'assets/models/CODY_sober.glb'}, {id:'CODY_stressed',label:'Stressed',url:'assets/models/CODY_stressed.glb'} ],
   EDWIN_KENNEDY:   [ {id:'EDWIN_KENNEDY_unchained',label:'Unchained',url:'assets/models/EDWIN_KENNEDY_unchained.glb'} ],
   MASTER_SENSEI:   [ {id:'MASTER_SENSEI_rose',label:'Rose',url:'assets/models/MASTER_SENSEI_rose.glb'} ],
@@ -16183,6 +16186,14 @@ const CHAR_MODEL_DEFAULTS = {
   // permission) — unskinned, so it goes through the rigid-chunk auto-rig path until UniRig'd.
   MDICKIE:{url:'assets/models/mdickie_char/MDICKIE_tinted.glb',name:'MDICKIE (WR3D)'},
   MAIME:{url:'assets/models/MAIME.glb',name:'MAIME (canon)'},
+  // JAGER — the Coven's scout. Owner's own generated body, ingested through
+  // tools/models/ingest_character.sh: 1,978,239 tris -> 34,726 over four decimation passes, then
+  // pre-scaled 0.978m -> 1.799m and given VIPER's proven 58-joint rig by weight transfer (mean
+  // nearest-source distance 0.0170 m), then rescaled so the mesh fills its own skeleton
+  // (bone/mesh ratio 1.055 -> 1.000). skinqa p95 0.1055 WEAK, rig continuity whole, 0 page errors.
+  // The CLEAN-SHAVEN body is the default because the owner said the beard on the earlier generation
+  // was far thicker than the character; the bearded and coat versions are attire.
+  JAGER:{url:'assets/models/JAGER.glb',name:'JAGER (canon)'},
   ONYX:{url:'assets/models/ONYX_skinned.glb',name:'ONYX'},
   CODY_CALLAHAN:{url:'assets/models/CODY_gear_skinned.glb',name:'CODY · Gear'},
   CAIN_ELIAS:{url:'assets/models/CAIN_ELIAS_gear.glb',name:'CAIN ELIAS · Gear'},
@@ -57921,6 +57932,76 @@ window.__deriveVariant = async function(key){
     }
     if (n < 200) setTimeout(function(){ wire(n+1); }, 250);
   })(0);
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_LATE_BODIES — the last way a procedural body still reaches the screen.
+//
+// OWNER, as the standing priority: "never seeing procedural three js models unless specific
+// attires for that are selected."
+//
+// MEASURED, tools/harness/smoke.cjs, on this exact build:
+//     BANNON  model:yes    VIPER  model:yes    ZEPHYR  model:NO   <- the run-in
+// One FAILURE, and it is always the same actor. WHY THE BAN DOES NOT COVER HIM: setProcVisible
+// only refuses the built-in body when `f._charModelRequested` is set, and that flag is set by
+// applyCharModels — which only ever runs for the SIDES p1..p4 at match start. An interferer is
+// built with a bare `new Fighter(...)` and pushed onto `fighters`, so NOBODY EVER ASKED for his
+// model. No request, therefore no ban, therefore a grey tube in the middle of a match.
+//
+// THE FIX IS NOT A NEW LOADER. A fighter at index 2 IS p3 — fighterFor('p3') returns fighters[2] —
+// so the whole existing machinery already covers him and was simply never asked. Ask it, and hold
+// him invisible until he is actually himself: a run-in that appears a second late is a run-in; a
+// run-in that appears as a grey tube is the bug the owner has been reporting for weeks.
+//
+// The ceiling matters as much as the ban. An invisible attacker is its own bug, so if the model
+// genuinely never arrives the engine's own failure path (_modelFailed) shows the built-in body —
+// the ONE case the owner allows: a real failure, not a slow load.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_LATE_BODIES) return;
+
+  var SIDES = ['p1', 'p2', 'p3', 'p4'];
+  var ST = { adopted:0, hidden:0, revealed:0, timedOut:0, last:null };
+
+  function fighters_(){ try{ return new Function('return typeof fighters!=="undefined"?fighters:[]')(); }catch(e){ return []; } }
+
+  function tick(){
+    var F = fighters_();
+    for (var i = 0; i < F.length; i++){
+      var f = F[i]; if (!f || f._forceProc) continue;
+
+      // 1. ANY fighter without a model request gets one, through the normal path.
+      if (!f._charModelRequested && !f.model && !f.__lateAsked){
+        f.__lateAsked = true;
+        try{
+          if (i < SIDES.length && typeof applyCharModels === 'function'){
+            ST.adopted++; ST.last = (f.opts && f.opts.name) || ('#' + i);
+            applyCharModels(SIDES[i]);
+          }
+        }catch(e){}
+      }
+
+      // 2. Until he has one, he is NOT on screen. The procedural ban already refuses to show the
+      //    built-in body once a request is in flight; this covers the window before that, and any
+      //    path that sets no flag at all.
+      var waiting = (!f.model && !f._modelFailed && (f._charModelRequested || f.__lateAsked));
+      if (waiting){
+        if (!f.__lateHiddenAt){ f.__lateHiddenAt = (performance.now ? performance.now() : Date.now()); ST.hidden++; }
+        try{ if (f.seg && typeof setProcVisible === 'function') setProcVisible(f, false); }catch(e){}
+        var wait = (performance.now ? performance.now() : Date.now()) - f.__lateHiddenAt;
+        if (wait > 20000 && !f.__lateGaveUp){ f.__lateGaveUp = true; ST.timedOut++; }
+      } else if (f.__lateHiddenAt && f.model){
+        f.__lateHiddenAt = 0; ST.revealed++;
+      }
+    }
+  }
+
+  (function loop(){ requestAnimationFrame(loop); try{ tick(); }catch(e){} })();
+  window.BANNON_LATE_BODIES = { stats: function(){ return Object.assign({}, ST); } };
+  try{ console.log('%c[BANNON_LATE_BODIES] every fighter asks for a model, and waits off-screen for it','color:#7CFC00'); }catch(e){}
 })();
 </script>
 
