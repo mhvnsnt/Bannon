@@ -77,6 +77,29 @@ function WATCH(){
   addEventListener('unhandledrejection', e => { try{ S.rejections.push(String(e.reason && e.reason.message || e.reason).slice(0,160)); }catch(_){} });
 
   const arm = () => {
+    // THE PROCEDURAL BODY, SAMPLED EVERY 100ms FOR THE WHOLE SESSION. Checking it once at the end
+    // (which is all this harness ever did) cannot catch a FLASH, and a flash is the entire
+    // complaint: "procedural models keep appearing first and sometimes are the only thing that
+    // appear". Count every sample where a fighter who has a GLB coming is showing the tube.
+    if (!window.__procWatch){
+      window.__procWatch = { samples:0, violations:0, worst:null, byName:{} };
+      setInterval(function(){
+        try{
+          var F = new Function('return typeof fighters!=="undefined"?fighters:null')();
+          (F||[]).forEach(function(f){
+            if (!f || !f.seg || !f.seg.head) return;
+            var W = window.__procWatch; W.samples++;
+            var showing = !!f.seg.head.visible;
+            var owed = !!f._charModelRequested && !f._forceProc && !f._modelFailed;
+            if (showing && owed){
+              var n = (f.opts && f.opts.name) || '?';
+              W.violations++; W.byName[n] = (W.byName[n]||0)+1;
+              W.worst = { name:n, hasModel:!!f.model, failed:!!f._modelFailed, at:Math.round(performance.now()) };
+            }
+          });
+        }catch(e){}
+      }, 100);
+    }
     if (window.studioApplyClipPose && !window.studioApplyClipPose.__sm){
       const o = window.studioApplyClipPose;
       const w = function(){ S.poseCalls++; return o.apply(this, arguments); };
@@ -227,7 +250,7 @@ function WATCH(){
     // 6. THE FRAME LOOP AND THE STATE MACHINE
     const health = await page.evaluate(() => {
       const S = window.__S;
-      return { frames:S.frames, seconds:+((performance.now()-S.t0)/1000).toFixed(1),
+      return { proc: window.__procWatch, frames:S.frames, seconds:+((performance.now()-S.t0)/1000).toFixed(1),
                fps:+(S.frames/Math.max(0.001,(performance.now()-S.t0)/1000)).toFixed(2),
                worstStallMs: S.stalls.length ? Math.max.apply(null, S.stalls.map(s=>s.ms)) : 0,
                stallsOver1s: S.stalls.filter(s=>s.ms>1000).length,
@@ -237,6 +260,14 @@ function WATCH(){
     if (health.frames < 30) fail('FRAME LOOP', 'only ' + health.frames + ' frames in ' + health.seconds + 's — the loop is not running');
     if (health.nan > 0) fail('NaN', health.nan + ' frames with a non-finite fighter transform');
     if (health.rejections.length) fail('UNHANDLED REJECTION', health.rejections.join(' | '));
+    const P = health.proc;
+    if (P){
+      report.procWatch = P;
+      if (P.violations > 0)
+        fail('PROCEDURAL BODY SHOWN', P.violations + ' of ' + P.samples + ' samples had a fighter showing the ' +
+             'built-in body while his GLB was on its way: ' + JSON.stringify(P.byName) + '  last: ' + JSON.stringify(P.worst));
+      else note('PROCEDURAL BODY', 'never shown while a model was in flight (' + P.samples + ' samples)');
+    }
     if (Object.keys(health.states||{}).length < 2) fail('STATE MACHINE', 'the fighters never left one state: ' + JSON.stringify(health.states));
   }catch(e){
     fail('HARNESS', String(e && e.message).split('\n')[0].slice(0,180));

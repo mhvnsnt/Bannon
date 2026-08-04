@@ -49,7 +49,16 @@ jobs:
           # mocap manifest (tiny) so BANNON_LOAD_FBX_LIBRARY knows the full clip list offline; the FBX
           # themselves stay CDN-streamed (too big to bundle).
           cp assets/mocap/*.json $A/assets/mocap/ 2>/dev/null || true
-          echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files"
+          # THE MODELS AND THE ENGINE WERE NEVER IN THE APK. Owner: "I'm still seeing the procedural
+          # three js models". Not a loader bug — assets/models was simply never copied, so every
+          # character GLB was a multi-megabyte raw.githubusercontent.com fetch on mobile data at the
+          # moment a match starts, and a slow or refused one falls back to the procedural body.
+          # assets/vendor (three.js, GLTFLoader, FBXLoader, post-processing) was missing too, so the
+          # offline app fell back to CDN <script> tags just to boot.
+          # Selection lives in a real script, not a heredoc in this block scalar — that has broken
+          # this workflow twice. Wired models only: 59 GLBs / 36.6 MB, not the 3.6 GB workbench.
+          node scripts/bundle_apk_assets.cjs BANNON_v150.stamped.html $A
+          echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files, total assets $(du -sh $A | cut -f1)"
 
       - uses: actions/setup-java@v4
         with:

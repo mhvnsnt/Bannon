@@ -64,3 +64,4 @@ assets/mocap/segments/
 
 # playtest recordings — regenerate with tools/harness/play_and_record.cjs, don't bloat the repo
 dist/playtest/
+.cache/

@@ -26,6 +26,50 @@ if (!SRC || !TGT) { console.error('usage: node transfer_weights.cjs <source.glb>
 const OUT = process.argv[4] || TGT.replace(/\.glb$/i, '') + '_xfer.glb';
 const K = 6;                       // neighbours blended per target vertex
 
+// ── COMPRESSED INPUT IS UNREADABLE BY THE PARSER BELOW, AND IT DOES NOT SAY SO ────────────────
+// This file has its own minimal GLB reader, which is why it is fast and dependency-light. It knows
+// nothing about EXT_meshopt_compression — and EVERY rig in assets/models is meshopt-compressed now.
+// Fed one, it reads compressed bytes as float32 and produces numbers like src height 6.74e+38, then
+// prints "wrote ... 58 joints ... texture preserved" and exits 0. A TOTAL SUCCESS MESSAGE ON PURE
+// GARBAGE. Decompress to a temp file first, and refuse rather than guess if that is not possible.
+function decompressIfNeeded(p) {
+  let declared = false;
+  try {
+    const b = fs.readFileSync(p);
+    let off = 12;
+    while (off < b.length) {
+      const l = b.readUInt32LE(off), t = b.readUInt32LE(off + 4);
+      if (t === 0x4E4F534A) {
+        const j = JSON.parse(b.slice(off + 8, off + 8 + l).toString('utf8'));
+        declared = (j.extensionsUsed || []).indexOf('EXT_meshopt_compression') >= 0;
+      }
+      off += 8 + l;
+    }
+  } catch (e) { return p; }
+  if (!declared) return p;
+  const out = require('os').tmpdir() + '/xfer_' + require('path').basename(p);
+  const r = require('child_process').spawnSync(process.execPath, ['-e', `
+    const {NodeIO}=require('@gltf-transform/core'),{ALL_EXTENSIONS}=require('@gltf-transform/extensions');
+    const {MeshoptEncoder,MeshoptDecoder}=require('meshoptimizer');
+    const {normalizeBuffer}=require(${JSON.stringify(__dirname + '/fix_extensions_used.cjs')});
+    const fs=require('fs');
+    (async()=>{ await MeshoptEncoder.ready; await MeshoptDecoder.ready;
+      const io=new NodeIO().registerExtensions(ALL_EXTENSIONS)
+        .registerDependencies({'meshopt.encoder':MeshoptEncoder,'meshopt.decoder':MeshoptDecoder});
+      const d=await io.readBinary(normalizeBuffer(fs.readFileSync(${JSON.stringify(p)})));
+      // strip the extension so the plain reader downstream sees raw accessors
+      for (const e of d.getRoot().listExtensionsUsed()) if (/meshopt/i.test(e.extensionName)) e.dispose();
+      fs.writeFileSync(${JSON.stringify(out)}, Buffer.from(await io.writeBinary(d)));
+    })();`, ], { cwd: process.cwd(), encoding: 'utf8' });
+  if (r.status !== 0 || !fs.existsSync(out)) {
+    console.error('REFUSED: ' + p + ' is EXT_meshopt_compression and could not be decompressed.\n' +
+                  'This tool\'s GLB reader cannot decode it and would silently produce garbage.');
+    process.exit(4);
+  }
+  console.error('  (decompressed ' + require('path').basename(p) + ' for reading)');
+  return out;
+}
+
 function readGLB(path) {
   const b = fs.readFileSync(path);
   let off = 12, json = null, binOff = 0, binLen = 0;
@@ -51,7 +95,7 @@ function accessor(g, i) {
   return { data: out, comp: a.componentType, type: a.type, count: a.count };
 }
 
-const S = readGLB(SRC), T = readGLB(TGT);
+const S = readGLB(decompressIfNeeded(SRC)), T = readGLB(decompressIfNeeded(TGT));
 if (!S.json.skins || !S.json.skins.length) { console.error('source has no skin — nothing to transfer'); process.exit(2); }
 if (!T.json.meshes || T.json.meshes.length !== 1 || T.json.meshes[0].primitives.length !== 1) {
   console.error('target must be a single mesh / single primitive (run strip_satellites first)'); process.exit(2);
