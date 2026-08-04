@@ -1467,3 +1467,35 @@ because it is the SAME trap already in this file:
 (strike / grapple / walk, with named bone travel). Extend THAT rather than building a fourth
 instrument. A per-category audit covering zoning, dives, pins and ring transitions is still OPEN and
 should be added to smoke, not written fresh.
+
+## THE HARNESS HAS A NOISE FLOOR — MEASURED 2026-08-04. READ THIS BEFORE TRUSTING ONE RUN.
+Re-ran tools/harness/stall_autopsy.cjs on the IDENTICAL baseline build, same machine, same 28.7 s
+window, nothing changed between the two runs:
+    gl.linkWait   1,762 ms  ->  2,568 ms   (+46%)
+    js.raf        3,786 ms  ->  4,827 ms   (+27%)
+    gl.texture      855 ms  ->    686 ms   (-20%)
+    worst frame   1,651 ms  ->  2,124 ms   (+29%)
+A SINGLE RUN CANNOT RESOLVE A DIFFERENCE SMALLER THAN ROUGHLY HALF. Several conclusions in this
+file's history rest on one run of a render harness; they are worth less than they read. From here:
+compare against a CONTROL RUN OF THE SAME BUILD, not against a number recorded in a previous
+session, and treat anything under ~50% as unproven. Counts (programs linked, procedural frames,
+poseCalls, node counts) are far tighter than timings — prefer them.
+
+### WHAT THIS CAUGHT, SAME DAY (the reason it is now law)
+- **BANNON_GPUQ, built and then DELETED.** It swept the scene every 120 ms for materials with no
+  compiled program and called renderer.compile whenever it found one. Measured js.raf 3,786 ->
+  12,655 ms, worst frame 1,651 -> 4,432 ms. Clearly outside the noise floor, so a real regression.
+  ROOT CAUSE: it can never converge — particle and fx materials are created and destroyed
+  constantly, so "an unpaid material exists" is true forever and the queue re-walked the whole
+  scene graph and re-ran an all-or-nothing compile every 400 ms for the life of the match.
+  A SYSTEM THAT CANNOT CONVERGE IS NOT A SYSTEM WITH A BAD CONSTANT. Do not re-tune it; the idea
+  is wrong. Deleted, not damped.
+- **BANNON_POSTWARM kept on the STRUCTURAL argument, not a claimed speed-up.** renderer.compile
+  walks the SCENE GRAPH, and EffectComposer's passes own their own materials — a luminosity pass,
+  five bloom mip blurs run twice each, three ShaderPasses — none of which are in the scene. They
+  link on the composer's FIRST render. One composer render, once, at boot. It measures INSIDE the
+  noise floor and is written down as unproven.
+- STILL OPEN: 15-19 shader programs first link after the bell, 6 of them within 3 s (behind the
+  entrance, harmless) and ~9 at 16-25 s into the match. Those are created-and-drawn in the same
+  frame, so nothing that watches the scene can pre-empt them — the fix is to CREATE the fx and
+  damage materials at boot so they are never new. Not attempted yet.

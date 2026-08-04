@@ -1,155 +1,66 @@
 <script>
 // ============================================================================================
-// BANNON_GPUQ — PAY THE GPU BILL BEFORE THE MOVE, NOT DURING IT.
+// BANNON_POSTWARM — one shot, and ONLY the thing that is genuinely missing.
 //
-// MEASURED (tools/harness/stall_autopsy.cjs + late_programs.cjs) on this build:
-//     __outsideJS   23,714 ms of 28,906 ms   — 82% of wall clock is not in JavaScript at all
-//     gl.linkWait    1,762 ms total, 731 ms of it in ONE frame at the bell
-//     gl.texture       855 ms, still landing 42 s into the match
-//     19 shader programs first link AFTER the bell, still arriving at t=54 s
+// THIS REPLACES A CHANGE I MEASURED AND THREW AWAY. The first version (BANNON_GPUQ) swept the
+// scene every 120 ms for materials with no compiled program and called renderer.compile whenever
+// it found one. The idea was sound; the measurement was not kind:
+//                          BEFORE          AFTER          window-normalised
+//     gl.linkWait          1,762 ms        2,699 ms       6.1%  ->  6.2%   (no change)
+//     gl.texture             855 ms        1,124 ms       3.0%  ->  2.6%   (marginal)
+//     js.raf               3,786 ms       12,655 ms        13%  ->   29%   MUCH WORSE
+//     worst single frame   1,651 ms        4,432 ms
+// The sweep never converges: particle and fx materials are created and destroyed constantly, so
+// "an unpaid material exists" is true forever, and the queue re-walked the whole scene graph and
+// re-ran an all-or-nothing compile every 400 ms for the life of the match. It bought nothing and
+// tripled the JavaScript cost of a frame. Deleted, not tuned — a system that cannot converge is
+// not a system with a bad constant.
 //
-// TWO PRE-WARM SYSTEMS ALREADY EXIST AND BOTH MISS THESE, for the same reason: they watch the
-// MESH COUNT and re-compile when it moves. A NEW PROGRAM DOES NOT NEED A NEW MESH. Read straight
-// off the fragment shaders as they linked, every one of these arrived with the mesh count flat:
-//     PointsMaterial       t=20.20s   a particle system firing for the first time
-//     MeshDepthMaterial    t=22.44s   a SHADOW variant — renderer.compile does not build these
-//     MeshBasicMaterial    t=20.27s   an fx quad
-//     MeshStandardMaterial t=40.24s, 43.85s, 49.70s, 53.95s — material swaps on existing meshes
+// AND THE HARNESS HAS A NOISE FLOOR, which is the more important half of this note. Re-running
+// stall_autopsy on the IDENTICAL baseline build over the same 28.7 s window gave:
+//     gl.linkWait  1,762 ms  then  2,568 ms   (+46%)
+//     js.raf       3,786 ms  then  4,827 ms   (+27%)
+//     worst frame  1,651 ms  then  2,124 ms   (+29%)
+// Same bytes, same machine, no change at all. So a single run of this harness CANNOT resolve a
+// difference smaller than roughly half, and any conclusion drawn from one run of it — including
+// several in this file's history — is worth less than it looks. GPUQ's 3.3x on js.raf was clearly
+// outside that floor and was correctly thrown away; this one-shot warm measures INSIDE it and is
+// therefore kept on the STRUCTURAL argument alone (the post chain is genuinely not in the scene
+// graph and genuinely links on the first composed frame), not on a claimed speed-up. It is
+// one-shot, cannot loop, and cannot regress the frame loop.
 //
-// So this watches THE THING THAT ACTUALLY PREDICTS A STALL: a material that is in the scene and
-// has no compiled program yet, and a texture that is in the scene and has no GPU handle yet.
-// three.js exposes both — renderer.properties.get(x) is empty until the object has been uploaded.
-// That is a DIRECT read of "the driver has not paid for this yet", not a proxy for it.
-//
-// TEXTURES ARE SPREAD ONE AT A TIME because initTexture is per-texture and genuinely divisible.
-// PROGRAMS ARE NOT: renderer.compile is all-or-nothing in r128 and there is no compileAsync. The
-// win there is not spreading the cost, it is MOVING it — a compile fires the moment a material
-// enters the scene (a lull, a menu, an entrance) instead of the moment it is first DRAWN, which is
-// by definition the middle of the move that introduced it.
-//
-// NOTE ON linkProgram: it measures 0 ms because drivers link ASYNCHRONOUSLY. The bill arrives later
-// at the first getProgramParameter/draw, which is what stall_autopsy calls gl.linkWait. Do not read
-// "linkProgram took 0 ms" as "linking is free" — that was nearly the wrong conclusion here.
+// WHAT SURVIVES IS THE ONE PART THAT IS A REAL, BOUNDED GAP: the post chain is NOT IN THE SCENE
+// GRAPH. renderer.compile walks the scene, and EffectComposer's passes own their own materials —
+// a luminosity pass, five bloom mip blurs run twice each, three ShaderPasses. No amount of scene
+// compiling has ever touched them, so they link on the composer's FIRST render, which is the first
+// frame the player sees. One composer render into the existing target, once, pays for all of them
+// while the menu is still up. It runs a single time and can never repeat.
 // ============================================================================================
 (function(){
   'use strict';
-  if (window.BANNON_GPUQ) return;
-
-  var ST = { scans:0, compiles:0, compileMs:0, texUploads:0, texMs:0,
-             matsSeen:0, texSeen:0, lastCompileAt:0, duringPlay:0, composerWarmed:false };
-  var MIN_GAP_MS = 400;          // never two full compiles inside this window
-  var TEX_PER_FRAME = 3;
-
+  if (window.BANNON_POSTWARM) return;
+  var ST = { warmed:false, ms:0, passes:0, programsBefore:-1, programsAfter:-1 };
   function lex(n){ try{ return new Function('return typeof '+n+'!=="undefined"?'+n+':null')(); }catch(e){ return null; } }
-  function R(){ return lex('renderer'); }
-  function S(){ return lex('scene'); }
-  function C(){ return lex('camera'); }
-  function playing(){ try{ return lex('gameState') === 'fight'; }catch(e){ return false; } }
 
-  // ── IS THIS THING PAID FOR? ─────────────────────────────────────────────────────────────────
-  // renderer.properties is three.js's own per-object GPU bookkeeping. An entry with no `program`
-  // has never been compiled; a texture entry with no `__webglTexture` has never been uploaded.
-  function matUnpaid(r, m){
-    try{ var p = r.properties.get(m); return !p || !p.program; }catch(e){ return false; }
-  }
-  function texUnpaid(r, t){
-    try{ var p = r.properties.get(t); return !p || !p.__webglTexture; }catch(e){ return false; }
-  }
-
-  var TEX_KEYS = ['map','normalMap','roughnessMap','metalnessMap','emissiveMap','aoMap',
-                  'alphaMap','bumpMap','displacementMap','lightMap','envMap','specularMap'];
-
-  // A cursor-based sweep: the scene has hundreds of nodes and this runs every frame, so it walks a
-  // SLICE per frame rather than the whole graph. Materials are collected fresh each pass because a
-  // material swap is one of the cases that slipped past the mesh-count watchers.
-  var cursor = 0;
-  function sweep(){
-    var r = R(), s = S(); if (!r || !s) return;
-    ST.scans++;
-    var nodes = [];
-    s.traverse(function(o){ if (o.isMesh || o.isPoints || o.isLine || o.isSprite) nodes.push(o); });
-    if (!nodes.length) return;
-
-    var SLICE = Math.max(24, Math.ceil(nodes.length / 8));
-    if (cursor >= nodes.length) cursor = 0;
-    var end = Math.min(nodes.length, cursor + SLICE);
-
-    var needCompile = false, texQueue = [];
-    for (var i = cursor; i < end; i++){
-      var o = nodes[i];
-      if (!o.visible) continue;
-      var mats = Array.isArray(o.material) ? o.material : (o.material ? [o.material] : []);
-      for (var j=0;j<mats.length;j++){
-        var m = mats[j]; if (!m) continue;
-        ST.matsSeen++;
-        if (matUnpaid(r, m)) needCompile = true;
-        for (var k=0;k<TEX_KEYS.length;k++){
-          var t = m[TEX_KEYS[k]];
-          if (t && t.isTexture && texUnpaid(r, t)){ texQueue.push(t); ST.texSeen++; }
-        }
-      }
-    }
-    cursor = end;
-
-    // TEXTURES: genuinely divisible, so pay a few per frame and no more.
-    if (texQueue.length && typeof r.initTexture === 'function'){
-      var n = Math.min(TEX_PER_FRAME, texQueue.length);
-      var t0 = performance.now();
-      for (var q=0;q<n;q++){ try{ r.initTexture(texQueue[q]); ST.texUploads++; }catch(e){} }
-      ST.texMs += (performance.now() - t0);
-    }
-
-    // PROGRAMS: all-or-nothing in r128, so the win is WHEN, not how much. Fire as soon as an
-    // unpaid material appears — which is when it entered the scene, not when it is first drawn.
-    if (needCompile){
-      var now = performance.now();
-      if (now - ST.lastCompileAt < MIN_GAP_MS) return;
-      var cam = C(); if (!cam) return;
-      ST.lastCompileAt = now;
-      var t1 = performance.now();
-      try{ r.compile(s, cam); }catch(e){ return; }
-      var ms = performance.now() - t1;
-      ST.compiles++; ST.compileMs += ms;
-      if (playing()) ST.duringPlay++;
-    }
-  }
-
-  // ── THE POST CHAIN IS NOT IN THE SCENE ──────────────────────────────────────────────────────
-  // renderer.compile walks the SCENE GRAPH. EffectComposer's passes own their own materials — a
-  // luminosity pass, five bloom mip blurs run twice each, and three ShaderPasses — and none of
-  // them are in the scene, so no amount of scene compiling has ever touched them. They link on the
-  // composer's first render, which is the first frame of the match. Rendering the composer once
-  // into a tiny target pays for all of them somewhere harmless.
-  function warmComposer(){
-    if (ST.composerWarmed) return;
-    var r = R(), comp = window.__composer;
-    if (!r || !comp || typeof comp.render !== 'function') return;
-    ST.composerWarmed = true;                 // one attempt, success or not — never a retry loop
+  function warm(){
+    if (ST.warmed) return false;
+    var r = lex('renderer'), comp = window.__composer;
+    if (!r || !comp || typeof comp.render !== 'function') return false;
+    ST.warmed = true;                       // one attempt, success or not — never a retry loop
     try{
+      ST.programsBefore = (r.info.programs || []).length;
       var t0 = performance.now();
       comp.render(0.016);
-      ST.composerWarmMs = +(performance.now() - t0).toFixed(1);
-      try{ console.log('%c[BANNON_GPUQ] post chain warmed in ' + ST.composerWarmMs + 'ms ('
-        + (comp.passes||[]).length + ' passes)','color:#7CFC00'); }catch(e){}
+      ST.ms = +(performance.now() - t0).toFixed(1);
+      ST.passes = (comp.passes || []).length;
+      ST.programsAfter = (r.info.programs || []).length;
+      try{ console.log('%c[BANNON_POSTWARM] post chain warmed in ' + ST.ms + 'ms — ' + ST.passes +
+        ' passes, programs ' + ST.programsBefore + ' -> ' + ST.programsAfter, 'color:#7CFC00'); }catch(e){}
     }catch(e){}
+    return true;
   }
+  (function poll(n){ n = n || 0; if (warm() || n > 60) return; setTimeout(function(){ poll(n+1); }, 500); })(0);
 
-  // Sweep on a wall clock, not a frame count. At the 3 fps this engine gives a phone during a busy
-  // match, "every 12 frames" is four seconds — the same trap that made the appearance tick lag
-  // behind its own slider. A slice sweep is a few hundred property lookups; 120ms is cheap.
-  setInterval(function(){ try{ sweep(); }catch(e){} }, 120);
-  setTimeout(function poll(){ warmComposer(); if (!ST.composerWarmed) setTimeout(poll, 500); }, 1200);
-
-  window.BANNON_GPUQ = {
-    sweep: sweep, warmComposer: warmComposer,
-    stats: function(){
-      var r = R();
-      return { scans:ST.scans, compiles:ST.compiles, compileMs:+ST.compileMs.toFixed(0),
-               compilesDuringPlay:ST.duringPlay, texturesUploaded:ST.texUploads,
-               textureMs:+ST.texMs.toFixed(0), composerWarmed:ST.composerWarmed,
-               programsNow: r && r.info && r.info.programs ? r.info.programs.length : -1 };
-    }
-  };
-  try{ console.log('%c[BANNON_GPUQ] watching for UNPAID materials and textures, not mesh count','color:#7CFC00'); }catch(e){}
+  window.BANNON_POSTWARM = { warm: warm, stats: function(){ return Object.assign({}, ST); } };
 })();
 </script>
