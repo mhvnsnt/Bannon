@@ -1,0 +1,583 @@
+<script>
+// ============================================================================================
+// BANNON_APPEARANCE — GROOMING ON THE GLB: FACIAL HAIR, HAIR, TATTOOS, GEAR, KIT COLOURS.
+//
+// OWNER: "we will need a way in character customization to add remove facial hair cause Jager's
+// beard was never as thick as it looks on the model and his broken heart tattoo is inaccurate",
+// then: "we also need to be able to change caw and model hairstyles, clothes, etc, just like
+// mdickie and WWE 2k".
+//
+// MEASURED FIRST, and it is worse than a missing feature. The ⛹ CREATE editor is a real 90-control
+// body sculptor — height, limb lengths, 14 girths, 16 width/depth axes, 7 colours — and EVERY ONE
+// of them drives `f.seg`, the PROCEDURAL segment body. The game now binds a GLB for every fighter,
+// and a GLB has no `f.seg`. So the entire appearance editor is pointed at a body the owner is never
+// supposed to see. Grep confirms the rest: ApplyHairstyle, ApplyHeadwear, ApplyEyewear,
+// ApplyClothing, WearBelt — MDickie's whole Editor.bb appearance layer — return ZERO hits in this
+// file, and so do `facialHair`, `GOATEE`, `STUBBLE` and `SIDEBURN`.
+//
+// SO THIS ATTACHES TO THE SKELETON, which is the one thing every fighter actually has. It is the
+// SAME dual path BANNON_MDICKIE.wearOn already proved for the 64 MDickie headwear props: resolve a
+// real bone through window.__boneOf, parent to it, and the piece rides the mocap instead of floating.
+//
+// THE BODY FRAME IS THE MODEL CONTAINER'S OWN BASIS, AND THAT IS A MEASURED CHOICE.
+// The first version derived it from the skeleton: UP from Head->HeadTop_End, RIGHT from
+// LeftArm->RightArm, FORWARD = cross(right, up). Every number it produced looked healthy — unit
+// length, orthogonal, a 0.1176 m head radius — and the beard landed 0.17 head-radii from the "chin"
+// against 1.13 from the "back". IT WAS NINETY DEGREES WRONG, and the check could not see it because
+// the check computed the chin with the SAME forward vector. A test that reuses the assumption it is
+// testing always passes. The screenshot is what caught it.
+// TWO INDEPENDENT READS SETTLED IT:
+//     the container's local +Z   vs   the engine's own (sin(facing),0,cos(facing))   ->  dot 1.000
+//     the bind arm axis          vs   that same facing                               ->  dot 0.000
+// The arm axis is ninety degrees out because these rigs are NOT BOUND IN A T-POSE — the arm bones
+// are staggered front-to-back in a fighting stance, so LeftArm->RightArm runs ALONG the facing
+// rather than across it. On BANNON_rigged the bind arm axis measures the exact negative of it.
+// So the frame is taken straight off the container the engine already orients:
+//     +Z = the way he faces      +Y = up      +X = his LEFT
+// +X is his left rather than his right because (right, up, forward) is a LEFT-handed triple for a
+// human, and a left-handed basis cannot become a quaternion — makeBasis would return garbage.
+// The container's own axes are orthonormal and right-handed by construction, so there is nothing to
+// build and nothing to get wrong.
+//
+// EVERY PIECE IS AUTHORED AGAINST THE BIND POSE, not the live one. skeleton.boneInverses gives the
+// pose the mesh was WEIGHTED in; using the pose the fighter happens to be standing in bakes a
+// crooked beard the moment his head is turned, and it stays crooked forever.
+//
+// TATTOOS ARE PROJECTED DECALS, NOT UV PAINT. We do not author the UV layout of 60 models from a
+// dozen different generators, so painting into their texture is not available. A decal plane
+// parented to the chest / arm / leg bone works on EVERY model including ones that arrive tomorrow.
+// Designs are drawn with 2D canvas paths, so the catalogue adds ZERO bytes to the APK and cannot be
+// a download at the moment a match starts.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_APPEARANCE) return;
+
+  var KEY = 'bannon_appearance';
+  var ST  = { applied:0, beards:0, hair:0, tattoos:0, gear:0, tinted:0, noFrame:0, last:null };
+
+  function T(){ return (typeof THREE !== 'undefined') ? THREE : null; }
+  function fighters_(){ try{ return new Function('return typeof fighters!=="undefined"?fighters:[]')(); }catch(e){ return []; } }
+  function ckey(f){ try{ return (typeof charModelKey === 'function') ? charModelKey(f) : ''; }catch(e){ return ''; } }
+  function nameOf(f){ try{ return (typeof fname === 'function' ? fname(f) : (f && f.opts && f.opts.name)) || ''; }catch(e){ return ''; } }
+
+  // ── the store: one key, per CHARACTER. A run-in and a booked match are the same man. ─────────
+  function load(){ try{ return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }catch(e){ return {}; } }
+  function save(db){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){} }
+  function getLook(k){ var db = load(); return db[k] || null; }
+  function setLook(k, look){ var db = load(); if (look) db[k] = look; else delete db[k]; save(db); mark(k); return look; }
+  function mark(k){ var F = fighters_(); for (var i=0;i<F.length;i++) if (ckey(F[i]) === k) F[i].__appSig = null; }
+
+  // ── FACIAL HAIR ─────────────────────────────────────────────────────────────────────────────
+  // Each patch is [x,y,z, rx,ry,rz, sx,sy,sz] in HEAD RADII, in the body frame. The head bone's
+  // origin is the neck-top joint, so the chin sits at roughly y +0.35, z +0.55 of a head radius.
+  var BEARDS = {
+    NONE:        [],
+    STUBBLE:     [[0,0.42,0.52, 0,0,0, 0.86,0.50,0.60]],
+    MOUSTACHE:   [[0,0.60,0.72, 0,0,0, 0.44,0.13,0.22]],
+    SOUL_PATCH:  [[0,0.40,0.74, 0,0,0, 0.15,0.14,0.16]],
+    GOATEE:      [[0,0.60,0.72, 0,0,0, 0.44,0.13,0.22],
+                  [0,0.34,0.66, 0,0,0, 0.30,0.34,0.30]],
+    CHINSTRAP:   [[0,0.40,0.44, 0,0,0, 0.90,0.30,0.70],
+                  [ 0.62,0.62,0.20, 0,0,0, 0.16,0.42,0.30],
+                  [-0.62,0.62,0.20, 0,0,0, 0.16,0.42,0.30]],
+    MUTTONCHOPS: [[ 0.60,0.58,0.22, 0,0,0, 0.22,0.52,0.38],
+                  [-0.60,0.58,0.22, 0,0,0, 0.22,0.52,0.38]],
+    FULL:        [[0,0.42,0.52, 0,0,0, 0.86,0.52,0.62],
+                  [0,0.60,0.72, 0,0,0, 0.44,0.13,0.22],
+                  [ 0.60,0.62,0.24, 0,0,0, 0.18,0.46,0.34],
+                  [-0.60,0.62,0.24, 0,0,0, 0.18,0.46,0.34]],
+    LONG:        [[0,0.42,0.52, 0,0,0, 0.86,0.52,0.62],
+                  [0,0.60,0.72, 0,0,0, 0.44,0.13,0.22],
+                  [ 0.60,0.62,0.24, 0,0,0, 0.18,0.46,0.34],
+                  [-0.60,0.62,0.24, 0,0,0, 0.18,0.46,0.34],
+                  [0,-0.10,0.56, 0,0,0, 0.42,0.62,0.34]],
+    HANDLEBAR:   [[0,0.60,0.72, 0,0,0, 0.52,0.12,0.20],
+                  [ 0.30,0.66,0.66, 0,0,0.5, 0.14,0.20,0.16],
+                  [-0.30,0.66,0.66, 0,0,-0.5, 0.14,0.20,0.16]]
+  };
+
+  // ── HAIR ────────────────────────────────────────────────────────────────────────────────────
+  // Same units, same frame. The skull cap sits at y ~ +0.75 because the head bone is at the neck.
+  var HAIR = {
+    KEEP:      null,                          // leave the model's own hair alone — the default
+    BALD:      [],
+    BUZZ:      [[0,0.80,0.06, 0,0,0, 0.92,0.72,0.98]],
+    SHORT:     [[0,0.84,0.04, 0,0,0, 0.98,0.82,1.04],
+                [0,0.60,-0.46, 0,0,0, 0.80,0.50,0.42]],
+    SLICKBACK: [[0,0.86,-0.06, -0.18,0,0, 0.94,0.76,1.14]],
+    MOHAWK:    [[0,1.02,0.02, 0,0,0, 0.20,0.62,1.10],
+                [0,0.78,0.02, 0,0,0, 0.86,0.50,0.92]],
+    AFRO:      [[0,0.94,-0.02, 0,0,0, 1.34,1.20,1.34]],
+    TOPKNOT:   [[0,0.82,0.00, 0,0,0, 0.92,0.70,0.98],
+                [0,1.18,-0.10, 0,0,0, 0.30,0.34,0.30]],
+    PONYTAIL:  [[0,0.84,0.00, 0,0,0, 0.96,0.78,1.02],
+                [0,0.62,-0.86, 0.30,0,0, 0.26,0.86,0.26]],
+    LONG_HAIR: [[0,0.86,0.00, 0,0,0, 1.02,0.84,1.06],
+                [0,0.18,-0.42, 0,0,0, 0.96,1.10,0.70]],
+    DREADS:    [[0,0.84,0.00, 0,0,0, 0.96,0.78,1.00],
+                [ 0.52,0.34,-0.32, 0,0,0, 0.20,0.86,0.20],
+                [-0.52,0.34,-0.32, 0,0,0, 0.20,0.86,0.20],
+                [ 0.00,0.30,-0.60, 0,0,0, 0.22,0.94,0.22],
+                [ 0.34,0.36,-0.62, 0,0,0, 0.18,0.80,0.18],
+                [-0.34,0.36,-0.62, 0,0,0, 0.18,0.80,0.18]]
+  };
+
+  // ── GEAR: pads, tape, masks, coats. Anatomy, not scenery — each rides its own bone. ─────────
+  // [bone, x,y,z, sx,sy,sz, shape]  positions in METRES from that bone, in the body frame.
+  var GEAR = {
+    ELBOW_PADS:  [['LeftForeArm', 0,-0.02,0, 0.075,0.085,0.075,'sphere'],
+                  ['RightForeArm',0,-0.02,0, 0.075,0.085,0.075,'sphere']],
+    KNEE_PADS:   [['LeftLeg', 0,-0.02,0.02, 0.085,0.100,0.085,'sphere'],
+                  ['RightLeg',0,-0.02,0.02, 0.085,0.100,0.085,'sphere']],
+    WRIST_TAPE:  [['LeftHand', 0,0.05,0, 0.055,0.070,0.055,'cyl'],
+                  ['RightHand',0,0.05,0, 0.055,0.070,0.055,'cyl']],
+    ARM_SLEEVE:  [['LeftForeArm', 0,-0.11,0, 0.062,0.230,0.062,'cyl'],
+                  ['RightForeArm',0,-0.11,0, 0.062,0.230,0.062,'cyl']],
+    MASK:        [['Head', 0,0.55,0.42, 0.115,0.130,0.100,'sphere']],
+    HEADBAND:    [['Head', 0,0.86,0.00, 0.125,0.035,0.130,'cyl']],
+    VEST:        [['Spine2', 0,0.02,0.00, 0.215,0.230,0.160,'box']],
+    TRENCH_COAT: [['Spine2', 0,-0.02,0.00, 0.235,0.260,0.185,'box'],
+                  ['Spine',  0,-0.36,-0.02, 0.245,0.480,0.205,'box']],
+    LONG_TIGHTS: [['LeftUpLeg', 0,-0.20,0, 0.095,0.420,0.095,'cyl'],
+                  ['RightUpLeg',0,-0.20,0, 0.095,0.420,0.095,'cyl']],
+    BOOTS:       [['LeftLeg', 0,-0.30,0.02, 0.082,0.180,0.100,'cyl'],
+                  ['RightLeg',0,-0.30,0.02, 0.082,0.180,0.100,'cyl']]
+  };
+
+  // ── TATTOO DESIGNS — drawn, not downloaded ──────────────────────────────────────────────────
+  var DESIGNS = {
+    BROKEN_HEART: function(c, s){
+      // the owner's own note: the broken-heart tattoo on the generated Jager model is wrong
+      c.lineWidth = s*0.055; c.lineJoin='round'; c.lineCap='round';
+      var half = function(sign){ c.beginPath(); c.moveTo(s*0.50, s*0.30);
+        c.bezierCurveTo(s*(0.50+sign*0.30), s*0.02, s*(0.50+sign*0.52), s*0.36, s*0.50, s*0.80); c.stroke(); };
+      half(1); half(-1);
+      c.beginPath();                                   // the crack — what makes it BROKEN
+      c.moveTo(s*0.50, s*0.14); c.lineTo(s*0.42, s*0.34); c.lineTo(s*0.57, s*0.46);
+      c.lineTo(s*0.44, s*0.60); c.lineTo(s*0.52, s*0.72); c.lineTo(s*0.50, s*0.80); c.stroke();
+    },
+    CROSS: function(c, s){ c.fillRect(s*0.44, s*0.10, s*0.12, s*0.78); c.fillRect(s*0.22, s*0.30, s*0.56, s*0.12); },
+    TRIBAL: function(c, s){
+      c.lineWidth = s*0.07; c.lineCap='round';
+      for (var i=0;i<3;i++){ var o=i*s*0.15; c.beginPath(); c.moveTo(s*0.16+o, s*0.88);
+        c.quadraticCurveTo(s*0.30+o, s*0.40, s*0.62+o*0.5, s*0.14); c.stroke(); }
+      c.beginPath(); c.moveTo(s*0.20, s*0.62); c.quadraticCurveTo(s*0.55, s*0.66, s*0.86, s*0.34); c.stroke();
+    },
+    BARBED_WIRE: function(c, s){
+      c.lineWidth = s*0.045; c.lineCap='round'; c.beginPath();
+      for (var x=0; x<=s; x+=2) c.lineTo(x, s*0.50 + Math.sin(x/s*Math.PI*6)*s*0.09);
+      c.stroke();
+      for (var k=0;k<6;k++){ var px=s*(0.09+k*0.166), py=s*0.50+Math.sin(px/s*Math.PI*6)*s*0.09;
+        c.beginPath(); c.moveTo(px-s*0.06,py-s*0.09); c.lineTo(px+s*0.06,py+s*0.09);
+        c.moveTo(px+s*0.06,py-s*0.09); c.lineTo(px-s*0.06,py+s*0.09); c.stroke(); }
+    },
+    STAR: function(c, s){
+      c.beginPath();
+      for (var i=0;i<10;i++){ var r=(i%2?0.18:0.42)*s, a=-Math.PI/2+i*Math.PI/5;
+        c.lineTo(s*0.5+Math.cos(a)*r, s*0.5+Math.sin(a)*r); }
+      c.closePath(); c.fill();
+    },
+    SKULL: function(c, s){
+      c.beginPath(); c.ellipse(s*0.5,s*0.42,s*0.30,s*0.32,0,0,Math.PI*2); c.fill();
+      c.fillRect(s*0.34,s*0.66,s*0.32,s*0.18);
+      c.save(); c.globalCompositeOperation='destination-out';
+      c.beginPath(); c.ellipse(s*0.38,s*0.40,s*0.09,s*0.11,0,0,Math.PI*2); c.fill();
+      c.beginPath(); c.ellipse(s*0.62,s*0.40,s*0.09,s*0.11,0,0,Math.PI*2); c.fill();
+      c.beginPath(); c.moveTo(s*0.5,s*0.50); c.lineTo(s*0.44,s*0.62); c.lineTo(s*0.56,s*0.62); c.closePath(); c.fill();
+      for (var i=0;i<3;i++) c.fillRect(s*(0.38+i*0.10), s*0.66, s*0.035, s*0.18);
+      c.restore();
+    },
+    ROSE: function(c, s){
+      c.lineWidth = s*0.05;
+      for (var i=5;i>=1;i--){ c.beginPath(); c.ellipse(s*0.5,s*0.42,s*0.055*i,s*0.062*i,i*0.4,0,Math.PI*2); c.stroke(); }
+      c.beginPath(); c.moveTo(s*0.5,s*0.66); c.lineTo(s*0.5,s*0.92); c.stroke();
+      c.beginPath(); c.ellipse(s*0.36,s*0.78,s*0.13,s*0.055,-0.5,0,Math.PI*2); c.fill();
+    },
+    SLEEVE: function(c, s){
+      c.lineWidth = s*0.035;
+      for (var i=0;i<9;i++){ c.beginPath(); c.moveTo(0, s*(0.06+i*0.11));
+        c.bezierCurveTo(s*0.35, s*(0.02+i*0.11), s*0.65, s*(0.18+i*0.11), s, s*(0.04+i*0.11)); c.stroke(); }
+      for (var j=0;j<14;j++){ c.beginPath();
+        c.ellipse(s*(0.08+(j*0.19)%0.9), s*(0.12+(j*0.31)%0.8), s*0.04, s*0.06, j, 0, Math.PI*2); c.fill(); }
+    },
+    TEXT: null          // the design IS the wearer's own word
+  };
+
+  var _texCache = {};
+  function texture(design, text){
+    var ck = design + '|' + (text || '');
+    if (_texCache[ck]) return _texCache[ck];
+    var TH = T(); if (!TH) return null;
+    var S = 256, cv = document.createElement('canvas'); cv.width = cv.height = S;
+    var c = cv.getContext('2d');
+    c.clearRect(0,0,S,S); c.fillStyle = '#000'; c.strokeStyle = '#000';
+    if (design === 'TEXT'){
+      var t = String(text || 'BANNON').toUpperCase().slice(0,14), px = S*0.30;
+      c.textAlign='center'; c.textBaseline='middle';
+      // shrink to fit — a tattoo that runs off its own decal reads as a bug
+      do { c.font = 'bold ' + px + 'px serif'; px -= 4; } while (px > 8 && c.measureText(t).width > S*0.92);
+      c.fillText(t, S/2, S/2);
+    } else if (DESIGNS[design]) DESIGNS[design](c, S);
+    else return null;
+    var tx = new TH.CanvasTexture(cv);
+    if (TH.SRGBColorSpace) tx.colorSpace = TH.SRGBColorSpace;
+    tx.anisotropy = 4;
+    _texCache[ck] = tx;
+    return tx;
+  }
+
+  // ── SLOTS: which bone, and which way is OUT ─────────────────────────────────────────────────
+  // `out` is in the body frame — +X is his LEFT, +Y up, +Z the way he faces.
+  var SLOTS = {
+    CHEST:     { bones:['Spine2','Spine1','Chest','Spine'], out:[0,0,1],  along:0.06,  size:0.20 },
+    BACK:      { bones:['Spine2','Spine1','Chest','Spine'], out:[0,0,-1], along:0.06,  size:0.24 },
+    STOMACH:   { bones:['Spine','Spine1','Hips'],           out:[0,0,1],  along:0.02,  size:0.16 },
+    ARM_LEFT:  { bones:['LeftArm','LeftShoulder'],          out:[1,0,0],  along:0.12,  size:0.13 },
+    ARM_RIGHT: { bones:['RightArm','RightShoulder'],        out:[-1,0,0], along:0.12,  size:0.13 },
+    FORE_LEFT: { bones:['LeftForeArm','LeftArm'],           out:[1,0,0],  along:0.10,  size:0.10 },
+    FORE_RIGHT:{ bones:['RightForeArm','RightArm'],         out:[-1,0,0], along:0.10,  size:0.10 },
+    NECK:      { bones:['Neck','Head'],                     out:[0,0,1],  along:0.02,  size:0.07 },
+    LEG_LEFT:  { bones:['LeftUpLeg','LeftLeg'],             out:[1,0,0],  along:0.14,  size:0.13 },
+    LEG_RIGHT: { bones:['RightUpLeg','RightLeg'],           out:[-1,0,0], along:0.14,  size:0.13 }
+  };
+
+  function bone(model, names){
+    for (var i=0;i<names.length;i++){ var b = window.__boneOf ? window.__boneOf(model, names[i]) : null; if (b) return b; }
+    return null;
+  }
+
+  // ── THE BODY FRAME — the container's own basis. See the note at the top for why. ────────────
+  function frameOf(model){
+    var TH = T(); if (!TH) return null;
+    var head = bone(model, ['Head']);
+    if (!head) return null;
+    model.updateMatrixWorld(true);
+    var q = model.getWorldQuaternion(new TH.Quaternion());
+    var left    = new TH.Vector3(1,0,0).applyQuaternion(q).normalize();
+    var up      = new TH.Vector3(0,1,0).applyQuaternion(q).normalize();
+    var forward = new TH.Vector3(0,0,1).applyQuaternion(q).normalize();
+    var headR = 0;
+    try{
+      var top = window.__boneOf ? (window.__boneOf(model,'HeadTop_End') || window.__boneOf(model,'HeadTop')) : null;
+      if (top){ var d = top.getWorldPosition(new TH.Vector3()).sub(head.getWorldPosition(new TH.Vector3()));
+                if (d.lengthSq() > 1e-8) headR = d.length(); }
+    }catch(e){}
+    if (!(headR > 1e-4)){
+      // MEASURED: the 58-joint rigs this game ships carry no head-top bone at all, so this is the
+      // normal path, not a rare fallback. 7.5 head-heights is the standing figure convention;
+      // halved because the tables are written in radii.
+      var box = new TH.Box3().setFromObject(model), sz = new TH.Vector3(); box.getSize(sz);
+      headR = Math.max(0.04, sz.y / 15);
+    }
+    return { head:head, q:q, left:left, up:up, forward:forward, right:left.clone().negate(), headR:headR };
+  }
+
+  // The BIND world orientation of a bone. skeleton.boneInverses[i] is the inverse bind matrix, so
+  // its inverse is the pose the mesh was WEIGHTED in — which is what a beard must be authored
+  // against, or a head turned at that instant bakes a crooked beard that stays crooked forever.
+  function bindQuat(model, b){
+    var TH = T();
+    try{
+      var sk = null, mesh = null;
+      model.traverse(function(o){ if (o.isSkinnedMesh && !sk && o.skeleton){ sk = o.skeleton; mesh = o; } });
+      if (sk && mesh){
+        var i = sk.bones.indexOf(b);
+        if (i >= 0 && sk.boneInverses[i]){
+          var M = new TH.Matrix4().multiplyMatrices(mesh.matrixWorld,
+                    new TH.Matrix4().copy(sk.boneInverses[i]).invert());
+          return new TH.Quaternion().setFromRotationMatrix(M);
+        }
+      }
+    }catch(e){}
+    return b.getWorldQuaternion(new TH.Quaternion());
+  }
+
+  // A group whose LOCAL axes are the body frame and whose LOCAL unit is one WORLD metre, parented
+  // to a bone. Everything below is authored in plain metres and plain anatomy directions, and every
+  // rig convention and bone scale is cancelled once, here.
+  function frameGroup(host, fr, model){
+    var TH = T();
+    var g = new TH.Group();
+    host.add(g);
+    g.quaternion.copy(bindQuat(model, host).invert().multiply(fr.q));
+    var ws = host.getWorldScale(new TH.Vector3());
+    var s = (Math.abs(ws.x) + Math.abs(ws.y) + Math.abs(ws.z)) / 3;
+    g.scale.setScalar(s > 1e-6 ? 1/s : 1);
+    return g;
+  }
+
+  // ── SHARED GEOMETRY. Ten spheres a face is 96 triangles, but the particle-buffer lesson in this
+  // file is that geometry you allocate is geometry the GPU walks — so there is ONE of each. ─────
+  var _geo = null;
+  function geo(kind){
+    var TH = T();
+    if (!_geo) _geo = { sphere:new TH.SphereGeometry(1,10,7), cyl:new TH.CylinderGeometry(1,1,1,10,1),
+                        box:new TH.BoxGeometry(1,1,1) };
+    return _geo[kind] || _geo.sphere;
+  }
+
+  function shellMat(colour, dens, rough){
+    var TH = T();
+    return new TH.MeshStandardMaterial({
+      color: new TH.Color(colour), roughness: rough == null ? 0.95 : rough, metalness: 0.0,
+      transparent: dens < 0.98, opacity: 0.45 + dens*0.55, depthWrite: dens >= 0.98 });
+  }
+
+  function buildPatches(patches, spec, fr, model, host, unit, defColour){
+    var TH = T();
+    if (!patches || !patches.length) return null;
+    var g = frameGroup(host, fr, model);
+    var dens = Math.max(0.15, Math.min(1, spec.density == null ? 0.75 : spec.density));
+    var mat = shellMat(spec.colour == null ? defColour : spec.colour, dens);
+    for (var i=0;i<patches.length;i++){
+      var p = patches[i], m = new TH.Mesh(geo('sphere'), mat);
+      m.position.set(p[0]*unit, p[1]*unit, p[2]*unit);
+      m.rotation.set(p[3], p[4], p[5]);
+      // THICKNESS IS VOLUME, not only shade — a stubble and a full beard are different SIZES, and
+      // "the beard is too thick on the model" is a size complaint, not a colour one.
+      var t = 0.55 + dens*0.55;
+      m.scale.set(p[6]*unit*0.5*t, p[7]*unit*0.5*t, p[8]*unit*0.5*t);
+      m.castShadow = false; m.frustumCulled = false; m.renderOrder = 2;
+      g.add(m);
+    }
+    g.userData.__appDispose = [mat];
+    return g;
+  }
+
+  function buildGear(id, spec, fr, model){
+    var TH = T();
+    var parts = GEAR[id]; if (!parts) return null;
+    var out = [], mat = shellMat(spec && spec.colour != null ? spec.colour : 0x181818, 1, 0.6);
+    for (var i=0;i<parts.length;i++){
+      var p = parts[i], host = bone(model, [p[0]]); if (!host) continue;
+      var g = frameGroup(host, fr, model);
+      var m = new TH.Mesh(geo(p[7]), mat);
+      m.position.set(p[1], p[2], p[3]);
+      m.scale.set(p[4], p[5], p[6]);
+      m.castShadow = false; m.frustumCulled = false; m.renderOrder = 1;
+      g.add(m); g.userData.__appDispose = [];
+      out.push(g);
+    }
+    if (out.length) out[0].userData.__appDispose = [mat];
+    return out;
+  }
+
+  function buildTattoo(t, fr, model){
+    var TH = T();
+    var slot = SLOTS[t.slot]; if (!slot) return null;
+    var host = bone(model, slot.bones); if (!host) return null;
+    var tex = texture(t.design, t.text); if (!tex) return null;
+    var g = frameGroup(host, fr, model);
+    var sz = slot.size * (t.scale == null ? 1 : t.scale) * (fr.headR / 0.115);   // scales WITH the body
+    var mat = new TH.MeshBasicMaterial({
+      map: tex, transparent: true, opacity: t.opacity == null ? 0.85 : t.opacity,
+      color: new TH.Color(t.colour == null ? 0x1a1410 : t.colour),
+      depthWrite: false, side: TH.DoubleSide,
+      polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+    var m = new TH.Mesh(new TH.PlaneGeometry(sz, sz), mat);
+    var o = slot.out, depth = sz * 0.62;                 // clear of the surface, not floating off it
+    m.position.set(o[0]*depth, (t.along == null ? slot.along : t.along) * (fr.headR/0.115) * -1, o[2]*depth);
+    m.lookAt(m.position.clone().add(new TH.Vector3(o[0], o[1], o[2])));   // a plane's normal is +Z
+    m.rotateZ(t.rot == null ? 0 : t.rot);
+    m.renderOrder = 3; m.frustumCulled = false; m.castShadow = false;
+    g.add(m);
+    g.userData.__appDispose = [m.geometry, mat];
+    return g;
+  }
+
+  // ── KIT COLOURS: recolour the model's OWN meshes ────────────────────────────────────────────
+  // This is the honest way to change clothes on a body whose clothes are painted into it. Which
+  // mesh is which is READ off the model's own names, and a name is a HINT, so nothing is guessed:
+  // a fighter with no mesh matching a part simply has no knob for it, rather than a knob that
+  // silently recolours his face.
+  var PARTS = {
+    TRUNKS: /trunk|short|brief|tight|pant|bottom/i,
+    BOOTS:  /boot|shoe|foot/i,
+    GLOVES: /glove|hand|wrist|tape/i,
+    TOP:    /shirt|vest|jacket|coat|top|torso|body/i,
+    HAIR:   /hair|braid|dread|pony/i,
+    SKIN:   /skin|head|face|arm|leg|flesh/i
+  };
+  function partsOf(model){
+    var seen = {};
+    try{ model.traverse(function(o){
+      if (!o.isMesh || !o.material) return;
+      var n = (o.name || '') + '|' + ((o.material && o.material.name) || '');
+      for (var k in PARTS) if (PARTS[k].test(n)) (seen[k] = seen[k] || []).push(o);
+    }); }catch(e){}
+    return seen;
+  }
+  function tint(model, kit){
+    var TH = T(); if (!kit) return 0;
+    var seen = partsOf(model), n = 0;
+    for (var k in kit){
+      var col = kit[k]; if (col == null || !seen[k]) continue;
+      seen[k].forEach(function(o){
+        try{
+          if (!o.userData.__appOrigMat) o.userData.__appOrigMat = o.material;
+          var m = o.userData.__appOrigMat.clone();
+          m.color = new TH.Color(col);
+          o.material = m; o.userData.__appTinted = true; n++;
+        }catch(e){}
+      });
+    }
+    return n;
+  }
+  function untint(model){
+    try{ model.traverse(function(o){
+      if (o.isMesh && o.userData && o.userData.__appTinted && o.userData.__appOrigMat){
+        try{ o.material.dispose(); }catch(e){}
+        o.material = o.userData.__appOrigMat; o.userData.__appTinted = false;
+      } }); }catch(e){}
+  }
+  // Hiding the model's OWN hair is what makes a replacement hairstyle a REPLACEMENT rather than a
+  // second head of hair growing through the first. Reversible, and only ever by the model's names.
+  function hideOwnHair(model, hide){
+    try{ var seen = partsOf(model).HAIR || [];
+      seen.forEach(function(o){
+        if (hide){ if (o.userData.__appHairWas == null) o.userData.__appHairWas = o.visible; o.visible = false; }
+        else if (o.userData.__appHairWas != null){ o.visible = o.userData.__appHairWas; o.userData.__appHairWas = null; }
+      });
+      return seen.length;
+    }catch(e){ return 0; }
+  }
+
+  // ── APPLY / CLEAR ───────────────────────────────────────────────────────────────────────────
+  function clear(f){
+    var kept = f.__appNodes || [];
+    for (var i=0;i<kept.length;i++){
+      var n = kept[i];
+      try{ if (n.parent) n.parent.remove(n); }catch(e){}
+      try{ var d = n.userData && n.userData.__appDispose;
+           if (d) for (var j=0;j<d.length;j++) d[j] && d[j].dispose && d[j].dispose(); }catch(e){}
+    }
+    f.__appNodes = [];
+    if (f.model){ untint(f.model); hideOwnHair(f.model, false); }
+  }
+
+  function apply(f){
+    var TH = T(); if (!TH || !f || !f.model) return false;
+    clear(f);
+    var look = getLook(ckey(f));
+    if (!look) return true;                       // nothing equipped is a valid look, not a failure
+    var fr = frameOf(f.model);
+    if (!fr){ ST.noFrame++; return false; }        // rig cannot supply a frame — place NOTHING
+
+    var nodes = [], R = fr.headR;
+
+    if (look.beard && look.beard.style && look.beard.style !== 'NONE'){
+      var b = buildPatches(BEARDS[look.beard.style], look.beard, fr, f.model, fr.head, R, 0x241a12);
+      if (b){ nodes.push(b); ST.beards++; }
+    }
+    if (look.hair && look.hair.style && look.hair.style !== 'KEEP'){
+      hideOwnHair(f.model, true);                 // a replacement replaces
+      var h = buildPatches(HAIR[look.hair.style], look.hair, fr, f.model, fr.head, R, 0x1c1410);
+      if (h){ nodes.push(h); ST.hair++; }
+    }
+    (look.gear || []).forEach(function(g){
+      var parts = buildGear(g.id, g, fr, f.model);
+      if (parts && parts.length){ parts.forEach(function(p){ nodes.push(p); }); ST.gear++; }
+    });
+    (look.tattoos || []).forEach(function(t){
+      var n = buildTattoo(t, fr, f.model);
+      if (n){ nodes.push(n); ST.tattoos++; }
+    });
+    if (look.kit) ST.tinted += tint(f.model, look.kit);
+
+    f.__appNodes = nodes;
+    ST.applied++; ST.last = nameOf(f);
+    return true;
+  }
+
+  // The bind site calls _rigSense as a LEXICAL identifier, so wrapping window._rigSense would
+  // intercept nothing — that trap is written down elsewhere in this file more than once. Poll for
+  // the model instead, which is the pattern BANNON_LATE_BODIES proved, and re-apply when the
+  // SIGNATURE of (model, look) changes so a studio edit shows up live without a reload.
+  function sigOf(f){
+    var l = getLook(ckey(f));
+    return (f.modelUrl || '') + '|' + (l ? JSON.stringify(l) : '');
+  }
+  function tick(){
+    var F = fighters_();
+    for (var i=0;i<F.length;i++){
+      var f = F[i]; if (!f || !f.model) continue;
+      var s = sigOf(f);
+      if (f.__appSig === s) continue;
+      try{ f.model.updateMatrixWorld(true); }catch(e){}
+      if (apply(f)) f.__appSig = s;
+    }
+  }
+  // TIME-BASED, NOT FRAME-BASED. This began as `if (++n % 12 === 0)` inside a rAF loop and the
+  // harness caught it: at the 3 fps a software rasteriser gives during a live match, twelve frames
+  // is FOUR SECONDS, so every studio edit landed seconds after the slider moved and the first
+  // measurement read zero nodes. On a phone a dropped frame would do the same thing. The work is a
+  // string compare per fighter, so a wall-clock interval is both cheaper and honest.
+  setInterval(function(){ try{ tick(); }catch(e){} }, 250);
+
+  // ── API ─────────────────────────────────────────────────────────────────────────────────────
+  function keyOf(n){ return String(n || '').toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
+
+  window.BANNON_APPEARANCE = {
+    BEARD_STYLES: Object.keys(BEARDS),
+    HAIR_STYLES:  Object.keys(HAIR),
+    GEAR_IDS:     Object.keys(GEAR),
+    DESIGNS:      Object.keys(DESIGNS),
+    SLOTS:        Object.keys(SLOTS),
+    KIT_PARTS:    Object.keys(PARTS),
+    get: function(n){ return getLook(keyOf(n)); },
+    set: function(n, look){ return setLook(keyOf(n), look); },
+    setBeard: function(n, style, colour, density){
+      var k = keyOf(n), l = getLook(k) || {};
+      l.beard = { style:String(style||'NONE').toUpperCase(), colour:colour, density:density };
+      return setLook(k, l); },
+    setHair: function(n, style, colour, density){
+      var k = keyOf(n), l = getLook(k) || {};
+      l.hair = { style:String(style||'KEEP').toUpperCase(), colour:colour, density:density };
+      return setLook(k, l); },
+    toggleGear: function(n, id, colour){
+      var k = keyOf(n), l = getLook(k) || {}; l.gear = l.gear || [];
+      var i = -1; l.gear.forEach(function(g, j){ if (g.id === id) i = j; });
+      if (i >= 0) l.gear.splice(i, 1); else l.gear.push({ id:id, colour:colour });
+      return setLook(k, l); },
+    setGearColour: function(n, id, colour){
+      var k = keyOf(n), l = getLook(k) || {};
+      (l.gear||[]).forEach(function(g){ if (g.id === id) g.colour = colour; });
+      return setLook(k, l); },
+    setKit: function(n, part, colour){
+      var k = keyOf(n), l = getLook(k) || {}; l.kit = l.kit || {};
+      if (colour == null) delete l.kit[part]; else l.kit[part] = colour;
+      return setLook(k, l); },
+    addTattoo: function(n, t){
+      var k = keyOf(n), l = getLook(k) || {}; l.tattoos = l.tattoos || [];
+      l.tattoos.push(Object.assign({ slot:'CHEST', design:'BROKEN_HEART', scale:1, rot:0, opacity:0.85 }, t||{}));
+      return setLook(k, l); },
+    updateTattoo: function(n, i, patch){
+      var k = keyOf(n), l = getLook(k) || {};
+      if (!l.tattoos || !l.tattoos[i]) return null;
+      Object.assign(l.tattoos[i], patch || {}); return setLook(k, l); },
+    removeTattoo: function(n, i){
+      var k = keyOf(n), l = getLook(k) || {};
+      if (!l.tattoos) return null; l.tattoos.splice(i, 1); return setLook(k, l); },
+    reset: function(n){ return setLook(keyOf(n), null); },
+    refresh: function(){ var F = fighters_(); for (var i=0;i<F.length;i++) F[i].__appSig = null; },
+    // what the model itself can offer — the moveset editor equivalent for appearance: only show a
+    // knob the model actually has a mesh for.
+    partsAvailable: function(f){
+      f = f || fighters_()[0];
+      var s = f && f.model ? partsOf(f.model) : {}, o = {};
+      for (var k in s) o[k] = s[k].length; return o; },
+    // probe(): every number a test needs, so a failure is READ and not guessed at.
+    probe: function(f){
+      f = f || fighters_()[0]; if (!f) return { err:'no fighter' };
+      var fr = f.model ? frameOf(f.model) : null;
+      var r3 = function(v){ return v.toArray().map(function(x){ return +x.toFixed(3); }); };
+      return { name: nameOf(f), key: ckey(f), model: !!f.model, url: f.modelUrl || null,
+        frame: fr ? { headR:+fr.headR.toFixed(4), left:r3(fr.left), right:r3(fr.right),
+                      up:r3(fr.up), forward:r3(fr.forward) } : null,
+        look: getLook(ckey(f)), nodes: (f.__appNodes||[]).length }; },
+    stats: function(){ return Object.assign({}, ST); }
+  };
+  try{ console.log('%c[BANNON_APPEARANCE] hair · facial hair · tattoos · gear · kit colours, on the GLB skeleton — BANNON_APPEARANCE.probe()','color:#7CFC00'); }catch(e){}
+})();
+</script>

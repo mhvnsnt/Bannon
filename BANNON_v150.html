@@ -7055,6 +7055,9 @@ window.CHAR_ALT_MODELS = {
   JAGER:           [ {id:'JAGER_beard',label:'Bearded',url:'assets/models/JAGER_beard.glb'} ],
   CAIN_ELIAS:      [ {id:'CAIN_ELIAS_ring',label:'Ring Gear',url:'assets/models/CAIN_ELIAS_ring.glb'}, {id:'CAIN_ELIAS_snakeskin',label:'Snakeskin',url:'assets/models/CAIN_ELIAS_snakeskin.glb'}, {id:'CAIN_ELIAS_godwithin',label:'God Within',url:'assets/models/CAIN_ELIAS_godwithin.glb'} ],
   CIPHER:          [ {id:'CIPHER_minion',label:'Minion',url:'assets/models/CIPHER_minion.glb'}, {id:'CIPHER_feral',label:'Feral',url:'assets/models/CIPHER_feral.glb'} ],
+  // JAGER casual/manager/street attire — trench coat, shaved. The owner uploaded it as a SEPARATE
+  // body rather than a costume swap, so it is an alt MODEL, not a tint.
+  JAGER:           [ {id:'JAGER_coat',label:'Street / Manager',url:'assets/models/JAGER_coat.glb'} ],
   CODY:            [ {id:'CODY_sober',label:'Sober',url:'assets/models/CODY_sober.glb'}, {id:'CODY_stressed',label:'Stressed',url:'assets/models/CODY_stressed.glb'} ],
   EDWIN_KENNEDY:   [ {id:'EDWIN_KENNEDY_unchained',label:'Unchained',url:'assets/models/EDWIN_KENNEDY_unchained.glb'} ],
   MASTER_SENSEI:   [ {id:'MASTER_SENSEI_rose',label:'Rose',url:'assets/models/MASTER_SENSEI_rose.glb'} ],
@@ -16304,6 +16307,14 @@ const CHAR_MODEL_DEFAULTS = {
   // permission) — unskinned, so it goes through the rigid-chunk auto-rig path until UniRig'd.
   MDICKIE:{url:'assets/models/mdickie_char/MDICKIE_tinted.glb',name:'MDICKIE (WR3D)'},
   MAIME:{url:'assets/models/MAIME.glb',name:'MAIME (canon)'},
+  // JAGER — the Coven's scout. Owner's own generated body, ingested through
+  // tools/models/ingest_character.sh: 1,978,239 tris -> 34,726 over four decimation passes, then
+  // pre-scaled 0.978m -> 1.799m and given VIPER's proven 58-joint rig by weight transfer (mean
+  // nearest-source distance 0.0170 m), then rescaled so the mesh fills its own skeleton
+  // (bone/mesh ratio 1.055 -> 1.000). skinqa p95 0.1055 WEAK, rig continuity whole, 0 page errors.
+  // The CLEAN-SHAVEN body is the default because the owner said the beard on the earlier generation
+  // was far thicker than the character; the bearded and coat versions are attire.
+  JAGER:{url:'assets/models/JAGER.glb',name:'JAGER (canon)'},
   ONYX:{url:'assets/models/ONYX_skinned.glb',name:'ONYX'},
   CODY_CALLAHAN:{url:'assets/models/CODY_gear_skinned.glb',name:'CODY · Gear'},
   CAIN_ELIAS:{url:'assets/models/CAIN_ELIAS_gear.glb',name:'CAIN ELIAS · Gear'},
@@ -44703,7 +44714,11 @@ window.BANNON_CAW_FRONT=(function(){
          esc(a[0])+'<div style="color:#8a9a7a;font-weight:400;font-size:9px;margin-top:5px">'+esc(a[2])+'</div></button>';
     });
     h+='</div><div style="padding:10px 14px;border-top:1px solid #ff7a1a33">'+
-       '<button data-cf="sculpt" style="width:100%;background:linear-gradient(160deg,#2a1a3a,#180e26);border:1px solid #c084fc66;color:#e9d6ff;padding:11px;border-radius:8px;cursor:pointer;font:bold 12px ui-var(--f-mono)">③ SCULPT / EDIT THIS BODY ▶</button></div>';
+       // ✂ APPEARANCE is listed BEFORE the sculptor on purpose. The sculptor drives f.seg — the
+       // PROCEDURAL body — and every fighter now binds a GLB, so on a real wrestler its 90 controls
+       // move nothing the owner can see. Appearance attaches to the SKELETON: it works on all of them.
+       '<button data-cf="groom" data-name="'+esc(name)+'" style="width:100%;background:linear-gradient(160deg,#2a1a08,#1a1004);border:1px solid #ffb64866;color:#ffe9c0;padding:11px;border-radius:8px;cursor:pointer;font:bold 12px ui-var(--f-mono);margin-bottom:8px">③ ✂ HAIR · BEARD · TATTOOS · GEAR ▶</button>'+
+       '<button data-cf="sculpt" style="width:100%;background:linear-gradient(160deg,#2a1a3a,#180e26);border:1px solid #c084fc66;color:#e9d6ff;padding:11px;border-radius:8px;cursor:pointer;font:bold 12px ui-var(--f-mono)">④ SCULPT / EDIT THIS BODY ▶</button></div>';
     panel.innerHTML=h; wireGrid();
   }
   function wireGrid(){
@@ -44716,6 +44731,9 @@ window.BANNON_CAW_FRONT=(function(){
       try{ window.bindEditTarget && window.bindEditTarget(b.dataset.name, b.dataset.alt || null); }catch(e){}
     });
     panel.querySelectorAll('[data-cf="sculpt"]').forEach(b=>b.onclick=()=>startEditor());
+    panel.querySelectorAll('[data-cf="groom"]').forEach(b=>b.onclick=()=>{
+      try{ if(window.BANNON_APPEARANCE_STUDIO){ close(); window.BANNON_APPEARANCE_STUDIO.open(b.dataset.name||null); } }catch(e){}
+    });
   }
   window.openCawFront=open;
   // INTERCEPT the SUPERSTAR/CAW hub tile so it opens the front door, not the raw slider lab
@@ -51643,10 +51661,17 @@ window.__deriveVariant = async function(key){
         // steps tiers back and forth, this reallocates on every step and each one is a black frame.
         // So: at most one resize per second, and never for a ratio change too small to be worth it.
         var want = Math.min(T.pr, window.devicePixelRatio || 1);
+        // ONE reallocation, not two, AND at most one per second. EffectComposer.setPixelRatio
+        // already ends with `this.setSize(this._width, this._height)`, so the explicit setSize that
+        // followed it reallocated the main target AND all five bloom mip targets a SECOND time, for
+        // nothing. Measured with tools/harness/black_frames.cjs: four tier steps produced TWELVE
+        // resize events in six seconds; removing the duplicate takes it to eight. Reallocating every
+        // render target is the most plausible way to put a blank frame on screen — but the flashing
+        // did NOT reproduce here (0 black frames of 205, twice), so this halves a known churn rather
+        // than being a confirmed fix, and it is written down that way.
         var now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
         if (C.setPixelRatio && Math.abs((C.__pr || 0) - want) > 0.01 && (now - (C.__prAt || -9999)) > 1000){
           C.setPixelRatio(want); C.__pr = want; C.__prAt = now;
-          try{ C.setSize(window.innerWidth, window.innerHeight); }catch(e){}
         }
         // BLOOM IS THE MULTI-MIP BLUR. It is a look, not a mechanic — off below HIGH. Disabling the
         // PASS keeps the composer (and the cheap single-pass broadcast grade) intact, so the frame
@@ -51681,7 +51706,34 @@ window.__deriveVariant = async function(key){
   function frame(){
     requestAnimationFrame(frame);
     var n = performance.now(), d = n - ST.last; ST.last = n;
-    if (d > 0 && d < 5000){
+
+    // ── THE WORSE THE FREEZE, THE MORE INVISIBLE IT WAS TO THE SYSTEM BUILT TO FIX IT ──────────
+    // This read `d > 0 && d < 5000`, discarding any frame longer than five seconds as noise. On a
+    // phone that is exactly backwards: a device running at 0.2 fps produces a 5,000 ms frame EVERY
+    // FRAME, so ST.acc never grew, ST.fps never updated, autoTier() was never called, and the game
+    // sat at its opening tier while completely frozen. The frames that most needed to be counted
+    // were the only ones thrown away. A long frame is now DATA — clamped, not discarded, because a
+    // backgrounded tab really can produce a minute-long gap and that is not a rendering verdict.
+    if (d > 0){
+      if (document.hidden){ return; }                    // a hidden tab is not a slow device
+      if (d > 20000){ return; }                          // came back from sleep — no verdict
+      var hard = (window.PERF_HARD_STALL_MS != null ? window.PERF_HARD_STALL_MS : 1200);
+      if (d >= hard){
+        // ONE frame this long is a freeze the player already felt. Averaging it away over the next
+        // three half-second windows means the response arrives seconds after the damage. Drop now.
+        ST.stalls = (ST.stalls || 0) + 1; ST.worstFrame = Math.max(ST.worstFrame || 0, Math.round(d));
+        if (window.BANNON_PERF_AUTO !== false && ST.tier != null && ST.tier < TIERS.length - 1
+            && !document.hidden && (n - (ST.lastHardDrop || 0)) > 1000){
+          // JUMP AS FAR AS THE EVIDENCE JUSTIFIES, IN ONE STEP. Stepping down one tier at a time
+          // made four separate applyTier calls in six seconds, and every one of those reallocates
+          // the whole post chain. How bad the frame was already says how far to go.
+          var steps = Math.min(TIERS.length - 1 - ST.tier, Math.max(1, Math.floor(d / hard)));
+          ST.lastHardDrop = n; ST.everDropped = true; ST.hardDrops = (ST.hardDrops || 0) + 1;
+          try{ console.log('%c[BANNON_PERF] ' + Math.round(d) + 'ms frame — dropping ' + steps +
+            ' tier(s) on the spot','color:#ff6b6b'); }catch(e){}
+          applyTier(ST.tier + steps);
+        }
+      }
       ST.acc += d; ST.frames++;
       if (ST.acc >= 500){
         ST.fps = ST.frames / (ST.acc / 1000);
@@ -51704,7 +51756,11 @@ window.__deriveVariant = async function(key){
   function autoTier(){
     if (window.BANNON_PERF_AUTO === false) return;
     if (ST.tier == null) return;
-    if (typeof gameState !== 'undefined' && gameState !== 'fight') return;
+    // WAS `gameState !== 'fight'` — so the menu, the character select, the entrance, free roam and
+    // God Within could crawl indefinitely and the tier never moved. The owner plays in all of them,
+    // and the entrance is the single heaviest moment in a match (arena + both bodies + pyro + tron).
+    // The only place a verdict is meaningless is a hidden tab.
+    if (document.hidden) return;
     if (ST.fps < ST.target) lowRun++; else lowRun = 0;
     if (lowRun >= 3 && ST.tier < TIERS.length - 1){ lowRun = 0; highRun = 0; ST.everDropped = true; applyTier(ST.tier + 1); }
     // step UP only if we have never had to drop, and only while comfortably clear of target, so a
@@ -51797,6 +51853,11 @@ window.__deriveVariant = async function(key){
         fpsWorst: s.length ? +s[0].toFixed(1) : null,
         tier: (TIERS[ST.tier || 0] || {}).name,
         tierChanges: ST.applied,
+        // THE FREEZE, AS A NUMBER. fpsMedian hides a hitch by definition — a 1.5s stall inside an
+        // otherwise smooth second still reads as a respectable average. These three do not.
+        hardStalls: ST.stalls || 0,
+        worstFrameMs: ST.worstFrame || 0,
+        tierDropsFromStalls: ST.hardDrops || 0,
         scene: census(),
         devicePixelRatio: window.devicePixelRatio,
         ua: navigator.userAgent.slice(0, 90)
@@ -60061,4 +60122,1290 @@ window.__deriveVariant = async function(key){
   try{ console.log('%c[BANNON_TRON_STUDIO] BANNON_TRON_STUDIO.open() — custom trons + entrance FX per wrestler','color:#7CFC00'); }catch(e){}
 })();
 </script>
+<script>
+// ============================================================================================
+// BANNON_APPEARANCE — GROOMING ON THE GLB: FACIAL HAIR, HAIR, TATTOOS, GEAR, KIT COLOURS.
+//
+// OWNER: "we will need a way in character customization to add remove facial hair cause Jager's
+// beard was never as thick as it looks on the model and his broken heart tattoo is inaccurate",
+// then: "we also need to be able to change caw and model hairstyles, clothes, etc, just like
+// mdickie and WWE 2k".
+//
+// MEASURED FIRST, and it is worse than a missing feature. The ⛹ CREATE editor is a real 90-control
+// body sculptor — height, limb lengths, 14 girths, 16 width/depth axes, 7 colours — and EVERY ONE
+// of them drives `f.seg`, the PROCEDURAL segment body. The game now binds a GLB for every fighter,
+// and a GLB has no `f.seg`. So the entire appearance editor is pointed at a body the owner is never
+// supposed to see. Grep confirms the rest: ApplyHairstyle, ApplyHeadwear, ApplyEyewear,
+// ApplyClothing, WearBelt — MDickie's whole Editor.bb appearance layer — return ZERO hits in this
+// file, and so do `facialHair`, `GOATEE`, `STUBBLE` and `SIDEBURN`.
+//
+// SO THIS ATTACHES TO THE SKELETON, which is the one thing every fighter actually has. It is the
+// SAME dual path BANNON_MDICKIE.wearOn already proved for the 64 MDickie headwear props: resolve a
+// real bone through window.__boneOf, parent to it, and the piece rides the mocap instead of floating.
+//
+// THE BODY FRAME IS THE MODEL CONTAINER'S OWN BASIS, AND THAT IS A MEASURED CHOICE.
+// The first version derived it from the skeleton: UP from Head->HeadTop_End, RIGHT from
+// LeftArm->RightArm, FORWARD = cross(right, up). Every number it produced looked healthy — unit
+// length, orthogonal, a 0.1176 m head radius — and the beard landed 0.17 head-radii from the "chin"
+// against 1.13 from the "back". IT WAS NINETY DEGREES WRONG, and the check could not see it because
+// the check computed the chin with the SAME forward vector. A test that reuses the assumption it is
+// testing always passes. The screenshot is what caught it.
+// TWO INDEPENDENT READS SETTLED IT:
+//     the container's local +Z   vs   the engine's own (sin(facing),0,cos(facing))   ->  dot 1.000
+//     the bind arm axis          vs   that same facing                               ->  dot 0.000
+// The arm axis is ninety degrees out because these rigs are NOT BOUND IN A T-POSE — the arm bones
+// are staggered front-to-back in a fighting stance, so LeftArm->RightArm runs ALONG the facing
+// rather than across it. On BANNON_rigged the bind arm axis measures the exact negative of it.
+// So the frame is taken straight off the container the engine already orients:
+//     +Z = the way he faces      +Y = up      +X = his LEFT
+// +X is his left rather than his right because (right, up, forward) is a LEFT-handed triple for a
+// human, and a left-handed basis cannot become a quaternion — makeBasis would return garbage.
+// The container's own axes are orthonormal and right-handed by construction, so there is nothing to
+// build and nothing to get wrong.
+//
+// EVERY PIECE IS AUTHORED AGAINST THE BIND POSE, not the live one. skeleton.boneInverses gives the
+// pose the mesh was WEIGHTED in; using the pose the fighter happens to be standing in bakes a
+// crooked beard the moment his head is turned, and it stays crooked forever.
+//
+// TATTOOS ARE PROJECTED DECALS, NOT UV PAINT. We do not author the UV layout of 60 models from a
+// dozen different generators, so painting into their texture is not available. A decal plane
+// parented to the chest / arm / leg bone works on EVERY model including ones that arrive tomorrow.
+// Designs are drawn with 2D canvas paths, so the catalogue adds ZERO bytes to the APK and cannot be
+// a download at the moment a match starts.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_APPEARANCE) return;
+
+  var KEY = 'bannon_appearance';
+  var ST  = { applied:0, beards:0, hair:0, tattoos:0, gear:0, tinted:0, noFrame:0, last:null };
+
+  function T(){ return (typeof THREE !== 'undefined') ? THREE : null; }
+  function fighters_(){ try{ return new Function('return typeof fighters!=="undefined"?fighters:[]')(); }catch(e){ return []; } }
+  function ckey(f){ try{ return (typeof charModelKey === 'function') ? charModelKey(f) : ''; }catch(e){ return ''; } }
+  function nameOf(f){ try{ return (typeof fname === 'function' ? fname(f) : (f && f.opts && f.opts.name)) || ''; }catch(e){ return ''; } }
+
+  // ── the store: one key, per CHARACTER. A run-in and a booked match are the same man. ─────────
+  function load(){ try{ return JSON.parse(localStorage.getItem(KEY) || '{}') || {}; }catch(e){ return {}; } }
+  function save(db){ try{ localStorage.setItem(KEY, JSON.stringify(db)); }catch(e){} }
+  function getLook(k){ var db = load(); return db[k] || null; }
+  function setLook(k, look){ var db = load(); if (look) db[k] = look; else delete db[k]; save(db); mark(k); return look; }
+  function mark(k){ var F = fighters_(); for (var i=0;i<F.length;i++) if (ckey(F[i]) === k) F[i].__appSig = null; }
+
+  // ── FACIAL HAIR ─────────────────────────────────────────────────────────────────────────────
+  // Each patch is [x,y,z, rx,ry,rz, sx,sy,sz] in HEAD RADII, in the body frame. The head bone's
+  // origin is the neck-top joint, so the chin sits at roughly y +0.35, z +0.55 of a head radius.
+  var BEARDS = {
+    NONE:        [],
+    STUBBLE:     [[0,0.42,0.52, 0,0,0, 0.86,0.50,0.60]],
+    MOUSTACHE:   [[0,0.60,0.72, 0,0,0, 0.44,0.13,0.22]],
+    SOUL_PATCH:  [[0,0.40,0.74, 0,0,0, 0.15,0.14,0.16]],
+    GOATEE:      [[0,0.60,0.72, 0,0,0, 0.44,0.13,0.22],
+                  [0,0.34,0.66, 0,0,0, 0.30,0.34,0.30]],
+    CHINSTRAP:   [[0,0.40,0.44, 0,0,0, 0.90,0.30,0.70],
+                  [ 0.62,0.62,0.20, 0,0,0, 0.16,0.42,0.30],
+                  [-0.62,0.62,0.20, 0,0,0, 0.16,0.42,0.30]],
+    MUTTONCHOPS: [[ 0.60,0.58,0.22, 0,0,0, 0.22,0.52,0.38],
+                  [-0.60,0.58,0.22, 0,0,0, 0.22,0.52,0.38]],
+    FULL:        [[0,0.42,0.52, 0,0,0, 0.86,0.52,0.62],
+                  [0,0.60,0.72, 0,0,0, 0.44,0.13,0.22],
+                  [ 0.60,0.62,0.24, 0,0,0, 0.18,0.46,0.34],
+                  [-0.60,0.62,0.24, 0,0,0, 0.18,0.46,0.34]],
+    LONG:        [[0,0.42,0.52, 0,0,0, 0.86,0.52,0.62],
+                  [0,0.60,0.72, 0,0,0, 0.44,0.13,0.22],
+                  [ 0.60,0.62,0.24, 0,0,0, 0.18,0.46,0.34],
+                  [-0.60,0.62,0.24, 0,0,0, 0.18,0.46,0.34],
+                  [0,-0.10,0.56, 0,0,0, 0.42,0.62,0.34]],
+    HANDLEBAR:   [[0,0.60,0.72, 0,0,0, 0.52,0.12,0.20],
+                  [ 0.30,0.66,0.66, 0,0,0.5, 0.14,0.20,0.16],
+                  [-0.30,0.66,0.66, 0,0,-0.5, 0.14,0.20,0.16]]
+  };
+
+  // ── HAIR ────────────────────────────────────────────────────────────────────────────────────
+  // Same units, same frame. The skull cap sits at y ~ +0.75 because the head bone is at the neck.
+  var HAIR = {
+    KEEP:      null,                          // leave the model's own hair alone — the default
+    BALD:      [],
+    BUZZ:      [[0,0.80,0.06, 0,0,0, 0.92,0.72,0.98]],
+    SHORT:     [[0,0.84,0.04, 0,0,0, 0.98,0.82,1.04],
+                [0,0.60,-0.46, 0,0,0, 0.80,0.50,0.42]],
+    SLICKBACK: [[0,0.86,-0.06, -0.18,0,0, 0.94,0.76,1.14]],
+    MOHAWK:    [[0,1.02,0.02, 0,0,0, 0.20,0.62,1.10],
+                [0,0.78,0.02, 0,0,0, 0.86,0.50,0.92]],
+    AFRO:      [[0,0.94,-0.02, 0,0,0, 1.34,1.20,1.34]],
+    TOPKNOT:   [[0,0.82,0.00, 0,0,0, 0.92,0.70,0.98],
+                [0,1.18,-0.10, 0,0,0, 0.30,0.34,0.30]],
+    PONYTAIL:  [[0,0.84,0.00, 0,0,0, 0.96,0.78,1.02],
+                [0,0.62,-0.86, 0.30,0,0, 0.26,0.86,0.26]],
+    LONG_HAIR: [[0,0.86,0.00, 0,0,0, 1.02,0.84,1.06],
+                [0,0.18,-0.42, 0,0,0, 0.96,1.10,0.70]],
+    DREADS:    [[0,0.84,0.00, 0,0,0, 0.96,0.78,1.00],
+                [ 0.52,0.34,-0.32, 0,0,0, 0.20,0.86,0.20],
+                [-0.52,0.34,-0.32, 0,0,0, 0.20,0.86,0.20],
+                [ 0.00,0.30,-0.60, 0,0,0, 0.22,0.94,0.22],
+                [ 0.34,0.36,-0.62, 0,0,0, 0.18,0.80,0.18],
+                [-0.34,0.36,-0.62, 0,0,0, 0.18,0.80,0.18]]
+  };
+
+  // ── GEAR: pads, tape, masks, coats. Anatomy, not scenery — each rides its own bone. ─────────
+  // [bone, x,y,z, sx,sy,sz, shape]  positions in METRES from that bone, in the body frame.
+  var GEAR = {
+    ELBOW_PADS:  [['LeftForeArm', 0,-0.02,0, 0.075,0.085,0.075,'sphere'],
+                  ['RightForeArm',0,-0.02,0, 0.075,0.085,0.075,'sphere']],
+    KNEE_PADS:   [['LeftLeg', 0,-0.02,0.02, 0.085,0.100,0.085,'sphere'],
+                  ['RightLeg',0,-0.02,0.02, 0.085,0.100,0.085,'sphere']],
+    WRIST_TAPE:  [['LeftHand', 0,0.05,0, 0.055,0.070,0.055,'cyl'],
+                  ['RightHand',0,0.05,0, 0.055,0.070,0.055,'cyl']],
+    ARM_SLEEVE:  [['LeftForeArm', 0,-0.11,0, 0.062,0.230,0.062,'cyl'],
+                  ['RightForeArm',0,-0.11,0, 0.062,0.230,0.062,'cyl']],
+    MASK:        [['Head', 0,0.55,0.42, 0.115,0.130,0.100,'sphere']],
+    HEADBAND:    [['Head', 0,0.86,0.00, 0.125,0.035,0.130,'cyl']],
+    VEST:        [['Spine2', 0,0.02,0.00, 0.215,0.230,0.160,'box']],
+    TRENCH_COAT: [['Spine2', 0,-0.02,0.00, 0.235,0.260,0.185,'box'],
+                  ['Spine',  0,-0.36,-0.02, 0.245,0.480,0.205,'box']],
+    LONG_TIGHTS: [['LeftUpLeg', 0,-0.20,0, 0.095,0.420,0.095,'cyl'],
+                  ['RightUpLeg',0,-0.20,0, 0.095,0.420,0.095,'cyl']],
+    BOOTS:       [['LeftLeg', 0,-0.30,0.02, 0.082,0.180,0.100,'cyl'],
+                  ['RightLeg',0,-0.30,0.02, 0.082,0.180,0.100,'cyl']]
+  };
+
+  // ── TATTOO DESIGNS — drawn, not downloaded ──────────────────────────────────────────────────
+  var DESIGNS = {
+    BROKEN_HEART: function(c, s){
+      // the owner's own note: the broken-heart tattoo on the generated Jager model is wrong
+      c.lineWidth = s*0.055; c.lineJoin='round'; c.lineCap='round';
+      var half = function(sign){ c.beginPath(); c.moveTo(s*0.50, s*0.30);
+        c.bezierCurveTo(s*(0.50+sign*0.30), s*0.02, s*(0.50+sign*0.52), s*0.36, s*0.50, s*0.80); c.stroke(); };
+      half(1); half(-1);
+      c.beginPath();                                   // the crack — what makes it BROKEN
+      c.moveTo(s*0.50, s*0.14); c.lineTo(s*0.42, s*0.34); c.lineTo(s*0.57, s*0.46);
+      c.lineTo(s*0.44, s*0.60); c.lineTo(s*0.52, s*0.72); c.lineTo(s*0.50, s*0.80); c.stroke();
+    },
+    CROSS: function(c, s){ c.fillRect(s*0.44, s*0.10, s*0.12, s*0.78); c.fillRect(s*0.22, s*0.30, s*0.56, s*0.12); },
+    TRIBAL: function(c, s){
+      c.lineWidth = s*0.07; c.lineCap='round';
+      for (var i=0;i<3;i++){ var o=i*s*0.15; c.beginPath(); c.moveTo(s*0.16+o, s*0.88);
+        c.quadraticCurveTo(s*0.30+o, s*0.40, s*0.62+o*0.5, s*0.14); c.stroke(); }
+      c.beginPath(); c.moveTo(s*0.20, s*0.62); c.quadraticCurveTo(s*0.55, s*0.66, s*0.86, s*0.34); c.stroke();
+    },
+    BARBED_WIRE: function(c, s){
+      c.lineWidth = s*0.045; c.lineCap='round'; c.beginPath();
+      for (var x=0; x<=s; x+=2) c.lineTo(x, s*0.50 + Math.sin(x/s*Math.PI*6)*s*0.09);
+      c.stroke();
+      for (var k=0;k<6;k++){ var px=s*(0.09+k*0.166), py=s*0.50+Math.sin(px/s*Math.PI*6)*s*0.09;
+        c.beginPath(); c.moveTo(px-s*0.06,py-s*0.09); c.lineTo(px+s*0.06,py+s*0.09);
+        c.moveTo(px+s*0.06,py-s*0.09); c.lineTo(px-s*0.06,py+s*0.09); c.stroke(); }
+    },
+    STAR: function(c, s){
+      c.beginPath();
+      for (var i=0;i<10;i++){ var r=(i%2?0.18:0.42)*s, a=-Math.PI/2+i*Math.PI/5;
+        c.lineTo(s*0.5+Math.cos(a)*r, s*0.5+Math.sin(a)*r); }
+      c.closePath(); c.fill();
+    },
+    SKULL: function(c, s){
+      c.beginPath(); c.ellipse(s*0.5,s*0.42,s*0.30,s*0.32,0,0,Math.PI*2); c.fill();
+      c.fillRect(s*0.34,s*0.66,s*0.32,s*0.18);
+      c.save(); c.globalCompositeOperation='destination-out';
+      c.beginPath(); c.ellipse(s*0.38,s*0.40,s*0.09,s*0.11,0,0,Math.PI*2); c.fill();
+      c.beginPath(); c.ellipse(s*0.62,s*0.40,s*0.09,s*0.11,0,0,Math.PI*2); c.fill();
+      c.beginPath(); c.moveTo(s*0.5,s*0.50); c.lineTo(s*0.44,s*0.62); c.lineTo(s*0.56,s*0.62); c.closePath(); c.fill();
+      for (var i=0;i<3;i++) c.fillRect(s*(0.38+i*0.10), s*0.66, s*0.035, s*0.18);
+      c.restore();
+    },
+    ROSE: function(c, s){
+      c.lineWidth = s*0.05;
+      for (var i=5;i>=1;i--){ c.beginPath(); c.ellipse(s*0.5,s*0.42,s*0.055*i,s*0.062*i,i*0.4,0,Math.PI*2); c.stroke(); }
+      c.beginPath(); c.moveTo(s*0.5,s*0.66); c.lineTo(s*0.5,s*0.92); c.stroke();
+      c.beginPath(); c.ellipse(s*0.36,s*0.78,s*0.13,s*0.055,-0.5,0,Math.PI*2); c.fill();
+    },
+    SLEEVE: function(c, s){
+      c.lineWidth = s*0.035;
+      for (var i=0;i<9;i++){ c.beginPath(); c.moveTo(0, s*(0.06+i*0.11));
+        c.bezierCurveTo(s*0.35, s*(0.02+i*0.11), s*0.65, s*(0.18+i*0.11), s, s*(0.04+i*0.11)); c.stroke(); }
+      for (var j=0;j<14;j++){ c.beginPath();
+        c.ellipse(s*(0.08+(j*0.19)%0.9), s*(0.12+(j*0.31)%0.8), s*0.04, s*0.06, j, 0, Math.PI*2); c.fill(); }
+    },
+    TEXT: null          // the design IS the wearer's own word
+  };
+
+  var _texCache = {};
+  function texture(design, text){
+    var ck = design + '|' + (text || '');
+    if (_texCache[ck]) return _texCache[ck];
+    var TH = T(); if (!TH) return null;
+    var S = 256, cv = document.createElement('canvas'); cv.width = cv.height = S;
+    var c = cv.getContext('2d');
+    c.clearRect(0,0,S,S); c.fillStyle = '#000'; c.strokeStyle = '#000';
+    if (design === 'TEXT'){
+      var t = String(text || 'BANNON').toUpperCase().slice(0,14), px = S*0.30;
+      c.textAlign='center'; c.textBaseline='middle';
+      // shrink to fit — a tattoo that runs off its own decal reads as a bug
+      do { c.font = 'bold ' + px + 'px serif'; px -= 4; } while (px > 8 && c.measureText(t).width > S*0.92);
+      c.fillText(t, S/2, S/2);
+    } else if (DESIGNS[design]) DESIGNS[design](c, S);
+    else return null;
+    var tx = new TH.CanvasTexture(cv);
+    if (TH.SRGBColorSpace) tx.colorSpace = TH.SRGBColorSpace;
+    tx.anisotropy = 4;
+    _texCache[ck] = tx;
+    return tx;
+  }
+
+  // ── SLOTS: which bone, and which way is OUT ─────────────────────────────────────────────────
+  // `out` is in the body frame — +X is his LEFT, +Y up, +Z the way he faces.
+  var SLOTS = {
+    CHEST:     { bones:['Spine2','Spine1','Chest','Spine'], out:[0,0,1],  along:0.06,  size:0.20 },
+    BACK:      { bones:['Spine2','Spine1','Chest','Spine'], out:[0,0,-1], along:0.06,  size:0.24 },
+    STOMACH:   { bones:['Spine','Spine1','Hips'],           out:[0,0,1],  along:0.02,  size:0.16 },
+    ARM_LEFT:  { bones:['LeftArm','LeftShoulder'],          out:[1,0,0],  along:0.12,  size:0.13 },
+    ARM_RIGHT: { bones:['RightArm','RightShoulder'],        out:[-1,0,0], along:0.12,  size:0.13 },
+    FORE_LEFT: { bones:['LeftForeArm','LeftArm'],           out:[1,0,0],  along:0.10,  size:0.10 },
+    FORE_RIGHT:{ bones:['RightForeArm','RightArm'],         out:[-1,0,0], along:0.10,  size:0.10 },
+    NECK:      { bones:['Neck','Head'],                     out:[0,0,1],  along:0.02,  size:0.07 },
+    LEG_LEFT:  { bones:['LeftUpLeg','LeftLeg'],             out:[1,0,0],  along:0.14,  size:0.13 },
+    LEG_RIGHT: { bones:['RightUpLeg','RightLeg'],           out:[-1,0,0], along:0.14,  size:0.13 }
+  };
+
+  function bone(model, names){
+    for (var i=0;i<names.length;i++){ var b = window.__boneOf ? window.__boneOf(model, names[i]) : null; if (b) return b; }
+    return null;
+  }
+
+  // ── THE BODY FRAME — the container's own basis. See the note at the top for why. ────────────
+  function frameOf(model){
+    var TH = T(); if (!TH) return null;
+    var head = bone(model, ['Head']);
+    if (!head) return null;
+    model.updateMatrixWorld(true);
+    var q = model.getWorldQuaternion(new TH.Quaternion());
+    var left    = new TH.Vector3(1,0,0).applyQuaternion(q).normalize();
+    var up      = new TH.Vector3(0,1,0).applyQuaternion(q).normalize();
+    var forward = new TH.Vector3(0,0,1).applyQuaternion(q).normalize();
+    var headR = 0;
+    try{
+      var top = window.__boneOf ? (window.__boneOf(model,'HeadTop_End') || window.__boneOf(model,'HeadTop')) : null;
+      if (top){ var d = top.getWorldPosition(new TH.Vector3()).sub(head.getWorldPosition(new TH.Vector3()));
+                if (d.lengthSq() > 1e-8) headR = d.length(); }
+    }catch(e){}
+    if (!(headR > 1e-4)){
+      // MEASURED: the 58-joint rigs this game ships carry no head-top bone at all, so this is the
+      // normal path, not a rare fallback. 7.5 head-heights is the standing figure convention;
+      // halved because the tables are written in radii.
+      var box = new TH.Box3().setFromObject(model), sz = new TH.Vector3(); box.getSize(sz);
+      headR = Math.max(0.04, sz.y / 15);
+    }
+    return { head:head, q:q, left:left, up:up, forward:forward, right:left.clone().negate(), headR:headR };
+  }
+
+  // The BIND world orientation of a bone. skeleton.boneInverses[i] is the inverse bind matrix, so
+  // its inverse is the pose the mesh was WEIGHTED in — which is what a beard must be authored
+  // against, or a head turned at that instant bakes a crooked beard that stays crooked forever.
+  function bindQuat(model, b){
+    var TH = T();
+    try{
+      var sk = null, mesh = null;
+      model.traverse(function(o){ if (o.isSkinnedMesh && !sk && o.skeleton){ sk = o.skeleton; mesh = o; } });
+      if (sk && mesh){
+        var i = sk.bones.indexOf(b);
+        if (i >= 0 && sk.boneInverses[i]){
+          var M = new TH.Matrix4().multiplyMatrices(mesh.matrixWorld,
+                    new TH.Matrix4().copy(sk.boneInverses[i]).invert());
+          return new TH.Quaternion().setFromRotationMatrix(M);
+        }
+      }
+    }catch(e){}
+    return b.getWorldQuaternion(new TH.Quaternion());
+  }
+
+  // A group whose LOCAL axes are the body frame and whose LOCAL unit is one WORLD metre, parented
+  // to a bone. Everything below is authored in plain metres and plain anatomy directions, and every
+  // rig convention and bone scale is cancelled once, here.
+  function frameGroup(host, fr, model){
+    var TH = T();
+    var g = new TH.Group();
+    host.add(g);
+    g.quaternion.copy(bindQuat(model, host).invert().multiply(fr.q));
+    var ws = host.getWorldScale(new TH.Vector3());
+    var s = (Math.abs(ws.x) + Math.abs(ws.y) + Math.abs(ws.z)) / 3;
+    g.scale.setScalar(s > 1e-6 ? 1/s : 1);
+    return g;
+  }
+
+  // ── SHARED GEOMETRY. Ten spheres a face is 96 triangles, but the particle-buffer lesson in this
+  // file is that geometry you allocate is geometry the GPU walks — so there is ONE of each. ─────
+  var _geo = null;
+  function geo(kind){
+    var TH = T();
+    if (!_geo) _geo = { sphere:new TH.SphereGeometry(1,10,7), cyl:new TH.CylinderGeometry(1,1,1,10,1),
+                        box:new TH.BoxGeometry(1,1,1) };
+    return _geo[kind] || _geo.sphere;
+  }
+
+  function shellMat(colour, dens, rough){
+    var TH = T();
+    return new TH.MeshStandardMaterial({
+      color: new TH.Color(colour), roughness: rough == null ? 0.95 : rough, metalness: 0.0,
+      transparent: dens < 0.98, opacity: 0.45 + dens*0.55, depthWrite: dens >= 0.98 });
+  }
+
+  function buildPatches(patches, spec, fr, model, host, unit, defColour){
+    var TH = T();
+    if (!patches || !patches.length) return null;
+    var g = frameGroup(host, fr, model);
+    var dens = Math.max(0.15, Math.min(1, spec.density == null ? 0.75 : spec.density));
+    var mat = shellMat(spec.colour == null ? defColour : spec.colour, dens);
+    for (var i=0;i<patches.length;i++){
+      var p = patches[i], m = new TH.Mesh(geo('sphere'), mat);
+      m.position.set(p[0]*unit, p[1]*unit, p[2]*unit);
+      m.rotation.set(p[3], p[4], p[5]);
+      // THICKNESS IS VOLUME, not only shade — a stubble and a full beard are different SIZES, and
+      // "the beard is too thick on the model" is a size complaint, not a colour one.
+      var t = 0.55 + dens*0.55;
+      m.scale.set(p[6]*unit*0.5*t, p[7]*unit*0.5*t, p[8]*unit*0.5*t);
+      m.castShadow = false; m.frustumCulled = false; m.renderOrder = 2;
+      g.add(m);
+    }
+    g.userData.__appDispose = [mat];
+    return g;
+  }
+
+  function buildGear(id, spec, fr, model){
+    var TH = T();
+    var parts = GEAR[id]; if (!parts) return null;
+    var out = [], mat = shellMat(spec && spec.colour != null ? spec.colour : 0x181818, 1, 0.6);
+    for (var i=0;i<parts.length;i++){
+      var p = parts[i], host = bone(model, [p[0]]); if (!host) continue;
+      var g = frameGroup(host, fr, model);
+      var m = new TH.Mesh(geo(p[7]), mat);
+      m.position.set(p[1], p[2], p[3]);
+      m.scale.set(p[4], p[5], p[6]);
+      m.castShadow = false; m.frustumCulled = false; m.renderOrder = 1;
+      g.add(m); g.userData.__appDispose = [];
+      out.push(g);
+    }
+    if (out.length) out[0].userData.__appDispose = [mat];
+    return out;
+  }
+
+  function buildTattoo(t, fr, model){
+    var TH = T();
+    var slot = SLOTS[t.slot]; if (!slot) return null;
+    var host = bone(model, slot.bones); if (!host) return null;
+    var tex = texture(t.design, t.text); if (!tex) return null;
+    var g = frameGroup(host, fr, model);
+    var sz = slot.size * (t.scale == null ? 1 : t.scale) * (fr.headR / 0.115);   // scales WITH the body
+    var mat = new TH.MeshBasicMaterial({
+      map: tex, transparent: true, opacity: t.opacity == null ? 0.85 : t.opacity,
+      color: new TH.Color(t.colour == null ? 0x1a1410 : t.colour),
+      depthWrite: false, side: TH.DoubleSide,
+      polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+    var m = new TH.Mesh(new TH.PlaneGeometry(sz, sz), mat);
+    var o = slot.out, depth = sz * 0.62;                 // clear of the surface, not floating off it
+    m.position.set(o[0]*depth, (t.along == null ? slot.along : t.along) * (fr.headR/0.115) * -1, o[2]*depth);
+    m.lookAt(m.position.clone().add(new TH.Vector3(o[0], o[1], o[2])));   // a plane's normal is +Z
+    m.rotateZ(t.rot == null ? 0 : t.rot);
+    m.renderOrder = 3; m.frustumCulled = false; m.castShadow = false;
+    g.add(m);
+    g.userData.__appDispose = [m.geometry, mat];
+    return g;
+  }
+
+  // ── KIT COLOURS: recolour the model's OWN meshes ────────────────────────────────────────────
+  // This is the honest way to change clothes on a body whose clothes are painted into it. Which
+  // mesh is which is READ off the model's own names, and a name is a HINT, so nothing is guessed:
+  // a fighter with no mesh matching a part simply has no knob for it, rather than a knob that
+  // silently recolours his face.
+  var PARTS = {
+    TRUNKS: /trunk|short|brief|tight|pant|bottom/i,
+    BOOTS:  /boot|shoe|foot/i,
+    GLOVES: /glove|hand|wrist|tape/i,
+    TOP:    /shirt|vest|jacket|coat|top|torso|body/i,
+    HAIR:   /hair|braid|dread|pony/i,
+    SKIN:   /skin|head|face|arm|leg|flesh/i
+  };
+  function partsOf(model){
+    var seen = {};
+    try{ model.traverse(function(o){
+      if (!o.isMesh || !o.material) return;
+      var n = (o.name || '') + '|' + ((o.material && o.material.name) || '');
+      for (var k in PARTS) if (PARTS[k].test(n)) (seen[k] = seen[k] || []).push(o);
+    }); }catch(e){}
+    return seen;
+  }
+  function tint(model, kit){
+    var TH = T(); if (!kit) return 0;
+    var seen = partsOf(model), n = 0;
+    for (var k in kit){
+      var col = kit[k]; if (col == null || !seen[k]) continue;
+      seen[k].forEach(function(o){
+        try{
+          if (!o.userData.__appOrigMat) o.userData.__appOrigMat = o.material;
+          var m = o.userData.__appOrigMat.clone();
+          m.color = new TH.Color(col);
+          o.material = m; o.userData.__appTinted = true; n++;
+        }catch(e){}
+      });
+    }
+    return n;
+  }
+  function untint(model){
+    try{ model.traverse(function(o){
+      if (o.isMesh && o.userData && o.userData.__appTinted && o.userData.__appOrigMat){
+        try{ o.material.dispose(); }catch(e){}
+        o.material = o.userData.__appOrigMat; o.userData.__appTinted = false;
+      } }); }catch(e){}
+  }
+  // Hiding the model's OWN hair is what makes a replacement hairstyle a REPLACEMENT rather than a
+  // second head of hair growing through the first. Reversible, and only ever by the model's names.
+  function hideOwnHair(model, hide){
+    try{ var seen = partsOf(model).HAIR || [];
+      seen.forEach(function(o){
+        if (hide){ if (o.userData.__appHairWas == null) o.userData.__appHairWas = o.visible; o.visible = false; }
+        else if (o.userData.__appHairWas != null){ o.visible = o.userData.__appHairWas; o.userData.__appHairWas = null; }
+      });
+      return seen.length;
+    }catch(e){ return 0; }
+  }
+
+  // ── APPLY / CLEAR ───────────────────────────────────────────────────────────────────────────
+  function clear(f){
+    var kept = f.__appNodes || [];
+    for (var i=0;i<kept.length;i++){
+      var n = kept[i];
+      try{ if (n.parent) n.parent.remove(n); }catch(e){}
+      try{ var d = n.userData && n.userData.__appDispose;
+           if (d) for (var j=0;j<d.length;j++) d[j] && d[j].dispose && d[j].dispose(); }catch(e){}
+    }
+    f.__appNodes = [];
+    if (f.model){ untint(f.model); hideOwnHair(f.model, false); }
+  }
+
+  function apply(f){
+    var TH = T(); if (!TH || !f || !f.model) return false;
+    clear(f);
+    var look = getLook(ckey(f));
+    if (!look) return true;                       // nothing equipped is a valid look, not a failure
+    var fr = frameOf(f.model);
+    if (!fr){ ST.noFrame++; return false; }        // rig cannot supply a frame — place NOTHING
+
+    var nodes = [], R = fr.headR;
+
+    if (look.beard && look.beard.style && look.beard.style !== 'NONE'){
+      var b = buildPatches(BEARDS[look.beard.style], look.beard, fr, f.model, fr.head, R, 0x241a12);
+      if (b){ nodes.push(b); ST.beards++; }
+    }
+    if (look.hair && look.hair.style && look.hair.style !== 'KEEP'){
+      hideOwnHair(f.model, true);                 // a replacement replaces
+      var h = buildPatches(HAIR[look.hair.style], look.hair, fr, f.model, fr.head, R, 0x1c1410);
+      if (h){ nodes.push(h); ST.hair++; }
+    }
+    (look.gear || []).forEach(function(g){
+      var parts = buildGear(g.id, g, fr, f.model);
+      if (parts && parts.length){ parts.forEach(function(p){ nodes.push(p); }); ST.gear++; }
+    });
+    (look.tattoos || []).forEach(function(t){
+      var n = buildTattoo(t, fr, f.model);
+      if (n){ nodes.push(n); ST.tattoos++; }
+    });
+    if (look.kit) ST.tinted += tint(f.model, look.kit);
+
+    f.__appNodes = nodes;
+    ST.applied++; ST.last = nameOf(f);
+    return true;
+  }
+
+  // The bind site calls _rigSense as a LEXICAL identifier, so wrapping window._rigSense would
+  // intercept nothing — that trap is written down elsewhere in this file more than once. Poll for
+  // the model instead, which is the pattern BANNON_LATE_BODIES proved, and re-apply when the
+  // SIGNATURE of (model, look) changes so a studio edit shows up live without a reload.
+  function sigOf(f){
+    var l = getLook(ckey(f));
+    return (f.modelUrl || '') + '|' + (l ? JSON.stringify(l) : '');
+  }
+  function tick(){
+    var F = fighters_();
+    for (var i=0;i<F.length;i++){
+      var f = F[i]; if (!f || !f.model) continue;
+      var s = sigOf(f);
+      if (f.__appSig === s) continue;
+      try{ f.model.updateMatrixWorld(true); }catch(e){}
+      if (apply(f)) f.__appSig = s;
+    }
+  }
+  // TIME-BASED, NOT FRAME-BASED. This began as `if (++n % 12 === 0)` inside a rAF loop and the
+  // harness caught it: at the 3 fps a software rasteriser gives during a live match, twelve frames
+  // is FOUR SECONDS, so every studio edit landed seconds after the slider moved and the first
+  // measurement read zero nodes. On a phone a dropped frame would do the same thing. The work is a
+  // string compare per fighter, so a wall-clock interval is both cheaper and honest.
+  setInterval(function(){ try{ tick(); }catch(e){} }, 250);
+
+  // ── API ─────────────────────────────────────────────────────────────────────────────────────
+  function keyOf(n){ return String(n || '').toUpperCase().replace(/[^A-Z0-9]/g,'_'); }
+
+  window.BANNON_APPEARANCE = {
+    BEARD_STYLES: Object.keys(BEARDS),
+    HAIR_STYLES:  Object.keys(HAIR),
+    GEAR_IDS:     Object.keys(GEAR),
+    DESIGNS:      Object.keys(DESIGNS),
+    SLOTS:        Object.keys(SLOTS),
+    KIT_PARTS:    Object.keys(PARTS),
+    get: function(n){ return getLook(keyOf(n)); },
+    set: function(n, look){ return setLook(keyOf(n), look); },
+    setBeard: function(n, style, colour, density){
+      var k = keyOf(n), l = getLook(k) || {};
+      l.beard = { style:String(style||'NONE').toUpperCase(), colour:colour, density:density };
+      return setLook(k, l); },
+    setHair: function(n, style, colour, density){
+      var k = keyOf(n), l = getLook(k) || {};
+      l.hair = { style:String(style||'KEEP').toUpperCase(), colour:colour, density:density };
+      return setLook(k, l); },
+    toggleGear: function(n, id, colour){
+      var k = keyOf(n), l = getLook(k) || {}; l.gear = l.gear || [];
+      var i = -1; l.gear.forEach(function(g, j){ if (g.id === id) i = j; });
+      if (i >= 0) l.gear.splice(i, 1); else l.gear.push({ id:id, colour:colour });
+      return setLook(k, l); },
+    setGearColour: function(n, id, colour){
+      var k = keyOf(n), l = getLook(k) || {};
+      (l.gear||[]).forEach(function(g){ if (g.id === id) g.colour = colour; });
+      return setLook(k, l); },
+    setKit: function(n, part, colour){
+      var k = keyOf(n), l = getLook(k) || {}; l.kit = l.kit || {};
+      if (colour == null) delete l.kit[part]; else l.kit[part] = colour;
+      return setLook(k, l); },
+    addTattoo: function(n, t){
+      var k = keyOf(n), l = getLook(k) || {}; l.tattoos = l.tattoos || [];
+      l.tattoos.push(Object.assign({ slot:'CHEST', design:'BROKEN_HEART', scale:1, rot:0, opacity:0.85 }, t||{}));
+      return setLook(k, l); },
+    updateTattoo: function(n, i, patch){
+      var k = keyOf(n), l = getLook(k) || {};
+      if (!l.tattoos || !l.tattoos[i]) return null;
+      Object.assign(l.tattoos[i], patch || {}); return setLook(k, l); },
+    removeTattoo: function(n, i){
+      var k = keyOf(n), l = getLook(k) || {};
+      if (!l.tattoos) return null; l.tattoos.splice(i, 1); return setLook(k, l); },
+    reset: function(n){ return setLook(keyOf(n), null); },
+    refresh: function(){ var F = fighters_(); for (var i=0;i<F.length;i++) F[i].__appSig = null; },
+    // what the model itself can offer — the moveset editor equivalent for appearance: only show a
+    // knob the model actually has a mesh for.
+    partsAvailable: function(f){
+      f = f || fighters_()[0];
+      var s = f && f.model ? partsOf(f.model) : {}, o = {};
+      for (var k in s) o[k] = s[k].length; return o; },
+    // probe(): every number a test needs, so a failure is READ and not guessed at.
+    probe: function(f){
+      f = f || fighters_()[0]; if (!f) return { err:'no fighter' };
+      var fr = f.model ? frameOf(f.model) : null;
+      var r3 = function(v){ return v.toArray().map(function(x){ return +x.toFixed(3); }); };
+      return { name: nameOf(f), key: ckey(f), model: !!f.model, url: f.modelUrl || null,
+        frame: fr ? { headR:+fr.headR.toFixed(4), left:r3(fr.left), right:r3(fr.right),
+                      up:r3(fr.up), forward:r3(fr.forward) } : null,
+        look: getLook(ckey(f)), nodes: (f.__appNodes||[]).length }; },
+    stats: function(){ return Object.assign({}, ST); }
+  };
+  try{ console.log('%c[BANNON_APPEARANCE] hair · facial hair · tattoos · gear · kit colours, on the GLB skeleton — BANNON_APPEARANCE.probe()','color:#7CFC00'); }catch(e){}
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_APPEARANCE_STUDIO — the front end for the grooming layer. Phone-first: one scrolling
+// column, fat targets, no drag-and-drop (the ROSTER TAB lesson — `dragstart` never fires on a
+// touchscreen, so a screen built on it is a screen the owner cannot use on the device he plays on).
+// Everything writes through BANNON_APPEARANCE, which is the ONE store. No parallel state.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_APPEARANCE_STUDIO) return;
+
+  var A = function(){ return window.BANNON_APPEARANCE; };
+  var panel = null, who = 'BANNON', tab = 'HAIR';
+  var esc = function(s){ return String(s==null?'':s).replace(/[<>&"]/g, function(c){
+    return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]; }); };
+  var hex = function(n){ return '#' + ((n>>>0)&0xffffff).toString(16).padStart(6,'0'); };
+  var int = function(s){ return parseInt(String(s).slice(1), 16); };
+
+  function roster(){
+    try{ var r=(window.ROSTER_ALL?window.ROSTER_ALL():[]).map(function(c){return c.name;}); if(r.length) return r; }catch(e){}
+    return ['BANNON'];
+  }
+  // Prefer whoever is on screen — editing the man you are looking at is the point of a live preview.
+  function liveNames(){
+    try{ var F=new Function('return typeof fighters!=="undefined"?fighters:[]')();
+      return F.map(function(f){ try{ return (typeof fname==='function'?fname(f):'')||''; }catch(e){ return ''; } }).filter(Boolean);
+    }catch(e){ return []; }
+  }
+
+  var CSS = 'position:fixed;inset:0;z-index:100000;background:#0b0806f7;color:#ffd9a8;'
+          + 'font:12px var(--f-ui,system-ui);overflow-y:auto;-webkit-overflow-scrolling:touch;'
+          + 'padding:0 12px calc(env(safe-area-inset-bottom,0px) + 30px);';
+  var BTN = 'background:#1c1109;color:#ffd9a8;border:1px solid #ff7a1a66;border-radius:7px;'
+          + 'padding:9px 10px;cursor:pointer;font:bold 11px var(--f-ui,system-ui);letter-spacing:.5px;';
+  var ON  = 'background:#3a2a08;border-color:#ffb648;color:#ffe9c0;';
+  var TABS = ['HAIR','BEARD','TATTOOS','GEAR','KIT'];
+
+  function build(){
+    if (panel) return;
+    panel = document.createElement('div');
+    panel.id = 'appStudio'; panel.style.cssText = CSS;
+    document.body.appendChild(panel);
+  }
+  function look(){ return (A() && A().get(who)) || {}; }
+  function msg(t){ var e = document.getElementById('apMsg'); if (e) e.textContent = t || ''; }
+
+  function row(label, inner){
+    return '<div style="display:flex;align-items:center;gap:8px;margin-top:6px">'
+         + '<span style="width:66px;color:#c98;font-size:10px;flex:none">'+label+'</span>' + inner + '</div>';
+  }
+  function slider(kind, i, label, lo, hi, step, val){
+    return row(label, '<input data-ap="'+kind+'"'+(i==null?'':' data-i="'+i+'"')
+      +' type="range" min="'+lo+'" max="'+hi+'" step="'+step+'" value="'+(val==null?(lo+hi)/2:val)+'" style="flex:1">');
+  }
+  function colour(kind, i, label, val){
+    return row(label, '<input data-ap="'+kind+'"'+(i==null?'':' data-i="'+i+'"')
+      +' type="color" value="'+hex(val)+'" style="flex:1;height:30px;background:none;border:1px solid #ff7a1a55;border-radius:6px">');
+  }
+  function chips(kind, list, active, extra){
+    var h = '<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">';
+    list.forEach(function(s){
+      h += '<button data-ap="'+kind+'" data-s="'+esc(s)+'"'+(extra||'')+' style="'+BTN+(s===active||(active&&active.indexOf&&active.indexOf(s)>=0)?ON:'')+'">'
+         + esc(String(s).replace(/_/g,' ')) + '</button>';
+    });
+    return h + '</div>';
+  }
+
+  function render(){
+    var L = look(), a = A(); if (!a) return;
+    var live = liveNames(), all = roster();
+    var h = '';
+
+    h += '<div style="position:sticky;top:0;background:#0b0806;padding:12px 0 8px;z-index:5;'
+       + 'border-bottom:1px solid #ff7a1a44">'
+       + '<div style="display:flex;align-items:center;justify-content:space-between">'
+       + '<div style="color:#ff7a1a;font:bold 13px var(--f-ui);letter-spacing:1px">✂ APPEARANCE'
+       + '<div style="color:#c98;font:normal 9px var(--f-ui);margin-top:2px">'+esc(who.replace(/_/g,' '))
+       + ' · rides the skeleton · works on any model</div></div>'
+       + '<button data-ap="close" style="'+BTN+'">✕ DONE</button></div>'
+       + chips('tab', TABS, tab) + '</div>';
+
+    if (tab === 'WHO' || !who){ /* handled below */ }
+
+    if (tab === 'HAIR'){
+      var hair = L.hair || { style:'KEEP', density:0.8, colour:0x1c1410 };
+      h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:14px 0 0">HAIRSTYLE</div>';
+      h += chips('hair', a.HAIR_STYLES, hair.style || 'KEEP');
+      h += slider('hdens', null, 'VOLUME', 0.15, 1, 0.05, hair.density == null ? 0.8 : hair.density);
+      h += colour('hcol', null, 'COLOUR', hair.colour == null ? 0x1c1410 : hair.colour);
+      h += '<div style="color:#8a7f6a;font-size:9px;margin-top:6px;line-height:1.5">'
+         + 'KEEP leaves the model\'s own hair alone. Any other choice HIDES it first, so a new style '
+         + 'replaces rather than grows through. BALD hides it and adds nothing.</div>';
+    }
+
+    if (tab === 'BEARD'){
+      var b = L.beard || { style:'NONE', density:0.7, colour:0x241a12 };
+      h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:14px 0 0">FACIAL HAIR</div>';
+      h += chips('beard', a.BEARD_STYLES, b.style || 'NONE');
+      h += slider('dens', null, 'THICKNESS', 0.15, 1, 0.05, b.density == null ? 0.7 : b.density);
+      h += colour('bcol', null, 'COLOUR', b.colour == null ? 0x241a12 : b.colour);
+      h += '<div style="color:#8a7f6a;font-size:9px;margin-top:6px;line-height:1.5">'
+         + 'THICKNESS is VOLUME, not just shade — a stubble and a full beard are different sizes. '
+         + 'A beard painted into the model itself cannot be removed here; pick the clean-shaven attire for that.</div>';
+    }
+
+    if (tab === 'TATTOOS'){
+      var tats = L.tattoos || [];
+      h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:14px 0 6px">TATTOOS ('+tats.length+')</div>';
+      tats.forEach(function(t, i){
+        h += '<div style="border:1px solid #ff7a1a33;border-radius:8px;padding:9px;margin-bottom:8px;background:#150e0a">'
+           + '<div style="display:flex;justify-content:space-between;align-items:center">'
+           + '<b style="color:#ffb648;font-size:11px">'+esc(t.design.replace(/_/g,' '))+' · '+esc(t.slot.replace(/_/g,' '))+'</b>'
+           + '<button data-ap="rmtat" data-i="'+i+'" style="'+BTN+'background:#2a0e0e;border-color:#c05">✕</button></div>';
+        h += chips('tslot', a.SLOTS, t.slot, ' data-i="'+i+'"');
+        h += chips('tdes',  a.DESIGNS, t.design, ' data-i="'+i+'"');
+        if (t.design === 'TEXT')
+          h += row('WORD', '<input data-ap="ttext" data-i="'+i+'" value="'+esc(t.text||'')+'" maxlength="14" placeholder="BANNON" '
+                 + 'style="flex:1;background:#1c1109;color:#ffd9a8;border:1px solid #ff7a1a55;border-radius:6px;padding:7px">');
+        h += slider('tscale', i, 'SIZE',    0.3, 2.5, 0.05, t.scale==null?1:t.scale);
+        h += slider('trot',   i, 'ROTATE', -3.14, 3.14, 0.05, t.rot==null?0:t.rot);
+        h += slider('talong', i, 'SLIDE',  -0.30, 0.30, 0.01, t.along==null?0.06:t.along);
+        h += slider('topac',  i, 'FADE',    0.15, 1, 0.05, t.opacity==null?0.85:t.opacity);
+        h += colour('tcol', i, 'INK', t.colour==null?0x1a1410:t.colour);
+        h += '</div>';
+      });
+      h += '<button data-ap="addtat" style="'+BTN+'width:100%;padding:12px;border-style:dashed;border-color:#7CFC00;color:#7CFC00">✚ ADD A TATTOO</button>';
+    }
+
+    if (tab === 'GEAR'){
+      var worn = (L.gear || []).map(function(g){ return g.id; });
+      h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:14px 0 0">GEAR · tap to wear or remove</div>';
+      h += chips('gear', a.GEAR_IDS, worn);
+      (L.gear || []).forEach(function(g){ h += colour('gcol', null, g.id.replace(/_/g,' ').slice(0,10),
+        g.colour == null ? 0x181818 : g.colour).replace('data-ap="gcol"', 'data-ap="gcol" data-s="'+esc(g.id)+'"'); });
+      h += '<div style="color:#8a7f6a;font-size:9px;margin-top:6px;line-height:1.5">'
+         + 'Each piece hangs on its own bone, so it rides the animation. Pads and tape are small; '
+         + 'a coat is a big shell and will read better on a lean body than a heavyweight.</div>';
+    }
+
+    if (tab === 'KIT'){
+      var kit = L.kit || {};
+      var avail = {}; try{ avail = a.partsAvailable(); }catch(e){}
+      h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:14px 0 0">KIT COLOURS</div>';
+      h += '<div style="color:#8a7f6a;font-size:9px;margin:5px 0 0;line-height:1.5">'
+         + 'Recolours the MODEL\'S OWN meshes. Only parts this model actually has are listed — the '
+         + 'names are read off the file, so a body with no separate trunks mesh gets no trunks knob.</div>';
+      var any = false;
+      a.KIT_PARTS.forEach(function(p){
+        if (!avail[p]) return; any = true;
+        h += colour('kit', null, p, kit[p] == null ? 0x888888 : kit[p]).replace('data-ap="kit"', 'data-ap="kit" data-s="'+p+'"');
+        if (kit[p] != null) h += '<div style="text-align:right"><button data-ap="kitclr" data-s="'+p+'" style="'+BTN+'font-size:9px;padding:4px 8px">reset '+p+'</button></div>';
+      });
+      if (!any) h += '<div style="color:#c05;font-size:11px;margin-top:10px">This model has no separately named parts — nothing to recolour. Use an alternate attire instead.</div>';
+      h += '<div style="color:#8a7f6a;font-size:9px;margin-top:10px">detected: '+esc(JSON.stringify(avail))+'</div>';
+    }
+
+    // WHO — always at the bottom so the controls are under the thumb, the roster is a scroll away
+    h += '<div style="color:#e8c15a;letter-spacing:2px;font-size:10px;margin:18px 0 0">WRESTLER</div>';
+    if (live.length){
+      h += '<div style="color:#7CFC00;font-size:9px;letter-spacing:1px;margin-top:6px">IN THE RING NOW</div>';
+      h += chips('who', live, who);
+    }
+    h += '<div style="color:#c98;font-size:9px;letter-spacing:1px;margin-top:6px">ROSTER</div>';
+    h += chips('who', all.slice(0,140), who);
+
+    h += '<div style="display:flex;gap:6px;margin:16px 0 0">'
+       + '<button data-ap="reset" style="'+BTN+'flex:1;background:#2a0e0e;border-color:#c05">RESET '+esc(who.replace(/_/g,' '))+'</button>'
+       + '<button data-ap="close" style="'+BTN+'flex:1;background:#16300f;border-color:#7CFC00;color:#dfffcf">DONE</button></div>';
+    h += '<div id="apMsg" style="color:#7CFC00;font-size:10px;margin-top:8px;min-height:14px"></div>';
+
+    panel.innerHTML = h; wire();
+  }
+
+  function wire(){
+    var a = A();
+    // A live-preview edit must not rebuild the DOM under the finger — that kills a drag on a
+    // touchscreen mid-gesture. Sliders and colour pickers write THROUGH without re-rendering;
+    // only structural changes (tab, style, add/remove) redraw.
+    panel.querySelectorAll('[data-ap]').forEach(function(el){
+      var k = el.getAttribute('data-ap');
+      var i = el.hasAttribute('data-i') ? +el.getAttribute('data-i') : null;
+      var s = el.getAttribute('data-s');
+      if (k === 'close')  el.onclick  = close;
+      if (k === 'tab')    el.onclick  = function(){ tab = s; render(); };
+      if (k === 'who')    el.onclick  = function(){ who = String(s).toUpperCase().replace(/[^A-Z0-9]/g,'_'); render(); };
+      if (k === 'hair')   el.onclick  = function(){ var H = look().hair||{}; a.setHair(who, s, H.colour, H.density); render(); msg('hair: '+s.replace(/_/g,' ')); };
+      if (k === 'hdens')  el.oninput  = function(){ var H = look().hair||{}; a.setHair(who, H.style||'BUZZ', H.colour, +el.value); };
+      if (k === 'hcol')   el.oninput  = function(){ var H = look().hair||{}; a.setHair(who, H.style||'BUZZ', int(el.value), H.density); };
+      if (k === 'beard')  el.onclick  = function(){ var B = look().beard||{}; a.setBeard(who, s, B.colour, B.density); render(); msg('facial hair: '+s.replace(/_/g,' ')); };
+      if (k === 'dens')   el.oninput  = function(){ var B = look().beard||{}; a.setBeard(who, B.style||'STUBBLE', B.colour, +el.value); };
+      if (k === 'bcol')   el.oninput  = function(){ var B = look().beard||{}; a.setBeard(who, B.style||'STUBBLE', int(el.value), B.density); };
+      if (k === 'addtat') el.onclick  = function(){ a.addTattoo(who, {}); render(); msg('tattoo added'); };
+      if (k === 'rmtat')  el.onclick  = function(){ a.removeTattoo(who, i); render(); msg('tattoo removed'); };
+      if (k === 'tslot')  el.onclick  = function(){ a.updateTattoo(who, i, { slot:s, along:null }); render(); };
+      if (k === 'tdes')   el.onclick  = function(){ a.updateTattoo(who, i, { design:s }); render(); };
+      if (k === 'ttext')  el.oninput  = function(){ a.updateTattoo(who, i, { text:el.value }); };
+      if (k === 'tscale') el.oninput  = function(){ a.updateTattoo(who, i, { scale:+el.value }); };
+      if (k === 'trot')   el.oninput  = function(){ a.updateTattoo(who, i, { rot:+el.value }); };
+      if (k === 'talong') el.oninput  = function(){ a.updateTattoo(who, i, { along:+el.value }); };
+      if (k === 'topac')  el.oninput  = function(){ a.updateTattoo(who, i, { opacity:+el.value }); };
+      if (k === 'tcol')   el.oninput  = function(){ a.updateTattoo(who, i, { colour:int(el.value) }); };
+      if (k === 'gear')   el.onclick  = function(){ a.toggleGear(who, s); render(); msg(s.replace(/_/g,' ')); };
+      if (k === 'gcol')   el.oninput  = function(){ a.setGearColour(who, s, int(el.value)); };
+      if (k === 'kit')    el.oninput  = function(){ a.setKit(who, s, int(el.value)); };
+      if (k === 'kitclr') el.onclick  = function(){ a.setKit(who, s, null); render(); };
+      if (k === 'reset')  el.onclick  = function(){ a.reset(who); render(); msg('reset '+who.replace(/_/g,' ')); };
+    });
+  }
+
+  function open(name){
+    if (!A()){ try{ console.warn('[APPEARANCE] core module not loaded'); }catch(e){} return; }
+    build();
+    var live = liveNames();
+    who = String(name || live[0] || who || 'BANNON').toUpperCase().replace(/[^A-Z0-9]/g,'_');
+    panel.style.display = 'block'; panel.scrollTop = 0; render();
+  }
+  function close(){ if (panel) panel.style.display = 'none'; }
+
+  window.BANNON_APPEARANCE_STUDIO = { open:open, close:close, render:render };
+  try{ console.log('%c[BANNON_APPEARANCE_STUDIO] BANNON_APPEARANCE_STUDIO.open() — hair · beard · ink · gear · kit','color:#7CFC00'); }catch(e){}
+})();
+</script>
+
+
+<script>
+// ============================================================================================
+// BANNON_SCULPT — THE CREATE SLIDERS DRIVE THE GLB, NOT THE TUBE BODY.
+//
+// OWNER: "we have to change the custom stuff to drive the glb bodies and models."
+//
+// MEASURED, and it is worse than "some controls are missing". applyShapeMorphs had exactly two
+// paths and one of them is dead on every model we ship:
+//   1. BLENDSHAPES, matched by name against the GLB's morph targets. Read off the shipped bytes:
+//        BANNON_rigged  15 prims  145,939 verts  58 joints  MORPH TARGETS 0
+//        VIPER           1 prim    57,596 verts  58 joints  MORPH TARGETS 0
+//        CIPHER_rigged   1 prim    68,182 verts  52 joints  MORPH TARGETS 0
+//      Tripo and UniRig do not author morph targets. This path has never moved a vertex.
+//   2. BONE SCALE, for four controls: height, armLen, legLen, torsoLen.
+// So of the ~90 controls in the CREATE editor — 14 girths, 16 width/depth axes, face sculpt —
+// FOUR reached a GLB and eighty-six moved only the procedural body nobody is supposed to see.
+//
+// THE TECHNIQUE IS SKIN-WEIGHTED BIND-SPACE DEFORMATION, which is what MakeHuman and MB-Lab do and
+// what every "body morph without blendshapes" pipeline reduces to. It is exactly correct here, and
+// the proof is already written down in this repo for rescale_mesh.cjs:
+//     skinned(v) = SUM w_i (jointWorld_i . IBM_i) v
+// and in BIND pose jointWorld_i == inverse(IBM_i), so the bracket is the identity and skinned(v)
+// == v. Move a vertex in bind space and you move exactly that vertex on screen — while the joints,
+// the inverse bind matrices and the weights are all untouched, so every animation still plays.
+// Same argument that let rescale_mesh fix TARZANIAN_DEVIL and CODY_gear by scaling POSITION alone.
+//
+// WHICH VERTEX BELONGS TO WHICH BODY PART IS READ, NOT GUESSED (owner law). It comes from the
+// model's OWN skin weights: a vertex weighted 0.8 to LeftForeArm is 0.8 forearm. No proximity
+// heuristic, no bounding-box slicing, no assumption about how the mesh was authored — the rig
+// already answers the question, and it answers it per model.
+//
+// THE ORIGINAL POSITIONS ARE CACHED AND EVERY PASS STARTS FROM THEM. Sculpting from the current
+// state compounds: drag a slider to 1.2 and back to 1.0 and the body keeps the gain.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_SCULPT) return;
+
+  var ST = { models:0, verts:0, applies:0, ms:0, lastRegions:null, skipped:0 };
+
+  function T(){ return (typeof THREE !== 'undefined') ? THREE : null; }
+  function norm(s){
+    try{ if (window.__normBoneKey) return window.__normBoneKey(s); }catch(e){}
+    return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  }
+
+  // ── REGIONS. A joint belongs to at most one; first match wins, so the tests run most-specific
+  //    first (forearm before arm, upleg before leg). ────────────────────────────────────────────
+  var REGIONS = [
+    ['head',      /head|skull/],
+    ['neck',      /neck/],
+    ['shoulders', /shoulder|clavicle/],
+    ['chest',     /spine2|spine1|chest|upperchest/],
+    ['waist',     /spine|abdomen|belly/],
+    ['hips',      /hip|pelvis|root/],
+    ['forearms',  /forearm|lowerarm|foarm/],
+    ['hands',     /hand|finger|thumb|index|middle|ring|pinky/],
+    ['arms',      /arm/],
+    ['thighs',    /upleg|thigh|upperleg/],
+    ['feet',      /foot|toe|ankle|ball/],
+    ['calves',    /leg|shin|calf/]
+  ];
+  var RNAMES = REGIONS.map(function(r){ return r[0]; });
+
+  function regionOfBone(name){
+    var n = norm(name);
+    for (var i=0;i<REGIONS.length;i++) if (REGIONS[i][1].test(n)) return i;
+    return -1;
+  }
+
+  // ── THE CONTROL TABLE ───────────────────────────────────────────────────────────────────────
+  // [regions, mode, gain]. 'radial' pushes away from the region's bone AXIS (that is what girth
+  // is); 'x'/'z' scale along the body's width / depth (the disproportionate-body knobs); 'size'
+  // is a uniform scale about the joint (head, hands, feet).
+  var CONTROLS = {
+    shoulders:{ r:['shoulders','chest'], m:'radial', g:1.0 },
+    traps:    { r:['neck','shoulders'],  m:'radial', g:0.9 },
+    chest:    { r:['chest'],             m:'radial', g:1.0 },
+    bust:     { r:['chest'],             m:'z',      g:0.8 },
+    arms:     { r:['arms'],              m:'radial', g:1.0 },
+    forearms: { r:['forearms'],          m:'radial', g:1.0 },
+    hands:    { r:['hands'],             m:'size',   g:1.0 },
+    waist:    { r:['waist'],             m:'radial', g:1.0 },
+    hips:     { r:['hips'],              m:'radial', g:1.0 },
+    glutes:   { r:['hips'],              m:'z',      g:0.9 },
+    thighs:   { r:['thighs'],            m:'radial', g:1.0 },
+    calves:   { r:['calves'],            m:'radial', g:1.0 },
+    feet:     { r:['feet'],              m:'size',   g:1.0 },
+    head:     { r:['head'],              m:'size',   g:1.0 },
+    shoulderW:{ r:['shoulders','chest'], m:'x', g:1.0 },
+    chestW:   { r:['chest'],             m:'x', g:1.0 },
+    chestD:   { r:['chest'],             m:'z', g:1.0 },
+    waistW:   { r:['waist'],             m:'x', g:1.0 },
+    waistD:   { r:['waist'],             m:'z', g:1.0 },
+    hipW:     { r:['hips'],              m:'x', g:1.0 },
+    hipD:     { r:['hips'],              m:'z', g:1.0 },
+    thighW:   { r:['thighs'],            m:'x', g:1.0 },
+    neckW:    { r:['neck'],              m:'x', g:1.0 },
+    neckD:    { r:['neck'],              m:'z', g:1.0 },
+    lats:     { r:['chest'],             m:'x', g:1.0 },
+    bicepW:   { r:['arms'],              m:'radial', g:1.0 },
+    forearmW: { r:['forearms'],          m:'radial', g:1.0 },
+    calfW:    { r:['calves'],            m:'x', g:1.0 },
+    handS:    { r:['hands'],             m:'size', g:1.0 },
+    footS:    { r:['feet'],              m:'size', g:1.0 }
+  };
+  // 0..1 sliders. Muscle swells the upper body and thighs; fat settles on the waist and hips and
+  // only lightly elsewhere; fem narrows the shoulders and widens the hips.
+  var BUILD = {
+    muscularity: [['shoulders',0.26],['chest',0.24],['arms',0.30],['forearms',0.20],
+                  ['thighs',0.22],['calves',0.18],['neck',0.14]],
+    bodyFat:     [['waist',0.42],['hips',0.30],['chest',0.14],['neck',0.12],
+                  ['arms',0.10],['thighs',0.14]],
+    fem:         [['shoulders',-0.14],['chest',-0.06],['hips',0.18],['thighs',0.12],['waist',-0.10]]
+  };
+
+  // ── PREPARE: cache base positions, bone bind frames, per-vertex region weights ──────────────
+  function prepare(model){
+    var TH = T(); if (!TH) return null;
+    if (model.userData.__sculpt) return model.userData.__sculpt;
+    var meshes = [];
+    model.traverse(function(o){ if (o.isSkinnedMesh && o.skeleton && o.geometry) meshes.push(o); });
+    if (!meshes.length) return null;
+
+    var t0 = performance.now();
+    var out = { meshes: [], regions: [] };
+    meshes.forEach(function(mesh){
+      var g = mesh.geometry;
+      var pos = g.getAttribute('position'), si = g.getAttribute('skinIndex'), sw = g.getAttribute('skinWeight');
+      if (!pos || !si || !sw) return;
+      var n = pos.count;
+      var base = new Float32Array(pos.array);        // the untouched body — every pass starts here
+
+      // DIRECT TYPED-ARRAY ACCESS, not getComponent(): that accessor does not exist in the r128
+      // this game vendors (it threw `si.getComponent is not a function` on the first run), and at
+      // 146,000 vertices x 4 influences it would be 584,000 method calls either way.
+      // skinWeight is frequently a NORMALIZED Uint8/Uint16 attribute, in which case the raw array
+      // holds 0..255 or 0..65535 and reading it straight would make every weight enormous.
+      var siA = si.array, swA = sw.array, siS = si.itemSize || 4, swS = sw.itemSize || 4;
+      var swK = 1;
+      if (sw.normalized){
+        if (swA instanceof Uint8Array) swK = 1/255;
+        else if (swA instanceof Uint16Array) swK = 1/65535;
+        else if (swA instanceof Int8Array) swK = 1/127;
+        else if (swA instanceof Int16Array) swK = 1/32767;
+      }
+      var bones = mesh.skeleton.bones, jr = new Int8Array(bones.length);
+      for (var b=0;b<bones.length;b++) jr[b] = regionOfBone(bones[b].name);
+
+      // BONE BIND FRAMES IN THE MESH'S OWN BIND SPACE. boneInverses[i] maps bind space -> bone
+      // space, so its inverse IS the bone's bind transform right where the vertices live. No world
+      // matrices and no live pose — nothing that moves while a match is running.
+      var bp = new Float32Array(bones.length*3), bd = new Float32Array(bones.length*3);
+      var M = new TH.Matrix4(), V = new TH.Vector3();
+      var childOf = {};
+      for (var i=0;i<bones.length;i++){
+        var p = bones[i].parent;
+        if (p && p.isBone){ var pi = bones.indexOf(p); if (pi >= 0) (childOf[pi] = childOf[pi] || []).push(i); }
+      }
+      for (var i2=0;i2<bones.length;i2++){
+        var inv = mesh.skeleton.boneInverses[i2]; if (!inv) continue;
+        M.copy(inv).invert(); V.setFromMatrixPosition(M);
+        bp[i2*3]=V.x; bp[i2*3+1]=V.y; bp[i2*3+2]=V.z;
+      }
+      for (var i3=0;i3<bones.length;i3++){
+        var ch = childOf[i3];
+        if (ch && ch.length){
+          // AVERAGE of the children, so a hip with two legs points DOWN the body rather than at
+          // one thigh. The bone axis is what girth is measured around.
+          V.set(0,0,0);
+          for (var q=0;q<ch.length;q++){ var c=ch[q];
+            V.x += bp[c*3]-bp[i3*3]; V.y += bp[c*3+1]-bp[i3*3+1]; V.z += bp[c*3+2]-bp[i3*3+2]; }
+          V.divideScalar(ch.length);
+        } else V.set(0,1,0);
+        if (V.lengthSq() < 1e-10) V.set(0,1,0);
+        V.normalize();
+        bd[i3*3]=V.x; bd[i3*3+1]=V.y; bd[i3*3+2]=V.z;
+      }
+
+      // PER-VERTEX REGION WEIGHTS, straight off the model's own skin weights. Top TWO regions:
+      // one is a hard seam at every joint, four is memory we do not need.
+      var r0 = new Int8Array(n), r1 = new Int8Array(n);
+      var w0 = new Float32Array(n), w1 = new Float32Array(n);
+      var vb0 = new Int32Array(n), vb1 = new Int32Array(n);
+      var acc = new Float32Array(RNAMES.length);
+      for (var v=0; v<n; v++){
+        for (var k=0;k<acc.length;k++) acc[k] = 0;
+        var bB0=-1,bB1=-1,bW0=0,bW1=0;
+        for (var c2=0;c2<4;c2++){
+          var idx = siA[v*siS + c2], w = swA[v*swS + c2] * swK;
+          if (!(w > 0)) continue;
+          var rg = jr[idx]; if (rg < 0) continue;
+          acc[rg] += w;
+          if (w > bW0){ bW1=bW0; bB1=bB0; bW0=w; bB0=idx; }
+          else if (w > bW1){ bW1=w; bB1=idx; }
+        }
+        var a=-1, aw=0, b2=-1, bw=0;
+        for (var k2=0;k2<acc.length;k2++){
+          if (acc[k2] > aw){ bw=aw; b2=a; aw=acc[k2]; a=k2; }
+          else if (acc[k2] > bw){ bw=acc[k2]; b2=k2; }
+        }
+        r0[v]=a; w0[v]=aw; r1[v]=b2; w1[v]=bw;
+        vb0[v]=bB0; vb1[v]=(bB1 >= 0 ? bB1 : bB0);
+      }
+      out.meshes.push({ mesh:mesh, pos:pos, base:base, n:n, r0:r0, w0:w0, r1:r1, w1:w1,
+                        vb0:vb0, vb1:vb1, bp:bp, bd:bd });
+      ST.verts += n;
+    });
+    if (!out.meshes.length) return null;
+    // what the rig actually offered — a model missing a region simply has no knob that moves it
+    var got = {};
+    out.meshes.forEach(function(M2){ for (var v2=0;v2<M2.n;v2++) if (M2.r0[v2] >= 0) got[RNAMES[M2.r0[v2]]] = 1; });
+    out.regions = Object.keys(got);
+    ST.lastRegions = out.regions; ST.models++;
+    model.userData.__sculpt = out;
+    try{ console.log('%c[BANNON_SCULPT] prepared ' + out.meshes.length + ' skinned mesh(es), ' +
+      out.meshes.reduce(function(a,m){return a+m.n;},0) + ' verts, regions: ' + out.regions.join(' ') +
+      '  (' + (performance.now()-t0).toFixed(0) + 'ms)','color:#7CFC00'); }catch(e){}
+    return out;
+  }
+
+  // ── APPLY ───────────────────────────────────────────────────────────────────────────────────
+  function apply(f){
+    var TH = T(); if (!TH || !f || !f.model) return false;
+    var S = prepare(f.model); if (!S){ ST.skipped++; return false; }
+    var sh = f.shape || {};
+    var t0 = performance.now();
+
+    // A per-region scalar per mode. Neutral is 1 everywhere, which means an untouched slider set
+    // writes the base mesh back byte for byte — that is what makes RESET exact.
+    var R = {};
+    for (var ri=0; ri<RNAMES.length; ri++) R[RNAMES[ri]] = { radial:1, x:1, z:1, size:1 };
+    function add(regions, mode, amt, gain){
+      if (!amt) return;
+      for (var i=0;i<regions.length;i++){ var rg = R[regions[i]]; if (rg) rg[mode] += amt * (gain == null ? 1 : gain); }
+    }
+    for (var key in CONTROLS){
+      var v = sh[key]; if (v == null) continue;
+      var c = CONTROLS[key];
+      add(c.r, c.m, (+v) - 1, c.g);
+    }
+    for (var bk in BUILD){
+      var bv = sh[bk]; if (bv == null) continue;
+      var amt = Math.max(-1, Math.min(1, +bv));
+      var rows = BUILD[bk];
+      for (var j=0;j<rows.length;j++) add([rows[j][0]], bk === 'fem' ? 'x' : 'radial', amt * rows[j][1]);
+    }
+
+    var anyChange = false;
+    for (var rn=0; rn<RNAMES.length; rn++){ var kk = R[RNAMES[rn]];
+      if (kk.radial !== 1 || kk.x !== 1 || kk.z !== 1 || kk.size !== 1){ anyChange = true; break; } }
+
+    for (var mi=0; mi<S.meshes.length; mi++){
+      var M3 = S.meshes[mi];
+      var out = M3.pos.array, base = M3.base, n2 = M3.n;
+      out.set(base);                                  // ALWAYS from the base — never compounding
+      if (anyChange) for (var v3=0; v3<n2; v3++){
+        var i33 = v3*3;
+        for (var slot=0; slot<2; slot++){
+          var rgi = slot ? M3.r1[v3] : M3.r0[v3];
+          if (rgi < 0) continue;
+          var w2 = (slot ? M3.w1[v3] : M3.w0[v3]);
+          if (!(w2 > 0.001)) continue;
+          var k3 = R[RNAMES[rgi]];
+          if (k3.radial === 1 && k3.x === 1 && k3.z === 1 && k3.size === 1) continue;
+          var bi = (slot ? M3.vb1[v3] : M3.vb0[v3]); if (bi < 0) continue;
+          var px = M3.bp[bi*3], py = M3.bp[bi*3+1], pz = M3.bp[bi*3+2];
+          var dx = M3.bd[bi*3], dy = M3.bd[bi*3+1], dz = M3.bd[bi*3+2];
+          var qx = out[i33]-px, qy = out[i33+1]-py, qz = out[i33+2]-pz;
+
+          if (k3.size !== 1){                          // uniform about the joint
+            var s = (k3.size - 1) * w2;
+            out[i33] += qx*s; out[i33+1] += qy*s; out[i33+2] += qz*s;
+            qx = out[i33]-px; qy = out[i33+1]-py; qz = out[i33+2]-pz;
+          }
+          if (k3.radial !== 1){                        // GIRTH: away from the bone AXIS, not the joint
+            var along = qx*dx + qy*dy + qz*dz;
+            var s2 = (k3.radial - 1) * w2;
+            out[i33]   += (qx - dx*along)*s2;
+            out[i33+1] += (qy - dy*along)*s2;
+            out[i33+2] += (qz - dz*along)*s2;
+          }
+          if (k3.x !== 1) out[i33]   += (out[i33]   - px) * (k3.x - 1) * w2;
+          if (k3.z !== 1) out[i33+2] += (out[i33+2] - pz) * (k3.z - 1) * w2;
+        }
+      }
+      M3.pos.needsUpdate = true;
+      try{ M3.mesh.geometry.computeVertexNormals(); }catch(e){}
+      try{ M3.mesh.geometry.computeBoundingSphere(); M3.mesh.geometry.computeBoundingBox(); }catch(e){}
+    }
+    ST.applies++; ST.ms += (performance.now() - t0);
+    return true;
+  }
+
+  // Dragging a slider fires on every pointer move, and a 146k-vertex rebuild per move is a stall
+  // the owner would read as the freeze. Coalesce to the next frame.
+  var pending = null, raf = 0;
+  function request(f){
+    pending = f;
+    if (raf) return;
+    raf = requestAnimationFrame(function(){ raf = 0; var g = pending; pending = null;
+      try{ apply(g); }catch(e){} });
+  }
+
+  window.BANNON_SCULPT = {
+    apply: apply, request: request, prepare: prepare,
+    regions: function(f){ var S = f && f.model ? prepare(f.model) : null; return S ? S.regions : []; },
+    // put a model back to the bytes it shipped with, so a bad sculpt is never permanent
+    reset: function(f){
+      var S = f && f.model && f.model.userData.__sculpt; if (!S) return false;
+      for (var i=0;i<S.meshes.length;i++){ var M = S.meshes[i];
+        M.pos.array.set(M.base); M.pos.needsUpdate = true;
+        try{ M.mesh.geometry.computeVertexNormals(); }catch(e){} }
+      return true;
+    },
+    controls: Object.keys(CONTROLS).concat(Object.keys(BUILD)),
+    stats: function(){ return { models:ST.models, verts:ST.verts, applies:ST.applies,
+      avgMs: ST.applies ? +(ST.ms/ST.applies).toFixed(1) : 0, skipped:ST.skipped, lastRegions:ST.lastRegions }; }
+  };
+
+  // ── WIRE INTO THE EXISTING CALL SITES ───────────────────────────────────────────────────────
+  // applyShapeMorphs is already called from applyFighterSpec (every slider), from restyleFighter
+  // and at model bind. Extending it means the whole CREATE editor, the DNA system and the roster
+  // templates all reach the GLB with no change to any of them — and its bone-scale half (height /
+  // armLen / legLen / torsoLen) still runs, because limb LENGTH is a rig change, not a vertex one.
+  (function wire(n){
+    n = n || 0;
+    if (typeof window.applyShapeMorphs === 'function' && !window.applyShapeMorphs.__sculpt){
+      var orig = window.applyShapeMorphs;
+      var w = function(f){ var r = orig.apply(this, arguments); try{ request(f); }catch(e){} return r; };
+      w.__sculpt = true;
+      window.applyShapeMorphs = w;
+      try{ console.log('%c[BANNON_SCULPT] armed — the CREATE sliders now move GLB vertices, not just the tube body','color:#7CFC00'); }catch(e){}
+      return;
+    }
+    if (n < 200) setTimeout(function(){ wire(n+1); }, 250);
+  })(0);
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_LATE_BODIES — the last way a procedural body still reaches the screen.
+//
+// OWNER, as the standing priority: "never seeing procedural three js models unless specific
+// attires for that are selected."
+//
+// MEASURED, tools/harness/smoke.cjs, on this exact build:
+//     BANNON  model:yes    VIPER  model:yes    ZEPHYR  model:NO   <- the run-in
+// One FAILURE, and it is always the same actor. WHY THE BAN DOES NOT COVER HIM: setProcVisible
+// only refuses the built-in body when `f._charModelRequested` is set, and that flag is set by
+// applyCharModels — which only ever runs for the SIDES p1..p4 at match start. An interferer is
+// built with a bare `new Fighter(...)` and pushed onto `fighters`, so NOBODY EVER ASKED for his
+// model. No request, therefore no ban, therefore a grey tube in the middle of a match.
+//
+// THE FIX IS NOT A NEW LOADER. A fighter at index 2 IS p3 — fighterFor('p3') returns fighters[2] —
+// so the whole existing machinery already covers him and was simply never asked. Ask it, and hold
+// him invisible until he is actually himself: a run-in that appears a second late is a run-in; a
+// run-in that appears as a grey tube is the bug the owner has been reporting for weeks.
+//
+// The ceiling matters as much as the ban. An invisible attacker is its own bug, so if the model
+// genuinely never arrives the engine's own failure path (_modelFailed) shows the built-in body —
+// the ONE case the owner allows: a real failure, not a slow load.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_LATE_BODIES) return;
+
+  var SIDES = ['p1', 'p2', 'p3', 'p4'];
+  var ST = { adopted:0, hidden:0, revealed:0, timedOut:0, last:null };
+
+  function fighters_(){ try{ return new Function('return typeof fighters!=="undefined"?fighters:[]')(); }catch(e){ return []; } }
+
+  function tick(){
+    var F = fighters_();
+    for (var i = 0; i < F.length; i++){
+      var f = F[i]; if (!f || f._forceProc) continue;
+
+      // 1. ANY fighter without a model request gets one, through the normal path.
+      if (!f._charModelRequested && !f.model && !f.__lateAsked){
+        f.__lateAsked = true;
+        try{
+          if (i < SIDES.length && typeof applyCharModels === 'function'){
+            ST.adopted++; ST.last = (f.opts && f.opts.name) || ('#' + i);
+            applyCharModels(SIDES[i]);
+          }
+        }catch(e){}
+      }
+
+      // 2. Until he has one, he is NOT on screen. The procedural ban already refuses to show the
+      //    built-in body once a request is in flight; this covers the window before that, and any
+      //    path that sets no flag at all.
+      var waiting = (!f.model && !f._modelFailed && (f._charModelRequested || f.__lateAsked));
+      if (waiting){
+        if (!f.__lateHiddenAt){ f.__lateHiddenAt = (performance.now ? performance.now() : Date.now()); ST.hidden++; }
+        try{ if (f.seg && typeof setProcVisible === 'function') setProcVisible(f, false); }catch(e){}
+        var wait = (performance.now ? performance.now() : Date.now()) - f.__lateHiddenAt;
+        if (wait > 20000 && !f.__lateGaveUp){ f.__lateGaveUp = true; ST.timedOut++; }
+      } else if (f.__lateHiddenAt && f.model){
+        f.__lateHiddenAt = 0; ST.revealed++;
+      }
+    }
+  }
+
+  (function loop(){ requestAnimationFrame(loop); try{ tick(); }catch(e){} })();
+  window.BANNON_LATE_BODIES = { stats: function(){ return Object.assign({}, ST); } };
+  try{ console.log('%c[BANNON_LATE_BODIES] every fighter asks for a model, and waits off-screen for it','color:#7CFC00'); }catch(e){}
+})();
+</script>
+
+
+<script>
+// ============================================================================================
+// BANNON_POSTWARM — one shot, and ONLY the thing that is genuinely missing.
+//
+// THIS REPLACES A CHANGE I MEASURED AND THREW AWAY. The first version (BANNON_GPUQ) swept the
+// scene every 120 ms for materials with no compiled program and called renderer.compile whenever
+// it found one. The idea was sound; the measurement was not kind:
+//                          BEFORE          AFTER          window-normalised
+//     gl.linkWait          1,762 ms        2,699 ms       6.1%  ->  6.2%   (no change)
+//     gl.texture             855 ms        1,124 ms       3.0%  ->  2.6%   (marginal)
+//     js.raf               3,786 ms       12,655 ms        13%  ->   29%   MUCH WORSE
+//     worst single frame   1,651 ms        4,432 ms
+// The sweep never converges: particle and fx materials are created and destroyed constantly, so
+// "an unpaid material exists" is true forever, and the queue re-walked the whole scene graph and
+// re-ran an all-or-nothing compile every 400 ms for the life of the match. It bought nothing and
+// tripled the JavaScript cost of a frame. Deleted, not tuned — a system that cannot converge is
+// not a system with a bad constant.
+//
+// AND THE HARNESS HAS A NOISE FLOOR, which is the more important half of this note. Re-running
+// stall_autopsy on the IDENTICAL baseline build over the same 28.7 s window gave:
+//     gl.linkWait  1,762 ms  then  2,568 ms   (+46%)
+//     js.raf       3,786 ms  then  4,827 ms   (+27%)
+//     worst frame  1,651 ms  then  2,124 ms   (+29%)
+// Same bytes, same machine, no change at all. So a single run of this harness CANNOT resolve a
+// difference smaller than roughly half, and any conclusion drawn from one run of it — including
+// several in this file's history — is worth less than it looks. GPUQ's 3.3x on js.raf was clearly
+// outside that floor and was correctly thrown away; this one-shot warm measures INSIDE it and is
+// therefore kept on the STRUCTURAL argument alone (the post chain is genuinely not in the scene
+// graph and genuinely links on the first composed frame), not on a claimed speed-up. It is
+// one-shot, cannot loop, and cannot regress the frame loop.
+//
+// WHAT SURVIVES IS THE ONE PART THAT IS A REAL, BOUNDED GAP: the post chain is NOT IN THE SCENE
+// GRAPH. renderer.compile walks the scene, and EffectComposer's passes own their own materials —
+// a luminosity pass, five bloom mip blurs run twice each, three ShaderPasses. No amount of scene
+// compiling has ever touched them, so they link on the composer's FIRST render, which is the first
+// frame the player sees. One composer render into the existing target, once, pays for all of them
+// while the menu is still up. It runs a single time and can never repeat.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_POSTWARM) return;
+  var ST = { warmed:false, ms:0, passes:0, programsBefore:-1, programsAfter:-1 };
+  function lex(n){ try{ return new Function('return typeof '+n+'!=="undefined"?'+n+':null')(); }catch(e){ return null; } }
+
+  function warm(){
+    if (ST.warmed) return false;
+    var r = lex('renderer'), comp = window.__composer;
+    if (!r || !comp || typeof comp.render !== 'function') return false;
+    ST.warmed = true;                       // one attempt, success or not — never a retry loop
+    try{
+      ST.programsBefore = (r.info.programs || []).length;
+      var t0 = performance.now();
+      comp.render(0.016);
+      ST.ms = +(performance.now() - t0).toFixed(1);
+      ST.passes = (comp.passes || []).length;
+      ST.programsAfter = (r.info.programs || []).length;
+      try{ console.log('%c[BANNON_POSTWARM] post chain warmed in ' + ST.ms + 'ms — ' + ST.passes +
+        ' passes, programs ' + ST.programsBefore + ' -> ' + ST.programsAfter, 'color:#7CFC00'); }catch(e){}
+    }catch(e){}
+    return true;
+  }
+  (function poll(n){ n = n || 0; if (warm() || n > 60) return; setTimeout(function(){ poll(n+1); }, 500); })(0);
+
+  window.BANNON_POSTWARM = { warm: warm, stats: function(){ return Object.assign({}, ST); } };
+})();
+</script>
+
 </html>

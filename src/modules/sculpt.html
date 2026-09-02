@@ -1,0 +1,339 @@
+<script>
+// ============================================================================================
+// BANNON_SCULPT — THE CREATE SLIDERS DRIVE THE GLB, NOT THE TUBE BODY.
+//
+// OWNER: "we have to change the custom stuff to drive the glb bodies and models."
+//
+// MEASURED, and it is worse than "some controls are missing". applyShapeMorphs had exactly two
+// paths and one of them is dead on every model we ship:
+//   1. BLENDSHAPES, matched by name against the GLB's morph targets. Read off the shipped bytes:
+//        BANNON_rigged  15 prims  145,939 verts  58 joints  MORPH TARGETS 0
+//        VIPER           1 prim    57,596 verts  58 joints  MORPH TARGETS 0
+//        CIPHER_rigged   1 prim    68,182 verts  52 joints  MORPH TARGETS 0
+//      Tripo and UniRig do not author morph targets. This path has never moved a vertex.
+//   2. BONE SCALE, for four controls: height, armLen, legLen, torsoLen.
+// So of the ~90 controls in the CREATE editor — 14 girths, 16 width/depth axes, face sculpt —
+// FOUR reached a GLB and eighty-six moved only the procedural body nobody is supposed to see.
+//
+// THE TECHNIQUE IS SKIN-WEIGHTED BIND-SPACE DEFORMATION, which is what MakeHuman and MB-Lab do and
+// what every "body morph without blendshapes" pipeline reduces to. It is exactly correct here, and
+// the proof is already written down in this repo for rescale_mesh.cjs:
+//     skinned(v) = SUM w_i (jointWorld_i . IBM_i) v
+// and in BIND pose jointWorld_i == inverse(IBM_i), so the bracket is the identity and skinned(v)
+// == v. Move a vertex in bind space and you move exactly that vertex on screen — while the joints,
+// the inverse bind matrices and the weights are all untouched, so every animation still plays.
+// Same argument that let rescale_mesh fix TARZANIAN_DEVIL and CODY_gear by scaling POSITION alone.
+//
+// WHICH VERTEX BELONGS TO WHICH BODY PART IS READ, NOT GUESSED (owner law). It comes from the
+// model's OWN skin weights: a vertex weighted 0.8 to LeftForeArm is 0.8 forearm. No proximity
+// heuristic, no bounding-box slicing, no assumption about how the mesh was authored — the rig
+// already answers the question, and it answers it per model.
+//
+// THE ORIGINAL POSITIONS ARE CACHED AND EVERY PASS STARTS FROM THEM. Sculpting from the current
+// state compounds: drag a slider to 1.2 and back to 1.0 and the body keeps the gain.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_SCULPT) return;
+
+  var ST = { models:0, verts:0, applies:0, ms:0, lastRegions:null, skipped:0 };
+
+  function T(){ return (typeof THREE !== 'undefined') ? THREE : null; }
+  function norm(s){
+    try{ if (window.__normBoneKey) return window.__normBoneKey(s); }catch(e){}
+    return String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  }
+
+  // ── REGIONS. A joint belongs to at most one; first match wins, so the tests run most-specific
+  //    first (forearm before arm, upleg before leg). ────────────────────────────────────────────
+  var REGIONS = [
+    ['head',      /head|skull/],
+    ['neck',      /neck/],
+    ['shoulders', /shoulder|clavicle/],
+    ['chest',     /spine2|spine1|chest|upperchest/],
+    ['waist',     /spine|abdomen|belly/],
+    ['hips',      /hip|pelvis|root/],
+    ['forearms',  /forearm|lowerarm|foarm/],
+    ['hands',     /hand|finger|thumb|index|middle|ring|pinky/],
+    ['arms',      /arm/],
+    ['thighs',    /upleg|thigh|upperleg/],
+    ['feet',      /foot|toe|ankle|ball/],
+    ['calves',    /leg|shin|calf/]
+  ];
+  var RNAMES = REGIONS.map(function(r){ return r[0]; });
+
+  function regionOfBone(name){
+    var n = norm(name);
+    for (var i=0;i<REGIONS.length;i++) if (REGIONS[i][1].test(n)) return i;
+    return -1;
+  }
+
+  // ── THE CONTROL TABLE ───────────────────────────────────────────────────────────────────────
+  // [regions, mode, gain]. 'radial' pushes away from the region's bone AXIS (that is what girth
+  // is); 'x'/'z' scale along the body's width / depth (the disproportionate-body knobs); 'size'
+  // is a uniform scale about the joint (head, hands, feet).
+  var CONTROLS = {
+    shoulders:{ r:['shoulders','chest'], m:'radial', g:1.0 },
+    traps:    { r:['neck','shoulders'],  m:'radial', g:0.9 },
+    chest:    { r:['chest'],             m:'radial', g:1.0 },
+    bust:     { r:['chest'],             m:'z',      g:0.8 },
+    arms:     { r:['arms'],              m:'radial', g:1.0 },
+    forearms: { r:['forearms'],          m:'radial', g:1.0 },
+    hands:    { r:['hands'],             m:'size',   g:1.0 },
+    waist:    { r:['waist'],             m:'radial', g:1.0 },
+    hips:     { r:['hips'],              m:'radial', g:1.0 },
+    glutes:   { r:['hips'],              m:'z',      g:0.9 },
+    thighs:   { r:['thighs'],            m:'radial', g:1.0 },
+    calves:   { r:['calves'],            m:'radial', g:1.0 },
+    feet:     { r:['feet'],              m:'size',   g:1.0 },
+    head:     { r:['head'],              m:'size',   g:1.0 },
+    shoulderW:{ r:['shoulders','chest'], m:'x', g:1.0 },
+    chestW:   { r:['chest'],             m:'x', g:1.0 },
+    chestD:   { r:['chest'],             m:'z', g:1.0 },
+    waistW:   { r:['waist'],             m:'x', g:1.0 },
+    waistD:   { r:['waist'],             m:'z', g:1.0 },
+    hipW:     { r:['hips'],              m:'x', g:1.0 },
+    hipD:     { r:['hips'],              m:'z', g:1.0 },
+    thighW:   { r:['thighs'],            m:'x', g:1.0 },
+    neckW:    { r:['neck'],              m:'x', g:1.0 },
+    neckD:    { r:['neck'],              m:'z', g:1.0 },
+    lats:     { r:['chest'],             m:'x', g:1.0 },
+    bicepW:   { r:['arms'],              m:'radial', g:1.0 },
+    forearmW: { r:['forearms'],          m:'radial', g:1.0 },
+    calfW:    { r:['calves'],            m:'x', g:1.0 },
+    handS:    { r:['hands'],             m:'size', g:1.0 },
+    footS:    { r:['feet'],              m:'size', g:1.0 }
+  };
+  // 0..1 sliders. Muscle swells the upper body and thighs; fat settles on the waist and hips and
+  // only lightly elsewhere; fem narrows the shoulders and widens the hips.
+  var BUILD = {
+    muscularity: [['shoulders',0.26],['chest',0.24],['arms',0.30],['forearms',0.20],
+                  ['thighs',0.22],['calves',0.18],['neck',0.14]],
+    bodyFat:     [['waist',0.42],['hips',0.30],['chest',0.14],['neck',0.12],
+                  ['arms',0.10],['thighs',0.14]],
+    fem:         [['shoulders',-0.14],['chest',-0.06],['hips',0.18],['thighs',0.12],['waist',-0.10]]
+  };
+
+  // ── PREPARE: cache base positions, bone bind frames, per-vertex region weights ──────────────
+  function prepare(model){
+    var TH = T(); if (!TH) return null;
+    if (model.userData.__sculpt) return model.userData.__sculpt;
+    var meshes = [];
+    model.traverse(function(o){ if (o.isSkinnedMesh && o.skeleton && o.geometry) meshes.push(o); });
+    if (!meshes.length) return null;
+
+    var t0 = performance.now();
+    var out = { meshes: [], regions: [] };
+    meshes.forEach(function(mesh){
+      var g = mesh.geometry;
+      var pos = g.getAttribute('position'), si = g.getAttribute('skinIndex'), sw = g.getAttribute('skinWeight');
+      if (!pos || !si || !sw) return;
+      var n = pos.count;
+      var base = new Float32Array(pos.array);        // the untouched body — every pass starts here
+
+      // DIRECT TYPED-ARRAY ACCESS, not getComponent(): that accessor does not exist in the r128
+      // this game vendors (it threw `si.getComponent is not a function` on the first run), and at
+      // 146,000 vertices x 4 influences it would be 584,000 method calls either way.
+      // skinWeight is frequently a NORMALIZED Uint8/Uint16 attribute, in which case the raw array
+      // holds 0..255 or 0..65535 and reading it straight would make every weight enormous.
+      var siA = si.array, swA = sw.array, siS = si.itemSize || 4, swS = sw.itemSize || 4;
+      var swK = 1;
+      if (sw.normalized){
+        if (swA instanceof Uint8Array) swK = 1/255;
+        else if (swA instanceof Uint16Array) swK = 1/65535;
+        else if (swA instanceof Int8Array) swK = 1/127;
+        else if (swA instanceof Int16Array) swK = 1/32767;
+      }
+      var bones = mesh.skeleton.bones, jr = new Int8Array(bones.length);
+      for (var b=0;b<bones.length;b++) jr[b] = regionOfBone(bones[b].name);
+
+      // BONE BIND FRAMES IN THE MESH'S OWN BIND SPACE. boneInverses[i] maps bind space -> bone
+      // space, so its inverse IS the bone's bind transform right where the vertices live. No world
+      // matrices and no live pose — nothing that moves while a match is running.
+      var bp = new Float32Array(bones.length*3), bd = new Float32Array(bones.length*3);
+      var M = new TH.Matrix4(), V = new TH.Vector3();
+      var childOf = {};
+      for (var i=0;i<bones.length;i++){
+        var p = bones[i].parent;
+        if (p && p.isBone){ var pi = bones.indexOf(p); if (pi >= 0) (childOf[pi] = childOf[pi] || []).push(i); }
+      }
+      for (var i2=0;i2<bones.length;i2++){
+        var inv = mesh.skeleton.boneInverses[i2]; if (!inv) continue;
+        M.copy(inv).invert(); V.setFromMatrixPosition(M);
+        bp[i2*3]=V.x; bp[i2*3+1]=V.y; bp[i2*3+2]=V.z;
+      }
+      for (var i3=0;i3<bones.length;i3++){
+        var ch = childOf[i3];
+        if (ch && ch.length){
+          // AVERAGE of the children, so a hip with two legs points DOWN the body rather than at
+          // one thigh. The bone axis is what girth is measured around.
+          V.set(0,0,0);
+          for (var q=0;q<ch.length;q++){ var c=ch[q];
+            V.x += bp[c*3]-bp[i3*3]; V.y += bp[c*3+1]-bp[i3*3+1]; V.z += bp[c*3+2]-bp[i3*3+2]; }
+          V.divideScalar(ch.length);
+        } else V.set(0,1,0);
+        if (V.lengthSq() < 1e-10) V.set(0,1,0);
+        V.normalize();
+        bd[i3*3]=V.x; bd[i3*3+1]=V.y; bd[i3*3+2]=V.z;
+      }
+
+      // PER-VERTEX REGION WEIGHTS, straight off the model's own skin weights. Top TWO regions:
+      // one is a hard seam at every joint, four is memory we do not need.
+      var r0 = new Int8Array(n), r1 = new Int8Array(n);
+      var w0 = new Float32Array(n), w1 = new Float32Array(n);
+      var vb0 = new Int32Array(n), vb1 = new Int32Array(n);
+      var acc = new Float32Array(RNAMES.length);
+      for (var v=0; v<n; v++){
+        for (var k=0;k<acc.length;k++) acc[k] = 0;
+        var bB0=-1,bB1=-1,bW0=0,bW1=0;
+        for (var c2=0;c2<4;c2++){
+          var idx = siA[v*siS + c2], w = swA[v*swS + c2] * swK;
+          if (!(w > 0)) continue;
+          var rg = jr[idx]; if (rg < 0) continue;
+          acc[rg] += w;
+          if (w > bW0){ bW1=bW0; bB1=bB0; bW0=w; bB0=idx; }
+          else if (w > bW1){ bW1=w; bB1=idx; }
+        }
+        var a=-1, aw=0, b2=-1, bw=0;
+        for (var k2=0;k2<acc.length;k2++){
+          if (acc[k2] > aw){ bw=aw; b2=a; aw=acc[k2]; a=k2; }
+          else if (acc[k2] > bw){ bw=acc[k2]; b2=k2; }
+        }
+        r0[v]=a; w0[v]=aw; r1[v]=b2; w1[v]=bw;
+        vb0[v]=bB0; vb1[v]=(bB1 >= 0 ? bB1 : bB0);
+      }
+      out.meshes.push({ mesh:mesh, pos:pos, base:base, n:n, r0:r0, w0:w0, r1:r1, w1:w1,
+                        vb0:vb0, vb1:vb1, bp:bp, bd:bd });
+      ST.verts += n;
+    });
+    if (!out.meshes.length) return null;
+    // what the rig actually offered — a model missing a region simply has no knob that moves it
+    var got = {};
+    out.meshes.forEach(function(M2){ for (var v2=0;v2<M2.n;v2++) if (M2.r0[v2] >= 0) got[RNAMES[M2.r0[v2]]] = 1; });
+    out.regions = Object.keys(got);
+    ST.lastRegions = out.regions; ST.models++;
+    model.userData.__sculpt = out;
+    try{ console.log('%c[BANNON_SCULPT] prepared ' + out.meshes.length + ' skinned mesh(es), ' +
+      out.meshes.reduce(function(a,m){return a+m.n;},0) + ' verts, regions: ' + out.regions.join(' ') +
+      '  (' + (performance.now()-t0).toFixed(0) + 'ms)','color:#7CFC00'); }catch(e){}
+    return out;
+  }
+
+  // ── APPLY ───────────────────────────────────────────────────────────────────────────────────
+  function apply(f){
+    var TH = T(); if (!TH || !f || !f.model) return false;
+    var S = prepare(f.model); if (!S){ ST.skipped++; return false; }
+    var sh = f.shape || {};
+    var t0 = performance.now();
+
+    // A per-region scalar per mode. Neutral is 1 everywhere, which means an untouched slider set
+    // writes the base mesh back byte for byte — that is what makes RESET exact.
+    var R = {};
+    for (var ri=0; ri<RNAMES.length; ri++) R[RNAMES[ri]] = { radial:1, x:1, z:1, size:1 };
+    function add(regions, mode, amt, gain){
+      if (!amt) return;
+      for (var i=0;i<regions.length;i++){ var rg = R[regions[i]]; if (rg) rg[mode] += amt * (gain == null ? 1 : gain); }
+    }
+    for (var key in CONTROLS){
+      var v = sh[key]; if (v == null) continue;
+      var c = CONTROLS[key];
+      add(c.r, c.m, (+v) - 1, c.g);
+    }
+    for (var bk in BUILD){
+      var bv = sh[bk]; if (bv == null) continue;
+      var amt = Math.max(-1, Math.min(1, +bv));
+      var rows = BUILD[bk];
+      for (var j=0;j<rows.length;j++) add([rows[j][0]], bk === 'fem' ? 'x' : 'radial', amt * rows[j][1]);
+    }
+
+    var anyChange = false;
+    for (var rn=0; rn<RNAMES.length; rn++){ var kk = R[RNAMES[rn]];
+      if (kk.radial !== 1 || kk.x !== 1 || kk.z !== 1 || kk.size !== 1){ anyChange = true; break; } }
+
+    for (var mi=0; mi<S.meshes.length; mi++){
+      var M3 = S.meshes[mi];
+      var out = M3.pos.array, base = M3.base, n2 = M3.n;
+      out.set(base);                                  // ALWAYS from the base — never compounding
+      if (anyChange) for (var v3=0; v3<n2; v3++){
+        var i33 = v3*3;
+        for (var slot=0; slot<2; slot++){
+          var rgi = slot ? M3.r1[v3] : M3.r0[v3];
+          if (rgi < 0) continue;
+          var w2 = (slot ? M3.w1[v3] : M3.w0[v3]);
+          if (!(w2 > 0.001)) continue;
+          var k3 = R[RNAMES[rgi]];
+          if (k3.radial === 1 && k3.x === 1 && k3.z === 1 && k3.size === 1) continue;
+          var bi = (slot ? M3.vb1[v3] : M3.vb0[v3]); if (bi < 0) continue;
+          var px = M3.bp[bi*3], py = M3.bp[bi*3+1], pz = M3.bp[bi*3+2];
+          var dx = M3.bd[bi*3], dy = M3.bd[bi*3+1], dz = M3.bd[bi*3+2];
+          var qx = out[i33]-px, qy = out[i33+1]-py, qz = out[i33+2]-pz;
+
+          if (k3.size !== 1){                          // uniform about the joint
+            var s = (k3.size - 1) * w2;
+            out[i33] += qx*s; out[i33+1] += qy*s; out[i33+2] += qz*s;
+            qx = out[i33]-px; qy = out[i33+1]-py; qz = out[i33+2]-pz;
+          }
+          if (k3.radial !== 1){                        // GIRTH: away from the bone AXIS, not the joint
+            var along = qx*dx + qy*dy + qz*dz;
+            var s2 = (k3.radial - 1) * w2;
+            out[i33]   += (qx - dx*along)*s2;
+            out[i33+1] += (qy - dy*along)*s2;
+            out[i33+2] += (qz - dz*along)*s2;
+          }
+          if (k3.x !== 1) out[i33]   += (out[i33]   - px) * (k3.x - 1) * w2;
+          if (k3.z !== 1) out[i33+2] += (out[i33+2] - pz) * (k3.z - 1) * w2;
+        }
+      }
+      M3.pos.needsUpdate = true;
+      try{ M3.mesh.geometry.computeVertexNormals(); }catch(e){}
+      try{ M3.mesh.geometry.computeBoundingSphere(); M3.mesh.geometry.computeBoundingBox(); }catch(e){}
+    }
+    ST.applies++; ST.ms += (performance.now() - t0);
+    return true;
+  }
+
+  // Dragging a slider fires on every pointer move, and a 146k-vertex rebuild per move is a stall
+  // the owner would read as the freeze. Coalesce to the next frame.
+  var pending = null, raf = 0;
+  function request(f){
+    pending = f;
+    if (raf) return;
+    raf = requestAnimationFrame(function(){ raf = 0; var g = pending; pending = null;
+      try{ apply(g); }catch(e){} });
+  }
+
+  window.BANNON_SCULPT = {
+    apply: apply, request: request, prepare: prepare,
+    regions: function(f){ var S = f && f.model ? prepare(f.model) : null; return S ? S.regions : []; },
+    // put a model back to the bytes it shipped with, so a bad sculpt is never permanent
+    reset: function(f){
+      var S = f && f.model && f.model.userData.__sculpt; if (!S) return false;
+      for (var i=0;i<S.meshes.length;i++){ var M = S.meshes[i];
+        M.pos.array.set(M.base); M.pos.needsUpdate = true;
+        try{ M.mesh.geometry.computeVertexNormals(); }catch(e){} }
+      return true;
+    },
+    controls: Object.keys(CONTROLS).concat(Object.keys(BUILD)),
+    stats: function(){ return { models:ST.models, verts:ST.verts, applies:ST.applies,
+      avgMs: ST.applies ? +(ST.ms/ST.applies).toFixed(1) : 0, skipped:ST.skipped, lastRegions:ST.lastRegions }; }
+  };
+
+  // ── WIRE INTO THE EXISTING CALL SITES ───────────────────────────────────────────────────────
+  // applyShapeMorphs is already called from applyFighterSpec (every slider), from restyleFighter
+  // and at model bind. Extending it means the whole CREATE editor, the DNA system and the roster
+  // templates all reach the GLB with no change to any of them — and its bone-scale half (height /
+  // armLen / legLen / torsoLen) still runs, because limb LENGTH is a rig change, not a vertex one.
+  (function wire(n){
+    n = n || 0;
+    if (typeof window.applyShapeMorphs === 'function' && !window.applyShapeMorphs.__sculpt){
+      var orig = window.applyShapeMorphs;
+      var w = function(f){ var r = orig.apply(this, arguments); try{ request(f); }catch(e){} return r; };
+      w.__sculpt = true;
+      window.applyShapeMorphs = w;
+      try{ console.log('%c[BANNON_SCULPT] armed — the CREATE sliders now move GLB vertices, not just the tube body','color:#7CFC00'); }catch(e){}
+      return;
+    }
+    if (n < 200) setTimeout(function(){ wire(n+1); }, 250);
+  })(0);
+})();
+</script>
