@@ -1,0 +1,13 @@
+{
+  "name": "bannon-unreal-worker",
+  "version": "1.0.0",
+  "description": "Federated Remote Worker for M. Engine Unreal Operations",
+  "main": "worker.js",
+  "scripts": {
+    "start": "node worker.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5"
+  }
+}
