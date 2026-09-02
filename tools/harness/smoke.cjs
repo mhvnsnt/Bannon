@@ -106,6 +106,87 @@ function WATCH(){
       w.__sm = 1; ['__owner','__bridge','__probe','__rec','__au'].forEach(k => { w[k] = o[k]; });
       window.studioApplyClipPose = w;
     }
+    // ── CONTRADICTION DETECTOR ────────────────────────────────────────────────────────────────
+    // The owner can tell the game is wrong without being able to name the bug, and a harness that
+    // only asserts what someone thought to assert cannot help with that. These look instead for
+    // states that CANNOT BOTH BE TRUE, which needs no prior theory about what broke.
+    //
+    // Every field checked here was MEASURED off a live fighter first (owner LAW: no guesses).
+    // `y`, `vy`, `downTimer`, `getUpT` and `blocking` do NOT exist on a fighter — anything
+    // depending on them is deliberately absent rather than written against a hoped-for field.
+    if (!window.__contra){
+      const C = window.__contra = { samples:0, hits:{}, worst:{}, prev:new WeakMap() };
+      const flag = (kind, ev) => { C.hits[kind] = (C.hits[kind]||0)+1; if(!C.worst[kind]) C.worst[kind] = ev; };
+      setInterval(function(){
+        try{
+          const F = new Function('return typeof fighters!=="undefined"?fighters:null')() || [];
+          if (F.length < 2) return;
+          C.samples++;
+          const ZY = window.ZONE_Y || { RING:0, APRON:0, FLOOR:-0.85 };
+          for (let i=0;i<F.length;i++){
+            const f = F[i]; if (!f) continue;
+            const nm = (f.opts && f.opts.name) || f.specName || ('#'+i);
+
+            // 1. A ragdoll cannot be standing. This is the animation/physics authority fight.
+            if (f.ragdoll && /^(idle|walk|run|attack|block)$/.test(String(f.state)))
+              flag('RAGDOLL_WHILE_STANDING', nm+' ragdoll=true state='+f.state);
+
+            // 2. grappleStage advances only inside a grapple.
+            if (f.grappleStage > 0 && !f.grappling)
+              flag('GRAPPLE_STAGE_WITHOUT_GRAPPLE', nm+' stage='+f.grappleStage+' grappling=false');
+
+            // 3. ZONE vs ZONE_Y. A fighter on the FLOOR whose height says RING renders waist-deep
+            //    through the mat — the exact defect v161l fixed by unifying ZONE_Y.FLOOR to -0.85.
+            //    0.35 tolerates the documented 8x/6x smoothing lerp mid-transition.
+            if (f.zone && ZY[f.zone] !== undefined && isFinite(f.zoneY)
+                && Math.abs(f.zoneY - ZY[f.zone]) > 0.35)
+              flag('ZONE_HEIGHT_MISMATCH', nm+' zone='+f.zone+' expects y='+ZY[f.zone]+' but zoneY='+(+f.zoneY).toFixed(3));
+
+            // 4. Bounded quantities leaving their bounds.
+            if (isFinite(f.hp) && isFinite(f.maxHp) && (f.hp > f.maxHp + 1 || f.hp < -1))
+              flag('HP_OUT_OF_RANGE', nm+' hp='+Math.round(f.hp)+' max='+f.maxHp);
+            if (isFinite(f.stamina) && isFinite(f.maxStamina) && (f.stamina > f.maxStamina + 1 || f.stamina < -1))
+              flag('STAMINA_OUT_OF_RANGE', nm+' stamina='+(+f.stamina).toFixed(1)+' max='+(+f.maxStamina).toFixed(1));
+
+            // 5. Teleport. 100ms of the engine's own MAX_BODY_VEL 3.8 m/s is 0.38m; 1.5m is a jump
+            //    no locomotion produces, so it is a set rather than a move.
+            const pv = C.prev.get(f);
+            if (pv && isFinite(f.x) && isFinite(f.z)){
+              const d = Math.hypot(f.x-pv.x, f.z-pv.z);
+              if (d > 1.5) flag('TELEPORT', nm+' moved '+d.toFixed(2)+'m in one 100ms sample, state='+f.state);
+            }
+            C.prev.set(f, { x:f.x, z:f.z });
+
+            // 6. The engine's own stuck timer running away.
+            if (isFinite(f._stuckT) && f._stuckT > 5)
+              flag('STUCK_TIMER', nm+' _stuckT='+(+f._stuckT).toFixed(1)+' state='+f.state);
+          }
+
+          // 7. Grappling is a claim about TWO bodies. If one says it is grappling while the
+          //    nearest other fighter is metres away, the animation and the state disagree —
+          //    the "two-character animations drifting apart" failure, made measurable.
+          for (let i=0;i<F.length;i++){
+            const a = F[i]; if (!a || !a.grappling) continue;
+            let best = Infinity, who = '?';
+            for (let j=0;j<F.length;j++){
+              if (i===j || !F[j]) continue;
+              const d = Math.hypot(a.x-F[j].x, a.z-F[j].z);
+              if (d < best){ best = d; who = (F[j].opts&&F[j].opts.name)||('#'+j); }
+            }
+            if (isFinite(best) && best > 2.2)
+              flag('GRAPPLE_AT_RANGE', ((a.opts&&a.opts.name)||('#'+i))+' grappling but nearest ('+who+') is '+best.toFixed(2)+'m away');
+          }
+
+          // 8. Interpenetration — two bodies occupying the same space.
+          for (let i=0;i<F.length;i++) for (let j=i+1;j<F.length;j++){
+            const a=F[i], b=F[j]; if(!a||!b) continue;
+            const d = Math.hypot(a.x-b.x, a.z-b.z);
+            if (isFinite(d) && d < 0.18 && !a.grappling && !b.grappling)
+              flag('INTERPENETRATION', 'two fighters '+d.toFixed(3)+'m apart with no grapple');
+          }
+        }catch(e){}
+      }, 100);
+    }
     if (typeof window.updateFighterModel === 'function' && !window.updateFighterModel.__sm){
       const o = window.updateFighterModel;
       const TRACK = ['LeftArm','LeftForeArm','LeftHand','LeftUpLeg','LeftFoot','Spine1','Head'];
@@ -269,6 +350,21 @@ function WATCH(){
       else note('PROCEDURAL BODY', 'never shown while a model was in flight (' + P.samples + ' samples)');
     }
     if (Object.keys(health.states||{}).length < 2) fail('STATE MACHINE', 'the fighters never left one state: ' + JSON.stringify(health.states));
+
+    // Contradictions are reported as their own class. A contradiction is not a tuning question —
+    // two things the engine believes at once cannot both be right, so each is a real defect or a
+    // real flaw in the check, and either is worth knowing.
+    const C = await page.evaluate(() => window.__contra ? { samples:window.__contra.samples,
+      hits:window.__contra.hits, worst:window.__contra.worst } : null).catch(() => null);
+    report.contradictions = C;
+    if (C && C.samples > 0){
+      for (const kind of Object.keys(C.hits)){
+        fail('CONTRADICTION ' + kind, C.hits[kind] + '/' + C.samples + ' samples — e.g. ' + C.worst[kind]);
+      }
+      if (!Object.keys(C.hits).length) note('contradictions', '0 across ' + C.samples + ' samples (8 checks)');
+    } else if (C) {
+      note('contradictions', 'detector armed but took 0 samples');
+    }
   }catch(e){
     fail('HARNESS', String(e && e.message).split('\n')[0].slice(0,180));
   }
