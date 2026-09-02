@@ -102,6 +102,61 @@ approximation that says so out loud.
 **Tier 3** — the 2–7 edge middle. **Tier 4** — the six hubs. **Tier 5** —
 `BANNON_DNA`.
 
+## BLOCKER FOUND ATTEMPTING TIER 1 — a naive extraction breaks the phone
+
+I took the harness baseline, read `BANNON_EDITOR` (a clean 54-line IIFE with, on
+inspection, **zero** real dependencies — the `BANNON_RULES` edge the graph showed
+is the span artifact described in Finding 4), and was ready to move it to
+`src/modules/editor.js`.
+
+**Checking the shipping path first stopped it.** Both delivery mechanisms assume
+ONE file:
+
+```
+OTA   BANNON_v150.html  ->  dist/BANNON.html   (android.yml: cp, one file)
+      the app fetches dist/version.json, downloads dist/BANNON.html, swaps it
+
+APK   scripts/bundle_apk_assets.cjs copies a FIXED directory list:
+        assets/vendor, assets/ring, assets/models/props,
+        assets/models/mdickie_char, assets/mocap/open, assets/tron
+      `src/` is not in it, and would not be bundled.
+```
+
+So `<script src="src/modules/editor.js">` would 404 twice over: not present in
+the APK, and never delivered by an OTA update that ships only the HTML. The
+module would silently vanish on the device while working perfectly in a browser
+served from the repo — **exactly the failure recorded in `CLAUDE.md` as "the APK
+had no models in it"**, where the code was debugged for a week and the asset was
+simply absent.
+
+### The fix: split the SOURCE, ship ONE file
+
+Extraction must be paired with a build step that concatenates back:
+
+```
+src/modules/*.js  +  BANNON_v150.src.html
+        │
+        ▼  build step (new)
+   BANNON_v150.html          <- one file, byte-identical contract
+        │
+        ├── dist/BANNON.html   (OTA swap, unchanged)
+        └── APK bundle         (unchanged)
+```
+
+Developers edit modules; the shipped artifact stays a single file, so the OTA
+single-file swap, the cold-launch `document.write` bootstrap and the APK bundle
+all keep working untouched.
+
+**This build step does not exist yet, and it is now the first task — before any
+module moves.** Its own gate is cheap and non-negotiable: the concatenated
+output must be byte-identical to the current file when no module has been
+extracted yet, which proves the build is a no-op before it is trusted with real
+splits.
+
+The alternative — extracting into a directory the bundler already copies
+(`assets/`) — is rejected: it makes engine source an "asset", still needs the
+OTA path to deliver it, and scatters the code across two trees for no gain.
+
 ## The loop, per module
 
 ```
@@ -135,7 +190,31 @@ Neither is a merge candidate; both are worked examples in the same domain.
 
 Where all three agree a boundary exists, it is probably a real one.
 
+## Harness baseline, taken before any change
+
+`node tools/harness/smoke.cjs` on the current file, so a later extraction has
+something to be compared against:
+
+```
+strike   poseCalls 24   walk  poseCalls 18   grapple  poseCalls 0
+frames 126 in 59.5s (2.12 fps)   worst stall 4012ms
+states  walk 28, attack 15, idle 61, hurt 1, block 1, vault 3, dive 8,
+        falling 1, stumble 13
+2 FAILURES: BANNON / VIPER have no GLB bound
+```
+
+The two model failures are **pre-existing in this sandbox** and are the baseline,
+not a regression to chase here. An extraction is correct when these numbers come
+back the same.
+
+(`playwright` was not installed; `npm install --no-save playwright` with
+`PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` is enough — the browser is already at
+`/opt/pw-browsers`.)
+
 ## Status
 
-`STRUCTURALLY_VERIFIED` — measured, ordered, three candidates hand-verified.
-**No module has been extracted. No line of `BANNON_v150.html` has changed.**
+`STRUCTURALLY_VERIFIED` — measured, ordered, three candidates hand-verified,
+baseline captured, and the shipping blocker found before it did any damage.
+
+**No module has been extracted. No line of `BANNON_v150.html` has changed.** The
+next task is the concatenating build step, not a module move.
