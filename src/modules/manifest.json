@@ -1,0 +1,32 @@
+{
+  "//": "DETERMINISTIC CONCATENATION ORDER. Filesystem enumeration order is not a contract \u2014 readdir order varies by filesystem, and a build that reorders itself between runs cannot be diffed or trusted. Order here is the order modules are spliced back in, which must match the order they were extracted from so execution order is preserved.",
+  "modules": [
+    {
+      "name": "BANNON_EDITOR",
+      "file": "editor.js",
+      "originalSpan": "BANNON_v150.html lines 42746-42799, between BANNON_BUCKLES and BANNON_RULES",
+      "lines": 54,
+      "dependsOn": [],
+      "dependents": [],
+      "extractionCommit": "this commit",
+      "states": {
+        "SOURCE_SAFE": "yes \u2014 a self-contained IIFE; read in full",
+        "DEPENDENCY_SAFE": "yes \u2014 0 real inbound (its only mention elsewhere is a /* */ comment), 0 outbound. The BANNON_RULES edge the graph reported is the line-based span artifact.",
+        "BUILD_SAFE": "yes \u2014 round trip is byte-exact, SHA-256 06fbcc0f\u2026",
+        "DELIVERY_SAFE": "yes \u2014 reassembled into the single file before APK bundling and OTA, so no new fetch exists on any path",
+        "BEHAVIOR_VERIFIED": "yes \u2014 but by BYTE IDENTITY, not by comparing harness numbers. The built output is SHA-256 identical to the pre-extraction file, so there is no behaviour left to differ. Harness runs either side of it differ (strike poseCalls 24 vs 60, 2.12 vs 3.91 fps, models unbound vs bound) and that is HARNESS VARIANCE measuring itself: identical bytes cannot behave differently.",
+        "DEVICE_VERIFIED": "no \u2014 needs a real device run"
+      },
+      "originalStartOffset": 2965837,
+      "originalEndOffset": 2967708,
+      "originalLineRange": [
+        42746,
+        42799
+      ],
+      "precedingSourceSha256": "dec19d6b17670172b0998652e9f91c1e92ccc2481d8a084770de04099c797f49",
+      "moduleSourceSha256": "bcd5c26457b7bed5d043c1741b2e028a5d7d0260ef5b85c8b1cf77c6af282081",
+      "followingSourceSha256": "1618fd270b7f9172acaf65641dfce4d4d546bd7097db6ad59cf12e0856731e33",
+      "baselineOutputSha256": "06fbcc0fcea11ec71c7d72edd2661a8c683e6300e87a02c23a5a6dcbd87ccad3"
+    }
+  ]
+}
