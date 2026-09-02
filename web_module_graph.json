@@ -1,0 +1,1732 @@
+{
+  "file": "BANNON_v150.html",
+  "totalLines": 60065,
+  "moduleCount": 149,
+  "modules": [
+    {
+      "name": "BANNON_TRON_STUDIO",
+      "lines": 8,
+      "out": 0,
+      "in": 1,
+      "score": 1,
+      "dependsOn": []
+    },
+    {
+      "name": "BANNON_MDICKIE_PROPS",
+      "lines": 1,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_MDICKIE"
+      ]
+    },
+    {
+      "name": "BANNON_TELEMETRY_NDJSON",
+      "lines": 3,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_AUTONOMY_BRIDGE"
+      ]
+    },
+    {
+      "name": "BANNON_BUILD_INFO",
+      "lines": 14,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_OTA_NOTIFY"
+      ]
+    },
+    {
+      "name": "BANNON_PREFETCH_COMBAT",
+      "lines": 22,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_COMBAT_MOCAP"
+      ]
+    },
+    {
+      "name": "BANNON_MOCAP_LOAD",
+      "lines": 26,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_MOVESET_LIB"
+      ]
+    },
+    {
+      "name": "BANNON_DIALOGUE",
+      "lines": 33,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_STORY"
+      ]
+    },
+    {
+      "name": "BANNON_IMPACT",
+      "lines": 41,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_LIFT_CHECK"
+      ]
+    },
+    {
+      "name": "BANNON_CLIPWORKER",
+      "lines": 52,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_CLIP_MANIFEST"
+      ]
+    },
+    {
+      "name": "BANNON_EDITOR",
+      "lines": 54,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_RULES"
+      ]
+    },
+    {
+      "name": "BANNON_STATS",
+      "lines": 55,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_MOCAP_CORE",
+      "lines": 61,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_MOCAP_LOAD"
+      ]
+    },
+    {
+      "name": "BANNON_AUTHORED",
+      "lines": 66,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_VARIANTS"
+      ]
+    },
+    {
+      "name": "BANNON_SAVE_SCOPE",
+      "lines": 68,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_BOOT"
+      ]
+    },
+    {
+      "name": "BANNON_BASES_OFF",
+      "lines": 73,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_BASES"
+      ]
+    },
+    {
+      "name": "BANNON_PERF_AUTO",
+      "lines": 73,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_PERF"
+      ]
+    },
+    {
+      "name": "BANNON_COMBO",
+      "lines": 86,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_PROCGEN"
+      ]
+    },
+    {
+      "name": "BANNON_PROCGEN",
+      "lines": 93,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_AUTHORED"
+      ]
+    },
+    {
+      "name": "BANNON_SEGMENT",
+      "lines": 101,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_PREFETCH_COMBAT"
+      ]
+    },
+    {
+      "name": "BANNON_MATCHRULES",
+      "lines": 165,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_BONELOCK"
+      ]
+    },
+    {
+      "name": "BANNON_FLOW",
+      "lines": 174,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_RATING_CREDIT"
+      ]
+    },
+    {
+      "name": "BANNON_BROADCAST",
+      "lines": 177,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_PERF"
+      ]
+    },
+    {
+      "name": "BANNON_CLIP_MANIFEST",
+      "lines": 205,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_FOOTIK"
+      ]
+    },
+    {
+      "name": "BANNON_WARM",
+      "lines": 227,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_GFX"
+      ]
+    },
+    {
+      "name": "BANNON_MOVESET_STUDIO",
+      "lines": 282,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_REACH"
+      ]
+    },
+    {
+      "name": "BANNON_GODMODE",
+      "lines": 672,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_AUDIT"
+      ]
+    },
+    {
+      "name": "BANNON_OCTREE",
+      "lines": 3076,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_ROSTER"
+      ]
+    },
+    {
+      "name": "BANNON_VERSION",
+      "lines": 5302,
+      "out": 1,
+      "in": 1,
+      "score": 2,
+      "dependsOn": [
+        "BANNON_LOAD_FBX_LIBRARY"
+      ]
+    },
+    {
+      "name": "BANNON_OFFICE_MEETING",
+      "lines": 4,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_COURT"
+      ]
+    },
+    {
+      "name": "BANNON_FORGE_LOOP",
+      "lines": 8,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_AUDIT"
+      ]
+    },
+    {
+      "name": "BANNON_RATING_MOVE",
+      "lines": 15,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_SHOTCALLER"
+      ]
+    },
+    {
+      "name": "BANNON_CREATION_SUITE",
+      "lines": 43,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_ENTRANCE_EDITOR",
+        "BANNON_VENUES"
+      ]
+    },
+    {
+      "name": "BANNON_WORLD_UPGRADES",
+      "lines": 55,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_FULL_PROPS",
+        "BANNON_GODWITHIN_OPEN_WORLD"
+      ]
+    },
+    {
+      "name": "BANNON_LEGAL",
+      "lines": 58,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_LIFE"
+      ]
+    },
+    {
+      "name": "BANNON_CLOTH",
+      "lines": 60,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_OCTREE"
+      ]
+    },
+    {
+      "name": "BANNON_SKILLS",
+      "lines": 61,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_EXPERT_PROMPT"
+      ]
+    },
+    {
+      "name": "BANNON_LOAD_ARENA_ASSETS",
+      "lines": 68,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_LOAD_CHARACTER_ASSETS"
+      ]
+    },
+    {
+      "name": "BANNON_OTA_CHECK",
+      "lines": 73,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_BUILD_INFO",
+        "BANNON_PERF"
+      ]
+    },
+    {
+      "name": "BANNON_APEX",
+      "lines": 74,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_CAGE"
+      ]
+    },
+    {
+      "name": "BANNON_ENTRANCE_SEQ",
+      "lines": 81,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_LATE_BODIES"
+      ]
+    },
+    {
+      "name": "BANNON_GNM_FACE",
+      "lines": 86,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_MOCAP_CORE"
+      ]
+    },
+    {
+      "name": "BANNON_CLIP_VARIANTS",
+      "lines": 92,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_MOVE_LIBRARY",
+        "BANNON_MOVE_VARIANTS"
+      ]
+    },
+    {
+      "name": "BANNON_REACH",
+      "lines": 97,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_SENSOR"
+      ]
+    },
+    {
+      "name": "BANNON_AUTONOMY_BRIDGE",
+      "lines": 108,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_ROPES"
+      ]
+    },
+    {
+      "name": "BANNON_CAW_FRONT",
+      "lines": 115,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_CREATION_SUITE",
+        "BANNON_DNA"
+      ]
+    },
+    {
+      "name": "BANNON_LIFT_CHECK",
+      "lines": 115,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_FLOW"
+      ]
+    },
+    {
+      "name": "BANNON_MOVESET_SLOTS",
+      "lines": 129,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_BASES_OFF"
+      ]
+    },
+    {
+      "name": "BANNON_SAVES",
+      "lines": 132,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_CAGE",
+        "BANNON_CELL_ROOF"
+      ]
+    },
+    {
+      "name": "BANNON_GRID",
+      "lines": 142,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_LIFE",
+        "BANNON_ROAMFREE"
+      ]
+    },
+    {
+      "name": "BANNON_VENUES",
+      "lines": 156,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_OTA_CHECK",
+        "BANNON_WORLD"
+      ]
+    },
+    {
+      "name": "BANNON_GFX",
+      "lines": 160,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_PREWARM"
+      ]
+    },
+    {
+      "name": "BANNON_PREWARM",
+      "lines": 160,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_BRIDGE"
+      ]
+    },
+    {
+      "name": "BANNON_LOADORDER",
+      "lines": 164,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_CLIPWORKER"
+      ]
+    },
+    {
+      "name": "BANNON_MOCAP",
+      "lines": 195,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_BRAIN"
+      ]
+    },
+    {
+      "name": "BANNON_STYLE",
+      "lines": 233,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_ENTRANCE",
+        "BANNON_STORY"
+      ]
+    },
+    {
+      "name": "BANNON_UI",
+      "lines": 257,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_DAEMON",
+        "BANNON_REF"
+      ]
+    },
+    {
+      "name": "BANNON_PAYBACKS",
+      "lines": 276,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_CLIP_ROTATE",
+        "BANNON_ROSTER_MOVESETS"
+      ]
+    },
+    {
+      "name": "BANNON_ZONEMOVE",
+      "lines": 311,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_TAUNTS"
+      ]
+    },
+    {
+      "name": "BANNON_ROAMFREE",
+      "lines": 325,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_PERF_AUTO"
+      ]
+    },
+    {
+      "name": "BANNON_PANELS",
+      "lines": 332,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_MOVEPOOL",
+        "BANNON_STYLE"
+      ]
+    },
+    {
+      "name": "BANNON_ROSTER_UI",
+      "lines": 349,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_SAVES",
+        "BANNON_SAVE_SCOPE"
+      ]
+    },
+    {
+      "name": "BANNON_MOVE_VARIANTS",
+      "lines": 385,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_PINS",
+        "BANNON_REF"
+      ]
+    },
+    {
+      "name": "BANNON_RINGRULES",
+      "lines": 398,
+      "out": 2,
+      "in": 1,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_BUCKLES",
+        "BANNON_ZONEMOVE"
+      ]
+    },
+    {
+      "name": "BANNON_BOOT",
+      "lines": 803,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_BOOT_SCREEN"
+      ]
+    },
+    {
+      "name": "BANNON_LOAD_CHARACTER_ASSETS",
+      "lines": 2489,
+      "out": 1,
+      "in": 2,
+      "score": 3,
+      "dependsOn": [
+        "BANNON_LOAD_FBX_LIBRARY"
+      ]
+    },
+    {
+      "name": "BANNON_TELEMETRY_LOG",
+      "lines": 10,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_AUDIT",
+        "BANNON_INSPECT",
+        "BANNON_TELEMETRY_NDJSON"
+      ]
+    },
+    {
+      "name": "BANNON_ANIMATION_DECOMPRESSOR",
+      "lines": 31,
+      "out": 2,
+      "in": 2,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_EXPANDED_WORLD",
+        "BANNON_MOVE_LIBRARY"
+      ]
+    },
+    {
+      "name": "BANNON_EXPANDED_WORLD",
+      "lines": 32,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_ANIMATION_DECOMPRESSOR",
+        "BANNON_ENVIRONMENTS",
+        "BANNON_WORLD_UPGRADES"
+      ]
+    },
+    {
+      "name": "BANNON_AUTOPILOT",
+      "lines": 41,
+      "out": 2,
+      "in": 2,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_EXPERT_PROMPT",
+        "BANNON_SKILLS"
+      ]
+    },
+    {
+      "name": "BANNON_TRAINING_MINIGAMES",
+      "lines": 45,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_FULL_PROPS",
+        "BANNON_RPG",
+        "BANNON_SETTINGS_MENU"
+      ]
+    },
+    {
+      "name": "BANNON_MDICKIE_LEGACY_MODULE",
+      "lines": 57,
+      "out": 2,
+      "in": 2,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_GNM_FACE",
+        "BANNON_RPG"
+      ]
+    },
+    {
+      "name": "BANNON_ENTRANCES",
+      "lines": 68,
+      "out": 2,
+      "in": 2,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_GODWITHIN",
+        "BANNON_STORY"
+      ]
+    },
+    {
+      "name": "BANNON_GODWITHIN_OPEN_WORLD",
+      "lines": 71,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_GODWITHIN",
+        "BANNON_MDICKIE_LEGACY_MODULE",
+        "BANNON_RPG"
+      ]
+    },
+    {
+      "name": "BANNON_LIFE_UI",
+      "lines": 83,
+      "out": 1,
+      "in": 3,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_CLIP_VARIANTS"
+      ]
+    },
+    {
+      "name": "BANNON_ENTRANCE_RUNIN",
+      "lines": 129,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_BROADCAST",
+        "BANNON_ENTRANCE",
+        "BANNON_INTERFERENCE"
+      ]
+    },
+    {
+      "name": "BANNON_BONELOCK",
+      "lines": 150,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_BUCKLES",
+        "BANNON_RINGRULES",
+        "BANNON_RULES"
+      ]
+    },
+    {
+      "name": "BANNON_CLIP_ROTATE",
+      "lines": 159,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_FX",
+        "BANNON_LIFE",
+        "BANNON_SHOWTIME"
+      ]
+    },
+    {
+      "name": "BANNON_TRAVEL",
+      "lines": 165,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_CARDS",
+        "BANNON_NEWS",
+        "BANNON_STORY"
+      ]
+    },
+    {
+      "name": "BANNON_BREAK",
+      "lines": 194,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_ENTRANCE",
+        "BANNON_TRON",
+        "BANNON_TRONVIDEO"
+      ]
+    },
+    {
+      "name": "BANNON_FOOTIK",
+      "lines": 196,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_BREAK",
+        "BANNON_FX",
+        "BANNON_PROPS"
+      ]
+    },
+    {
+      "name": "BANNON_WALKOUT",
+      "lines": 203,
+      "out": 1,
+      "in": 3,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_MATCHRULES"
+      ]
+    },
+    {
+      "name": "BANNON_SHOTCALLER",
+      "lines": 222,
+      "out": 2,
+      "in": 2,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_MOVEPOOL",
+        "BANNON_MOVE_LIBRARY"
+      ]
+    },
+    {
+      "name": "BANNON_STIP",
+      "lines": 279,
+      "out": 3,
+      "in": 1,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_OWNER_MOVES",
+        "BANNON_ROSTER_MOVESETS",
+        "BANNON_TAG"
+      ]
+    },
+    {
+      "name": "BANNON_PROPS",
+      "lines": 563,
+      "out": 1,
+      "in": 3,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_UI"
+      ]
+    },
+    {
+      "name": "BANNON_ROPES",
+      "lines": 2929,
+      "out": 2,
+      "in": 2,
+      "score": 4,
+      "dependsOn": [
+        "BANNON_AUTOPILOT",
+        "BANNON_VERSION"
+      ]
+    },
+    {
+      "name": "BANNON_PROMOS",
+      "lines": 36,
+      "out": 2,
+      "in": 3,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_ITEMS",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_NEWS",
+      "lines": 36,
+      "out": 1,
+      "in": 4,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_ENTRANCES"
+      ]
+    },
+    {
+      "name": "BANNON_SETTINGS_MENU",
+      "lines": 50,
+      "out": 2,
+      "in": 3,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_ANIMATION_DECOMPRESSOR",
+        "BANNON_JUKEBOX"
+      ]
+    },
+    {
+      "name": "BANNON_PROMOTIONS",
+      "lines": 54,
+      "out": 1,
+      "in": 4,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_PORTRAITS"
+      ]
+    },
+    {
+      "name": "BANNON_FULL_PROPS",
+      "lines": 57,
+      "out": 2,
+      "in": 3,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_APEX",
+        "BANNON_CAGE"
+      ]
+    },
+    {
+      "name": "BANNON_AI_DNA",
+      "lines": 66,
+      "out": 2,
+      "in": 3,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_AUTONOMY_BRIDGE",
+        "BANNON_TELEMETRY_LOG"
+      ]
+    },
+    {
+      "name": "BANNON_LEGACY",
+      "lines": 104,
+      "out": 3,
+      "in": 2,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_STORY",
+        "BANNON_UNIVERSE",
+        "BANNON_WEAPONS_CATALOG"
+      ]
+    },
+    {
+      "name": "BANNON_TRAUMA",
+      "lines": 106,
+      "out": 2,
+      "in": 3,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_MOVESET_LIB",
+        "BANNON_RIGS"
+      ]
+    },
+    {
+      "name": "BANNON_EXPERT_PROMPT",
+      "lines": 124,
+      "out": 2,
+      "in": 3,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_AI_DNA",
+        "BANNON_SKILLS"
+      ]
+    },
+    {
+      "name": "BANNON_COURT",
+      "lines": 125,
+      "out": 3,
+      "in": 2,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_IMPACT",
+        "BANNON_MOVESET_LIB",
+        "BANNON_MOVE_LIBRARY"
+      ]
+    },
+    {
+      "name": "BANNON_ITEMS",
+      "lines": 145,
+      "out": 3,
+      "in": 2,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_ENVIRONMENTS",
+        "BANNON_NEWS",
+        "BANNON_RPG"
+      ]
+    },
+    {
+      "name": "BANNON_LATE_BODIES",
+      "lines": 172,
+      "out": 4,
+      "in": 1,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_ENTRANCE_SEQ",
+        "BANNON_TRON",
+        "BANNON_TRONVIDEO",
+        "BANNON_TRON_STUDIO"
+      ]
+    },
+    {
+      "name": "BANNON_BRIDGE",
+      "lines": 185,
+      "out": 4,
+      "in": 1,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_GFX",
+        "BANNON_LIFE",
+        "BANNON_PANELS",
+        "BANNON_PREWARM"
+      ]
+    },
+    {
+      "name": "BANNON_MOVESET_LIB",
+      "lines": 199,
+      "out": 1,
+      "in": 4,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_CAW_FRONT"
+      ]
+    },
+    {
+      "name": "BANNON_SENSOR",
+      "lines": 205,
+      "out": 3,
+      "in": 2,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_GRID",
+        "BANNON_MOCAP",
+        "BANNON_ROAMFREE"
+      ]
+    },
+    {
+      "name": "BANNON_PERF",
+      "lines": 207,
+      "out": 2,
+      "in": 3,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_LOADORDER",
+        "BANNON_ROSTER_MOVESETS"
+      ]
+    },
+    {
+      "name": "BANNON_OTA_NOTIFY",
+      "lines": 290,
+      "out": 4,
+      "in": 1,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_ENVIRONMENTS",
+        "BANNON_MDICKIE_PROPS",
+        "BANNON_WEAPONS",
+        "BANNON_WORLD"
+      ]
+    },
+    {
+      "name": "BANNON_COMBAT_MOCAP",
+      "lines": 296,
+      "out": 3,
+      "in": 2,
+      "score": 5,
+      "dependsOn": [
+        "BANNON_BASES",
+        "BANNON_MOVESET_SLOTS",
+        "BANNON_ROSTER"
+      ]
+    },
+    {
+      "name": "BANNON_RATING_CREDIT",
+      "lines": 1,
+      "out": 1,
+      "in": 5,
+      "score": 6,
+      "dependsOn": [
+        "BANNON_RATING_MOVE"
+      ]
+    },
+    {
+      "name": "BANNON_WORLD",
+      "lines": 49,
+      "out": 2,
+      "in": 4,
+      "score": 6,
+      "dependsOn": [
+        "BANNON_ENVIRONMENTS",
+        "BANNON_RPG"
+      ]
+    },
+    {
+      "name": "BANNON_WEAPONS",
+      "lines": 53,
+      "out": 1,
+      "in": 5,
+      "score": 6,
+      "dependsOn": [
+        "BANNON_MOVE_LIBRARY"
+      ]
+    },
+    {
+      "name": "BANNON_CAGE",
+      "lines": 73,
+      "out": 2,
+      "in": 4,
+      "score": 6,
+      "dependsOn": [
+        "BANNON_SETTINGS_MENU",
+        "BANNON_TRAINING_MINIGAMES"
+      ]
+    },
+    {
+      "name": "BANNON_TAUNTS",
+      "lines": 136,
+      "out": 3,
+      "in": 3,
+      "score": 6,
+      "dependsOn": [
+        "BANNON_ENTRANCE_RUNIN",
+        "BANNON_FX",
+        "BANNON_TRON"
+      ]
+    },
+    {
+      "name": "BANNON_SEASON",
+      "lines": 163,
+      "out": 2,
+      "in": 4,
+      "score": 6,
+      "dependsOn": [
+        "BANNON_ROSTER_MOVESETS",
+        "BANNON_TAG"
+      ]
+    },
+    {
+      "name": "BANNON_BUCKLES",
+      "lines": 167,
+      "out": 3,
+      "in": 3,
+      "score": 6,
+      "dependsOn": [
+        "BANNON_CAREER",
+        "BANNON_EDITOR",
+        "BANNON_STORY"
+      ]
+    },
+    {
+      "name": "BANNON_INSPECT",
+      "lines": 169,
+      "out": 3,
+      "in": 3,
+      "score": 6,
+      "dependsOn": [
+        "BANNON_AUDIT",
+        "BANNON_AUTOPILOT",
+        "BANNON_FORGE_LOOP"
+      ]
+    },
+    {
+      "name": "BANNON_BASES",
+      "lines": 247,
+      "out": 3,
+      "in": 3,
+      "score": 6,
+      "dependsOn": [
+        "BANNON_COMBO",
+        "BANNON_MOVESET_LIB",
+        "BANNON_RATING_CREDIT"
+      ]
+    },
+    {
+      "name": "BANNON_DAEMON",
+      "lines": 62,
+      "out": 3,
+      "in": 4,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_AUDIT",
+        "BANNON_FORGE_LOOP",
+        "BANNON_INSPECT"
+      ]
+    },
+    {
+      "name": "BANNON_MOVE_LIBRARY",
+      "lines": 80,
+      "out": 1,
+      "in": 6,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_JUKEBOX"
+      ]
+    },
+    {
+      "name": "BANNON_RIGS",
+      "lines": 93,
+      "out": 5,
+      "in": 2,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_CARDS",
+        "BANNON_MDICKIE_LEGACY_MODULE",
+        "BANNON_OFFICE_MEETING",
+        "BANNON_STORY",
+        "BANNON_WEAPONS"
+      ]
+    },
+    {
+      "name": "BANNON_VARIANTS",
+      "lines": 160,
+      "out": 6,
+      "in": 1,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_CARDS",
+        "BANNON_COURT",
+        "BANNON_INTERFERENCE",
+        "BANNON_LEGAL",
+        "BANNON_REF",
+        "BANNON_TRAUMA"
+      ]
+    },
+    {
+      "name": "BANNON_PORTRAITS",
+      "lines": 167,
+      "out": 4,
+      "in": 3,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_ENTRANCES",
+        "BANNON_ITEMS",
+        "BANNON_LOADORDER",
+        "BANNON_NEWS"
+      ]
+    },
+    {
+      "name": "BANNON_OWNER_MOVES",
+      "lines": 174,
+      "out": 6,
+      "in": 1,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_COMBAT_MOCAP",
+        "BANNON_ROSTER_MOVESETS",
+        "BANNON_TAUNTS",
+        "BANNON_WALKOUT",
+        "BANNON_WARM",
+        "BANNON_ZONEMOVE"
+      ]
+    },
+    {
+      "name": "BANNON_JUKEBOX",
+      "lines": 222,
+      "out": 2,
+      "in": 5,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_DNA",
+        "BANNON_STATS"
+      ]
+    },
+    {
+      "name": "BANNON_TRONVIDEO",
+      "lines": 231,
+      "out": 5,
+      "in": 2,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_ENTRANCE",
+        "BANNON_ENTRANCE_SEQ",
+        "BANNON_FX",
+        "BANNON_TRON",
+        "BANNON_WALKOUT"
+      ]
+    },
+    {
+      "name": "BANNON_CELL_ROOF",
+      "lines": 382,
+      "out": 6,
+      "in": 1,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_CAGE",
+        "BANNON_ENVIRONMENTS",
+        "BANNON_MDICKIE",
+        "BANNON_PROPS",
+        "BANNON_STIP",
+        "BANNON_WEAPONS"
+      ]
+    },
+    {
+      "name": "BANNON_BRAIN",
+      "lines": 579,
+      "out": 5,
+      "in": 2,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_DAEMON",
+        "BANNON_FX",
+        "BANNON_PORTRAITS",
+        "BANNON_PROPS",
+        "BANNON_ROSTER"
+      ]
+    },
+    {
+      "name": "BANNON_TAG",
+      "lines": 596,
+      "out": 5,
+      "in": 2,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_PROMOTIONS",
+        "BANNON_ROSTER_UI",
+        "BANNON_SEASON",
+        "BANNON_STORY",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_SHOWTIME",
+      "lines": 837,
+      "out": 6,
+      "in": 1,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_ENVIRONMENTS",
+        "BANNON_LIFE",
+        "BANNON_LIFE_UI",
+        "BANNON_SEASON",
+        "BANNON_UNIVERSE",
+        "BANNON_WORLD"
+      ]
+    },
+    {
+      "name": "BANNON_LOAD_FBX_LIBRARY",
+      "lines": 1962,
+      "out": 4,
+      "in": 3,
+      "score": 7,
+      "dependsOn": [
+        "BANNON_AI_DNA",
+        "BANNON_BRAIN",
+        "BANNON_LOAD_ARENA_ASSETS",
+        "BANNON_SENSOR"
+      ]
+    },
+    {
+      "name": "BANNON_TRON",
+      "lines": 24,
+      "out": 1,
+      "in": 7,
+      "score": 8,
+      "dependsOn": [
+        "BANNON_ENTRANCE"
+      ]
+    },
+    {
+      "name": "BANNON_RULES",
+      "lines": 69,
+      "out": 3,
+      "in": 5,
+      "score": 8,
+      "dependsOn": [
+        "BANNON_PROMOS",
+        "BANNON_STORY",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_CARDS",
+      "lines": 178,
+      "out": 3,
+      "in": 5,
+      "score": 8,
+      "dependsOn": [
+        "BANNON_CAREER",
+        "BANNON_TRAUMA",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_REF",
+      "lines": 244,
+      "out": 1,
+      "in": 7,
+      "score": 8,
+      "dependsOn": [
+        "BANNON_WEAPONS"
+      ]
+    },
+    {
+      "name": "BANNON_PINS",
+      "lines": 554,
+      "out": 5,
+      "in": 3,
+      "score": 8,
+      "dependsOn": [
+        "BANNON_BASES",
+        "BANNON_MOVESET_STUDIO",
+        "BANNON_RATING_CREDIT",
+        "BANNON_REF",
+        "BANNON_ROSTER"
+      ]
+    },
+    {
+      "name": "BANNON_ENTRANCE_EDITOR",
+      "lines": 589,
+      "out": 5,
+      "in": 3,
+      "score": 8,
+      "dependsOn": [
+        "BANNON_ENTRANCE",
+        "BANNON_LEGACY",
+        "BANNON_MDICKIE",
+        "BANNON_STORY",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_AUDIT",
+      "lines": 848,
+      "out": 3,
+      "in": 5,
+      "score": 8,
+      "dependsOn": [
+        "BANNON_DAEMON",
+        "BANNON_EXPERT_PROMPT",
+        "BANNON_INSPECT"
+      ]
+    },
+    {
+      "name": "BANNON_FX",
+      "lines": 67,
+      "out": 1,
+      "in": 8,
+      "score": 9,
+      "dependsOn": [
+        "BANNON_TRON"
+      ]
+    },
+    {
+      "name": "BANNON_RPG",
+      "lines": 87,
+      "out": 3,
+      "in": 6,
+      "score": 9,
+      "dependsOn": [
+        "BANNON_FULL_PROPS",
+        "BANNON_GODWITHIN",
+        "BANNON_LIFE"
+      ]
+    },
+    {
+      "name": "BANNON_CAREER",
+      "lines": 120,
+      "out": 3,
+      "in": 6,
+      "score": 9,
+      "dependsOn": [
+        "BANNON_MDICKIE",
+        "BANNON_STORY",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_MOVEPOOL",
+      "lines": 305,
+      "out": 6,
+      "in": 3,
+      "score": 9,
+      "dependsOn": [
+        "BANNON_INTERFERENCE",
+        "BANNON_RATING_CREDIT",
+        "BANNON_REF",
+        "BANNON_ROSTER",
+        "BANNON_RULES",
+        "BANNON_STORY"
+      ]
+    },
+    {
+      "name": "BANNON_BOOT_SCREEN",
+      "lines": 2325,
+      "out": 8,
+      "in": 1,
+      "score": 9,
+      "dependsOn": [
+        "BANNON_BOOT",
+        "BANNON_CAREER",
+        "BANNON_CLOTH",
+        "BANNON_LIFE",
+        "BANNON_MDICKIE",
+        "BANNON_MOVEPOOL",
+        "BANNON_STORY",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_ROSTER",
+      "lines": 24,
+      "out": 1,
+      "in": 9,
+      "score": 10,
+      "dependsOn": [
+        "BANNON_DNA"
+      ]
+    },
+    {
+      "name": "BANNON_ENVIRONMENTS",
+      "lines": 105,
+      "out": 1,
+      "in": 10,
+      "score": 11,
+      "dependsOn": [
+        "BANNON_WORLD"
+      ]
+    },
+    {
+      "name": "BANNON_INTERFERENCE",
+      "lines": 125,
+      "out": 6,
+      "in": 5,
+      "score": 11,
+      "dependsOn": [
+        "BANNON_CARDS",
+        "BANNON_PROMOS",
+        "BANNON_RIGS",
+        "BANNON_ROSTER",
+        "BANNON_SEGMENT",
+        "BANNON_STORY"
+      ]
+    },
+    {
+      "name": "BANNON_WEAPONS_CATALOG",
+      "lines": 347,
+      "out": 10,
+      "in": 1,
+      "score": 11,
+      "dependsOn": [
+        "BANNON_BUCKLES",
+        "BANNON_CAREER",
+        "BANNON_GODWITHIN",
+        "BANNON_LEGACY",
+        "BANNON_MDICKIE",
+        "BANNON_PORTRAITS",
+        "BANNON_PROMOTIONS",
+        "BANNON_SEASON",
+        "BANNON_STORY",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_ENTRANCE",
+      "lines": 112,
+      "out": 5,
+      "in": 7,
+      "score": 12,
+      "dependsOn": [
+        "BANNON_ENTRANCE_EDITOR",
+        "BANNON_FX",
+        "BANNON_STORY",
+        "BANNON_TRON",
+        "BANNON_WALKOUT"
+      ]
+    },
+    {
+      "name": "BANNON_ROSTER_MOVESETS",
+      "lines": 388,
+      "out": 7,
+      "in": 5,
+      "score": 12,
+      "dependsOn": [
+        "BANNON_INTERFERENCE",
+        "BANNON_MOVESET_SLOTS",
+        "BANNON_PAYBACKS",
+        "BANNON_PINS",
+        "BANNON_REF",
+        "BANNON_RULES",
+        "BANNON_TRAUMA"
+      ]
+    },
+    {
+      "name": "BANNON_GODWITHIN",
+      "lines": 85,
+      "out": 8,
+      "in": 5,
+      "score": 13,
+      "dependsOn": [
+        "BANNON_ENVIRONMENTS",
+        "BANNON_LIFE",
+        "BANNON_LIFE_UI",
+        "BANNON_PROMOS",
+        "BANNON_PROMOTIONS",
+        "BANNON_ROSTER",
+        "BANNON_STORY",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_MDICKIE",
+      "lines": 340,
+      "out": 8,
+      "in": 7,
+      "score": 15,
+      "dependsOn": [
+        "BANNON_CARDS",
+        "BANNON_ENVIRONMENTS",
+        "BANNON_FX",
+        "BANNON_NEWS",
+        "BANNON_OFFICE_MEETING",
+        "BANNON_STORY",
+        "BANNON_TRAVEL",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_LIFE",
+      "lines": 1085,
+      "out": 9,
+      "in": 8,
+      "score": 17,
+      "dependsOn": [
+        "BANNON_CAREER",
+        "BANNON_ENVIRONMENTS",
+        "BANNON_LEGAL",
+        "BANNON_LIFE_UI",
+        "BANNON_MDICKIE",
+        "BANNON_ROSTER",
+        "BANNON_RPG",
+        "BANNON_UNIVERSE",
+        "BANNON_WEAPONS"
+      ]
+    },
+    {
+      "name": "BANNON_UNIVERSE",
+      "lines": 248,
+      "out": 4,
+      "in": 15,
+      "score": 19,
+      "dependsOn": [
+        "BANNON_DIALOGUE",
+        "BANNON_JUKEBOX",
+        "BANNON_PROMOTIONS",
+        "BANNON_STORY"
+      ]
+    },
+    {
+      "name": "BANNON_STORY",
+      "lines": 170,
+      "out": 3,
+      "in": 19,
+      "score": 22,
+      "dependsOn": [
+        "BANNON_CAREER",
+        "BANNON_JUKEBOX",
+        "BANNON_UNIVERSE"
+      ]
+    },
+    {
+      "name": "BANNON_DNA",
+      "lines": 16765,
+      "out": 32,
+      "in": 3,
+      "score": 35,
+      "dependsOn": [
+        "BANNON_AI_DNA",
+        "BANNON_APEX",
+        "BANNON_CLOTH",
+        "BANNON_DAEMON",
+        "BANNON_ENTRANCE",
+        "BANNON_ENTRANCE_EDITOR",
+        "BANNON_ENVIRONMENTS",
+        "BANNON_FX",
+        "BANNON_GNM_FACE",
+        "BANNON_GODMODE",
+        "BANNON_GODWITHIN",
+        "BANNON_INTERFERENCE",
+        "BANNON_JUKEBOX",
+        "BANNON_LIFT_CHECK",
+        "BANNON_LOAD_ARENA_ASSETS",
+        "BANNON_LOAD_CHARACTER_ASSETS",
+        "BANNON_LOAD_FBX_LIBRARY",
+        "BANNON_MOCAP",
+        "BANNON_MOVE_LIBRARY",
+        "BANNON_PINS",
+        "BANNON_RATING_CREDIT",
+        "BANNON_RATING_MOVE",
+        "BANNON_REACH",
+        "BANNON_REF",
+        "BANNON_ROPES",
+        "BANNON_ROSTER",
+        "BANNON_RULES",
+        "BANNON_SEASON",
+        "BANNON_SETTINGS_MENU",
+        "BANNON_SHOTCALLER",
+        "BANNON_TAUNTS",
+        "BANNON_TRON"
+      ]
+    }
+  ]
+}

@@ -26,50 +26,72 @@ jobs:
       - name: Compile TypeScript
         run: npm run build
 
+  verify-unreal-wiring:
+    name: Verify Unreal Module Wiring
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      # What a hosted runner CAN check without the engine: that every module
+      # holding C++ is declared, and every declared module has a Build.cs.
+      # BannonEngine sat undeclared with 31 files and the entire content schema,
+      # and nothing failed — this is the gate that makes that loud.
+      - name: Verify module wiring
+        run: node scripts/verify_unreal_modules.cjs
+
   build-unreal-physics:
     name: Compile Native Unreal C++
-    runs-on: ubuntu-latest
+    needs: verify-unreal-wiring
+    # A real Unreal compile needs a licensed ~100GB engine install, which no
+    # hosted runner has. This job previously used `epicgames/unreal-engine-github-action`,
+    # an action that DOES NOT EXIST — so it failed in two seconds at action
+    # resolution on every run, on main included, while presenting itself as the
+    # Unreal compile gate. It never compiled anything.
+    #
+    # It now runs only where an engine actually exists. Set the repository
+    # variable UNREAL_RUNNER_AVAILABLE=true once a self-hosted runner labelled
+    # `unreal` is attached. Until then the job is SKIPPED, which is the honest
+    # state — not a pass, and not a permanent red that means nothing.
+    if: ${{ vars.UNREAL_RUNNER_AVAILABLE == 'true' }}
+    runs-on: [self-hosted, unreal]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           lfs: true
-          
-      # Build Linux Editor/Server
-      - name: Build Unreal Project (Linux)
-        id: build_unreal_linux
-        uses: epicgames/unreal-engine-github-action@v1
-        with:
-          project: unreal/Bannon.uproject
-          target: BannonEditor
-          build-configuration: Development
-          platform: Linux
-        env:
-          GITHUB_TOKEN: ${{ secrets.UE_GITHUB_TOKEN }}
-          
-      # Build Android APK Artifacts
-      - name: Build Unreal Project (Android APK)
-        id: build_unreal_android
-        uses: epicgames/unreal-engine-github-action@v1
-        with:
-          project: unreal/Bannon.uproject
-          target: Bannon
-          build-configuration: Shipping
-          platform: Android
-        env:
-          GITHUB_TOKEN: ${{ secrets.UE_GITHUB_TOKEN }}
-          
-      # Upload APK to GitHub Artifacts for the user to download and play
+          submodules: recursive
+
+      - name: Build Unreal Project (Linux Editor)
+        run: |
+          "$UE_ROOT/Engine/Build/BatchFiles/Linux/Build.sh" \
+            BannonEditor Linux Development \
+            -project="$GITHUB_WORKSPACE/unreal/Bannon.uproject" -waitmutex
+
+      - name: Build Unreal Project (Android Shipping)
+        run: |
+          "$UE_ROOT/Engine/Build/BatchFiles/Linux/Build.sh" \
+            Bannon Android Shipping \
+            -project="$GITHUB_WORKSPACE/unreal/Bannon.uproject" -waitmutex
+
       - name: Upload Android APK
         uses: actions/upload-artifact@v4
         with:
           name: Bannon-Android-APK
           path: unreal/Saved/StagedBuilds/Android/
-          
-      # The n8n Orchestrator Loop: Route failure logs straight to the AI for autonomous fixes
+
+      # Guarded: an unset webhook must not turn a real build result into a
+      # curl failure that masks it.
       - name: Trigger n8n Agent Webhook on Failure
-        if: failure()
+        if: failure() && env.N8N_WEBHOOK_URL != ''
+        env:
+          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
         run: |
-          curl -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
-          -H "Content-Type: application/json" \
-          -d "{\"repository\": \"${{ github.repository }}\", \"commit\": \"${{ github.sha }}\", \"status\": \"failed\", \"error_log_url\": \"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
+          curl -X POST "$N8N_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "{\"repository\": \"${{ github.repository }}\", \"commit\": \"${{ github.sha }}\", \"status\": \"failed\", \"error_log_url\": \"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
