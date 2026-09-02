@@ -33,3 +33,5 @@ The worker must execute:
 2. JAGER `.glb` imports into `Content/Characters/JAGER/`.
 
 Upon success or failure, the worker MUST push evidence logs (compilation output, commandlet logs) and any successfully generated binaries/assets, returning the execution flow to M. Engine.
+
+| Artifact Transport | **PARTIALLY_VERIFIED** | Real HTTP file transport implemented in `worker.js` and verified with test bytes to M. Engine. |
