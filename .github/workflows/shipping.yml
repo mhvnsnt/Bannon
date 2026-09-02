@@ -20,5 +20,17 @@ jobs:
         with: { node-version: '20' }
       - name: Shipping gate (dangling references)
         run: node scripts/verify_shipping.cjs
+      # BANNON_v150.html is now GENERATED from BANNON_v150.src.html plus
+      # src/modules/*.js. Editing a module without rebuilding would ship the old
+      # file while the source says otherwise — and the OTA/APK paths deliver the
+      # GENERATED file, so the stale copy is the one that reaches the phone.
+      # A gate nothing runs is not a gate; this is the path that sets it.
+      - name: Built engine is not stale
+        run: node scripts/build_web.cjs --check
+      # Records why each extracted module is safe where it sits. Informational —
+      # every module is spliced back at its original position, so this reports
+      # rather than blocks.
+      - name: Module lexical-scope classification
+        run: node scripts/check_module_scope.cjs
       - name: Existing integrity checks
         run: node scripts/verify_integrity.cjs || true
