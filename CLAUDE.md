@@ -1783,11 +1783,40 @@ judging a grip on its approach frame is an artifact — one frame at 0.785 m wit
 dominating the drift figure. The discard is REPORTED, not hidden. And drift is judged on the p5-p95
 BAND with the full range printed beside it, so a single stage-boundary frame cannot define a verdict.
 
+### THE CARRY, FINISHED — HOLD WHAT YOU CAN ACTUALLY HOLD
+The reach clamp on its own puts the hand at full extension pointing at the right place and touching
+NOTHING. Through the hoist the declared chest grip was out of reach on 61-73% of frames by ~0.27 m,
+because the carry lifts the victim past where the arm can follow. A man carrying a body grips
+whatever part of it is in his hands — so when the declared grip is beyond the arm, the adapter aims
+at the grippable bone NEAREST THE DECLARED GRIP that is genuinely in reach, and clamps only when
+nothing on the body is reachable at all. Both outcomes are counted (222-234 rerouted per run, 11-24
+stranded). Out-of-reach at the hoist **61-73% -> 5-13%**. Final A/B/A/B, mean contact:
+    stage 1 LOCK-UP   control 0.329/0.274 and 0.578/0.448   ->   0.050/0.076 and 0.054/0.061
+    stage 2 HOIST     control 0.271/0.320 and 0.473/0.595   ->   0.068/0.059 and 0.080/0.070
+Every treatment run is inside the engine's own 0.15 m definition of contact; no control run is. The
+distributions do not overlap.
+
+### WHY MORE ITERATIONS WOULD BUY NOTHING — MEASURED, NOT ASSUMED
+The post-solve residual (hand to target AFTER the solve) is **mean 0.024 m, max 0.118 m**. CCD is
+converging. The leftover jitter is the TARGET MOVING — the lock-up jockey oscillates the chest and
+the nearest-bone answer flips between the chest and the braced forearm — not the solver failing.
+Two causes needing different answers, so they are measured apart. **Do not re-tune the iteration
+count; that is not where the residual is.**
+
+### TWO MORE DEFECTS IN THE INSTRUMENT, FOUND THE SAME WAY
+5. **`grappleStage` GOES STALE.** When a hold breaks, the attacker can be left reading stage 1 with
+   nobody in his hands, and one run in five reported a lock-up "contact" of 0.944 m with a 3.17 m
+   range — two men standing three metres apart, filed under LOCK-UP. Stages 1-3 are built only from
+   frames where the grabbing relationship is LIVE. Discarded frames are printed, not hidden.
+6. A stage with under 15 live frames is reported THIN rather than judged. A verdict on six frames is
+   noise wearing a number.
+Also: the stage screenshots borrow the engine's own `__camShot` to sit 1.55 m from the pair. At
+broadcast distance two wrestlers are 80 px tall and an elbow folded the wrong way is invisible —
+SEE IT only means anything if the shot is close enough to see.
+
 ### STILL OPEN, STATED NOT BURIED
-- Stage 2 sits at 0.135-0.156 m against the 0.15 m threshold, with 61-73% of frames still out of
-  reach by ~0.27 m. That is the CARRY GEOMETRY lifting the victim past where the arm can follow, not
-  the solver. The honest next move is to aim at the reachable part of the victim nearest the declared
-  grip rather than clamping along the ray into empty air.
+- Drift is improved but still crosses the stated half-a-shoulder-span bar on some runs (band
+  0.10-0.29 m). The residual is the target's own oscillation, per the measurement above.
 - **STAGE 3 IS UNREACHABLE FROM PLAYER INPUT.** `playerAttack` sets `grappleStage = 3` and then falls
   through to the delivery ON THE SAME PRESS, by design and by its own comment. So the carry has never
   been measured from the player's side and nothing is claimed about it. Only the AI dwells there
