@@ -1538,3 +1538,62 @@ as an unrelated "Page crashed" in a harness.
 ### WHAT IT ALREADY FOUND
 `find.mjs worker pool sandbox` -> `M.-Engine-/tools/unreal-worker/server.js`. That is the exact
 "you already built this" case the owner described, answered without him naming a repo.
+
+## FEDERATION-ASSISTED AUDIT (2026-09-03) — tools/federation/audit.mjs
+Owner's two questions, both facts about the files, so neither is answered with an opinion:
+"which imported open-source projects are actually INTEGRATED versus merely STORED", and "is Bannon
+carrying a vendored duplicate that should be replaced with a canonical integration".
+
+**INTEGRATION HAS A BLUNT DEFINITION HERE: a subsystem is INTEGRATED if something OUTSIDE it names
+it.** Not "does it look important", not "is it in the README". References are weighted by WHERE
+they live, because they are not equal — the shipped HTML naming it (100) means the running game
+reaches it; a workflow or bundler (20) means it reaches a device; a tool or script (5) means the
+pipeline reaches it; a .md (1) means a human wrote about it. A subsystem whose only reference is
+documentation scores 1 and the report says so, instead of "referenced".
+
+### MY FIRST RUN OF THIS WAS WRONG AND FLATTERED EVERYTHING — the same trap, again
+It searched for the BARE DIRECTORY NAME and reported `config` — ONE file — with 405 references and
+a score of 1,283, because it was matching the English word in every comment and identifier in the
+repo. `logs`, `models`, `workspace`, `dist` and `roadmap` were inflated identically, and the whole
+report read as if every generic-sounding folder were load-bearing. Fixed by matching the name as a
+PATH (`config/`), since a real reference to a directory essentially always carries the slash.
+`roadmap` went from "IN THE GAME, 271" to "PARKED, 0". **A measurement that makes everything look
+healthy is the one to distrust first.**
+
+### WHAT IT FOUND — 872 files with two or fewer external references
+    PARKED, nothing outside them names them at all:
+      claude-plugins-official-main  405 files      living-nexus-android   45
+      BlenderGoodies                  7            autonomous_payloads     1
+      roadmap                         1
+    One or two references only:
+      box3d-0.1.0                   350            harness-main           35
+      blender-mcp-main               15            backend                 5   (documentation only)
+      android_build                   4            blendforge              4
+    And the one the owner asked about directly:
+      imports/                      390 files, 7 references, PIPELINE ONLY — the imported
+                                    open-source projects are stored, not wired into the game.
+    Genuinely load-bearing, for contrast: godmode/ 526 files (226), unreal/ 717 (229),
+    tools/ 155 (378), assets/ 4,862, server/, native/, scripts/, models/, canon/, docs/.
+
+### VENDORED DUPLICATES — CODEDUMMY IS 84.7% INSIDE BANNON
+1,581 shared paths: godmode/ 516 · box3d-0.1.0/ 346 · claude-plugins-official-main/ 307 ·
+src/ 130 · assets/ 57 · harness-main/ 31 · canon/ 16 · blender-mcp-main/ 12.
+Overlap is measured BY PATH, never by name — two repos both having a `src/` proves nothing, and
+paths every JS project carries (package.json, README, LICENSE, .gitignore, index.html, tsconfig,
+lockfiles, Dockerfile) are excluded before scoring. Other repos share only boilerplate:
+God-Mode-OS-D3MN-V2 15 paths, M-Hero-Simulator- 8, Wrestli6game-3 6, M.-Engine- 5, bolt.diy-M 1.
+CANONICAL OWNERSHIP, on the evidence: `godmode/` is REACHED from Bannon (226) so Bannon is its
+integration target; `box3d-0.1.0`, `claude-plugins-official-main`, `blender-mcp-main` and
+`harness-main` are third-party copies Bannon does not reach, duplicated out of CODEDUMMY.
+**NOTHING HAS BEEN DELETED. OWNER LAW: never prune without asking.** This is a build list, not an
+action taken.
+
+## CHECKPOINT PROTOCOL (2026-09-03) — the container WILL disappear mid-task
+It happened twice in one session: the working tree reset to an older lineage and every uncommitted
+thing went with it — a whole appearance module, two harnesses and a world-shrink pass, all lost the
+first time. The second time nothing was lost because it had been pushed.
+    implement -> gate (syntax + the harness that covers it) -> commit -> PUSH -> continue
+PUSH IS PART OF THE STEP, NOT THE END OF THE TASK. A working tree is not storage, and an ephemeral
+container makes "I'll commit it all at the end" a bet that loses eventually. Recovery is
+`git fetch origin <branch> && git reset --hard FETCH_HEAD` — which is only ever available if the
+push happened.

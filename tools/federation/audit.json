@@ -1,0 +1,622 @@
+{
+ "integration": [
+  {
+   "dir": "claude-plugins-official-main",
+   "files": 405,
+   "refs": 0,
+   "score": 0,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 0,
+    "docs": 0,
+    "other": 0
+   },
+   "verdict": "PARKED — nothing outside it names it"
+  },
+  {
+   "dir": "living-nexus-android",
+   "files": 45,
+   "refs": 0,
+   "score": 0,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 0,
+    "docs": 0,
+    "other": 0
+   },
+   "verdict": "PARKED — nothing outside it names it"
+  },
+  {
+   "dir": "BlenderGoodies",
+   "files": 7,
+   "refs": 0,
+   "score": 0,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 0,
+    "docs": 0,
+    "other": 0
+   },
+   "verdict": "PARKED — nothing outside it names it"
+  },
+  {
+   "dir": "autonomous_payloads",
+   "files": 1,
+   "refs": 0,
+   "score": 0,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 0,
+    "docs": 0,
+    "other": 0
+   },
+   "verdict": "PARKED — nothing outside it names it"
+  },
+  {
+   "dir": "roadmap",
+   "files": 1,
+   "refs": 0,
+   "score": 0,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 0,
+    "docs": 0,
+    "other": 0
+   },
+   "verdict": "PARKED — nothing outside it names it"
+  },
+  {
+   "dir": "backend",
+   "files": 5,
+   "refs": 1,
+   "score": 1,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 0,
+    "docs": 1,
+    "other": 0
+   },
+   "verdict": "documentation only"
+  },
+  {
+   "dir": "box3d-0.1.0",
+   "files": 350,
+   "refs": 1,
+   "score": 5,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 1,
+    "docs": 0,
+    "other": 0
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "harness-main",
+   "files": 35,
+   "refs": 1,
+   "score": 5,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 1,
+    "docs": 0,
+    "other": 0
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "android_build",
+   "files": 4,
+   "refs": 1,
+   "score": 5,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 1,
+    "docs": 0,
+    "other": 0
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "blendforge",
+   "files": 4,
+   "refs": 1,
+   "score": 5,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 1,
+    "docs": 0,
+    "other": 0
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "forge_server",
+   "files": 5,
+   "refs": 4,
+   "score": 8,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 1,
+    "docs": 3,
+    "other": 0
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "Config",
+   "files": 1,
+   "refs": 5,
+   "score": 9,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 0,
+    "docs": 3,
+    "other": 2
+   },
+   "verdict": "documentation only"
+  },
+  {
+   "dir": "blender-mcp-main",
+   "files": 15,
+   "refs": 2,
+   "score": 10,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 2,
+    "docs": 0,
+    "other": 0
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "supabase",
+   "files": 7,
+   "refs": 7,
+   "score": 23,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 3,
+    "docs": 2,
+    "other": 2
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "imports",
+   "files": 390,
+   "refs": 7,
+   "score": 25,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 3,
+    "docs": 1,
+    "other": 3
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "logs",
+   "files": 22,
+   "refs": 11,
+   "score": 31,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 2,
+    "docs": 3,
+    "other": 6
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "config",
+   "files": 1,
+   "refs": 17,
+   "score": 33,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 1,
+    "docs": 10,
+    "other": 6
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "android",
+   "files": 13,
+   "refs": 5,
+   "score": 34,
+   "where": {
+    "shipped": 0,
+    "build": 1,
+    "tooling": 1,
+    "docs": 0,
+    "other": 3
+   },
+   "verdict": "ships to the device"
+  },
+  {
+   "dir": "workspace",
+   "files": 1,
+   "refs": 34,
+   "score": 84,
+   "where": {
+    "shipped": 0,
+    "build": 0,
+    "tooling": 3,
+    "docs": 12,
+    "other": 19
+   },
+   "verdict": "pipeline only"
+  },
+  {
+   "dir": "app",
+   "files": 96,
+   "refs": 34,
+   "score": 116,
+   "where": {
+    "shipped": 0,
+    "build": 2,
+    "tooling": 1,
+    "docs": 11,
+    "other": 20
+   },
+   "verdict": "ships to the device"
+  },
+  {
+   "dir": "godmode",
+   "files": 526,
+   "refs": 10,
+   "score": 226,
+   "where": {
+    "shipped": 2,
+    "build": 0,
+    "tooling": 2,
+    "docs": 1,
+    "other": 5
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "unreal",
+   "files": 717,
+   "refs": 17,
+   "score": 229,
+   "where": {
+    "shipped": 2,
+    "build": 0,
+    "tooling": 2,
+    "docs": 10,
+    "other": 3
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "canon",
+   "files": 19,
+   "refs": 15,
+   "score": 231,
+   "where": {
+    "shipped": 2,
+    "build": 0,
+    "tooling": 2,
+    "docs": 6,
+    "other": 5
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "dist",
+   "files": 4,
+   "refs": 42,
+   "score": 253,
+   "where": {
+    "shipped": 1,
+    "build": 2,
+    "tooling": 6,
+    "docs": 8,
+    "other": 25
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "native",
+   "files": 31,
+   "refs": 31,
+   "score": 269,
+   "where": {
+    "shipped": 2,
+    "build": 0,
+    "tooling": 6,
+    "docs": 15,
+    "other": 8
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "scripts",
+   "files": 15,
+   "refs": 59,
+   "score": 279,
+   "where": {
+    "shipped": 2,
+    "build": 0,
+    "tooling": 1,
+    "docs": 47,
+    "other": 9
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "public",
+   "files": 6,
+   "refs": 42,
+   "score": 322,
+   "where": {
+    "shipped": 2,
+    "build": 0,
+    "tooling": 7,
+    "docs": 6,
+    "other": 27
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "server",
+   "files": 21,
+   "refs": 59,
+   "score": 337,
+   "where": {
+    "shipped": 2,
+    "build": 0,
+    "tooling": 3,
+    "docs": 20,
+    "other": 34
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "docs",
+   "files": 40,
+   "refs": 62,
+   "score": 372,
+   "where": {
+    "shipped": 2,
+    "build": 2,
+    "tooling": 11,
+    "docs": 32,
+    "other": 15
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "tools",
+   "files": 155,
+   "refs": 82,
+   "score": 378,
+   "where": {
+    "shipped": 2,
+    "build": 0,
+    "tooling": 6,
+    "docs": 37,
+    "other": 37
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "models",
+   "files": 36,
+   "refs": 73,
+   "score": 472,
+   "where": {
+    "shipped": 2,
+    "build": 1,
+    "tooling": 38,
+    "docs": 17,
+    "other": 15
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "assets",
+   "files": 4862,
+   "refs": 125,
+   "score": 667,
+   "where": {
+    "shipped": 2,
+    "build": 2,
+    "tooling": 71,
+    "docs": 39,
+    "other": 11
+   },
+   "verdict": "IN THE GAME"
+  },
+  {
+   "dir": "src",
+   "files": 230,
+   "refs": 159,
+   "score": 671,
+   "where": {
+    "shipped": 2,
+    "build": 4,
+    "tooling": 7,
+    "docs": 41,
+    "other": 105
+   },
+   "verdict": "IN THE GAME"
+  }
+ ],
+ "overlap": [
+  {
+   "repo": "CODEDUMMY",
+   "sharedFiles": 1581,
+   "pctOfTheirs": 84.7,
+   "subsystems": [
+    {
+     "dir": "godmode",
+     "files": 516
+    },
+    {
+     "dir": "box3d-0.1.0",
+     "files": 346
+    },
+    {
+     "dir": "claude-plugins-official-main",
+     "files": 307
+    },
+    {
+     "dir": "src",
+     "files": 130
+    },
+    {
+     "dir": "assets",
+     "files": 57
+    },
+    {
+     "dir": "harness-main",
+     "files": 31
+    },
+    {
+     "dir": "canon",
+     "files": 16
+    },
+    {
+     "dir": "blender-mcp-main",
+     "files": 12
+    }
+   ]
+  },
+  {
+   "repo": "God-Mode-OS-D3MN-V2",
+   "sharedFiles": 15,
+   "pctOfTheirs": 2.9,
+   "subsystems": [
+    {
+     "dir": "src",
+     "files": 6
+    },
+    {
+     "dir": "AGENTS.md",
+     "files": 1
+    },
+    {
+     "dir": "God-Mode-OS-D3MN-V2-main (3).zip",
+     "files": 1
+    },
+    {
+     "dir": "firebase-applet-config.json",
+     "files": 1
+    },
+    {
+     "dir": "metadata.json",
+     "files": 1
+    },
+    {
+     "dir": "nixpacks.toml",
+     "files": 1
+    },
+    {
+     "dir": "railway.json",
+     "files": 1
+    },
+    {
+     "dir": "remix_-remix_-newest-god-mode-os (1) (11).zip",
+     "files": 1
+    }
+   ]
+  },
+  {
+   "repo": "M-Hero-Simulator-",
+   "sharedFiles": 8,
+   "pctOfTheirs": 24.2,
+   "subsystems": [
+    {
+     "dir": "src",
+     "files": 4
+    },
+    {
+     "dir": "AGENTS.md",
+     "files": 1
+    },
+    {
+     "dir": "metadata.json",
+     "files": 1
+    },
+    {
+     "dir": "server.ts",
+     "files": 1
+    },
+    {
+     "dir": "vite.config.ts",
+     "files": 1
+    }
+   ]
+  },
+  {
+   "repo": "Wrestli6game-3",
+   "sharedFiles": 6,
+   "pctOfTheirs": 14.6,
+   "subsystems": [
+    {
+     "dir": "src",
+     "files": 4
+    },
+    {
+     "dir": "metadata.json",
+     "files": 1
+    },
+    {
+     "dir": "vite.config.ts",
+     "files": 1
+    }
+   ]
+  },
+  {
+   "repo": "M.-Engine-",
+   "sharedFiles": 5,
+   "pctOfTheirs": 0.8,
+   "subsystems": [
+    {
+     "dir": ".github",
+     "files": 3
+    },
+    {
+     "dir": "AGENTS.md",
+     "files": 1
+    },
+    {
+     "dir": "metadata.json",
+     "files": 1
+    }
+   ]
+  },
+  {
+   "repo": "bolt.diy-M",
+   "sharedFiles": 1,
+   "pctOfTheirs": 0.2,
+   "subsystems": [
+    {
+     "dir": "vite.config.ts",
+     "files": 1
+    }
+   ]
+  }
+ ]
+}
