@@ -1629,3 +1629,42 @@ Worst frames on runs where nothing broke: 2,856 ms, 2,624 ms, 3,615 ms — sever
 a match exists. Multi-second stalls remain even when every invariant holds. The harness reports the
 worst frame on a PASS for exactly this reason: "no invariant broken" and "the worst frame was
 3.6 seconds" are both true at once, and only one of them is what the owner feels.
+
+## THE FREEZE IS THE MENU (2026-09-03) — tools/harness/boot_autopsy.cjs
+Every harness in tools/harness starts measuring AT THE BELL. The fuzzer's PASSING runs kept
+reporting worst frames of 2,856 / 2,624 / 3,615 ms with several of them BEFORE A MATCH EXISTED, so
+the worst stalls in this game were living in the one region nothing had ever looked at.
+boot_autopsy attributes every long frame to an OBSERVED boot phase — PAGE, SCRIPT_EVAL, ENGINE,
+RENDERER, FIRST_FRAME, MENU, SELECT, MATCH_LOAD, MATCH — each opening when its MARKER IS SEEN, never
+on a timeline, because a hardcoded timeline invents boundaries and then attributes stalls to them
+confidently. FIRST MEASUREMENT, 412x915 at dpr 2:
+    phase          start      ms   long   worst    work in the phase
+    PAGE             0.2   807.7      0       0
+    ENGINE         807.9    5432      2     843    23 shaders · 1 wasm
+    RENDERER      6239.9    28.3      1    4538    1 render
+    FIRST_FRAME   6268.2  3319.1      1    1237    2 shaders · 35 renders
+    MENU          9587.3   34043      23   4756    49 shaders · 354 renders
+    SELECT       43630.7  1627.9      1    1007
+    MATCH_LOAD   45258.6   469.7      1     404
+    MATCH        45728.3  6973.5      7     963
+**THE MENU IS 34 SECONDS LONG AND 35.6 OF THOSE SECONDS ARE STALL** — 23 long frames, worst 4,756 ms,
+against 4.3 s of stall in the whole MATCH. Sitting on the main menu doing nothing is the freeze.
+The stall context says what it is doing: shader links climbing 25 -> 59 across the phase and up to
+**26 concurrent pending requests**. That is preview/warm work on the main thread, not gameplay.
+A single 4,538 ms frame also sits in RENDERER — the very first frame after the WebGL context exists.
+### THE INVARIANT IS ATTRIBUTION COMPLETENESS, NOT A BUDGET
+"Boot must be under X ms" would be a noisy lie across environments — this container is a software
+rasteriser and its absolute numbers say nothing about a phone (already law, above). What CAN be
+asserted is that **every long frame falls inside exactly one open phase and every phase has a
+start**. If a stall lands with no phase the MODEL is wrong and the report says so rather than
+quietly filing it under whatever was nearest. First run: 0 gaps, 0 unstamped, ATTRIBUTION COMPLETE.
+### THREE CLASSES, KEPT SEPARATE (this is why I8 was rescoped and it applies here too)
+    HARD INVARIANT FAILURE      behaviour contradicts a required system property
+    SOFT PERFORMANCE FINDING    expensive enough to investigate
+    EXPECTED CONFIGURATION COST expensive because a configuration was deliberately forced
+Treating every expensive configuration as a broken invariant poisons the signal.
+### THE BROWSER'S OWN RECORD IS IN THERE TOO
+PerformanceObserver('longtask') logged 59 entries and independently agrees on the big ones (4,692 ms
+at t+34,961; 4,519 ms at t+1,703). Its `attribution` is "unknown" for all of them, which is what a
+single inline-script page produces — the container it would name IS the page. Useful as
+corroboration, not as a pointer to a line.
