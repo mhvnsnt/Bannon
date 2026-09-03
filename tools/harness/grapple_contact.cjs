@@ -67,6 +67,10 @@ function serve(port){
 
 // ---------------------------------------------------------------- injected before any game code
 function PROBE(){
+  // A/B IN THE SAME BUILD. CLAUDE.md law: never compare against a number recorded in an earlier
+  // session — compare against a control run of the same build. `--nogripik` sets the module's own
+  // kill switch BEFORE any game code runs, so the control is this exact file with the solver off.
+  if (window.__CG_NOGRIPIK) window.GRIP_IK = false;
   window.__CG = {
     samples: [], on: false, pixels: true, errs: [], marks: [],
     bonesMissing: {}, note: []
@@ -240,7 +244,13 @@ function stats(v){
   const s = v.slice().sort((a, b) => a - b);
   const q = p => s[Math.min(s.length - 1, Math.max(0, Math.round((s.length - 1) * p)))];
   return { n: v.length, min: +s[0].toFixed(4), mean: +(v.reduce((a, b) => a + b, 0) / v.length).toFixed(4),
-           p95: +q(0.95).toFixed(4), max: +s[s.length - 1].toFixed(4), range: +(s[s.length - 1] - s[0]).toFixed(4) };
+           p05: +q(0.05).toFixed(4), p95: +q(0.95).toFixed(4), max: +s[s.length - 1].toFixed(4),
+           range: +(s[s.length - 1] - s[0]).toFixed(4),
+           // BAND is the drift with the single-frame extremes taken off. A stage boundary produces
+           // exactly one frame where the bodies have not been pulled together yet, and letting that
+           // one frame define "the grip does not hold" buries the 60 frames on either side of it.
+           // Both are reported, and the verdict names which one it used, so nothing is hidden.
+           band: +(q(0.95) - q(0.05)).toFixed(4) };
 }
 
 function analyse(samples){
@@ -282,7 +292,8 @@ function analyse(samples){
       out.hands[k] = Object.assign(st2, {
         gripBone: top, gripShare: +(tally[top] / bones.length).toFixed(2),
         gripSwitches: switches, bones: tally,
-        spans: R.spanMedian ? { mean: +(st2.mean / R.spanMedian).toFixed(2), range: +(st2.range / R.spanMedian).toFixed(2) } : null
+        spans: R.spanMedian ? { mean: +(st2.mean / R.spanMedian).toFixed(2), range: +(st2.range / R.spanMedian).toFixed(2),
+                                band: +(st2.band / R.spanMedian).toFixed(2) } : null
       });
       if (!R.worst || st2.range > R.worst.range)
         R.worst = { stage: +st, hand: k, range: st2.range, min: st2.min, max: st2.max,
@@ -321,12 +332,24 @@ function analyse(samples){
   const shot = async (n) => {
     if (!has('shots')) return;
     await page.evaluate(() => window.__CG.setPixels(true));
-    await sleep(900);
-    try{ await page.screenshot({ path: path.join(OUT, 'grapple_' + n + '.png') }); }catch(e){}
+    // OWNER LAW: SEE IT. The broadcast camera frames the whole ring, and at that distance two
+    // wrestlers are 80 px tall — a solver that hits its target and folds the elbow backwards would
+    // be invisible. __camShot is the engine's OWN camera blend (it exists for entrances), so this
+    // borrows it rather than reaching past the camera code: 1.7 m out at chest height, looking at
+    // the midpoint of the two men. weight 0 afterwards hands the camera straight back.
+    await page.evaluate(() => { try{ const P = window.__CG.pair(); if (!P) return;
+      const mx = (P.a.x + P.v.x) / 2, mz = (P.a.z + P.v.z) / 2;
+      window.__camShot = { px: mx + 1.55, py: 1.35, pz: mz + 1.15,
+                           lx: mx, ly: 1.15, lz: mz, w: 1, speed: 14 }; }catch(e){} });
+    await sleep(1400);
+    try{ await page.screenshot({ path: path.join(OUT, 'grapple_' + (has('nogripik') ? 'ctl_' : '') + n + '.png') }); }catch(e){}
+    await page.evaluate(() => { try{ window.__camShot = null; }catch(e){} });
     await page.evaluate(() => window.__CG.setPixels(false));
   };
 
+  report.gripik = has('nogripik') ? 'OFF (control run)' : 'ON';
   try{
+    if (has('nogripik')) await page.addInitScript(() => { window.__CG_NOGRIPIK = true; });
     await page.addInitScript(PROBE);
     await page.goto(`http://127.0.0.1:${port}/BANNON_v150.html`, { waitUntil:'domcontentloaded', timeout:60000 });
 
@@ -373,6 +396,12 @@ function analyse(samples){
 
     const stage = () => page.evaluate(() => { try{ const P = window.__CG.pair();
       return P && P.live ? (P.a.grappleStage | 0) : 0; }catch(e){ return -1; } });
+    // PIN THE MOVE. pickGrapplePosition rolls a hold at the stage 1 -> 2 transition, so back-to-back
+    // runs were comparing a chest grip against a thigh grip and the difference read as noise. A
+    // replay is only a replay if the move is the same one; STANDARD is the plain collar tie and its
+    // GRIP_SPEC is chest/chest, which is the case the owner described.
+    const pin = () => page.evaluate(() => { try{ const P = window.__CG.pair();
+      if (P && P.live) P.a.grapplePos = 'STANDARD'; }catch(e){} });
     // Press the real button until the stage actually advances. Fixed sleeps guess at _liftMinT and
     // at this container's frame rate; polling the state the engine reports does not.
     const advanceTo = async (want, ms) => {
@@ -402,14 +431,17 @@ function analyse(samples){
       await place(); await sleep(500);
     }
     report.reached = { lockup: (await stage()) >= 1 };
+    await pin();
     await page.evaluate(() => window.__CG.mark('lockup'));
     await sleep(900); await shot('1_lockup');
 
     report.reached.hoist = await advanceTo(2, 6000);
+    await pin();
     await page.evaluate(() => window.__CG.mark('hoist'));
     await sleep(900); await shot('2_hoist');
 
     report.reached.carry = await advanceTo(3, 8000);
+    await pin();
     await page.evaluate(() => window.__CG.mark('carry'));
     await sleep(900); await shot('3_carry');
 
@@ -427,6 +459,7 @@ function analyse(samples){
     await page.evaluate(() => window.__CG.stop());
     if (!report.reached.lockup) block('the grab never took — nothing about a grapple was measured');
 
+    report.gripikStats = await page.evaluate(() => { try{ return window.BANNON_GRIPIK ? window.BANNON_GRIPIK.stats() : null; }catch(e){ return null; } });
     const raw = await page.evaluate(() => ({ samples: window.__CG.samples, marks: window.__CG.marks,
       errs: window.__CG.errs, bonesMissing: window.__CG.bonesMissing }));
     report.marks = raw.marks.map(m => ({ label: m.label, i: m.i }));
@@ -454,7 +487,15 @@ function analyse(samples){
   console.log('\n===== GRAPPLE CONTACT =====');
   (report.who || []).forEach(w => console.log('  ' + String(w.name).padEnd(16) + (w.model ? 'GLB bound' : 'NO MODEL') +
     (w.isPlayer ? '  [player]' : '') + (w.interferer ? '  [run-in]' : '')));
-  console.log('  AI frozen: ' + (report.aiFrozen ? 'yes' : 'NO') + '   reached ' + JSON.stringify(report.reached || {}));
+  console.log('  AI frozen: ' + (report.aiFrozen ? 'yes' : 'NO') + '   GRIPIK ' + report.gripik +
+    '   reached ' + JSON.stringify(report.reached || {}));
+  const GS = report.gripikStats;
+  if (GS) console.log('  GRIPIK solves ' + GS.solved + ' over ' + GS.frames + ' held frames' +
+    (GS.reach ? '   arm reach ' + GS.reach.armLen + 'm  target out of reach on ' +
+      Object.keys(GS.reach.byStage).map(k => 'st' + k + ' ' + GS.reach.byStage[k].pctClamped + '% (short ' +
+        GS.reach.byStage[k].meanShortfall + 'm)').join(', ') : '') +
+    (Object.keys(GS.skipped || {}).length ? '   SKIPPED ' + JSON.stringify(GS.skipped) : '') +
+    (GS.lastErr ? '   lastErr ' + GS.lastErr : ''));
   if (report.pair) console.log('  measured pair: ' + report.pair.a + ' holding ' + report.pair.v);
   console.log('  samples ' + report.sampleCount + '  (' + report.fps + ' fps, pixels stubbed)   stages seen ' +
     JSON.stringify(report.stagesSeen));
@@ -471,10 +512,10 @@ function analyse(samples){
                   vL:'      victim L hand     -> attacker body', vR:'      victim R hand     -> attacker body' };
     for (const k of ['aL','pL','aR','pR','vL','vR']){
       const h = g.hands[k]; if (!h || !h.n){ console.log('    ' + LBL[k] + '  — no samples'); continue; }
-      console.log('    ' + LBL[k] + '  mean ' + h.mean.toFixed(3) + 'm  min ' + h.min.toFixed(3) +
-        '  max ' + h.max.toFixed(3) + '  drift ' + h.range.toFixed(3) +
-        (h.spans ? ' (' + h.spans.range + ' spans)' : '') +
-        '   grip ' + h.gripBone + ' ' + Math.round(h.gripShare * 100) + '% · ' + h.gripSwitches + ' switches');
+      console.log('    ' + LBL[k] + '  mean ' + h.mean.toFixed(3) + 'm  p95 ' + h.p95.toFixed(3) +
+        '  max ' + h.max.toFixed(3) + '  band ' + h.band.toFixed(3) +
+        (h.spans ? '/' + h.spans.band + 'sp' : '') +
+        '   grip ' + h.gripBone + ' ' + Math.round(h.gripShare * 100) + '% · ' + h.gripSwitches + ' sw');
     }
     if (g.follow) for (const k of ['fL','fR']){
       const f = g.follow[k]; if (!f) continue;
@@ -506,9 +547,9 @@ function analyse(samples){
         if (h.mean > CONTACT_M)
           bad.push('NO CONTACT  ' + k + ' stage ' + st + ': the visible hand sits ' + h.mean.toFixed(3) +
                    'm from the nearest bone of the man it is holding (engine grip offset is <=0.06m)');
-        if (h.range / A.spanMedian > 0.5)
-          bad.push('DRIFT       ' + k + ' stage ' + st + ': ' + h.range.toFixed(3) + 'm = ' +
-                   (h.range / A.spanMedian).toFixed(2) + ' shoulder spans');
+        if (h.band / A.spanMedian > 0.5)
+          bad.push('DRIFT       ' + k + ' stage ' + st + ': p5-p95 band ' + h.band.toFixed(3) + 'm = ' +
+                   (h.band / A.spanMedian).toFixed(2) + ' shoulder spans (full range ' + h.range.toFixed(3) + 'm)');
       }
     }
     report.verdict = bad.length ? 'FAIL' : 'PASS'; report.failures = bad;

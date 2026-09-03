@@ -562,6 +562,16 @@ window.__clipJsonFetch = async function(key, cdn){
      usable no matter how much was downloaded. With this, any .bvh dropped into assets/mocap/ is
      loadable by the same loadClipFor() path and gets auto-mapped like everything else. -->
 <script src="assets/vendor/BVHLoader.js"></script>
+<!-- CCDIKSolver — three.js r128's OWN inverse-kinematics solver, examples/js/animation/CCDIKSolver.js,
+     MIT, byte-for-byte unmodified and matched to the exact revision we vendor. It is the open-source
+     capability behind BANNON_GRIPIK below: a grab that is measured 0.25-0.33 m off the man being held
+     needs a solver that pulls the visible arm onto a target, and hand-rolling one when the library we
+     already ship contains it is exactly the reinvention the owner told me to stop doing.
+     It normally addresses its target by INDEX into a SkinnedMesh's skeleton.bones. Our grip target is
+     a point on the OTHER fighter's body, which is in no skeleton of ours — so the adapter presents it
+     a shim { skeleton:{ bones:[...] } } holding just the arm chain plus a target Object3D. The solver
+     touches nothing else on the mesh, so it runs unmodified against a world-space target. -->
+<script src="assets/vendor/CCDIKSolver.js"></script>
 <script>
 (function(){ if(typeof THREE!=='undefined' && THREE.FBXLoader){ window.__FBX_READY=true; return; }
   // relative copy missing (served from elsewhere) — try the repo CDN then jsdelivr
@@ -10515,7 +10525,17 @@ Fighter.prototype.poseGrabbed = function(dt){
   this.facing = by.facing; this.dir = by.dir;
   if (st===1){
     // bent into the lockup, feet planted
-    this.x = lerp(this.x, by.x + by.dir*0.85, Math.min(1,dt*10)); this.z = by.z;
+    // LOCK-UP SPACING IS DERIVED FROM THE BODIES, NOT A CONSTANT. It was a flat 0.85 m, and
+    // tools/harness/grapple_contact.cjs measured the attacker's arm — shoulder bone to hand bone off
+    // the bound GLB — at 0.43 m. The tie-up was parking the two men FURTHER APART THAN AN ARM IS
+    // LONG: the grip target was out of reach on 100% of lock-up frames, short by 0.31 m. That is why
+    // the hands float in the collar tie, and no IK solver can fix it — the hand is being asked to
+    // touch something it cannot get to. BANNON_GRIPIK.lockupGap measures both bodies and returns a
+    // distance the arms can actually span; it can only ever return LESS than 0.85, so the worst case
+    // is exactly the old behaviour, and with no model bound it returns 0.85 unchanged.
+    var _lg = 0.85;
+    try{ if (window.BANNON_GRIPIK && window.BANNON_GRIPIK.lockupGap) _lg = window.BANNON_GRIPIK.lockupGap(by, this); }catch(e){}
+    this.x = lerp(this.x, by.x + by.dir*_lg, Math.min(1,dt*10)); this.z = by.z;
     this.root.position.set(this.x, RING.floorY + (this.zoneY||0), this.z); this.root.rotation.y=this.facing;  // v120 FIX: zone-aware
     this.J.pelvis.set(-0.05,0.86,0); this.J.chest.set(-0.16,1.18,0); this.J.head.set(-0.26,1.48,0);
     // MUTUAL GRIP: the held body holds BACK — hands brace on the attacker (shoulder/chest), not floating air
@@ -61448,6 +61468,241 @@ window.__deriveVariant = async function(key){
   (function poll(n){ n = n || 0; if (warm() || n > 60) return; setTimeout(function(){ poll(n+1); }, 500); })(0);
 
   window.BANNON_POSTWARM = { warm: warm, stats: function(){ return Object.assign({}, ST); } };
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════════════════════════════════════
+     BANNON_GRIPIK — THE HANDS ACTUALLY HOLD ON (2026-09-03)
+
+     THE BUG, MEASURED FIRST, tools/harness/grapple_contact.cjs, BANNON holding VIPER, STANDARD:
+         stage 1 LOCK-UP   visible attacker hand -> NEAREST bone of the man he is holding
+                           left 0.253 / 0.334 m,  right 0.319 / 0.306 m   (two runs)
+         stage 2 HOIST     left 0.315 / 0.334 m,  right 0.395 / 0.268 m
+     The engine's own _gripOpp places a gripping hand ON the victim's joint with offsets of at most
+     0.06 m, so the code itself declares what contact means. The hands were four to five times that
+     away — floating, never touching, which is exactly what the owner has been describing.
+
+     THE DECOMPOSITION SAID WHICH HALF TO FIX, AND IT WAS BOTH:
+         INTENT  the engine's own procedural grip point -> victim body   0.183 / 0.237 m
+         FOLLOW  the visible GLB hand -> that grip point                 0.197 / 0.242 m
+     Reading the code agrees with the numbers. `_gripOpp` — the function written to put hands on the
+     real body — is NEVER CALLED AT STAGE 1. The lock-up sets J.haL/haR to fixed local offsets
+     (0.40, 1.40, +-0.14) that know nothing about where the opponent is standing. And even where it
+     IS called, it writes into the PROCEDURAL joint rig, while the body on screen is the GLB.
+
+     WHAT THIS IS, AND WHAT IT IS NOT. It is an ADAPTER over three.js r128's own CCDIKSolver
+     (assets/vendor/CCDIKSolver.js, MIT, unmodified). No solver is hand-rolled here. This file owns
+     three things the library cannot know:
+       1. WHERE the hand should go. Read from GRIP_SPEC, the engine's existing per-move anatomy
+          table ("POWERBOMB: a:'knL', b:'knR'" — hands on both thighs above the knee). That table is
+          already researched and cited in this file; nothing about the target is invented here.
+       2. TRANSLATION between the two vocabularies. GRIP_SPEC speaks procedural joint keys; the GLB
+          speaks Mixamo. The map is INVERTED FROM MOCAP_BONE_MAP, the engine's own table, rather
+          than written fresh — a second spelling of the same thing is the single most repeated
+          defect in this codebase's history and it is not being repeated here.
+       3. A SHIM so the unmodified solver can aim at a point that is not in our skeleton.
+
+     ORDER MATTERS. This runs AFTER updateFighterModel, because that is what applies the clip or the
+     procedural pose to the GLB; solving before it would be overwritten in the same frame.
+     window.GRIP_IK = false disables it completely and restores the previous behaviour.
+     ══════════════════════════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  if (window.BANNON_GRIPIK) return;
+  var ST = { solved:0, frames:0, skipped:{}, lastErr:null, enabled:true, iters:4,
+             // REACH LEDGER. A hand that still misses after the solver ran has one of two causes and
+             // they are not the same bug: the solver failed, or the target was never reachable. This
+             // counts the second so it can never be mistaken for the first.
+             reach:{ n:0, clamped:0, sumShort:0, maxShort:0, armLen:0, byStage:{} } };
+
+  // GRIP_SPEC joint key -> GLB bone. INVERTED FROM MOCAP_BONE_MAP (see the header): that table maps
+  // glb -> procedural, this is the same table read the other way, plus the three keys GRIP_SPEC uses
+  // that the mocap map has no row for — wrists (the hand bone IS the wrist) and the clavicles.
+  var J2B = {
+    pelvis:'Hips', spineLow:'Spine', spineMid:'Spine1', chest:'Spine2', head:'Head',
+    clavL:'LeftShoulder',  shL:'LeftArm',  elL:'LeftForeArm',  haL:'LeftHand',  wrL:'LeftHand',
+    clavR:'RightShoulder', shR:'RightArm', elR:'RightForeArm', haR:'RightHand', wrR:'RightHand',
+    hipL:'LeftUpLeg',  knL:'LeftLeg',  ftL:'LeftFoot',
+    hipR:'RightUpLeg', knR:'RightLeg', ftR:'RightFoot'
+  };
+
+  function bone(model, n){ try{ return window.__boneOf ? window.__boneOf(model, n) : null; }catch(e){ return null; } }
+
+  // Per-model, per-side solver. Built once and cached on the model, because the chain is the same
+  // for the life of the bind and rebuilding it every frame would allocate three objects per hand.
+  function rig(model, side){
+    if (!model || !window.THREE || !window.THREE.CCDIKSolver) return null;
+    var C = model.userData.__gripIK || (model.userData.__gripIK = {});
+    if (C[side] !== undefined) return C[side];
+    var arm  = bone(model, side + 'Arm');
+    var fore = bone(model, side + 'ForeArm');
+    var hand = bone(model, side + 'Hand');
+    // NO CHAIN, NO SOLVE, AND SAY SO. A silent zero here would look identical to a working solver
+    // that happens to have nothing to do, which is the trap this whole session keeps hitting.
+    if (!arm || !fore || !hand || fore.parent !== arm || hand.parent !== fore){
+      ST.skipped[side + ':chain'] = (ST.skipped[side + ':chain'] || 0) + 1;
+      return (C[side] = null);
+    }
+    var target = new window.THREE.Object3D();
+    // links run child-first toward the root, and the effector's parent must be links[0] — the
+    // solver's own _valid() checks exactly that and warns when it is wrong.
+    var shim = { skeleton: { bones: [ hand, fore, arm, target ] } };
+    var iks  = [ { target: 3, effector: 0, links: [ { index: 1 }, { index: 2 } ],
+                   iteration: ST.iters, minAngle: 0.0, maxAngle: 1.0 } ];
+    var solver;
+    try{ solver = new window.THREE.CCDIKSolver(shim, iks); }
+    catch(e){ ST.lastErr = String(e && e.message).slice(0,140); return (C[side] = null); }
+    // Arm length in bind space is the reach ceiling. Beyond it CCD simply straightens the arm, which
+    // is the correct visual — a man stretching for a grip he cannot quite reach.
+    var L = new window.THREE.Vector3(), R = new window.THREE.Vector3();
+    arm.updateWorldMatrix(true,false); fore.updateWorldMatrix(true,false); hand.updateWorldMatrix(true,false);
+    L.setFromMatrixPosition(arm.matrixWorld); R.setFromMatrixPosition(fore.matrixWorld);
+    var upper = L.distanceTo(R);
+    L.setFromMatrixPosition(fore.matrixWorld); R.setFromMatrixPosition(hand.matrixWorld);
+    var lower = L.distanceTo(R);
+    return (C[side] = { solver: solver, target: target, arm: arm, fore: fore, hand: hand,
+                        reach: (upper + lower) * 0.98 });
+  }
+
+  var _t = null, _o = null;
+  // Where this hand is supposed to be, in world space, read off the victim's REAL body.
+  function gripPoint(att, vic, which){
+    if (!vic || !vic.model) return null;
+    var GS = null;
+    try{ GS = (typeof GRIP_SPEC !== 'undefined')
+      ? (GRIP_SPEC[att.grapplePos] || GRIP_SPEC[(att.deliverType||'slam')] || GRIP_SPEC.slam) : null; }catch(e){}
+    if (!GS) return null;
+    // _gripOpp's own convention: the LEFT hand takes 'a', the RIGHT takes 'b'; a one-armed cinch
+    // (facelock / DDT) sends both to 'a'. Followed exactly so the IK cannot disagree with the engine.
+    var key = (GS.one || which === 'Left') ? GS.a : (GS.b || GS.a);
+    var bn = J2B[key]; if (!bn) return null;
+    var b = bone(vic.model, bn); if (!b) { ST.skipped['target:' + key] = (ST.skipped['target:' + key]||0) + 1; return null; }
+    b.updateWorldMatrix(true, false);
+    if (!_t) _t = new window.THREE.Vector3();
+    return _t.setFromMatrixPosition(b.matrixWorld);
+  }
+
+  // Point one arm chain at a world position and let the vendored solver do the work.
+  // Clamp the target into the arm's ACTUAL reach from the shoulder first, so a target across the
+  // ring cannot yank the shoulder round, and so an unreachable grip is COUNTED rather than silently
+  // producing a straight arm that reads as a solver failure. THE ROOT IS NEVER MOVED — the same rule
+  // BANNON_REACH already holds: a fighter extends, he does not slide.
+  function aimAt(r, p, st){
+    if (!_o) _o = new window.THREE.Vector3();
+    r.arm.updateWorldMatrix(true, false);
+    _o.setFromMatrixPosition(r.arm.matrixWorld);
+    var d = _o.distanceTo(p);
+    var tx = p.x, ty = p.y, tz = p.z;
+    var R = ST.reach; R.n++; R.armLen = +r.reach.toFixed(4);
+    var bs = R.byStage[st] || (R.byStage[st] = { n:0, clamped:0, sumShort:0, maxShort:0 });
+    bs.n++;
+    if (d > r.reach && d > 1e-4){
+      var k = r.reach / d, short = d - r.reach;
+      R.clamped++; R.sumShort += short; if (short > R.maxShort) R.maxShort = short;
+      bs.clamped++;  bs.sumShort += short; if (short > bs.maxShort) bs.maxShort = short;
+      tx = _o.x + (p.x - _o.x) * k; ty = _o.y + (p.y - _o.y) * k; tz = _o.z + (p.z - _o.z) * k;
+    }
+    r.target.matrixWorld.identity(); r.target.matrixWorld.setPosition(tx, ty, tz);
+    try{ r.solver.updateOne(r.solver.iks[0]); ST.solved++; }
+    catch(e){ ST.lastErr = String(e && e.message).slice(0,140); }
+  }
+
+  // How far apart the two men should stand in a collar tie, measured off the bodies that are on
+  // screen. Never more than the 0.85 m it replaces, so this can only tighten a tie-up, never open
+  // one; and with nothing bound it hands back 0.85 and the engine is untouched.
+  function lockupGap(by, held){
+    var OLD = 0.85;
+    try{
+      if (!by || !by.model || window.GRIP_IK === false || !ST.enabled) return OLD;
+      var r = rig(by.model, 'Left') || rig(by.model, 'Right');
+      if (!r || !r.reach) return OLD;
+      // Torso is roughly half as deep as the shoulders are wide, so half a torso depth is about a
+      // quarter of a shoulder span. That clearance keeps the chests apart instead of interpenetrating.
+      var clear = 0.10;
+      if (held && held.model){
+        var la = bone(held.model, 'LeftArm'), ra = bone(held.model, 'RightArm');
+        if (la && ra){ la.updateWorldMatrix(true,false); ra.updateWorldMatrix(true,false);
+          if (!_t) _t = new window.THREE.Vector3();
+          var A = _t.setFromMatrixPosition(la.matrixWorld).clone();
+          var B = new window.THREE.Vector3().setFromMatrixPosition(ra.matrixWorld);
+          clear = A.distanceTo(B) * 0.28; }
+      }
+      // 0.95 of full extension: a tie-up is braced and bent, not locked out at fingertip range.
+      var want = r.reach * 0.95 + clear;
+      ST.lastGap = +want.toFixed(3);
+      return want < OLD ? (want < 0.35 ? 0.35 : want) : OLD;
+    }catch(e){ return OLD; }
+  }
+
+  function solveFor(att){
+    if (!ST.enabled || window.GRIP_IK === false) return;
+    if (!att || !att.model || att.ragdoll) return;
+    var vic = att.grabTarget;
+    // THE HELD MAN GRIPS BACK. poseGrabbed's stage-1 "MUTUAL GRIP" block already declares it — it
+    // puts the held fighter's procedural haL on the holder's shL and haR on his chest — but it wrote
+    // that into the procedural rig, which is not the body on screen. Same convention, same bones,
+    // now applied to the GLB. Stage 1 only, because that is the only stage the engine claims it for.
+    if (!att.grappling && att.grabbedBy && att.grabbedBy.model && (att.grabbedBy.grappleStage|0) === 1){
+      var by = att.grabbedBy;
+      ST.frames++;
+      [['Left','LeftArm'], ['Right','Spine2']].forEach(function(pair){
+        var r2 = rig(att.model, pair[0]); if (!r2) return;
+        var b2 = bone(by.model, pair[1]); if (!b2) return;
+        b2.updateWorldMatrix(true, false);
+        if (!_t) _t = new window.THREE.Vector3();
+        aimAt(r2, _t.setFromMatrixPosition(b2.matrixWorld), 1);
+      });
+      return;
+    }
+    if (!att.grappling || !vic || vic.grabbedBy !== att || !vic.model) return;
+    var st = att.grappleStage | 0;
+    if (st < 1 || st > 3) return;              // 4 is the release: the bodies are MEANT to separate
+    ST.frames++;
+    ['Left','Right'].forEach(function(side){
+      var r = rig(att.model, side); if (!r) return;
+      var p = gripPoint(att, vic, side); if (!p) return;
+      aimAt(r, p, st);
+    });
+  }
+
+  // Wrap AFTER the pose applier, and only once. `updateFighterModel` is a plain function declaration
+  // that Fighter.updateModel calls through the WINDOW binding (`typeof updateFighterModel==='function'`
+  // then `updateFighterModel(this)`) — verified at the call site — so wrapping window is enough here.
+  // CLAUDE.md records the opposite case for studioApplyClipPose, which combat calls LEXICALLY and
+  // where a window wrapper counts the wrong calls; that trap is why this note exists.
+  (function arm(n){
+    n = n || 0;
+    if (typeof window.updateFighterModel === 'function' && !window.updateFighterModel.__gripik){
+      var o = window.updateFighterModel;
+      var w = function(f){ var r = o.apply(this, arguments); try{ solveFor(f); }catch(e){ ST.lastErr = String(e&&e.message).slice(0,140); } return r; };
+      w.__gripik = 1; window.updateFighterModel = w;
+      try{ console.log('%c[BANNON_GRIPIK] armed — CCDIKSolver r128 driving grapple hands onto the real body', 'color:#7CFC00'); }catch(e){}
+      return;
+    }
+    if (n > 120) return;
+    setTimeout(function(){ arm(n+1); }, 500);
+  })(0);
+
+  window.BANNON_GRIPIK = {
+    lockupGap: lockupGap,
+    stats: function(){
+      var R = ST.reach, out = Object.assign({}, ST);
+      out.reach = { n:R.n, clamped:R.clamped, armLen:R.armLen,
+        meanShortfall: R.clamped ? +(R.sumShort / R.clamped).toFixed(4) : 0,
+        maxShortfall: +R.maxShort.toFixed(4), byStage: {} };
+      for (var k in R.byStage){ var b = R.byStage[k];
+        out.reach.byStage[k] = { n:b.n, clamped:b.clamped, pctClamped: b.n ? Math.round(100*b.clamped/b.n) : 0,
+          meanShortfall: b.clamped ? +(b.sumShort / b.clamped).toFixed(4) : 0, maxShortfall: +b.maxShort.toFixed(4) }; }
+      return out;
+    },
+    reset: function(){ ST.solved = 0; ST.frames = 0; ST.skipped = {};
+      ST.reach = { n:0, clamped:0, sumShort:0, maxShort:0, armLen:ST.reach.armLen, byStage:{} }; },
+    enable: function(on){ ST.enabled = !!on; return ST.enabled; },
+    iterations: function(n){ ST.iters = Math.max(1, n|0); return ST.iters; },
+    // exposed so a harness can ask what the engine INTENDS for a hold without driving one
+    targetFor: function(att, which){ try{ var p = gripPoint(att, att && att.grabTarget, which||'Left');
+      return p ? { x:+p.x.toFixed(4), y:+p.y.toFixed(4), z:+p.z.toFixed(4) } : null; }catch(e){ return null; } }
+  };
 })();
 </script>
 
