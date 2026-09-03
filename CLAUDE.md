@@ -1824,3 +1824,62 @@ SEE IT only means anything if the shot is close enough to see.
 - The IK links carry no rotation limits, so an elbow can in principle fold the wrong way. Nothing
   like it showed in the renders; that is not the same as proven.
 - `window.GRIP_IK = false` reverts the whole thing at runtime.
+
+## THE ANIMATION STOPS BEING A CHARACTER POSE AT THE RETARGET (2026-09-03) — pose_ledger.cjs
+The brief for this pass named a pipeline: RigAnalyzer -> CharacterRuntime -> PoseBuffer /
+AnimationClipAdapter -> PoseBlender -> Inertializer -> PhysicsAnimationBridge.
+**MEASURED FIRST: six of those seven identifiers appear ZERO times anywhere in this repository**, and
+the seventh is a two-line cross-fade patch. Instrumenting that pipeline would have produced a
+confident, well-formatted report about fiction. **Check that the thing you are about to autopsy
+exists before you build the instrument.** Same lesson as the APK with no models in it.
+
+### THE REAL PIPELINE, derived from the code and then CONFIRMED by the ledger's own stack traces
+    16964  PROCEDURAL RETARGET  every mapped bone slerped 30-40%/frame toward an aim computed from
+                                the PROCEDURAL rig's joint positions (worldJoint(from)->worldJoint(to))
+    16967  hold-to-rest         leaf bones with no child axis
+    17035  CLIP BLOCK           mocap — but only on the bones that clip happens to drive
+    59187  BANNON_FOOTIK        foot IK
+    61644  BANNON_GRIPIK        grip IK
+**The writer of every bone is identified by its SOURCE LINE off the stack.** This game is one HTML
+file, so a line number IS an identity and it cannot go stale the way a hand-written layer list does.
+
+### A. THE AUTHORITY CENSUS — THIS IS THE MARIONETTE, AND IT IS STRUCTURAL
+Read off the engine's own `userData.__driven` stamp, per frame, per bone:
+    idle 0% clip-driven · grapple 0% · walk 11% · strike 30%
+**70-100% OF THE VISIBLE SKELETON IS CHASING THE PROCEDURAL RIG AT ALL TIMES.** The GLB is a puppet
+of the procedural body BY CONSTRUCTION. It is the same code path for every character and every
+motion, which is exactly why the complaint is global rather than per-move — and it means **no amount
+of better mocap changes what it looks like, because for most bones the mocap is not the authority.**
+
+### B. THE LAG — a first-order filter cannot catch a moving target, it can only trail it
+New dormant hook (`window.__PL_AIM`, one property lookup when nothing listens) hands the harness the
+AIM the retarget is about to slerp toward — it is a local temporary, so there is no other way to ask
+the question. Angle between where the bone IS and where its own target says it should be:
+    idle 38.0° (limbs 40.7) · walk 45.7 (50.6) · strike 47.3 (50.9) · grapple 48.1 (49.0) · max ~180
+**The visible bone sits roughly 45 degrees from its own target, permanently.** The write is
+`slerp(aim, 0.3..0.4)` with **NO dt term**, so it closes a third of the gap per frame against a
+target that keeps moving.
+FRAME RATE: walk limb lag 50.59° at 47.6 fps vs 55.09° at 5.5 fps. Direction matches the missing dt;
+**+9% is INSIDE the documented noise floor, so this is consistent-with, NOT proven.**
+
+### C. SINGLE-FINAL-AUTHORITY DOES NOT HOLD — bones written by TWO source lines in ONE frame
+    grapple  LeftForeArm/RightForeArm/LeftArm/RightArm  1310-1312 frames EACH
+    walk     LeftUpLeg 163 · LeftLeg 149 · RightUpLeg 143 · RightLeg 125 · Spine 56
+    strike   Spine1/Spine2/Neck 71 each · Head 29 · LeftShoulder 23
+FOOTIK contests the legs with the retarget every walk frame; the clip contests the spine during a
+strike; and **GRIPIK — mine — contests all four arm bones on essentially every frame of a grapple.**
+That fix measured a real improvement and it is still a LAYERED OVERRIDE, not an authority. Say so.
+
+### THE INSTRUMENT DEFECT, CAUGHT BEFORE REPORTING ANY OF IT
+The first run attributed **every write in all five motion classes to ONE key, `59:24`** — a line
+inside the vendored three.min.js, because `Quaternion.slerp/copy` fire the change callback from in
+there. A ledger where every writer is the same library function is not a clean result, it is a broken
+instrument — and its "contested: none" was a lie it told. Only stack frames naming BANNON_v150.html
+count as writers now. **A measurement that makes everything look healthy is the one to distrust.**
+
+### WHAT THIS SETS UP — do not start two
+The next system is the retarget itself, and the order is forced by the numbers: raising the clip's
+share of the skeleton is worth more than tuning the filter, because a bone the clip does not own
+cannot be fixed by making it chase better. Candidate order: (1) why is idle 0% and grapple 0% — is a
+clip even resident and mapped for those states; (2) dt-correct the catch-up so a phone and a desktop
+converge the same; (3) decide a real authority per bone per frame instead of layering overrides.
