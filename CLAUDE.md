@@ -1707,3 +1707,91 @@ only 7-10 ms total, so the cost is NOT parsing — it is the first DRAW of those
 where three.js links. That arithmetic fits, and fitting arithmetic is not proof. The experiment
 that would settle it is a perturbation that actually suppresses the queue (install the hook in the
 init script BEFORE any module runs, not from an interval).
+
+## SYSTEM DONE (first half): THE GRAB ACTUALLY HOLDS ON (2026-09-03)
+Owner's own bug report, verbatim: *"CURRENT BUG: grab animation visually connects, but hands drift
+during rotation / OPEN SOURCE CANDIDATE: constraint / IK implementation / EXTRACTION: hand-target
+solver only / GATE: same deterministic grab replay / PASS CONDITION: distance between contact points
+remains bounded through the full move."* Nothing here had ever measured it. `smoke.cjs` proves a
+grapple MOVES the skeleton, and bone TRAVEL is large whether the grip holds or lets go — it cannot
+tell the two apart. **A PASSING METRIC IS NOT A PASSING MODEL** (the severed-rig lesson again).
+
+### THE MEASUREMENT — tools/harness/grapple_contact.cjs
+Per frame: distance from each attacker HAND bone to the NEAREST bone of the man he is holding, WHICH
+bone that is, and how often the answer changes. Scale is the victim's live shoulder span, so no
+verdict depends on a model being a particular height. **The contact threshold is taken from the
+engine's own code, not invented:** `_gripOpp` places a gripping hand on the victim's joint with
+offsets of at most 0.06 m, so 0.15 m is that with an allowance for bone-centre vs surface.
+MEASURED, BANNON holding VIPER, STANDARD: lock-up **0.25-0.33 m**, hoist **0.32-0.40 m**. Four to
+five times the engine's own definition of contact. The hands were never on the body at all.
+
+### THE DECOMPOSITION IS THE POINT — it says WHICH HALF to go and fix
+    INTENT  the engine's own procedural grip point -> victim body   0.183 / 0.237 m
+    FOLLOW  the visible GLB hand -> that grip point                 0.197 / 0.242 m
+Both halves broken, roughly equally. Reading the code agreed with the numbers: **`_gripOpp` — the
+function written to put hands on the real body — IS NEVER CALLED AT STAGE 1.** The lock-up sets
+`J.haL/haR` to fixed local offsets `(0.40, 1.40, ±0.14)` that know nothing about where the opponent
+is standing. And where it IS called it writes into the PROCEDURAL rig, which is not the body on
+screen. The engine has been solving grips on a skeleton the player never sees.
+
+### THE FIX — vendored solver + adapter, and the adapter owns only what the library cannot know
+`assets/vendor/CCDIKSolver.js` is **three.js r128's own** `examples/js/animation/CCDIKSolver.js`,
+MIT, byte-for-byte unmodified, matched to the revision we already vendor. No solver was hand-rolled.
+It addresses its target by INDEX into a SkinnedMesh's `skeleton.bones`, and our target is a point on
+the OTHER fighter — in no skeleton of ours. **The adapter hands it a shim
+`{ skeleton:{ bones:[hand, forearm, arm, target] } }`** and it runs unmodified against a world point.
+That shim is the whole trick; remember it, it works for any three.js IK against an external target.
+`BANNON_GRIPIK` owns three things only: WHERE (read from **GRIP_SPEC**, the engine's existing
+per-move anatomy table, already researched and cited — nothing invented), WHICH (the procedural-key
+-> Mixamo map is **INVERTED FROM MOCAP_BONE_MAP**, never written fresh; two spellings of one thing is
+the most repeated defect in this codebase), and WHEN (after `updateFighterModel`, or the pose
+overwrites it in the same frame). It also solves the HELD man's hands back onto the holder, which
+poseGrabbed's stage-1 MUTUAL GRIP block already declares and then writes into the unseen rig.
+
+### RESULT, A/B/A/B IN ONE BUILD (`--nogripik` is the control — never compare to a past session)
+    stage 1 LOCK-UP   control 0.309 / 0.302 m   ->   0.067 / 0.070 m
+                      control 0.669 / 0.564 m   ->   0.084 / 0.099 m
+    stage 2 HOIST     control 0.404 / 0.534 m   ->   0.143 / 0.147 m
+And the hand is on a NAMED part instead of wandering: grip bone **Spine2 — the chest, exactly what
+GRIP_SPEC.STANDARD declares — on 80-93% of lock-up frames**, against 37-43% on a different bone every
+few frames. SEEN as well as counted, side by side at 1.55 m.
+
+### THE FINDING NO SOLVER COULD HAVE FIXED — MEASURE THE REACH BEFORE BLAMING THE IK
+The reach ledger reported the grip target **out of reach on 100% of lock-up frames, short by 0.31 m**.
+The attacker's arm, shoulder bone to hand bone off the bound GLB, is **0.43 m**. The tie-up was
+parking the two men **0.85 m apart — FURTHER APART THAN AN ARM IS LONG**. A hand was being asked to
+touch something it could not get to, and every IK in the world would have straightened the arm and
+missed. That flat 0.85 is now DERIVED from the two bodies (0.95 of arm extension + a torso half-depth
+from the shoulder span) and **can only ever return LESS than 0.85**, so the worst case is the old
+behaviour and an unbound model gets 0.85 unchanged. Out-of-reach at lock-up 100% -> 45-58%,
+shortfall 0.31 m -> 0.07-0.12 m.
+
+### FOUR DEFECTS IN MY OWN INSTRUMENT, ALL FOUND BY MEASURING — the recurring shape
+1. `shoulderSpan()` was handed the FIGHTER where it needed `fighter.model`. `__boneOf` on a non-model
+   returns null without complaint, so every span was silently null and the scale vanished.
+2. Attacker hardcoded as `fighters[0]`. The first run measured **the PLAYER BEING GRABBED BY THE CPU**
+   with a third body (a run-in) on the mat. Read the pair off the live grabbing relationship, never
+   off an array index.
+3. **A DETERMINISTIC REPRO CANNOT BE TAKEN FROM INSIDE AN UNFROZEN MATCH.** Freeze the AI through the
+   engine's own gate (`!f.isPlayer` in the updateAI loop) — not by setting `isPlayer`, which also
+   routes input and the camera.
+4. The drive stood where the fighters happened to be and the first `g` came back as `ropegrab` —
+   ROPE_INTERACT correctly turns GRAB near the ropes into a rope grab. Then every `j` was a JAB that
+   knocked the man down. Place at ring centre; only press `j` while a hold is live.
+Plus: the first 350 ms of a stage is dropped, because poseGrabbed lerps the bodies into the hold and
+judging a grip on its approach frame is an artifact — one frame at 0.785 m with a 0.13 m root gap was
+dominating the drift figure. The discard is REPORTED, not hidden. And drift is judged on the p5-p95
+BAND with the full range printed beside it, so a single stage-boundary frame cannot define a verdict.
+
+### STILL OPEN, STATED NOT BURIED
+- Stage 2 sits at 0.135-0.156 m against the 0.15 m threshold, with 61-73% of frames still out of
+  reach by ~0.27 m. That is the CARRY GEOMETRY lifting the victim past where the arm can follow, not
+  the solver. The honest next move is to aim at the reachable part of the victim nearest the declared
+  grip rather than clamping along the ray into empty air.
+- **STAGE 3 IS UNREACHABLE FROM PLAYER INPUT.** `playerAttack` sets `grappleStage = 3` and then falls
+  through to the delivery ON THE SAME PRESS, by design and by its own comment. So the carry has never
+  been measured from the player's side and nothing is claimed about it. Only the AI dwells there
+  (`st===3 && stateTime>1.2`). The player's rotation window is really stage 2.
+- The IK links carry no rotation limits, so an elbow can in principle fold the wrong way. Nothing
+  like it showed in the renders; that is not the same as proven.
+- `window.GRIP_IK = false` reverts the whole thing at runtime.
