@@ -51669,9 +51669,42 @@ window.__deriveVariant = async function(key){
         // render target is the most plausible way to put a blank frame on screen — but the flashing
         // did NOT reproduce here (0 black frames of 205, twice), so this halves a known churn rather
         // than being a confirmed fix, and it is written down that way.
+        // ── DEFER, NEVER DROP ────────────────────────────────────────────────────────────────
+        // FOUND BY tools/harness/fuzz_invariants.cjs, seed 39094, shrunk to FOUR actions:
+        //     hide -> resize 899x799 -> tier 0 (FULL) -> tier 4 (POTATO)   =>  4,018 ms frame
+        // The rate limit used to sit in the SAME condition as the change itself, so a second tier
+        // change arriving inside the one-second window was not delayed, it was THROWN AWAY. The
+        // composer kept FULL's pixel ratio while ST.tier, the badge and every log line said POTATO.
+        // THAT DEFEATS THE ENTIRE AUTO-TIER: the game drops the tier and the cost does not go down,
+        // which is exactly "it says POTATO and it still freezes".
+        // It is worst precisely when it matters most. The hard-stall path fires
+        // `floor(d / 1200)` steps at once and can fire again on the next bad frame, so a device in
+        // real trouble produces bursts of tier changes — and under the old code every change after
+        // the first in each second was silently discarded.
+        // Now the WANTED ratio is always recorded, and a single pending timer applies whatever the
+        // latest value is when the window expires. A burst of N changes costs exactly TWO
+        // reallocations, the first and the final one, instead of N — which is the reason the rate
+        // limit exists — and the composer can never be left disagreeing with the tier.
         var now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-        if (C.setPixelRatio && Math.abs((C.__pr || 0) - want) > 0.01 && (now - (C.__prAt || -9999)) > 1000){
-          C.setPixelRatio(want); C.__pr = want; C.__prAt = now;
+        C.__prWant = want;
+        if (C.setPixelRatio && Math.abs((C.__pr || 0) - want) > 0.01){
+          if (now - (C.__prAt || -9999) > 1000){
+            C.setPixelRatio(want); C.__pr = want; C.__prAt = now;
+          } else if (!C.__prTimer){
+            var wait = 1000 - (now - (C.__prAt || 0));
+            C.__prTimer = setTimeout(function(){
+              C.__prTimer = null;
+              try{
+                var w2 = C.__prWant;                       // the LATEST request, not the one queued
+                if (Math.abs((C.__pr || 0) - w2) > 0.01){
+                  C.setPixelRatio(w2); C.__pr = w2;
+                  C.__prAt = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+                  try{ console.log('%c[BANNON_PERF] composer pixel ratio settled at ' + w2 +
+                    ' (deferred through the rate limit)', 'color:#ffb000'); }catch(e){}
+                }
+              }catch(e){}
+            }, Math.max(16, wait));
+          }
         }
         // BLOOM IS THE MULTI-MIP BLUR. It is a look, not a mechanic — off below HIGH. Disabling the
         // PASS keeps the composer (and the cheap single-pass broadcast grade) intact, so the frame

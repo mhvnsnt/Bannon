@@ -1597,3 +1597,35 @@ PUSH IS PART OF THE STEP, NOT THE END OF THE TASK. A working tree is not storage
 container makes "I'll commit it all at the end" a bet that loses eventually. Recovery is
 `git fetch origin <branch> && git reset --hard FETCH_HEAD` — which is only ever available if the
 push happened.
+
+## THE FUZZER FOUND ITS FIRST REAL BUG (2026-09-03) — AND THE COMPLETE LOOP RAN
+tools/harness/fuzz_invariants.cjs, seed 39094, 30 generated actions, shrunk to FOUR:
+    hide -> resize 899x799 -> tier 0 (FULL) -> tier 4 (POTATO)
+### THE DEFECT: A RATE LIMIT THAT DROPPED INSTEAD OF DEFERRING
+    if (C.setPixelRatio && Math.abs((C.__pr||0)-want) > 0.01 && (now - (C.__prAt||-9999)) > 1000)
+The cooldown sat in the SAME condition as the change, so a second tier change arriving inside the
+one-second window was not delayed — it was THROWN AWAY. The composer kept FULL's pixel ratio while
+ST.tier, the build badge and every log line said POTATO. **THAT DEFEATS THE WHOLE AUTO-TIER: the
+game drops the tier and the cost does not go down.** It is "it says POTATO and it still freezes".
+It is worst exactly when it matters most: the hard-stall path fires `floor(d/1200)` steps at once
+and can fire again on the next bad frame, so a device in real trouble produces BURSTS of tier
+changes — and every change after the first in each second was silently discarded.
+FIXED by recording the wanted ratio always and letting one pending timer apply the LATEST value
+when the window expires. A burst of N changes costs exactly TWO reallocations (first and final)
+instead of N — which is the reason the rate limit exists — and the composer can never disagree.
+### THE INVARIANT WAS PROVEN TO FIRE BEFORE IT WAS TRUSTED
+New **I10: the composer's pixel ratio must agree with the active tier** once settled (a deferred
+change is correct, not a violation, so `__prTimer` pending is honoured). The fix was temporarily
+REVERTED and the same repro replayed: `I10  tier HIGH wants composer pr 1.75 but it is 2`. With the
+fix restored the identical replay PASSES. An invariant that has never failed is not a test.
+### I8 IS SCOPED, AND THAT MATTERS
+The original 4,018 ms frame did NOT go away with the fix, and chasing it as a bug would have been
+wrong: the fuzzer had set tier 0, and FULL on an 899x799 viewport at dpr 2 is ~2.9M pixels through
+five post passes. On this container's SOFTWARE rasteriser a 4-second frame there is the honest cost
+of that configuration. I8 now only fires at tiers a phone actually runs, and reports a raised-tier
+frame as a soft NOTE. Reporting configuration cost as a broken invariant buries the real ones.
+### WHAT THE PASSING RUNS SAY, WHICH IS NOT "FINE"
+Worst frames on runs where nothing broke: 2,856 ms, 2,624 ms, 3,615 ms — several around BOOT, before
+a match exists. Multi-second stalls remain even when every invariant holds. The harness reports the
+worst frame on a PASS for exactly this reason: "no invariant broken" and "the worst frame was
+3.6 seconds" are both true at once, and only one of them is what the owner feels.
