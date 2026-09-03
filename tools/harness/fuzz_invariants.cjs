@@ -54,7 +54,7 @@ const LEGAL_STATES = ['menu','menu_select','menu_creator','menu_models','caw','f
                       'pause_creator','pause_models','roundend','winner'];
 const HARD_FRAME_MS = +arg('frame-ms', '4000');
 const STUCK_MS      = +arg('stuck-ms', '25000');
-const MAX_FIGHTERS  = 8;
+const MAX_FIGHTERS  = +arg('max-fighters', '8');
 
 // ── the action alphabet ──────────────────────────────────────────────────────────────────────
 // Every one is something a player or the OS can really do. Nothing here pokes an internal that a
@@ -222,12 +222,18 @@ async function runSequence(browser, port, seq, label){
   const boot = await bootToMatch(page, port);
   if (!boot.ok){ await page.close(); return { violations:[{ id:'BOOT', detail: boot.why }], at:-1 }; }
 
-  let prevCount = null, out = { violations:[], at:-1, log:[] };
+  let prevCount = null, out = { violations:[], at:-1, log:[], worstFrame:0, worstAt:0, states:{} };
   for (let i = 0; i < seq.length; i++){
     const a = seq[i];
     await doAction(page, a);
     const { v, s } = await checkInvariants(page, { lastAction: a.id, prevCount });
     prevCount = s && s.count != null ? s.count : prevCount;
+    // THE WORST FRAME IS THE OWNER'S ACTUAL COMPLAINT, so it is reported on a PASS too. A harness
+    // that only speaks up when it fails hides the number that says whether things are improving —
+    // "no invariant broken" and "the worst frame was 3,900 ms" are both true at once, and only one
+    // of them is what he feels.
+    if (s && s.watch && s.watch.worstFrame > out.worstFrame){ out.worstFrame = s.watch.worstFrame; out.worstAt = s.watch.worstAt; }
+    if (s && s.state) out.states[s.state] = (out.states[s.state]||0) + 1;
     if (pageErrors.length) v.push({ id:'I7', detail: pageErrors.slice(0,3).join(' | ') });
     if (v.length){ out.violations = v; out.at = i; break; }
   }
@@ -253,10 +259,16 @@ async function runSequence(browser, port, seq, label){
     console.log('\n===== FUZZ ' + (replay ? 'REPLAY ' + path.basename(replay) : 'seed ' + seed) +
                 '  (' + seq.length + ' actions) =====');
     const res = await runSequence(browser, port, seq, 'seed' + seed);
-    if (!res.violations.length){ console.log('  PASS — no invariant broken in ' + seq.length + ' actions'); continue; }
+    if (!res.violations.length){
+      console.log('  PASS — no invariant broken in ' + seq.length + ' actions' +
+        '   worst frame ' + res.worstFrame + 'ms at t+' + res.worstAt + 'ms' +
+        '   states ' + JSON.stringify(res.states));
+      continue;
+    }
 
     anyFail = true;
-    console.log('  BROKEN at action ' + res.at + ' (' + (seq[res.at] ? seq[res.at].id : '?') + '):');
+    console.log('  BROKEN at action ' + res.at + ' (' + (seq[res.at] ? seq[res.at].id : '?') + ')' +
+                '   worst frame ' + res.worstFrame + 'ms:');
     res.violations.forEach(v => console.log('    ' + v.id + '  ' + v.detail));
 
     let minimal = seq.slice(0, res.at + 1);
