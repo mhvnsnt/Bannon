@@ -1,0 +1,80 @@
+[
+ {
+  "full_name": "mhvnsnt/Bannon",
+  "role": "federation root \u2014 the game",
+  "canonical": true,
+  "attached_to_session": true
+ },
+ {
+  "full_name": "mhvnsnt/M.-Engine-",
+  "role": "engine / kernel components",
+  "attached_to_session": true
+ },
+ {
+  "full_name": "mhvnsnt/M-Hero-Simulator-",
+  "role": "simulator",
+  "attached_to_session": false
+ },
+ {
+  "full_name": "mhvnsnt/God-Mode-OS-D3MN-V2",
+  "role": "cognitive / governance, latest",
+  "attached_to_session": true
+ },
+ {
+  "full_name": "mhvnsnt/God-Mode-OS-D3MN",
+  "role": "cognitive / governance, prior",
+  "attached_to_session": false
+ },
+ {
+  "full_name": "mhvnsnt/God-Mode-OS",
+  "role": "cognitive / governance, original",
+  "attached_to_session": false
+ },
+ {
+  "full_name": "mhvnsnt/CODEDUMMY",
+  "role": "coding / workspace agent",
+  "attached_to_session": true
+ },
+ {
+  "full_name": "mhvnsnt/CODEDUMMY-",
+  "role": "coding / workspace agent, variant",
+  "attached_to_session": false
+ },
+ {
+  "full_name": "mhvnsnt/bolt.diy-M",
+  "role": "dev environment / UI",
+  "attached_to_session": false
+ },
+ {
+  "full_name": "mhvnsnt/Physics-sandbox-playground-",
+  "role": "physics sandbox",
+  "attached_to_session": false
+ },
+ {
+  "full_name": "mhvnsnt/Funnel-and-rod-fully-interactive-physics-biomechanics-simulator-",
+  "role": "biomechanics physics",
+  "attached_to_session": false
+ },
+ {
+  "full_name": "mhvnsnt/URBAN-MAYHEM-",
+  "role": "game project",
+  "attached_to_session": false
+ },
+ {
+  "full_name": "mhvnsnt/Dream-Infinite-World",
+  "role": "world generation",
+  "attached_to_session": false
+ },
+ {
+  "full_name": "mhvnsnt/Wrestli6game-3",
+  "role": "earlier wrestling game",
+  "attached_to_session": true
+ },
+ {
+  "full_name": "mhvnsnt/UnrealEngine",
+  "role": "Epic UE fork",
+  "skip_index": true,
+  "skip_reason": "fork of Epic's engine \u2014 tens of GB. Indexing it by cloning fills this container's disk, which has presented twice as an unrelated 'Page crashed'. Reference it by path, do not index it.",
+  "attached_to_session": true
+ }
+]

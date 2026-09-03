@@ -51779,9 +51779,19 @@ window.__deriveVariant = async function(key){
       var cores = navigator.hardwareConcurrency || 4;
       var mem   = navigator.deviceMemory || 4;
       if (!mobile) return cores >= 8 ? 0 : 1;
-      if (cores <= 4 || mem <= 3) return 4;      // budget phone — open at POTATO, earn your way up
-      if (cores <= 6 || mem <= 4) return 3;
-      return 2;
+      // EVERY PHONE OPENS AT POTATO AND EARNS ITS WAY UP. This read the core count and opened a
+      // well-specced phone at MEDIUM, and that is the freeze window the owner keeps hitting.
+      // MEASURED, tools/harness/tier_response.cjs on a phone viewport at dpr 2.5: the game took
+      // SEVEN hard stalls (worst frame 4,284 ms) and TWO automatic tier drops over the first ~19
+      // seconds before it settled on POTATO by itself. Those nineteen seconds are the start of the
+      // match — exactly when he is trying to play.
+      // CORE COUNT IS NOT GPU. navigator.hardwareConcurrency says nothing about fill rate, and fill
+      // rate is what render_cost.cjs measured as the actual lever: FULL -> POTATO is 82% fewer
+      // post-process pixels and 6.7x the frame rate on the same scene.
+      // The cost of being wrong in this direction is a plainer look for a few seconds, because the
+      // climb-up path already raises the tier when fps holds above 1.6x target and nothing has had
+      // to drop. The cost of being wrong the other way is an unplayable opening.
+      return 4;
     }catch(e){ return 3; }
   }
 

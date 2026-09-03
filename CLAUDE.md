@@ -1499,3 +1499,42 @@ poseCalls, node counts) are far tighter than timings — prefer them.
   entrance, harmless) and ~9 at 16-25 s into the match. Those are created-and-drawn in the same
   frame, so nothing that watches the scene can pre-empt them — the fix is to CREATE the fx and
   damage materials at boot so they are never new. Not attempted yet.
+
+## THE FEDERATION IS QUERYABLE NOW (2026-09-03) — tools/federation/
+Owner: "the orchestrator should automatically search the federation and discover the implementation
+you already built elsewhere instead of making you say 'Go add M.-Engine-'." Fair — handing him a
+repo list is not automation.
+- `node tools/federation/index_repos.mjs [--refresh] [--repo NAME]` clones every repo shallow with
+  `--depth 1 --filter=blob:none --no-checkout` (the whole TREE, none of the file CONTENT) and
+  derives what is actually there: entry points, languages by file count, top-level subsystems, and
+  CAPABILITY TAGS matched from real paths.
+- `node tools/federation/find.mjs "<what you need>"` / `--list` / `--repo NAME` answers with
+  EVIDENCE — the capability, the file count that earned it, the subsystem, the entry point to open.
+- **CAPABILITIES ARE DERIVED FROM FILES, NEVER FROM DESCRIPTIONS.** A registry saying
+  "M.-Engine- = engine components" is a guess wearing a schema and goes stale the day after it is
+  written. OWNER LAW: metadata is a hint, never an authority. `role` is carried through and labelled
+  as a declared hint; nothing ranks on it.
+### THREE TRAPS, ALL MEASURED, ALL WORTH KEEPING
+1. **THE SESSION GIT PROXY SERVES LOWERCASE REPO NAMES.** `mhvnsnt/CODEDUMMY` 404s;
+   `mhvnsnt/codedummy` clones. CODEDUMMY was ALREADY ATTACHED to the session and still "failed to
+   clone", which reads exactly like a permissions problem and is a casing problem. GitHub's web UI
+   is case-insensitive, so the display name from `list_repos` carries the owner's capitalisation and
+   is NOT what to dial. Lowercase every clone URL.
+2. **`git ls-tree -l` DEFEATS `--filter=blob:none`.** The sizes live in the blobs a partial clone
+   deliberately did not fetch, so asking for them sends git back to the network per object. It hung
+   and the catch reported "empty tree" for a repo whose tree reads perfectly by hand. Use
+   `--name-only`; file COUNTS are a better proxy for "is this a real subsystem" than bytes anyway,
+   because one checked-in binary outweighs a whole module.
+3. **TWO INDEXER RUNS IN FLIGHT CLOBBER EACH OTHER.** An earlier run finished LAST and overwrote the
+   good registry with its stale results — `find.mjs` then reported 1 indexed repo out of 15 and
+   named Bannon itself as "not indexed". Check `pgrep -f index_repos` before re-running.
+### ATTACHING IS THE ONLY MANUAL STEP, AND IT IS ONE CALL
+A repo the session has not been given 404s identically to one that does not exist, so the tool says
+`NOT ATTACHED — run add_repo(owner/name) first` rather than printing a git error. Currently indexed:
+Bannon (8,260 files), CODEDUMMY (1,999), M.-Engine- (678), bolt.diy-M (538), God-Mode-OS-D3MN-V2
+(519), Wrestli6game-3 (48), M-Hero-Simulator- (39). mhvnsnt/UnrealEngine is DELIBERATELY SKIPPED —
+it is a fork of Epic's engine at tens of GB, and filling this container's disk has twice presented
+as an unrelated "Page crashed" in a harness.
+### WHAT IT ALREADY FOUND
+`find.mjs worker pool sandbox` -> `M.-Engine-/tools/unreal-worker/server.js`. That is the exact
+"you already built this" case the owner described, answered without him naming a repo.

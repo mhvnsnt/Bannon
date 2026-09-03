@@ -1,0 +1,940 @@
+{
+ "generatedAt": "2026-09-03T08:06:34.078Z",
+ "note": "CAPABILITIES ARE DERIVED FROM FILE PATHS, not from descriptions. Regenerate with tools/federation/index_repos.mjs.",
+ "capabilityTable": [
+  "multi-agent orchestration",
+  "remote sandbox",
+  "physics",
+  "animation / mocap",
+  "3d rendering",
+  "unreal engine",
+  "github automation",
+  "llm / inference",
+  "workspace / coding agent",
+  "governance / policy",
+  "ui / frontend",
+  "build / packaging",
+  "game runtime",
+  "data / persistence"
+ ],
+ "repos": [
+  {
+   "full_name": "mhvnsnt/Bannon",
+   "role": "federation root — the game",
+   "canonical": true,
+   "attached_to_session": true,
+   "indexed": true,
+   "fileCount": 8260,
+   "languages": [
+    {
+     "lang": "JSON",
+     "files": 4270
+    },
+    {
+     "lang": "TypeScript",
+     "files": 817
+    },
+    {
+     "lang": "C/C++ header",
+     "files": 551
+    },
+    {
+     "lang": "C++",
+     "files": 459
+    },
+    {
+     "lang": "Markdown",
+     "files": 357
+    },
+    {
+     "lang": "JavaScript",
+     "files": 178
+    },
+    {
+     "lang": "Python",
+     "files": 127
+    },
+    {
+     "lang": "C",
+     "files": 97
+    }
+   ],
+   "subsystems": [
+    {
+     "dir": "assets",
+     "files": 4847
+    },
+    {
+     "dir": "unreal",
+     "files": 717
+    },
+    {
+     "dir": "godmode",
+     "files": 526
+    },
+    {
+     "dir": "claude-plugins-official-main",
+     "files": 405
+    },
+    {
+     "dir": "imports",
+     "files": 390
+    },
+    {
+     "dir": "box3d-0.1.0",
+     "files": 350
+    },
+    {
+     "dir": "src",
+     "files": 225
+    },
+    {
+     "dir": "(root)",
+     "files": 176
+    },
+    {
+     "dir": "tools",
+     "files": 137
+    },
+    {
+     "dir": "app",
+     "files": 96
+    },
+    {
+     "dir": "living-nexus-android",
+     "files": 45
+    },
+    {
+     "dir": "docs",
+     "files": 40
+    },
+    {
+     "dir": "models",
+     "files": 36
+    },
+    {
+     "dir": "harness-main",
+     "files": 35
+    }
+   ],
+   "capabilities": [
+    {
+     "capability": "animation / mocap",
+     "files": 2216
+    },
+    {
+     "capability": "unreal engine",
+     "files": 721
+    },
+    {
+     "capability": "3d rendering",
+     "files": 589
+    },
+    {
+     "capability": "ui / frontend",
+     "files": 345
+    },
+    {
+     "capability": "game runtime",
+     "files": 135
+    },
+    {
+     "capability": "multi-agent orchestration",
+     "files": 132
+    },
+    {
+     "capability": "remote sandbox",
+     "files": 124
+    },
+    {
+     "capability": "workspace / coding agent",
+     "files": 119
+    },
+    {
+     "capability": "physics",
+     "files": 102
+    },
+    {
+     "capability": "build / packaging",
+     "files": 90
+    },
+    {
+     "capability": "governance / policy",
+     "files": 56
+    },
+    {
+     "capability": "github automation",
+     "files": 52
+    },
+    {
+     "capability": "llm / inference",
+     "files": 51
+    },
+    {
+     "capability": "data / persistence",
+     "files": 39
+    }
+   ],
+   "entryPoints": [
+    "android_build/CMakeLists.txt",
+    "blender-mcp-main/main.py",
+    "blender-mcp-main/pyproject.toml",
+    "blendforge/package.json",
+    "box3d-0.1.0/CMakeLists.txt",
+    "forge_server/app.py",
+    "godmode/index.html",
+    "godmode/package.json",
+    "godmode/server.ts",
+    "godmode/src/main.tsx",
+    "harness-main/index.html",
+    "imports/kinetic-sandbox-v2/index.html",
+    "imports/kinetic-sandbox/index.html",
+    "imports/m-craft-v2/index.html",
+    "imports/m-craft/index.html",
+    "index.html",
+    "index.js",
+    "native/CMakeLists.txt",
+    "package.json",
+    "public/index.html",
+    "server.ts",
+    "src/main.tsx",
+    "unreal/Bannon.uproject"
+   ]
+  },
+  {
+   "full_name": "mhvnsnt/M.-Engine-",
+   "role": "engine / kernel components",
+   "attached_to_session": true,
+   "indexed": true,
+   "fileCount": 678,
+   "languages": [
+    {
+     "lang": "Kotlin",
+     "files": 374
+    },
+    {
+     "lang": "Python",
+     "files": 126
+    },
+    {
+     "lang": "Markdown",
+     "files": 64
+    },
+    {
+     "lang": "JavaScript",
+     "files": 23
+    },
+    {
+     "lang": "JSON",
+     "files": 7
+    },
+    {
+     "lang": "Shell",
+     "files": 5
+    },
+    {
+     "lang": "TypeScript",
+     "files": 2
+    },
+    {
+     "lang": "C++",
+     "files": 1
+    }
+   ],
+   "subsystems": [
+    {
+     "dir": "app",
+     "files": 420
+    },
+    {
+     "dir": "scripts",
+     "files": 130
+    },
+    {
+     "dir": "(root)",
+     "files": 57
+    },
+    {
+     "dir": "m-engine-web",
+     "files": 24
+    },
+    {
+     "dir": "cloud_control_plane",
+     "files": 11
+    },
+    {
+     "dir": ".github",
+     "files": 10
+    },
+    {
+     "dir": "functions",
+     "files": 10
+    },
+    {
+     "dir": "tools",
+     "files": 4
+    },
+    {
+     "dir": "assets",
+     "files": 3
+    },
+    {
+     "dir": "gradle",
+     "files": 3
+    },
+    {
+     "dir": "workspace",
+     "files": 3
+    },
+    {
+     "dir": "library",
+     "files": 1
+    },
+    {
+     "dir": "memory",
+     "files": 1
+    },
+    {
+     "dir": "shared-control-plane",
+     "files": 1
+    }
+   ],
+   "capabilities": [
+    {
+     "capability": "workspace / coding agent",
+     "files": 82
+    },
+    {
+     "capability": "github automation",
+     "files": 31
+    },
+    {
+     "capability": "remote sandbox",
+     "files": 23
+    },
+    {
+     "capability": "build / packaging",
+     "files": 19
+    },
+    {
+     "capability": "data / persistence",
+     "files": 19
+    },
+    {
+     "capability": "llm / inference",
+     "files": 19
+    },
+    {
+     "capability": "governance / policy",
+     "files": 10
+    },
+    {
+     "capability": "multi-agent orchestration",
+     "files": 9
+    },
+    {
+     "capability": "unreal engine",
+     "files": 9
+    },
+    {
+     "capability": "ui / frontend",
+     "files": 7
+    }
+   ],
+   "entryPoints": [
+    "functions/lib/index.js",
+    "functions/package.json",
+    "functions/src/index.js",
+    "functions/src/index.ts",
+    "m-engine-web/index.html",
+    "m-engine-web/package.json",
+    "tools/unreal-worker/server.js"
+   ]
+  },
+  {
+   "full_name": "mhvnsnt/M-Hero-Simulator-",
+   "role": "simulator",
+   "attached_to_session": false,
+   "indexed": true,
+   "fileCount": 39,
+   "languages": [
+    {
+     "lang": "TypeScript",
+     "files": 15
+    },
+    {
+     "lang": "JavaScript",
+     "files": 13
+    },
+    {
+     "lang": "JSON",
+     "files": 4
+    },
+    {
+     "lang": "Markdown",
+     "files": 2
+    },
+    {
+     "lang": "HTML",
+     "files": 1
+    },
+    {
+     "lang": "CSS",
+     "files": 1
+    }
+   ],
+   "subsystems": [
+    {
+     "dir": "(root)",
+     "files": 25
+    },
+    {
+     "dir": "src",
+     "files": 14
+    }
+   ],
+   "capabilities": [
+    {
+     "capability": "physics",
+     "files": 6
+    }
+   ],
+   "entryPoints": [
+    "index.html",
+    "package.json",
+    "server.ts",
+    "src/main.tsx"
+   ]
+  },
+  {
+   "full_name": "mhvnsnt/God-Mode-OS-D3MN-V2",
+   "role": "cognitive / governance, latest",
+   "attached_to_session": true,
+   "indexed": true,
+   "fileCount": 519,
+   "languages": [
+    {
+     "lang": "TypeScript",
+     "files": 411
+    },
+    {
+     "lang": "JavaScript",
+     "files": 33
+    },
+    {
+     "lang": "Python",
+     "files": 18
+    },
+    {
+     "lang": "JSON",
+     "files": 15
+    },
+    {
+     "lang": "HTML",
+     "files": 10
+    },
+    {
+     "lang": "Markdown",
+     "files": 4
+    },
+    {
+     "lang": "Shell",
+     "files": 4
+    },
+    {
+     "lang": "CSS",
+     "files": 1
+    }
+   ],
+   "subsystems": [
+    {
+     "dir": "src",
+     "files": 407
+    },
+    {
+     "dir": "(root)",
+     "files": 74
+    },
+    {
+     "dir": "daemon",
+     "files": 16
+    },
+    {
+     "dir": "public",
+     "files": 11
+    },
+    {
+     "dir": "scripts",
+     "files": 5
+    },
+    {
+     "dir": "training_data",
+     "files": 4
+    },
+    {
+     "dir": "assets",
+     "files": 1
+    },
+    {
+     "dir": "database",
+     "files": 1
+    }
+   ],
+   "capabilities": [
+    {
+     "capability": "ui / frontend",
+     "files": 147
+    },
+    {
+     "capability": "multi-agent orchestration",
+     "files": 29
+    },
+    {
+     "capability": "governance / policy",
+     "files": 21
+    },
+    {
+     "capability": "workspace / coding agent",
+     "files": 20
+    },
+    {
+     "capability": "llm / inference",
+     "files": 16
+    },
+    {
+     "capability": "data / persistence",
+     "files": 13
+    },
+    {
+     "capability": "game runtime",
+     "files": 10
+    },
+    {
+     "capability": "remote sandbox",
+     "files": 9
+    },
+    {
+     "capability": "physics",
+     "files": 6
+    },
+    {
+     "capability": "3d rendering",
+     "files": 4
+    },
+    {
+     "capability": "animation / mocap",
+     "files": 3
+    }
+   ],
+   "entryPoints": [
+    "index.html",
+    "package.json",
+    "server.ts",
+    "src/main.tsx"
+   ]
+  },
+  {
+   "full_name": "mhvnsnt/God-Mode-OS-D3MN",
+   "role": "cognitive / governance, prior",
+   "attached_to_session": false,
+   "indexed": false,
+   "error": "clone failed"
+  },
+  {
+   "full_name": "mhvnsnt/God-Mode-OS",
+   "role": "cognitive / governance, original",
+   "attached_to_session": false,
+   "indexed": false,
+   "error": "clone failed"
+  },
+  {
+   "full_name": "mhvnsnt/CODEDUMMY",
+   "role": "coding / workspace agent",
+   "attached_to_session": true,
+   "indexed": true,
+   "fileCount": 1999,
+   "languages": [
+    {
+     "lang": "TypeScript",
+     "files": 584
+    },
+    {
+     "lang": "Markdown",
+     "files": 278
+    },
+    {
+     "lang": "JavaScript",
+     "files": 170
+    },
+    {
+     "lang": "C/C++ header",
+     "files": 112
+    },
+    {
+     "lang": "JSON",
+     "files": 106
+    },
+    {
+     "lang": "C",
+     "files": 97
+    },
+    {
+     "lang": "Python",
+     "files": 66
+    },
+    {
+     "lang": "GLSL",
+     "files": 30
+    }
+   ],
+   "subsystems": [
+    {
+     "dir": "godmode",
+     "files": 524
+    },
+    {
+     "dir": "claude-plugins-official-main",
+     "files": 405
+    },
+    {
+     "dir": "box3d-0.1.0",
+     "files": 350
+    },
+    {
+     "dir": "(root)",
+     "files": 246
+    },
+    {
+     "dir": ".git_corrupted",
+     "files": 144
+    },
+    {
+     "dir": "src",
+     "files": 135
+    },
+    {
+     "dir": "assets",
+     "files": 57
+    },
+    {
+     "dir": "harness-main",
+     "files": 35
+    },
+    {
+     "dir": "canon",
+     "files": 16
+    },
+    {
+     "dir": "blender-mcp-main",
+     "files": 15
+    },
+    {
+     "dir": "server",
+     "files": 13
+    },
+    {
+     "dir": "BlenderGoodies",
+     "files": 7
+    },
+    {
+     "dir": "supabase",
+     "files": 7
+    },
+    {
+     "dir": "scripts",
+     "files": 6
+    }
+   ],
+   "capabilities": [
+    {
+     "capability": "ui / frontend",
+     "files": 221
+    },
+    {
+     "capability": "3d rendering",
+     "files": 103
+    },
+    {
+     "capability": "multi-agent orchestration",
+     "files": 87
+    },
+    {
+     "capability": "animation / mocap",
+     "files": 52
+    },
+    {
+     "capability": "workspace / coding agent",
+     "files": 50
+    },
+    {
+     "capability": "github automation",
+     "files": 50
+    },
+    {
+     "capability": "governance / policy",
+     "files": 38
+    },
+    {
+     "capability": "llm / inference",
+     "files": 29
+    },
+    {
+     "capability": "data / persistence",
+     "files": 28
+    },
+    {
+     "capability": "remote sandbox",
+     "files": 26
+    },
+    {
+     "capability": "game runtime",
+     "files": 23
+    },
+    {
+     "capability": "physics",
+     "files": 18
+    },
+    {
+     "capability": "build / packaging",
+     "files": 14
+    }
+   ],
+   "entryPoints": [
+    "blender-mcp-main/main.py",
+    "blender-mcp-main/pyproject.toml",
+    "blendforge/package.json",
+    "box3d-0.1.0/CMakeLists.txt",
+    "forge_server/app.py",
+    "godmode/index.html",
+    "godmode/package.json",
+    "godmode/server.ts",
+    "godmode/src/main.tsx",
+    "harness-main/index.html",
+    "index.html",
+    "package.json",
+    "server.ts",
+    "src/main.tsx"
+   ]
+  },
+  {
+   "full_name": "mhvnsnt/CODEDUMMY-",
+   "role": "coding / workspace agent, variant",
+   "attached_to_session": false,
+   "indexed": false,
+   "error": "clone failed"
+  },
+  {
+   "full_name": "mhvnsnt/bolt.diy-M",
+   "role": "dev environment / UI",
+   "attached_to_session": false,
+   "indexed": true,
+   "fileCount": 538,
+   "languages": [
+    {
+     "lang": "TypeScript",
+     "files": 396
+    },
+    {
+     "lang": "Markdown",
+     "files": 13
+    },
+    {
+     "lang": "JavaScript",
+     "files": 7
+    },
+    {
+     "lang": "JSON",
+     "files": 6
+    },
+    {
+     "lang": "Shell",
+     "files": 6
+    },
+    {
+     "lang": "CSS",
+     "files": 1
+    }
+   ],
+   "subsystems": [
+    {
+     "dir": "app",
+     "files": 390
+    },
+    {
+     "dir": "(root)",
+     "files": 36
+    },
+    {
+     "dir": "public",
+     "files": 29
+    },
+    {
+     "dir": "icons",
+     "files": 24
+    },
+    {
+     "dir": ".github",
+     "files": 20
+    },
+    {
+     "dir": "electron",
+     "files": 15
+    },
+    {
+     "dir": "docs",
+     "files": 12
+    },
+    {
+     "dir": "scripts",
+     "files": 5
+    },
+    {
+     "dir": "assets",
+     "files": 4
+    },
+    {
+     "dir": ".husky",
+     "files": 1
+    },
+    {
+     "dir": "functions",
+     "files": 1
+    },
+    {
+     "dir": "types",
+     "files": 1
+    }
+   ],
+   "capabilities": [
+    {
+     "capability": "ui / frontend",
+     "files": 200
+    },
+    {
+     "capability": "workspace / coding agent",
+     "files": 62
+    },
+    {
+     "capability": "github automation",
+     "files": 48
+    },
+    {
+     "capability": "llm / inference",
+     "files": 12
+    },
+    {
+     "capability": "remote sandbox",
+     "files": 9
+    },
+    {
+     "capability": "data / persistence",
+     "files": 8
+    },
+    {
+     "capability": "build / packaging",
+     "files": 8
+    },
+    {
+     "capability": "animation / mocap",
+     "files": 5
+    }
+   ],
+   "entryPoints": [
+    "docs/pyproject.toml",
+    "electron/main/index.ts",
+    "electron/preload/index.ts",
+    "package.json"
+   ]
+  },
+  {
+   "full_name": "mhvnsnt/Physics-sandbox-playground-",
+   "role": "physics sandbox",
+   "attached_to_session": false,
+   "indexed": false,
+   "error": "clone failed"
+  },
+  {
+   "full_name": "mhvnsnt/Funnel-and-rod-fully-interactive-physics-biomechanics-simulator-",
+   "role": "biomechanics physics",
+   "attached_to_session": false,
+   "indexed": false,
+   "error": "clone failed"
+  },
+  {
+   "full_name": "mhvnsnt/URBAN-MAYHEM-",
+   "role": "game project",
+   "attached_to_session": false,
+   "indexed": false,
+   "error": "clone failed"
+  },
+  {
+   "full_name": "mhvnsnt/Dream-Infinite-World",
+   "role": "world generation",
+   "attached_to_session": false,
+   "indexed": false,
+   "error": "clone failed"
+  },
+  {
+   "full_name": "mhvnsnt/Wrestli6game-3",
+   "role": "earlier wrestling game",
+   "attached_to_session": true,
+   "indexed": true,
+   "fileCount": 48,
+   "languages": [
+    {
+     "lang": "TypeScript",
+     "files": 39
+    },
+    {
+     "lang": "JSON",
+     "files": 4
+    },
+    {
+     "lang": "Markdown",
+     "files": 1
+    },
+    {
+     "lang": "HTML",
+     "files": 1
+    },
+    {
+     "lang": "CSS",
+     "files": 1
+    }
+   ],
+   "subsystems": [
+    {
+     "dir": "src",
+     "files": 39
+    },
+    {
+     "dir": "(root)",
+     "files": 9
+    }
+   ],
+   "capabilities": [
+    {
+     "capability": "ui / frontend",
+     "files": 23
+    },
+    {
+     "capability": "game runtime",
+     "files": 10
+    }
+   ],
+   "entryPoints": [
+    "index.html",
+    "package.json",
+    "src/main.tsx"
+   ]
+  },
+  {
+   "full_name": "mhvnsnt/UnrealEngine",
+   "role": "Epic UE fork",
+   "skip_index": true,
+   "skip_reason": "fork of Epic's engine — tens of GB. Indexing it by cloning fills this container's disk, which has presented twice as an unrelated 'Page crashed'. Reference it by path, do not index it.",
+   "attached_to_session": true,
+   "indexed": false
+  }
+ ]
+}
