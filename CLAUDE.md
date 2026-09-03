@@ -1668,3 +1668,42 @@ PerformanceObserver('longtask') logged 59 entries and independently agrees on th
 at t+34,961; 4,519 ms at t+1,703). Its `attribution` is "unknown" for all of them, which is what a
 single inline-script page produces — the container it would name IS the page. Useful as
 corroboration, not as a pointer to a line.
+
+## THE MENU LEDGER (2026-09-03) — tools/harness/menu_ledger.cjs, AND TWO BLIND INSTRUMENTS
+boot_autopsy said WHERE. This asks WHICH WORK. Getting there took two corrections to my own
+instrument, and they are the same mistake at two different layers — both worth keeping.
+1. **THE WINDOW OPENED AFTER THE THING IT MEASURED.** The first version marked MENU when the DRIVER
+   saw `gameState === 'menu'`. `page.evaluate` cannot return while the main thread is stalled, so
+   the window opened only once the stalls had finished: **2 stalls in 40 s against boot_autopsy's
+   23**. AN OBSERVER OUTSIDE THE PROCESS CANNOT TIMESTAMP A FREEZE INSIDE IT. Marked in-page: 24
+   stalls, 25,701 ms, worst 2,464 ms — reproduced.
+2. **THE SAMPLER WAS BLIND DURING THE STALL.** Attribution was "whichever subphase an 8 ms
+   setInterval saw most during the gap". It reported MENU_IDLE for all 24 with `samples {}` on
+   several, because **A STALLED MAIN THREAD DOES NOT RUN TIMERS EITHER**. Same-thread sampling
+   cannot observe the window it exists for. What survives a freeze is a COUNTER: every counter is
+   now diffed ACROSS the gap, and the deltas say what the thread finished while it was not
+   answering. This is the general fix for measuring a freeze from inside the frozen process.
+### THE LEDGER — 40 s sitting on the menu, doing nothing
+    25 stalls · 27,479 ms · worst 3,288 ms · 577 frames
+    3288ms shaders +13 · 2465ms shaders +21 · 1809ms shaders +22 · 1311ms glb +3 shaders +7
+    SUMMED: shaders 76 · fetches 128 · glb 10       6 of 25 stalls had NO counted work at all
+**SHADER LINKING OWNS THE MENU STALL — 76 of the 81 links in the window land inside a stalled
+frame**, and the reading reproduced across two runs (76/81 and 69/73).
+**THE THREE SUSPECTS NAMED GOING IN ARE NOT RUNNING:** canvas readbacks 0, portrait
+get/prioritise 0, clip warm calls 0. The earlier pass that moved 121 portraits out of one
+synchronous forEach HELD. This is different work.
+### gameState REACHES 'menu' AT t+182 ms
+The menu is not a screen the game arrives at after loading — it is the screen shown WHILE the game
+loads underneath it. That is why every match-scoped harness missed all of this.
+### A PERTURBATION THAT DID NOT APPLY, RECORDED AS SUCH
+`--perturb noglb` was meant to suppress the portrait GLB queue. It did not: **12 GLB portraits
+loaded in BOTH the baseline and the perturbed run**, so the 25->24 stall difference is noise and
+proves nothing. The hook wraps `THREE.GLTFLoader.prototype.load` from an interval, and the portrait
+queue starts before that interval first fires. A PERTURBATION THAT DID NOT CHANGE THE VARIABLE IS
+NOT EVIDENCE — do not read the comparison.
+### THE LEADING HYPOTHESIS, LABELLED AS ONE
+12 GLB portraits at roughly 6 programs each is ~72, against 73-81 links measured. `onLoad` costs
+only 7-10 ms total, so the cost is NOT parsing — it is the first DRAW of those materials, which is
+where three.js links. That arithmetic fits, and fitting arithmetic is not proof. The experiment
+that would settle it is a perturbation that actually suppresses the queue (install the hook in the
+init script BEFORE any module runs, not from an interval).
