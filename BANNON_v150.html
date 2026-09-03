@@ -16957,6 +16957,10 @@ function updateFighterModel(f){
           // visible walk sway — while being structurally unable to end up behind the body. This is
           // what replaced the old all-or-nothing freeze.
           if(_armLeash > 0) _qw.slerp(_rlq, _armLeash);
+          // DORMANT MEASUREMENT HOOK. The AIM is a local temporary, so the only way to ask "how far
+          // behind its own target is the visible bone actually sitting" is from in here. Costs one
+          // property lookup when nothing is listening; tools/harness/pose_ledger.cjs sets it.
+          if(window.__PL_AIM) window.__PL_AIM(mp.bone, _qw, mp.isLimb, f);
           mp.bone.quaternion.slerp(_qw, _grapPose ? (mp.isLimb?0.7:0.62) : (mp.isLimb ? 0.4 : 0.3));
         } else if(mp.bone.userData.restQuat){
           // no child bone defines an axis -> hold the rest pose (never world-lock/twist)
