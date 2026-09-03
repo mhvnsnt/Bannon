@@ -61513,7 +61513,8 @@ window.__deriveVariant = async function(key){
              // REACH LEDGER. A hand that still misses after the solver ran has one of two causes and
              // they are not the same bug: the solver failed, or the target was never reachable. This
              // counts the second so it can never be mistaken for the first.
-             reach:{ n:0, clamped:0, sumShort:0, maxShort:0, armLen:0, byStage:{} } };
+             reach:{ n:0, clamped:0, rerouted:0, stranded:0, sumShort:0, maxShort:0, armLen:0,
+                     solveN:0, solveSum:0, solveMax:0, byStage:{} } };
 
   // GRIP_SPEC joint key -> GLB bone. INVERTED FROM MOCAP_BONE_MAP (see the header): that table maps
   // glb -> procedural, this is the same table read the other way, plus the three keys GRIP_SPEC uses
@@ -61564,7 +61565,40 @@ window.__deriveVariant = async function(key){
                         reach: (upper + lower) * 0.98 });
   }
 
-  var _t = null, _o = null;
+  var _t = null, _o = null, _c = null;
+
+  // Everything on a body a hand could credibly close around. Used only when the declared grip is out
+  // of reach; fingers are left out because our rigs do not carry them consistently.
+  var GRIPPABLE = ['Head','Neck','Spine2','Spine1','Spine','Hips',
+    'LeftArm','RightArm','LeftForeArm','RightForeArm','LeftHand','RightHand',
+    'LeftUpLeg','RightUpLeg','LeftLeg','RightLeg','LeftFoot','RightFoot'];
+
+  // WHEN THE DECLARED GRIP IS BEYOND THE ARM, HOLD WHAT YOU CAN ACTUALLY HOLD.
+  // Clamping along the ray to the target — which is what the reach clamp does on its own — puts the
+  // hand at full extension pointing at the right place and touching NOTHING. Measured: through the
+  // hoist the declared chest grip was out of reach on 61-73% of frames by ~0.27 m, because the carry
+  // lifts the victim past where the arm can follow. A man carrying a body grips whatever part of it
+  // is in his hands, so this picks the grippable bone NEAREST THE DECLARED GRIP that is genuinely
+  // within reach. If nothing is, it hands the point back unchanged and the clamp still applies.
+  function reachable(r, vic, p){
+    if (!_o) _o = new window.THREE.Vector3();
+    r.arm.updateWorldMatrix(true, false);
+    _o.setFromMatrixPosition(r.arm.matrixWorld);
+    if (_o.distanceTo(p) <= r.reach) return p;
+    if (!_c) _c = new window.THREE.Vector3();
+    var best = null, bd = Infinity;
+    for (var i = 0; i < GRIPPABLE.length; i++){
+      var b = bone(vic.model, GRIPPABLE[i]); if (!b) continue;
+      b.updateWorldMatrix(true, false);
+      _c.setFromMatrixPosition(b.matrixWorld);
+      if (_o.distanceTo(_c) > r.reach) continue;          // this part is out of reach too
+      var d = _c.distanceTo(p);                            // how far from the hold the move asked for
+      if (d < bd){ bd = d; best = best || new window.THREE.Vector3(); best.copy(_c); }
+    }
+    if (best){ ST.reach.rerouted++; return best; }
+    ST.reach.stranded++;
+    return p;
+  }
   // Where this hand is supposed to be, in world space, read off the victim's REAL body.
   function gripPoint(att, vic, which){
     if (!vic || !vic.model) return null;
@@ -61605,6 +61639,15 @@ window.__deriveVariant = async function(key){
     r.target.matrixWorld.identity(); r.target.matrixWorld.setPosition(tx, ty, tz);
     try{ r.solver.updateOne(r.solver.iks[0]); ST.solved++; }
     catch(e){ ST.lastErr = String(e && e.message).slice(0,140); }
+    // POST-SOLVE ERROR. Residual jitter has two possible causes and they need different answers:
+    // the solver did not converge on the target, or the target itself moved. This measures the
+    // first directly, so the second is never blamed for it.
+    try{
+      r.hand.updateWorldMatrix(true, false);
+      if (!_c) _c = new window.THREE.Vector3();
+      var e2 = _c.setFromMatrixPosition(r.hand.matrixWorld).distanceTo(_o.set(tx, ty, tz));
+      R.solveN++; R.solveSum += e2; if (e2 > R.solveMax) R.solveMax = e2;
+    }catch(e){}
   }
 
   // How far apart the two men should stand in a collar tie, measured off the bodies that are on
@@ -61661,7 +61704,7 @@ window.__deriveVariant = async function(key){
     ['Left','Right'].forEach(function(side){
       var r = rig(att.model, side); if (!r) return;
       var p = gripPoint(att, vic, side); if (!p) return;
-      aimAt(r, p, st);
+      aimAt(r, reachable(r, vic, p), st);
     });
   }
 
@@ -61687,16 +61730,19 @@ window.__deriveVariant = async function(key){
     lockupGap: lockupGap,
     stats: function(){
       var R = ST.reach, out = Object.assign({}, ST);
-      out.reach = { n:R.n, clamped:R.clamped, armLen:R.armLen,
+      out.reach = { n:R.n, clamped:R.clamped, rerouted:R.rerouted, stranded:R.stranded, armLen:R.armLen,
         meanShortfall: R.clamped ? +(R.sumShort / R.clamped).toFixed(4) : 0,
-        maxShortfall: +R.maxShort.toFixed(4), byStage: {} };
+        maxShortfall: +R.maxShort.toFixed(4),
+        solveN: R.solveN, solveErrMean: R.solveN ? +(R.solveSum / R.solveN).toFixed(4) : 0,
+        solveErrMax: +R.solveMax.toFixed(4), byStage: {} };
       for (var k in R.byStage){ var b = R.byStage[k];
         out.reach.byStage[k] = { n:b.n, clamped:b.clamped, pctClamped: b.n ? Math.round(100*b.clamped/b.n) : 0,
           meanShortfall: b.clamped ? +(b.sumShort / b.clamped).toFixed(4) : 0, maxShortfall: +b.maxShort.toFixed(4) }; }
       return out;
     },
     reset: function(){ ST.solved = 0; ST.frames = 0; ST.skipped = {};
-      ST.reach = { n:0, clamped:0, sumShort:0, maxShort:0, armLen:ST.reach.armLen, byStage:{} }; },
+      ST.reach = { n:0, clamped:0, rerouted:0, stranded:0, sumShort:0, maxShort:0, armLen:ST.reach.armLen,
+                   solveN:0, solveSum:0, solveMax:0, byStage:{} }; },
     enable: function(on){ ST.enabled = !!on; return ST.enabled; },
     iterations: function(n){ ST.iters = Math.max(1, n|0); return ST.iters; },
     // exposed so a harness can ask what the engine INTENDS for a hold without driving one

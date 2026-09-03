@@ -263,8 +263,20 @@ function analyse(samples){
   for (const k in KEYS) R.handsResolved[k] = samples.filter(s => s[k]).length;
 
   // group by grapple stage — the stages are physically different situations (tie-up, hoist, carry)
+  //
+  // ONLY FRAMES WHERE A HOLD IS ACTUALLY LIVE COUNT AS GRAPPLE FRAMES. `grappleStage` GOES STALE:
+  // when a hold breaks, the attacker can be left reading stage 1 with nobody in his hands, and one
+  // run in five duly reported a lock-up "contact" of 0.944 m with a 3.17 m range — that is not a
+  // grip that failed, it is two men standing 3 m apart being filed under LOCK-UP. `held` is read off
+  // the live grabbing relationship every frame, and stages 1-3 are built from those frames only.
+  // This applies identically to the control and the treatment, so it cannot flatter either.
   const byStage = {};
-  samples.forEach(s => { (byStage[s.st] = byStage[s.st] || []).push(s); });
+  samples.forEach(s => {
+    const st = (s.st >= 1 && s.st <= 3 && !s.held) ? 'stale' : s.st;
+    (byStage[st] = byStage[st] || []).push(s);
+  });
+  R.staleFrames = (byStage.stale || []).length;
+  delete byStage.stale;
 
   for (const st in byStage){
     const all = byStage[st];
@@ -490,6 +502,10 @@ function analyse(samples){
   console.log('  AI frozen: ' + (report.aiFrozen ? 'yes' : 'NO') + '   GRIPIK ' + report.gripik +
     '   reached ' + JSON.stringify(report.reached || {}));
   const GS = report.gripikStats;
+  if (GS && GS.reach) console.log('  GRIPIK solver residual: mean ' + GS.reach.solveErrMean +
+    'm  max ' + GS.reach.solveErrMax + 'm  over ' + GS.reach.solveN + ' solves');
+  if (GS && GS.reach) console.log('  GRIPIK reroute: ' + GS.reach.rerouted + ' grips moved to a reachable body part, ' +
+    GS.reach.stranded + ' left with nothing in reach');
   if (GS) console.log('  GRIPIK solves ' + GS.solved + ' over ' + GS.frames + ' held frames' +
     (GS.reach ? '   arm reach ' + GS.reach.armLen + 'm  target out of reach on ' +
       Object.keys(GS.reach.byStage).map(k => 'st' + k + ' ' + GS.reach.byStage[k].pctClamped + '% (short ' +
@@ -500,6 +516,7 @@ function analyse(samples){
   console.log('  samples ' + report.sampleCount + '  (' + report.fps + ' fps, pixels stubbed)   stages seen ' +
     JSON.stringify(report.stagesSeen));
   if (A && A.spanMedian) console.log('  victim shoulder span ' + A.spanMedian + ' m  — every "spans" figure below is in these units');
+  if (A && A.staleFrames) console.log('  ' + A.staleFrames + ' frames discarded: grappleStage said a hold was on and nobody was holding anybody');
   if (report.bonesMissing && Object.keys(report.bonesMissing).length)
     console.log('  bones that never resolved: ' + JSON.stringify(report.bonesMissing));
 
@@ -543,7 +560,10 @@ function analyse(samples){
       if (+st < 1 || +st > 3) continue;                  // 0 = before the grab, 4 = deliberate release
       for (const k of ['aL','aR']){
         const h = A.stages[st].hands[k];
-        if (!h || !h.n || h.n <= 5) continue;
+        // Under 15 live frames a stage has not been observed, it has been glimpsed. Say so instead
+        // of issuing a verdict on noise — a thin stage is a weak run, not a passing game.
+        if (!h || !h.n) continue;
+        if (h.n < 15){ report.thin = report.thin || []; report.thin.push(k + ' stage ' + st + ' only ' + h.n + ' frames'); continue; }
         if (h.mean > CONTACT_M)
           bad.push('NO CONTACT  ' + k + ' stage ' + st + ': the visible hand sits ' + h.mean.toFixed(3) +
                    'm from the nearest bone of the man it is holding (engine grip offset is <=0.06m)');
