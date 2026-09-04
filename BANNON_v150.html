@@ -493,6 +493,51 @@ window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10
     });
     window.__MESHOPT_READY = !!window.MeshoptDecoder;
   }catch(e){}
+
+  // ── computeVertexNormals() DESTROYS A QUANTISED NORMAL BUFFER ────────────────────────────────
+  // MEASURED, and it is why a shipped fighter rendered as a flat dark silhouette with a perfectly
+  // good 1024x1024 texture on him under 16 lights:
+  //     BANNON_SEWN        normal Float32Array raw          0 of 4684 zero-length
+  //     BANNON_XFER_MESH   normal Int16Array normalized   4013 of 4013 ZERO-LENGTH, raw max 0
+  // three.js r128's computeVertexNormals zeroes the existing normal attribute and then accumulates
+  // FACE NORMALS into it with setXYZ. Face normals are in -1..1, so writing them into an Int16Array
+  // truncates EVERY component to 0. The buffer ends up genuinely empty and there is nothing left to
+  // shade against. Our own optimize_gltf pass quantises normals, so any model that went through it
+  // is one BANNON_SCULPT / soft-tissue recompute away from turning into a silhouette — while a model
+  // with float normals takes the identical call and is fine. That is exactly why ONE fighter was
+  // flat and the other was not, and no amount of lighting or quality-tier work could have found it.
+  //
+  // The fix is at the one place that can see it: upgrade a non-float normal attribute to Float32
+  // (de-normalising by the type's max, which is what the GPU would have done) BEFORE recomputing. A
+  // float normal buffer is always valid, so this can never make a model worse — the only cost is
+  // 12 bytes a vertex on a model that was about to be broken anyway. Positions and UVs stay
+  // quantised, so the memory win of the optimisation pass is kept.
+  try{
+    var _BG = THREE.BufferGeometry && THREE.BufferGeometry.prototype;
+    if (_BG && _BG.computeVertexNormals && !_BG.computeVertexNormals.__quantguard){
+      var _cvn = _BG.computeVertexNormals;
+      var _w = function(){
+        try{
+          var a = this.attributes && this.attributes.normal;
+          if (a && a.array && !(a.array instanceof Float32Array)){
+            var k = 1;
+            if (a.normalized){
+              if (a.array instanceof Int8Array)   k = 127;
+              else if (a.array instanceof Uint8Array)  k = 255;
+              else if (a.array instanceof Int16Array)  k = 32767;
+              else if (a.array instanceof Uint16Array) k = 65535;
+            }
+            var n = a.array.length, f = new Float32Array(n);
+            for (var i = 0; i < n; i++) f[i] = a.array[i] / k;
+            this.setAttribute('normal', new THREE.BufferAttribute(f, a.itemSize, false));
+            window.__NORMALS_UPGRADED = (window.__NORMALS_UPGRADED || 0) + 1;
+          }
+        }catch(e){}
+        return _cvn.apply(this, arguments);
+      };
+      _w.__quantguard = 1; _BG.computeVertexNormals = _w;
+    }
+  }catch(e){}
 })();
 </script>
 <!-- FBXLoader + fflate — VENDORED LOCALLY so the offline APK (file://) can load mocap animation.

@@ -2365,3 +2365,45 @@ Do not tune locomotion, plant lock or TWIST while the legs point up: every one o
 is taken on a body that is already inverted. `tools/harness/render_truth.cjs` is the gate; run it
 first, and read `--perturb <stateclip|nativepose|footik|gripik>` for isolation (it PRINTS whether the
 perturbation armed, because a perturbation that did not change the variable is not evidence).
+
+### FIXED: computeVertexNormals() DESTROYS A QUANTISED NORMAL BUFFER (2026-09-04)
+The "blacked out / silhouette" model the owner has been looking at. MEASURED in the live scene, same
+frame, same 16 lights totalling 15.63 intensity, same tier:
+
+    BANNON_SEWN        normal Float32Array raw            0 of 4684 zero-length     96 distinct colours
+    BANNON_XFER_MESH   normal Int16Array normalized    4013 of 4013 ZERO-LENGTH      8 distinct colours
+
+three.js r128's `computeVertexNormals` zeroes the existing normal attribute and then accumulates FACE
+NORMALS into it with `setXYZ`. Face normals live in -1..1, so writing them into an **Int16Array
+truncates every component to 0**. The buffer ends up genuinely empty and there is nothing to shade
+against. `BANNON_SCULPT`'s soft-tissue pass calls it (line 61569, and 31082 is a second caller), and
+our own `tools/assets/optimize_gltf.cjs` quantises normals — so ANY optimised model is one recompute
+away from becoming a silhouette, while a float-normal model takes the identical call and is fine.
+That is precisely why ONE fighter was flat and the other was not.
+FIX: a one-time wrap of `THREE.BufferGeometry.prototype.computeVertexNormals` beside the meshopt
+guard, upgrading a non-float normal attribute to Float32 (de-normalised by the type max, which is
+what the GPU would have done) BEFORE recomputing. A float normal buffer is always valid so it cannot
+make a model worse; positions and UVs stay quantised, so the optimisation pass keeps its memory win.
+RESULT: VIPER **8 -> 108 distinct colours**, and the render goes from a grey cut-out to a textured
+wrestler with skin, trunks, boots and hair. `window.__NORMALS_UPGRADED` counts the upgrades.
+STILL OPEN: after the fix 1003 of 4013 of his normals are still zero-length (25%), so some vertices
+belong to no valid triangle. He renders correctly; the mesh still has degenerate faces in it.
+
+### FOUR MEASUREMENTS OF MINE THAT WERE WRONG ON THE WAY TO THAT ONE
+- **"UVs are degenerate, u 80..65487."** `BufferAttribute.getX()` returns the RAW stored value and
+  de-normalisation happens ON THE GPU via the `normalized` flag, so a correct UNSIGNED_SHORT UV reads
+  0..65535 here. De-normalised, VIPER's UVs are 0.0012..0.9993 — perfect. RETRACTED.
+- **"The captures store ABSOLUTE local rotations and the clip block applies rest twice."** Built on
+  `max` over keys of a EULER angle, which is meaningless when the rotation sits near +-pi and wraps.
+  Across all 973 clips the MEAN thigh rx is about -0.7, nowhere near the rest value of +2.949.
+  RETRACTED — see the direction reading, which is what actually separated the two fighters.
+- **A file-level accessor sweep of all 62 wired models found 0 broken.** True and useless on its own:
+  the flag was declared correctly and the VALUES were zeros. `tools/model_diag/quantised_attrs.cjs`
+  reads the GLB JSON chunk (works on EXT_meshopt_compression files, no decoding) and catches a
+  MISDECLARED accessor; it cannot catch a correctly declared one filled with garbage.
+- **The roster sweep through the game\'s OWN loader is the one that separates file from runtime.**
+  `render_truth.cjs --sweep` loads all 62 wired models with the real GLTFLoader + vendored meshopt
+  decoder: **59 clean, 3 with NO normal attribute at all (BANNON.glb, MAIME.glb,
+  MAIME_tattered.glb), 0 bad UVs**. VIPER.glb came back CLEAN — which is what proved the corruption
+  happens at RUNTIME and not in the asset. Check the file AND the loaded result; they are different
+  claims and only one of them was true here.

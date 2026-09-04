@@ -57,6 +57,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
 const argv = process.argv.slice(2);
 const num = (f, d) => { const i = argv.indexOf('--' + f); return i >= 0 ? (+argv[i+1] || d) : d; };
 const str = (f, d) => { const i = argv.indexOf('--' + f); return i >= 0 ? argv[i+1] : d; };
+const has = f => argv.indexOf('--' + f) >= 0;
 
 function serve(port){
   const srv = http.createServer((req, res) => {
@@ -484,6 +485,127 @@ function PROBE(){
     return out;
   };
 
+  // ── GEOMETRY TRUTH: the vertex data the shader actually reads ────────────────────────────────
+  // A material can name a decoded 1024x1024 map and still draw flat if the mesh has no UVs, or a
+  // degenerate UV range, or zero-length normals. Those are the three inputs that turn a textured lit
+  // body into a silhouette, and all three are readable off the buffers — no guessing from a picture.
+  window.__rtGeom = function(idx){
+    const A = FIGHTERS() || []; const f = A[idx]; if (!f || !f.model) return { err:'no model' };
+    const sm = skinOf(f.model); if (!sm) return { err:'no skinned mesh' };
+    const g = sm.geometry, at = g.attributes, out = { mesh:sm.name || '(unnamed)',
+      attributes:Object.keys(at), verts:at.position ? at.position.count : 0,
+      indexed: !!g.index, groups: g.groups ? g.groups.length : 0 };
+    // DE-NORMALISE BEFORE JUDGING. BufferAttribute.getX() returns the RAW stored value; a quantised
+    // attribute is divided by its type's max ON THE GPU, via the `normalized` flag. So a correctly
+    // authored UNSIGNED_SHORT UV reads 0..65535 here and is perfectly fine. My first version read
+    // those raw numbers and reported "u 80..65487 — DEGENERATE", which is the instrument, not the
+    // asset: a file-level sweep of all 62 wired models found `normalized` correctly declared on
+    // every one. Read the flag, then the value.
+    const DEN = a => { if (!a || !a.normalized) return 1;
+      const A = a.array;
+      if (A instanceof Int8Array)   return 127;
+      if (A instanceof Uint8Array)  return 255;
+      if (A instanceof Int16Array)  return 32767;
+      if (A instanceof Uint16Array) return 65535;
+      if (A instanceof Int32Array)  return 2147483647;
+      if (A instanceof Uint32Array) return 4294967295;
+      return 1; };
+    const arrName = a => a ? (a.array && a.array.constructor ? a.array.constructor.name : '?') +
+                             (a.normalized ? ' normalized' : ' raw') : '-';
+    out.arrays = { position:arrName(at.position), normal:arrName(at.normal), uv:arrName(at.uv) };
+
+    const uv = at.uv;
+    if (!uv) out.uv = 'ABSENT';
+    else {
+      const k = DEN(uv);
+      let uMin=1e9,uMax=-1e9,vMin=1e9,vMax=-1e9, nan=0;
+      const step = Math.max(1, Math.floor(uv.count/4000));
+      for (let i = 0; i < uv.count; i += step){
+        const u = uv.getX(i)/k, v = uv.getY(i)/k;
+        if (!isFinite(u) || !isFinite(v)){ nan++; continue; }
+        if (u<uMin)uMin=u; if (u>uMax)uMax=u; if (v<vMin)vMin=v; if (v>vMax)vMax=v;
+      }
+      out.uv = { u:[+uMin.toFixed(4), +uMax.toFixed(4)], v:[+vMin.toFixed(4), +vMax.toFixed(4)],
+                 uSpan:+(uMax-uMin).toFixed(4), vSpan:+(vMax-vMin).toFixed(4), nonFinite:nan,
+                 // A body unwrapped over a texture uses a real share of it. A span near zero means
+                 // every vertex samples the same texel and the body draws as one flat colour.
+                 degenerate: (uMax-uMin) < 0.02 || (vMax-vMin) < 0.02 };
+    }
+    const nr = at.normal;
+    if (!nr) out.normal = 'ABSENT';
+    else {
+      const kn = DEN(nr);
+      let zero=0, bad=0, n=0; const step = Math.max(1, Math.floor(nr.count/4000));
+      for (let i = 0; i < nr.count; i += step){
+        const x=nr.getX(i)/kn, y=nr.getY(i)/kn, z=nr.getZ(i)/kn; n++;
+        const L = Math.sqrt(x*x+y*y+z*z);
+        if (!isFinite(L)) { bad++; continue; }
+        if (L < 0.5) zero++;
+      }
+      // RAW magnitudes too. "Declared normalized but the stored integers are within +-1" is the
+      // signature of float normals written into a quantised buffer without being scaled by the
+      // type max — the values are correct numbers in the wrong units, and nothing upstream sees it.
+      let rmax = 0; for (let i = 0; i < nr.count; i += step){
+        rmax = Math.max(rmax, Math.abs(nr.getX(i)), Math.abs(nr.getY(i)), Math.abs(nr.getZ(i))); }
+      out.normal = { sampled:n, zeroLength:zero, nonFinite:bad, rawMaxAbs:rmax, denom:kn,
+                     degenerate: (zero+bad) > n*0.2,
+                     unscaled: !!(nr.normalized && kn > 1 && rmax <= 1.0001) };
+    }
+    out.hasVertexColors = !!at.color;
+    return out;
+  };
+
+  // ── THE SAME GEOMETRY CHECK, ACROSS THE WHOLE ROSTER, THROUGH THE GAME'S OWN LOADER ──────────
+  // Reading the GLB's JSON chunk finds an accessor DECLARED wrong; it cannot find one declared right
+  // and filled with zeros, which is what the flat fighter turned out to be. So this loads each model
+  // exactly as the game does — same GLTFLoader, same vendored meshopt decoder — and measures what the
+  // shader would actually receive.
+  window.__rtSweepOne = function(url){
+    return new Promise(function(res){
+      try{
+        const L = new THREE.GLTFLoader();
+        L.load(url, function(g){
+          try{
+            let sm = null, meshes = 0;
+            g.scene.traverse(o => { if (o.isMesh || o.isSkinnedMesh){ meshes++;
+              if (!sm && o.geometry && o.geometry.attributes && o.geometry.attributes.position) sm = o; } });
+            if (!sm) return res({ url, err:'no mesh with positions' });
+            const at = sm.geometry.attributes;
+            const DEN = a => { if (!a || !a.normalized) return 1; const A = a.array;
+              if (A instanceof Int8Array) return 127; if (A instanceof Uint8Array) return 255;
+              if (A instanceof Int16Array) return 32767; if (A instanceof Uint16Array) return 65535;
+              return 1; };
+            const out = { url, mesh:sm.name || '(unnamed)', meshes, verts:at.position.count,
+                          skinned:!!sm.isSkinnedMesh };
+            const nr = at.normal;
+            if (!nr) out.normals = 'ABSENT';
+            else {
+              const k = DEN(nr); const step = Math.max(1, Math.floor(nr.count/2000));
+              let zero = 0, n = 0, rawMax = 0;
+              for (let i = 0; i < nr.count; i += step){
+                const x = nr.getX(i), y = nr.getY(i), z = nr.getZ(i); n++;
+                rawMax = Math.max(rawMax, Math.abs(x), Math.abs(y), Math.abs(z));
+                if (Math.sqrt(x*x+y*y+z*z)/k < 0.5) zero++;
+              }
+              out.normals = { sampled:n, zeroLength:zero, rawMaxAbs:+rawMax.toFixed(4), denom:k,
+                              array:(nr.array && nr.array.constructor ? nr.array.constructor.name : '?'),
+                              normalized:!!nr.normalized, degenerate: zero > n*0.2 };
+            }
+            const uv = at.uv;
+            if (!uv) out.uv = 'ABSENT';
+            else { const k = DEN(uv); let mn = 1e9, mx = -1e9;
+              const step = Math.max(1, Math.floor(uv.count/2000));
+              for (let i = 0; i < uv.count; i += step){ const u = uv.getX(i)/k; if (u<mn)mn=u; if (u>mx)mx=u; }
+              out.uv = { span:+(mx-mn).toFixed(4), degenerate:(mx-mn) < 0.02 }; }
+            // free it — a roster sweep that keeps 62 models alive fills the GPU and the container disk
+            g.scene.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+            res(out);
+          }catch(e){ res({ url, err:String(e && e.message).slice(0,110) }); }
+        }, undefined, function(e){ res({ url, err:'load failed: ' + String((e && e.message) || e).slice(0,90) }); });
+      }catch(e){ res({ url, err:String(e && e.message).slice(0,110) }); }
+    });
+  };
+
   window.__rtTier = function(t){ try{ window.BANNON_PERF_AUTO = false;
     if (window.BANNON_PERF && window.BANNON_PERF.setTier){ window.BANNON_PERF.setTier(t); return true; } }catch(e){} return false; };
   window.__rtFreeze = function(){ try{
@@ -518,6 +640,45 @@ function PROBE(){
 
   const gs = () => page.evaluate(() => { try{ return new Function('return gameState')(); }catch(e){ return null; } }).catch(()=>null);
   for (let i = 0; i < 300 && (await gs()) !== 'menu'; i++) await sleep(400);
+
+  // ── ROSTER SWEEP MODE ────────────────────────────────────────────────────────────────────────
+  // `--sweep` loads every WIRED model through the game's own GLTFLoader (with the vendored meshopt
+  // decoder already attached by the engine) and measures the vertex data the shader would receive.
+  // WIRING IS THE TEST, NOT THE DIRECTORY LISTING: assets/models holds gigabytes of intermediates.
+  if (has('sweep')){
+    const files = fs.readdirSync(path.join(ROOT,'assets','models')).filter(f => f.endsWith('.glb'));
+    const htmlSrc = fs.readFileSync(path.join(ROOT,'BANNON_v150.html'),'utf8');
+    const wired = files.filter(f => htmlSrc.indexOf(f) >= 0).sort();
+    console.log('\n===== ROSTER GEOMETRY SWEEP =====');
+    console.log('  ' + wired.length + ' wired model(s) of ' + files.length + ' present, loaded through the game\'s own loader');
+    const badN = [], badU = [], errN = [], okN = [];
+    for (const f of wired){
+      const r = await page.evaluate(u => window.__rtSweepOne(u), 'assets/models/' + f);
+      if (r.err){ errN.push([f, r.err]); continue; }
+      const n = r.normals;
+      if (n === 'ABSENT' || (n && n.degenerate)) badN.push([f, r]);
+      else if (r.uv && r.uv.degenerate) badU.push([f, r]);
+      else okN.push(f);
+    }
+    if (badN.length){
+      console.log('\n  NORMALS DEGENERATE — these render as FLAT SILHOUETTES no matter the lighting:');
+      for (const [f, r] of badN){ const n = r.normals;
+        console.log('   ' + f.padEnd(34) + (n === 'ABSENT' ? 'NO NORMAL ATTRIBUTE'
+          : n.zeroLength + '/' + n.sampled + ' zero-length   ' + n.array + (n.normalized ? ' normalized' : ' raw') +
+            '   raw max|component| ' + n.rawMaxAbs + ' of ' + n.denom) + '   mesh ' + r.mesh); }
+    }
+    if (badU.length){ console.log('\n  UV DEGENERATE:');
+      for (const [f, r] of badU) console.log('   ' + f.padEnd(34) + 'u span ' + r.uv.span); }
+    if (errN.length){ console.log('\n  UNREADABLE (UNKNOWN, never a pass):');
+      for (const [f, e] of errN) console.log('   ' + f.padEnd(34) + e); }
+    console.log('\n  ' + okN.length + ' clean   ' + badN.length + ' flat-shaded   ' + badU.length + ' bad UVs   ' + errN.length + ' unreadable');
+    fs.mkdirSync(OUT, { recursive:true });
+    fs.writeFileSync(path.join(OUT,'roster_geometry.json'),
+      JSON.stringify({ wired:wired.length, badNormals:badN, badUV:badU, errors:errN, clean:okN }, null, 1));
+    try{ await browser.close(); }catch(e){} try{ srv.close(); }catch(e){}
+    process.exitCode = (badN.length || badU.length || errN.length) ? 1 : 0;
+    return;
+  }
   await page.evaluate(() => { const b = document.getElementById('btnFight'); if (b) b.click(); });
   for (let i = 0; i < 60; i++){ const ok = await page.evaluate(() => { const s=document.getElementById('csStart'); return !!(s && s.offsetParent !== null); }); if (ok) break; await sleep(400); }
   await page.evaluate(() => { const s = document.getElementById('csStart'); if (s) s.click(); });
@@ -552,6 +713,7 @@ function PROBE(){
       const mat = await page.evaluate(i => window.__rtMaterial(i), idx);
       const bind = await page.evaluate(i => window.__rtBind(i), idx);
       const leg  = await page.evaluate(i => window.__rtLeg(i), idx);
+      const geom = await page.evaluate(i => window.__rtGeom(i), idx);
       const scn = await page.evaluate(() => window.__rtScene());
       // find the white blob from THIS camera, before anything is hidden
       await page.evaluate(() => window.__rtBlob());
@@ -570,7 +732,7 @@ function PROBE(){
       await page.screenshot({ path:sp });
       await page.evaluate(i => window.__rtSolo(i, false), idx);
       await sleep(400);
-      rows.push({ tier:t, tierSet:set, idx, body, cam, px, solo, hid, mat, bind, leg, scene:scn, blob, shot:p, soloShot:sp });
+      rows.push({ tier:t, tierSet:set, idx, body, cam, px, solo, hid, mat, bind, leg, geom, scene:scn, blob, shot:p, soloShot:sp });
     }
   }
   await page.evaluate(() => { try{ window.__camShot = null; }catch(e){} });
@@ -630,6 +792,28 @@ function PROBE(){
     for (const bn in re_) P('  ' + ''.padEnd(15) + 'rest local ' + bn.padEnd(11) +
       'rx ' + String(re_[bn].rx).padStart(7) + '  ry ' + String(re_[bn].ry).padStart(7) +
       '  rz ' + String(re_[bn].rz).padStart(7) + '   max|rot| ' + re_[bn].maxAbs + ' rad');
+  }
+
+  P('\n  2d. GEOMETRY TRUTH — the vertex data the shader reads. No UVs, a collapsed UV range or');
+  P('      zero-length normals all draw a textured lit body as a flat silhouette.');
+  const seenG = {};
+  for (const r of rows){
+    const b = r.body || {}, G = r.geom || {};
+    if (seenG[b.name]) continue; seenG[b.name] = 1;
+    if (G.err){ P('  ' + String(b.name||r.idx).padEnd(15) + 'ERROR: ' + G.err); unknown++; continue; }
+    const uv = G.uv, nr = G.normal;
+    P('  ' + String(b.name).padEnd(15) + String(G.verts).padStart(7) + ' verts   attrs [' + (G.attributes||[]).join(',') + ']' +
+      (G.hasVertexColors ? '   HAS VERTEX COLOURS' : ''));
+    if (G.arrays) P('  ' + ''.padEnd(15) + 'buffers  pos ' + G.arrays.position + '   normal ' + G.arrays.normal + '   uv ' + G.arrays.uv);
+    P('  ' + ''.padEnd(15) + 'uv ' + (typeof uv === 'string' ? uv
+        : 'u ' + uv.u.join('..') + '  v ' + uv.v.join('..') + '  span ' + uv.uSpan + ' x ' + uv.vSpan +
+          (uv.degenerate ? '   <- DEGENERATE: every vertex samples nearly the same texel' : '')));
+    P('  ' + ''.padEnd(15) + 'normals ' + (typeof nr === 'string' ? nr
+        : nr.sampled + ' sampled, ' + nr.zeroLength + ' zero-length, ' + nr.nonFinite + ' non-finite' +
+          '   raw max|component| ' + nr.rawMaxAbs + ' of a possible ' + nr.denom +
+          (nr.unscaled ? '   <- DECLARED normalized BUT STORED IN FLOAT RANGE: never scaled by the type max' : '') +
+          (nr.degenerate ? '   <- DEGENERATE: nothing to shade against' : '')));
+    if ((uv && uv.degenerate) || (nr && nr.degenerate)) fails++;
   }
 
   P('\n  2c. HOW FAR EACH BONE IS ROTATED FROM ITS OWN REST, right now (quaternion angle, no Euler)');
