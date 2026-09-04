@@ -1911,10 +1911,16 @@ nothing rearchitected.** 678 files / 21 MB, cloned read-only at 7fd2f72. Full su
 - **`workspace/BANNON_LYRA_BASELINE_STRATEGY.md` ALREADY EXISTS** (2026-09-01) and converges with the
   direction reached here: adopt PlayerController / possession / CommonUI / Experiences-as-match-types
   / content organisation; adapt input, camera (two-target framing, not third-person follow), tags,
-  networking (GGPO rollback overrides Lyra replication). **IT MARKS GAS `NOT RELEVANT` AND IT IS
-  RIGHT** — Bannon's combat laws in `native/include` are engine-agnostic and compile to web AND C++,
-  so adopting GAS for combat would break the cross-engine core. Read that row before anyone proposes
-  "adopt Lyra wholesale".
+  networking (GGPO rollback overrides Lyra replication).
+- **OWNER LAW, SETTLED MONTHS AGO — GAS IS USABLE IN GOD WITHIN MODE. DO NOT RE-DERIVE.** The
+  strategy doc marks GAS `NOT RELEVANT` across the board and I repeated that verbatim; the SCOPE is
+  wrong. COMBAT LAWS: GAS is out, and that half stands — `native/include` is engine-agnostic and
+  compiles to the web build AND C++, so moving combat into Unreal's framework breaks the cross-engine
+  core. GOD WITHIN: GAS is IN — the RPG/free-roam mode's abilities, interactions, status effects and
+  progression are not combat laws, never have to run in the web build, and
+  ability-with-cost-cooldown-tags is exactly what GAS exists for. **THE TEST IS NOT "is it Unreal
+  proprietary" — IT IS "does this rule have to run in the web build too?"** Yes -> native/include.
+  No -> GAS is available.
 - **HONEST GAP:** there is NO generic sandbox actuator, NO webview/browser actuator and NO
   coding-agent dispatch implementation in M. Engine. `POST /workers/dispatch` is declared in the
   OpenAPI (naming SWE-agent/OpenHands) but the only worker that exists is Unreal-specific. The gap is

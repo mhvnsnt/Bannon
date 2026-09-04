@@ -106,10 +106,24 @@ organisation. Adapt: Enhanced Input, camera (wrestling needs two-target framing,
 follow), Gameplay Tags, networking (Bannon's GGPO rollback overrides Lyra's prediction-based
 replication).
 
-**IT DISSENTS ON GAS, AND THE DISSENT IS RIGHT.** Marked `NOT RELEVANT`: Bannon's combat laws live
-in `native/include`, are engine-agnostic and compile to BOTH web and C++. Adopting the Gameplay
-Ability System for combat logic would force a rewrite into Unreal's proprietary framework and break
-the cross-engine core. Anyone proposing "adopt Lyra wholesale" needs to read that row first.
+### GAS — THE DOC'S BLANKET `NOT RELEVANT` IS WRONG, AND SO WAS I FOR REPEATING IT
+**OWNER LAW (settled months ago, do not re-derive): GAS IS USABLE IN GOD WITHIN MODE.**
+The strategy doc marks Gameplay Ability System `NOT RELEVANT` across the board and I published that
+verbatim. The scope is wrong. Split it:
+
+* **COMBAT LAWS — GAS IS OUT, and this half of the dissent stands.** Bannon's combat rules live in
+  `native/include`, are engine-agnostic and compile to BOTH the web build and C++. Rewriting them
+  into Unreal's proprietary framework breaks the cross-engine core, and the web build is the one the
+  owner's phone actually plays. Grapples, strikes, pins, submissions, reversals, the absolute math —
+  none of it moves into GAS.
+* **GOD WITHIN — GAS IS IN.** God Within is the RPG / free-roam / open-world mode: abilities,
+  interactions, status effects, progression, world systems, encounters. None of that is the
+  cross-engine combat law, none of it has to compile to the web build, and ability-with-cost-and-
+  cooldown-and-tags is precisely the problem GAS exists to solve. Refusing it there would be
+  hand-rolling a system Lyra already ships.
+
+The test is not "is it Unreal-proprietary" — it is **"does this rule have to run in the web build
+too?"** If yes it stays in `native/include`. If no, GAS is available.
 
 Also in `workspace/`: `BANNON_UNREAL_IMPORT_MANIFEST.md`, `BANNON_ASSET_PROVENANCE.md`.
 
