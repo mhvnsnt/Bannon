@@ -59221,6 +59221,23 @@ window.__deriveVariant = async function(key){
     if (window.__FIK_W) { try{ window.__FIK_W(side, role, planted, rad); }catch(e){} }
   }
 
+  // EVERY WAY A PLANT LOCK CAN END, recorded with the context needed to tell them apart: how long
+  // the lock had lived, how far off it already was, how much of the leg's reach the target was
+  // asking for, and how fast the body was moving at the time. The histogram comes out of rec(); the
+  // ring buffer keeps the individual events so a dominant cause can be traced to actual frames.
+  // Capped, because an unbounded event log inside a per-frame solver is a memory leak.
+  var BRK = [], BRK_CAP = 240;
+  function brk(who, leg, why, st, err, reach, bodyD, dt){
+    rec('break.' + who + '.' + why, reach);
+    var ext = FAIL.span > 0 ? FAIL.cur / FAIL.span : 0;
+    if (why !== 'support_switch') rec('extAtBreak.' + who, ext);
+    if (BRK.length >= BRK_CAP) return;
+    BRK.push({ who:who, leg:leg, why:why, ageFrames: st.age || 0,
+               err: +err.toFixed(4), reach: +reach.toFixed(3), ext: +ext.toFixed(3),
+               w: +(st.w || 0).toFixed(3),
+               bodySpd: dt > 0 ? +(bodyD / dt).toFixed(3) : 0 });
+  }
+
   // scratch — allocated once. This runs 4 times a frame per fighter; per-frame `new` here is how a
   // helper becomes the garbage-collector hitch it was written to prevent.
   var A = null, B = null, C = null, T = null, TT = null, ax = null, v1 = null, v2 = null, q1 = null, q2 = null, pq = null, qs = null;
@@ -59247,11 +59264,22 @@ window.__deriveVariant = async function(key){
   }
 
   // ── the solver. hip -> knee -> ankle, ankle driven to `target`. ────────────────────────────
+  // WHY the solver bailed, for the caller. "released 121 times" is one number covering at least
+  // four unrelated failures — a leg stretched past its own length, a leg folded tighter than a knee
+  // can bend, and a degenerate rig are different defects with different fixes, and averaging them
+  // into one counter is how a release histogram becomes unreadable.
+  // `cur`/`span` are the leg's OWN current extension, target not involved: |hip->ankle| over
+  // (L1+L2). If a break reports cur/span at the same ratio as the target's, then nothing about the
+  // target is out of reach — the POSE the clip already put the leg in is what fails the test, and
+  // the solver is refusing a configuration the skeleton is standing in. Those are opposite defects
+  // and the distinction cannot be made from a single "out_of_reach" counter.
+  var FAIL = { why:null, d:0, min:0, max:0, cur:0, span:1 };
   function twoBone(hip, knee, ankle, target, w, side, planted){
+    FAIL.why = null;
     hip.updateMatrixWorld(true);
     hip.getWorldPosition(A); knee.getWorldPosition(B); ankle.getWorldPosition(C);
     var L1 = A.distanceTo(B), L2 = B.distanceTo(C);
-    if (L1 < 1e-4 || L2 < 1e-4) return false;
+    if (L1 < 1e-4 || L2 < 1e-4){ FAIL.why = 'degenerate_rig'; return false; }
 
     // `T` is PRIVATE scratch and `target` is the caller's. They were the same vector in the first
     // version, which made this line `T.copy(C).lerp(T, w)` — the target collapsed onto the foot's
@@ -59261,7 +59289,18 @@ window.__deriveVariant = async function(key){
     T.copy(C).lerp(target, w);                       // partial authority = a real blend, not a switch
     var d = A.distanceTo(T);
     var min = Math.abs(L1 - L2) + 1e-3, max = (L1 + L2) * REACH;
-    if (d > max || d < min) return false;            // out of reach — the caller releases the lock
+    FAIL.d = d; FAIL.min = min; FAIL.max = max;
+    FAIL.cur = A.distanceTo(C); FAIL.span = (L1 + L2) || 1;
+    // The BASELINE for the number above: how extended the leg is on EVERY attempt, not just the
+    // ones that fail. Without it, "the leg is straight when it breaks" is unfalsifiable — a leg that
+    // is straight all the time would produce the same reading and mean something entirely different.
+    rec('ext.' + side + (planted ? '.plant' : '.swing'), FAIL.cur / FAIL.span);
+    // TWO different failures, deliberately not merged. `d > max` is the leg stretched past its own
+    // length — the body has walked away from the plant. `d < min` is the target folded closer to the
+    // hip than a knee can bend, which happens on a deep step, not on a stride, and would need the
+    // opposite fix. One `return false` for both is what made 121 releases unreadable.
+    if (d > max){ FAIL.why = 'out_of_reach'; return false; }
+    if (d < min){ FAIL.why = 'too_close';    return false; }
 
     // KNEE: law of cosines. The interior angle at the knee that puts the ankle exactly d from the hip.
     var want = Math.acos(Math.max(-1, Math.min(1, (L1*L1 + L2*L2 - d*d) / (2*L1*L2))));
@@ -59328,6 +59367,19 @@ window.__deriveVariant = async function(key){
     if (!legs.L || !legs.R) return;
 
     var S = f.__ik || (f.__ik = { L:{w:0,x:0,z:0,on:false}, R:{w:0,x:0,z:0,on:false}, sup:null });
+    var who = f.isPlayer ? 'p' : 'ai';
+    // BODY TRAVEL THIS FRAME. The slide ratio that motivated this module is foot speed over body
+    // speed, so the denominator has to be measured on the same frames as the numerator — not taken
+    // from a different run. Tagged by fighter: conflating the player with a ragdolled opponent has
+    // already cost one readable number in this module.
+    // Held on the FIGHTER, not on S. `for (var k in S)` below treats every key except 'sup' as a leg,
+    // so a scalar parked in S survives only because `legs[k]` happens to be undefined — an accident,
+    // and the kind that stops being one the day someone adds a third leg key.
+    var pb = f.__ikBody || (f.__ikBody = {});
+    var bodyD = (pb.x === undefined) ? 0 : Math.hypot(f.x - pb.x, f.z - pb.z);
+    pb.x = f.x; pb.z = f.z;
+    if (dt > 0) rec('speed.' + who + '.body', bodyD / dt);
+
     legs.L.ft.getWorldPosition(v1); var ly = v1.y, lx = v1.x, lz = v1.z;
     legs.R.ft.getWorldPosition(v2); var ry = v2.y, rx = v2.x, rz = v2.z;
     var sup = (ly <= ry) ? 'L' : 'R';
@@ -59336,8 +59388,13 @@ window.__deriveVariant = async function(key){
       S.sup = sup;
       var s = S[sup];
       s.x = (sup === 'L') ? lx : rx; s.z = (sup === 'L') ? lz : rz;
-      s.on = true; s.w = 0; ST.plants++;
-      S[sup === 'L' ? 'R' : 'L'].on = false;  // the other leg is swinging now — hands off
+      s.on = true; s.w = 0; s.age = 0; ST.plants++;
+      var oth = S[sup === 'L' ? 'R' : 'L'];
+      // A LOCK ENDED BY THE WEIGHT MOVING ON IS NOT A FAILURE. It is the gait working, and counting
+      // it beside a leg that stretched past its own length would put the healthy case at the top of
+      // the histogram and bury the defect underneath it.
+      if (oth.on) brk(who, sup === 'L' ? 'R' : 'L', 'support_switch', oth, 0, 0, bodyD, dt);
+      oth.on = false;                         // the other leg is swinging now — hands off
     }
 
     for (var k in S){
@@ -59354,8 +59411,10 @@ window.__deriveVariant = async function(key){
       // it is a different quantity from how much rotation it spends removing it.
       var planted = (k === sup && st.on), ph = planted ? '.plant' : '.swing';
       var e0 = Math.hypot(v1.x - st.x, v1.z - st.z);
+      st.age = (st.age || 0) + 1;
       rec(k + '.attempt' + ph, e0);           // EVERY attempt, including the ones that release
       if (!twoBone(leg.up, leg.lo, leg.ft, TT, st.w, k, planted)){
+        brk(who, k, FAIL.why || 'solver_failure', st, e0, FAIL.max > 0 ? FAIL.d / FAIL.max : 0, bodyD, dt);
         st.on = false; st.x = v1.x; st.z = v1.z; ST.releases++;   // out of reach: re-plant here
       } else {
         // PAIRED before/after, same frames, same sample. Recording the error on every attempt and
@@ -59366,6 +59425,23 @@ window.__deriveVariant = async function(key){
         rec(k + '.err' + ph, e0);
         rec(k + '.res' + ph, Math.hypot(v1.x - st.x, v1.z - st.z));
       }
+    }
+
+    // HOW FAR THE FOOT ACTUALLY TRAVELLED, split by whether it was supposed to be nailed down.
+    // Sampled HERE, at the end of step(), because FOOTIK is the last pose pass by construction —
+    // so this is the pose that gets rendered. Sampling at the top of step() would compare a
+    // post-IK frame against a pre-IK one and score this module's own correction as slide.
+    // 'locked' vs 'free' is the whole question the owner asked: is the cost a poor correction
+    // while locked, or the time spent not locked at all?
+    for (var k2 in S){
+      if (k2 === 'sup') continue;
+      var st2 = S[k2], lg2 = legs[k2];
+      if (!lg2) continue;
+      lg2.ft.getWorldPosition(v1);
+      if (st2.fx !== undefined && dt > 0)
+        rec('slide.' + who + '.' + ((st2.on && k2 === S.sup) ? 'locked' : 'free'),
+            Math.hypot(v1.x - st2.fx, v1.z - st2.fz) / dt);
+      st2.fx = v1.x; st2.fz = v1.z;
     }
   }
 
@@ -59403,7 +59479,8 @@ window.__deriveVariant = async function(key){
       }
       return o;
     },
-    reset: function(){ for (var k in ST) ST[k] = 0; W = {}; } };
+    breaks: function(){ return BRK.slice(); },
+    reset: function(){ for (var k in ST) ST[k] = 0; W = {}; BRK.length = 0; } };
 })();
 </script>
 
