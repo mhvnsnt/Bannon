@@ -1883,3 +1883,39 @@ share of the skeleton is worth more than tuning the filter, because a bone the c
 cannot be fixed by making it chase better. Candidate order: (1) why is idle 0% and grapple 0% — is a
 clip even resident and mapped for those states; (2) dt-correct the catch-up so a phone and a desktop
 converge the same; (3) decide a real authority per bone per frame instead of layering overrides.
+
+## M. ENGINE, MAPPED (2026-09-04) — docs/M_ENGINE_MAP.md
+Owner gave permission to pull `mhvnsnt/m.-engine-` into Bannon. **MAPPED ONLY — nothing copied,
+nothing rearchitected.** 678 files / 21 MB, cloned read-only at 7fd2f72. Full survey in
+`docs/M_ENGINE_MAP.md`; the load-bearing facts:
+- **`tools/unreal-worker/`** is real and good: a NAMED OPERATION ALLOWLIST (probe / build /
+  automationTest / inspectContent) with no command-string endpoint, paths confined to project roots,
+  every op returning evidence ON FAILURE TOO, a constant-time token compare, and **capabilities
+  PROBED not configured**. Its own header: *"'Unreal is installed' according to a config file is not
+  evidence."* That is this repo's OWNER LAW, arrived at independently. `REALITY_CONTRACT.md` is the
+  same discipline again.
+- **`cloud_control_plane/`** (Kotlin/Ktor) already has worker enrol + heartbeat + cancel, a
+  capability surface with `/verify` and `/reality_sweep`, cycles, telemetry, and a ledger with
+  SQLite AND Postgres backends. Do not rebuild any of that.
+- **RAN ITS PROBE HERE rather than reading its claims.** `UNREAL_PROJECT_AVAILABLE VERIFIED`;
+  `UNREAL_RUNTIME_DISCOVERED`, `UNREAL_BUILD_CAPABLE`, `ANDROID_TOOLCHAIN_AVAILABLE` and
+  `PHYSICAL_DEVICE_AVAILABLE` all `CAPABILITY_GAP`.
+- **THE FINDING THAT DECIDES THE UE/LYRA PLAN.** `unreal/Bannon.uproject` exists with **706 .cpp/.h
+  and 0 .uasset, 0 .umap, 0 .uplugin**. The UE side is not a game that renders badly — there is
+  nothing there to render. `inspectContent` was written for exactly this case.
+- **THE LEG/LOCOMOTION WORK CANNOT BE A WORKER JOB TODAY, for two reasons.** This container has no
+  Unreal (so build/automationTest are CAPABILITY_GAP by design), and more fundamentally the
+  locomotion defects are all in `BANNON_v150.html` — the Three.js build the owner's phone plays.
+  Dispatching them to the Unreal worker sends them to a runtime holding none of the code under test.
+  The unreal-worker is the right tool for the UE/Lyra path and the wrong tool for locomotion.
+- **`workspace/BANNON_LYRA_BASELINE_STRATEGY.md` ALREADY EXISTS** (2026-09-01) and converges with the
+  direction reached here: adopt PlayerController / possession / CommonUI / Experiences-as-match-types
+  / content organisation; adapt input, camera (two-target framing, not third-person follow), tags,
+  networking (GGPO rollback overrides Lyra replication). **IT MARKS GAS `NOT RELEVANT` AND IT IS
+  RIGHT** — Bannon's combat laws in `native/include` are engine-agnostic and compile to web AND C++,
+  so adopting GAS for combat would break the cross-engine core. Read that row before anyone proposes
+  "adopt Lyra wholesale".
+- **HONEST GAP:** there is NO generic sandbox actuator, NO webview/browser actuator and NO
+  coding-agent dispatch implementation in M. Engine. `POST /workers/dispatch` is declared in the
+  OpenAPI (naming SWE-agent/OpenHands) but the only worker that exists is Unreal-specific. The gap is
+  in the right place: the operation model to extend is already there.
