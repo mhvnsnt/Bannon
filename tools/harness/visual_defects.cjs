@@ -118,6 +118,103 @@ function PROBE(){
     return o;
   }
 
+  // ── WHICH CLIP AUTHORED THIS POSE ────────────────────────────────────────────────────────────
+  // Owner: "add moveId / role / phase / clipId / clipTime to the exact-frame defect sidecar ...
+  // that should rapidly answer whether the wrong clip is mapped, a receiver clip is being used as
+  // an attacker clip, a two-body capture is applied to one skeleton, the source animation itself is
+  // inverted, or the clip's coordinate/root interpretation is wrong. That is a data triage problem
+  // before it is an animation-system rewrite."
+  //
+  // IDENTITY BY OBJECT, NOT BY LABEL. A baked clip is a bare {keys,dur} with no name field, and the
+  // SAME object is registered under both its key form and its human form (DROP_KICK_1 and
+  // "Drop Kick (1)"), so the honest answer is every registry key that points at it — not a guess at
+  // which one is canonical. Cached on the clip, so the registry is scanned once per capture.
+  function cidOf(clip){
+    if (clip.__vdCid) return clip.__vdCid;
+    const keys = [];
+    try{ const C = window.STUDIO && window.STUDIO.clips;
+      if (C) for (const k in C) if (C[k] === clip) keys.push(k); }catch(e){}
+    // An UNREGISTERED clip is itself a finding (studio scratch, a worker bake that never landed in
+    // STUDIO), so it is fingerprinted rather than reported as unknown.
+    return (clip.__vdCid = keys.length ? keys.join('|')
+            : 'anon[' + (+(clip.dur||0)).toFixed(2) + 's/' + ((clip.keys && clip.keys.length)||0) + 'k]');
+  }
+
+  // The engine's dormant hook. Everything expensive lives here, in the instrument, so the game pays
+  // one property lookup when nothing is listening.
+  window.__CLIP_TRACE = function(f, clip, phase, tt, w){
+    if (!S.on || !f || !clip) return;
+    let chain = [];
+    try{
+      const st = new Error().stack || '';
+      // Same source-line attribution as the write ledger. chain[0] is studioApplyClipPose itself and
+      // the next entries are its WRAPPERS — the receiver-pairing hook and the pose counter both
+      // replaced window.studioApplyClipPose, so a naive "chain[1] is the caller" reads the wrapper
+      // on 100% of calls. MEASURED: every one of 309 traces reported site 55620, the pairing hook.
+      // The wrapper prefix is not guessed and not hardcoded — it is the LONGEST COMMON PREFIX of
+      // every chain in the run, computed at report time, because the layers every call passes
+      // through are exactly the ones every chain shares.
+      const all = (st.match(/BANNON_v150\.html:(\d+):\d+/g) || []).slice(0, 10);
+      chain = all.map(function(s){ return s.match(/:(\d+):/)[1]; });
+      const CS = S.chainSet || (S.chainSet = {});
+      CS[chain.join('>')] = (CS[chain.join('>')] || 0) + 1;
+    }catch(e){}
+    // TWO RECORDS, NOT ONE, AND THE SECOND IS THE HONEST ONE.
+    // __vdClip is the last application ever; __vdClipNow is the application that belongs to the
+    // pose the scan is ABOUT to measure, and it is cleared at the END of the tick exactly like the
+    // write ledger. Counting frames instead read "clip-driven on 0 of 313 defect hits" — a claim
+    // that the animation system is never the author — when the truth is that this probe's rAF is
+    // registered in the init script and therefore runs BEFORE the engine's, so a clip that authored
+    // the measured pose is always stamped one tick earlier. The offset is the instrument's, not the
+    // game's, and an offset silently absorbed into a verdict is how a harness invents a finding.
+    f.__vdClip = f.__vdClipNow = {
+                   cid: cidOf(clip), phase: +(+phase).toFixed(3), tS: +(+tt).toFixed(3),
+                   durS: +(+(clip.dur||0)).toFixed(3), w: (w == null ? null : +(+w).toFixed(3)),
+                   applier: chain[0] || null, chain: chain.join('>'),
+                   frame: S.frames };
+    S.clipCalls = (S.clipCalls || 0) + 1;
+    const B = S.byClip || (S.byClip = {});
+    B[f.__vdClip.cid] = (B[f.__vdClip.cid] || 0) + 1;
+  };
+
+  // The record that rides on a defect. TWO INDEPENDENT READINGS OF ROLE — the live grabbing
+  // relationship, and the clip's own name — precisely so they can disagree. A receiver half played
+  // on an attacker is one of the five named causes of the inverted body and it is decidable here,
+  // with no change to the animation pipeline at all.
+  const FIGHTERS = new Function('return typeof fighters!=="undefined"?fighters:null');
+  function clipInfo(idx){
+    try{
+      const A = FIGHTERS() || [];
+      const f = A[idx]; if (!f) return null;
+      const now = f.__vdClipNow || null;                 // authored the pose being measured
+      const c = now || f.__vdClip || null, mv = f.attackData || null;
+      const rec = {
+        moveId:   (mv && (mv.id || mv.name)) || null,
+        moveCat:  (mv && mv.cat) || null,
+        moveClip: (mv && mv.clip) || null,          // what the move ASKED for, before resolution
+        state:    f.state || null,
+        grapplePos: f.grapplePos || null,
+        role: f.grabbedBy ? 'VICTIM'
+            : (f.__isReceiverDrive ? 'RECEIVER_DRIVE'
+            : ((f.grabbing || f.grappleTarget || f._victim) ? 'ATTACKER'
+            : (f.state === 'attack' ? 'ATTACKER' : 'SELF'))),
+        clip: c,
+        // DID A CAPTURE AUTHOR THE POSE BEING MEASURED? This is the field that decides whether the
+        // clip metadata means anything at all: false means the defect frame was NOT clip-driven,
+        // the procedural retarget owns it, and no clip remap can fix it. Same lifecycle as the
+        // write ledger — set by the engine's frame, read by the scan, cleared at the end of it.
+        clipDrove: !!now,
+        // Ticks since a capture last touched this body at all, for the frames clipDrove is false on.
+        ticksSinceClip: (f.__vdClip ? (S.frames - f.__vdClip.frame) : null)
+      };
+      if (c){
+        rec.receiverClip = /__RECV|_V_|VICTIM/i.test(c.cid);
+        rec.roleMismatch = !!(rec.receiverClip && rec.role !== 'VICTIM' && rec.role !== 'RECEIVER_DRIVE');
+      }
+      return rec;
+    }catch(e){ return { err:String(e).slice(0,90) }; }
+  }
+
   // ── FRAME IDENTITY: the picture and the numbers must be the SAME event ──────────────────────
   // The screenshots were taken after the run, when the fighters had moved on, so the image did not
   // show the frame the numbers described. Storing the worst frame's POSE lets it be restored
@@ -141,9 +238,34 @@ function PROBE(){
   function note(cls, sev, detail){
     const c = S.cls[cls] || (S.cls[cls] = { n:0, worst:0, frames:0 });
     c.n++;
+    // ── THE DISTRIBUTION, NOT THE ANECDOTE ────────────────────────────────────────────────────
+    // The stored "worst" record is really the FIRST frame to saturate, because every severity is
+    // clamped to 1 and the keep test is strict — so a single worst record cannot say whether one
+    // capture causes a class or fifty do. Every HIT is censused instead: which capture was last
+    // applied, how stale it was, and what move was live. This is the plant-lock histogram applied
+    // to rendered defects, and it is what turns "GROUND: BOX_IDLE" into a claim worth acting on.
+    if (detail && detail.fighter != null){
+      const k = clipInfo(detail.fighter);
+      if (k){
+        const H = c.census || (c.census = { byClip:{}, byMove:{}, byRole:{}, stale:{}, nClipDriven:0 });
+        const cid = k.clipDrove ? k.clip.cid : ('NOT CLIP-DRIVEN (last was ' + ((k.clip && k.clip.cid) || 'none') + ')');
+        H.byClip[cid] = (H.byClip[cid] || 0) + 1;
+        H.byMove[k.moveId || ('state:' + (k.state||'?'))] = (H.byMove[k.moveId || ('state:' + (k.state||'?'))] || 0) + 1;
+        H.byRole[k.role || '?'] = (H.byRole[k.role || '?'] || 0) + 1;
+        const s = k.clipDrove ? 0 : k.ticksSinceClip;
+        const bucket = s == null ? 'never' : (s === 0 ? 'clip authored this frame'
+                     : (s <= 3 ? 'stale 1-3' : (s <= 10 ? 'stale 4-10' : 'stale >10')));
+        H.stale[bucket] = (H.stale[bucket] || 0) + 1;
+        if (k.clipDrove) H.nClipDriven++;
+        detail = Object.assign({}, detail, { clip:k });      // reuse the reading, never take it twice
+      }
+    }
     if (sev > c.worst){
       c.worst = sev;
-      S.worst[cls] = Object.assign({ sev:sev, frame:S.frames, t:+(performance.now()/1000).toFixed(3) }, detail);
+      const d = Object.assign({ sev:sev, frame:S.frames, t:+(performance.now()/1000).toFixed(3) }, detail);
+      // The defect, the bones, the writers AND the clip are one record on one frame.
+      if (d.fighter != null && d.clip === undefined) d.clip = clipInfo(d.fighter);
+      S.worst[cls] = d;
       S.pose[cls] = snapPose();          // the exact pose that produced this number
     }
   }
@@ -476,6 +598,10 @@ function PROBE(){
         // "WRITERS: {}". Clearing here means the ledger holds exactly the writes that produced the
         // pose just measured. Same ordering class as every other instrument defect this session.
         S.wr = {};
+        // The clip record has the identical lifecycle and is cleared with it, so "a capture authored
+        // this pose" is a fact about the same window the writers came from and not a frame count.
+        if (A[0]) A[0].__vdClipNow = null;
+        if (A[1]) A[1].__vdClipNow = null;
       }catch(e){ S.err = String(e).slice(0,140); }
     }
     requestAnimationFrame(tick);
@@ -490,7 +616,9 @@ function PROBE(){
     return o; }catch(e){ return { err:String(e) }; } };
   window.__vdStop  = () => { S.on = false; return { frames:S.frames, samples:S.samples, cls:S.cls,
                                                     worst:S.worst, resolved:S.resolved, err:S.err,
-                                                    meshSamples:S.meshSamples||0, meshNoAPI:!!S.meshNoAPI }; };
+                                                    meshSamples:S.meshSamples||0, meshNoAPI:!!S.meshNoAPI,
+                                                    clipCalls:S.clipCalls||0, byClip:S.byClip||{},
+                                                    bySite:S.bySite||{}, chainSet:S.chainSet||{} }; };
   // Freeze the sim, put the stored pose back, and hand the driver a scene that IS the defect frame.
   window.__vdRestore = (cls) => { try{
     const P = S.pose[cls]; if (!P) return false;
@@ -573,9 +701,20 @@ function PROBE(){
       const p = path.join(OUT, 'defect_' + cls + '.png');
       try{ await page.screenshot({ path:p }); shots[cls] = p;
         // The sidecar: the picture and the measurement are one record, keyed by the same frame.
+        const K = w.clip || {}, KC = K.clip || {};
         fs.writeFileSync(p.replace(/\.png$/, '.json'),
           JSON.stringify({ scenario:'driven combat', frame:w.frame, simTimeS:w.t, class:cls,
-                           fighterIndex:w.fighter, detail:w, image:path.basename(p) }, null, 1));
+                           fighterIndex:w.fighter,
+                           // The owner's five fields, lifted to the top of the record so the triage
+                           // question is answerable without reading the nested detail.
+                           moveId:K.moveId || null, role:K.role || null, phase:KC.phase != null ? KC.phase : null,
+                           clipId:KC.cid || null, clipTimeS:KC.tS != null ? KC.tS : null,
+                           clipDurS:KC.durS != null ? KC.durS : null, clipWeight:KC.w != null ? KC.w : null,
+                           clipCallSite:KC.site || null, clipCallChain:KC.chain || null,
+                           clipDrove:K.clipDrove === undefined ? null : K.clipDrove, ticksSinceClip:K.ticksSinceClip != null ? K.ticksSinceClip : null,
+                           receiverClip:K.receiverClip === undefined ? null : K.receiverClip,
+                           roleMismatch:K.roleMismatch === undefined ? null : K.roleMismatch,
+                           detail:w, image:path.basename(p) }, null, 1));
       }catch(e){}
     }
     await page.evaluate(() => { try{ window.__camShot = null; }catch(e){} });
@@ -603,6 +742,62 @@ function PROBE(){
     console.log('   ' + c.padEnd(15) + verdict.padEnd(11) + String(hit ? hit.n : 0).padStart(5) +
       '   ' + String(hit ? hit.worst.toFixed(2) : '-').padStart(6) + '   ' + detail.slice(0, 96));
   }
+  // ── CLIP PROVENANCE ─────────────────────────────────────────────────────────────────────────
+  // WHICH CAPTURE AUTHORED THE DEFECT, and did a clip author it at all. clipDrove is the field that
+  // stops this from being decoration: a defect on a frame no clip drove is a RETARGET problem
+  // wearing a clip's name, and the two need opposite fixes.
+  // THE WRAPPER PREFIX IS DERIVED, NOT DECLARED. Every call passes through studioApplyClipPose and
+  // whatever has wrapped it, so those lines are exactly the longest prefix common to every chain;
+  // the first entry past it is the real caller. Measured this way the sites separate cleanly
+  // (5159 the strike path, 62192 the state-clip layer) where chain[1] read 55620 for all 309.
+  const chains = Object.keys(r.chainSet || {}).map(s => s.split('>'));
+  let lcp = 0;
+  if (chains.length){
+    lcp = chains[0].length;
+    for (const c of chains){ let i = 0; while (i < lcp && i < c.length && c[i] === chains[0][i]) i++; lcp = i; }
+    if (lcp >= chains[0].length) lcp = Math.max(0, chains[0].length - 1);   // never eat the caller itself
+  }
+  const siteOf = ch => { const a = String(ch||'').split('>'); return a[lcp] || a[a.length-1] || '-'; };
+  const bySiteReal = {};
+  for (const [ch, n] of Object.entries(r.chainSet || {})) { const s = siteOf(ch); bySiteReal[s] = (bySiteReal[s]||0) + n; }
+
+  console.log('\n  CLIP PROVENANCE — ' + (r.clipCalls||0) + ' clip applications during the scan, ' +
+              Object.keys(r.byClip||{}).length + ' distinct captures');
+  if (r.clipCalls){
+    const top = Object.entries(r.byClip||{}).sort((a,b)=>b[1]-a[1]).slice(0,6);
+    for (const [k,n] of top) console.log('     ' + String(n).padStart(5) + '  ' + k.slice(0,88));
+    console.log('     applier+wrapper prefix (shared by every call): ' + (chains[0]||[]).slice(0,lcp).join('>'));
+    console.log('     by REAL call site (game-file line): ' + JSON.stringify(bySiteReal));
+  } else {
+    console.log('     NONE. No capture drove either body in this window — every defect below was');
+    console.log('     authored by the procedural retarget, and no clip remap can fix it.');
+  }
+  let mismatch = 0;
+  for (const c of CLASSES){
+    const w = r.worst[c]; if (!w || !w.clip) continue;
+    const K = w.clip, KC = K.clip || {};
+    console.log('   ' + c.padEnd(15) + 'move=' + String(K.moveId || '-').slice(0,22).padEnd(24) +
+                'role=' + String(K.role||'-').padEnd(15) +
+                'clip=' + String(KC.cid || '(none)').slice(0,34));
+    console.log('   ' + ''.padEnd(15) + '  phase=' + (KC.phase != null ? KC.phase : '-') +
+                ' t=' + (KC.tS != null ? KC.tS + 's' : '-') + '/' + (KC.durS != null ? KC.durS + 's' : '-') +
+                '  w=' + (KC.w != null ? KC.w : '-') +
+                '  site=' + siteOf(KC.chain) + '  chain=' + (KC.chain || '-') +
+                '  clipDrove=' + (K.clipDrove === undefined ? '-' : K.clipDrove) +
+                (K.receiverClip ? '  RECEIVER-HALF CLIP' : '') +
+                (K.roleMismatch ? '  <- ROLE MISMATCH' : ''));
+    if (K.roleMismatch) mismatch++;
+    const H = (r.cls[c] || {}).census;
+    if (H){
+      const fmt = o => Object.entries(o).sort((a,b)=>b[1]-a[1]).slice(0,4).map(([k,v])=>k.slice(0,30)+' '+v).join(' · ');
+      console.log('   ' + ''.padEnd(15) + '  over all ' + (r.cls[c].n) + ' hits — clip: ' + fmt(H.byClip));
+      console.log('   ' + ''.padEnd(15) + '    move: ' + fmt(H.byMove) + '   role: ' + fmt(H.byRole));
+      console.log('   ' + ''.padEnd(15) + '    staleness (frames since a clip drove this body): ' + fmt(H.stale) +
+                  '   clip-driven on ' + H.nClipDriven + '/' + r.cls[c].n + ' hits');
+    }
+  }
+  if (mismatch) console.log('   ' + mismatch + ' defect(s) show a RECEIVER-HALF capture playing on a body that is not the victim.');
+
   console.log('\n  ' + (fails ? fails + ' CLASS(ES) FAILED' : 'no class failed') +
               (unknown ? ', ' + unknown + ' UNKNOWN (a check that could not run is not a pass)' : ''));
   console.log('  ' + ((fails || unknown) ? 'FRAME VERDICT: FAIL — a single severe defect outranks overall appearance'

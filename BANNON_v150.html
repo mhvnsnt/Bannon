@@ -19238,6 +19238,14 @@ init();
       else J.set(J.tgt.x+(pose[j][0]-J.tgt.x)*w, J.tgt.y+(pose[j][1]-J.tgt.y)*w, J.tgt.z+(pose[j][2]-J.tgt.z)*w);
     }
     f._clipDriveAt = (typeof performance!=='undefined' ? performance.now() : Date.now());
+    // DORMANT TRIAGE HOOK — one property lookup per call when nothing listens (same shape as
+    // window.__PL_AIM). A RENDERED DEFECT HAS TO BE TRACEABLE TO THE CLIP THAT AUTHORED THE POSE:
+    // an inverted body tells you nothing on its own, but "this frame was written by THIS capture at
+    // THIS time through THIS call site" is a data question with a data answer. `clip` here is a bare
+    // {keys,dur} with no name — the identity is recovered from the registry by OBJECT IDENTITY on
+    // the harness side, never from a label passed in, because a label is what would be wrong.
+    // Everything expensive (registry scan, stack line, role) lives in the instrument, not here.
+    if (window.__CLIP_TRACE){ try{ window.__CLIP_TRACE(f, clip, phase, tt, w); }catch(_e){} }
     if(f.model){ const _b=sampleBones(clip, tt); if(_b) f.model.userData.clipBones=_b; f.model.userData.clipW=w;
       const _mph=sampleMorphs(clip, tt); if(_mph) f.model.userData.clipMorphs=_mph; }
   };
