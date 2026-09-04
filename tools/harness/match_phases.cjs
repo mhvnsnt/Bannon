@@ -48,6 +48,10 @@ const NOPHASE = process.argv.indexOf('--nophase') > 0;
 // (ARM_MS). An invariant that has never been observed to fire is not a test — same law as I10 in
 // the fuzzer, where the fix was reverted to prove the check could fail before it was trusted.
 const NOENT = process.argv.indexOf('--noentrance') > 0;
+// --breakout throws a STRIKE during the entrance. Under the corrected model that is not refused —
+// it is intent, and it must authorise a PRE-BELL BRAWL: bodies live, match clock and official rules
+// still off. The default arm deliberately does NOT attack, so it measures the ordinary entrance.
+const BREAK = process.argv.indexOf('--breakout') > 0;
 
 function serve(port){
   const srv = http.createServer((req, res) => {
@@ -71,6 +75,15 @@ function PROBE(cfg){
   window.__mpMark = mark;
   window.__mpStart = function(){ S.t0 = performance.now(); S.ev = []; S.counts = { ai:0, input:0 }; };
 
+  if (cfg.brk){
+    // A finite round time, so "the clock did not tick before the bell" is an observable fact rather
+    // than a vacuous one. MATCH_RULES is read by startRound at match start.
+    try{ window.MATCH_RULES = Object.assign({}, window.MATCH_RULES||{}, { time: 90 }); }catch(e){}
+    const w3 = setInterval(function(){ try{
+      window.MATCH_RULES = Object.assign({}, window.MATCH_RULES||{}, { time: 90 });
+    }catch(e){} }, 200);
+    setTimeout(function(){ clearInterval(w3); }, 30000);
+  }
   if (cfg.noent){
     // STUB AFTER THE SEQUENCE HAS WRAPPED, NOT BEFORE. My first version replaced
     // BANNON_ENTRANCE.play as soon as the module existed — and BANNON_ENTRANCE_SEQ then wrapped
@@ -162,9 +175,25 @@ function PROBE(cfg){
     }catch(e){}
   }, 50);
 
+  // THE ROUND CLOCK, SAMPLED. A pre-bell brawl is combat that is NOT match time, so the honest
+  // check is that the visible timer does not advance before the bell. Needs a finite time limit —
+  // the default is INFINITE, and a clock that was never going to tick proves nothing.
+  S.clock = { atBell: null, seen: [] };
+  setInterval(function(){
+    try{
+      var el = document.getElementById('timer'); if (!el) return;
+      var v = parseInt(el.textContent, 10); if (!isFinite(v)) return;
+      if (!S.clock.seen.length || S.clock.seen[S.clock.seen.length-1].v !== v)
+        S.clock.seen.push({ v:v, t: S.t0 ? Math.round(performance.now()-S.t0) : 0 });
+    }catch(e){}
+  }, 100);
+  window.addEventListener('bannon:bell', function(){ try{
+    var el = document.getElementById('timer'); S.clock.atBell = el ? parseInt(el.textContent,10) : null;
+  }catch(e){} });
+
   window.__mpStop = function(){
     let ph = null; try{ ph = window.BANNON_PHASE ? window.BANNON_PHASE.state() : null; }catch(e){}
-    return { ev: S.ev, counts: S.counts, phase: ph, noentArmed: !!window.__NOENT_ARMED };
+    return { ev: S.ev, counts: S.counts, phase: ph, clock: S.clock, noentArmed: !!window.__NOENT_ARMED };
   };
 
   try{ if (window.BANNON_PERF && window.BANNON_PERF.setTier){ window.BANNON_PERF.setTier(4); window.BANNON_PERF_AUTO = false; } }catch(e){}
@@ -180,7 +209,7 @@ function PROBE(cfg){
     args:['--use-gl=swiftshader','--no-sandbox','--no-proxy-server','--proxy-bypass-list=<-loopback>'] });
   const page = await browser.newPage({ viewport:{ width:412, height:915 } });
   const errs = []; page.on('pageerror', e => errs.push(String(e.message).split('\n')[0].slice(0,140)));
-  await page.addInitScript(PROBE, { nophase: NOPHASE, noent: NOENT });
+  await page.addInitScript(PROBE, { nophase: NOPHASE, noent: NOENT, brk: BREAK });
   await page.goto(`http://127.0.0.1:${port}/BANNON_v150.html`, { waitUntil:'domcontentloaded', timeout:60000 });
 
   const gs = () => page.evaluate(() => { try{ return new Function('return gameState')(); }catch(e){ return null; } }).catch(()=>null);
@@ -193,15 +222,26 @@ function PROBE(cfg){
   await page.evaluate(() => window.__mpStart());
   await page.evaluate(() => { const s = document.getElementById('csStart'); if (s) s.click(); });
 
-  // MASH THROUGH THE ENTRANCE ON PURPOSE. If combat is gated this produces nothing; if it is not,
-  // this is the "punch during your own entrance" case and the counters will say so.
+  // THE DEFAULT ARM DOES NOT ATTACK. Under the corrected model a strike during an entrance is a
+  // deliberate BREAKOUT, so mashing here would test the breakout path and then report it as "combat
+  // leaked into the entrance" — the harness would be manufacturing the very thing it checks for.
+  // Movement only by default; --breakout opts into the strike.
   await page.evaluate(() => dispatchEvent(new KeyboardEvent('keydown',{key:'d',bubbles:true})));
   for (let i = 0; i < 90; i++){
-    await page.evaluate(() => { dispatchEvent(new KeyboardEvent('keydown',{key:'j',bubbles:true}));
-                                dispatchEvent(new KeyboardEvent('keyup',{key:'j',bubbles:true})); });
+    // WAIT FOR AN ENTRANCE TO ACTUALLY BE RUNNING BEFORE SWINGING. Striking the instant the match
+    // loads breaks out of nothing — the first run of this arm authorised a breakout at 0.46s with
+    // sawEntrance:false, so it proved a strike can start a brawl but never tested INTERRUPTING an
+    // entrance, which is the case the owner described. Swing at a walk that is on screen.
+    if (BREAK){
+      const running = await page.evaluate(() => { try{
+        return !!(window.BANNON_ENTRANCE_SEQ && window.BANNON_ENTRANCE_SEQ.stats().running); }catch(e){ return false; } });
+      const already = await page.evaluate(() => { try{ return (window.BANNON_PHASE.state().breakouts||0) > 0; }catch(e){ return false; } });
+      if (running || already) await page.evaluate(() => { dispatchEvent(new KeyboardEvent('keydown',{key:'j',bubbles:true}));
+                                                          dispatchEvent(new KeyboardEvent('keyup',{key:'j',bubbles:true})); });
+    }
     await sleep(400);
-    const st = await page.evaluate(() => { try{ return window.BANNON_PHASE ? window.BANNON_PHASE.state().combatState : 'ACTIVE'; }catch(e){ return 'ACTIVE'; } });
-    if (st === 'ACTIVE' && i > 4) { await sleep(2500); break; }
+    const st = await page.evaluate(() => { try{ return window.BANNON_PHASE ? window.BANNON_PHASE.state().combatPhase : 'OFFICIAL'; }catch(e){ return 'OFFICIAL'; } });
+    if (st === 'OFFICIAL' && i > 4) { await sleep(2500); break; }
   }
   await page.evaluate(() => dispatchEvent(new KeyboardEvent('keyup',{key:'d',bubbles:true})));
   const r = await page.evaluate(() => window.__mpStop());
@@ -240,6 +280,9 @@ function PROBE(cfg){
     if (must == null){ verdict = 'UNKNOWN — ' + ref + ' was never observed'; bad++; }
     else if (then == null) verdict = 'ok (never happened in the window)';
     else if (then >= must - 60) verdict = 'ok  (' + ((then-must)/1000).toFixed(2) + 's after)';
+    else if (BREAK && label.indexOf('the bell rings') !== 0){
+      verdict = 'by design  ' + ((must-then)/1000).toFixed(2) + 's before ' + ref + ' (breakout arm)';
+    }
     else { verdict = 'FAIL  ' + ((must-then)/1000).toFixed(2) + 's BEFORE ' + ref; bad++; }
     console.log('   ' + label.padEnd(38) + verdict);
   }
@@ -258,6 +301,31 @@ function PROBE(cfg){
   // UNKNOWN IS NOT PASS. A check that cannot see the failure it looks for must not report clean.
   console.log('\n  ' + (bad ? bad + ' CHECK(S) NOT SATISFIED' : 'ALL CHECKS SATISFIED — combat begins at the bell'));
   if (errs.length) console.log('  page errors: ' + errs.slice(0,4).join(' | '));
+  if (BREAK){
+    // THE BREAKOUT ARM'S ASSERTIONS ARE DIFFERENT ONES. Combat before the bell is CORRECT here; what
+    // must not happen is the MATCH starting early. So: a breakout was authorised, it was pre-bell
+    // and not official, the round clock did not advance, and the bell still eventually rang.
+    const bo = r.ev.find(x => x.name.indexOf('announce "IT IS BREAKING DOWN"') === 0);
+    // A TICK IS A DECREASE, NOT A CHANGE. The first version counted any change and reported
+    // "86 -> 90  FAIL, match time burned" — which was the timer ELEMENT being initialised from a
+    // stale value to the round's start value, the opposite of the clock running. Only a countdown
+    // is match time being spent.
+    const ticks = (r.clock && r.clock.seen || []).filter(x => bell == null || x.t < bell - 60);
+    let moved = false;
+    for (let i = 1; i < ticks.length; i++) if (ticks[i].v < ticks[i-1].v) moved = true;
+    console.log('\n--- PRE-BELL BRAWL ---');
+    console.log('   breakouts authorised        ' + ((r.phase && r.phase.breakouts) || 0) +
+                (bo ? '   (announced at ' + (bo.t/1000).toFixed(2) + 's)' : ''));
+    console.log('   the bell still rang         ' + (bell != null ? 'yes, at ' + (bell/1000).toFixed(2) + 's' : 'NO — UNRECOVERABLE'));
+    console.log('   round clock before the bell ' + (ticks.length ? ticks.map(x=>x.v).join(' -> ') : 'never sampled') +
+                '   ' + (moved ? '<- FAIL, match time burned before the bell' : 'held'));
+    console.log('   final phase                 ' + JSON.stringify(r.phase));
+    console.log('   interrupted a live entrance ' + (r.phase && r.phase.sawEntrance ? 'yes' : 'NO'));
+    if (!(r.phase && r.phase.breakouts))
+      console.log('   INVALID — no breakout was authorised, so this says nothing about the pre-bell path');
+    else if (!(r.phase && r.phase.sawEntrance))
+      console.log('   PARTIAL — a brawl started, but no entrance was ever on screen to interrupt');
+  }
   if (NOENT){
     // The failsafe has exactly one requirement: the bell rings anyway, and reasonably promptly.
     const armed = bell != null;
@@ -273,7 +341,7 @@ function PROBE(cfg){
       console.log('   ' + (armed ? 'combat is reachable with entrances absent' : 'UNRECOVERABLE — the match can never start'));
     }
   }
-  fs.writeFileSync(path.join(OUT, 'match_phases' + (NOPHASE ? '_control' : (NOENT ? '_failsafe' : '')) + '.json'),
+  fs.writeFileSync(path.join(OUT, 'match_phases' + (NOPHASE ? '_control' : (NOENT ? '_failsafe' : (BREAK ? '_breakout' : ''))) + '.json'),
                    JSON.stringify({ nophase:NOPHASE, ...r, errs }, null, 1));
-  console.log('  report -> ' + path.join(OUT, 'match_phases' + (NOPHASE ? '_control' : (NOENT ? '_failsafe' : '')) + '.json'));
+  console.log('  report -> ' + path.join(OUT, 'match_phases' + (NOPHASE ? '_control' : (NOENT ? '_failsafe' : (BREAK ? '_breakout' : ''))) + '.json'));
 })();

@@ -2074,3 +2074,53 @@ variance (0.1876 / 0.0149 / 0.1563 on the re-run). One check, not an assumption 
 2-3 commentary lines still fire during the walk (REF BUMP, REVERSAL!) — other systems that authorise
 themselves without asking the phase. The pattern is now established and the fix for each is one
 guard at the funnel; they are not gated yet.
+
+## OWNER CORRECTION, SAME DAY — COMBAT IS NOT THE SAME THING AS AN OFFICIAL MATCH (2026-09-04)
+Owner, on the version above: "the phase model should not simply be 'entrance = combat disabled' ...
+Someone can punch another wrestler on the ramp, throw them into the barricade, grapple them on the
+floor, interrupt an entrance, run into the ring, fight before the bell, without the match clock or
+official rules being active." **HE IS RIGHT AND MY FIRST VERSION WAS TOO BLUNT.** It fixed the
+measured bug and deleted a feature the game should have.
+
+THE ORIGINAL DEFECT WAS NEVER "combat happened during an entrance" — it was that EVERY entrance
+automatically became an unrestricted fight because one label authorised everything at once. Banning
+pre-bell combat is the same mistake in the other direction.
+
+    combatPhase        NONE | PRE_BELL | OFFICIAL | POST_MATCH   may a body be driven
+    officialMatch      derived: combatPhase === OFFICIAL          do the clock and the rules run
+    presentationPhase  NONE | ENTRANCE | CONFRONTATION | ANNOUNCEMENT | READY | MATCH
+
+`combatActive()` is true in PRE_BELL **and** OFFICIAL — the input gate. `officialMatch()` is the
+round clock's question, and it is why a ramp brawl no longer burns match time.
+
+### A BREAKOUT IS AN EVENT, NOT A SCRIPTED SEQUENCE
+Owner: "I would avoid `if entrance 7: special interruption code`." One door — `BANNON_PHASE
+.breakout(reason)` — reached identically by a player strike, a run-in, an AI decision or a story
+beat. It releases the walkout's hold on the bodies, sets PRE_BELL, and leaves the clock off.
+**THE GATE IS A DOOR, NOT A WALL:** `playerAttack` no longer REFUSES a strike thrown during an
+entrance — it breaks out and then proceeds on that same press, because a breakout you have to ask
+for twice is a dropped input.
+
+### THE BELL IS A CONDITION, NEVER A TIMER
+Owner: "I wouldn't make: wait 20 seconds -> bell." `ringReady()` reads both competitors' real
+positions against ARENA_HALF/ARENA_HALF_Z and the FLOOR zone Y. **Being THROWN into the ring
+therefore satisfies readiness for free** — the case he named, with no code of its own. CEIL_MS still
+forces the bell, because a match that can never start is worse than one that starts early.
+
+### A THIRD INPUT PATH, FOUND THE SAME WAY AS THE SECOND
+`playerAttack` is called DIRECTLY from the j/k/l/space/u/g keydown handler, not through
+readPlayerInput — so the loop gate never covered it, exactly like BANNON_APEX.cmd. **Combat
+authorisation has to live at every intent funnel, not at one of them.** That is now three separate
+paths (loop, cmd, playerAttack) and the pattern should be assumed for any new one.
+
+### VERIFIED, THREE ARMS
+    normal      entrances done 20.3s -> bell 21.8s; 0 breakouts; nothing authorised before the bell
+    --breakout  strike at 1.53s INTERRUPTS A LIVE ENTRANCE -> PRE_BELL; damage before the bell BY
+                DESIGN; ROUND CLOCK HELD; bell still rang at 3.34s once both men were in the ring
+    --noentrance  bell RANG at 3.10s with the entrance genuinely suppressed
+TWO MORE INSTRUMENT DEFECTS, MINE: the clock check counted any CHANGE as a tick and reported
+"86 -> 90 FAIL, match time burned" — that was the timer ELEMENT being initialised from a stale value,
+the opposite of a countdown; a tick is a DECREASE. And the first breakout arm swung the instant the
+match loaded, authorising a brawl at 0.46s with sawEntrance:false — it proved a strike starts a
+fight but never tested INTERRUPTING an entrance, which is the whole case. Wait for a walk to be on
+screen, and PRINT whether one was.
