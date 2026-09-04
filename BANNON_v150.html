@@ -59202,6 +59202,25 @@ window.__deriveVariant = async function(key){
   var OK_STATE = { idle:1, walk:1, run:1, block:1, taunt:1 };
   var EASE_IN = 0.12, EASE_OUT = 0.09, REACH = 0.97;
 
+  // ── THE WRITE LEDGER (owner, on the authority question: "A chain that is technically touched
+  // every frame but receives microscopic corrections is a different problem from a chain being
+  // substantially reposed every frame.") ──────────────────────────────────────────────────────
+  // WHICH bones this module writes is already answerable from the write ledger's stack attribution.
+  // HOW MUCH it writes is not, and that is the number that decides whether this is a constraint
+  // correction or a second pose author. So every spin() this module performs records the WORLD-SPACE
+  // rotation angle it applied, bucketed by bone role and by whether the leg was planted or easing
+  // out — a swing-leg correction and a plant correction are different claims about authority.
+  // Sums/max/sumsq only: a per-frame array over a long walk is a memory leak wearing a measurement.
+  var W = {};
+  function rec(key, v){
+    var b = W[key] || (W[key] = { n:0, sum:0, max:0, sq:0 });
+    b.n++; b.sum += v; b.sq += v*v; if (v > b.max) b.max = v;
+  }
+  function note(side, role, planted, rad){
+    rec(side + role + (planted ? '.plant' : '.swing'), rad);
+    if (window.__FIK_W) { try{ window.__FIK_W(side, role, planted, rad); }catch(e){} }
+  }
+
   // scratch — allocated once. This runs 4 times a frame per fighter; per-frame `new` here is how a
   // helper becomes the garbage-collector hitch it was written to prevent.
   var A = null, B = null, C = null, T = null, TT = null, ax = null, v1 = null, v2 = null, q1 = null, q2 = null, pq = null, qs = null;
@@ -59228,7 +59247,7 @@ window.__deriveVariant = async function(key){
   }
 
   // ── the solver. hip -> knee -> ankle, ankle driven to `target`. ────────────────────────────
-  function twoBone(hip, knee, ankle, target, w){
+  function twoBone(hip, knee, ankle, target, w, side, planted){
     hip.updateMatrixWorld(true);
     hip.getWorldPosition(A); knee.getWorldPosition(B); ankle.getWorldPosition(C);
     var L1 = A.distanceTo(B), L2 = B.distanceTo(C);
@@ -59256,6 +59275,7 @@ window.__deriveVariant = async function(key){
       if (ax.lengthSq() < 1e-8){ ax.set(1,0,0).applyQuaternion(hip.getWorldQuaternion(q1)); }
       ax.normalize();
       spin(knee, q2.setFromAxisAngle(ax, delta));
+      note(side, '.knee', planted, Math.abs(delta));
       ankle.getWorldPosition(C);
     }
 
@@ -59264,6 +59284,7 @@ window.__deriveVariant = async function(key){
     if (v1.lengthSq() > 1e-8 && v2.lengthSq() > 1e-8){
       v1.normalize(); v2.normalize();
       spin(hip, q2.setFromUnitVectors(v1, v2));
+      note(side, '.hip', planted, 2 * Math.acos(Math.max(-1, Math.min(1, Math.abs(q2.w)))));
     }
     ST.solved++;
     return true;
@@ -59276,14 +59297,19 @@ window.__deriveVariant = async function(key){
     return (up && lo && ft && lo.parent === up && ft.parent === lo) ? { up:up, lo:lo, ft:ft } : null;
   }
 
+  // WHY it stood down, not just that it did. A bare skip counter cannot distinguish "correctly
+  // excluded during a grapple" from "never ran at all", and those are opposite findings. The reason
+  // is recorded per fighter so a second body on the apron cannot be mistaken for the player.
   function eligible(f){
-    if (window.FOOT_IK === false) return false;
-    if (!f || !f.model || !f.model.userData) return false;
-    if (f.ragdoll || f._ragdoll) return false;
-    if (!OK_STATE[f.state]) return false;
-    if (f.grappling || f.grabbedBy || f._pinning || f._climbing || f.airborne) return false;
+    var why = null;
+    if (window.FOOT_IK === false) why = 'disabled';
+    else if (!f || !f.model || !f.model.userData) why = 'nomodel';
+    else if (f.ragdoll || f._ragdoll) why = 'ragdoll';
+    else if (!OK_STATE[f.state]) why = 'state:' + (f && f.state);
+    else if (f.grappling || f.grabbedBy || f._pinning || f._climbing || f.airborne) why = 'contact';
     // in the air on purpose (a dive, a hop, a bump) — the feet belong to the arc, not the mat
-    if (typeof f.y === 'number' && f.y > 0.08) return false;
+    else if (typeof f.y === 'number' && f.y > 0.08) why = 'airborne';
+    if (why){ rec('skip.' + (f && f.isPlayer ? 'p' : 'ai') + '.' + why, 1); return false; }
     return true;
   }
 
@@ -59294,8 +59320,11 @@ window.__deriveVariant = async function(key){
     var legs = m.userData.__ikLegs;
     if (legs === undefined){
       legs = m.userData.__ikLegs = { L: legOf(m, 'Left'), R: legOf(m, 'Right') };
-      if (legs.L && legs.R) ST.legs++;
     }
+    // SET, not increment. The resolve happens once per model and is cached on the model, so an
+    // increment there reads as 0 after any reset() — which is a counter lying about the rig rather
+    // than reporting it. Restated every frame, it cannot go stale.
+    if (legs.L && legs.R) ST.legs = 1;
     if (!legs.L || !legs.R) return;
 
     var S = f.__ik || (f.__ik = { L:{w:0,x:0,z:0,on:false}, R:{w:0,x:0,z:0,on:false}, sup:null });
@@ -59320,8 +59349,22 @@ window.__deriveVariant = async function(key){
       if (st.w <= 0.001 || !leg) continue;
       leg.ft.getWorldPosition(v1);
       TT.set(st.x, v1.y, st.z);               // LOCK XZ, KEEP THE GAIT'S OWN Y
-      if (!twoBone(leg.up, leg.lo, leg.ft, TT, st.w)){
+      // THE CONSTRAINT VIOLATION ITSELF, before any correction: how far the animation has carried
+      // the ankle off the locked plant, in XZ. This is the error the module exists to remove, and
+      // it is a different quantity from how much rotation it spends removing it.
+      var planted = (k === sup && st.on), ph = planted ? '.plant' : '.swing';
+      var e0 = Math.hypot(v1.x - st.x, v1.z - st.z);
+      rec(k + '.attempt' + ph, e0);           // EVERY attempt, including the ones that release
+      if (!twoBone(leg.up, leg.lo, leg.ft, TT, st.w, k, planted)){
         st.on = false; st.x = v1.x; st.z = v1.z; ST.releases++;   // out of reach: re-plant here
+      } else {
+        // PAIRED before/after, same frames, same sample. Recording the error on every attempt and
+        // the residual only on success compares two different populations, and "the residual is
+        // bigger than the error" would then be an artifact of which frames each one saw. Both halves
+        // of this pair are written on exactly the frames where a solve actually happened.
+        leg.ft.getWorldPosition(v1);
+        rec(k + '.err' + ph, e0);
+        rec(k + '.res' + ph, Math.hypot(v1.x - st.x, v1.z - st.z));
       }
     }
   }
@@ -59348,7 +59391,19 @@ window.__deriveVariant = async function(key){
   arm(0);
 
   window.BANNON_FOOTIK = { stats: function(){ return Object.assign({}, ST); },
-                           reset: function(){ for (var k in ST) ST[k] = 0; } };
+    // writes() answers "what authority does this module actually exercise", per bone role, in the
+    // units the question is asked in: radians of world rotation applied, and metres of plant error
+    // before and after. mean AND max AND sd, because a chain corrected by a hair on average and by
+    // half a radian at its worst is authoring the pose on the frames that matter.
+    writes: function(){
+      var o = {};
+      for (var k in W){ var b = W[k];
+        var mean = b.n ? b.sum / b.n : 0;
+        o[k] = { n:b.n, mean:mean, max:b.max, sd: b.n ? Math.sqrt(Math.max(0, b.sq/b.n - mean*mean)) : 0 };
+      }
+      return o;
+    },
+    reset: function(){ for (var k in ST) ST[k] = 0; W = {}; } };
 })();
 </script>
 
