@@ -16068,7 +16068,13 @@ const modelStatusText = { p1:'', p2:'' };
 // clip-bone consumer used none at all. Normalise once, in one place: lowercase, then drop every
 // character that is not a letter or a digit. "mixamorig:LeftArm", "mixamorigLeftArm",
 // "MIXAMORIG_left_arm" and "mixamorig left arm" all collapse to "mixamorigleftarm".
-window.__normBoneKey = function(n){ return String(n==null?'':n).toLowerCase().replace(/[^a-z0-9]/g,''); };
+// NOTE THE \d* — Mixamo re-exports a rig as `mixamorig9:Head` when more than one skeleton has passed
+// through it, and this stripped only a bare `mixamorig`. `mixamorig9:Head` normalised to `9head`,
+// matched nothing, and the FOLLOW-UP prefix pass does not start with a digit either, so those clips
+// lost their ENTIRE CORE SKELETON — Head, Hips, Neck, Spine and all four limbs. Measured across the
+// shipped set: 8 clips, every core bone unresolved on each. That is the fourth time in this file's
+// history that two components spelled the same bone differently; the digit is now part of the prefix.
+window.__normBoneKey = function(n){ return String(n==null?'':n).toLowerCase().replace(/^mixamorig\d+/,'mixamorig').replace(/[^a-z0-9]/g,''); };
 
 // ── ONE CLIP RESOLVER, for the same reason there is one bone resolver ────────────────────────
 // THIS IS THE THIRD TIME THE SAME DEFECT HAS COST US THE ANIMATIONS: two components spelling the
@@ -16108,6 +16114,19 @@ window.__studioClip = function(name){
 // Build the index from an already-lowercased boneByName map. Also files a SUFFIX alias with the
 // rig prefix removed, so a capture named "mixamorig:LeftArm" still finds a bone plainly called
 // "LeftArm" on a non-Mixamo rig (and vice versa). Exact match always wins over the alias.
+// CROSS-CONVENTION ALIASES, INVERTED FROM THE ENGINE'S OWN MOCAP_BONE_MAP — never a second table.
+// 290 of the shipped clips use the MDickie rig convention, whose torso bone is `J_Chest`. That
+// normalises to `chest`, the prefix pass strips the `j`, and a Mixamo skeleton has NO BONE CALLED
+// CHEST — it has Spine1 and Spine2. So the TORSO TRACK WAS DROPPED on every one of those 290 clips
+// and the census reported it as an ordinary miss. MOCAP_BONE_MAP already declares `spine2:'chest'`,
+// `hips:'pelvis'`, `spine:'spineLow'`, `spine1:'spineMid'`, `leftarm:'shL'` and the rest; read the
+// other way round that IS the alias table, so it is derived from the engine's own vocabulary rather
+// than invented beside it. Applied only when the direct name misses, so nothing existing changes.
+var _XCONV = { chest:'spine2', pelvis:'hips', spinelow:'spine', spinemid:'spine1',
+               shl:'leftarm', shr:'rightarm', ell:'leftforearm', elr:'rightforearm',
+               hal:'lefthand', har:'righthand', clavl:'leftshoulder', clavr:'rightshoulder',
+               hipl:'leftupleg', hipr:'rightupleg', knl:'leftleg', knr:'rightleg',
+               ftl:'leftfoot', ftr:'rightfoot' };
 window.__buildBoneNorm = function(bones){
   var NX = {}, ALIAS = {}, k, nk, st;
   for(k in bones){
@@ -16117,6 +16136,7 @@ window.__buildBoneNorm = function(bones){
     if(st && st!==nk && !ALIAS[st]) ALIAS[st] = bones[k];
   }
   for(k in ALIAS){ if(!NX[k]) NX[k] = ALIAS[k]; }
+  for(k in _XCONV){ if(!NX[k] && NX[_XCONV[k]]) NX[k] = NX[_XCONV[k]]; }
   return NX;
 };
 // Resolve a clip/track bone name against a bound model. Returns the THREE.Bone or null.

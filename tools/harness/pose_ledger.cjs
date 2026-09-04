@@ -323,6 +323,43 @@ function PROBE(){
     await run('walk_slowfps', holdKey('d'), relKey('d'));
     await page.evaluate(() => window.__PL.setPixels(false));
 
+    // MAPPING CENSUS. play_and_record reports "clip bone refs 290859, RESOLVED 84186 (28.9%)" and
+    // that number ALONE proves nothing: a capture carries ~50 finger tracks per key that a 58-joint
+    // rig will never have, so most of the miss is expected. The question that matters is WHICH bones
+    // fail — a missing pinky is nothing, a missing forearm is the animation not reaching the body.
+    report.mapping = await page.evaluate(() => {
+      try{
+        const F = new Function('return fighters')();
+        const p = (F||[]).find(f => f && f.isPlayer) || (F||[])[0];
+        const S = (typeof STUDIO !== 'undefined' && STUDIO.clips) ? STUDIO.clips : null;
+        if (!p || !p.model || !S) return { err: 'no model or no resident clips' };
+        // CORE = anything that carries the BODY. The first version of this list left out `Chest`,
+        // and 290 shipped clips use the MDickie rig convention where the torso bone IS `J_Chest` —
+        // so the census reported those as harmless non-core misses when they are the torso not
+        // arriving. A filter that is too narrow reports a clean result for the thing it cannot see.
+        const CORE = /(hips|pelvis|waist|torso|chest|spine|neck|head|clav|shoulder|upperarm|lowerarm|forearm|elbow|wrist|hand|arm|thigh|upleg|shin|calf|knee|ankle|foot|toe|leg|root)$/i;
+        const seen = {}, missCore = {}, missOther = {};
+        let refs = 0, ok = 0, clips = 0;
+        for (const cn in S){
+          const c = S[cn]; if (!c || !c.keys || !c.keys.length) continue;
+          clips++;
+          const b = c.keys[0].bones || {};
+          for (const bn in b){
+            if (seen[bn] != null){ refs++; if (seen[bn]) ok++; continue; }
+            const hit = !!(window.__boneOf && window.__boneOf(p.model, bn));
+            seen[bn] = hit; refs++; if (hit) ok++;
+            if (!hit){
+              const bare = bn.replace(/^mixamorig:?/i, '');
+              if (CORE.test(bare)) missCore[bare] = (missCore[bare]||0)+1;
+              else missOther[bare] = (missOther[bare]||0)+1;
+            }
+          }
+        }
+        return { clips, distinctBones: Object.keys(seen).length, refs, resolved: ok,
+                 missCore: Object.keys(missCore).sort(), missOtherCount: Object.keys(missOther).length,
+                 missOtherSample: Object.keys(missOther).slice(0, 10) };
+      }catch(e){ return { err: String(e && e.message).slice(0,140) }; }
+    });
     report.stateclip = await page.evaluate(() => { try{ return window.BANNON_STATECLIP ? window.BANNON_STATECLIP.stats() : null; }catch(e){ return null; } });
     report.ledger = await page.evaluate(() => ({ b: window.__PL.b, errs: window.__PL.errs, bones: window.__PL.bones }));
   }catch(e){
@@ -368,6 +405,14 @@ function PROBE(){
     ' · closure ' + JSON.stringify(report.stateclip.closure) +
     ' · clips ' + JSON.stringify(report.stateclip.byClip) + (report.stateclip.lastErr ? ' · err ' + report.stateclip.lastErr : ''));
   if (report.blockers.length) console.log('  BLOCKERS: ' + report.blockers.join(' | '));
+  console.log('');
+  const MP = report.mapping;
+  if (MP && !MP.err) console.log('  MAPPING: ' + MP.clips + ' resident clips · ' + MP.distinctBones +
+    ' distinct bone tracks · ' + MP.resolved + '/' + MP.refs + ' resolve (' +
+    Math.round(100*MP.resolved/Math.max(1,MP.refs)) + '%)\n           CORE bones that do NOT resolve: ' +
+    (MP.missCore.length ? MP.missCore.join(', ') : 'NONE') + '\n           non-core unresolved: ' +
+    MP.missOtherCount + ' (' + MP.missOtherSample.join(', ') + (MP.missOtherCount>10?', ...':'') + ')');
+  else if (MP) console.log('  MAPPING: ' + MP.err);
   console.log('');
   console.log('  drive/state           frames    fps   clip(mapped)  clip(all)   lag PROC   lag CLIP   contested');
   const rows = Object.keys(report.summary).filter(k => report.summary[k].frames >= 8)
