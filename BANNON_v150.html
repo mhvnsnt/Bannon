@@ -61825,7 +61825,9 @@ window.__deriveVariant = async function(key){
   // Ordered by preference. BOX_IDLE is a full 52-bone capture; the GEN_ entries are 17-bone
   // MoMask-generated stances. Both are real captures that ship — nothing here is aspirational.
   var CAT = {
-    IDLE: ['BOX_IDLE', 'GEN_IDLE_STANCE', 'GEN_GUARD_HIGH', 'ACTION_IDLE_TO_STANDING_IDLE']
+    IDLE: ['BOX_IDLE', 'GEN_IDLE_STANCE', 'GEN_GUARD_HIGH', 'ACTION_IDLE_TO_STANDING_IDLE'],
+    WALK: ['GEN_WALK_FWD'],
+    RUN:  ['GEN_RUN_FWD']
   };
 
   // A LOOPING STATE MAY ONLY PLAY A CLIP THAT ACTUALLY LOOPS — MEASURED, NOT READ OFF THE NAME.
@@ -61868,19 +61870,21 @@ window.__deriveVariant = async function(key){
 
   function slots(){ try{ return JSON.parse(localStorage.getItem(STORE) || '{}') || {}; }catch(e){ return {}; } }
 
-  function clipFor(f){
+  function clipFor(f, cat){
+    cat = cat || 'IDLE';
+    var pool = CAT[cat] || CAT.IDLE;
     var name = (f && ((f.opts && f.opts.name) || f.specName)) || 'BANNON';
     var S = slots();
-    var over = S && S.stateClip && S.stateClip[name] && S.stateClip[name].IDLE;
-    var want = over || CAT.IDLE[hash(name + ':IDLE') % CAT.IDLE.length];
+    var over = S && S.stateClip && S.stateClip[name] && S.stateClip[name][cat];
+    var want = over || pool[hash(name + ':' + cat) % pool.length];
     var c = window.__studioClip && window.__studioClip(want);
     if (c && loops(want, c)) return { name: want, clip: c };
     if (c) ST.rejectedNoLoop[want] = (ST.rejectedNoLoop[want] || 0) + 1;
     // Not resident. Ask for it FOR NEXT TIME and fall back to any entry that is already here —
     // never block the current frame on a fetch, which is the trap the taunt pass had to be fixed for.
     try{ if (window.loadClipFor) window.loadClipFor(want); }catch(e){}
-    for (var i = 0; i < CAT.IDLE.length; i++){
-      var an = CAT.IDLE[i], alt = window.__studioClip && window.__studioClip(an);
+    for (var i = 0; i < pool.length; i++){
+      var an = pool[i], alt = window.__studioClip && window.__studioClip(an);
       if (alt && loops(an, alt)) return { name: an, clip: alt };
       if (alt) ST.rejectedNoLoop[an] = (ST.rejectedNoLoop[an] || 0) + 1;
     }
@@ -61888,18 +61892,31 @@ window.__deriveVariant = async function(key){
     return null;
   }
 
-  function stamp(f, dt){
+  function stamp(f, dt, walking){
     if (window.STATE_CLIP === false) return;
     if (!f || f.ragdoll || f.airLift) return;
-    if (!REST[f.state]) return;
+    var cat = walking ? (f.running ? 'RUN' : 'WALK') : 'IDLE';
+    if (!walking && !REST[f.state]) return;
     var now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     // Somebody with a stronger claim already drove a clip this frame — a move, a taunt, a ring
     // transition. Stand down rather than becoming a second writer.
     if (f._clipDriveAt != null && (now - f._clipDriveAt) < 12){ ST.skippedHigher++; return; }
-    var pick = clipFor(f); if (!pick) return;
-    f._scT = (f._scT || 0) + (dt > 0.25 ? 0.25 : dt);      // same anti-teleport clamp the walkout uses
-    var ph = window.__clipPhase ? window.__clipPhase(pick.clip, f._scT, 1, true)
-                                : ((f._scT % (pick.clip.dur || 1)) / (pick.clip.dur || 1));
+    var pick = clipFor(f, cat); if (!pick) return;
+    var ph;
+    if (walking){
+      // PHASE COMES FROM THE ENGINE'S OWN STRIDE, NOT FROM A CLOCK. `walkPhase` is advanced by
+      // DISTANCE TRAVELLED (`+= (|vx| / 0.32) * PI`, one step per 0.32 m) and LOCO.footPlant
+      // world-locks the planted foot to it. Driving a walk clip off wall-clock time instead would
+      // let the feet cycle at a rate unrelated to how far the body actually moved, which is the
+      // definition of skating — trading a puppet for a moonwalk. One stride = 2*PI radians.
+      var wp = (typeof f.walkPhase === 'number') ? f.walkPhase : 0;
+      ph = ((wp / (Math.PI * 2)) % 1 + 1) % 1;
+      ST.phaseFrom = 'walkPhase';
+    } else {
+      f._scT = (f._scT || 0) + (dt > 0.25 ? 0.25 : dt);    // same anti-teleport clamp the walkout uses
+      ph = window.__clipPhase ? window.__clipPhase(pick.clip, f._scT, 1, true)
+                              : ((f._scT % (pick.clip.dur || 1)) / (pick.clip.dur || 1));
+    }
     var w = (window.STATE_CLIP_W != null) ? window.STATE_CLIP_W : 1;
     try{ window.studioApplyClipPose(f, pick.clip, ph, w); ST.applied++;
          ST.byClip[pick.name] = (ST.byClip[pick.name] || 0) + 1; }
@@ -61909,7 +61926,8 @@ window.__deriveVariant = async function(key){
   // WARM ITS OWN POOL, at a lull, concurrency 2, never on the critical path.
   function warm(){
     if (!window.loadClipFor) return;
-    var q = CAT.IDLE.slice(), live = 0;
+    var q = []; for (var ck in CAT) q = q.concat(CAT[ck]);
+    var live = 0;
     (function next(){
       while (live < 2 && q.length){
         var n = q.shift();
@@ -61932,8 +61950,16 @@ window.__deriveVariant = async function(key){
       var o = FP.prototype.poseGuard;
       var w = function(dt, walking){
         var r = o.apply(this, arguments);
-        // `walking` true is the real gait, which is tuned and is not this module's business.
-        try{ if (!walking) stamp(this, dt); }catch(e){ ST.lastErr = String(e && e.message).slice(0,140); }
+        // WALK AND RUN GO THROUGH IT TOO NOW. Measured on the shipped build, walk was 2-7%
+        // clip-driven with 223-718 contested bone-frames, and gait_and_bind reported the two FEET
+        // at DIFFERENT cadences (0.5 Hz vs 1.78 Hz), the arms flapping at ~4 Hz — outside the
+        // 0.5-3 Hz human gait band entirely — and the hips not cycling at all. That is the
+        // incoherent look, and it is what a procedural aim plus a foot IK plus an arm leash all
+        // writing the same bones produces. window.STATE_CLIP_LOCO = false leaves locomotion alone.
+        try{
+          if (!walking) stamp(this, dt, false);
+          else if (window.STATE_CLIP_LOCO !== false) stamp(this, dt, true);
+        }catch(e){ ST.lastErr = String(e && e.message).slice(0,140); }
         return r;
       };
       w.__stateclip = 1; FP.prototype.poseGuard = w;
@@ -61947,15 +61973,16 @@ window.__deriveVariant = async function(key){
 
   window.BANNON_STATECLIP = {
     catalogue: function(){ return JSON.parse(JSON.stringify(CAT)); },
-    clipFor: function(f){ var p = clipFor(f); return p && p.name; },
+    clipFor: function(f, cat){ var p = clipFor(f, cat); return p && p.name; },
     warm: warm,
     stats: function(){
-      var res = 0, loopable = 0;
-      for (var i = 0; i < CAT.IDLE.length; i++){ var n = CAT.IDLE[i];
+      var res = 0, loopable = 0, all = [];
+      for (var ck in CAT) all = all.concat(CAT[ck]);
+      for (var i = 0; i < all.length; i++){ var n = all[i];
         var c = window.__studioClip && window.__studioClip(n);
         if (c){ res++; if (loops(n, c)) loopable++; } }
-      ST.resident = res; ST.loopable = loopable;
-      return Object.assign({}, ST, { poolSize: CAT.IDLE.length });
+      ST.resident = res; ST.loopable = loopable; ST.poolAll = all.length;
+      return Object.assign({}, ST, { poolSize: ST.poolAll || CAT.IDLE.length });
     },
     setStyle: function(name, clipName){
       try{ var S = slots(); S.stateClip = S.stateClip || {}; S.stateClip[name] = S.stateClip[name] || {};

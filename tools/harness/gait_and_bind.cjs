@@ -175,6 +175,10 @@ function analyse(v, times){
     args:['--use-gl=swiftshader','--no-sandbox','--no-proxy-server','--proxy-bypass-list=<-loopback>'] });
   const page = await browser.newPage({ viewport:{ width:412, height:915 } });
   const errs = []; page.on('pageerror', e => errs.push(String(e.message).split('\n')[0].slice(0,140)));
+  // A/B IN THE SAME BUILD (CLAUDE.md law: never compare against a number from a past session).
+  // --noloco leaves locomotion to the procedural retarget exactly as it shipped.
+  if (process.argv.indexOf('--noloco') > 0)
+    await page.addInitScript(() => { window.STATE_CLIP_LOCO = false; });
   await page.addInitScript(PROBE);
   await page.goto(`http://127.0.0.1:${port}/BANNON_v150.html`, { waitUntil:'domcontentloaded', timeout:60000 });
 
