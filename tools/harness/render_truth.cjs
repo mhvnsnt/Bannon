@@ -154,10 +154,29 @@ function PROBE(){
       const y = m4.elements[13]; if (y < bMin) bMin = y; if (y > bMax) bMax = y; });
     const g = sm.geometry; if (!g.boundingBox) g.computeBoundingBox();
     const gb = g.boundingBox;
+    // THE REST LOCAL ROTATION, next to what the clips bake. The clip block composes rest * clip, i.e.
+    // it treats a clip's Euler as an OFFSET FROM REST. If a capture instead stores the bone's
+    // ABSOLUTE local rotation, then at rest clip ~= rest and the product is rest squared — which on a
+    // Mixamo thigh (pointing down, ~180 deg from its parent's axis) folds the leg UP over the body.
+    // Printing the two side by side is the whole test, and neither number is inferred from a name.
+    const rest = {};
+    const eul = new THREE.Euler();
+    sk.bones.forEach(b => {
+      const nm = String(b.name || '').toLowerCase().replace(/[^a-z0-9]/g, '').replace(/^mixamorig\d*/, '');
+      const key = (nm.indexOf('leftupleg') === 0) ? 'LeftUpLeg' : (nm.indexOf('rightupleg') === 0) ? 'RightUpLeg'
+                : (nm === 'leftleg') ? 'LeftLeg' : (nm === 'hips') ? 'Hips' : null;
+      if (!key || rest[key]) return;
+      const q = (b.userData && b.userData.restQuat) || null;
+      if (!q) return;
+      eul.setFromQuaternion(q, 'XYZ');
+      rest[key] = { rx:+eul.x.toFixed(3), ry:+eul.y.toFixed(3), rz:+eul.z.toFixed(3),
+                    maxAbs:+Math.max(Math.abs(eul.x), Math.abs(eul.y), Math.abs(eul.z)).toFixed(3) };
+    });
     return { bones:pick, bindY:bindY, liveY:liveY,
              boneBindSpanY:[+bMin.toFixed(3), +bMax.toFixed(3)],
              meshBindSpanY:[+gb.min.y.toFixed(3), +gb.max.y.toFixed(3)],
              // THE TEST: in a correct bind pose the feet are the lowest thing on the body.
+             restLocalEuler: rest,
              bindFeetBelowHips: (bindY.leftfoot != null && bindY.hips != null) ? (bindY.leftfoot < bindY.hips) : null,
              liveFeetBelowHips: (liveY.leftfoot != null && liveY.hips != null) ? (liveY.leftfoot < liveY.hips) : null,
              nBones: sk.bones.length };
@@ -429,6 +448,42 @@ function PROBE(){
              nFighters: A.length, nBoundModels: fighterRoots.length };
   };
 
+  // ── HOW FAR IS EACH BONE FROM ITS OWN REST, RIGHT NOW ────────────────────────────────────────
+  // The outcome (legs folded up) is measured; this says how much rotation is being applied to get
+  // there, per bone, against the rig's own rest. Compared between the STATE_CLIP arms it separates
+  // "the clip asks for a big rotation" from "something composes a small one twice". Euler angles are
+  // NOT used — a rotation near +-pi wraps, and reading the max of a wrapping Euler across keys is
+  // exactly how I first mis-read this as "the capture stores absolute rotations".
+  window.__rtLeg = function(idx){
+    const A = FIGHTERS() || []; const f = A[idx]; if (!f || !f.model) return { err:'no model' };
+    const out = {};
+    ['LeftUpLeg','RightUpLeg','LeftLeg','RightLeg','LeftFoot','Hips','Spine','LeftArm'].forEach(n => {
+      const b = window.__boneOf ? window.__boneOf(f.model, n) : null;
+      if (!b) return;
+      const rest = b.userData && b.userData.restQuat;
+      if (!rest) { out[n] = { err:'no restQuat' }; return; }
+      const d = Math.min(1, Math.abs(rest.x*b.quaternion.x + rest.y*b.quaternion.y +
+                                     rest.z*b.quaternion.z + rest.w*b.quaternion.w));
+      out[n] = { fromRestDeg: +(2*Math.acos(d)*180/Math.PI).toFixed(1) };
+    });
+    // WHERE THE LIMB ACTUALLY POINTS. Angle-from-rest is axis-agnostic: two 160-degree rotations
+    // about different axes put a leg in completely different places, which is why the angles alone
+    // could not separate the buried fighter from the standing one. A standing leg points DOWN.
+    const seg = (a, b) => {
+      const A2 = window.__boneOf(f.model, a), B2 = window.__boneOf(f.model, b);
+      if (!A2 || !B2) return null;
+      const p1 = A2.getWorldPosition(V()), p2 = B2.getWorldPosition(V());
+      const v = p2.sub(p1); const len = v.length(); if (len < 1e-6) return null;
+      v.divideScalar(len);
+      return { dirY:+v.y.toFixed(3), lenM:+len.toFixed(3) };   // dirY -1 = straight down
+    };
+    out._thighL = seg('LeftUpLeg','LeftLeg');
+    out._shinL  = seg('LeftLeg','LeftFoot');
+    out._thighR = seg('RightUpLeg','RightLeg');
+    out._spine  = seg('Hips','Head');
+    return out;
+  };
+
   window.__rtTier = function(t){ try{ window.BANNON_PERF_AUTO = false;
     if (window.BANNON_PERF && window.BANNON_PERF.setTier){ window.BANNON_PERF.setTier(t); return true; } }catch(e){} return false; };
   window.__rtFreeze = function(){ try{
@@ -496,6 +551,7 @@ function PROBE(){
       for (let k = 0; k < 40 && !px; k++){ await sleep(150); px = await page.evaluate(i => window.__rtPx[i], idx); }
       const mat = await page.evaluate(i => window.__rtMaterial(i), idx);
       const bind = await page.evaluate(i => window.__rtBind(i), idx);
+      const leg  = await page.evaluate(i => window.__rtLeg(i), idx);
       const scn = await page.evaluate(() => window.__rtScene());
       // find the white blob from THIS camera, before anything is hidden
       await page.evaluate(() => window.__rtBlob());
@@ -514,7 +570,7 @@ function PROBE(){
       await page.screenshot({ path:sp });
       await page.evaluate(i => window.__rtSolo(i, false), idx);
       await sleep(400);
-      rows.push({ tier:t, tierSet:set, idx, body, cam, px, solo, hid, mat, bind, scene:scn, blob, shot:p, soloShot:sp });
+      rows.push({ tier:t, tierSet:set, idx, body, cam, px, solo, hid, mat, bind, leg, scene:scn, blob, shot:p, soloShot:sp });
     }
   }
   await page.evaluate(() => { try{ window.__camShot = null; }catch(e){} });
@@ -568,6 +624,25 @@ function PROBE(){
       'bind ' + k.bindFeetBelowHips + ' / live ' + k.liveFeetBelowHips);
     P('  ' + ''.padEnd(15) + 'bone bind span Y ' + (k.boneBindSpanY||[]).join(' .. ') +
       '   mesh bind span Y ' + (k.meshBindSpanY||[]).join(' .. ') + '   ' + k.nBones + ' bones');
+    // REST vs CLIP. The clip block composes rest * clip; if a capture stores ABSOLUTE local
+    // rotations then clip ~= rest and the leg is folded by its own rest rotation a second time.
+    const re_ = k.restLocalEuler || {};
+    for (const bn in re_) P('  ' + ''.padEnd(15) + 'rest local ' + bn.padEnd(11) +
+      'rx ' + String(re_[bn].rx).padStart(7) + '  ry ' + String(re_[bn].ry).padStart(7) +
+      '  rz ' + String(re_[bn].rz).padStart(7) + '   max|rot| ' + re_[bn].maxAbs + ' rad');
+  }
+
+  P('\n  2c. HOW FAR EACH BONE IS ROTATED FROM ITS OWN REST, right now (quaternion angle, no Euler)');
+  const seenLeg = {};
+  for (const r of rows){
+    const b = r.body || {}, L = r.leg || {};
+    if (seenLeg[b.name] || L.err) continue; seenLeg[b.name] = 1;
+    P('  ' + String(b.name).padEnd(15) + Object.keys(L).filter(k => k[0] !== '_')
+        .map(k => k + ' ' + (L[k].fromRestDeg != null ? L[k].fromRestDeg + 'deg' : L[k].err)).join('  '));
+    // dirY -1 is straight down. A standing thigh and shin are near -1; a leg folded up over the
+    // body is positive. This is the reading that separates the two fighters.
+    P('  ' + ''.padEnd(15) + ['_thighL','_shinL','_thighR','_spine'].map(k => k.slice(1) + ' dirY ' +
+        (L[k] ? L[k].dirY + ' (len ' + L[k].lenM + 'm)' : '-')).join('   '));
   }
 
   P('\n  3. RENDER TRUTH — his OWN pixels. FULL FRAME can be reading the ropes in front of him, so');

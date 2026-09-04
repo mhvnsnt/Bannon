@@ -2279,3 +2279,89 @@ there is the same class of mistake as baking a CC BY-NC dataset into the shippin
 inverted body, the retarget/clip torso contention, the plant lock and the transferred-rig mesh tear
 are all in THAT runtime, and none is fixed by a repository existing. The Three.js work is not blocked
 on this and must not wait for it.
+
+## THE LEGS POINT UP, ON BOTH FIGHTERS, AND ONE LAYER DOES IT (2026-09-04) — render_truth.cjs
+Owner, on a frame I showed him and narrated past: "the models are floating, broken, blacked out,
+halfway in the ring, one floating looking like a silhouette, it's not good at all and u didn't say
+anything about it." And: "do not tune locomotion while the character itself is capable of loading as
+a black silhouette, splitting into boots/body, or spawning under the floor. Otherwise every animation
+measurement is contaminated." Both hits land. Animation work stopped; this is the P0 bring-up gate.
+
+### THE FINDING — BANNON_STATECLIP INVERTS EVERY FIGHTER'S LEGS IN EVERY CALM STATE
+Limb DIRECTION, not angle (dirY -1 = straight down), sim frozen, same pose, A/B on `window.STATE_CLIP`
+armed in the INIT SCRIPT and confirmed armed in the report:
+
+    clips ON      BANNON  thigh +0.898  shin +0.993      VIPER  thigh +0.659  shin +0.912
+    clips OFF     BANNON  thigh -0.528  shin -0.715      VIPER  thigh -0.785  shin -0.989
+
+Both bodies stand with their legs folded UP over the torso whenever the idle/walk/run clip layer runs.
+The spine is fine either way (hips->head dirY +0.96), so it is the legs specifically.
+It also SHORTENS them: the same thigh bone measures 0.445 m with clips on and 0.528 m with them off,
+a 16% loss, from bone TRANSLATION in the clip block — and the STRETCH class reported clean throughout,
+because it checks deviation from a running mean and the legs are shortened on every frame.
+
+### THAT IS WHAT BURIES BANNON, AND THE GROUNDING SNAP IS INNOCENT
+`updateFighterModel` line 16966 moves the container so the LOWEST FOOT BONE sits at floorY + 0.10.
+Solving from the measured numbers: 0.871 + 0.10 - mfy = -0.79, so the bone it snapped to was at
+**1.76 m — head height**. It did exactly what it says and dragged the whole body 1.66 m under the mat
+to obey a foot that had been folded up over the head. Measured: lowest DRAWN vertex 0.774 m below the
+mat, reproduced at tiers 0/2/4 and across three runs (-0.767 / -0.774 / -0.775); with STATE_CLIP off
+he stands at +0.083.
+NOTE the snap also uses `floorY` and NOT `floorY + zoneY`, so a man on the FLOOR zone is snapped to
+ring height. Separate latent bug, not yet the cause of anything measured.
+**VIPER PASSED THE PLACEMENT CHECK WITH INVERTED LEGS** — the snap happened to land him near the mat.
+A body can be catastrophically wrong and still satisfy a placement test; the direction reading is what
+separates them, and this is the severed-rig lesson again in a new place.
+
+### THE BIND POSE IS CORRECT, SO IT IS NOT THE GLB
+Read straight off `inverse(boneInverses[i])`: feet -0.819 BELOW hips 0.165 on both models, 58 bones,
+bone bind span -0.929..0.679 against a mesh bind span -0.94..0.94. `bindFeetBelowHips true`,
+`liveFeetBelowHips false`. Asset innocent; pose pipeline guilty.
+
+### A THEORY I FORMED AND KILLED IN THE SAME PASS — WRITE THE DEAD ONES DOWN
+I measured BOX_IDLE's thigh track at "max |rot| 171 deg" and the rig's REST local thigh rotation at
+2.949 rad (169 deg), concluded the captures store ABSOLUTE local rotations while the clip block
+composes rest * clip, and had a tidy story about the rest rotation being applied twice.
+**IT IS WRONG.** `max` over keys of a EULER angle is meaningless when the rotation sits near +-pi and
+wraps; across all 973 clips the MEAN thigh rx is about -0.7, nowhere near +2.949. And the killing
+measurement: rotation-from-rest is 166.7 deg on BANNON and 158.4 deg on VIPER — 8 degrees apart, while
+one is buried and one is not. Angle-from-rest is AXIS-AGNOSTIC; two 160-degree rotations about
+different axes put a leg in completely different places. Only the DIRECTION reading separated them.
+
+### FOUR OF MY OWN INSTRUMENTS WERE WRONG FIRST, ALL BANKED PATTERNS
+1. **THE CANVAS READBACK RETURNED NOTHING AND READ AS "EVERY BODY IS BLACK".** meanLuma 0 / darkFrac 1
+   / 1 distinct colour for BOTH fighters at ALL THREE tiers. The renderer has no
+   preserveDrawingBuffer, so drawImage from `page.evaluate` — outside any rAF, after compositing —
+   reads an empty buffer. Sampling now happens inside a rAF and a WHOLE-CANVAS control rides along: if
+   the entire frame is black the body's blackness says nothing and the verdict is UNKNOWN.
+2. **MY "SHADED" THRESHOLD CERTIFIED THE DEFECT.** `distinctColours <= 6` printed "ok" for a body
+   showing EIGHT colours beside one showing NINETY. The bar is now the OTHER FIGHTER in the same
+   frame under the same lights and tier — a control the picture itself supplies.
+3. **SAMPLING A FIGHTER'S SCREEN PIXELS MEASURES WHATEVER IS IN FRONT OF HIM.** The glowing ropes sit
+   between camera and body. SOLO hides every other MESH — never a light, since hiding one changes
+   three.js's light COUNT and recompiles every material (banked law) — and that reading decides it.
+4. **CAMERA TRUTH IS A GATE, NOT A NOTE.** The previous pass photographed the underside of the mat and
+   filed it as defect evidence. The camera is derived from the subject's measured bounds and then
+   validated (on screen, occupies the frame, above the surface, outside the subject's bounds); a
+   failing image is written `_INVALID` instead of being presented as evidence.
+
+### WHAT ELSE THE GATE FOUND
+- **VIPER RENDERS AS A FLAT SILHOUETTE AND IT IS NOT THE QUALITY TIER.** SOLO: 8 distinct colours,
+  meanLuma 52, at tier 0 AND tier 4, against BANNON's 90-105 in the identical frame. His material is a
+  MeshStandardMaterial whose map DID decode (1024x1024, image present, not merely referenced) plus a
+  normalMap, under 16 lights totalling 15.63 intensity. Not a missing texture, not a missing light,
+  not the tier — which is what I would have guessed. OPEN.
+- **THE WHITE BLOB IS IDENTIFIED, BY RAY, NOT BY EYE.** The screen point is FOUND (brightest near-white
+  region outside the HUD bands) and then raycast: a POINTS CLOUD, PointsMaterial #555555 on a
+  BufferGeometry parented DIRECTLY TO THE SCENE with no owning group, centre (0.10, 1.61, -9.55),
+  size 1.41 x 1.28 x 1.59, 17 m out on the stage at head height. A particle system nothing cleans up.
+- Four unnamed white 1.9 x 2 x 1.95 m meshes spanning y -1..1, 26% of frame each — NOT identified.
+  Logged as open rather than explained away.
+- Both fighters have a bound model, one skinned mesh each, no orphan skinned bodies in the scene.
+
+### THE ORDER FROM HERE (owner's, and it is right)
+Scene/render identity -> material tier A/B -> model placement -> camera truth -> THEN animation.
+Do not tune locomotion, plant lock or TWIST while the legs point up: every one of those measurements
+is taken on a body that is already inverted. `tools/harness/render_truth.cjs` is the gate; run it
+first, and read `--perturb <stateclip|nativepose|footik|gripik>` for isolation (it PRINTS whether the
+perturbation armed, because a perturbation that did not change the variable is not evidence).
