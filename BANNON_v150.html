@@ -16919,6 +16919,25 @@ function updateFighterModel(f){
   if(!_nativePose && modelCfg.animate && m.userData.mapped && !(typeof FREEPOSE!=='undefined'&&FREEPOSE)){
     try{
       for(const mp of m.userData.mapped){
+        // CLIP AUTHORITY, GENERALISED FROM THE GUARD THIS FILE ALREADY HAD.
+        //
+        // The `__driven` check below existed for ARMS ONLY. Everywhere else the retarget wrote the
+        // bone and the clip block overwrote it a few lines later in the SAME FRAME — two authorities
+        // on one transform, which is exactly the ownership conflict the pose ledger measures.
+        // MEASURED once locomotion started playing a clip: walk clip authority 3% -> 83%, and
+        // CONTESTED BONE-FRAMES 559 -> 2136. The clip won the bone and the fight got worse.
+        //
+        // Skipping the retarget on a clip-owned bone is provably a VISUAL NO-OP: the clip block
+        // assigns `_b.quaternion.copy(rest * clip)` outright at full weight, so the retarget's write
+        // was being discarded in the same frame regardless. Removing it changes nothing on screen,
+        // removes the second writer, and saves the work.
+        //
+        // `__driven` is stamped at the END of the previous frame, so a clip's first frame still gets
+        // one retarget write (a one-frame transition, not a fight), and the clip block CLEARS the
+        // stamp every frame — so the moment a clip stops owning a bone the retarget resumes with no
+        // extra bookkeeping. window.CLIP_AUTHORITY = false restores the old both-writers behaviour.
+        if (window.CLIP_AUTHORITY !== false && mp.bone && m.userData.__driven &&
+            m.userData.__driven[mp.bone.uuid] > 0.5) continue;
         // ARM-HOLD, REWRITTEN AS A FALLBACK RATHER THAN A GATE.
         //
         // It used to `continue` — skip the aim entirely and slerp the arm to its bind rest — for
@@ -61858,7 +61877,14 @@ window.__deriveVariant = async function(key){
     }catch(e){ return (_loopMemo[name] = false); }
   }
   var ST = { applied:0, skippedHigher:0, missing:0, warmed:0, warmFailed:0, byClip:{}, lastErr:null,
-             resident:0, rejectedNoLoop:{}, closure:{} };
+             resident:0, rejectedNoLoop:{}, closure:{},
+             // COVERAGE FUNNEL. GEN_WALK_FWD applied 26 times in a run whose control had a 249-frame
+             // walk bucket, so the locomotion A/B was never a comparable experiment and has been
+             // withdrawn as a verdict. The question is now WHICH BOUNDARY drops the walk frames, and
+             // a funnel answers that in one run instead of five guesses. Every rejection is counted
+             // where it happens; the first large drop is the defect.
+             calls:{ walk:0, idle:0 }, appliedBy:{ IDLE:0, WALK:0, RUN:0 },
+             gate:{ locoOff:0, ragdoll:0, airLift:0, notRest:0, higherLayer:0, noPick:0 } };
   var STORE = 'bannon_moveset_slots';
 
   // States where a resting stance is the right animation. Everything else already has an owner and
@@ -61894,14 +61920,16 @@ window.__deriveVariant = async function(key){
 
   function stamp(f, dt, walking){
     if (window.STATE_CLIP === false) return;
-    if (!f || f.ragdoll || f.airLift) return;
+    if (!f) return;
+    if (f.ragdoll){ ST.gate.ragdoll++; return; }
+    if (f.airLift){ ST.gate.airLift++; return; }
     var cat = walking ? (f.running ? 'RUN' : 'WALK') : 'IDLE';
-    if (!walking && !REST[f.state]) return;
+    if (!walking && !REST[f.state]){ ST.gate.notRest++; return; }
     var now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
     // Somebody with a stronger claim already drove a clip this frame — a move, a taunt, a ring
     // transition. Stand down rather than becoming a second writer.
-    if (f._clipDriveAt != null && (now - f._clipDriveAt) < 12){ ST.skippedHigher++; return; }
-    var pick = clipFor(f, cat); if (!pick) return;
+    if (f._clipDriveAt != null && (now - f._clipDriveAt) < 12){ ST.skippedHigher++; ST.gate.higherLayer++; return; }
+    var pick = clipFor(f, cat); if (!pick){ ST.gate.noPick++; return; }
     var ph;
     if (walking){
       // PHASE COMES FROM THE ENGINE'S OWN STRIDE, NOT FROM A CLOCK. `walkPhase` is advanced by
@@ -61919,6 +61947,7 @@ window.__deriveVariant = async function(key){
     }
     var w = (window.STATE_CLIP_W != null) ? window.STATE_CLIP_W : 1;
     try{ window.studioApplyClipPose(f, pick.clip, ph, w); ST.applied++;
+         ST.appliedBy[cat] = (ST.appliedBy[cat] || 0) + 1;
          ST.byClip[pick.name] = (ST.byClip[pick.name] || 0) + 1; }
     catch(e){ ST.lastErr = String(e && e.message).slice(0, 140); }
   }
@@ -61957,8 +61986,9 @@ window.__deriveVariant = async function(key){
         // incoherent look, and it is what a procedural aim plus a foot IK plus an arm leash all
         // writing the same bones produces. window.STATE_CLIP_LOCO = false leaves locomotion alone.
         try{
-          if (!walking) stamp(this, dt, false);
-          else if (window.STATE_CLIP_LOCO !== false) stamp(this, dt, true);
+          if (!walking){ ST.calls.idle++; stamp(this, dt, false); }
+          else { ST.calls.walk++;
+            if (window.STATE_CLIP_LOCO !== false) stamp(this, dt, true); else ST.gate.locoOff++; }
         }catch(e){ ST.lastErr = String(e && e.message).slice(0,140); }
         return r;
       };

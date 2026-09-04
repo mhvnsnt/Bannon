@@ -244,6 +244,7 @@ function PROBE(){
 
   try{
     if (has('nostateclip')) await page.addInitScript(() => { window.__PL_NOSTATECLIP = true; });
+    if (has('noauthority')) await page.addInitScript(() => { window.CLIP_AUTHORITY = false; });
     await page.addInitScript(PROBE);
     await page.goto(`http://127.0.0.1:${port}/BANNON_v150.html`, { waitUntil:'domcontentloaded', timeout:60000 });
     if (await waitFor(async () => (await gs()) === 'menu', 120000, 'the menu')){
@@ -398,6 +399,12 @@ function PROBE(){
   console.log('\n===== POSE LEDGER =====');
   console.log('  bones hooked ' + (report.bones || 0) + '   page errors ' + pageErrors.length +
     '   STATECLIP ' + (has('nostateclip') ? 'OFF (control)' : 'ON'));
+  const SC = report.stateclip;
+  if (SC && SC.calls) console.log('\n  LOCOMOTION COVERAGE FUNNEL — the first large drop is the defect' +
+    '\n    poseGuard walking=true   ' + String(SC.calls.walk).padStart(6) +
+    '\n    poseGuard walking=false  ' + String(SC.calls.idle).padStart(6) +
+    '\n    rejected: ' + JSON.stringify(SC.gate) +
+    '\n    APPLIED by category      ' + JSON.stringify(SC.appliedBy));
   if (report.stateclip) console.log('  STATECLIP applied ' + report.stateclip.applied + ' · resident ' +
     report.stateclip.resident + '/' + report.stateclip.poolSize + ' · stood down for a higher layer ' +
     report.stateclip.skippedHigher + ' · missing ' + report.stateclip.missing +
