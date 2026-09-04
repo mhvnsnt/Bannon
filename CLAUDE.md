@@ -2229,3 +2229,53 @@ fails **no image is written** — an image that does not show the measured frame
    error now instead of a silent null.
 4. An `infl` that could not be computed returned `null` and read as "no influence data" rather than
    "this did not run". UNKNOWN is not PASS applies to sub-fields too.
+
+## mhvnsnt/lyra, MAPPED (2026-09-04) — docs/LYRA_MAP.md
+Owner: "Map mhvnsnt/Lyra against the Bannon requirements ... inspect its actual contents, not assume
+it is stock Lyra or that it contains everything." **MAPPED ONLY — nothing copied, forked or built.**
+Tree-only clone at 7e87d76 (--depth 1 --filter=blob:none --no-checkout: the whole tree, none of the
+blob content, 1.1 MB on disk). LOWERCASE the clone URL — banked law, the proxy serves lowercase.
+
+**IT IS REAL LYRA WITH THE CONTENT, UE 5.3:** 9,533 files — 8,606 .uasset, 341 .h, 340 .cpp,
+17 .uplugin, 16 .umap, 63 enabled plugins. **That is the exact inverse of the finding that decided
+the UE plan a day earlier:** `unreal/Bannon.uproject` is 706 sources and 0 content; this is 681
+sources and 8,606 assets. The half each is missing is the half the other has.
+
+**THE LOCOMOTION VOCABULARY IS COMPLETE** — Unarmed 109 assets (the set wrestling can use; Rifle 118,
+Pistol 107 are shooter-specific). Not one loop per direction but the STARTS, STOPS, PIVOTS and TURNS:
+`MF_Unarmed_Jog_{Fwd,Bwd,Left,Right}` each with `_Start _Stop _Pivot`, `TurnLeft/Right_90/_180`,
+`Idle_Ready`, `Idle_Break`, `BS_MM_Unarmed_Jog_Walk`. Bannon currently selects GEN_WALK_FWD and loops
+it; this is what the alternative looks like as shipped data.
+**LINKED ANIM LAYERS:** `ABP_ItemAnimLayersBase` + `ABP_{Unarmed,Rifle,Pistol,Shotgun}AnimLayers`
+(+_Feminine). One base graph, the PERFORMANCE swapped underneath per context — structurally the
+owner's move-contract layering, and for Bannon it maps to fighting style / move family.
+**A SHIPPED FOOT PLANT:** `CR_Mannequin_FootPlant`, `CR_Mannequin_Procedural`, `CR_Mannequin_Body`,
+`IK_Mannequin`. Bannon's FOOTIK is measured at 10% engagement, releases more than it plants, and the
+foot still travels 6.74x body speed while locked. That is a reference implementation for an OPEN
+defect. **GAS fully present**: 111 ability files (consistent with banked law — GAS in for God Within,
+out of the cross-engine combat laws).
+
+### THE TWO PLUGINS THAT MATTER MOST ARE ENABLED AND SHIP ZERO ASSETS
+    ContextualAnimation   ENABLED -> 0 assets        AnimationWarping  ENABLED -> 0 assets
+    AnimationLocomotionLibrary ENABLED               ControlFlows      ENABLED
+**`ContextualAnimation` is UE5's two-character synchronised interaction system** — paired actors with
+roles, contact alignment and sync points, i.e. EXACTLY the "grapples need a two-character animation
+contract: attacker clip, victim clip, contact anchors, relative transform, sync markers, move phase"
+the owner specified. Unreal ships it; this checkout enables it. **AND LYRA AUTHORS NOT ONE SCENE WITH
+IT.** Same for AnimationWarping. **CAPABILITY PROBED, NOT CONFIGURED** — available infrastructure and
+a working example to copy are different claims and only the first is true. The two-body grapple
+contract still has to be authored from nothing; what exists is the framework to author it in.
+
+**WHAT IS NOT IN IT:** zero wrestling anything — no grapple, throw, receiver animation, reversal,
+pin, ring, rope, entrance, run-in, match rules, or any two-body interaction. All 16 maps are shooter
+or test. The owner's framing holds exactly: Lyra answers "how does a human move naturally between
+actions" and says nothing about "what is this fighter trying to do to this other fighter".
+
+**LICENCE:** Lyra content is Epic's under the UE EULA. Fine for a UE game; **NOT liftable into
+BANNON_v150.html** — a different runtime under a different licence, and copying its animation assets
+there is the same class of mistake as baking a CC BY-NC dataset into the shipping game.
+
+**WHAT THIS DOES NOT CHANGE:** the build on the phone is BANNON_v150.html. The clip authoring an
+inverted body, the retarget/clip torso contention, the plant lock and the transferred-rig mesh tear
+are all in THAT runtime, and none is fixed by a repository existing. The Three.js work is not blocked
+on this and must not wait for it.
