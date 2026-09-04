@@ -2124,3 +2124,62 @@ the opposite of a countdown; a tick is a DECREASE. And the first breakout arm sw
 match loaded, authorising a brawl at 0.46s with sawEntrance:false — it proved a strike starts a
 fight but never tested INTERRUPTING an entrance, which is the whole case. Wait for a walk to be on
 screen, and PRINT whether one was.
+
+## THE VISUAL VERIFIER WAS THE DEFECT (2026-09-04) — tools/harness/visual_defects.cjs
+Owner: "Claude overlooks all bugs and glitches in every image and acts like the images look perfect
+when they are glitched and bugged out visually." And then, correcting my first build: **"not just
+the skeleton, the mesh and models and body parts too, duh, the glbs too."** Both hits are fair.
+
+An agent asked "does this look good?" is being invited to praise, and a rubric it fills in by eye is
+a guess wearing a checklist. So every check is COMPUTED, in metres and degrees, and "looks good" is
+not an output the harness can produce. One severe defect fails the frame; there is no aggregate
+that can outvote a limb through a torso. **UNKNOWN IS NOT PASS.**
+
+### THE MESH IS CHECKED, NOT ONLY THE BONES
+`SkinnedMesh.boneTransform` gives the CPU-skinned position of a vertex — the surface the GPU is
+about to draw. Sampled triangle edges have a fixed BIND length in the position attribute and are
+re-measured after skinning: **MESH_TEAR** (an edge that has doubled is torn surface — the "shredded,
+fanning leg geometry" defect by name) and **MESH_INFLATE** (skinned bbox against bind bbox). A
+skeleton can measure perfect while the GLB is shredded; that is the severed-rig lesson exactly.
+
+### CALIBRATE EVERY RULE AGAINST THE BIND POSE — THIS IS THE PART TO KEEP
+The bind pose is the one configuration the model is KNOWN correct in, read from
+`inverse(boneInverses[i])`. **If a check fires at bind, the CHECK is wrong and the game is not.**
+FOUR OF MY OWN CHECKS WERE WRONG AND THE FIRST REPORT WAS MOSTLY MY BUGS:
+1. **TWIST fell back to LeftArm->RightArm when shoulder bones were missing** and read 177.9 deg. That
+   is the trap ALREADY IN THIS FILE: "these rigs are NOT BOUND IN A T-POSE — LeftArm->RightArm runs
+   ALONG the facing." Shoulder bones only now, and the verdict is DEVIATION FROM BIND, not absolute.
+2. **REVERSE_JOINT asserted elbows bend backwards relative to facing** — 372 false hits. A hook puts
+   the elbow out to the side and a guard puts it in front. Knees only.
+3. **CLIPPING took the torso radius from the CLAVICLE ROOTS** (Mixamo LeftShoulder/RightShoulder sit
+   either side of the neck, measured 0.18 m apart), so the radius collapsed to its floor and every
+   hand near the chest was "inside the torso". Radius comes from HIP WIDTH now.
+4. **MESH_TEAR had only a non-zero guard**, so a 0.1 mm bind edge skinning to 0.5 mm was a ratio of 5.
+   Absolute floors: the bind edge must exceed 2 mm and the skinned edge 2 cm to be visible at all.
+5. And the one that broke my own law: once the knee rule was calibrated it could not calibrate on
+   this rig (knees dead straight at bind, along 0.000) and the class reported **"clean, 244 frames
+   checked" having run on none of them.** A class is marked resolved only when it genuinely
+   calibrated; it now reports UNKNOWN.
+**THE SCREENSHOTS WERE NOT EVIDENCE EITHER** — they are taken after the run, when the fighters have
+moved on, so the image does not show the frame the numbers describe. Do not present them as proof of
+a specific defect until the capture happens ON the detecting frame.
+
+### WHAT SURVIVED FOUR ROUNDS OF CALIBRATION — REAL, MEASURED, OPEN
+    TWIST      bind 0 deg, live deviation up to 179.4 deg on 48 of 328 frames (~15%)
+               the upper body inverts relative to the hips
+    GROUND     root on the mat (rootY 0) with the LOWER foot 1.73 m above it, state 'attack', 129 hits
+               a man standing on the mat with both feet head-high
+    MESH_TEAR  BANNON_SEWN, 23-63 sampled edges past 1.6x bind length with absolute floors applied
+               this is the GLB SURFACE, not the rig
+    CLIPPING   hand 2.1 cm from the torso axis against a 0.196 m radius, 17 hits
+    REVERSE_JOINT / SEPARATION   UNKNOWN — could not calibrate / no live hold in the window
+NONE OF THESE ARE FIXED. They are the first honest list of what the rendered fighter is actually
+doing wrong, and the correlation to the pose ledger's writers is the next step.
+
+### STILL TO BUILD (owner's "Character Truth Harness", his ordering)
+ASSET TRUTH (GLB scene graph: expected meshes present, skin/skeleton refs resolve, no duplicated or
+missing body region, no component kilometres away) -> MESH TRUTH (disconnected components, exploding
+vertices, collapsed regions) -> SKIN TRUTH (weights sum to 1, joint indices valid, wrong-joint
+influence) -> SKELETON TRUTH -> ANIMATION TRUTH per scenario (BIND/IDLE/WALK/RUN/STRIKE/GRAPPLE/
+THROW/GROUND/RAGDOLL/RECOVERY, per fighter GLB, because a model can pass at rest and break under one
+animation) -> RENDER TRUTH. Only MESH TRUTH and part of SKELETON TRUTH exist today.
