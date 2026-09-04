@@ -44,6 +44,10 @@ const MIME = { '.html':'text/html','.js':'text/javascript','.json':'application/
   '.css':'text/css','.svg':'image/svg+xml','.gltf':'model/gltf+json' };
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const NOFIK = process.argv.indexOf('--nofootik') > 0;
+// --reach2 turns the clamp candidate ON. It raises lock occupancy 2% -> 33%, i.e. it makes FOOTIK
+// solve ~700 times instead of ~38 — so it could hand this module the leg-chain authority the write
+// map just proved it does NOT have. That has to be measured, not assumed away.
+const REACH2 = process.argv.indexOf('--reach2') > 0;
 
 function serve(port){
   const srv = http.createServer((req, res) => {
@@ -73,6 +77,7 @@ function footikRange(){
 function PROBE(cfg){
   const S = window.__FW = { on:false, ledger:{}, frames:0, states:{} };
   if (cfg.nofik) window.FOOT_IK = false;
+  window.FOOT_IK_REACH2 = !!cfg.reach2;
 
   const LEGS = ['LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot','Hips'];
 
@@ -158,7 +163,7 @@ const DEG = r => (r * 180 / Math.PI);
     args:['--use-gl=swiftshader','--no-sandbox','--no-proxy-server','--proxy-bypass-list=<-loopback>'] });
   const page = await browser.newPage({ viewport:{ width:412, height:915 } });
   const errs = []; page.on('pageerror', e => errs.push(String(e.message).split('\n')[0].slice(0,140)));
-  await page.addInitScript(PROBE, { nofik: NOFIK });
+  await page.addInitScript(PROBE, { nofik: NOFIK, reach2: REACH2 });
   await page.goto(`http://127.0.0.1:${port}/BANNON_v150.html`, { waitUntil:'domcontentloaded', timeout:60000 });
 
   const gs = () => page.evaluate(() => { try{ return new Function('return gameState')(); }catch(e){ return null; } }).catch(()=>null);
@@ -167,6 +172,23 @@ const DEG = r => (r * 180 / Math.PI);
   for (let i = 0; i < 60; i++){ const ok = await page.evaluate(() => { const s=document.getElementById('csStart'); return !!(s && s.offsetParent !== null); }); if (ok) break; await sleep(400); }
   await page.evaluate(() => { const s = document.getElementById('csStart'); if (s) s.click(); });
   for (let i = 0; i < 90 && (await gs()) !== 'fight'; i++) await sleep(400);
+// THE BELL IS NOT THE FIGHT. gameState flips to 'fight' and BANNON_ENTRANCE_SEQ then walks both
+  // men down the ramp, up to 15s each, during which the player is on the RAMP and the APRON and not
+  // on the mat at all. Driving a walk into that measures the entrance — it is why the stills came
+  // back showing a SKIP ENTRANCES chip and an 'apron' state in every state histogram. Skip it
+  // explicitly and WAIT for the sequence to actually report itself finished, rather than sleeping a
+  // guessed number of seconds.
+  await page.evaluate(() => { try{
+    window.__SEQ_SKIP_ALL = true;
+    if (window.BANNON_WALKOUT && window.BANNON_WALKOUT.skip) window.BANNON_WALKOUT.skip();
+  }catch(e){} });
+  for (let i = 0; i < 50; i++){
+    const running = await page.evaluate(() => { try{
+      return !!(window.BANNON_ENTRANCE_SEQ && window.BANNON_ENTRANCE_SEQ.stats().running);
+    }catch(e){ return false; } });
+    if (!running) break;
+    await sleep(400);
+  }
   await sleep(9000);
 
   // FREEZE THE AI through the engine's own gate, and put the opponent out of range. A deterministic
@@ -191,7 +213,7 @@ const DEG = r => (r * 180 / Math.PI);
 
   const inFik = l => l >= range.from && l <= range.to;
 
-  console.log('\n===== FOOTIK WRITE MAP ' + (NOFIK ? '(CONTROL — FOOT_IK=false)' : '') + ' =====');
+  console.log('\n===== FOOTIK WRITE MAP ' + (NOFIK ? '(CONTROL — FOOT_IK=false)' : (REACH2 ? '(REACH2 CANDIDATE ON)' : '(shipped guard)')) + ' =====');
   console.log('  module occupies lines ' + range.from + '-' + range.to + ' of this build');
   console.log('  ' + res.frames + ' frames sampled;  player states: ' +
     Object.keys(res.states).map(k => k + ' ' + res.states[k]).join(', '));
@@ -266,7 +288,7 @@ const DEG = r => (r * 180 / Math.PI);
   }
 
   if (errs.length) console.log('\n  page errors: ' + errs.slice(0,4).join(' | '));
-  const file = path.join(OUT, 'footik_writemap' + (NOFIK ? '_control' : '') + '.json');
+  const file = path.join(OUT, 'footik_writemap' + (NOFIK ? '_control' : (REACH2 ? '_reach2' : '')) + '.json');
   fs.writeFileSync(file, JSON.stringify({ range, nofootik:NOFIK, share, ...res }, null, 1));
   console.log('\n  report -> ' + file);
 })();

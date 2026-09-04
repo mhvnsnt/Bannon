@@ -99,6 +99,23 @@ function PROBE(cfg){
   for (let i = 0; i < 60; i++){ const ok = await page.evaluate(() => { const s=document.getElementById('csStart'); return !!(s && s.offsetParent !== null); }); if (ok) break; await sleep(400); }
   await page.evaluate(() => { const s = document.getElementById('csStart'); if (s) s.click(); });
   for (let i = 0; i < 90 && (await gs()) !== 'fight'; i++) await sleep(400);
+// THE BELL IS NOT THE FIGHT. gameState flips to 'fight' and BANNON_ENTRANCE_SEQ then walks both
+  // men down the ramp, up to 15s each, during which the player is on the RAMP and the APRON and not
+  // on the mat at all. Driving a walk into that measures the entrance — it is why the stills came
+  // back showing a SKIP ENTRANCES chip and an 'apron' state in every state histogram. Skip it
+  // explicitly and WAIT for the sequence to actually report itself finished, rather than sleeping a
+  // guessed number of seconds.
+  await page.evaluate(() => { try{
+    window.__SEQ_SKIP_ALL = true;
+    if (window.BANNON_WALKOUT && window.BANNON_WALKOUT.skip) window.BANNON_WALKOUT.skip();
+  }catch(e){} });
+  for (let i = 0; i < 50; i++){
+    const running = await page.evaluate(() => { try{
+      return !!(window.BANNON_ENTRANCE_SEQ && window.BANNON_ENTRANCE_SEQ.stats().running);
+    }catch(e){ return false; } });
+    if (!running) break;
+    await sleep(400);
+  }
   await sleep(9000);
 
   // Opponent frozen through the engine's own AI gate and moved out of range, but kept INSIDE the

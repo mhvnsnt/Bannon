@@ -1925,3 +1925,73 @@ nothing rearchitected.** 678 files / 21 MB, cloned read-only at 7fd2f72. Full su
   coding-agent dispatch implementation in M. Engine. `POST /workers/dispatch` is declared in the
   OpenAPI (naming SWE-agent/OpenHands) but the only worker that exists is Unreal-specific. The gap is
   in the right place: the operation model to extend is already there.
+
+## THE PLANT LOCK, AND A CANDIDATE THAT WAS MEASURED AND LEFT OFF (2026-09-04)
+FOOTIK's write map (previous section) found the module is NOT the second author of the leg chain —
+2-4% of leg-bone writes against the CLIP's one-per-bone-per-frame — and found the real defect
+instead: it solves on 10% of the frames it is eligible for and RELEASES its lock more often than it
+plants one. This is why.
+
+### 105 OF 111 BREAKS ARE ONE CAUSE, AND IT IS THE GUARD REJECTING A STRAIGHT LEG
+`twoBone` had ONE `return false` covering a leg stretched past its own length, a leg folded tighter
+than a knee can bend, and a degenerate rig. Separated at the source (plus `support_switch` — the
+weight moving to the other foot, the gait working — recorded as its own cause so the healthy case
+cannot sit at the top of the histogram hiding the failure under it):
+
+    out_of_reach 105   mean reach ratio 1.02 (max 1.04)     support_switch 6     opponent 0
+
+The events say more than the histogram: **age 1, err 0.0 cm, ext 0.99**. The lock dies on its FIRST
+frame, with the foot not having drifted at all, because the target IS the foot's own position and
+the guard calls it unreachable. New reading, the leg's own extension |hip->ankle|/(L1+L2) with no
+target involved: **0.987 at the break** against `REACH = 0.97`. A stance leg is very nearly straight
+— that is what a stance leg IS — so the guard rejects almost every plant the module makes. The
+arithmetic closes exactly: 0.99/0.97 = 1.02, the measured ratio.
+
+### AND THE PAIRED SLIDE ACCOUNT ANSWERS "BAD CORRECTION, OR TIME UNLOCKED?"
+Foot travel sampled at the END of step() — FOOTIK is the last pose pass, so that is the RENDERED
+pose; sampling at the top scores the module's own correction as slide. Against body travel on the
+SAME frames. **TIME UNLOCKED, decisively: 2-3% lock occupancy.** The lock never lives long enough
+for its own 120 ms ease-in to arrive (weight at the break is 0.08-0.24 of 1).
+
+### THE CANDIDATE WORKED AND IS STILL OFF — `window.FOOT_IK_REACH2`, OPT-IN
+Never refuse a target inside the leg's own current extension (you cannot fail to reach where you
+already are); clamp a small overshoot onto the reach sphere; still release a far one.
+A/B/A2, 3 interleaved reps, controls agreeing within 10%:
+
+    out_of_reach breaks     107  ->   32       the diagnosed defect, fixed
+    lock occupancy         2.3%  -> 33.2%      the lock survives now
+    foot slide ratio     11.70x  -> 11.37x     ranges fully OVERLAP — UNPROVEN
+    FOOTIK's leg-chain write share   2-4%  ->  16-30%
+
+**IT BUYS AUTHORITY AND PAYS NOTHING.** A rarely-firing bounded correction becomes a 16-30% co-author
+of thigh and shin with no demonstrated reduction in the sliding it exists to stop. That is the trade
+the owner named — "do not make the candidate's success criterion simply: contested bone frames went
+down" — arriving INVERTED, the candidate CREATING authority rather than hiding it. Same answer.
+Knee flex is unchanged (mean 148->152, % over 170 deg 0-3% either way) so it is not a stiff-legged
+regression; it is simply not worth its authority.
+
+### THE RETRACTION, AND THE HARNESS BUG BEHIND IT
+An earlier run of the SAME A/B showed 4.61x -> 3.87x with NON-OVERLAPPING ranges and I nearly banked
+it as a real reduction. It was measuring the ENTRANCE. **`gameState` reads 'fight' while
+BANNON_ENTRANCE_SEQ is still walking both men down the ramp**, up to 15 s each, so a harness that
+waits for 'fight' and then drives a walk is driving it on the RAMP and the APRON. Every state
+histogram in this arc carried an `apron` bucket and I read past it. Caught only by LOOKING at the
+stills — the picture had a SKIP ENTRANCES chip in the corner. All four footik harnesses now set
+`__SEQ_SKIP_ALL`, call `BANNON_WALKOUT.skip()`, and WAIT for `BANNON_ENTRANCE_SEQ.stats().running`
+to clear rather than sleeping a guessed number of seconds. **WAIT FOR THE SEQUENCE TO SAY IT IS
+DONE, NEVER FOR THE STATE THAT PRECEDES IT.**
+
+### THE NEXT DEFECT, NAMED: THE LOCK DOES NOT HOLD EVEN WHEN IT IS ON
+With occupancy at 33% the foot still travels **6.74x body speed WHILE LOCKED**. So releasing is only
+half of it; holding the lock longer just fails for longer. Do not re-tune the reach branch. The open
+question is why a solved, weighted plant does not pin the foot — suspect the partial-authority lerp
+`T.copy(C).lerp(target, w)`, which moves the ankle only w of the way to the lock, and the measured
+residual of 7-10 cm on a plant.
+
+### HARNESSES ADDED (extend these, do not write a fifth)
+  tools/harness/footik_writemap.cjs   which bones / how much rotation / against what error, with
+                                      --nofootik and --reach2 arms and the source-line write ledger
+  tools/harness/footik_lockbreak.cjs  the break-cause histogram + the locked-vs-free slide account
+  tools/harness/footik_ab.cjs         A/B/A2 with --reps, control agreement checked FIRST, verdicts
+                                      decided on overlapping RANGES rather than a delta of means
+  tools/harness/footik_look.cjs       SEE IT: side-on stills of the walk in both arms + knee flex

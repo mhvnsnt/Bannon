@@ -59201,6 +59201,11 @@ window.__deriveVariant = async function(key){
   var ST = { solved:0, plants:0, releases:0, skipped:0, legs:0 };
   var OK_STATE = { idle:1, walk:1, run:1, block:1, taunt:1 };
   var EASE_IN = 0.12, EASE_OUT = 0.09, REACH = 0.97;
+  // How far past its own reach a target may sit before the plant is abandoned rather than clamped,
+  // as a fraction of the leg's full span (~8.5cm on a 0.85m leg). Not a tuning knob reached for at
+  // random: the measured breaks clustered at a shortfall of ~0.02 span, so this leaves them clamped
+  // while still releasing a foot the body has genuinely walked away from.
+  var CLAMP_SLACK = 0.10;
 
   // ── THE WRITE LEDGER (owner, on the authority question: "A chain that is technically touched
   // every frame but receives microscopic corrections is a different problem from a chain being
@@ -59299,7 +59304,46 @@ window.__deriveVariant = async function(key){
     // length — the body has walked away from the plant. `d < min` is the target folded closer to the
     // hip than a knee can bend, which happens on a deep step, not on a stride, and would need the
     // opposite fix. One `return false` for both is what made 121 releases unreadable.
-    if (d > max){ FAIL.why = 'out_of_reach'; return false; }
+    if (d > max){
+      // CANDIDATE, AND IT IS OFF BY DEFAULT — window.FOOT_IK_REACH2 is opt-in, deliberately.
+      // TESTED A/B/A2, 3 interleaved reps, controls agreeing within 10%:
+      //     out_of_reach breaks   107  ->   32      the diagnosed defect, fixed
+      //     lock occupancy       2.3%  -> 33.2%     the lock now survives
+      //     foot slide ratio    11.70x -> 11.37x    ranges fully overlap: UNPROVEN
+      //     FOOTIK's share of leg-chain writes   2-4%  ->  16-30%
+      // IT BUYS AUTHORITY AND PAYS NOTHING. A rarely-firing bounded correction becomes a 16-30%
+      // co-author of the thigh and shin with no demonstrated reduction in the sliding it exists to
+      // stop. That is the exact trade the owner named: "Do not make the candidate's success
+      // criterion simply: contested bone frames went down" — here it arrives inverted, the candidate
+      // CREATING authority rather than hiding it, and the answer is the same. It stays off.
+      // AND THE REASON IT PAYS NOTHING IS THE NEXT DEFECT, not this one: even while LOCKED the foot
+      // still travels 6.74x body speed. Holding the lock longer only fails for longer. Do not
+      // re-tune this branch — the constraint does not hold when it is on, and that is a different
+      // fix. (An earlier run of the same A/B DID show a real reduction, 4.61x -> 3.87x with
+      // non-overlapping ranges. It was measuring the ENTRANCE — gameState reads 'fight' while the
+      // walkout still runs. Retracted; see tools/harness/footik_ab.cjs.)
+      //
+      // MEASURED CAUSE it was built for: 105 of 111 lock breaks were this branch,
+      // at reach ratio 1.02 mean / 1.05 max, on lock AGE 1 with plant error 0.0 cm — the target was
+      // the foot's own current position and the guard called it unreachable. Leg extension at the
+      // break was 0.986 mean against a REACH of 0.97: a stance leg is very nearly straight, which is
+      // what a stance leg IS, so the guard rejected almost every plant the module made.
+      //
+      // TWO PARTS, and the first is the principled one:
+      //   emax — the leg is DEMONSTRABLY able to be at its current extension, because it is there.
+      //          A request that does not ask it to reach further than that can never be out of
+      //          reach, and refusing one is refusing to hold a pose the character is standing in.
+      //   slack — beyond that, a target a couple of centimetres past full extension is what every
+      //          two-bone solver clamps onto the reach sphere and solves; abandoning the plant for
+      //          it is what leaves the foot free 97% of the time. A target far past the leg means he
+      //          should be taking a step, not stretching, so that still releases.
+      var emax = Math.max(max, FAIL.cur);
+      if (window.FOOT_IK_REACH2 && d <= emax + FAIL.span * CLAMP_SLACK){
+        var eff = Math.min(d, emax);
+        if (d > eff){ T.sub(A).setLength(eff).add(A); d = eff; }   // onto the sphere, direction kept
+        rec('clamp' + (planted ? '.plant' : '.swing'), (d - max) / (FAIL.span || 1));
+      } else { FAIL.why = 'out_of_reach'; return false; }
+    }
     if (d < min){ FAIL.why = 'too_close';    return false; }
 
     // KNEE: law of cosines. The interior angle at the knee that puts the ankle exactly d from the hip.
