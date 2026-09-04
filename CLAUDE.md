@@ -2183,3 +2183,49 @@ vertices, collapsed regions) -> SKIN TRUTH (weights sum to 1, joint indices vali
 influence) -> SKELETON TRUTH -> ANIMATION TRUTH per scenario (BIND/IDLE/WALK/RUN/STRIKE/GRAPPLE/
 THROW/GROUND/RAGDOLL/RECOVERY, per fighter GLB, because a model can pass at rest and break under one
 animation) -> RENDER TRUTH. Only MESH TRUTH and part of SKELETON TRUTH exist today.
+
+## THE BRIDGE FROM THE RENDERED DEFECT BACK TO THE CODE (2026-09-04)
+Owner: "the report doesn't stop at 'Left leg visually distorted' — it can correlate visible
+deformation spike <-> joint rotation spike <-> writer / subsystem." Built into visual_defects.cjs:
+every defect now carries **the source lines that wrote its bones ON ITS OWN FRAME**, using the same
+`quaternion._onChange` + stack attribution the FOOTIK write map proved.
+
+    17053   THE PROCEDURAL RETARGET   mp.bone.quaternion.slerp(_qw, ...)
+    17124   THE CLIP BLOCK            _b.quaternion.copy(_qw2) / slerp(_qw2, _cw)
+
+### WHAT IT NAMED
+**TWIST (torso inverted 167-179 deg against a bind of 0):** on the defect frame LeftShoulder,
+RightShoulder, LeftUpLeg, RightUpLeg and Spine were written by **BOTH 17053 AND 17124 in the same
+frame**; Spine1/Spine2/Hips by the clip alone. The inversion happens on contested frames.
+**GROUND — and the numbers say something sharper than "floating feet":**
+    rootY 0 · zoneY 0 · hipsY 1.026 · headY 0.816 · feet 1.618 / 1.821 · state 'attack'
+**The head is BELOW the hips and the feet are above both — the body is upside down**, and every leg
+bone plus Hips on that frame was written by **17124, THE CLIP, ALONE.** No retarget, no IK. So the
+inverted body is what the ANIMATION ASKED FOR. Suspect a two-body or `__RECV` (receiver-half)
+capture being applied to a single skeleton — the exact hazard BANNON_TAG was built to prevent for
+tag captures. NOT yet confirmed; that is the next thing to check.
+**MESH_TEAR:** VIPER / `BANNON_XFER_MESH`, worst vertex dominated by `bone_19` (0.732 / bone_18
+0.223 / bone_17 0.045), a 5.4 mm bind edge skinning to 7.99 cm. Writers empty on that frame, which
+is honest rather than broken — the ledger is per-frame and that bone was not written on it. Note the
+naming: a weight-transferred rig carries `bone_N`, NOT Mixamo names, so any correlation keyed on
+Mixamo names silently misses these models.
+
+### FRAME IDENTITY IS CLOSED
+The worst frame of each class now stores **every bone's local quaternion and position**. Before the
+screenshot the sim is frozen and that pose is restored, so the image IS the measured frame; a
+sidecar JSON carries `{frame, simTimeS, class, fighterIndex, detail}` beside the PNG. If the restore
+fails **no image is written** — an image that does not show the measured frame is not evidence.
+
+### FOUR MORE INSTRUMENT DEFECTS, ALL MINE (the count for this harness is now nine)
+1. **THE WRITE LEDGER READ EMPTY ON EVERY DEFECT.** The probe's rAF is registered in the init script,
+   so it runs BEFORE the engine's every frame: clearing the ledger at the top of the tick wiped it
+   and then measured a pose whose writes had not happened yet. Clear at the END of the tick and it
+   holds exactly the writes that produced the pose just measured.
+2. **GROUND DOUBLE-SUBTRACTED THE ZONE Y.** `lo` already subtracts zoneY, and subtracting a raw `f.y`
+   as well double-counted it for anyone on the FLOOR (where f.y == zoneY == -0.85), turning a 0.96 m
+   float into a reported 1.81 m. Two quantities must be in the same frame of reference first.
+3. **`sw.getComponent is not a function`** — r128's BufferAttribute has getX/getY/getZ/getW and no
+   getComponent, so the vertex->joint half of the bridge threw and returned null. It reports the
+   error now instead of a silent null.
+4. An `infl` that could not be computed returned `null` and read as "no influence data" rather than
+   "this did not run". UNKNOWN is not PASS applies to sub-fields too.

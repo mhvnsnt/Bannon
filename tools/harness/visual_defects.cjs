@@ -74,7 +74,7 @@ function serve(port){
 }
 
 function PROBE(){
-  const S = window.__VD = { on:false, frames:0, cls:{}, worst:{}, resolved:{}, samples:0 };
+  const S = window.__VD = { on:false, frames:0, cls:{}, worst:{}, resolved:{}, samples:0, pose:{}, wr:{} };
 
   // CHAINS the checks need, by Mixamo name. __boneOf already normalises the prefix.
   const CHAIN = {
@@ -87,10 +87,65 @@ function PROBE(){
   const V = () => new THREE.Vector3();
   const wp = (m, n) => { const b = window.__boneOf(m, n); if (!b) return null; return b.getWorldPosition(V()); };
 
+  // ── WHO WROTE THESE BONES, ON THIS FRAME ────────────────────────────────────────────────────
+  // Owner: "the report doesn't stop at 'Left leg visually distorted' — it can correlate visible
+  // deformation spike <-> joint rotation spike <-> writer / subsystem." The bridge is the same
+  // source-line ledger footik_writemap proved: three.js fires Quaternion._onChangeCallback from
+  // inside its own copy()/slerp(), so the nearest stack frame naming the GAME file is the real
+  // author. Reset every frame, so a defect carries the writers of ITS frame, not of the run.
+  S.wr = {};                     // boneName -> { line: count } for the CURRENT frame only
+  function watchWrites(m){
+    if (!m || m.__vdWatched) return;
+    m.__vdWatched = 1;
+    m.traverse(function(o){
+      if (!o.isBone) return;
+      const nm = String(o.name || '').replace(/^mixamorig\d*/, '');
+      const q = o.quaternion, prev = q._onChangeCallback;
+      q._onChange(function(){
+        if (prev) { try{ prev(); }catch(e){} }
+        if (!S.on) return;
+        let st = ''; try{ st = new Error().stack || ''; }catch(e){ return; }
+        const mm = st.match(/BANNON_v150\.html:(\d+):\d+/);
+        if (!mm) return;
+        const b = S.wr[nm] || (S.wr[nm] = {});
+        b[mm[1]] = (b[mm[1]] || 0) + 1;
+      });
+    });
+  }
+  function writersFor(names){
+    const o = {};
+    for (const n of names) if (S.wr[n]) o[n] = S.wr[n];
+    return o;
+  }
+
+  // ── FRAME IDENTITY: the picture and the numbers must be the SAME event ──────────────────────
+  // The screenshots were taken after the run, when the fighters had moved on, so the image did not
+  // show the frame the numbers described. Storing the worst frame's POSE lets it be restored
+  // exactly and photographed afterwards — the alternative, reading the canvas inside the probe's
+  // own rAF, races the engine's render and would capture whichever frame won.
+  function snapPose(){
+    const out = [];
+    try{
+      const A = new Function('return fighters')() || [];
+      A.slice(0,2).forEach(function(f){
+        if (!f || !f.model) return out.push(null);
+        const rec = { bones:[], x:f.x, z:f.z, y:f.y, facing:f.facing, state:f.state };
+        f.model.traverse(function(o){ if (o.isBone)
+          rec.bones.push({ b:o, q:o.quaternion.clone(), p:o.position.clone() }); });
+        out.push(rec);
+      });
+    }catch(e){}
+    return out;
+  }
+
   function note(cls, sev, detail){
     const c = S.cls[cls] || (S.cls[cls] = { n:0, worst:0, frames:0 });
     c.n++;
-    if (sev > c.worst){ c.worst = sev; S.worst[cls] = Object.assign({ sev:sev, frame:S.frames }, detail); }
+    if (sev > c.worst){
+      c.worst = sev;
+      S.worst[cls] = Object.assign({ sev:sev, frame:S.frames, t:+(performance.now()/1000).toFixed(3) }, detail);
+      S.pose[cls] = snapPose();          // the exact pose that produced this number
+    }
   }
   function ok(cls){ S.resolved[cls] = (S.resolved[cls] || 0) + 1; }
 
@@ -151,9 +206,37 @@ function PROBE(){
         if (r > worst){ worst = r; worstD = { vert:T[e], ratio:+r.toFixed(2), bindM:+B[e].toFixed(5), skinnedM:+d[e].toFixed(5) }; }
       }
     }
-    if (worst > 1.6)
+    if (worst > 1.6){
+      // THE VERTEX -> JOINT -> WRITER BRIDGE. Owner's exact chain, and it is why region inference
+      // must come from WEIGHTS and never from mesh names: BANNON_SEWN is ONE primitive spanning 48
+      // of 58 joints, because the sew tool deliberately concatenated fifteen severed pieces. The
+      // name says nothing; skinIndex/skinWeight say which bones actually move this surface.
+      // PRIMARY plus the full INFLUENCE SIGNATURE, because a vertex at a joint boundary legitimately
+      // blends two bones and collapsing it to one would hide exactly the case that tears.
+      let infl = null;
+      try{
+        const si = sm.geometry.attributes.skinIndex, sw = sm.geometry.attributes.skinWeight;
+        if (si && sw && worstD){
+          const v = worstD.vert, sk = sm.skeleton, list = [];
+          // r128's BufferAttribute exposes getX/getY/getZ/getW and has NO getComponent — the first
+          // version threw "sw.getComponent is not a function" and the influence came back null, i.e.
+          // the vertex->joint half of the bridge silently did not exist. It reports the error now.
+          const G = ['getX','getY','getZ','getW'];
+          for (let k = 0; k < 4; k++){
+            const w = sw[G[k]](v); if (w <= 0.001) continue;
+            const bi = si[G[k]](v), bn = sk.bones[bi];
+            list.push({ bone: bn ? String(bn.name||'').replace(/^mixamorig\d*/,'') : ('#'+bi), w:+w.toFixed(3) });
+          }
+          list.sort(function(a,b){ return b.w - a.w; });
+          infl = { primary: list.length ? list[0].bone : null, signature: list,
+                   writers: writersFor(list.map(function(e){ return e.bone; })) };
+        }
+      }catch(e){ infl = { error: String(e).slice(0,90) }; }
+      if (!infl) infl = { error: 'skinIndex/skinWeight attribute missing on this geometry' };
       note('MESH_TEAR', Math.min(1, (worst - 1.6) / 3),
-           Object.assign({ fighter:idx, model:C.file, mesh:C.name, edgesTorn:over, ofSampled:C.tris.length*3 }, worstD));
+           Object.assign({ fighter:idx, model:C.file, mesh:C.name, edgesTorn:over,
+                           ofSampled:C.tris.length*3, influence:infl }, worstD));
+    }
 
     if (C.bindDiag > 1e-4 && !box.isEmpty()){
       const diag = box.min.distanceTo(box.max);
@@ -290,7 +373,8 @@ function PROBE(){
         // whatever this particular rig's bind twist already is.
         const dev = Math.abs(tw - base);
         if (dev > 75) note('TWIST', Math.min(1, (dev - 75) / 90),
-                           { fighter:idx, twistDeg:+tw.toFixed(1), bindTwistDeg:+base.toFixed(1), deviationDeg:+dev.toFixed(1) });
+                           { fighter:idx, twistDeg:+tw.toFixed(1), bindTwistDeg:+base.toFixed(1), deviationDeg:+dev.toFixed(1),
+                             writers: writersFor(['LeftShoulder','RightShoulder','LeftUpLeg','RightUpLeg','Spine','Spine1','Spine2','Hips']) });
       }
     }
 
@@ -307,14 +391,32 @@ function PROBE(){
                        /dive|climb|perch|midrope|apron|jump|fall/.test(String(f.state || ''));
       if (!airborne){
         const lo = Math.min(lf.y, rf.y) - zy;
-        const rootUp = (typeof f.y === 'number' ? f.y : 0);
+        // ROOT HEIGHT ABOVE THE ZONE, NOT ABSOLUTE. `lo` already subtracts zoneY, so subtracting a
+        // raw f.y double-counted it for anyone on the FLOOR (f.y == zoneY == -0.85 there) and turned
+        // a 0.96 m float into a reported 1.81 m. The two quantities have to be in the same frame of
+        // reference before they can be subtracted from each other.
+        const rootUp = (typeof f.y === 'number' ? f.y : 0) - zy;
         if (lo < -0.08) note('GROUND', Math.min(1, -lo), { fighter:idx, sunkM:+(-lo).toFixed(3), state:f.state, rootY:+rootUp.toFixed(3) });
         // FLOATING means the BODY is down and the FEET are not. If the root is up too, the whole man
         // is in the air and that is a jump, not a defect — the first run flagged floatM 1.083 during
         // 'attack', which a jumping strike produces legitimately. Subtracting the root is what
         // separates "he is airborne" from "his feet left his body behind".
         else if (lo - rootUp > 0.30)
-          note('GROUND', Math.min(1, lo - rootUp), { fighter:idx, floatM:+(lo-rootUp).toFixed(3), state:f.state, rootY:+rootUp.toFixed(3) });
+          note('GROUND', Math.min(1, lo - rootUp),
+               { fighter:idx, floatM:+(lo-rootUp).toFixed(3), state:f.state, rootY:+rootUp.toFixed(3),
+                 // THREE POSSIBILITIES, KEPT APART (owner): the skeleton placing the body wrong, the
+                 // skinning making the visible body float, or the pose being fine and the contact
+                 // proxy disagreeing. footYs are BONE positions, so a large gap here with a sane
+                 // rootY is a SKELETON fact, not a mesh one — that distinction is the whole point.
+                 // hipsY is the SKELETON's own root in world space. f.y is the engine's logical
+                 // height and they are not the same quantity — if hips sit at ~1.8 too then the
+                 // whole body is up there and this instrument's rootY is measuring the wrong thing;
+                 // if hips are at a normal ~0.9 with the feet at 1.8, the legs are genuinely
+                 // inverted. Recording both is what makes those two answers distinguishable.
+                 lFootY:+lf.y.toFixed(3), rFootY:+rf.y.toFixed(3), zoneY:+zy.toFixed(3),
+                 hipsY: (function(){ const h = wp(m,'Hips'); return h ? +h.y.toFixed(3) : null; })(),
+                 headY: (function(){ const h = wp(m,'Head'); return h ? +h.y.toFixed(3) : null; })(),
+                 writers: writersFor(['LeftFoot','RightFoot','LeftLeg','RightLeg','LeftUpLeg','RightUpLeg','Hips']) });
       }
     }
 
@@ -360,12 +462,20 @@ function PROBE(){
       S.frames++;
       try{
         const A = new Function('return typeof fighters!=="undefined"?fighters:null')() || [];
+        if (A[0] && A[0].model) watchWrites(A[0].model);
+        if (A[1] && A[1].model) watchWrites(A[1].model);
         if (A[0] && A[1]){
           S.samples++; scan(A[0], 0, A[1]); scan(A[1], 1, A[0]);
           // The mesh scan touches ~600 vertices per body, so it runs every 5th sampled frame. A tear
           // that lasts under 5 frames is not what the owner is looking at on his phone.
           if (S.samples % 5 === 0){ S.meshSamples = (S.meshSamples||0) + 1; meshScan(A[0], 0); meshScan(A[1], 1); }
         }
+        // RESET AT THE END, NOT THE START. This probe's rAF is registered in the init script, so it
+        // runs BEFORE the engine's every frame: clearing at the top wiped the ledger and then
+        // measured a pose whose writes had not happened yet, and every defect reported
+        // "WRITERS: {}". Clearing here means the ledger holds exactly the writes that produced the
+        // pose just measured. Same ordering class as every other instrument defect this session.
+        S.wr = {};
       }catch(e){ S.err = String(e).slice(0,140); }
     }
     requestAnimationFrame(tick);
@@ -381,6 +491,23 @@ function PROBE(){
   window.__vdStop  = () => { S.on = false; return { frames:S.frames, samples:S.samples, cls:S.cls,
                                                     worst:S.worst, resolved:S.resolved, err:S.err,
                                                     meshSamples:S.meshSamples||0, meshNoAPI:!!S.meshNoAPI }; };
+  // Freeze the sim, put the stored pose back, and hand the driver a scene that IS the defect frame.
+  window.__vdRestore = (cls) => { try{
+    const P = S.pose[cls]; if (!P) return false;
+    if (!window.__vdFrozen){
+      const F = new Function('return typeof Fighter!=="undefined"?Fighter:null')();
+      if (F && F.prototype.update){ const o = F.prototype.update;
+        F.prototype.update = function(){ return; }; window.__vdFrozen = o; }
+    }
+    const A = new Function('return fighters')() || [];
+    P.forEach(function(rec, i){
+      const f = A[i]; if (!rec || !f) return;
+      f.x = rec.x; f.z = rec.z; f.y = rec.y; f.facing = rec.facing;
+      rec.bones.forEach(function(e){ e.b.quaternion.copy(e.q); e.b.position.copy(e.p); });
+      if (f.model) f.model.updateMatrixWorld(true);
+    });
+    return true;
+  }catch(e){ return false; } };
   window.__vdShot = (idx) => { try{
     const A = new Function('return fighters')(); const f = A[idx] || A[0]; if (!f) return false;
     window.__camShot = { px: f.x + 0.5, py: 1.05, pz: f.z + 2.3, lx: f.x, ly: 0.85, lz: f.z, w:1, speed:30 };
@@ -436,10 +563,20 @@ function PROBE(){
   if (has('shots')){
     for (const cls of Object.keys(r.worst || {})){
       const w = r.worst[cls];
+      // FRAME IDENTITY. Restore the exact pose that produced this number before photographing it,
+      // and REFUSE to write the file if the restore did not take — an image that does not show the
+      // measured frame is not evidence, and that is precisely what the first version shipped.
+      const restored = await page.evaluate(c => window.__vdRestore(c), cls);
+      if (!restored){ console.log('   (no pose snapshot for ' + cls + ' — no image written)'); continue; }
       await page.evaluate(i => window.__vdShot(i), w.fighter || 0);
       await sleep(900);
       const p = path.join(OUT, 'defect_' + cls + '.png');
-      try{ await page.screenshot({ path:p }); shots[cls] = p; }catch(e){}
+      try{ await page.screenshot({ path:p }); shots[cls] = p;
+        // The sidecar: the picture and the measurement are one record, keyed by the same frame.
+        fs.writeFileSync(p.replace(/\.png$/, '.json'),
+          JSON.stringify({ scenario:'driven combat', frame:w.frame, simTimeS:w.t, class:cls,
+                           fighterIndex:w.fighter, detail:w, image:path.basename(p) }, null, 1));
+      }catch(e){}
     }
     await page.evaluate(() => { try{ window.__camShot = null; }catch(e){} });
   }
