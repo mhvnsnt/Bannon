@@ -61756,4 +61756,194 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<!-- ══════════════════════════════════════════════════════════════════════════════════════════════
+     BANNON_STATECLIP — THE STATES THAT NEVER ASKED FOR AN ANIMATION (2026-09-04)
+
+     tools/harness/pose_ledger.cjs measured, off the engine's own `userData.__driven` stamp, what
+     share of the VISIBLE skeleton a mocap clip actually drives:
+         idle 0%   grapple 0%   walk 11%   strike 30%
+     70-100% of the body is chasing the procedural rig instead. The next question was WHICH boundary
+     fails — clip missing, not resident, not selected, not mapped, not evaluated, or overwritten —
+     because those are four or five completely different fixes and guessing between them is how a
+     week disappears.
+
+     IT IS THE SELECTION BOUNDARY, AND IT IS THE FIRST ONE IN THE CHAIN. Read out of the code:
+       * `idle` HAS NO CASE IN THE STATE DISPATCH AT ALL. It falls to `default: poseGuard(dt, ...)`,
+         which is entirely procedural. `Fighter.prototype.poseIdle` is never defined anywhere in this
+         file — the only two references to it are a wrapper at ~33258 that wraps `undefined` and is
+         guarded by a typeof check, so it has always been a no-op wrapping nothing.
+       * The clips are not missing. 973 captures ship, including GEN_IDLE_STANCE, BOX_IDLE (a full
+         52-bone capture), GEN_GUARD_HIGH and ACTION_IDLE_TO_STANDING_IDLE.
+     So: the animation exists, the pipeline downstream of it works, and nobody ever asked for it.
+     That is why this is a selection fix and NOT a retarget rewrite. A bone the clip does not own
+     cannot be repaired by making it chase better, and equally: do not go rebuilding the retargeter
+     for a state that never handed it a clip.
+
+     HOW IT PLUGS IN, using only paths that already work:
+       * `studioApplyClipPose(f, clip, phase, weight)` already drives BOTH the procedural joints and
+         the GLB's clipBones/clipW. Nothing new is written to the skeleton here.
+       * `__clipPhase(clip, elapsed, window, loop)` already derives a LOOPING phase from the clip's
+         own duration — the fix that stopped a 2.15 s capture being played through a 0.55 s window.
+       * A clip is EQUIPPED PER FIGHTER, deterministically from his name, and overridable through the
+         one `bannon_moveset_slots` store the studio, the list editor, BANNON_PINS and
+         BANNON_ZONEMOVE already share. Rolling per use is what makes everyone generic (owner LAW,
+         and the ring-transition pass had to be corrected for exactly this).
+       * A MODULE OWNS ITS OWN READINESS (owner LAW): it warms its own pool at a lull, never on the
+         critical path, and reports residency in stats() rather than silently playing nothing.
+       * HIGHER-PRIORITY LAYERS WIN. If anything else already drove a clip this frame
+         (`f._clipDriveAt`, which studioApplyClipPose stamps), this stands down instead of stacking
+         a second authority on top — which is the defect the write ledger found everywhere else.
+
+     window.STATE_CLIP = false disables it. window.STATE_CLIP_W sets the blend weight (default 1:
+     the clip is the authority on the bones it carries, and the bones it does not carry are still
+     the procedural layer's, automatically, because the clip block only drives what is in clipBones).
+     ══════════════════════════════════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  if (window.BANNON_STATECLIP) return;
+
+  // Ordered by preference. BOX_IDLE is a full 52-bone capture; the GEN_ entries are 17-bone
+  // MoMask-generated stances. Both are real captures that ship — nothing here is aspirational.
+  var CAT = {
+    IDLE: ['BOX_IDLE', 'GEN_IDLE_STANCE', 'GEN_GUARD_HIGH', 'ACTION_IDLE_TO_STANDING_IDLE']
+  };
+
+  // A LOOPING STATE MAY ONLY PLAY A CLIP THAT ACTUALLY LOOPS — MEASURED, NOT READ OFF THE NAME.
+  // The first version of this module took the catalogue at face value and one fighter drew
+  // ACTION_IDLE_TO_STANDING_IDLE. Its name says transition and the frames agree: between its last
+  // key and its first, RightUpLeg differs by 338.8 DEGREES. Looping it snapped a leg through nearly
+  // a full turn every 0.93 s, and it was visible in the render as a spread-legged fighter — the
+  // exact puppet artifact this whole pass exists to remove, reintroduced by the fix for it.
+  //   BOX_IDLE 0.0 deg max · GEN_IDLE_STANCE 18.0 · GEN_GUARD_HIGH 35.9 · that one 338.8
+  // So the gate is on the DATA and it generalises: any clip anyone adds later is measured the same
+  // way, once, and cached. window.LOOP_MAX_DEG moves the bar.
+  var _loopMemo = {};
+  function loops(name, clip){
+    if (name in _loopMemo) return _loopMemo[name];
+    var lim = (window.LOOP_MAX_DEG != null) ? window.LOOP_MAX_DEG : 45;
+    try{
+      var K = clip && clip.keys;
+      if (!K || K.length < 2) return (_loopMemo[name] = false);
+      var a = K[0].bones || {}, z = K[K.length - 1].bones || {}, mx = 0;
+      for (var b in a){
+        var q = z[b]; if (!q) continue; var pq = a[b];
+        var dx = (pq.rx||0)-(q.rx||0), dy = (pq.ry||0)-(q.ry||0), dz = (pq.rz||0)-(q.rz||0);
+        var d = Math.sqrt(dx*dx + dy*dy + dz*dz) * 180 / Math.PI;
+        if (d > mx) mx = d;
+      }
+      ST.closure[name] = +mx.toFixed(1);
+      return (_loopMemo[name] = (mx <= lim));
+    }catch(e){ return (_loopMemo[name] = false); }
+  }
+  var ST = { applied:0, skippedHigher:0, missing:0, warmed:0, warmFailed:0, byClip:{}, lastErr:null,
+             resident:0, rejectedNoLoop:{}, closure:{} };
+  var STORE = 'bannon_moveset_slots';
+
+  // States where a resting stance is the right animation. Everything else already has an owner and
+  // this must not take it from them.
+  var REST = { idle:1, '':1, undefined:1 };
+
+  function hash(s){ var h = 2166136261; s = String(s || '');
+    for (var i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = (h * 16777619) >>> 0; } return h; }
+
+  function slots(){ try{ return JSON.parse(localStorage.getItem(STORE) || '{}') || {}; }catch(e){ return {}; } }
+
+  function clipFor(f){
+    var name = (f && ((f.opts && f.opts.name) || f.specName)) || 'BANNON';
+    var S = slots();
+    var over = S && S.stateClip && S.stateClip[name] && S.stateClip[name].IDLE;
+    var want = over || CAT.IDLE[hash(name + ':IDLE') % CAT.IDLE.length];
+    var c = window.__studioClip && window.__studioClip(want);
+    if (c && loops(want, c)) return { name: want, clip: c };
+    if (c) ST.rejectedNoLoop[want] = (ST.rejectedNoLoop[want] || 0) + 1;
+    // Not resident. Ask for it FOR NEXT TIME and fall back to any entry that is already here —
+    // never block the current frame on a fetch, which is the trap the taunt pass had to be fixed for.
+    try{ if (window.loadClipFor) window.loadClipFor(want); }catch(e){}
+    for (var i = 0; i < CAT.IDLE.length; i++){
+      var an = CAT.IDLE[i], alt = window.__studioClip && window.__studioClip(an);
+      if (alt && loops(an, alt)) return { name: an, clip: alt };
+      if (alt) ST.rejectedNoLoop[an] = (ST.rejectedNoLoop[an] || 0) + 1;
+    }
+    ST.missing++;
+    return null;
+  }
+
+  function stamp(f, dt){
+    if (window.STATE_CLIP === false) return;
+    if (!f || f.ragdoll || f.airLift) return;
+    if (!REST[f.state]) return;
+    var now = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    // Somebody with a stronger claim already drove a clip this frame — a move, a taunt, a ring
+    // transition. Stand down rather than becoming a second writer.
+    if (f._clipDriveAt != null && (now - f._clipDriveAt) < 12){ ST.skippedHigher++; return; }
+    var pick = clipFor(f); if (!pick) return;
+    f._scT = (f._scT || 0) + (dt > 0.25 ? 0.25 : dt);      // same anti-teleport clamp the walkout uses
+    var ph = window.__clipPhase ? window.__clipPhase(pick.clip, f._scT, 1, true)
+                                : ((f._scT % (pick.clip.dur || 1)) / (pick.clip.dur || 1));
+    var w = (window.STATE_CLIP_W != null) ? window.STATE_CLIP_W : 1;
+    try{ window.studioApplyClipPose(f, pick.clip, ph, w); ST.applied++;
+         ST.byClip[pick.name] = (ST.byClip[pick.name] || 0) + 1; }
+    catch(e){ ST.lastErr = String(e && e.message).slice(0, 140); }
+  }
+
+  // WARM ITS OWN POOL, at a lull, concurrency 2, never on the critical path.
+  function warm(){
+    if (!window.loadClipFor) return;
+    var q = CAT.IDLE.slice(), live = 0;
+    (function next(){
+      while (live < 2 && q.length){
+        var n = q.shift();
+        if (window.__studioClip && window.__studioClip(n)){ ST.warmed++; continue; }
+        live++;
+        try{
+          var r = window.loadClipFor(n);
+          if (r && r.then) r.then(function(){ ST.warmed++; live--; next(); },
+                                  function(){ ST.warmFailed++; live--; next(); });
+          else { ST.warmed++; live--; }
+        }catch(e){ ST.warmFailed++; live--; }
+      }
+    })();
+  }
+
+  (function arm(n){
+    n = n || 0;
+    var FP = null; try{ FP = new Function('return typeof Fighter!=="undefined"?Fighter:null')(); }catch(e){}
+    if (FP && FP.prototype && typeof FP.prototype.poseGuard === 'function' && !FP.prototype.poseGuard.__stateclip){
+      var o = FP.prototype.poseGuard;
+      var w = function(dt, walking){
+        var r = o.apply(this, arguments);
+        // `walking` true is the real gait, which is tuned and is not this module's business.
+        try{ if (!walking) stamp(this, dt); }catch(e){ ST.lastErr = String(e && e.message).slice(0,140); }
+        return r;
+      };
+      w.__stateclip = 1; FP.prototype.poseGuard = w;
+      setTimeout(warm, 4000);
+      try{ console.log('%c[BANNON_STATECLIP] armed — idle asks for a clip now', 'color:#7CFC00'); }catch(e){}
+      return;
+    }
+    if (n > 120) return;
+    setTimeout(function(){ arm(n + 1); }, 500);
+  })(0);
+
+  window.BANNON_STATECLIP = {
+    catalogue: function(){ return JSON.parse(JSON.stringify(CAT)); },
+    clipFor: function(f){ var p = clipFor(f); return p && p.name; },
+    warm: warm,
+    stats: function(){
+      var res = 0, loopable = 0;
+      for (var i = 0; i < CAT.IDLE.length; i++){ var n = CAT.IDLE[i];
+        var c = window.__studioClip && window.__studioClip(n);
+        if (c){ res++; if (loops(n, c)) loopable++; } }
+      ST.resident = res; ST.loopable = loopable;
+      return Object.assign({}, ST, { poolSize: CAT.IDLE.length });
+    },
+    setStyle: function(name, clipName){
+      try{ var S = slots(); S.stateClip = S.stateClip || {}; S.stateClip[name] = S.stateClip[name] || {};
+        S.stateClip[name].IDLE = clipName; localStorage.setItem(STORE, JSON.stringify(S)); return true;
+      }catch(e){ return false; }
+    }
+  };
+})();
+</script>
+
 </html>

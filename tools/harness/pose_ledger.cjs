@@ -73,6 +73,8 @@ function serve(port){
 }
 
 function PROBE(){
+  // A/B IN THE SAME BUILD (CLAUDE.md law: never compare to a number from a past session).
+  if (window.__PL_NOSTATECLIP) window.STATE_CLIP = false;
   window.__PL = {
     on: false, frame: 0, bucket: 'idle', pixels: true,
     // per bucket: { frames, lagSum, lagN, lagMax, clipBones, procBones, boneFrames, writes:{line:n}, multi:n }
@@ -80,8 +82,10 @@ function PROBE(){
   };
   const PL = window.__PL;
   function lex(n){ try{ return new Function('return typeof '+n+'!=="undefined"?'+n+':null')(); }catch(e){ return null; } }
-  const B = () => PL.b[PL.bucket] || (PL.b[PL.bucket] = { frames:0, lagSum:0, lagN:0, lagMax:0, lagLimbSum:0, lagLimbN:0,
-    clip:0, proc:0, boneFrames:0, writes:{}, multi:0, multiBones:{}, rafMs:0, rafN:0 });
+  const B = () => { const k = PL.bucket + '/' + (PL.state || '?');
+    return PL.b[k] || (PL.b[k] = { frames:0, lagSum:0, lagN:0, lagMax:0, lagLimbSum:0, lagLimbN:0,
+      lagClipSum:0, lagClipN:0, lagProcSum:0, lagProcN:0,
+      clip:0, proc:0, boneFrames:0, allClip:0, allTot:0, writes:{}, multi:0, multiBones:{}, rafMs:0, rafN:0 }); };
 
   PL.setPixels = function(on){
     PL.pixels = !!on;
@@ -105,6 +109,13 @@ function PROBE(){
       var b = B();
       b.lagSum += deg; b.lagN++; if (deg > b.lagMax) b.lagMax = deg;
       if (isLimb){ b.lagLimbSum += deg; b.lagLimbN++; }
+      // SPLIT BY OWNERSHIP. The retarget runs for EVERY mapped bone, including ones the clip block
+      // is about to overwrite outright a few lines later — so a rising overall lag can just mean the
+      // clip is moving the aim faster on bones whose lag no longer matters. Separating them stops a
+      // clip working from reading as a regression.
+      var drv = (f && f.model && f.model.userData.__driven) || null;
+      var owned = !!(drv && (drv[bone.uuid] || 0) > 0.5);
+      if (owned){ b.lagClipSum += deg; b.lagClipN++; } else { b.lagProcSum += deg; b.lagProcN++; }
     }catch(e){ if (PL.errs.length < 6) PL.errs.push('aim:' + String(e && e.message).slice(0,90)); }
   };
 
@@ -151,6 +162,8 @@ function PROBE(){
         if (prev) prev.call(q);
       });
     });
+    PL.boneUuids = {};
+    p.model.traverse(function(o){ if (o.isBone) PL.boneUuids[o.name] = o.uuid; });
     PL.bones = n; PL.wired = n > 0;
     return PL.wired;
   }
@@ -167,6 +180,12 @@ function PROBE(){
       const F = lex('fighters'); if (!F) return;
       const p = F.find(f => f && f.isPlayer) || F[0];
       if (!p || !p.model) return;
+      // BUCKET BY THE FIGHTER'S ACTUAL STATE, NOT BY THE WALL-CLOCK DRIVE WINDOW. The first version
+      // bucketed by which key the driver had just pressed, so the "strike" bucket was six seconds of
+      // mostly IDLE frames after a half-second punch — and when idle started playing a clip, "strike"
+      // duly reported 16% -> 80% clip-driven. That is not a strike measurement, it is idle wearing a
+      // strike label. The state the fighter is actually in is the only honest bucket key.
+      PL.state = p.state || 'idle';
       const b = B();
       b.frames++;
       if (last){ b.rafMs += (now - last); b.rafN++; }
@@ -179,6 +198,12 @@ function PROBE(){
         if ((drv[mp.bone.uuid] || 0) > 0.5) clip++;
       }
       b.clip += clip; b.proc += (tot - clip); b.boneFrames += tot;
+      // AND OVER THE WHOLE SKELETON, not just the retarget's 19-bone mapped set. A clip can drive a
+      // bone the retarget never touches (BOX_IDLE carries 52 tracks), and counting only the mapped
+      // set understates what the animation actually reaches.
+      let allClip = 0, allTot = 0;
+      for (const bn in PL.boneUuids){ allTot++; if ((drv[PL.boneUuids[bn]] || 0) > 0.5) allClip++; }
+      b.allClip += allClip; b.allTot += allTot;
       PL.frame++;
       PL.__seenFrame = {};          // the multi-writer test is PER FRAME; reset the window
     }catch(e){ if (PL.errs.length < 6) PL.errs.push('tick:' + String(e && e.message).slice(0,90)); }
@@ -218,6 +243,7 @@ function PROBE(){
   };
 
   try{
+    if (has('nostateclip')) await page.addInitScript(() => { window.__PL_NOSTATECLIP = true; });
     await page.addInitScript(PROBE);
     await page.goto(`http://127.0.0.1:${port}/BANNON_v150.html`, { waitUntil:'domcontentloaded', timeout:60000 });
     if (await waitFor(async () => (await gs()) === 'menu', 120000, 'the menu')){
@@ -259,7 +285,32 @@ function PROBE(){
         [p,o].forEach(f => { f.state='idle'; f.stateTime=0; f.grappling=false; f.grabTarget=null; f.grabbedBy=null; f.grappleStage=0; f.ragdoll=false; }); } }catch(e){} });
 
     await close();
+    // OWNER LAW: SEE IT. A 99%-clip-driven idle can be a perfectly measured boxing stance on a
+    // wrestler. The number says the animation ARRIVED; only the render says it is the right one.
+    const shot = async (n) => {
+      if (!has('shot')) return;
+      await page.evaluate(() => window.__PL.setPixels(true));
+      // FORCE A CLEAN IDLE FOR THE FRAME. The first shot caught a PIN — six seconds of match had
+      // happened inside the sampling window and the render showed two men on the mat, which says
+      // nothing about an idle stance. The picture has to be of the thing being claimed.
+      await page.evaluate(() => { try{ const F = new Function('return fighters')().filter(Boolean);
+        const p = F.find(f => f.isPlayer) || F[0];
+        F.forEach(f => { f.ragdoll = false; f.state = 'idle'; f.stateTime = 0; f.grappling = false;
+          f.grabTarget = null; f.grabbedBy = null; f.grappleStage = 0; f.hp = f.maxHp || f.hp; });
+        if (p){ p.x = 0; p.z = 0; }
+        F.forEach(f => { if (f !== p){ f.x = 2.4; f.z = 1.6; } });
+      }catch(e){} });
+      await sleep(700);
+      await page.evaluate(() => { try{ const F = new Function('return fighters')().filter(Boolean);
+        const p = F.find(f => f.isPlayer) || F[0]; if (!p) return;
+        window.__camShot = { px: p.x + 1.5, py: 1.3, pz: p.z + 1.2, lx: p.x, ly: 1.05, lz: p.z, w: 1, speed: 14 }; }catch(e){} });
+      await sleep(1600);
+      try{ await page.screenshot({ path: path.join(OUT, 'pose_' + (has('nostateclip') ? 'ctl_' : '') + n + '.png') }); }catch(e){}
+      await page.evaluate(() => { try{ window.__camShot = null; }catch(e){} });
+      await page.evaluate(() => window.__PL.setPixels(false));
+    };
     await run('idle');
+    await shot('idle');
     await run('walk', holdKey('d'), relKey('d'));
     await close(); await run('strike', async () => { await key('j'); await sleep(500); await key('k'); });
     await close(); await run('grapple', async () => { await key('g'); await sleep(700); await key('j'); });
@@ -272,6 +323,7 @@ function PROBE(){
     await run('walk_slowfps', holdKey('d'), relKey('d'));
     await page.evaluate(() => window.__PL.setPixels(false));
 
+    report.stateclip = await page.evaluate(() => { try{ return window.BANNON_STATECLIP ? window.BANNON_STATECLIP.stats() : null; }catch(e){ return null; } });
     report.ledger = await page.evaluate(() => ({ b: window.__PL.b, errs: window.__PL.errs, bones: window.__PL.bones }));
   }catch(e){
     block('HARNESS: ' + String(e && e.message).split('\n')[0].slice(0, 180));
@@ -289,9 +341,12 @@ function PROBE(){
       frames: b.frames,
       fps: b.rafN ? +(1000 / (b.rafMs / b.rafN)).toFixed(1) : 0,
       clipShare: b.boneFrames ? +(b.clip / b.boneFrames).toFixed(3) : 0,
+      clipShareAll: b.allTot ? +(b.allClip / b.allTot).toFixed(3) : 0,
       bonesPerFrame: b.frames ? +(b.boneFrames / b.frames).toFixed(1) : 0,
       lagMeanDeg: b.lagN ? +(b.lagSum / b.lagN).toFixed(2) : 0,
       lagLimbDeg: b.lagLimbN ? +(b.lagLimbSum / b.lagLimbN).toFixed(2) : 0,
+      lagProcDeg: b.lagProcN ? +(b.lagProcSum / b.lagProcN).toFixed(2) : 0,
+      lagClipDeg: b.lagClipN ? +(b.lagClipSum / b.lagClipN).toFixed(2) : 0,
       lagMaxDeg: +b.lagMax.toFixed(1),
       multiWriterBoneFrames: b.multi,
       topWriters: Object.keys(b.writes).sort((x, y) => b.writes[y] - b.writes[x]).slice(0, 6)
@@ -304,24 +359,31 @@ function PROBE(){
   if (has('json')){ console.log(JSON.stringify(report, null, 1)); process.exit(0); }
 
   console.log('\n===== POSE LEDGER =====');
-  console.log('  bones hooked ' + (report.bones || 0) + '   page errors ' + pageErrors.length);
+  console.log('  bones hooked ' + (report.bones || 0) + '   page errors ' + pageErrors.length +
+    '   STATECLIP ' + (has('nostateclip') ? 'OFF (control)' : 'ON'));
+  if (report.stateclip) console.log('  STATECLIP applied ' + report.stateclip.applied + ' · resident ' +
+    report.stateclip.resident + '/' + report.stateclip.poolSize + ' · stood down for a higher layer ' +
+    report.stateclip.skippedHigher + ' · missing ' + report.stateclip.missing +
+    ' · loopable ' + report.stateclip.loopable + ' · rejected-no-loop ' + JSON.stringify(report.stateclip.rejectedNoLoop) +
+    ' · closure ' + JSON.stringify(report.stateclip.closure) +
+    ' · clips ' + JSON.stringify(report.stateclip.byClip) + (report.stateclip.lastErr ? ' · err ' + report.stateclip.lastErr : ''));
   if (report.blockers.length) console.log('  BLOCKERS: ' + report.blockers.join(' | '));
   console.log('');
-  console.log('  motion         fps   clip-driven   bones/frame   lag mean   lag limb   lag max   contested');
-  for (const k of Object.keys(report.summary)){
+  console.log('  drive/state           frames    fps   clip(mapped)  clip(all)   lag PROC   lag CLIP   contested');
+  const rows = Object.keys(report.summary).filter(k => report.summary[k].frames >= 8)
+    .sort((a,b) => report.summary[b].frames - report.summary[a].frames);
+  for (const k of rows){
     const s = report.summary[k];
-    console.log('  ' + k.padEnd(14) + String(s.fps).padStart(5) + '   ' +
-      (Math.round(s.clipShare * 100) + '%').padStart(11) + '   ' +
-      String(s.bonesPerFrame).padStart(11) + '   ' +
-      (s.lagMeanDeg + '°').padStart(8) + '   ' + (s.lagLimbDeg + '°').padStart(8) + '   ' +
-      (s.lagMaxDeg + '°').padStart(7) + '   ' + String(s.multiWriterBoneFrames).padStart(9));
+    console.log('  ' + k.padEnd(20) + String(s.frames).padStart(6) + '  ' + String(s.fps).padStart(5) + '   ' +
+      (Math.round(s.clipShare * 100) + '%').padStart(12) + (Math.round(s.clipShareAll * 100) + '%').padStart(11) + '   ' +
+      (s.lagProcDeg + '°').padStart(8) + '   ' + (s.lagClipDeg + '°').padStart(8) + '   ' +
+      String(s.multiWriterBoneFrames).padStart(9));
   }
+  console.log('  (buckets under 8 frames are omitted — a verdict on six frames is noise wearing a number)');
   console.log('\n  WRITERS (source line in BANNON_v150.html x writes):');
-  for (const k of Object.keys(report.summary))
-    console.log('    ' + k.padEnd(14) + (report.summary[k].topWriters.join('  ') || '—'));
+  for (const k of rows) console.log('    ' + k.padEnd(20) + (report.summary[k].topWriters.join('  ') || '—'));
   console.log('\n  BONES WRITTEN BY TWO DIFFERENT LINES IN ONE FRAME:');
-  for (const k of Object.keys(report.summary))
-    console.log('    ' + k.padEnd(14) + (report.summary[k].topContested.join('  ') || 'none'));
+  for (const k of rows) console.log('    ' + k.padEnd(20) + (report.summary[k].topContested.slice(0,4).join('  ') || 'none'));
   if (report.ledger && report.ledger.errs && report.ledger.errs.length)
     console.log('\n  probe errors: ' + report.ledger.errs.join(' | '));
   console.log('\n  report -> ' + path.join(OUT, 'pose_ledger.json') + '\n');
