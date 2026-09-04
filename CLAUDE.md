@@ -1995,3 +1995,82 @@ residual of 7-10 cm on a plant.
   tools/harness/footik_ab.cjs         A/B/A2 with --reps, control agreement checked FIRST, verdicts
                                       decided on overlapping RANGES rather than a delta of means
   tools/harness/footik_look.cjs       SEE IT: side-on stills of the walk in both arms + knee flex
+
+## SYSTEM DONE: THE FIGHT STARTS AT THE BELL — BANNON_PHASE (2026-09-04)
+Owner: "fight should start at the bell, after the entrances and announce obviously, the order WWE
+games do." And the architectural half, which is the bigger rule: **"STATE NAMES MUST DESCRIBE THE
+ACTUAL CAPABILITY THEY AUTHORIZE ... You've repeatedly uncovered bugs caused by a label meaning more
+than one thing."**
+
+### WHAT startFight ACTUALLY DID, IN THIS ORDER
+    gameState = 'fight'                    <- combat input and AI go live HERE
+    setTimeout(400, BANNON_ENTRANCE.play)  <- the entrances then begin
+    startRound()                           <- announce('FIGHT') + the round clock starts
+So the bell rang, the clock started and both men became controllable while they were still behind
+the curtain. MEASURED in the control run, the announce log during the walk to the ring reads:
+KICKED FREE · GO BEHIND · CROSS BODY · ROLLED OVER · POWER ENDER combo x3 · REF BUMP.
+**They fought the entire entrance.** `gameState==='fight'` has never meant "combat may execute now"
+— it means "a match object exists". THIRTY-TWO comparisons in this file ask that question and get an
+answer to a different one, and it is the same overload that contaminated four FOOTIK harnesses.
+
+### THE THREE STATES, BECAUSE THEY ARE THREE QUESTIONS
+    matchState         IDLE | LOADING | ACTIVE | FINISHED       is there a match at all
+    presentationState  NONE | ENTRANCE | ANNOUNCEMENT | READY   what is the broadcast doing
+    combatState        PRE_BELL | ACTIVE | PAUSED | FINISHED    may a body be driven right now
+Only the third authorises anything, and it is the one nothing had. `BANNON_PHASE.combatActive()` is
+the question every gameplay system and every harness should ask; `window.__combatLive` is set from
+the loop each frame for anything that cannot reach the module.
+
+### GATED, AND DELIBERATELY NO MORE
+readPlayerInput · updateAI · the round clock · BANNON_APEX.cmd. Physics, ropes, camera, the pose
+pipeline and the walkout all still run on `_fight`/`_live` untouched — **an entrance is bodies
+MOVING, not a paused game.**
+**THE TRAP I CAUGHT BY READING THE BRANCH INSTEAD OF MOVING THE BLOCK:** `if(_fight){...} else if
+(fighters.length){ f.update(0) }` — the else branch freezes every fighter at dt=0 for menus. Moving
+the whole block behind the bell would have frozen the walkout it exists to protect and the entrance
+would never have advanced. The gate belongs on the two lines inside, never on the block.
+
+### A SECOND INPUT PATH THAT BYPASSED THE LOOP ENTIRELY
+Gating the loop still left **50 commentary lines during the walk** — GO BEHIND / FACE TO FACE
+toggling every 0.4 s. `BANNON_APEX.cmd(dir)` is reached from an i/j/k/l keydown handler AND from the
+swipe/dpad, never through readPlayerInput, and its only guard was
+`document.body.classList.contains('match-live')` — **the same overloaded label wearing a different
+name.** Both callers funnel through `cmd()`, so the guard belongs there. 50 -> 1-3.
+
+### EVERY FAILURE PATH RINGS THE BELL, AND THE FAILSAFE WAS PROVEN TO FIRE
+Three independent exits: the sequence reporting itself finished (normal), ARM_MS 3 s (no entrance
+ever started), CEIL_MS 60 s (hard ceiling). With the module absent, throwing or unarmed, `_combat`
+falls back to `_fight` and the game behaves exactly as before it existed.
+VERIFIED with entrances genuinely suppressed: **bell RANG at 3.37 s, sawEntrance false.**
+
+### RESULT — tools/harness/match_phases.cjs, order asserted, not duration
+    control      bell 0.44s, entrances done 20.4s   readPlayerInput 2892   updateAI 1924
+    with phase   entrances done 20.3s, bell 22.25s  readPlayerInput  456   updateAI  304
+    the bell rings AFTER the entrances       ok (1.95s after)
+    no AI decision before combat opens       ok (0.01s after)
+    no player input read before it           ok (0.01s after)
+    no damage before it                      ok
+"The entrance must take under N seconds" would be a noisy lie across environments. What CAN be
+asserted is that nothing authorising combat happens before the bell, however long it takes.
+
+### THREE INSTRUMENT DEFECTS, ALL MINE, ALL CAUGHT BY MEASURING
+1. **THE CHECK WAS ANCHORED TO THE BROKEN REFERENCE.** First version measured everything against the
+   bell and reported "no AI decision before the bell — ok" while the bell was at 0.44 s and the AI
+   fought until 20.4 s. **A check anchored to a broken reference certifies the break.** The bell's
+   own position is now one of the assertions, not the ruler for the others.
+2. **HP BASELINE TAKEN ON THE SELECT SCREEN.** `fighters` there holds PREVIEW bodies that startFight
+   throws away, so the real fighters were compared against a different object set and it reported
+   "FIRST damage" at the entrance end. Re-baselined at `gameState -> 'fight'`; the damage vanished.
+3. **THE FAILSAFE TEST DID NOT PERTURB ANYTHING.** Stubbing `BANNON_ENTRANCE.play` early is dead
+   code: BANNON_ENTRANCE_SEQ wraps it and its wrapper calls its OWN internal play(), never the
+   captured original. The run reported `sawEntrance:true` while claiming to prove the no-entrance
+   path. Stub AFTER SEQ stamps `__seq`. The harness now PRINTS whether the override armed and
+   refuses to read the result if the entrance ran — a perturbation that did not change the variable
+   is not evidence, and that is banked law I hit again.
+ALSO: an exact `LeftHand 0.0000` in two smoke categories looked like a regression and was run-to-run
+variance (0.1876 / 0.0149 / 0.1563 on the re-run). One check, not an assumption either way.
+
+### STILL OPEN, NAMED NOT BURIED
+2-3 commentary lines still fire during the walk (REF BUMP, REVERSAL!) — other systems that authorise
+themselves without asking the phase. The pattern is now established and the fix for each is one
+guard at the funnel; they are not gated yet.

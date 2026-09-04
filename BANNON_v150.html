@@ -14842,6 +14842,21 @@ function loop(now){
   // one place that already knows it, and it self-corrects every frame instead of relying on every
   // exit path remembering to clear a flag.
   window.__matchLive = _fight;
+  // ── THE BELL, NOT THE LOAD ───────────────────────────────────────────────────────────────────
+  // OWNER: "fight should start at the bell, after the entrances and announce obviously, the order
+  // WWE games do." `gameState==='fight'` does NOT mean that. startFight sets it, THEN fires the
+  // entrance on a 400ms timer, THEN calls startRound() which announces FIGHT and starts the round
+  // clock — so the bell rang and combat went live while both men were still behind the curtain.
+  // That is the same overloaded label that contaminated four harnesses: 'fight' means "this match
+  // will eventually contain a fight", not "combat may execute now".
+  // _combat is the second question, asked separately. It gates INPUT and AI only — physics, ropes,
+  // camera and the walkout itself all still need _live/_fight, which are untouched.
+  // FAILSAFE BY CONSTRUCTION: with BANNON_PHASE absent, erroring, or never armed, combatActive()
+  // is treated as TRUE and this is exactly the behaviour that shipped yesterday. A bell that never
+  // rings is unrecoverable, and that is already law in this file.
+  var _combat = _fight;
+  try{ if (_fight && window.BANNON_PHASE && window.BANNON_PHASE.combatActive) _combat = !!window.BANNON_PHASE.combatActive(); }catch(e){ _combat = _fight; }
+  window.__combatLive = _combat;
   const _movePrev = (gameState==='pause_creator'||gameState==='menu_creator');     // move creator auto-plays the selected strike on the edited fighter
   const _live     = _fight || _movePrev;                                            // combat / physics / round advance ONLY when fighting or actively previewing a move
   window.EDITOR_PREVIEW = /creator|models|dir|caw|studio|lab|select/.test(gameState||'');   // editors + the vs-screen render the posed/morphed skeleton (not frozen physics bodies) so edits/selections show live
@@ -14868,10 +14883,14 @@ function loop(now){
   const t = now/1000;
 
   if (_fight){
-    readPlayerInput(dt);   // v117: read input on the REAL frame clock so controls stop lagging behind the slowed combat sim (SIM_PACE 0.85). AI + physics stay weighty on sdt; player intent/locomotion read crisp. Revert to sdt if you want input slowed to match.
+    // GATED ON _combat, NOT ON THE BLOCK. The `else` branch below runs every fighter at dt=0 — a
+    // frozen pose for menus and editors — so moving this whole block behind the bell would freeze
+    // the walkout it exists to protect, and the entrance would never advance. Only the two things
+    // that must not touch a body during an entrance are held: the STICK and the AI.
+    if (_combat) readPlayerInput(dt);   // v117: read input on the REAL frame clock so controls stop lagging behind the slowed combat sim (SIM_PACE 0.85). AI + physics stay weighty on sdt; player intent/locomotion read crisp. Revert to sdt if you want input slowed to match.
     // v152: AI drives EVERY non-player fighter (was hardcoded fighters[1] — a CPU-controlled P1
     // stood idle forever, and multi-man needs N-fighter AI). isPlayer is the single source of truth.
-    for (const f of fighters){ if (f && !f.isPlayer && f.updateAI){
+    for (const f of fighters){ if (_combat && f && !f.isPlayer && f.updateAI){
       // ROAM MODE (God Within / Universe free-roam): NPCs stay PASSIVE — they do NOT attack, so you
       // actually WALK THE WORLD instead of being forced into a 1v1. They wake into combat only when
       // CHALLENGED (BANNON_GODWITHIN.challenge sets f._challenged). This is the roam fix.
@@ -14955,6 +14974,10 @@ function startRound(){
   if (roundTimer!==Infinity){
     roundTimerInterval = setInterval(()=>{
       if (gameState!=='fight') return;
+      // A round clock that runs during the entrance is counting a fight nobody is having. Same
+      // overloaded label as everywhere else: 'fight' is the match existing, __combatLive is the
+      // bell having rung. Undefined (no phase module) reads as live = the old behaviour.
+      if (window.__combatLive === false) return;
       roundTimer--;
       const tEl=document.getElementById('timer');
       tEl.textContent = roundTimer;
@@ -14962,7 +14985,14 @@ function startRound(){
       if (roundTimer<=0){ clearInterval(roundTimerInterval); timeUp(); }
     },1000);
   } else { const tEl=document.getElementById('timer'); if(tEl) tEl.classList.remove('warning'); }
-  announce('FIGHT', 'ROUND '+currentRound);
+  // THE BELL BELONGS AT THE END OF THE PRESENTATION. This announced FIGHT the instant the match
+  // object existed, ~30 s before either man reached the ring. BANNON_PHASE takes ownership when a
+  // presentation is pending and rings it when the entrances actually finish; it returns false for
+  // round 2+, for a build with no entrances, and if the module is absent — and then this announces
+  // immediately, exactly as it always did.
+  var _held = false;
+  try{ if (window.BANNON_PHASE && window.BANNON_PHASE.roundStart) _held = !!window.BANNON_PHASE.roundStart(currentRound); }catch(e){ _held = false; }
+  if (!_held) announce('FIGHT', 'ROUND '+currentRound);
 }
 function timeUp(){
   const a=fighters[0], b=fighters[1];
@@ -43862,6 +43892,15 @@ window.BANNON_APEX = (function(){
   function atRope(o){ try{ const HX=ARENA_HALF, HZ=(typeof ARENA_HALF_Z!=='undefined')?ARENA_HALF_Z:HX;
     return (Math.abs(o.x)>=HX-0.30 || Math.abs(o.z)>=HZ-0.30) && !o._inCorner; }catch(e){ return false; } }
   function cmd(dir){
+    // A SECOND INPUT PATH. This never goes through readPlayerInput — it is reached from the i/j/k/l
+    // keydown handler and from the swipe/dpad via BANNON_APEX.cmd — so gating the game loop did not
+    // touch it, and MEASURED, 50 commentary lines still fired during the entrance walk:
+    // "GO BEHIND" / "FACE TO FACE" toggling every 0.4 s while both men were on the ramp.
+    // Its only guard was `document.body.classList.contains('match-live')`, which is the SAME
+    // overloaded label as gameState==='fight' wearing a different name — it means a match exists,
+    // not that combat may execute. Both callers funnel through here, so the guard belongs here.
+    // Fail-open: no phase module, or a throw, and this behaves exactly as it always did.
+    try{ if (window.BANNON_PHASE && !window.BANNON_PHASE.combatActive()) return false; }catch(e){}
     const p=player(); if(!p || typeof p.opponent!=='function') return false;
     if(p.grappling && p.grappleStage>=2) return false;            // mid-hoist: stick steers pitch/twist, don't hijack
     const opp=p.opponent(); if(!opp) return false;
@@ -62196,6 +62235,149 @@ window.__deriveVariant = async function(key){
       }catch(e){ return false; }
     }
   };
+})();
+</script>
+
+<script>
+// ============================================================================================
+// BANNON_PHASE — THE MATCH IS NOT THE FIGHT. THE BELL IS.
+//
+// OWNER: "fight should start at the bell, after the entrances and announce obviously, the order
+// WWE games do." And, on the wider defect: "STATE NAMES MUST DESCRIBE THE ACTUAL CAPABILITY THEY
+// AUTHORIZE ... You've repeatedly uncovered bugs caused by a label meaning more than one thing."
+//
+// MEASURED, not assumed. startFight does this, in this order:
+//     gameState = 'fight'                       <- combat input and AI go live HERE
+//     setTimeout(400, BANNON_ENTRANCE.play)     <- the entrances then begin
+//     startRound()                              <- announce('FIGHT') + the round clock starts
+// So the bell rang, the clock started and both fighters became controllable while they were still
+// behind the curtain. `gameState === 'fight'` has never meant "combat may execute now" — it means
+// "a match object exists and will eventually contain a fight". THIRTY-TWO comparisons in this file
+// ask that question and get an answer to a different one.
+//
+// THE THREE STATES, SPLIT BECAUSE THEY ANSWER THREE DIFFERENT QUESTIONS:
+//     matchState         IDLE | LOADING | ACTIVE | FINISHED        is there a match at all
+//     presentationState  NONE | ENTRANCE | ANNOUNCEMENT | READY    what is the broadcast doing
+//     combatState        PRE_BELL | ACTIVE | PAUSED | FINISHED     may a body be driven right now
+// Only the third one authorises anything, and it is the one nothing had.
+//
+// WHAT IT ACTUALLY GATES, and deliberately no more: readPlayerInput, updateAI, and the round clock.
+// Physics, ropes, the camera, the pose pipeline and the walkout itself all still run on _fight and
+// _live untouched — an entrance is bodies MOVING, it is not a paused game, and gating the whole
+// block would have frozen the very thing this protects (the `else` branch runs every fighter at
+// dt=0). That was caught by reading the branch rather than assuming the block was safe to move.
+//
+// EVERY FAILURE PATH RINGS THE BELL. A match that cannot start is unrecoverable, and that is
+// already law in this file. Three independent ways out:
+//   * the entrance sequence reporting itself finished (the normal path)
+//   * ARM_MS — no entrance ever started, so there is nothing to wait for
+//   * CEIL_MS — a hard ceiling regardless of what any other module claims
+// And with this module absent, throwing, or never armed, the loop's _combat falls back to _fight
+// and the game behaves exactly as it did before it existed.
+// ============================================================================================
+(function(){
+  'use strict';
+  if (window.BANNON_PHASE) return;
+
+  var ARM_MS  = 3000;    // nothing has started an entrance by now -> there is no entrance
+  var CEIL_MS = 60000;   // a bell that never rings is worse than a bell that rings early
+  var ANN_MS  = 1500;    // the ring-announcer beat between the last entrance and the bell
+
+  var S = { match:'IDLE', pres:'NONE', combat:'PRE_BELL' };
+  var t0 = 0, presEnd = 0, sawEntrance = false, held = null, bellAt = 0;
+  var LOG = [];
+
+  function log(ev){
+    LOG.push({ ev:ev, t: t0 ? Math.round(now() - t0) : 0, match:S.match, pres:S.pres, combat:S.combat });
+    if (LOG.length > 120) LOG.shift();
+    try{ console.log('%c[BANNON_PHASE] ' + ev + '  ' + S.match + ' / ' + S.pres + ' / ' + S.combat,
+                     'color:#7CFC00'); }catch(e){}
+  }
+  function now(){ try{ return performance.now(); }catch(e){ return Date.now(); } }
+  function gs(){ try{ return new Function('return typeof gameState!=="undefined"?gameState:null')(); }catch(e){ return null; } }
+  function seqRunning(){
+    try{ return !!(window.BANNON_ENTRANCE_SEQ && window.BANNON_ENTRANCE_SEQ.stats().running); }catch(e){ return false; }
+  }
+
+  // ── THE BELL ────────────────────────────────────────────────────────────────────────────────
+  function ring(why){
+    if (S.combat === 'ACTIVE') return false;
+    S.pres = 'READY'; S.combat = 'ACTIVE'; bellAt = now();
+    log('BELL (' + why + ')');
+    // The announcement startRound handed over, delivered at the moment it actually means something.
+    if (held != null){
+      var r = held; held = null;
+      try{ if (typeof announce === 'function') announce('FIGHT', 'ROUND ' + r); }catch(e){}
+    }
+    try{ window.dispatchEvent(new CustomEvent('bannon:bell', { detail:{ why:why } })); }catch(e){}
+    return true;
+  }
+
+  // ── startRound hands the announcement over; we say whether we took it ───────────────────────
+  // Returning FALSE means "announce it yourself, now" — which is what round 2+, a build with no
+  // entrances, and any error path all get.
+  function roundStart(round){
+    if (round > 1){                       // between rounds there is no entrance to wait for
+      S.match = 'ACTIVE'; S.pres = 'NONE'; S.combat = 'ACTIVE'; bellAt = now();
+      log('ROUND ' + round);
+      return false;
+    }
+    t0 = now(); sawEntrance = false; presEnd = 0; held = round;
+    S.match = 'ACTIVE'; S.pres = 'ENTRANCE'; S.combat = 'PRE_BELL';
+    log('MATCH START — holding the bell for the presentation');
+    return true;                          // we own the announcement until the bell
+  }
+
+  // ── the poll. Cheap, and it self-corrects rather than trusting any one caller to fire ───────
+  setInterval(function(){
+    try{
+      var g = gs();
+
+      // Left the match entirely (menu, winner, a reload of the select screen): stand down. Without
+      // this a held announcement would fire into the next match's entrance.
+      if (S.match === 'ACTIVE' && g !== 'fight' && g !== 'pause'){
+        if (g === 'winner' || g === 'roundend'){ S.match = 'FINISHED'; S.combat = 'FINISHED'; }
+        else { S.match = 'IDLE'; S.pres = 'NONE'; S.combat = 'PRE_BELL'; }
+        held = null; log('match over / left (' + g + ')');
+        return;
+      }
+      // PAUSE is a combat state, not a match state — the match still exists behind the menu.
+      if (S.combat === 'ACTIVE' && g === 'pause'){ S.combat = 'PAUSED'; log('paused'); return; }
+      if (S.combat === 'PAUSED' && g === 'fight'){ S.combat = 'ACTIVE'; log('resumed'); return; }
+
+      if (S.combat !== 'PRE_BELL') return;
+
+      var running = seqRunning();
+      if (running){ sawEntrance = true; presEnd = 0; return; }   // an entrance is on screen: wait
+
+      if (sawEntrance){
+        // The entrances finished. Hold the ring-announcer beat, then ring.
+        if (!presEnd){ presEnd = now(); S.pres = 'ANNOUNCEMENT'; log('entrances done'); return; }
+        if (now() - presEnd >= ANN_MS) ring('presentation complete');
+        return;
+      }
+      // Never saw one start. Either walkouts are off, the sequence never armed, or this build has
+      // no entrance at all — all of which mean there is nothing to wait for.
+      if (t0 && now() - t0 >= ARM_MS) ring('no entrance started');
+      if (t0 && now() - t0 >= CEIL_MS) ring('ceiling');
+    }catch(e){
+      // An exception in the phase poll must never be able to prevent a bell.
+      try{ ring('poll error'); }catch(_){}
+    }
+  }, 100);
+
+  window.BANNON_PHASE = {
+    // THE question. Every gameplay system and every harness should ask this one, never gameState.
+    combatActive: function(){ return S.combat === 'ACTIVE'; },
+    state: function(){ return { matchState:S.match, presentationState:S.pres, combatState:S.combat,
+                                sinceBellMs: bellAt ? Math.round(now() - bellAt) : null,
+                                sawEntrance: sawEntrance }; },
+    roundStart: roundStart,
+    ringBell: function(){ return ring('manual'); },
+    log: function(){ return LOG.slice(); },
+    ARM_MS: ARM_MS, CEIL_MS: CEIL_MS, ANN_MS: ANN_MS
+  };
+  try{ console.log('%c[BANNON_PHASE] armed — combat begins at the bell, not at the match load','color:#7CFC00'); }catch(e){}
 })();
 </script>
 
