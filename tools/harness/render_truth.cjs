@@ -606,6 +606,134 @@ function PROBE(){
     });
   };
 
+  // ── WHICH CAPTURES INVERT THE LEGS ───────────────────────────────────────────────────────────
+  // The A/B says BANNON_STATECLIP causes it; this says WHICH clip. The sim is frozen, one capture is
+  // applied to the body at a fixed phase, the clip block is run, and the thigh/shin DIRECTION is
+  // read. Direction, not angle — angle-from-rest is axis-agnostic and could not separate the buried
+  // fighter from the standing one. dirY -1 is straight down; a standing leg is near -1.
+  window.__rtClipScan = function(idx, names, phase){
+    const A = FIGHTERS() || []; const f = A[idx]; if (!f || !f.model) return { err:'no model' };
+    const UFM = new Function('return typeof updateFighterModel==="function"?updateFighterModel:null')();
+    if (!UFM) return { err:'updateFighterModel not reachable' };
+    const seg = (a, b) => { const A2 = window.__boneOf(f.model, a), B2 = window.__boneOf(f.model, b);
+      if (!A2 || !B2) return null; const p1 = A2.getWorldPosition(V()), p2 = B2.getWorldPosition(V());
+      const v = p2.sub(p1), L = v.length(); return L < 1e-6 ? null : { dirY:+(v.y/L).toFixed(3), lenM:+L.toFixed(3) }; };
+    // EVERY CLIP MUST BE JUDGED FROM THE SAME START. Without this the readings chain: the first run
+    // of this scan showed the BASELINE row already at thighL +0.881 because the frozen body arrived
+    // inverted, and each later row inherited whatever the previous clip left behind. Resetting every
+    // bone to its own restQuat makes each capture an independent measurement.
+    const bones = [];
+    f.model.traverse(o => { if (o.isBone && o.userData && o.userData.restQuat) bones.push(o); });
+    const reset = () => { for (const b of bones){ b.quaternion.copy(b.userData.restQuat);
+      if (b.userData.restPos) b.position.copy(b.userData.restPos); } };
+
+    const out = [];
+    // BASELINE: the rig at REST, run through the same path, so every clip is compared against a
+    // reference measured in this same run rather than against a number from another session.
+    reset(); f.model.updateMatrixWorld(true);
+    out.push({ clip:'(rest pose — baseline)', thighL:seg('LeftUpLeg','LeftLeg'), shinL:seg('LeftLeg','LeftFoot'),
+               thighR:seg('RightUpLeg','RightLeg') });
+    // THE COMPOSITION IS THE VARIABLE. The clip block computes rest * clip, i.e. it treats a capture's
+    // rotation as an OFFSET FROM REST. The alternative reading is that a capture stores the bone's
+    // own local rotation outright. Both are applied to the SAME clip at the SAME phase from the SAME
+    // rest pose, and the leg direction says which one the data was authored for. This is a data
+    // question with a data answer; guessing at it produced a retracted theory already.
+    const euler = new THREE.Euler();
+    for (const nm of names){
+      reset();
+      const c = window.__studioClip && window.__studioClip(nm);
+      if (!c){ out.push({ clip:nm, err:'not resident' }); continue; }
+      try{
+        window.studioApplyClipPose(f, c, phase == null ? 0.5 : phase, 1);
+        // snapshot the bone tracks this clip stamped, BEFORE updateFighterModel consumes and nulls them
+        const cb = f.model.userData.clipBones || {};
+        const tracks = {}; let nTracks = 0;
+        for (const k in cb){ tracks[k] = cb[k]; nTracks++; }
+        UFM(f); f.model.updateMatrixWorld(true);
+        const asRestTimesClip = { thighL:seg('LeftUpLeg','LeftLeg'), shinL:seg('LeftLeg','LeftFoot'),
+                                  thighR:seg('RightUpLeg','RightLeg') };
+        // now the same tracks read as ABSOLUTE local rotations
+        reset();
+        for (const k in tracks){
+          const b = window.__boneOf(f.model, k); if (!b) continue;
+          const t = tracks[k];
+          euler.set(t.rx || 0, t.ry || 0, t.rz || 0, 'XYZ');
+          b.quaternion.setFromEuler(euler);
+        }
+        f.model.updateMatrixWorld(true);
+        const asAbsolute = { thighL:seg('LeftUpLeg','LeftLeg'), shinL:seg('LeftLeg','LeftFoot'),
+                             thighR:seg('RightUpLeg','RightLeg') };
+        // does this capture drive the legs at all? that is what separates the two families.
+        // THE DISCRIMINATOR, DERIVED FROM THE DATA. For a bone with a large rest rotation (a thigh
+        // is ~169 degrees from its parent), an OFFSET-convention track sits near IDENTITY and an
+        // ABSOLUTE-convention track sits near REST. Measuring both angles says which family a
+        // capture belongs to without a hand-written list, and without trusting any label.
+        // ACROSS THE WHOLE CLIP, NOT ONE PHASE. A single-phase reading misclassified BODY_JAB_CROSS
+        // on a 7-degree margin. A thigh in an OFFSET-convention capture passes CLOSE TO IDENTITY at
+        // some point in the cycle — that is what "no rotation relative to rest" means. A thigh in an
+        // ABSOLUTE-convention capture carries the rig's ~169-degree rest rotation baked in and can
+        // never approach identity. So the MINIMUM over the clip separates them with a wide margin,
+        // and no threshold has to be tuned to a single frame.
+        let fam = null;
+        try{
+          const tb = window.__boneOf(f.model, 'LeftUpLeg');
+          if (tb && tb.userData && tb.userData.restQuat){
+            const ang = (a, b) => 2*Math.acos(Math.min(1, Math.abs(a.x*b.x + a.y*b.y + a.z*b.z + a.w*b.w)))*180/Math.PI;
+            const ident = new THREE.Quaternion(), q = new THREE.Quaternion();
+            let minI = 999, minR = 999, sampled = 0;
+            for (let ph = 0; ph <= 1.0001; ph += 0.0625){
+              reset();
+              window.studioApplyClipPose(f, c, ph, 1);
+              const cb2 = f.model.userData.clipBones || {};
+              let key2 = null;
+              for (const k in cb2) if (String(k).toLowerCase().replace(/[^a-z]/g,'').indexOf('leftupleg') >= 0) { key2 = k; break; }
+              f.model.userData.clipBones = null;
+              if (!key2) continue;
+              const t2 = cb2[key2];
+              euler.set(t2.rx || 0, t2.ry || 0, t2.rz || 0, 'XYZ');
+              q.setFromEuler(euler);
+              minI = Math.min(minI, ang(q, ident));
+              minR = Math.min(minR, ang(q, tb.userData.restQuat));
+              sampled++;
+            }
+            if (sampled) fam = { minFromIdentityDeg:+minI.toFixed(1), minFromRestDeg:+minR.toFixed(1),
+                                 phases:sampled, convention: minI < minR ? 'OFFSET' : 'ABSOLUTE' };
+          }
+        }catch(e){}
+        reset();
+        const legTracks = ['LeftUpLeg','RightUpLeg','LeftLeg','RightLeg'].filter(function(n){
+          for (const k in tracks) if (String(k).toLowerCase().replace(/[^a-z]/g,'').indexOf(n.toLowerCase()) >= 0) return true;
+          return false; }).length;
+        out.push({ clip:nm, dur:+(c.dur||0).toFixed(2), nTracks, legTracks, fam,
+                   thighL:asRestTimesClip.thighL, shinL:asRestTimesClip.shinL, thighR:asRestTimesClip.thighR,
+                   abs:asAbsolute });
+      }catch(e){ out.push({ clip:nm, err:String(e && e.message).slice(0,80) }); }
+    }
+    return { rows:out };
+  };
+  window.__rtResident = function(){
+    try{ const S = window.STUDIO && window.STUDIO.clips; if (!S) return [];
+      return Object.keys(S); }catch(e){ return []; }
+  };
+
+  // WHICH BONES CAN DISCRIMINATE AT ALL. A bone whose REST rotation is near identity sits near
+  // identity under BOTH clip conventions, so its track carries no information about which one the
+  // capture uses. Only bones with a LARGE rest rotation can vote. This is measured off the rig, not
+  // assumed — assuming "the upper arm is like the thigh" manufactured 530 false MIXED verdicts.
+  window.__rtRest = function(idx){
+    const A = FIGHTERS() || []; const f = A[idx]; if (!f || !f.model) return { err:'no model' };
+    const out = [];
+    f.model.traverse(o => {
+      if (!o.isBone || !o.userData || !o.userData.restQuat) return;
+      const q = o.userData.restQuat;
+      out.push({ bone:String(o.name||'').replace(/^mixamorig\d*/,''),
+                 restDeg:+(2*Math.acos(Math.min(1, Math.abs(q.w)))*180/Math.PI).toFixed(1),
+                 q:[+q.x.toFixed(6), +q.y.toFixed(6), +q.z.toFixed(6), +q.w.toFixed(6)] });
+    });
+    out.sort((a,b) => b.restDeg - a.restDeg);
+    return out;
+  };
+
   window.__rtTier = function(t){ try{ window.BANNON_PERF_AUTO = false;
     if (window.BANNON_PERF && window.BANNON_PERF.setTier){ window.BANNON_PERF.setTier(t); return true; } }catch(e){} return false; };
   window.__rtFreeze = function(){ try{
@@ -699,6 +827,58 @@ function PROBE(){
 
   // FREEZE FIRST — every tier must photograph the SAME pose or the comparison is between two moments.
   const froze = await page.evaluate(() => window.__rtFreeze());
+
+  if (has('restcensus')){
+    const r = await page.evaluate(() => window.__rtRest(0));
+    console.log('\n===== REST ROTATION PER BONE (angle from identity) =====');
+    console.log('  Only bones far from identity can discriminate a clip\'s rotation convention.');
+    if (r.err) console.log('  ERROR: ' + r.err);
+    else {
+      for (const b of r) console.log('   ' + String(b.bone).padEnd(24) + String(b.restDeg).padStart(7) + ' deg   q ' + JSON.stringify(b.q));
+      fs.mkdirSync(OUT, { recursive:true });
+      fs.writeFileSync(path.join(OUT, 'rig_rest.json'), JSON.stringify(r, null, 1));
+      console.log('\n  rest quaternions -> ' + path.join(OUT, 'rig_rest.json'));
+    }
+    try{ await browser.close(); }catch(e){} try{ srv.close(); }catch(e){}
+    return;
+  }
+
+  // ── CLIP SCAN MODE ───────────────────────────────────────────────────────────────────────────
+  if (has('clipscan')){
+    const resident = await page.evaluate(() => window.__rtResident());
+    const want = String(str('clips', '')).split(',').filter(Boolean);
+    const names = want.length ? want : resident.slice(0, num('limit', 40));
+    console.log('\n===== WHICH CAPTURES INVERT THE LEGS =====');
+    console.log('  ' + resident.length + ' clips resident; scanning ' + names.length + ' at phase ' + num('phase', 0.5));
+    console.log('  dirY -1 = straight down. A standing leg is near -1; a leg folded up over the body is positive.');
+    const r = await page.evaluate(a => window.__rtClipScan(a[0], a[1], a[2]), [0, names, num('phase', 0.5)]);
+    if (r.err){ console.log('  ERROR: ' + r.err); }
+    else {
+      const bad = [], good = [];
+      for (const row of r.rows){
+        if (row.err){ console.log('   ' + String(row.clip).padEnd(34) + row.err); continue; }
+        const t = row.thighL, sh = row.shinL, ab = row.abs && row.abs.thighL;
+        const line = '   ' + String(row.clip).padEnd(30) +
+          String(row.legTracks == null ? '-' : row.legTracks + ' leg trk').padStart(10) +
+          '   rest*clip thighL ' + String(t ? t.dirY : '-').padStart(7) +
+          ' shinL ' + String(sh ? sh.dirY : '-').padStart(7) +
+          '   |  abs thighL ' + String(ab ? ab.dirY : '-').padStart(7) +
+          // RETRACTED FEATURE, PRINTED ONLY AS RAW NUMBERS. min-angle-to-identity was my first
+          // convention discriminator and it is confounded by acrobatic clips (a capoeira thigh
+          // genuinely reaches the orientation identity represents). The verdict now comes from the
+          // banked structural table (tools/harness/clip_truth.cjs); these are context, not a call.
+          '   |  minToIdentity ' + (row.fam ? row.fam.minFromIdentityDeg + ' deg' : '-');
+        if (t && t.dirY > 0){ bad.push(row.clip); console.log(line + '   <- LEGS UP'); }
+        else { good.push(row.clip); console.log(line); }
+      }
+      console.log('\n  ' + bad.length + ' capture(s) put the legs UP, ' + good.length + ' keep them down.');
+      if (bad.length) console.log('  legs-up: ' + bad.slice(0, 24).join(', '));
+      fs.mkdirSync(OUT, { recursive:true });
+      fs.writeFileSync(path.join(OUT,'clip_scan.json'), JSON.stringify(r, null, 1));
+    }
+    try{ await browser.close(); }catch(e){} try{ srv.close(); }catch(e){}
+    return;
+  }
   const rows = [];
   for (const t of TIERS){
     const set = await page.evaluate(tt => window.__rtTier(tt), t);

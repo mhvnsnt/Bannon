@@ -1,0 +1,3869 @@
+{
+ "note": "Measured on a real rig by assembling each clip under both compositions and reading limb direction. AMBIGUOUS and UNKNOWN clips are deliberately absent — the engine keeps its existing rest*clip behaviour for anything not listed here.",
+ "restBaseline": {
+  "thighL": -0.975,
+  "shinL": -0.969
+ },
+ "decided": 643,
+ "total": 973,
+ "clips": {
+  "ACTION_IDLE_TO_STANDING_IDLE": {
+   "absolute": true,
+   "margin": 5.269,
+   "offsetScore": 2.542,
+   "absoluteScore": -2.726
+  },
+  "ARMADA": {
+   "absolute": true,
+   "margin": 1.334,
+   "offsetScore": 0.801,
+   "absoluteScore": -0.533
+  },
+  "AU": {
+   "absolute": true,
+   "margin": 3.057,
+   "offsetScore": 1.692,
+   "absoluteScore": -1.364
+  },
+  "AU_DELAYED": {
+   "absolute": true,
+   "margin": 3.205,
+   "offsetScore": 1.345,
+   "absoluteScore": -1.86
+  },
+  "AU_HARD": {
+   "absolute": true,
+   "margin": 0.81,
+   "offsetScore": 0.207,
+   "absoluteScore": -0.603
+  },
+  "AU_KNEELING": {
+   "absolute": true,
+   "margin": 0.539,
+   "offsetScore": 0.194,
+   "absoluteScore": -0.345
+  },
+  "AU_MIRROR": {
+   "absolute": true,
+   "margin": 2.796,
+   "offsetScore": 1.02,
+   "absoluteScore": -1.776
+  },
+  "AU_SLOW": {
+   "absolute": true,
+   "margin": 2.108,
+   "offsetScore": 0.748,
+   "absoluteScore": -1.361
+  },
+  "AU_SNAP": {
+   "absolute": true,
+   "margin": 2.444,
+   "offsetScore": 0.994,
+   "absoluteScore": -1.45
+  },
+  "BACKDROP_360_FACE": {
+   "absolute": false,
+   "margin": 4.315,
+   "offsetScore": -1.469,
+   "absoluteScore": 2.846
+  },
+  "BACKDROP_360_FACE__RECV": {
+   "absolute": false,
+   "margin": 4.635,
+   "offsetScore": -2.041,
+   "absoluteScore": 2.593
+  },
+  "BASEBALL_HIT": {
+   "absolute": true,
+   "margin": 5.074,
+   "offsetScore": 2.568,
+   "absoluteScore": -2.506
+  },
+  "BASH": {
+   "absolute": true,
+   "margin": 4.794,
+   "offsetScore": 2.358,
+   "absoluteScore": -2.437
+  },
+  "BIG_BODY_BLOW": {
+   "absolute": true,
+   "margin": 0.808,
+   "offsetScore": -0.145,
+   "absoluteScore": -0.953
+  },
+  "BIG_JUMP": {
+   "absolute": true,
+   "margin": 0.85,
+   "offsetScore": 0.378,
+   "absoluteScore": -0.472
+  },
+  "BIG_RIB_HIT": {
+   "absolute": true,
+   "margin": 4.57,
+   "offsetScore": 2.22,
+   "absoluteScore": -2.35
+  },
+  "BODY_JAB_CROSS": {
+   "absolute": true,
+   "margin": 4.587,
+   "offsetScore": 2.267,
+   "absoluteScore": -2.321
+  },
+  "BOXING": {
+   "absolute": true,
+   "margin": 4.789,
+   "offsetScore": 2.404,
+   "absoluteScore": -2.385
+  },
+  "BOXING__1_": {
+   "absolute": true,
+   "margin": 5.236,
+   "offsetScore": 2.589,
+   "absoluteScore": -2.647
+  },
+  "BOXING__2_": {
+   "absolute": true,
+   "margin": 4.127,
+   "offsetScore": 1.819,
+   "absoluteScore": -2.308
+  },
+  "BOXING__3_": {
+   "absolute": true,
+   "margin": 4.919,
+   "offsetScore": 2.344,
+   "absoluteScore": -2.574
+  },
+  "BOXING__4_": {
+   "absolute": true,
+   "margin": 5.084,
+   "offsetScore": 2.502,
+   "absoluteScore": -2.583
+  },
+  "BOXING__5_": {
+   "absolute": true,
+   "margin": 4.875,
+   "offsetScore": 2.355,
+   "absoluteScore": -2.521
+  },
+  "BOX_IDLE": {
+   "absolute": true,
+   "margin": 5.674,
+   "offsetScore": 2.835,
+   "absoluteScore": -2.839
+  },
+  "BRACED_HANG_HOP_UP": {
+   "absolute": true,
+   "margin": 2.155,
+   "offsetScore": 0.995,
+   "absoluteScore": -1.16
+  },
+  "BRAINBUSTER_VERTICAL_SHEER": {
+   "absolute": false,
+   "margin": 3.907,
+   "offsetScore": -1.748,
+   "absoluteScore": 2.159
+  },
+  "BREAKDANCE_FOOTWORK_3": {
+   "absolute": true,
+   "margin": 1.69,
+   "offsetScore": 0.923,
+   "absoluteScore": -0.767
+  },
+  "BREAKDANCE_FOOTWORK_3__1_": {
+   "absolute": true,
+   "margin": 1.69,
+   "offsetScore": 0.923,
+   "absoluteScore": -0.767
+  },
+  "BREAKDANCE_FOOTWORK_TO_FREEZE": {
+   "absolute": true,
+   "margin": 1.293,
+   "offsetScore": 0.804,
+   "absoluteScore": -0.488
+  },
+  "BREAKDANCE_FREEZES": {
+   "absolute": false,
+   "margin": 0.36,
+   "offsetScore": -0.107,
+   "absoluteScore": 0.253
+  },
+  "BREAKDANCE_READY": {
+   "absolute": true,
+   "margin": 5.56,
+   "offsetScore": 2.787,
+   "absoluteScore": -2.773
+  },
+  "BREAKDANCE_UPROCK_TO_GROUND": {
+   "absolute": true,
+   "margin": 3.294,
+   "offsetScore": 1.756,
+   "absoluteScore": -1.538
+  },
+  "BROOKLYN_UPROCK": {
+   "absolute": true,
+   "margin": 1.218,
+   "offsetScore": 0.662,
+   "absoluteScore": -0.556
+  },
+  "BROOKLYN_UPROCK_DELAYED": {
+   "absolute": true,
+   "margin": 3.001,
+   "offsetScore": 1.547,
+   "absoluteScore": -1.454
+  },
+  "BROOKLYN_UPROCK_HARD": {
+   "absolute": true,
+   "margin": 2.817,
+   "offsetScore": 1.279,
+   "absoluteScore": -1.539
+  },
+  "BROOKLYN_UPROCK_KNEELING": {
+   "absolute": false,
+   "margin": 0.946,
+   "offsetScore": -0.35,
+   "absoluteScore": 0.596
+  },
+  "BROOKLYN_UPROCK_MIRROR": {
+   "absolute": true,
+   "margin": 0.604,
+   "offsetScore": 0.365,
+   "absoluteScore": -0.239
+  },
+  "BROOKLYN_UPROCK_SITOUT": {
+   "absolute": true,
+   "margin": 2.932,
+   "offsetScore": 1.515,
+   "absoluteScore": -1.417
+  },
+  "BROOKLYN_UPROCK_SLOW": {
+   "absolute": true,
+   "margin": 3.411,
+   "offsetScore": 1.693,
+   "absoluteScore": -1.719
+  },
+  "BROOKLYN_UPROCK_SNAP": {
+   "absolute": true,
+   "margin": 4.658,
+   "offsetScore": 2.346,
+   "absoluteScore": -2.313
+  },
+  "BRUTAL_ASSASSINATION": {
+   "absolute": true,
+   "margin": 3.672,
+   "offsetScore": 1.741,
+   "absoluteScore": -1.931
+  },
+  "BRUTAL_ASSASSINATION_DELAYED": {
+   "absolute": true,
+   "margin": 4.867,
+   "offsetScore": 2.416,
+   "absoluteScore": -2.451
+  },
+  "BRUTAL_ASSASSINATION_HARD": {
+   "absolute": true,
+   "margin": 4.851,
+   "offsetScore": 2.323,
+   "absoluteScore": -2.528
+  },
+  "BRUTAL_ASSASSINATION_MIRROR": {
+   "absolute": true,
+   "margin": 3.36,
+   "offsetScore": 1.682,
+   "absoluteScore": -1.679
+  },
+  "BRUTAL_ASSASSINATION_SITOUT": {
+   "absolute": true,
+   "margin": 2.847,
+   "offsetScore": 1.373,
+   "absoluteScore": -1.474
+  },
+  "BRUTAL_ASSASSINATION_SLOW": {
+   "absolute": true,
+   "margin": 4.338,
+   "offsetScore": 2.067,
+   "absoluteScore": -2.27
+  },
+  "BRUTAL_ASSASSINATION_SNAP": {
+   "absolute": true,
+   "margin": 3.55,
+   "offsetScore": 1.808,
+   "absoluteScore": -1.742
+  },
+  "CAN_CAN": {
+   "absolute": true,
+   "margin": 1.599,
+   "offsetScore": 0.81,
+   "absoluteScore": -0.789
+  },
+  "CAN_CAN_DELAYED": {
+   "absolute": true,
+   "margin": 3.685,
+   "offsetScore": 1.888,
+   "absoluteScore": -1.797
+  },
+  "CAN_CAN_HARD": {
+   "absolute": true,
+   "margin": 2.152,
+   "offsetScore": 1.291,
+   "absoluteScore": -0.861
+  },
+  "CAN_CAN_MIRROR": {
+   "absolute": true,
+   "margin": 1.563,
+   "offsetScore": 0.738,
+   "absoluteScore": -0.824
+  },
+  "CAN_CAN_SITOUT": {
+   "absolute": true,
+   "margin": 0.503,
+   "offsetScore": 0.147,
+   "absoluteScore": -0.356
+  },
+  "CAN_CAN_SLOW": {
+   "absolute": true,
+   "margin": 1.723,
+   "offsetScore": 0.725,
+   "absoluteScore": -0.998
+  },
+  "CAN_CAN_SNAP": {
+   "absolute": true,
+   "margin": 1.837,
+   "offsetScore": 1.062,
+   "absoluteScore": -0.776
+  },
+  "CAPOEIRA": {
+   "absolute": true,
+   "margin": 3.935,
+   "offsetScore": 1.913,
+   "absoluteScore": -2.022
+  },
+  "CAPOEIRA_DELAYED": {
+   "absolute": true,
+   "margin": 4.198,
+   "offsetScore": 2.143,
+   "absoluteScore": -2.055
+  },
+  "CAPOEIRA_HARD": {
+   "absolute": true,
+   "margin": 2.048,
+   "offsetScore": 1.062,
+   "absoluteScore": -0.986
+  },
+  "CAPOEIRA_KNEELING": {
+   "absolute": true,
+   "margin": 0.918,
+   "offsetScore": 0.511,
+   "absoluteScore": -0.407
+  },
+  "CAPOEIRA_MIRROR": {
+   "absolute": true,
+   "margin": 3.854,
+   "offsetScore": 2.075,
+   "absoluteScore": -1.779
+  },
+  "CAPOEIRA_SITOUT": {
+   "absolute": true,
+   "margin": 1.013,
+   "offsetScore": 0.523,
+   "absoluteScore": -0.49
+  },
+  "CAPOEIRA_SLOW": {
+   "absolute": true,
+   "margin": 2.474,
+   "offsetScore": 1.16,
+   "absoluteScore": -1.314
+  },
+  "CAPOEIRA_SNAP": {
+   "absolute": true,
+   "margin": 2.582,
+   "offsetScore": 1.334,
+   "absoluteScore": -1.249
+  },
+  "CAPOEIRA__1_": {
+   "absolute": true,
+   "margin": 2.076,
+   "offsetScore": 1.262,
+   "absoluteScore": -0.815
+  },
+  "CAPOEIRA__1__DELAYED": {
+   "absolute": true,
+   "margin": 3.039,
+   "offsetScore": 1.568,
+   "absoluteScore": -1.471
+  },
+  "CAPOEIRA__1__HARD": {
+   "absolute": true,
+   "margin": 2.369,
+   "offsetScore": 1.273,
+   "absoluteScore": -1.095
+  },
+  "CAPOEIRA__1__KNEELING": {
+   "absolute": false,
+   "margin": 0.391,
+   "offsetScore": -0.008,
+   "absoluteScore": 0.383
+  },
+  "CAPOEIRA__1__MIRROR": {
+   "absolute": true,
+   "margin": 2.512,
+   "offsetScore": 1.39,
+   "absoluteScore": -1.122
+  },
+  "CAPOEIRA__1__SITOUT": {
+   "absolute": true,
+   "margin": 2.558,
+   "offsetScore": 1.328,
+   "absoluteScore": -1.23
+  },
+  "CAPOEIRA__1__SLOW": {
+   "absolute": true,
+   "margin": 2.565,
+   "offsetScore": 0.804,
+   "absoluteScore": -1.761
+  },
+  "CAPOEIRA__1__SNAP": {
+   "absolute": true,
+   "margin": 2.537,
+   "offsetScore": 1.266,
+   "absoluteScore": -1.27
+  },
+  "CENTER_BLOCK": {
+   "absolute": true,
+   "margin": 4.438,
+   "offsetScore": 1.959,
+   "absoluteScore": -2.479
+  },
+  "CENTER_BLOCK_DELAYED": {
+   "absolute": true,
+   "margin": 4.493,
+   "offsetScore": 2.026,
+   "absoluteScore": -2.468
+  },
+  "CENTER_BLOCK_HARD": {
+   "absolute": true,
+   "margin": 4.412,
+   "offsetScore": 1.963,
+   "absoluteScore": -2.449
+  },
+  "CENTER_BLOCK_KNEELING": {
+   "absolute": true,
+   "margin": 1.389,
+   "offsetScore": 0.617,
+   "absoluteScore": -0.772
+  },
+  "CENTER_BLOCK_MIRROR": {
+   "absolute": true,
+   "margin": 4.671,
+   "offsetScore": 2.326,
+   "absoluteScore": -2.345
+  },
+  "CENTER_BLOCK_SITOUT": {
+   "absolute": true,
+   "margin": 3.433,
+   "offsetScore": 1.553,
+   "absoluteScore": -1.88
+  },
+  "CENTER_BLOCK_SLOW": {
+   "absolute": true,
+   "margin": 4.507,
+   "offsetScore": 2.029,
+   "absoluteScore": -2.478
+  },
+  "CENTER_BLOCK_SNAP": {
+   "absolute": true,
+   "margin": 3.937,
+   "offsetScore": 1.864,
+   "absoluteScore": -2.073
+  },
+  "CH06_NONPBR": {
+   "absolute": true,
+   "margin": 5.937,
+   "offsetScore": 2.945,
+   "absoluteScore": -2.991
+  },
+  "CH06_NONPBR_DELAYED": {
+   "absolute": true,
+   "margin": 5.937,
+   "offsetScore": 2.945,
+   "absoluteScore": -2.991
+  },
+  "CH06_NONPBR_HARD": {
+   "absolute": true,
+   "margin": 5.552,
+   "offsetScore": 2.767,
+   "absoluteScore": -2.785
+  },
+  "CH06_NONPBR_KNEELING": {
+   "absolute": true,
+   "margin": 2.114,
+   "offsetScore": 1.016,
+   "absoluteScore": -1.097
+  },
+  "CH06_NONPBR_MIRROR": {
+   "absolute": true,
+   "margin": 5.934,
+   "offsetScore": 2.941,
+   "absoluteScore": -2.993
+  },
+  "CH06_NONPBR_SITOUT": {
+   "absolute": true,
+   "margin": 4.757,
+   "offsetScore": 2.339,
+   "absoluteScore": -2.417
+  },
+  "CH06_NONPBR_SLOW": {
+   "absolute": true,
+   "margin": 5.937,
+   "offsetScore": 2.945,
+   "absoluteScore": -2.991
+  },
+  "CH06_NONPBR_SNAP": {
+   "absolute": true,
+   "margin": 5.937,
+   "offsetScore": 2.945,
+   "absoluteScore": -2.991
+  },
+  "CH24_NONPBR": {
+   "absolute": true,
+   "margin": 5.926,
+   "offsetScore": 2.93,
+   "absoluteScore": -2.996
+  },
+  "CH24_NONPBR_DELAYED": {
+   "absolute": true,
+   "margin": 5.926,
+   "offsetScore": 2.93,
+   "absoluteScore": -2.996
+  },
+  "CH24_NONPBR_HARD": {
+   "absolute": true,
+   "margin": 5.554,
+   "offsetScore": 2.761,
+   "absoluteScore": -2.792
+  },
+  "CH24_NONPBR_KNEELING": {
+   "absolute": true,
+   "margin": 2.085,
+   "offsetScore": 0.991,
+   "absoluteScore": -1.094
+  },
+  "CH24_NONPBR_MIRROR": {
+   "absolute": true,
+   "margin": 5.936,
+   "offsetScore": 2.938,
+   "absoluteScore": -2.998
+  },
+  "CH24_NONPBR_SITOUT": {
+   "absolute": true,
+   "margin": 4.731,
+   "offsetScore": 2.314,
+   "absoluteScore": -2.417
+  },
+  "CH24_NONPBR_SLOW": {
+   "absolute": true,
+   "margin": 5.926,
+   "offsetScore": 2.93,
+   "absoluteScore": -2.996
+  },
+  "CH24_NONPBR_SNAP": {
+   "absolute": true,
+   "margin": 5.926,
+   "offsetScore": 2.93,
+   "absoluteScore": -2.996
+  },
+  "CH44_NONPBR": {
+   "absolute": true,
+   "margin": 5.933,
+   "offsetScore": 2.935,
+   "absoluteScore": -2.998
+  },
+  "CH44_NONPBR_DELAYED": {
+   "absolute": true,
+   "margin": 5.933,
+   "offsetScore": 2.935,
+   "absoluteScore": -2.998
+  },
+  "CH44_NONPBR_HARD": {
+   "absolute": true,
+   "margin": 5.493,
+   "offsetScore": 2.704,
+   "absoluteScore": -2.79
+  },
+  "CH44_NONPBR_KNEELING": {
+   "absolute": true,
+   "margin": 2.267,
+   "offsetScore": 1.167,
+   "absoluteScore": -1.1
+  },
+  "CH44_NONPBR_MIRROR": {
+   "absolute": true,
+   "margin": 5.932,
+   "offsetScore": 2.934,
+   "absoluteScore": -2.998
+  },
+  "CH44_NONPBR_SITOUT": {
+   "absolute": true,
+   "margin": 4.847,
+   "offsetScore": 2.425,
+   "absoluteScore": -2.423
+  },
+  "CH44_NONPBR_SLOW": {
+   "absolute": true,
+   "margin": 5.933,
+   "offsetScore": 2.935,
+   "absoluteScore": -2.998
+  },
+  "CH44_NONPBR_SNAP": {
+   "absolute": true,
+   "margin": 5.933,
+   "offsetScore": 2.935,
+   "absoluteScore": -2.998
+  },
+  "CIPHER_FERAL_RUN": {
+   "absolute": false,
+   "margin": 3.791,
+   "offsetScore": -1.453,
+   "absoluteScore": 2.338
+  },
+  "CIPHER_FERAL_RUN_2": {
+   "absolute": false,
+   "margin": 1.929,
+   "offsetScore": 0.125,
+   "absoluteScore": 2.054
+  },
+  "CIPHER_FERAL_RUN_2__RECV": {
+   "absolute": false,
+   "margin": 1.117,
+   "offsetScore": -0.39,
+   "absoluteScore": 0.727
+  },
+  "CIPHER_FERAL_RUN__RECV": {
+   "absolute": false,
+   "margin": 1.983,
+   "offsetScore": 0.475,
+   "absoluteScore": 2.458
+  },
+  "CLIMBING_A_ROPE": {
+   "absolute": true,
+   "margin": 3.384,
+   "offsetScore": 1.527,
+   "absoluteScore": -1.857
+  },
+  "CLIMBING_A_ROPE_DELAYED": {
+   "absolute": true,
+   "margin": 4.478,
+   "offsetScore": 2.151,
+   "absoluteScore": -2.327
+  },
+  "CLIMBING_A_ROPE_HARD": {
+   "absolute": true,
+   "margin": 3.997,
+   "offsetScore": 2.011,
+   "absoluteScore": -1.985
+  },
+  "CLIMBING_A_ROPE_KNEELING": {
+   "absolute": true,
+   "margin": 1.987,
+   "offsetScore": 0.945,
+   "absoluteScore": -1.043
+  },
+  "CLIMBING_A_ROPE_MIRROR": {
+   "absolute": true,
+   "margin": 3.673,
+   "offsetScore": 1.849,
+   "absoluteScore": -1.824
+  },
+  "CLIMBING_A_ROPE_SITOUT": {
+   "absolute": true,
+   "margin": 2.402,
+   "offsetScore": 1.143,
+   "absoluteScore": -1.258
+  },
+  "CLIMBING_A_ROPE_SLOW": {
+   "absolute": true,
+   "margin": 1.932,
+   "offsetScore": 0.901,
+   "absoluteScore": -1.031
+  },
+  "CLIMBING_A_ROPE_SNAP": {
+   "absolute": true,
+   "margin": 4.656,
+   "offsetScore": 2.241,
+   "absoluteScore": -2.415
+  },
+  "CLIMBING_A_ROPE__1_": {
+   "absolute": true,
+   "margin": 2.817,
+   "offsetScore": 1.361,
+   "absoluteScore": -1.456
+  },
+  "CLIMBING_A_ROPE__1__DELAYED": {
+   "absolute": true,
+   "margin": 3.64,
+   "offsetScore": 1.764,
+   "absoluteScore": -1.876
+  },
+  "CLIMBING_A_ROPE__1__HARD": {
+   "absolute": true,
+   "margin": 3.111,
+   "offsetScore": 1.526,
+   "absoluteScore": -1.584
+  },
+  "CLIMBING_A_ROPE__1__KNEELING": {
+   "absolute": true,
+   "margin": 2.317,
+   "offsetScore": 1.157,
+   "absoluteScore": -1.16
+  },
+  "CLIMBING_A_ROPE__1__MIRROR": {
+   "absolute": true,
+   "margin": 2.752,
+   "offsetScore": 1.294,
+   "absoluteScore": -1.458
+  },
+  "CLIMBING_A_ROPE__1__SITOUT": {
+   "absolute": true,
+   "margin": 3.402,
+   "offsetScore": 1.658,
+   "absoluteScore": -1.743
+  },
+  "CLIMBING_A_ROPE__1__SLOW": {
+   "absolute": true,
+   "margin": 2.949,
+   "offsetScore": 1.429,
+   "absoluteScore": -1.52
+  },
+  "CLIMBING_A_ROPE__1__SNAP": {
+   "absolute": true,
+   "margin": 2.764,
+   "offsetScore": 1.335,
+   "absoluteScore": -1.428
+  },
+  "CLIMBING_UP_WALL": {
+   "absolute": true,
+   "margin": 3.091,
+   "offsetScore": 1.452,
+   "absoluteScore": -1.639
+  },
+  "CLIMBING_UP_WALL_DELAYED": {
+   "absolute": true,
+   "margin": 2.762,
+   "offsetScore": 1.282,
+   "absoluteScore": -1.48
+  },
+  "CLIMBING_UP_WALL_HARD": {
+   "absolute": true,
+   "margin": 2.505,
+   "offsetScore": 1.316,
+   "absoluteScore": -1.188
+  },
+  "CLIMBING_UP_WALL_KNEELING": {
+   "absolute": true,
+   "margin": 1.313,
+   "offsetScore": 0.552,
+   "absoluteScore": -0.761
+  },
+  "CLIMBING_UP_WALL_MIRROR": {
+   "absolute": true,
+   "margin": 3.222,
+   "offsetScore": 1.55,
+   "absoluteScore": -1.672
+  },
+  "CLIMBING_UP_WALL_SITOUT": {
+   "absolute": true,
+   "margin": 2.47,
+   "offsetScore": 1.205,
+   "absoluteScore": -1.265
+  },
+  "CLIMBING_UP_WALL_SLOW": {
+   "absolute": true,
+   "margin": 1.947,
+   "offsetScore": 0.971,
+   "absoluteScore": -0.975
+  },
+  "CLIMBING_UP_WALL_SNAP": {
+   "absolute": true,
+   "margin": 1.736,
+   "offsetScore": 0.616,
+   "absoluteScore": -1.12
+  },
+  "COMBO_PUNCH": {
+   "absolute": true,
+   "margin": 5.026,
+   "offsetScore": 2.518,
+   "absoluteScore": -2.508
+  },
+  "COMBO_PUNCH_DELAYED": {
+   "absolute": true,
+   "margin": 4.996,
+   "offsetScore": 2.481,
+   "absoluteScore": -2.515
+  },
+  "COMBO_PUNCH_HARD": {
+   "absolute": true,
+   "margin": 4.84,
+   "offsetScore": 2.341,
+   "absoluteScore": -2.5
+  },
+  "COMBO_PUNCH_KNEELING": {
+   "absolute": true,
+   "margin": 1.53,
+   "offsetScore": 0.871,
+   "absoluteScore": -0.659
+  },
+  "COMBO_PUNCH_MIRROR": {
+   "absolute": true,
+   "margin": 5.027,
+   "offsetScore": 2.586,
+   "absoluteScore": -2.441
+  },
+  "COMBO_PUNCH_SITOUT": {
+   "absolute": true,
+   "margin": 3.871,
+   "offsetScore": 2.012,
+   "absoluteScore": -1.859
+  },
+  "COMBO_PUNCH_SLOW": {
+   "absolute": true,
+   "margin": 4.972,
+   "offsetScore": 2.459,
+   "absoluteScore": -2.513
+  },
+  "COMBO_PUNCH_SNAP": {
+   "absolute": true,
+   "margin": 5,
+   "offsetScore": 2.493,
+   "absoluteScore": -2.507
+  },
+  "CORKSCREW_EVADE": {
+   "absolute": true,
+   "margin": 1.999,
+   "offsetScore": 1.127,
+   "absoluteScore": -0.872
+  },
+  "CORKSCREW_EVADE_DELAYED": {
+   "absolute": true,
+   "margin": 3.051,
+   "offsetScore": 1.874,
+   "absoluteScore": -1.177
+  },
+  "CORKSCREW_EVADE_HARD": {
+   "absolute": true,
+   "margin": 2.205,
+   "offsetScore": 1.175,
+   "absoluteScore": -1.031
+  },
+  "CORKSCREW_EVADE_MIRROR": {
+   "absolute": true,
+   "margin": 1.942,
+   "offsetScore": 0.948,
+   "absoluteScore": -0.994
+  },
+  "CORKSCREW_EVADE_SITOUT": {
+   "absolute": true,
+   "margin": 2.224,
+   "offsetScore": 1.346,
+   "absoluteScore": -0.878
+  },
+  "CORKSCREW_EVADE_SLOW": {
+   "absolute": true,
+   "margin": 2.351,
+   "offsetScore": 1.433,
+   "absoluteScore": -0.918
+  },
+  "CORKSCREW_EVADE_SNAP": {
+   "absolute": true,
+   "margin": 1.757,
+   "offsetScore": 0.831,
+   "absoluteScore": -0.926
+  },
+  "CORKSCREW_KIP_UP": {
+   "absolute": true,
+   "margin": 1.368,
+   "offsetScore": 0.636,
+   "absoluteScore": -0.732
+  },
+  "CORKSCREW_KIP_UP_DELAYED": {
+   "absolute": true,
+   "margin": 1.497,
+   "offsetScore": 0.826,
+   "absoluteScore": -0.672
+  },
+  "CORKSCREW_KIP_UP_HARD": {
+   "absolute": true,
+   "margin": 2.405,
+   "offsetScore": 1.321,
+   "absoluteScore": -1.084
+  },
+  "CORKSCREW_KIP_UP_KNEELING": {
+   "absolute": true,
+   "margin": 0.626,
+   "offsetScore": 0.274,
+   "absoluteScore": -0.352
+  },
+  "CORKSCREW_KIP_UP_MIRROR": {
+   "absolute": true,
+   "margin": 1.037,
+   "offsetScore": 0.138,
+   "absoluteScore": -0.899
+  },
+  "CORKSCREW_KIP_UP_SITOUT": {
+   "absolute": true,
+   "margin": 0.627,
+   "offsetScore": 0.244,
+   "absoluteScore": -0.383
+  },
+  "CORKSCREW_KIP_UP_SLOW": {
+   "absolute": true,
+   "margin": 0.939,
+   "offsetScore": 0.415,
+   "absoluteScore": -0.523
+  },
+  "CORKSCREW_KIP_UP_SNAP": {
+   "absolute": true,
+   "margin": 1.99,
+   "offsetScore": 0.935,
+   "absoluteScore": -1.055
+  },
+  "CROSS_JUMPS": {
+   "absolute": true,
+   "margin": 3.782,
+   "offsetScore": 2.004,
+   "absoluteScore": -1.778
+  },
+  "CROSS_JUMPS_DELAYED": {
+   "absolute": true,
+   "margin": 4.683,
+   "offsetScore": 2.34,
+   "absoluteScore": -2.343
+  },
+  "CROSS_JUMPS_HARD": {
+   "absolute": true,
+   "margin": 4.955,
+   "offsetScore": 2.38,
+   "absoluteScore": -2.576
+  },
+  "CROSS_JUMPS_MIRROR": {
+   "absolute": true,
+   "margin": 4.561,
+   "offsetScore": 2.304,
+   "absoluteScore": -2.258
+  },
+  "CROSS_JUMPS_SITOUT": {
+   "absolute": true,
+   "margin": 3.718,
+   "offsetScore": 1.85,
+   "absoluteScore": -1.869
+  },
+  "CROSS_JUMPS_SLOW": {
+   "absolute": true,
+   "margin": 5.701,
+   "offsetScore": 2.845,
+   "absoluteScore": -2.856
+  },
+  "CROSS_JUMPS_SNAP": {
+   "absolute": true,
+   "margin": 3.253,
+   "offsetScore": 1.563,
+   "absoluteScore": -1.69
+  },
+  "CROUCH_IDLE_02_LOOKING_AROUND": {
+   "absolute": true,
+   "margin": 2.547,
+   "offsetScore": 1.351,
+   "absoluteScore": -1.196
+  },
+  "CROUCH_IDLE_02_LOOKING_AROUND_DELAYED": {
+   "absolute": true,
+   "margin": 2.462,
+   "offsetScore": 1.33,
+   "absoluteScore": -1.133
+  },
+  "CROUCH_IDLE_02_LOOKING_AROUND_HARD": {
+   "absolute": true,
+   "margin": 2.011,
+   "offsetScore": 1.098,
+   "absoluteScore": -0.913
+  },
+  "CROUCH_IDLE_02_LOOKING_AROUND_KNEELING": {
+   "absolute": true,
+   "margin": 0.879,
+   "offsetScore": 0.604,
+   "absoluteScore": -0.275
+  },
+  "CROUCH_IDLE_02_LOOKING_AROUND_MIRROR": {
+   "absolute": true,
+   "margin": 1.629,
+   "offsetScore": 0.895,
+   "absoluteScore": -0.734
+  },
+  "CROUCH_IDLE_02_LOOKING_AROUND_SITOUT": {
+   "absolute": true,
+   "margin": 2.338,
+   "offsetScore": 1.283,
+   "absoluteScore": -1.054
+  },
+  "CROUCH_IDLE_02_LOOKING_AROUND_SLOW": {
+   "absolute": true,
+   "margin": 2.555,
+   "offsetScore": 1.359,
+   "absoluteScore": -1.196
+  },
+  "CROUCH_IDLE_02_LOOKING_AROUND_SNAP": {
+   "absolute": true,
+   "margin": 2.525,
+   "offsetScore": 1.339,
+   "absoluteScore": -1.186
+  },
+  "CROUCH_TORCH_WALK_RIGHT": {
+   "absolute": true,
+   "margin": 3.825,
+   "offsetScore": 1.992,
+   "absoluteScore": -1.832
+  },
+  "CROUCH_TORCH_WALK_RIGHT_DELAYED": {
+   "absolute": true,
+   "margin": 3.685,
+   "offsetScore": 1.796,
+   "absoluteScore": -1.889
+  },
+  "CROUCH_TORCH_WALK_RIGHT_HARD": {
+   "absolute": true,
+   "margin": 3.403,
+   "offsetScore": 1.643,
+   "absoluteScore": -1.76
+  },
+  "CROUCH_TORCH_WALK_RIGHT_KNEELING": {
+   "absolute": true,
+   "margin": 0.932,
+   "offsetScore": 0.59,
+   "absoluteScore": -0.342
+  },
+  "CROUCH_TORCH_WALK_RIGHT_MIRROR": {
+   "absolute": true,
+   "margin": 3.427,
+   "offsetScore": 1.746,
+   "absoluteScore": -1.681
+  },
+  "CROUCH_TORCH_WALK_RIGHT_SITOUT": {
+   "absolute": true,
+   "margin": 3.606,
+   "offsetScore": 1.787,
+   "absoluteScore": -1.819
+  },
+  "CROUCH_TORCH_WALK_RIGHT_SLOW": {
+   "absolute": true,
+   "margin": 3.966,
+   "offsetScore": 2.03,
+   "absoluteScore": -1.936
+  },
+  "CROUCH_TORCH_WALK_RIGHT_SNAP": {
+   "absolute": true,
+   "margin": 3.251,
+   "offsetScore": 1.546,
+   "absoluteScore": -1.706
+  },
+  "CROUCH_WALK_FORWARD": {
+   "absolute": true,
+   "margin": 4.111,
+   "offsetScore": 2.091,
+   "absoluteScore": -2.019
+  },
+  "CROUCH_WALK_FORWARD_DELAYED": {
+   "absolute": true,
+   "margin": 4.076,
+   "offsetScore": 2.018,
+   "absoluteScore": -2.058
+  },
+  "CROUCH_WALK_FORWARD_HARD": {
+   "absolute": true,
+   "margin": 3.268,
+   "offsetScore": 1.568,
+   "absoluteScore": -1.7
+  },
+  "CROUCH_WALK_FORWARD_KNEELING": {
+   "absolute": true,
+   "margin": 2.12,
+   "offsetScore": 1.331,
+   "absoluteScore": -0.789
+  },
+  "CROUCH_WALK_FORWARD_MIRROR": {
+   "absolute": true,
+   "margin": 3.867,
+   "offsetScore": 1.907,
+   "absoluteScore": -1.96
+  },
+  "CROUCH_WALK_FORWARD_SITOUT": {
+   "absolute": true,
+   "margin": 3.488,
+   "offsetScore": 1.906,
+   "absoluteScore": -1.582
+  },
+  "CROUCH_WALK_FORWARD_SLOW": {
+   "absolute": true,
+   "margin": 3.268,
+   "offsetScore": 1.675,
+   "absoluteScore": -1.592
+  },
+  "CROUCH_WALK_FORWARD_SNAP": {
+   "absolute": true,
+   "margin": 3.86,
+   "offsetScore": 1.912,
+   "absoluteScore": -1.948
+  },
+  "DANCING": {
+   "absolute": true,
+   "margin": 5.097,
+   "offsetScore": 2.567,
+   "absoluteScore": -2.53
+  },
+  "DANCING_DELAYED": {
+   "absolute": true,
+   "margin": 4.925,
+   "offsetScore": 2.478,
+   "absoluteScore": -2.448
+  },
+  "DANCING_HARD": {
+   "absolute": true,
+   "margin": 5.225,
+   "offsetScore": 2.591,
+   "absoluteScore": -2.634
+  },
+  "DANCING_KNEELING": {
+   "absolute": true,
+   "margin": 0.895,
+   "offsetScore": 0.513,
+   "absoluteScore": -0.382
+  },
+  "DANCING_MIRROR": {
+   "absolute": true,
+   "margin": 5.004,
+   "offsetScore": 2.474,
+   "absoluteScore": -2.53
+  },
+  "DANCING_RUNNING_MAN": {
+   "absolute": true,
+   "margin": 3.391,
+   "offsetScore": 1.665,
+   "absoluteScore": -1.726
+  },
+  "DANCING_RUNNING_MAN_DELAYED": {
+   "absolute": true,
+   "margin": 4.544,
+   "offsetScore": 2.317,
+   "absoluteScore": -2.227
+  },
+  "DANCING_RUNNING_MAN_HARD": {
+   "absolute": true,
+   "margin": 4.368,
+   "offsetScore": 2.177,
+   "absoluteScore": -2.191
+  },
+  "DANCING_RUNNING_MAN_KNEELING": {
+   "absolute": true,
+   "margin": 0.855,
+   "offsetScore": 0.495,
+   "absoluteScore": -0.36
+  },
+  "DANCING_RUNNING_MAN_MIRROR": {
+   "absolute": true,
+   "margin": 3.74,
+   "offsetScore": 1.941,
+   "absoluteScore": -1.798
+  },
+  "DANCING_RUNNING_MAN_SITOUT": {
+   "absolute": true,
+   "margin": 4.133,
+   "offsetScore": 2.127,
+   "absoluteScore": -2.005
+  },
+  "DANCING_RUNNING_MAN_SLOW": {
+   "absolute": true,
+   "margin": 4.658,
+   "offsetScore": 2.394,
+   "absoluteScore": -2.265
+  },
+  "DANCING_RUNNING_MAN_SNAP": {
+   "absolute": true,
+   "margin": 4.584,
+   "offsetScore": 2.335,
+   "absoluteScore": -2.249
+  },
+  "DANCING_SITOUT": {
+   "absolute": true,
+   "margin": 3.296,
+   "offsetScore": 1.678,
+   "absoluteScore": -1.617
+  },
+  "DANCING_SLOW": {
+   "absolute": true,
+   "margin": 4.94,
+   "offsetScore": 2.474,
+   "absoluteScore": -2.466
+  },
+  "DANCING_SNAP": {
+   "absolute": true,
+   "margin": 4.95,
+   "offsetScore": 2.479,
+   "absoluteScore": -2.471
+  },
+  "DANCING_TWERK": {
+   "absolute": true,
+   "margin": 4.125,
+   "offsetScore": 2.117,
+   "absoluteScore": -2.008
+  },
+  "DANCING_TWERK_DELAYED": {
+   "absolute": true,
+   "margin": 5.136,
+   "offsetScore": 2.597,
+   "absoluteScore": -2.539
+  },
+  "DANCING_TWERK_HARD": {
+   "absolute": true,
+   "margin": 5.089,
+   "offsetScore": 2.551,
+   "absoluteScore": -2.538
+  },
+  "DANCING_TWERK_MIRROR": {
+   "absolute": true,
+   "margin": 4.191,
+   "offsetScore": 2.096,
+   "absoluteScore": -2.094
+  },
+  "DANCING_TWERK_SITOUT": {
+   "absolute": true,
+   "margin": 2.755,
+   "offsetScore": 1.444,
+   "absoluteScore": -1.311
+  },
+  "DANCING_TWERK_SLOW": {
+   "absolute": true,
+   "margin": 4.202,
+   "offsetScore": 2.165,
+   "absoluteScore": -2.037
+  },
+  "DANCING_TWERK_SNAP": {
+   "absolute": true,
+   "margin": 4.684,
+   "offsetScore": 2.388,
+   "absoluteScore": -2.296
+  },
+  "DANCING__1_": {
+   "absolute": true,
+   "margin": 4.891,
+   "offsetScore": 2.467,
+   "absoluteScore": -2.423
+  },
+  "DANCING__1__DELAYED": {
+   "absolute": true,
+   "margin": 4.751,
+   "offsetScore": 2.397,
+   "absoluteScore": -2.353
+  },
+  "DANCING__1__HARD": {
+   "absolute": true,
+   "margin": 5.223,
+   "offsetScore": 2.603,
+   "absoluteScore": -2.62
+  },
+  "DANCING__1__KNEELING": {
+   "absolute": true,
+   "margin": 0.487,
+   "offsetScore": 0.302,
+   "absoluteScore": -0.185
+  },
+  "DANCING__1__MIRROR": {
+   "absolute": true,
+   "margin": 4.783,
+   "offsetScore": 2.389,
+   "absoluteScore": -2.394
+  },
+  "DANCING__1__SITOUT": {
+   "absolute": true,
+   "margin": 2.921,
+   "offsetScore": 1.492,
+   "absoluteScore": -1.429
+  },
+  "DANCING__1__SLOW": {
+   "absolute": true,
+   "margin": 4.759,
+   "offsetScore": 2.394,
+   "absoluteScore": -2.365
+  },
+  "DANCING__1__SNAP": {
+   "absolute": true,
+   "margin": 4.758,
+   "offsetScore": 2.395,
+   "absoluteScore": -2.363
+  },
+  "DANCING__2_": {
+   "absolute": true,
+   "margin": 2.227,
+   "offsetScore": 0.983,
+   "absoluteScore": -1.245
+  },
+  "DANCING__2__DELAYED": {
+   "absolute": true,
+   "margin": 2.889,
+   "offsetScore": 1.482,
+   "absoluteScore": -1.407
+  },
+  "DANCING__2__KNEELING": {
+   "absolute": true,
+   "margin": 1.051,
+   "offsetScore": 0.611,
+   "absoluteScore": -0.44
+  },
+  "DANCING__2__MIRROR": {
+   "absolute": true,
+   "margin": 3.046,
+   "offsetScore": 1.502,
+   "absoluteScore": -1.544
+  },
+  "DANCING__2__SLOW": {
+   "absolute": true,
+   "margin": 2.337,
+   "offsetScore": 1.173,
+   "absoluteScore": -1.164
+  },
+  "DANCING__2__SNAP": {
+   "absolute": true,
+   "margin": 0.488,
+   "offsetScore": 0.247,
+   "absoluteScore": -0.242
+  },
+  "DEATH_FROM_BACK_HEADSHOT": {
+   "absolute": true,
+   "margin": 3,
+   "offsetScore": 1.577,
+   "absoluteScore": -1.423
+  },
+  "DEATH_FROM_BACK_HEADSHOT_DELAYED": {
+   "absolute": true,
+   "margin": 4.802,
+   "offsetScore": 2.39,
+   "absoluteScore": -2.412
+  },
+  "DEATH_FROM_BACK_HEADSHOT_HARD": {
+   "absolute": true,
+   "margin": 4.441,
+   "offsetScore": 2.17,
+   "absoluteScore": -2.27
+  },
+  "DEATH_FROM_BACK_HEADSHOT_KNEELING": {
+   "absolute": true,
+   "margin": 1.021,
+   "offsetScore": 0.655,
+   "absoluteScore": -0.366
+  },
+  "DEATH_FROM_BACK_HEADSHOT_MIRROR": {
+   "absolute": true,
+   "margin": 2.724,
+   "offsetScore": 1.563,
+   "absoluteScore": -1.161
+  },
+  "DEATH_FROM_BACK_HEADSHOT_SITOUT": {
+   "absolute": true,
+   "margin": 3.206,
+   "offsetScore": 1.715,
+   "absoluteScore": -1.491
+  },
+  "DEATH_FROM_BACK_HEADSHOT_SLOW": {
+   "absolute": true,
+   "margin": 2.871,
+   "offsetScore": 1.5,
+   "absoluteScore": -1.371
+  },
+  "DEATH_FROM_BACK_HEADSHOT_SNAP": {
+   "absolute": true,
+   "margin": 4.563,
+   "offsetScore": 2.274,
+   "absoluteScore": -2.289
+  },
+  "DEFEAT": {
+   "absolute": true,
+   "margin": 5.592,
+   "offsetScore": 2.8,
+   "absoluteScore": -2.792
+  },
+  "DEFEAT_DELAYED": {
+   "absolute": true,
+   "margin": 5.565,
+   "offsetScore": 2.788,
+   "absoluteScore": -2.778
+  },
+  "DEFEAT_HARD": {
+   "absolute": true,
+   "margin": 5.291,
+   "offsetScore": 2.62,
+   "absoluteScore": -2.671
+  },
+  "DEFEAT_KNEELING": {
+   "absolute": true,
+   "margin": 1.858,
+   "offsetScore": 0.979,
+   "absoluteScore": -0.879
+  },
+  "DEFEAT_MIRROR": {
+   "absolute": true,
+   "margin": 5.6,
+   "offsetScore": 2.802,
+   "absoluteScore": -2.799
+  },
+  "DEFEAT_SITOUT": {
+   "absolute": true,
+   "margin": 4.414,
+   "offsetScore": 2.247,
+   "absoluteScore": -2.166
+  },
+  "DEFEAT_SLOW": {
+   "absolute": true,
+   "margin": 5.625,
+   "offsetScore": 2.816,
+   "absoluteScore": -2.81
+  },
+  "DEFEAT_SNAP": {
+   "absolute": true,
+   "margin": 5.586,
+   "offsetScore": 2.798,
+   "absoluteScore": -2.789
+  },
+  "DEFENDER_DELAYED": {
+   "absolute": true,
+   "margin": 2.414,
+   "offsetScore": 0.857,
+   "absoluteScore": -1.557
+  },
+  "DEFENDER_HARD": {
+   "absolute": true,
+   "margin": 3.357,
+   "offsetScore": 1.591,
+   "absoluteScore": -1.765
+  },
+  "DEFENDER_SITOUT": {
+   "absolute": true,
+   "margin": 2.027,
+   "offsetScore": 0.823,
+   "absoluteScore": -1.204
+  },
+  "DEFENDER_SLOW": {
+   "absolute": true,
+   "margin": 0.808,
+   "offsetScore": 0.657,
+   "absoluteScore": -0.152
+  },
+  "DEFENDER_SNAP": {
+   "absolute": true,
+   "margin": 1.594,
+   "offsetScore": 0.884,
+   "absoluteScore": -0.71
+  },
+  "DIVING_HEADBUTT_GABLE": {
+   "absolute": false,
+   "margin": 4.517,
+   "offsetScore": -2.273,
+   "absoluteScore": 2.243
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM_DELAYED": {
+   "absolute": true,
+   "margin": 2.958,
+   "offsetScore": 1.378,
+   "absoluteScore": -1.58
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM_HARD": {
+   "absolute": true,
+   "margin": 1.977,
+   "offsetScore": 0.895,
+   "absoluteScore": -1.082
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM_KNEELING": {
+   "absolute": true,
+   "margin": 1.488,
+   "offsetScore": 0.83,
+   "absoluteScore": -0.658
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM_SITOUT": {
+   "absolute": true,
+   "margin": 1.277,
+   "offsetScore": 0.617,
+   "absoluteScore": -0.66
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM_SLOW": {
+   "absolute": false,
+   "margin": 1.348,
+   "offsetScore": -0.806,
+   "absoluteScore": 0.542
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM_SNAP": {
+   "absolute": true,
+   "margin": 2.098,
+   "offsetScore": 0.95,
+   "absoluteScore": -1.148
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM__1_": {
+   "absolute": false,
+   "margin": 0.553,
+   "offsetScore": -0.346,
+   "absoluteScore": 0.207
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM__1__DELAYED": {
+   "absolute": true,
+   "margin": 3.446,
+   "offsetScore": 1.652,
+   "absoluteScore": -1.795
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM__1__HARD": {
+   "absolute": true,
+   "margin": 2.633,
+   "offsetScore": 1.241,
+   "absoluteScore": -1.392
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM__1__KNEELING": {
+   "absolute": true,
+   "margin": 1.126,
+   "offsetScore": 0.661,
+   "absoluteScore": -0.465
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM__1__MIRROR": {
+   "absolute": false,
+   "margin": 0.913,
+   "offsetScore": -0.533,
+   "absoluteScore": 0.38
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM__1__SITOUT": {
+   "absolute": true,
+   "margin": 1.614,
+   "offsetScore": 0.833,
+   "absoluteScore": -0.781
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM__1__SLOW": {
+   "absolute": false,
+   "margin": 1.571,
+   "offsetScore": -0.869,
+   "absoluteScore": 0.702
+  },
+  "DOUBLE_LEG_TAKEDOWN___VICTIM__1__SNAP": {
+   "absolute": true,
+   "margin": 2.308,
+   "offsetScore": 1.126,
+   "absoluteScore": -1.181
+  },
+  "DROP_KICK": {
+   "absolute": true,
+   "margin": 3.527,
+   "offsetScore": 1.737,
+   "absoluteScore": -1.79
+  },
+  "DROP_KICK_DELAYED": {
+   "absolute": true,
+   "margin": 3.82,
+   "offsetScore": 1.834,
+   "absoluteScore": -1.986
+  },
+  "DROP_KICK_HARD": {
+   "absolute": true,
+   "margin": 4.297,
+   "offsetScore": 2.176,
+   "absoluteScore": -2.121
+  },
+  "DROP_KICK_KNEELING": {
+   "absolute": true,
+   "margin": 0.943,
+   "offsetScore": 0.391,
+   "absoluteScore": -0.552
+  },
+  "DROP_KICK_MIRROR": {
+   "absolute": true,
+   "margin": 2.757,
+   "offsetScore": 1.306,
+   "absoluteScore": -1.451
+  },
+  "DROP_KICK_SITOUT": {
+   "absolute": true,
+   "margin": 2.848,
+   "offsetScore": 1.553,
+   "absoluteScore": -1.296
+  },
+  "DROP_KICK_SLOW": {
+   "absolute": true,
+   "margin": 3.407,
+   "offsetScore": 1.781,
+   "absoluteScore": -1.626
+  },
+  "DROP_KICK_SNAP": {
+   "absolute": true,
+   "margin": 3.458,
+   "offsetScore": 1.765,
+   "absoluteScore": -1.692
+  },
+  "DROP_KICK__1_": {
+   "absolute": true,
+   "margin": 3.559,
+   "offsetScore": 1.792,
+   "absoluteScore": -1.766
+  },
+  "DROP_KICK__1__DELAYED": {
+   "absolute": true,
+   "margin": 3.582,
+   "offsetScore": 1.822,
+   "absoluteScore": -1.76
+  },
+  "DROP_KICK__1__HARD": {
+   "absolute": true,
+   "margin": 4.42,
+   "offsetScore": 2.252,
+   "absoluteScore": -2.168
+  },
+  "DROP_KICK__1__KNEELING": {
+   "absolute": true,
+   "margin": 0.778,
+   "offsetScore": 0.352,
+   "absoluteScore": -0.426
+  },
+  "DROP_KICK__1__MIRROR": {
+   "absolute": true,
+   "margin": 2.676,
+   "offsetScore": 1.301,
+   "absoluteScore": -1.375
+  },
+  "DROP_KICK__1__SITOUT": {
+   "absolute": true,
+   "margin": 2.606,
+   "offsetScore": 1.522,
+   "absoluteScore": -1.084
+  },
+  "DROP_KICK__1__SLOW": {
+   "absolute": true,
+   "margin": 3.337,
+   "offsetScore": 1.799,
+   "absoluteScore": -1.537
+  },
+  "DROP_KICK__1__SNAP": {
+   "absolute": true,
+   "margin": 3.178,
+   "offsetScore": 1.654,
+   "absoluteScore": -1.524
+  },
+  "DRUNK_IDLE_VARIATION": {
+   "absolute": true,
+   "margin": 5.864,
+   "offsetScore": 2.911,
+   "absoluteScore": -2.953
+  },
+  "DRUNK_IDLE_VARIATION_DELAYED": {
+   "absolute": true,
+   "margin": 5.873,
+   "offsetScore": 2.912,
+   "absoluteScore": -2.961
+  },
+  "DRUNK_IDLE_VARIATION_HARD": {
+   "absolute": true,
+   "margin": 5.614,
+   "offsetScore": 2.766,
+   "absoluteScore": -2.847
+  },
+  "DRUNK_IDLE_VARIATION_KNEELING": {
+   "absolute": true,
+   "margin": 1.899,
+   "offsetScore": 0.956,
+   "absoluteScore": -0.943
+  },
+  "DRUNK_IDLE_VARIATION_MIRROR": {
+   "absolute": true,
+   "margin": 5.86,
+   "offsetScore": 2.925,
+   "absoluteScore": -2.935
+  },
+  "DRUNK_IDLE_VARIATION_SITOUT": {
+   "absolute": true,
+   "margin": 4.566,
+   "offsetScore": 2.281,
+   "absoluteScore": -2.285
+  },
+  "DRUNK_IDLE_VARIATION_SLOW": {
+   "absolute": true,
+   "margin": 5.862,
+   "offsetScore": 2.909,
+   "absoluteScore": -2.953
+  },
+  "DRUNK_IDLE_VARIATION_SNAP": {
+   "absolute": true,
+   "margin": 5.876,
+   "offsetScore": 2.915,
+   "absoluteScore": -2.961
+  },
+  "DRUNK_RUN_FORWARD": {
+   "absolute": true,
+   "margin": 3.319,
+   "offsetScore": 1.62,
+   "absoluteScore": -1.699
+  },
+  "DRUNK_RUN_FORWARD_DELAYED": {
+   "absolute": true,
+   "margin": 4.048,
+   "offsetScore": 2.034,
+   "absoluteScore": -2.014
+  },
+  "DRUNK_RUN_FORWARD_HARD": {
+   "absolute": true,
+   "margin": 3.641,
+   "offsetScore": 1.84,
+   "absoluteScore": -1.801
+  },
+  "DRUNK_RUN_FORWARD_KNEELING": {
+   "absolute": true,
+   "margin": 0.52,
+   "offsetScore": 0.158,
+   "absoluteScore": -0.362
+  },
+  "DRUNK_RUN_FORWARD_MIRROR": {
+   "absolute": true,
+   "margin": 3.015,
+   "offsetScore": 1.61,
+   "absoluteScore": -1.405
+  },
+  "DRUNK_RUN_FORWARD_SITOUT": {
+   "absolute": true,
+   "margin": 3.723,
+   "offsetScore": 1.731,
+   "absoluteScore": -1.992
+  },
+  "DRUNK_RUN_FORWARD_SLOW": {
+   "absolute": true,
+   "margin": 4.188,
+   "offsetScore": 2.081,
+   "absoluteScore": -2.107
+  },
+  "DRUNK_RUN_FORWARD_SNAP": {
+   "absolute": true,
+   "margin": 1.074,
+   "offsetScore": 0.537,
+   "absoluteScore": -0.537
+  },
+  "DRUNK_WALK": {
+   "absolute": true,
+   "margin": 2.859,
+   "offsetScore": 1.481,
+   "absoluteScore": -1.379
+  },
+  "DRUNK_WALK_DELAYED": {
+   "absolute": true,
+   "margin": 4.097,
+   "offsetScore": 2.08,
+   "absoluteScore": -2.016
+  },
+  "DRUNK_WALK_HARD": {
+   "absolute": true,
+   "margin": 3.38,
+   "offsetScore": 1.767,
+   "absoluteScore": -1.613
+  },
+  "DRUNK_WALK_MIRROR": {
+   "absolute": true,
+   "margin": 2.502,
+   "offsetScore": 1.3,
+   "absoluteScore": -1.202
+  },
+  "DRUNK_WALK_SITOUT": {
+   "absolute": true,
+   "margin": 1.926,
+   "offsetScore": 0.869,
+   "absoluteScore": -1.057
+  },
+  "DRUNK_WALK_SLOW": {
+   "absolute": true,
+   "margin": 3.884,
+   "offsetScore": 1.877,
+   "absoluteScore": -2.007
+  },
+  "DRUNK_WALK_SNAP": {
+   "absolute": true,
+   "margin": 4.241,
+   "offsetScore": 2.181,
+   "absoluteScore": -2.06
+  },
+  "DWARF_WALK": {
+   "absolute": true,
+   "margin": 5.121,
+   "offsetScore": 2.498,
+   "absoluteScore": -2.623
+  },
+  "DWARF_WALK_DELAYED": {
+   "absolute": true,
+   "margin": 5.331,
+   "offsetScore": 2.578,
+   "absoluteScore": -2.752
+  },
+  "DWARF_WALK_HARD": {
+   "absolute": true,
+   "margin": 3.707,
+   "offsetScore": 1.895,
+   "absoluteScore": -1.812
+  },
+  "DWARF_WALK_KNEELING": {
+   "absolute": true,
+   "margin": 1.499,
+   "offsetScore": 0.612,
+   "absoluteScore": -0.887
+  },
+  "DWARF_WALK_MIRROR": {
+   "absolute": true,
+   "margin": 4.993,
+   "offsetScore": 2.515,
+   "absoluteScore": -2.478
+  },
+  "DWARF_WALK_SITOUT": {
+   "absolute": true,
+   "margin": 1.52,
+   "offsetScore": 0.722,
+   "absoluteScore": -0.798
+  },
+  "DWARF_WALK_SLOW": {
+   "absolute": true,
+   "margin": 3.125,
+   "offsetScore": 1.633,
+   "absoluteScore": -1.492
+  },
+  "DWARF_WALK_SNAP": {
+   "absolute": true,
+   "margin": 4.78,
+   "offsetScore": 2.284,
+   "absoluteScore": -2.496
+  },
+  "DYING_BACKWARDS": {
+   "absolute": true,
+   "margin": 1.693,
+   "offsetScore": 0.797,
+   "absoluteScore": -0.895
+  },
+  "DYING_BACKWARDS_DELAYED": {
+   "absolute": true,
+   "margin": 4.261,
+   "offsetScore": 2.107,
+   "absoluteScore": -2.154
+  },
+  "DYING_BACKWARDS_HARD": {
+   "absolute": true,
+   "margin": 3.252,
+   "offsetScore": 1.597,
+   "absoluteScore": -1.655
+  },
+  "DYING_BACKWARDS_KNEELING": {
+   "absolute": true,
+   "margin": 1.858,
+   "offsetScore": 0.945,
+   "absoluteScore": -0.912
+  },
+  "DYING_BACKWARDS_MIRROR": {
+   "absolute": true,
+   "margin": 1.699,
+   "offsetScore": 0.795,
+   "absoluteScore": -0.905
+  },
+  "DYING_BACKWARDS_SITOUT": {
+   "absolute": true,
+   "margin": 2.86,
+   "offsetScore": 1.405,
+   "absoluteScore": -1.454
+  },
+  "DYING_BACKWARDS_SLOW": {
+   "absolute": true,
+   "margin": 0.598,
+   "offsetScore": 0.234,
+   "absoluteScore": -0.363
+  },
+  "DYING_BACKWARDS_SNAP": {
+   "absolute": true,
+   "margin": 3.406,
+   "offsetScore": 1.666,
+   "absoluteScore": -1.74
+  },
+  "ESQUIVA_3": {
+   "absolute": true,
+   "margin": 3.154,
+   "offsetScore": 1.729,
+   "absoluteScore": -1.425
+  },
+  "ESQUIVA_3_DELAYED": {
+   "absolute": true,
+   "margin": 3.232,
+   "offsetScore": 1.585,
+   "absoluteScore": -1.647
+  },
+  "ESQUIVA_3_HARD": {
+   "absolute": true,
+   "margin": 2.969,
+   "offsetScore": 1.449,
+   "absoluteScore": -1.52
+  },
+  "ESQUIVA_3_MIRROR": {
+   "absolute": true,
+   "margin": 3.032,
+   "offsetScore": 1.535,
+   "absoluteScore": -1.498
+  },
+  "ESQUIVA_3_SITOUT": {
+   "absolute": true,
+   "margin": 2.125,
+   "offsetScore": 1.212,
+   "absoluteScore": -0.912
+  },
+  "ESQUIVA_3_SLOW": {
+   "absolute": true,
+   "margin": 3.224,
+   "offsetScore": 1.765,
+   "absoluteScore": -1.459
+  },
+  "ESQUIVA_3_SNAP": {
+   "absolute": true,
+   "margin": 2.533,
+   "offsetScore": 1.38,
+   "absoluteScore": -1.152
+  },
+  "ESQUIVA_4": {
+   "absolute": true,
+   "margin": 2.492,
+   "offsetScore": 1.199,
+   "absoluteScore": -1.293
+  },
+  "ESQUIVA_4_DELAYED": {
+   "absolute": true,
+   "margin": 3.618,
+   "offsetScore": 1.77,
+   "absoluteScore": -1.848
+  },
+  "ESQUIVA_4_HARD": {
+   "absolute": true,
+   "margin": 2.388,
+   "offsetScore": 1.213,
+   "absoluteScore": -1.175
+  },
+  "ESQUIVA_4_MIRROR": {
+   "absolute": true,
+   "margin": 3.356,
+   "offsetScore": 1.538,
+   "absoluteScore": -1.819
+  },
+  "ESQUIVA_4_SITOUT": {
+   "absolute": true,
+   "margin": 2.143,
+   "offsetScore": 1.188,
+   "absoluteScore": -0.956
+  },
+  "ESQUIVA_4_SLOW": {
+   "absolute": true,
+   "margin": 2.565,
+   "offsetScore": 1.483,
+   "absoluteScore": -1.082
+  },
+  "ESQUIVA_4_SNAP": {
+   "absolute": true,
+   "margin": 3.335,
+   "offsetScore": 1.792,
+   "absoluteScore": -1.543
+  },
+  "ESQUIVA_4__1_": {
+   "absolute": true,
+   "margin": 2.748,
+   "offsetScore": 1.532,
+   "absoluteScore": -1.217
+  },
+  "ESQUIVA_4__1__DELAYED": {
+   "absolute": true,
+   "margin": 3.117,
+   "offsetScore": 1.509,
+   "absoluteScore": -1.608
+  },
+  "ESQUIVA_4__1__HARD": {
+   "absolute": true,
+   "margin": 1.783,
+   "offsetScore": 0.91,
+   "absoluteScore": -0.873
+  },
+  "ESQUIVA_4__1__KNEELING": {
+   "absolute": true,
+   "margin": 0.626,
+   "offsetScore": 0.451,
+   "absoluteScore": -0.175
+  },
+  "ESQUIVA_4__1__MIRROR": {
+   "absolute": true,
+   "margin": 3.214,
+   "offsetScore": 1.502,
+   "absoluteScore": -1.712
+  },
+  "ESQUIVA_4__1__SITOUT": {
+   "absolute": true,
+   "margin": 1.104,
+   "offsetScore": 0.738,
+   "absoluteScore": -0.366
+  },
+  "ESQUIVA_4__1__SLOW": {
+   "absolute": true,
+   "margin": 3.03,
+   "offsetScore": 1.659,
+   "absoluteScore": -1.37
+  },
+  "ESQUIVA_4__1__SNAP": {
+   "absolute": true,
+   "margin": 2.871,
+   "offsetScore": 1.487,
+   "absoluteScore": -1.383
+  },
+  "F5": {
+   "absolute": true,
+   "margin": 0.364,
+   "offsetScore": 0.593,
+   "absoluteScore": 0.23
+  },
+  "FALCON_ARROW_GROUNDED": {
+   "absolute": true,
+   "margin": 1.21,
+   "offsetScore": 0.746,
+   "absoluteScore": -0.464
+  },
+  "FALCON_ARROW_GROUNDED__RECV": {
+   "absolute": false,
+   "margin": 2,
+   "offsetScore": -0.82,
+   "absoluteScore": 1.18
+  },
+  "FALCON_ARROW_STANDING": {
+   "absolute": false,
+   "margin": 3.017,
+   "offsetScore": -1.582,
+   "absoluteScore": 1.435
+  },
+  "FALCON_ARROW_STANDING__RECV": {
+   "absolute": false,
+   "margin": 2.179,
+   "offsetScore": -0.515,
+   "absoluteScore": 1.664
+  },
+  "FALLING_FLAT_IMPACT_DELAYED": {
+   "absolute": false,
+   "margin": 1.521,
+   "offsetScore": -0.65,
+   "absoluteScore": 0.871
+  },
+  "FALLING_FLAT_IMPACT_HARD": {
+   "absolute": false,
+   "margin": 1.831,
+   "offsetScore": -0.828,
+   "absoluteScore": 1.003
+  },
+  "FALLING_FLAT_IMPACT_MIRROR": {
+   "absolute": false,
+   "margin": 0.394,
+   "offsetScore": -0.253,
+   "absoluteScore": 0.14
+  },
+  "FALLING_FLAT_IMPACT_SNAP": {
+   "absolute": false,
+   "margin": 0.858,
+   "offsetScore": -0.324,
+   "absoluteScore": 0.534
+  },
+  "FALLING_FORWARD_DEATH": {
+   "absolute": true,
+   "margin": 1.589,
+   "offsetScore": 0.553,
+   "absoluteScore": -1.037
+  },
+  "FALLING_FORWARD_DEATH_DELAYED": {
+   "absolute": true,
+   "margin": 3.679,
+   "offsetScore": 1.963,
+   "absoluteScore": -1.716
+  },
+  "FALLING_FORWARD_DEATH_HARD": {
+   "absolute": true,
+   "margin": 2.638,
+   "offsetScore": 1.262,
+   "absoluteScore": -1.376
+  },
+  "FALLING_FORWARD_DEATH_KNEELING": {
+   "absolute": true,
+   "margin": 0.435,
+   "offsetScore": 0.035,
+   "absoluteScore": -0.4
+  },
+  "FALLING_FORWARD_DEATH_MIRROR": {
+   "absolute": true,
+   "margin": 1.569,
+   "offsetScore": 0.581,
+   "absoluteScore": -0.988
+  },
+  "FALLING_FORWARD_DEATH_SITOUT": {
+   "absolute": true,
+   "margin": 1.33,
+   "offsetScore": 0.613,
+   "absoluteScore": -0.717
+  },
+  "FALLING_FORWARD_DEATH_SLOW": {
+   "absolute": true,
+   "margin": 1.481,
+   "offsetScore": 0.588,
+   "absoluteScore": -0.893
+  },
+  "FALLING_FORWARD_DEATH_SNAP": {
+   "absolute": true,
+   "margin": 2.872,
+   "offsetScore": 1.623,
+   "absoluteScore": -1.249
+  },
+  "FALL_B_LOOP": {
+   "absolute": true,
+   "margin": 2.131,
+   "offsetScore": 1.188,
+   "absoluteScore": -0.944
+  },
+  "FALL_B_LOOP_DELAYED": {
+   "absolute": true,
+   "margin": 2.17,
+   "offsetScore": 1.212,
+   "absoluteScore": -0.958
+  },
+  "FALL_B_LOOP_HARD": {
+   "absolute": true,
+   "margin": 2.246,
+   "offsetScore": 1.195,
+   "absoluteScore": -1.051
+  },
+  "FALL_B_LOOP_KNEELING": {
+   "absolute": true,
+   "margin": 0.413,
+   "offsetScore": 0.46,
+   "absoluteScore": 0.047
+  },
+  "FALL_B_LOOP_MIRROR": {
+   "absolute": true,
+   "margin": 1.29,
+   "offsetScore": 0.501,
+   "absoluteScore": -0.789
+  },
+  "FALL_B_LOOP_SITOUT": {
+   "absolute": true,
+   "margin": 1.647,
+   "offsetScore": 1.038,
+   "absoluteScore": -0.609
+  },
+  "FALL_B_LOOP_SLOW": {
+   "absolute": true,
+   "margin": 2.137,
+   "offsetScore": 1.191,
+   "absoluteScore": -0.946
+  },
+  "FALL_B_LOOP_SNAP": {
+   "absolute": true,
+   "margin": 2.152,
+   "offsetScore": 1.2,
+   "absoluteScore": -0.951
+  },
+  "FLYING_HEADBUTT": {
+   "absolute": false,
+   "margin": 4.605,
+   "offsetScore": -2.139,
+   "absoluteScore": 2.465
+  },
+  "FLYING_HEADBUTT__RECV": {
+   "absolute": false,
+   "margin": 3.064,
+   "offsetScore": -1.514,
+   "absoluteScore": 1.55
+  },
+  "GEN_CROSS": {
+   "absolute": false,
+   "margin": 5.669,
+   "offsetScore": -2.742,
+   "absoluteScore": 2.927
+  },
+  "GEN_ELBOW": {
+   "absolute": false,
+   "margin": 5.871,
+   "offsetScore": -2.881,
+   "absoluteScore": 2.991
+  },
+  "GEN_GETUP_BACK": {
+   "absolute": false,
+   "margin": 5.64,
+   "offsetScore": -2.775,
+   "absoluteScore": 2.865
+  },
+  "GEN_GETUP_FRONT": {
+   "absolute": false,
+   "margin": 5.454,
+   "offsetScore": -2.624,
+   "absoluteScore": 2.83
+  },
+  "GEN_GUARD_HIGH": {
+   "absolute": false,
+   "margin": 5.76,
+   "offsetScore": -2.813,
+   "absoluteScore": 2.947
+  },
+  "GEN_HOOK": {
+   "absolute": false,
+   "margin": 5.708,
+   "offsetScore": -2.769,
+   "absoluteScore": 2.939
+  },
+  "GEN_IDLE_STANCE": {
+   "absolute": false,
+   "margin": 5.708,
+   "offsetScore": -2.748,
+   "absoluteScore": 2.96
+  },
+  "GEN_JAB": {
+   "absolute": false,
+   "margin": 5.604,
+   "offsetScore": -2.838,
+   "absoluteScore": 2.767
+  },
+  "GEN_KNEE": {
+   "absolute": false,
+   "margin": 3.937,
+   "offsetScore": -1.821,
+   "absoluteScore": 2.116
+  },
+  "GEN_RUN_FWD": {
+   "absolute": false,
+   "margin": 5.375,
+   "offsetScore": -2.725,
+   "absoluteScore": 2.651
+  },
+  "GEN_SIDESTEP": {
+   "absolute": false,
+   "margin": 5.07,
+   "offsetScore": -2.445,
+   "absoluteScore": 2.625
+  },
+  "GEN_TAUNT_ARMS": {
+   "absolute": false,
+   "margin": 5.901,
+   "offsetScore": -2.909,
+   "absoluteScore": 2.992
+  },
+  "GEN_UPPERCUT": {
+   "absolute": false,
+   "margin": 5.752,
+   "offsetScore": -2.803,
+   "absoluteScore": 2.949
+  },
+  "GEN_WALK_FWD": {
+   "absolute": false,
+   "margin": 5.036,
+   "offsetScore": -2.626,
+   "absoluteScore": 2.41
+  },
+  "GETUP_KIPUP": {
+   "absolute": false,
+   "margin": 5.141,
+   "offsetScore": -2.555,
+   "absoluteScore": 2.586
+  },
+  "GINGA_BACKWARD": {
+   "absolute": true,
+   "margin": 4.226,
+   "offsetScore": 2.147,
+   "absoluteScore": -2.078
+  },
+  "GINGA_BACKWARD_DELAYED": {
+   "absolute": true,
+   "margin": 3.696,
+   "offsetScore": 1.952,
+   "absoluteScore": -1.744
+  },
+  "GINGA_BACKWARD_HARD": {
+   "absolute": true,
+   "margin": 3.259,
+   "offsetScore": 1.711,
+   "absoluteScore": -1.548
+  },
+  "GINGA_BACKWARD_KNEELING": {
+   "absolute": true,
+   "margin": 1.268,
+   "offsetScore": 0.58,
+   "absoluteScore": -0.688
+  },
+  "GINGA_BACKWARD_MIRROR": {
+   "absolute": true,
+   "margin": 4.423,
+   "offsetScore": 2.247,
+   "absoluteScore": -2.176
+  },
+  "GINGA_BACKWARD_SITOUT": {
+   "absolute": true,
+   "margin": 3.13,
+   "offsetScore": 1.622,
+   "absoluteScore": -1.508
+  },
+  "GINGA_BACKWARD_SLOW": {
+   "absolute": true,
+   "margin": 3.492,
+   "offsetScore": 1.799,
+   "absoluteScore": -1.694
+  },
+  "GINGA_BACKWARD_SNAP": {
+   "absolute": true,
+   "margin": 2.616,
+   "offsetScore": 1.372,
+   "absoluteScore": -1.244
+  },
+  "GINGA_FORWARD": {
+   "absolute": true,
+   "margin": 4.188,
+   "offsetScore": 2.179,
+   "absoluteScore": -2.009
+  },
+  "GINGA_FORWARD_DELAYED": {
+   "absolute": true,
+   "margin": 3.986,
+   "offsetScore": 1.884,
+   "absoluteScore": -2.101
+  },
+  "GINGA_FORWARD_HARD": {
+   "absolute": true,
+   "margin": 3.373,
+   "offsetScore": 1.68,
+   "absoluteScore": -1.693
+  },
+  "GINGA_FORWARD_KNEELING": {
+   "absolute": true,
+   "margin": 1.149,
+   "offsetScore": 0.651,
+   "absoluteScore": -0.498
+  },
+  "GINGA_FORWARD_MIRROR": {
+   "absolute": true,
+   "margin": 4.22,
+   "offsetScore": 2.102,
+   "absoluteScore": -2.118
+  },
+  "GINGA_FORWARD_SITOUT": {
+   "absolute": true,
+   "margin": 1.887,
+   "offsetScore": 1.04,
+   "absoluteScore": -0.847
+  },
+  "GINGA_FORWARD_SLOW": {
+   "absolute": true,
+   "margin": 3.408,
+   "offsetScore": 1.833,
+   "absoluteScore": -1.575
+  },
+  "GINGA_FORWARD_SNAP": {
+   "absolute": true,
+   "margin": 3.479,
+   "offsetScore": 1.747,
+   "absoluteScore": -1.733
+  },
+  "GINGA_SIDEWAYS_2": {
+   "absolute": true,
+   "margin": 4.665,
+   "offsetScore": 2.386,
+   "absoluteScore": -2.279
+  },
+  "GINGA_SIDEWAYS_2_DELAYED": {
+   "absolute": true,
+   "margin": 3.685,
+   "offsetScore": 1.771,
+   "absoluteScore": -1.914
+  },
+  "GINGA_SIDEWAYS_2_HARD": {
+   "absolute": true,
+   "margin": 4.064,
+   "offsetScore": 1.956,
+   "absoluteScore": -2.108
+  },
+  "GINGA_SIDEWAYS_2_KNEELING": {
+   "absolute": true,
+   "margin": 1.046,
+   "offsetScore": 0.476,
+   "absoluteScore": -0.57
+  },
+  "GINGA_SIDEWAYS_2_MIRROR": {
+   "absolute": true,
+   "margin": 4.438,
+   "offsetScore": 2.296,
+   "absoluteScore": -2.142
+  },
+  "GINGA_SIDEWAYS_2_SITOUT": {
+   "absolute": true,
+   "margin": 3.042,
+   "offsetScore": 1.432,
+   "absoluteScore": -1.61
+  },
+  "GINGA_SIDEWAYS_2_SLOW": {
+   "absolute": true,
+   "margin": 4.49,
+   "offsetScore": 2.301,
+   "absoluteScore": -2.189
+  },
+  "GINGA_SIDEWAYS_2_SNAP": {
+   "absolute": true,
+   "margin": 3.753,
+   "offsetScore": 1.877,
+   "absoluteScore": -1.876
+  },
+  "GUARD_HIGH": {
+   "absolute": false,
+   "margin": 5.853,
+   "offsetScore": -2.909,
+   "absoluteScore": 2.944
+  },
+  "GUARD_LOW": {
+   "absolute": false,
+   "margin": 5.481,
+   "offsetScore": -2.711,
+   "absoluteScore": 2.769
+  },
+  "HEAVY_WEAPON_SWING": {
+   "absolute": true,
+   "margin": 5.293,
+   "offsetScore": 2.645,
+   "absoluteScore": -2.649
+  },
+  "HEAVY_WEAPON_SWING_DELAYED": {
+   "absolute": true,
+   "margin": 5.294,
+   "offsetScore": 2.677,
+   "absoluteScore": -2.617
+  },
+  "HEAVY_WEAPON_SWING_HARD": {
+   "absolute": true,
+   "margin": 4.852,
+   "offsetScore": 2.294,
+   "absoluteScore": -2.557
+  },
+  "HEAVY_WEAPON_SWING_KNEELING": {
+   "absolute": true,
+   "margin": 1.094,
+   "offsetScore": 0.611,
+   "absoluteScore": -0.483
+  },
+  "HEAVY_WEAPON_SWING_MIRROR": {
+   "absolute": true,
+   "margin": 5.184,
+   "offsetScore": 2.628,
+   "absoluteScore": -2.556
+  },
+  "HEAVY_WEAPON_SWING_SITOUT": {
+   "absolute": true,
+   "margin": 3.748,
+   "offsetScore": 1.918,
+   "absoluteScore": -1.83
+  },
+  "HEAVY_WEAPON_SWING_SLOW": {
+   "absolute": true,
+   "margin": 4.47,
+   "offsetScore": 2.216,
+   "absoluteScore": -2.254
+  },
+  "HEAVY_WEAPON_SWING_SNAP": {
+   "absolute": true,
+   "margin": 5.119,
+   "offsetScore": 2.564,
+   "absoluteScore": -2.555
+  },
+  "HIT_ON_SIDE_OF_HEAD": {
+   "absolute": true,
+   "margin": 4.476,
+   "offsetScore": 2.214,
+   "absoluteScore": -2.262
+  },
+  "HIT_ON_SIDE_OF_HEAD_DELAYED": {
+   "absolute": true,
+   "margin": 3.887,
+   "offsetScore": 1.965,
+   "absoluteScore": -1.923
+  },
+  "HIT_ON_SIDE_OF_HEAD_HARD": {
+   "absolute": true,
+   "margin": 1.284,
+   "offsetScore": 0.575,
+   "absoluteScore": -0.709
+  },
+  "HIT_ON_SIDE_OF_HEAD_KNEELING": {
+   "absolute": true,
+   "margin": 1.863,
+   "offsetScore": 0.869,
+   "absoluteScore": -0.993
+  },
+  "HIT_ON_SIDE_OF_HEAD_MIRROR": {
+   "absolute": true,
+   "margin": 4.598,
+   "offsetScore": 2.247,
+   "absoluteScore": -2.351
+  },
+  "HIT_ON_SIDE_OF_HEAD_SITOUT": {
+   "absolute": true,
+   "margin": 1.562,
+   "offsetScore": 0.608,
+   "absoluteScore": -0.953
+  },
+  "HIT_ON_SIDE_OF_HEAD_SLOW": {
+   "absolute": true,
+   "margin": 1.063,
+   "offsetScore": 0.538,
+   "absoluteScore": -0.525
+  },
+  "HIT_ON_SIDE_OF_HEAD_SNAP": {
+   "absolute": true,
+   "margin": 4.32,
+   "offsetScore": 2.283,
+   "absoluteScore": -2.037
+  },
+  "HIT_ON_THE_BACK": {
+   "absolute": true,
+   "margin": 3.846,
+   "offsetScore": 1.951,
+   "absoluteScore": -1.895
+  },
+  "HIT_ON_THE_BACK_DELAYED": {
+   "absolute": true,
+   "margin": 2.615,
+   "offsetScore": 1.361,
+   "absoluteScore": -1.254
+  },
+  "HIT_ON_THE_BACK_HARD": {
+   "absolute": true,
+   "margin": 3.832,
+   "offsetScore": 1.877,
+   "absoluteScore": -1.955
+  },
+  "HIT_ON_THE_BACK_KNEELING": {
+   "absolute": true,
+   "margin": 0.367,
+   "offsetScore": 0.169,
+   "absoluteScore": -0.198
+  },
+  "HIT_ON_THE_BACK_MIRROR": {
+   "absolute": true,
+   "margin": 4.043,
+   "offsetScore": 1.994,
+   "absoluteScore": -2.05
+  },
+  "HIT_ON_THE_BACK_SITOUT": {
+   "absolute": true,
+   "margin": 1.563,
+   "offsetScore": 0.739,
+   "absoluteScore": -0.825
+  },
+  "HIT_ON_THE_BACK_SLOW": {
+   "absolute": true,
+   "margin": 2.024,
+   "offsetScore": 1.002,
+   "absoluteScore": -1.022
+  },
+  "HIT_ON_THE_BACK_SNAP": {
+   "absolute": true,
+   "margin": 2.101,
+   "offsetScore": 1.097,
+   "absoluteScore": -1.004
+  },
+  "HIT_REACTION": {
+   "absolute": true,
+   "margin": 4.718,
+   "offsetScore": 2.17,
+   "absoluteScore": -2.548
+  },
+  "HIT_REACTION_DELAYED": {
+   "absolute": true,
+   "margin": 5,
+   "offsetScore": 2.382,
+   "absoluteScore": -2.618
+  },
+  "HIT_REACTION_HARD": {
+   "absolute": true,
+   "margin": 4.819,
+   "offsetScore": 2.279,
+   "absoluteScore": -2.54
+  },
+  "HIT_REACTION_KNEELING": {
+   "absolute": true,
+   "margin": 1.372,
+   "offsetScore": 0.534,
+   "absoluteScore": -0.838
+  },
+  "HIT_REACTION_MIRROR": {
+   "absolute": true,
+   "margin": 4.658,
+   "offsetScore": 2.211,
+   "absoluteScore": -2.447
+  },
+  "HIT_REACTION_SITOUT": {
+   "absolute": true,
+   "margin": 3.727,
+   "offsetScore": 1.753,
+   "absoluteScore": -1.973
+  },
+  "HIT_REACTION_SLOW": {
+   "absolute": true,
+   "margin": 4.773,
+   "offsetScore": 2.238,
+   "absoluteScore": -2.535
+  },
+  "HIT_REACTION_SNAP": {
+   "absolute": true,
+   "margin": 4.833,
+   "offsetScore": 2.249,
+   "absoluteScore": -2.584
+  },
+  "HIT_TO_BODY": {
+   "absolute": true,
+   "margin": 4.795,
+   "offsetScore": 2.362,
+   "absoluteScore": -2.433
+  },
+  "HIT_TO_BODY_DELAYED": {
+   "absolute": true,
+   "margin": 4.711,
+   "offsetScore": 2.372,
+   "absoluteScore": -2.34
+  },
+  "HIT_TO_BODY_HARD": {
+   "absolute": true,
+   "margin": 4.37,
+   "offsetScore": 2.067,
+   "absoluteScore": -2.304
+  },
+  "HIT_TO_BODY_KNEELING": {
+   "absolute": true,
+   "margin": 1.569,
+   "offsetScore": 0.89,
+   "absoluteScore": -0.679
+  },
+  "HIT_TO_BODY_MIRROR": {
+   "absolute": true,
+   "margin": 4.804,
+   "offsetScore": 2.448,
+   "absoluteScore": -2.356
+  },
+  "HIT_TO_BODY_SITOUT": {
+   "absolute": true,
+   "margin": 3.756,
+   "offsetScore": 1.841,
+   "absoluteScore": -1.914
+  },
+  "HIT_TO_BODY_SLOW": {
+   "absolute": true,
+   "margin": 4.824,
+   "offsetScore": 2.38,
+   "absoluteScore": -2.444
+  },
+  "HIT_TO_BODY_SNAP": {
+   "absolute": true,
+   "margin": 4.83,
+   "offsetScore": 2.368,
+   "absoluteScore": -2.462
+  },
+  "HIT_TO_HEAD": {
+   "absolute": true,
+   "margin": 1.255,
+   "offsetScore": 0.617,
+   "absoluteScore": -0.638
+  },
+  "HIT_TO_HEAD_DELAYED": {
+   "absolute": true,
+   "margin": 4.824,
+   "offsetScore": 2.408,
+   "absoluteScore": -2.415
+  },
+  "HIT_TO_HEAD_KNEELING": {
+   "absolute": true,
+   "margin": 2.375,
+   "offsetScore": 1.215,
+   "absoluteScore": -1.161
+  },
+  "HIT_TO_HEAD_MIRROR": {
+   "absolute": true,
+   "margin": 0.819,
+   "offsetScore": 0.397,
+   "absoluteScore": -0.422
+  },
+  "HIT_TO_HEAD_SITOUT": {
+   "absolute": true,
+   "margin": 1.092,
+   "offsetScore": 0.503,
+   "absoluteScore": -0.589
+  },
+  "HIT_TO_HEAD_SNAP": {
+   "absolute": true,
+   "margin": 0.883,
+   "offsetScore": 0.458,
+   "absoluteScore": -0.424
+  },
+  "HOUSE_DANCING": {
+   "absolute": true,
+   "margin": 3.533,
+   "offsetScore": 1.62,
+   "absoluteScore": -1.913
+  },
+  "HOUSE_DANCING_DELAYED": {
+   "absolute": true,
+   "margin": 3.594,
+   "offsetScore": 1.903,
+   "absoluteScore": -1.69
+  },
+  "HOUSE_DANCING_HARD": {
+   "absolute": true,
+   "margin": 3.005,
+   "offsetScore": 1.533,
+   "absoluteScore": -1.472
+  },
+  "HOUSE_DANCING_MIRROR": {
+   "absolute": true,
+   "margin": 3.92,
+   "offsetScore": 1.919,
+   "absoluteScore": -2.001
+  },
+  "HOUSE_DANCING_SITOUT": {
+   "absolute": true,
+   "margin": 1.62,
+   "offsetScore": 0.936,
+   "absoluteScore": -0.684
+  },
+  "HOUSE_DANCING_SLOW": {
+   "absolute": true,
+   "margin": 2.18,
+   "offsetScore": 1.156,
+   "absoluteScore": -1.024
+  },
+  "HOUSE_DANCING_SNAP": {
+   "absolute": true,
+   "margin": 3.402,
+   "offsetScore": 1.727,
+   "absoluteScore": -1.675
+  },
+  "HURRICANE_KICK": {
+   "absolute": true,
+   "margin": 1.101,
+   "offsetScore": 0.637,
+   "absoluteScore": -0.464
+  },
+  "HURRICANE_KICK_HARD": {
+   "absolute": false,
+   "margin": 1.517,
+   "offsetScore": -0.717,
+   "absoluteScore": 0.8
+  },
+  "HURRICANE_KICK_MIRROR": {
+   "absolute": true,
+   "margin": 2.009,
+   "offsetScore": 1.164,
+   "absoluteScore": -0.845
+  },
+  "HURRICANE_KICK_SITOUT": {
+   "absolute": false,
+   "margin": 0.952,
+   "offsetScore": -0.259,
+   "absoluteScore": 0.693
+  },
+  "HURRICANE_KICK_SLOW": {
+   "absolute": true,
+   "margin": 0.36,
+   "offsetScore": 0.267,
+   "absoluteScore": -0.093
+  },
+  "HURRICANE_KICK_SNAP": {
+   "absolute": true,
+   "margin": 0.829,
+   "offsetScore": 0.476,
+   "absoluteScore": -0.353
+  },
+  "IDLE": {
+   "absolute": true,
+   "margin": 5.485,
+   "offsetScore": 2.693,
+   "absoluteScore": -2.792
+  },
+  "IDLE_DELAYED": {
+   "absolute": true,
+   "margin": 4.282,
+   "offsetScore": 2.113,
+   "absoluteScore": -2.169
+  },
+  "IDLE_HARD": {
+   "absolute": true,
+   "margin": 5.194,
+   "offsetScore": 2.549,
+   "absoluteScore": -2.645
+  },
+  "IDLE_KNEELING": {
+   "absolute": true,
+   "margin": 1.766,
+   "offsetScore": 0.874,
+   "absoluteScore": -0.892
+  },
+  "IDLE_MIRROR": {
+   "absolute": true,
+   "margin": 5.454,
+   "offsetScore": 2.793,
+   "absoluteScore": -2.661
+  },
+  "IDLE_SITOUT": {
+   "absolute": true,
+   "margin": 2.749,
+   "offsetScore": 1.445,
+   "absoluteScore": -1.304
+  },
+  "IDLE_SLOW": {
+   "absolute": true,
+   "margin": 4.25,
+   "offsetScore": 2.143,
+   "absoluteScore": -2.107
+  },
+  "IDLE_SNAP": {
+   "absolute": true,
+   "margin": 5.186,
+   "offsetScore": 2.522,
+   "absoluteScore": -2.664
+  },
+  "ILLEGAL_ELBOW_PUNCH": {
+   "absolute": true,
+   "margin": 4.776,
+   "offsetScore": 2.349,
+   "absoluteScore": -2.428
+  },
+  "ILLEGAL_ELBOW_PUNCH_DELAYED": {
+   "absolute": true,
+   "margin": 4.835,
+   "offsetScore": 2.4,
+   "absoluteScore": -2.434
+  },
+  "ILLEGAL_ELBOW_PUNCH_HARD": {
+   "absolute": true,
+   "margin": 4.751,
+   "offsetScore": 2.323,
+   "absoluteScore": -2.428
+  },
+  "ILLEGAL_ELBOW_PUNCH_KNEELING": {
+   "absolute": true,
+   "margin": 1.687,
+   "offsetScore": 0.94,
+   "absoluteScore": -0.747
+  },
+  "ILLEGAL_ELBOW_PUNCH_MIRROR": {
+   "absolute": true,
+   "margin": 4.683,
+   "offsetScore": 2.462,
+   "absoluteScore": -2.221
+  },
+  "ILLEGAL_ELBOW_PUNCH_SITOUT": {
+   "absolute": true,
+   "margin": 3.82,
+   "offsetScore": 1.958,
+   "absoluteScore": -1.862
+  },
+  "ILLEGAL_ELBOW_PUNCH_SLOW": {
+   "absolute": true,
+   "margin": 4.879,
+   "offsetScore": 2.415,
+   "absoluteScore": -2.464
+  },
+  "ILLEGAL_ELBOW_PUNCH_SNAP": {
+   "absolute": true,
+   "margin": 4.808,
+   "offsetScore": 2.378,
+   "absoluteScore": -2.43
+  },
+  "ILLEGAL_ELBOW_PUNCH__1_": {
+   "absolute": true,
+   "margin": 4.678,
+   "offsetScore": 2.237,
+   "absoluteScore": -2.44
+  },
+  "ILLEGAL_ELBOW_PUNCH__1__DELAYED": {
+   "absolute": true,
+   "margin": 3.954,
+   "offsetScore": 1.927,
+   "absoluteScore": -2.026
+  },
+  "ILLEGAL_ELBOW_PUNCH__1__HARD": {
+   "absolute": true,
+   "margin": 4.641,
+   "offsetScore": 2.214,
+   "absoluteScore": -2.427
+  },
+  "ILLEGAL_ELBOW_PUNCH__1__KNEELING": {
+   "absolute": true,
+   "margin": 1.493,
+   "offsetScore": 0.713,
+   "absoluteScore": -0.78
+  },
+  "ILLEGAL_ELBOW_PUNCH__1__MIRROR": {
+   "absolute": true,
+   "margin": 4.577,
+   "offsetScore": 2.4,
+   "absoluteScore": -2.176
+  },
+  "ILLEGAL_ELBOW_PUNCH__1__SITOUT": {
+   "absolute": true,
+   "margin": 3.3,
+   "offsetScore": 1.747,
+   "absoluteScore": -1.553
+  },
+  "ILLEGAL_ELBOW_PUNCH__1__SLOW": {
+   "absolute": true,
+   "margin": 4.746,
+   "offsetScore": 2.333,
+   "absoluteScore": -2.414
+  },
+  "ILLEGAL_ELBOW_PUNCH__1__SNAP": {
+   "absolute": true,
+   "margin": 4.043,
+   "offsetScore": 2.042,
+   "absoluteScore": -2.001
+  },
+  "ILLEGAL_ELBOW_PUNCH__2_": {
+   "absolute": true,
+   "margin": 4.678,
+   "offsetScore": 2.237,
+   "absoluteScore": -2.44
+  },
+  "ILLEGAL_ELBOW_PUNCH__2__DELAYED": {
+   "absolute": true,
+   "margin": 3.954,
+   "offsetScore": 1.927,
+   "absoluteScore": -2.026
+  },
+  "ILLEGAL_ELBOW_PUNCH__2__HARD": {
+   "absolute": true,
+   "margin": 4.641,
+   "offsetScore": 2.214,
+   "absoluteScore": -2.427
+  },
+  "ILLEGAL_ELBOW_PUNCH__2__KNEELING": {
+   "absolute": true,
+   "margin": 1.493,
+   "offsetScore": 0.713,
+   "absoluteScore": -0.78
+  },
+  "ILLEGAL_ELBOW_PUNCH__2__MIRROR": {
+   "absolute": true,
+   "margin": 4.577,
+   "offsetScore": 2.4,
+   "absoluteScore": -2.176
+  },
+  "ILLEGAL_ELBOW_PUNCH__2__SITOUT": {
+   "absolute": true,
+   "margin": 3.3,
+   "offsetScore": 1.747,
+   "absoluteScore": -1.553
+  },
+  "ILLEGAL_ELBOW_PUNCH__2__SLOW": {
+   "absolute": true,
+   "margin": 4.746,
+   "offsetScore": 2.333,
+   "absoluteScore": -2.414
+  },
+  "ILLEGAL_ELBOW_PUNCH__2__SNAP": {
+   "absolute": true,
+   "margin": 4.043,
+   "offsetScore": 2.042,
+   "absoluteScore": -2.001
+  },
+  "ILLEGAL_KNEE": {
+   "absolute": true,
+   "margin": 3.986,
+   "offsetScore": 2.05,
+   "absoluteScore": -1.936
+  },
+  "ILLEGAL_KNEE_DELAYED": {
+   "absolute": true,
+   "margin": 4.483,
+   "offsetScore": 2.213,
+   "absoluteScore": -2.27
+  },
+  "ILLEGAL_KNEE_HARD": {
+   "absolute": true,
+   "margin": 3.398,
+   "offsetScore": 1.691,
+   "absoluteScore": -1.707
+  },
+  "ILLEGAL_KNEE_KNEELING": {
+   "absolute": true,
+   "margin": 0.937,
+   "offsetScore": 0.525,
+   "absoluteScore": -0.412
+  },
+  "ILLEGAL_KNEE_MIRROR": {
+   "absolute": true,
+   "margin": 3.834,
+   "offsetScore": 1.865,
+   "absoluteScore": -1.968
+  },
+  "ILLEGAL_KNEE_SITOUT": {
+   "absolute": true,
+   "margin": 3.19,
+   "offsetScore": 1.66,
+   "absoluteScore": -1.53
+  },
+  "ILLEGAL_KNEE_SLOW": {
+   "absolute": true,
+   "margin": 3.583,
+   "offsetScore": 1.844,
+   "absoluteScore": -1.739
+  },
+  "ILLEGAL_KNEE_SNAP": {
+   "absolute": true,
+   "margin": 4.439,
+   "offsetScore": 2.16,
+   "absoluteScore": -2.279
+  },
+  "INJURED_HURTING_IDLE": {
+   "absolute": true,
+   "margin": 4.758,
+   "offsetScore": 2.386,
+   "absoluteScore": -2.372
+  },
+  "INJURED_HURTING_IDLE_DELAYED": {
+   "absolute": true,
+   "margin": 5.119,
+   "offsetScore": 2.569,
+   "absoluteScore": -2.55
+  },
+  "INJURED_HURTING_IDLE_HARD": {
+   "absolute": true,
+   "margin": 5.007,
+   "offsetScore": 2.475,
+   "absoluteScore": -2.532
+  },
+  "INJURED_HURTING_IDLE_KNEELING": {
+   "absolute": true,
+   "margin": 1.71,
+   "offsetScore": 0.947,
+   "absoluteScore": -0.763
+  },
+  "INJURED_HURTING_IDLE_MIRROR": {
+   "absolute": true,
+   "margin": 4.743,
+   "offsetScore": 2.332,
+   "absoluteScore": -2.411
+  },
+  "INJURED_HURTING_IDLE_SITOUT": {
+   "absolute": true,
+   "margin": 4.227,
+   "offsetScore": 2.246,
+   "absoluteScore": -1.981
+  },
+  "INJURED_HURTING_IDLE_SLOW": {
+   "absolute": true,
+   "margin": 5.042,
+   "offsetScore": 2.57,
+   "absoluteScore": -2.472
+  },
+  "INJURED_HURTING_IDLE_SNAP": {
+   "absolute": true,
+   "margin": 4.313,
+   "offsetScore": 2.188,
+   "absoluteScore": -2.125
+  },
+  "INJURED_RUN_BACKWARDS_RIGHT_TURN": {
+   "absolute": true,
+   "margin": 5.194,
+   "offsetScore": 2.601,
+   "absoluteScore": -2.593
+  },
+  "INJURED_RUN_BACKWARDS_RIGHT_TURN_DELAYED": {
+   "absolute": true,
+   "margin": 5.195,
+   "offsetScore": 2.649,
+   "absoluteScore": -2.546
+  },
+  "INJURED_RUN_BACKWARDS_RIGHT_TURN_HARD": {
+   "absolute": true,
+   "margin": 4.853,
+   "offsetScore": 2.25,
+   "absoluteScore": -2.602
+  },
+  "INJURED_RUN_BACKWARDS_RIGHT_TURN_KNEELING": {
+   "absolute": true,
+   "margin": 1.887,
+   "offsetScore": 1.147,
+   "absoluteScore": -0.739
+  },
+  "INJURED_RUN_BACKWARDS_RIGHT_TURN_MIRROR": {
+   "absolute": true,
+   "margin": 5.111,
+   "offsetScore": 2.59,
+   "absoluteScore": -2.521
+  },
+  "INJURED_RUN_BACKWARDS_RIGHT_TURN_SITOUT": {
+   "absolute": true,
+   "margin": 4.272,
+   "offsetScore": 2.363,
+   "absoluteScore": -1.91
+  },
+  "INJURED_RUN_BACKWARDS_RIGHT_TURN_SLOW": {
+   "absolute": true,
+   "margin": 5.06,
+   "offsetScore": 2.548,
+   "absoluteScore": -2.512
+  },
+  "INJURED_RUN_BACKWARDS_RIGHT_TURN_SNAP": {
+   "absolute": true,
+   "margin": 4.385,
+   "offsetScore": 2.239,
+   "absoluteScore": -2.146
+  },
+  "INJURED_TURN_RIGHT": {
+   "absolute": true,
+   "margin": 5.488,
+   "offsetScore": 2.737,
+   "absoluteScore": -2.752
+  },
+  "INJURED_TURN_RIGHT_DELAYED": {
+   "absolute": true,
+   "margin": 5.445,
+   "offsetScore": 2.736,
+   "absoluteScore": -2.708
+  },
+  "INJURED_TURN_RIGHT_HARD": {
+   "absolute": true,
+   "margin": 4.962,
+   "offsetScore": 2.436,
+   "absoluteScore": -2.526
+  },
+  "INJURED_TURN_RIGHT_KNEELING": {
+   "absolute": true,
+   "margin": 2.031,
+   "offsetScore": 1.136,
+   "absoluteScore": -0.895
+  },
+  "INJURED_TURN_RIGHT_MIRROR": {
+   "absolute": true,
+   "margin": 5.694,
+   "offsetScore": 2.841,
+   "absoluteScore": -2.853
+  },
+  "INJURED_TURN_RIGHT_SITOUT": {
+   "absolute": true,
+   "margin": 4.586,
+   "offsetScore": 2.382,
+   "absoluteScore": -2.205
+  },
+  "INJURED_TURN_RIGHT_SLOW": {
+   "absolute": true,
+   "margin": 5.455,
+   "offsetScore": 2.719,
+   "absoluteScore": -2.736
+  },
+  "INJURED_TURN_RIGHT_SNAP": {
+   "absolute": true,
+   "margin": 4.95,
+   "offsetScore": 2.49,
+   "absoluteScore": -2.46
+  },
+  "JUNGLE_JUICE": {
+   "absolute": false,
+   "margin": 2.492,
+   "offsetScore": -1.088,
+   "absoluteScore": 1.403
+  },
+  "JUNGLE_JUICE__RECV": {
+   "absolute": false,
+   "margin": 2.925,
+   "offsetScore": -1.21,
+   "absoluteScore": 1.715
+  },
+  "KIP_UP_DELAYED": {
+   "absolute": false,
+   "margin": 2.334,
+   "offsetScore": -1.334,
+   "absoluteScore": 1
+  },
+  "KIP_UP_HARD": {
+   "absolute": false,
+   "margin": 2.671,
+   "offsetScore": -1.48,
+   "absoluteScore": 1.191
+  },
+  "KIP_UP_KNEELING": {
+   "absolute": true,
+   "margin": 1.306,
+   "offsetScore": 0.678,
+   "absoluteScore": -0.628
+  },
+  "KIP_UP_SNAP": {
+   "absolute": false,
+   "margin": 0.673,
+   "offsetScore": -0.466,
+   "absoluteScore": 0.207
+  },
+  "LOCO_LIGHT": {
+   "absolute": false,
+   "margin": 5.426,
+   "offsetScore": -2.619,
+   "absoluteScore": 2.807
+  },
+  "LOCO_LUMBER": {
+   "absolute": false,
+   "margin": 5.256,
+   "offsetScore": -2.542,
+   "absoluteScore": 2.714
+  },
+  "LOCO_PROWL": {
+   "absolute": false,
+   "margin": 3.611,
+   "offsetScore": -1.726,
+   "absoluteScore": 1.885
+  },
+  "LOCO_STALK": {
+   "absolute": false,
+   "margin": 5.569,
+   "offsetScore": -2.705,
+   "absoluteScore": 2.864
+  },
+  "LOCO_STRUT": {
+   "absolute": false,
+   "margin": 5.372,
+   "offsetScore": -2.621,
+   "absoluteScore": 2.751
+  },
+  "LOLA_B_STYPEREK": {
+   "absolute": true,
+   "margin": 5.933,
+   "offsetScore": 2.935,
+   "absoluteScore": -2.998
+  },
+  "LOLA_B_STYPEREK_DELAYED": {
+   "absolute": true,
+   "margin": 5.933,
+   "offsetScore": 2.935,
+   "absoluteScore": -2.998
+  },
+  "LOLA_B_STYPEREK_HARD": {
+   "absolute": true,
+   "margin": 5.543,
+   "offsetScore": 2.756,
+   "absoluteScore": -2.787
+  },
+  "LOLA_B_STYPEREK_KNEELING": {
+   "absolute": true,
+   "margin": 2.135,
+   "offsetScore": 1.031,
+   "absoluteScore": -1.104
+  },
+  "LOLA_B_STYPEREK_MIRROR": {
+   "absolute": true,
+   "margin": 5.933,
+   "offsetScore": 2.935,
+   "absoluteScore": -2.998
+  },
+  "LOLA_B_STYPEREK_SITOUT": {
+   "absolute": true,
+   "margin": 4.765,
+   "offsetScore": 2.339,
+   "absoluteScore": -2.426
+  },
+  "LOLA_B_STYPEREK_SLOW": {
+   "absolute": true,
+   "margin": 5.933,
+   "offsetScore": 2.935,
+   "absoluteScore": -2.998
+  },
+  "LOLA_B_STYPEREK_SNAP": {
+   "absolute": true,
+   "margin": 5.933,
+   "offsetScore": 2.935,
+   "absoluteScore": -2.998
+  },
+  "PALADIN_J_NORDSTROM": {
+   "absolute": true,
+   "margin": 5.935,
+   "offsetScore": 2.939,
+   "absoluteScore": -2.996
+  },
+  "PALADIN_J_NORDSTROM_DELAYED": {
+   "absolute": true,
+   "margin": 5.935,
+   "offsetScore": 2.939,
+   "absoluteScore": -2.996
+  },
+  "PALADIN_J_NORDSTROM_HARD": {
+   "absolute": true,
+   "margin": 5.551,
+   "offsetScore": 2.766,
+   "absoluteScore": -2.785
+  },
+  "PALADIN_J_NORDSTROM_KNEELING": {
+   "absolute": true,
+   "margin": 2.132,
+   "offsetScore": 1.027,
+   "absoluteScore": -1.104
+  },
+  "PALADIN_J_NORDSTROM_MIRROR": {
+   "absolute": true,
+   "margin": 5.935,
+   "offsetScore": 2.939,
+   "absoluteScore": -2.996
+  },
+  "PALADIN_J_NORDSTROM_SITOUT": {
+   "absolute": true,
+   "margin": 4.762,
+   "offsetScore": 2.337,
+   "absoluteScore": -2.425
+  },
+  "PALADIN_J_NORDSTROM_SLOW": {
+   "absolute": true,
+   "margin": 5.935,
+   "offsetScore": 2.939,
+   "absoluteScore": -2.996
+  },
+  "PALADIN_J_NORDSTROM_SNAP": {
+   "absolute": true,
+   "margin": 5.935,
+   "offsetScore": 2.939,
+   "absoluteScore": -2.996
+  },
+  "PASSIVE_MARKER_MAN": {
+   "absolute": true,
+   "margin": 5.931,
+   "offsetScore": 2.933,
+   "absoluteScore": -2.998
+  },
+  "PASSIVE_MARKER_MAN_DELAYED": {
+   "absolute": true,
+   "margin": 5.931,
+   "offsetScore": 2.933,
+   "absoluteScore": -2.998
+  },
+  "PASSIVE_MARKER_MAN_HARD": {
+   "absolute": true,
+   "margin": 5.538,
+   "offsetScore": 2.75,
+   "absoluteScore": -2.788
+  },
+  "PASSIVE_MARKER_MAN_KNEELING": {
+   "absolute": true,
+   "margin": 2.136,
+   "offsetScore": 1.032,
+   "absoluteScore": -1.104
+  },
+  "PASSIVE_MARKER_MAN_MIRROR": {
+   "absolute": true,
+   "margin": 5.931,
+   "offsetScore": 2.933,
+   "absoluteScore": -2.998
+  },
+  "PASSIVE_MARKER_MAN_SITOUT": {
+   "absolute": true,
+   "margin": 4.766,
+   "offsetScore": 2.34,
+   "absoluteScore": -2.426
+  },
+  "PASSIVE_MARKER_MAN_SLOW": {
+   "absolute": true,
+   "margin": 5.931,
+   "offsetScore": 2.933,
+   "absoluteScore": -2.998
+  },
+  "PASSIVE_MARKER_MAN_SNAP": {
+   "absolute": true,
+   "margin": 5.931,
+   "offsetScore": 2.933,
+   "absoluteScore": -2.998
+  },
+  "POWERBOMB": {
+   "absolute": false,
+   "margin": 2.115,
+   "offsetScore": -1.115,
+   "absoluteScore": 1
+  },
+  "POWERBOMB_CHOKELIFT": {
+   "absolute": false,
+   "margin": 2.958,
+   "offsetScore": -1.35,
+   "absoluteScore": 1.608
+  },
+  "POWERBOMB_SITOUT": {
+   "absolute": false,
+   "margin": 5.014,
+   "offsetScore": -2.468,
+   "absoluteScore": 2.546
+  },
+  "POWERBOMB_SYCO": {
+   "absolute": false,
+   "margin": 1.092,
+   "offsetScore": 0.461,
+   "absoluteScore": 1.553
+  },
+  "PUMPHANDLE_GERMAN_DOUBLE": {
+   "absolute": false,
+   "margin": 1.68,
+   "offsetScore": -0.251,
+   "absoluteScore": 1.428
+  },
+  "PUMPHANDLE_GERMAN_DOUBLE__RECV": {
+   "absolute": false,
+   "margin": 3.01,
+   "offsetScore": -1.314,
+   "absoluteScore": 1.695
+  },
+  "PUMPKINHULK_L_SHAW": {
+   "absolute": true,
+   "margin": 5.886,
+   "offsetScore": 2.931,
+   "absoluteScore": -2.955
+  },
+  "PUMPKINHULK_L_SHAW_DELAYED": {
+   "absolute": true,
+   "margin": 5.886,
+   "offsetScore": 2.931,
+   "absoluteScore": -2.955
+  },
+  "PUMPKINHULK_L_SHAW_HARD": {
+   "absolute": true,
+   "margin": 5.539,
+   "offsetScore": 2.797,
+   "absoluteScore": -2.742
+  },
+  "PUMPKINHULK_L_SHAW_KNEELING": {
+   "absolute": true,
+   "margin": 2.119,
+   "offsetScore": 1.008,
+   "absoluteScore": -1.111
+  },
+  "PUMPKINHULK_L_SHAW_MIRROR": {
+   "absolute": true,
+   "margin": 5.886,
+   "offsetScore": 2.931,
+   "absoluteScore": -2.955
+  },
+  "PUMPKINHULK_L_SHAW_SITOUT": {
+   "absolute": true,
+   "margin": 4.719,
+   "offsetScore": 2.308,
+   "absoluteScore": -2.41
+  },
+  "PUMPKINHULK_L_SHAW_SLOW": {
+   "absolute": true,
+   "margin": 5.886,
+   "offsetScore": 2.931,
+   "absoluteScore": -2.955
+  },
+  "PUMPKINHULK_L_SHAW_SNAP": {
+   "absolute": true,
+   "margin": 5.886,
+   "offsetScore": 2.931,
+   "absoluteScore": -2.955
+  },
+  "QUESHADA_2": {
+   "absolute": true,
+   "margin": 2.994,
+   "offsetScore": 1.555,
+   "absoluteScore": -1.439
+  },
+  "QUESHADA_2_DELAYED": {
+   "absolute": true,
+   "margin": 3.984,
+   "offsetScore": 1.92,
+   "absoluteScore": -2.064
+  },
+  "QUESHADA_2_HARD": {
+   "absolute": true,
+   "margin": 3.516,
+   "offsetScore": 1.71,
+   "absoluteScore": -1.806
+  },
+  "QUESHADA_2_KNEELING": {
+   "absolute": true,
+   "margin": 0.478,
+   "offsetScore": 0.365,
+   "absoluteScore": -0.113
+  },
+  "QUESHADA_2_MIRROR": {
+   "absolute": true,
+   "margin": 3.651,
+   "offsetScore": 1.859,
+   "absoluteScore": -1.791
+  },
+  "QUESHADA_2_SITOUT": {
+   "absolute": true,
+   "margin": 2.335,
+   "offsetScore": 1.24,
+   "absoluteScore": -1.095
+  },
+  "QUESHADA_2_SLOW": {
+   "absolute": true,
+   "margin": 3.284,
+   "offsetScore": 1.854,
+   "absoluteScore": -1.43
+  },
+  "QUESHADA_2_SNAP": {
+   "absolute": true,
+   "margin": 3.519,
+   "offsetScore": 1.746,
+   "absoluteScore": -1.774
+  },
+  "SOMERSAULT_TORNADO_DDT": {
+   "absolute": false,
+   "margin": 5.133,
+   "offsetScore": -2.548,
+   "absoluteScore": 2.586
+  },
+  "SOMERSAULT_TORNADO_DDT__RECV": {
+   "absolute": false,
+   "margin": 0.995,
+   "offsetScore": 0.331,
+   "absoluteScore": 1.326
+  },
+  "STALLING_SUPLEX_STEPS": {
+   "absolute": false,
+   "margin": 5.069,
+   "offsetScore": -2.552,
+   "absoluteScore": 2.516
+  },
+  "STALLING_SUPLEX_STEPS__RECV": {
+   "absolute": false,
+   "margin": 3.131,
+   "offsetScore": -1.428,
+   "absoluteScore": 1.702
+  },
+  "STANCE_BLADED": {
+   "absolute": false,
+   "margin": 5.872,
+   "offsetScore": -2.885,
+   "absoluteScore": 2.987
+  },
+  "STANCE_CROUCH": {
+   "absolute": false,
+   "margin": 5.728,
+   "offsetScore": -2.828,
+   "absoluteScore": 2.899
+  },
+  "STANCE_WIDE": {
+   "absolute": false,
+   "margin": 5.908,
+   "offsetScore": -2.91,
+   "absoluteScore": 2.999
+  },
+  "TAG_POWERBOMB_GERMAN": {
+   "absolute": false,
+   "margin": 1.011,
+   "offsetScore": 0.089,
+   "absoluteScore": 1.099
+  },
+  "TAG_POWERBOMB_GERMAN__RECV": {
+   "absolute": false,
+   "margin": 1.162,
+   "offsetScore": 1.157,
+   "absoluteScore": 2.319
+  },
+  "TAUNT_ARMS_WIDE": {
+   "absolute": false,
+   "margin": 5.886,
+   "offsetScore": -2.915,
+   "absoluteScore": 2.971
+  },
+  "TAUNT_CALLOUT": {
+   "absolute": false,
+   "margin": 5.756,
+   "offsetScore": -2.828,
+   "absoluteScore": 2.928
+  },
+  "TAUNT_FLEX": {
+   "absolute": false,
+   "margin": 5.909,
+   "offsetScore": -2.911,
+   "absoluteScore": 2.998
+  },
+  "TAUNT_POINT": {
+   "absolute": false,
+   "margin": 5.579,
+   "offsetScore": -2.71,
+   "absoluteScore": 2.869
+  },
+  "TIGER_FEINT_KICK": {
+   "absolute": false,
+   "margin": 3.365,
+   "offsetScore": -1.564,
+   "absoluteScore": 1.801
+  },
+  "TIGER_FEINT_KICK__RECV": {
+   "absolute": false,
+   "margin": 3.175,
+   "offsetScore": -1.293,
+   "absoluteScore": 1.882
+  },
+  "TZ_SCOOP_SLAM": {
+   "absolute": false,
+   "margin": 5.457,
+   "offsetScore": -2.673,
+   "absoluteScore": 2.784
+  },
+  "TZ_SCOOP_SLAM__RECV": {
+   "absolute": false,
+   "margin": 3.404,
+   "offsetScore": -1.613,
+   "absoluteScore": 1.79
+  },
+  "TZ_TILT_WHIRL_SLAM": {
+   "absolute": false,
+   "margin": 5.457,
+   "offsetScore": -2.673,
+   "absoluteScore": 2.784
+  },
+  "TZ_TILT_WHIRL_SLAM__RECV": {
+   "absolute": false,
+   "margin": 3.226,
+   "offsetScore": -0.927,
+   "absoluteScore": 2.299
+  },
+  "Y_BOT": {
+   "absolute": true,
+   "margin": 5.931,
+   "offsetScore": 2.933,
+   "absoluteScore": -2.999
+  },
+  "Y_BOT_DELAYED": {
+   "absolute": true,
+   "margin": 5.931,
+   "offsetScore": 2.933,
+   "absoluteScore": -2.999
+  },
+  "Y_BOT_HARD": {
+   "absolute": true,
+   "margin": 5.555,
+   "offsetScore": 2.765,
+   "absoluteScore": -2.79
+  },
+  "Y_BOT_KNEELING": {
+   "absolute": true,
+   "margin": 2.088,
+   "offsetScore": 0.988,
+   "absoluteScore": -1.1
+  },
+  "Y_BOT_MIRROR": {
+   "absolute": true,
+   "margin": 5.931,
+   "offsetScore": 2.933,
+   "absoluteScore": -2.999
+  },
+  "Y_BOT_SITOUT": {
+   "absolute": true,
+   "margin": 4.737,
+   "offsetScore": 2.313,
+   "absoluteScore": -2.423
+  },
+  "Y_BOT_SLOW": {
+   "absolute": true,
+   "margin": 5.931,
+   "offsetScore": 2.933,
+   "absoluteScore": -2.999
+  },
+  "Y_BOT_SNAP": {
+   "absolute": true,
+   "margin": 5.931,
+   "offsetScore": 2.933,
+   "absoluteScore": -2.999
+  },
+  "ZOMBIE_DYING": {
+   "absolute": true,
+   "margin": 2.758,
+   "offsetScore": 1.446,
+   "absoluteScore": -1.313
+  },
+  "ZOMBIE_DYING_DELAYED": {
+   "absolute": true,
+   "margin": 4.761,
+   "offsetScore": 2.382,
+   "absoluteScore": -2.379
+  },
+  "ZOMBIE_DYING_HARD": {
+   "absolute": true,
+   "margin": 4.621,
+   "offsetScore": 2.294,
+   "absoluteScore": -2.327
+  },
+  "ZOMBIE_DYING_KNEELING": {
+   "absolute": true,
+   "margin": 0.703,
+   "offsetScore": 0.536,
+   "absoluteScore": -0.167
+  },
+  "ZOMBIE_DYING_MIRROR": {
+   "absolute": true,
+   "margin": 2.742,
+   "offsetScore": 1.551,
+   "absoluteScore": -1.191
+  },
+  "ZOMBIE_DYING_SITOUT": {
+   "absolute": true,
+   "margin": 2.8,
+   "offsetScore": 1.63,
+   "absoluteScore": -1.17
+  },
+  "ZOMBIE_DYING_SLOW": {
+   "absolute": true,
+   "margin": 2.421,
+   "offsetScore": 1.463,
+   "absoluteScore": -0.957
+  },
+  "ZOMBIE_DYING_SNAP": {
+   "absolute": true,
+   "margin": 4.471,
+   "offsetScore": 2.271,
+   "absoluteScore": -2.2
+  },
+  "ZONE_APRON_HOP": {
+   "absolute": false,
+   "margin": 5.684,
+   "offsetScore": -2.846,
+   "absoluteScore": 2.839
+  },
+  "ZONE_CLIMB_A": {
+   "absolute": false,
+   "margin": 5.356,
+   "offsetScore": -2.756,
+   "absoluteScore": 2.6
+  },
+  "ZONE_CLIMB_B": {
+   "absolute": false,
+   "margin": 5.154,
+   "offsetScore": -2.484,
+   "absoluteScore": 2.669
+  },
+  "ZONE_DROP_A": {
+   "absolute": false,
+   "margin": 5.426,
+   "offsetScore": -2.684,
+   "absoluteScore": 2.741
+  },
+  "ZONE_DROP_B": {
+   "absolute": false,
+   "margin": 5.692,
+   "offsetScore": -2.809,
+   "absoluteScore": 2.883
+  },
+  "ZONE_DROP_C": {
+   "absolute": false,
+   "margin": 5.424,
+   "offsetScore": -2.666,
+   "absoluteScore": 2.758
+  },
+  "ZONE_DUCK_A": {
+   "absolute": false,
+   "margin": 5.45,
+   "offsetScore": -2.727,
+   "absoluteScore": 2.723
+  },
+  "ZONE_DUCK_B": {
+   "absolute": false,
+   "margin": 5.644,
+   "offsetScore": -2.764,
+   "absoluteScore": 2.88
+  },
+  "ZONE_DUCK_C": {
+   "absolute": false,
+   "margin": 3.702,
+   "offsetScore": -1.373,
+   "absoluteScore": 2.329
+  },
+  "ZONE_MIDROPE_POSE": {
+   "absolute": false,
+   "margin": 5.489,
+   "offsetScore": -2.642,
+   "absoluteScore": 2.847
+  },
+  "ZONE_MIDROPE_STEP": {
+   "absolute": false,
+   "margin": 5.31,
+   "offsetScore": -2.667,
+   "absoluteScore": 2.643
+  },
+  "ZONE_OVER_TOP_IN": {
+   "absolute": false,
+   "margin": 5.423,
+   "offsetScore": -2.67,
+   "absoluteScore": 2.753
+  },
+  "ZONE_OVER_TOP_OUT": {
+   "absolute": false,
+   "margin": 5.62,
+   "offsetScore": -2.778,
+   "absoluteScore": 2.842
+  },
+  "ZONE_PERCH_POSE": {
+   "absolute": false,
+   "margin": 5.772,
+   "offsetScore": -2.826,
+   "absoluteScore": 2.946
+  },
+  "ZONE_PULLUP_A": {
+   "absolute": false,
+   "margin": 5.215,
+   "offsetScore": -2.571,
+   "absoluteScore": 2.644
+  },
+  "ZONE_PULLUP_B": {
+   "absolute": false,
+   "margin": 5.677,
+   "offsetScore": -2.862,
+   "absoluteScore": 2.815
+  },
+  "ZONE_PULLUP_C": {
+   "absolute": false,
+   "margin": 5.704,
+   "offsetScore": -2.79,
+   "absoluteScore": 2.914
+  },
+  "ZONE_ROLL_IN": {
+   "absolute": false,
+   "margin": 5.261,
+   "offsetScore": -2.518,
+   "absoluteScore": 2.743
+  },
+  "ZONE_ROLL_OUT_A": {
+   "absolute": false,
+   "margin": 2.528,
+   "offsetScore": -1.464,
+   "absoluteScore": 1.063
+  },
+  "ZONE_ROLL_OUT_B": {
+   "absolute": false,
+   "margin": 4.091,
+   "offsetScore": -2.003,
+   "absoluteScore": 2.088
+  },
+  "ZONE_SLIDE_IN_A": {
+   "absolute": false,
+   "margin": 4.772,
+   "offsetScore": -2.281,
+   "absoluteScore": 2.491
+  },
+  "ZONE_SLIDE_IN_B": {
+   "absolute": false,
+   "margin": 2.203,
+   "offsetScore": -0.51,
+   "absoluteScore": 1.693
+  },
+  "ZONE_SLIDE_IN_C": {
+   "absolute": false,
+   "margin": 4.031,
+   "offsetScore": -2.079,
+   "absoluteScore": 1.952
+  },
+  "ZONE_SLIDE_OUT": {
+   "absolute": false,
+   "margin": 1.264,
+   "offsetScore": -0.666,
+   "absoluteScore": 0.598
+  },
+  "ZONE_VAULT_A": {
+   "absolute": false,
+   "margin": 4.444,
+   "offsetScore": -2.097,
+   "absoluteScore": 2.347
+  },
+  "ZONE_VAULT_IN": {
+   "absolute": false,
+   "margin": 5.812,
+   "offsetScore": -2.856,
+   "absoluteScore": 2.956
+  }
+ }
+}

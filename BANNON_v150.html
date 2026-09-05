@@ -17160,7 +17160,15 @@ function updateFighterModel(f){
       // on the same bone keep the old additive behaviour, because those are authored offsets and are
       // meant to layer.
       var _clipDrives = !!(_c && (_c.rx||_c.ry||_c.rz));
-      if(_clipDrives && _b.userData.restQuat){
+      // AN ABSOLUTE-CONVENTION CAPTURE ALREADY CONTAINS THE REST ROTATION. Composing rest * clip for
+      // one of those applies the rig's rest a second time — on a Mixamo thigh that is ~169 degrees
+      // twice, which folds the leg up over the body. See __clipConvention above for how the family
+      // is derived from the clip itself. Everything else (weight, crossfade, __driven) is unchanged.
+      if(_clipDrives && m.userData.clipAbs && (_c.rx||_c.ry||_c.rz)){
+        if(_cw >= 0.999) _b.quaternion.copy(_qq); else _b.quaternion.slerp(_qq, _cw);
+        _driven[_b.uuid] = _cw;
+      }
+      else if(_clipDrives && _b.userData.restQuat){
         // rest * clip is the clip's own pose for this bone. _b.quaternion currently holds whatever the
         // procedural retarget put there this frame, so slerping toward the clip target BY THE WEIGHT is
         // a true per-bone crossfade between physics-aim and mocap — not a switch. At w=1 it is pure
@@ -19271,6 +19279,83 @@ init();
     return p < 0 ? 0 : (p > 1 ? 1 : p);
   };
 
+  // ── TWO CLIP CONVENTIONS LIVE IN ONE LIBRARY, AND THE ENGINE ASSUMED ONE ─────────────────────
+  // The clip block composes `restQuat * clip`, i.e. it reads a capture's bone rotation as an OFFSET
+  // FROM REST. Some of our captures are authored that way. Others store the bone's ABSOLUTE local
+  // rotation, and for those the rest rotation gets applied a second time.
+  // MEASURED, same clip, same phase, same rest pose, thigh direction (dirY -1 = straight down):
+  //     GEN_WALK_FWD    rest*clip -0.975  DOWN     as absolute +0.999  up
+  //     ZONE_PULLUP_A   rest*clip -0.977  DOWN     as absolute +1.000  up
+  //     BOX_IDLE        rest*clip +0.890  UP       as absolute -0.939  DOWN
+  //     COMBO_PUNCH     rest*clip +0.754  UP       as absolute -0.787  DOWN
+  //     BODY_JAB_CROSS  rest*clip +0.553  UP       as absolute -0.595  DOWN
+  // A Mixamo thigh sits ~169 degrees from its parent at rest, so applying that twice folds the leg
+  // up over the body — which is the "crushed / legs above the hips" fighter, the GROUND defect class,
+  // and the reason the grounding snap then drags the whole model under the mat chasing a foot bone
+  // at head height.
+  //
+  // THE CONVENTION IS DERIVED FROM THE CLIP, NEVER FROM A NAME OR A LIST (owner law). A thigh in an
+  // OFFSET capture passes CLOSE TO IDENTITY somewhere in its cycle — that is what "no rotation
+  // relative to rest" means. A thigh in an ABSOLUTE capture carries the rest rotation baked in and
+  // can never approach identity. Measured minimum over the whole clip:
+  //     OFFSET family    GEN_RUN_FWD 2.3   GEN_WALK_FWD 3.3   ZONE_PULLUP_A 6.8   degrees
+  //     ABSOLUTE family  DROP_KICK_1 127.8  BOXING 144.5  BODY_JAB_CROSS 148.1  COMBO_PUNCH 161.8
+  //                      BOX_IDLE 165.0
+  // Nothing lands between 6.8 and 127.8, so the threshold sits in a gap 120 degrees wide rather than
+  // being tuned. A clip with no thigh track cannot be classified and keeps the existing behaviour.
+  // `window.CLIP_ABS_DETECT = false` reverts the whole thing at runtime.
+  // THE CONVENTION IS READ FROM A BANKED, MEASURED TABLE — NOT DECIDED AT RUNTIME.
+  // Owner: "Convert at import/preprocess time, not by random special cases during gameplay."
+  // `tools/harness/clip_truth.cjs` decides each capture STRUCTURALLY on a real rig: it assembles the
+  // pose BOTH ways from the same rest pose over four phases and measures which reading leaves the
+  // thighs and shins pointing DOWN. That is the property we actually care about, not a proxy for it.
+  // Result over the whole library: **539 ABSOLUTE, 104 OFFSET, 330 undecided** — so the MAJORITY of
+  // our captures were being composed with the rig's rest rotation applied a second time.
+  //
+  // TWO OFFLINE HEURISTICS WERE TRIED FIRST AND BOTH WERE WRONG. Recorded because each was plausible:
+  //   1. minimum angle-to-identity of the thigh track. Separated the verified clips by 120 degrees
+  //      and is CONFOUNDED — in a capoeira au the thigh genuinely reaches the orientation identity
+  //      represents, so an absolute track dips near identity once and votes offset.
+  //   2. median angle to identity vs to the bone's BIND rotation, per bone, bind-relative. Correct
+  //      on paper and useless in practice: it assumes the animation visits rest (a boxing stance
+  //      never does), and LIMB DIRECTION IS A CHAIN PROPERTY — under the absolute reading the HIPS
+  //      rotation changes too, so one bone's local quaternion cannot say what the leg does.
+  // An UNLISTED clip keeps the existing rest*clip behaviour, so the table can only ever improve
+  // things. `window.CLIP_ABS_DETECT = false` reverts the whole thing at runtime.
+  var _CONV_MIN_MARGIN = 1.0;         // decided-but-shaky rows (0.35-1.0) are banked, not applied
+  window.__CLIP_CONV = { absolute:0, offset:0, unlisted:0, table:0 };
+  (function loadConvTable(){
+    try{
+      fetch('assets/moves/clip_conventions.json').then(function(r){ return r.json(); }).then(function(j){
+        window.__CLIP_CONV_TABLE = (j && j.clips) || {};
+        window.__CLIP_CONV.table = Object.keys(window.__CLIP_CONV_TABLE).length;
+      }).catch(function(){ window.__CLIP_CONV_TABLE = {}; });
+    }catch(e){ window.__CLIP_CONV_TABLE = {}; }
+  })();
+  // A baked clip is a bare {keys,dur} with no name, and the SAME object is registered under several
+  // keys, so identity is recovered by OBJECT IDENTITY from the registry and cached on the clip.
+  // A label passed in is exactly what would be wrong.
+  window.__clipConvention = function(clip){
+    if (!clip) return false;
+    if (clip.__conv !== undefined) return clip.__conv;
+    var conv = false, T = window.__CLIP_CONV_TABLE;
+    try{
+      if (T){
+        var keys = [], C = (window.STUDIO && window.STUDIO.clips) || null;
+        if (C) for (var k in C) if (C[k] === clip) keys.push(k);
+        for (var i = 0; i < keys.length; i++){
+          var e = T[keys[i]] || T[String(keys[i]).toUpperCase().replace(/[^A-Z0-9]/g,'_')];
+          if (e){ clip.__convName = keys[i]; clip.__convMargin = e.margin;
+                  if (e.margin >= _CONV_MIN_MARGIN) conv = !!e.absolute;
+                  break; }
+        }
+      }
+    }catch(e){}
+    clip.__conv = conv;
+    window.__CLIP_CONV[clip.__convName ? (conv ? 'absolute' : 'offset') : 'unlisted']++;
+    return conv;
+  };
+
   window.studioApplyClipPose = function(f, clip, phase, weight){
     const tt = phase*(clip.dur||1);
     const pose = samplePose(clip, tt);
@@ -19292,6 +19377,9 @@ init();
     // Everything expensive (registry scan, stack line, role) lives in the instrument, not here.
     if (window.__CLIP_TRACE){ try{ window.__CLIP_TRACE(f, clip, phase, tt, w); }catch(_e){} }
     if(f.model){ const _b=sampleBones(clip, tt); if(_b) f.model.userData.clipBones=_b; f.model.userData.clipW=w;
+      // Ride the convention along with the tracks — the clip block receives a bones dictionary and
+      // has no way to reach the clip object it came from.
+      f.model.userData.clipAbs = (window.CLIP_ABS_DETECT === false) ? false : window.__clipConvention(clip);
       const _mph=sampleMorphs(clip, tt); if(_mph) f.model.userData.clipMorphs=_mph; }
   };
 

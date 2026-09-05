@@ -2407,3 +2407,59 @@ belong to no valid triangle. He renders correctly; the mesh still has degenerate
   MAIME_tattered.glb), 0 bad UVs**. VIPER.glb came back CLEAN — which is what proved the corruption
   happens at RUNTIME and not in the asset. Check the file AND the loaded result; they are different
   claims and only one of them was true here.
+
+## FIXED: TWO ROTATION CONVENTIONS IN ONE CLIP LIBRARY (2026-09-05) — tools/harness/clip_truth.cjs
+Owner: "The clip library contains at least two rotation conventions, but the runtime assumes exactly
+one." He was right. This is the "crushed by a boulder" fighter, the GROUND defect class, the buried
+body and a large share of the "procedural puppet" look, all from one composition error.
+
+The clip block composes `restQuat * clip`, i.e. it reads a capture's bone rotation as an OFFSET FROM
+REST. MEASURED in the engine — same clip, same phase, same rest pose, thigh direction (dirY -1 = down):
+    GEN_WALK_FWD    rest*clip -0.975 DOWN     as absolute +0.999 up
+    ZONE_PULLUP_A   rest*clip -0.977 DOWN     as absolute +1.000 up
+    BOX_IDLE        rest*clip +0.890 UP       as absolute -0.939 DOWN
+    COMBO_PUNCH     rest*clip +0.754 UP       as absolute -0.787 DOWN
+    BODY_JAB_CROSS  rest*clip +0.553 UP       as absolute -0.595 DOWN
+**539 of 973 captures are authored ABSOLUTE, 104 OFFSET, 330 undecided.** The MAJORITY of the library
+was being composed with the rig's ~169-degree thigh rest rotation applied a SECOND time.
+A CORROBORATING SIGNAL NOBODY LOOKED FOR: absolute clips carry 52 bone tracks, offset ones 14-17.
+Two different bakers, and the track count says which.
+
+### THE TEST IS STRUCTURAL, ON A REAL RIG, AT IMPORT TIME
+Owner: "Convert at import/preprocess time, not by random special cases during gameplay."
+`tools/harness/clip_truth.cjs` assembles each clip BOTH WAYS from the same rest pose over four
+phases and measures which reading leaves the thighs and shins pointing DOWN. That is the property we
+care about, not a proxy. Validated against the nine clips whose behaviour was verified directly in
+the engine: **9/9 agree, margins 4.6-5.7 against a bar of 0.35.** The result is banked to
+`assets/moves/clip_conventions.json`; the engine READS it and applies only rows with margin >= 1.0.
+An unlisted clip keeps the existing behaviour, so the table can only improve things.
+`window.CLIP_ABS_DETECT = false` reverts. AMBIGUOUS (330) and low-margin rows (43) are banked and
+NOT applied — UNKNOWN is not a pass.
+
+### TWO OFFLINE HEURISTICS I BUILT AND RETRACTED — BOTH PLAUSIBLE, BOTH WRONG
+1. **MINIMUM ANGLE-TO-IDENTITY of the thigh track**, rig-free. Separated the nine verified clips with
+   a 120-degree gap (offset 2.3-6.8 deg, absolute 127.8-165) and is CONFOUNDED: in a capoeira au the
+   thigh genuinely REACHES the orientation identity represents, so an absolute track dips near
+   identity once and votes offset. Every MIXED verdict it produced was an acrobatic clip doing that.
+2. **MEDIAN ANGLE TO IDENTITY vs TO THE BONE'S BIND ROTATION**, per bone, bind-relative — the correct
+   formulation on paper (offset: final = B*Q, at rest when Q ~ identity; absolute: final = Q, at rest
+   when Q ~ B). It reported 120-175 degrees for BOTH hypotheses on nearly every clip. TWO REASONS:
+   it assumes the animation VISITS REST and a boxing stance is a permanently bent crouch that never
+   does; and **LIMB DIRECTION IS A CHAIN PROPERTY** — under the absolute reading the HIPS rotation
+   changes too, so one bone's local quaternion cannot say what the leg does.
+### AND A THIRD, WHICH IS THE ONE THE OWNER CAUGHT
+My first informative-bone set included the UPPER ARMS on the assumption that "the upper arm is like
+the thigh". **Measured off the rig it is 31.2 degrees, not 169** (LeftUpLeg 168.7, LeftShoulder 117.3,
+LeftArm 31.2, LeftLeg 23.5, Spine 5.8, Hips 0 — `render_truth.cjs --restcensus`). A bone whose rest
+rotation is near identity sits near identity under BOTH conventions and carries NO information. That
+one assumption manufactured **530 MIXED verdicts out of 973**, which read as a real per-track
+convention split and was not one. Owner: "measure the arm bind/rest orientations before accepting
+530 MIXED clips as a property of the animation library." Exactly right, and it was outcome B.
+
+### RESULT, MEASURED AND SEEN
+    BANNON  thigh +0.898 -> -0.947   shin +0.993 -> -0.955   buried 0.774 m -> STANDING at -0.072
+    VIPER   thigh +0.659 -> -0.930   shin +0.912 -> -0.880
+    render_truth --clipscan: 5 of 9 captures put the legs up -> 0 of 7
+Both fighters stand upright with their legs down and both are fully shaded (111 / 112 distinct
+colours). The solo render goes from a crumpled ball to a standing, textured wrestler.
+STILL OPEN: VIPER reads 0.134 m below the mat mid-'attack' against a 0.12 bar — small, real, named.
