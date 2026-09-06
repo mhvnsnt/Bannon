@@ -1,0 +1,88 @@
+name: Deploy playable game to GitHub Pages
+# Serves BANNON_v150.html as a real website (https://mhvnsnt.github.io/Bannon/) so the owner can
+# PLAY without downloading the HTML. Why this matters: a downloaded file:// page gets a fresh origin
+# every open, so localStorage (CAW/DNA saves, equipped movesets, chosen models) never persists, and
+# it has no assets/ folder beside it. A hosted URL = one stable origin (saves persist) + the model
+# CDN fallback (raw.githubusercontent / main) streams the GLBs. three.js already loads from its CDN.
+on:
+  push:
+    branches: [ main ]
+    paths: [ 'BANNON_v150.html', '.github/workflows/pages.yml', 'dist/BANNON.apk', 'dist/version.json' ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble site (HTML only; models stream from the repo CDN fallback)
+        run: |
+          mkdir -p _site _site/assets/icons
+          cp BANNON_v150.html _site/index.html
+          # PWA: manifest + icons beside index.html so the game installs as an app (Add to Home Screen).
+          cp manifest.json _site/manifest.json
+          cp assets/icons/icon-192.png assets/icons/icon-512.png assets/icons/apple-touch-icon.png _site/assets/icons/ || true
+          # a tiny landing note (optional) — the game is the index.
+          printf 'User-agent: *\nAllow: /\n' > _site/robots.txt
+          # THE APK, SERVED FROM A NORMAL WEB HOST.
+          # raw.githubusercontent.com hands the APK back as application/octet-stream, and mobile
+          # Chrome has repeatedly mangled that into something Android then rejects with "problem
+          # parsing the package" -- the owner hit it twice, including after a clean uninstall, on an
+          # APK verified locally as zipalign-clean with valid v1+v2+v3 signatures. Nothing was wrong
+          # with the package; the delivery was the problem. Pages serves it over plain HTTPS with a
+          # proper filename and a real download page beside it.
+          cp dist/BANNON.apk _site/BANNON.apk || true
+          # BOTH APKs, because the normal one can be refused on IDENTITY. When an install of the
+          # same package name signed with a different key is already on the phone, Android rejects
+          # the upgrade — and some OEM installers report that refusal as "problem parsing the
+          # package" rather than as a signature error, which sends you hunting a corrupt file that
+          # is not corrupt. com.bannon.game.fresh installs ALONGSIDE instead of over, so it cannot
+          # hit that. It was gitignored until today and had never reached any delivery path.
+          cp dist/BANNON-fresh.apk _site/BANNON-fresh.apk || true
+          cp dist/version.json _site/version.json || true
+          APKSZ=$(du -h dist/BANNON.apk 2>/dev/null | cut -f1)
+          VC=$(grep -o '"build":[0-9]*' dist/version.json 2>/dev/null | head -1 | cut -d: -f2)
+          cat > _site/install.html <<HTML
+          <!doctype html><meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>BANNON — install</title>
+          <style>body{background:#0a0d13;color:#ffe9c0;font:600 16px/1.5 system-ui,sans-serif;
+          margin:0;padding:28px;max-width:640px}a.btn{display:block;background:#d8a24a;color:#101010;
+          text-align:center;padding:18px;border-radius:14px;font-weight:800;text-decoration:none;
+          margin:22px 0;font-size:19px}a.alt{background:#2a3140;color:#ffe9c0}
+          li{margin:8px 0}code{background:#161b25;padding:2px 6px;border-radius:6px}</style>
+          <h1>BANNON</h1>
+          <p>build <b>${VC}</b> &middot; ${APKSZ}</p>
+          <a class="btn" href="BANNON.apk" download="BANNON.apk">DOWNLOAD APK</a>
+          <a class="btn alt" href="BANNON-fresh.apk" download="BANNON-fresh.apk">SIDE-BY-SIDE APK &mdash; use this if the one above will not install</a>
+          <a class="btn alt" href="./">OR PLAY IN THE BROWSER (no install)</a>
+          <h3>If Android says "problem parsing the package"</h3>
+          <ol>
+          <li>Check the downloaded file size. It must be about <b>${APKSZ}</b>. A few KB means the
+          download failed and you saved an error page &mdash; download it again.</li>
+          <li>Allow install from unknown sources for your browser, then tap the file again.</li>
+          <li>Uninstall any older BANNON first &mdash; a different signing key blocks the upgrade.</li>
+          </ol>
+          <p>Install once. After that the game updates itself and asks before applying.</p>
+          HTML
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

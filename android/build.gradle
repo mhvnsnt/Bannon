@@ -1,0 +1,8 @@
+// Top-level build file. Self-contained plain-WebView Android project (no Capacitor) — see android/README.md.
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

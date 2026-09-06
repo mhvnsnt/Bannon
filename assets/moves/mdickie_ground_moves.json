@@ -1,0 +1,20 @@
+{
+  "_source": "Wrestling MPire Ground.bb (grounded mat-game holds, head-side + leg-side) — ported with owner's rights, routed through OUR submission system (sub + limb + GROUNDED position). Proprietary flavor on signatures.",
+  "moves": [
+    { "name": "The Executioner's Vise",  "mdickie": "camel clutch",       "kind": "submission", "sub": "CAMEL_CLUTCH",   "limb": "back",  "from": "GROUNDED_HEAD", "style": ["technical","powerhouse"] },
+    { "name": "Sleeper Hold",            "mdickie": "sleeper hold",       "kind": "submission", "sub": "SLEEPER",        "limb": "neck",  "from": "GROUNDED_HEAD", "style": ["technical"] },
+    { "name": "Dragon Sleeper",          "mdickie": "dragon sleeper",     "kind": "submission", "sub": "DRAGON_SLEEPER", "limb": "neck",  "from": "GROUNDED_HEAD", "style": ["technical","striker"] },
+    { "name": "Cable Choke",             "mdickie": "choke hold",         "kind": "submission", "sub": "CHOKE",          "limb": "neck",  "from": "GROUNDED_HEAD", "style": ["hardcore","brawler"] },
+    { "name": "Crossface Clutch",        "mdickie": "crossface clutch",   "kind": "submission", "sub": "CROSSFACE",      "limb": "arm",   "from": "GROUNDED_HEAD", "style": ["technical"] },
+    { "name": "Arm Bar",                 "mdickie": "arm bar",            "kind": "submission", "sub": "ARMBAR",         "limb": "arm",   "from": "GROUNDED_HEAD", "style": ["technical","mma"] },
+    { "name": "The Boston Crab",         "mdickie": "boston crab",        "kind": "submission", "sub": "BOSTON_CRAB",    "limb": "back",  "from": "GROUNDED_LEGS", "style": ["technical","powerhouse"] },
+    { "name": "Half Crab",               "mdickie": "half crab",          "kind": "submission", "sub": "HALF_CRAB",      "limb": "leg",   "from": "GROUNDED_LEGS", "style": ["technical"] },
+    { "name": "The Ring Of Saturn",      "mdickie": "elevated crab (lion tamer)", "kind": "submission", "sub": "ELEVATED_CRAB", "limb": "back", "from": "GROUNDED_LEGS", "style": ["technical","powerhouse"] },
+    { "name": "Figure-Four Leglock",     "mdickie": "figure four leglock","kind": "submission", "sub": "FIGURE_FOUR",    "limb": "leg",   "from": "GROUNDED_LEGS", "style": ["technical","oldSchool"] },
+    { "name": "Spinning Toe Hold",       "mdickie": "spinning toe hold",  "kind": "submission", "sub": "TOE_HOLD",       "limb": "leg",   "from": "GROUNDED_LEGS", "style": ["technical","oldSchool"] },
+    { "name": "Ankle Lock",              "mdickie": "ankle lock",         "kind": "submission", "sub": "ANKLE_LOCK",     "limb": "leg",   "from": "GROUNDED_LEGS", "style": ["technical","mma"] },
+    { "name": "Scorpion Lock",           "mdickie": "scorpion lock",      "kind": "submission", "sub": "SCORPION",       "limb": "back",  "from": "GROUNDED_LEGS", "style": ["technical","highFlyer"] },
+    { "name": "Mounted Ground Pound",    "mdickie": "ground and pound",   "kind": "strike",     "pos": "GROUND_MOUNT",   "from": "GROUNDED_HEAD", "power": 46, "style": ["mma","brawler"] },
+    { "name": "Grounded Elbow Drop",     "mdickie": "elbow drop",         "kind": "strike",     "pos": "GROUND_STRIKE",  "from": "GROUNDED",      "power": 52, "style": ["brawler","oldSchool"] }
+  ]
+}

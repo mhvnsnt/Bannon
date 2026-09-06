@@ -1,0 +1,331 @@
+{
+ "file": "Promos.bb",
+ "functions": [
+  {
+   "name": "DisplayPromo",
+   "args": "",
+   "line": 457,
+   "calls": [
+    "promoLength",
+    "Speak",
+    "promoReact",
+    "Pop",
+    "promoActor",
+    "pChar",
+    "PromoCharm",
+    "PushTurn",
+    "ChangeRelationship",
+    "pHeel",
+    "FormTeam",
+    "charFed",
+    "charContract",
+    "charSalary",
+    "gamSchedule",
+    "charGender",
+    "fedRoster",
+    "fedSize",
+    "pAnim",
+    "ChangeAnim",
+    "fedBooker",
+    "TitleHolder",
+    "FindTeamMate",
+    "charRelationship",
+    "FindThirdParty",
+    "FindFriend",
+    "charWeapon",
+    "pHolding",
+    "weapType",
+    "weapValue",
+    "charMove",
+    "charAttack",
+    "charManager",
+    "ChangeRealRelationship",
+    "And",
+    "charRealRelationship",
+    "fedChampWorld",
+    "charHeel",
+    "fedChampInter",
+    "fedChampTag"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "PreparePromo",
+   "args": "",
+   "line": 4202,
+   "calls": [
+    "ImportantPromo",
+    "gamSchedule",
+    "pChar",
+    "charAttitude",
+    "charHappiness",
+    "charRealRelationship",
+    "fedBooker",
+    "Until",
+    "charFed",
+    "FindCharacter",
+    "promoLocked",
+    "promoLength",
+    "promoReact",
+    "promoActor",
+    "promoRole",
+    "FindActor",
+    "pTeam",
+    "pRole",
+    "FindStrength"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindActor",
+   "args": "cyc",
+   "line": 4272,
+   "calls": [
+    "promoActor"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ImportantPromo",
+   "args": "promo",
+   "line": 4279,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "DisplaySubtitles",
+   "args": "",
+   "line": 4288,
+   "calls": [
+    "SqueezeNewsFont",
+    "Outline"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "Speak",
+   "args": "cyc,target,expression",
+   "line": 4312,
+   "calls": [
+    "pFoc",
+    "pTeam",
+    "pOutTim",
+    "pHidden",
+    "pControl",
+    "pSpeaking",
+    "pEyes"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ResetExpressions",
+   "args": "cyc",
+   "line": 4330,
+   "calls": [
+    "pOldEyes",
+    "pEyes",
+    "charEyes",
+    "pChar",
+    "pFoc",
+    "charRelationship",
+    "pAngerTim",
+    "pSpeaking"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FacialExpressions",
+   "args": "cyc",
+   "line": 4343,
+   "calls": [
+    "pEyes",
+    "pOldEyes",
+    "pLimb",
+    "tEyes",
+    "pSpeaking",
+    "pMouth",
+    "tMouth"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FormTeam",
+   "args": "char,v",
+   "line": 4365,
+   "calls": [
+    "ChangeRelationship",
+    "charPartner",
+    "ChangeAllegiance",
+    "charHeel"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ChangeRelationship",
+   "args": "char,v,relation",
+   "line": 4377,
+   "calls": [
+    "charRelationship",
+    "charPartner",
+    "charManager"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ChangeRealRelationship",
+   "args": "char,v,relation",
+   "line": 4393,
+   "calls": [
+    "charRealRelationship"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ChangeAllegiance",
+   "args": "char,allegiance",
+   "line": 4401,
+   "calls": [
+    "FindCharacter",
+    "pHeel",
+    "charEyes",
+    "charHeel"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindFriend",
+   "args": "char,task",
+   "line": 4421,
+   "calls": [
+    "fedSize",
+    "charFed",
+    "fedRoster",
+    "charRelationship",
+    "Until"
+   ],
+   "doc": "-1=random, 0=oldest, 1=latest"
+  },
+  {
+   "name": "FindRealFriend",
+   "args": "char,task",
+   "line": 4443,
+   "calls": [
+    "fedSize",
+    "charFed",
+    "fedRoster",
+    "charRealRelationship",
+    "Until"
+   ],
+   "doc": "-1=random, 0=oldest, 1=latest"
+  },
+  {
+   "name": "FindEnemy",
+   "args": "char,task",
+   "line": 4465,
+   "calls": [
+    "fedSize",
+    "charFed",
+    "fedRoster",
+    "charRelationship",
+    "Until"
+   ],
+   "doc": "-1=random, 0=oldest, 1=latest"
+  },
+  {
+   "name": "FindRealEnemy",
+   "args": "char,task",
+   "line": 4487,
+   "calls": [
+    "fedSize",
+    "charFed",
+    "fedRoster",
+    "charRealRelationship",
+    "Until"
+   ],
+   "doc": "-1=random, 0=oldest, 1=latest"
+  },
+  {
+   "name": "FindThirdParty",
+   "args": "char,opponent,task",
+   "line": 4509,
+   "calls": [
+    "fedSize",
+    "charFed",
+    "fedRoster",
+    "charRelationship"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindTeamMate",
+   "args": "cyc",
+   "line": 4533,
+   "calls": [
+    "pTeam"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "PromoCharm",
+   "args": "",
+   "line": 4543,
+   "calls": [
+    "pHeat",
+    "KeyDown",
+    "charPopularity",
+    "pChar"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "PushTurn",
+   "args": "cyc,v",
+   "line": 4557,
+   "calls": [
+    "charHeel",
+    "pChar",
+    "pHeel",
+    "charEyes"
+   ],
+   "doc": ">0=circumstantial, 0=guaranteed face, -1=guaranteed heel"
+  },
+  {
+   "name": "FindStrength",
+   "args": "char,v",
+   "line": 4576,
+   "calls": [
+    "InjuryStatus",
+    "charHealth",
+    "charStrength",
+    "charSkill",
+    "charAgility",
+    "charStamina",
+    "charToughness",
+    "charAttitude",
+    "Or",
+    "charPopularity",
+    "And",
+    "charHeight",
+    "TranslateWeight",
+    "CountMatches",
+    "GetWinRate",
+    "charManager",
+    "charPartner",
+    "charAge"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "AnnounceBreakup",
+   "args": "",
+   "line": 4609,
+   "calls": [],
+   "doc": ""
+  }
+ ],
+ "types": [],
+ "globals": [],
+ "consts": [],
+ "dims": [],
+ "lineCount": 4611
+}

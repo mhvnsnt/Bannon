@@ -1,0 +1,387 @@
+{
+ "file": "World.bb",
+ "functions": [
+  {
+   "name": "PreviewArena",
+   "args": "",
+   "line": 8,
+   "calls": [
+    "Loader",
+    "charFed",
+    "LoadAtmos",
+    "LoadArena",
+    "LoadRopes",
+    "tVideo",
+    "LoadTexture",
+    "FindChild",
+    "CreateTimer",
+    "WaitTimer",
+    "KeyDown",
+    "ButtonPressed",
+    "MouseDown",
+    "gamAttendance",
+    "gamSchedule",
+    "ProduceSound",
+    "sCrowd",
+    "AnimateCrowd",
+    "ManageAtmos",
+    "ManageMusic",
+    "font",
+    "Outline",
+    "fontNews",
+    "KeyHit",
+    "Screenshot",
+    "light",
+    "rope",
+    "sign"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LoadArena",
+   "args": "",
+   "line": 130,
+   "calls": [
+    "GetArenaSettings",
+    "LoadAnimMesh",
+    "DecorateArena",
+    "DecorateRing",
+    "PrepareScenery",
+    "tVideo",
+    "LoadTexture",
+    "fedRoster",
+    "fedSize",
+    "charHeight",
+    "FindChild",
+    "tGirder",
+    "Or",
+    "tCrowd",
+    "EntityY",
+    "CrowdShape",
+    "LoadSign",
+    "LoadBlocks"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "CrowdShape",
+   "args": "crowder",
+   "line": 250,
+   "calls": [],
+   "doc": "-1=broken, 0=normal, 1=elongated"
+  },
+  {
+   "name": "LoadSign",
+   "args": "crowder",
+   "line": 266,
+   "calls": [
+    "sign",
+    "LoadAnimMesh",
+    "FindChild",
+    "tSign",
+    "EntityX",
+    "EntityY",
+    "EntityZ",
+    "EntityYaw",
+    "CrowdShape"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetArenaSettings",
+   "args": "option",
+   "line": 304,
+   "calls": [
+    "arenaWall",
+    "arenaCeiling",
+    "arenaGround"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GenerateArena",
+   "args": "promotion,event,ring",
+   "line": 420,
+   "calls": [
+    "CupStage",
+    "cupFoc",
+    "ApronColour",
+    "gamVenue",
+    "gamAtmos",
+    "gamRopes",
+    "gamPads",
+    "gamCanvas",
+    "gamApron",
+    "gamMatting"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GenerateAttendance",
+   "args": "",
+   "line": 568,
+   "calls": [
+    "fedSize",
+    "charFed",
+    "fedRoster",
+    "charPopularity",
+    "fedChampWorld",
+    "fedPopularity",
+    "gamSchedule",
+    "gamAgreement"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TranslateAttendance",
+   "args": "attendance",
+   "line": 601,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "ApronColour",
+   "args": "apron",
+   "line": 609,
+   "calls": [],
+   "doc": "1=black, 2=blue, 3=white"
+  },
+  {
+   "name": "DecorateArena",
+   "args": "",
+   "line": 617,
+   "calls": [
+    "tWall",
+    "LoadTexture",
+    "arenaWall",
+    "FindChild",
+    "tCeiling",
+    "arenaCeiling",
+    "tGround",
+    "arenaGround",
+    "And",
+    "tPoster"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "DecorateRing",
+   "args": "",
+   "line": 677,
+   "calls": [
+    "ApronColour",
+    "LoadTexture",
+    "FindChild",
+    "padExposed"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "PrepareScenery",
+   "args": "",
+   "line": 761,
+   "calls": [
+    "gamAgreement",
+    "FindChild",
+    "tPlant",
+    "charFed",
+    "fedProduction",
+    "videoScreen",
+    "videoOldScreen"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LoadBlocks",
+   "args": "",
+   "line": 815,
+   "calls": [
+    "blockType",
+    "blockClimb"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LoadAtmos",
+   "args": "",
+   "line": 1202,
+   "calls": [
+    "CreateCamera",
+    "GraphicsWidth",
+    "GraphicsHeight",
+    "GetCamera",
+    "CreatePivot",
+    "CreateListener",
+    "LoadLighting",
+    "sCrowd",
+    "EmitSound",
+    "LoadSound"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LoadLighting",
+   "args": "",
+   "line": 1276,
+   "calls": [
+    "CreatePivot",
+    "light",
+    "CreateLight"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ManageAtmos",
+   "args": "",
+   "line": 1298,
+   "calls": [
+    "charFed",
+    "fedProduction",
+    "gamAgreement",
+    "light"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "Camera",
+   "args": "",
+   "line": 1408,
+   "calls": [
+    "IdentifyCentres",
+    "KeyDown",
+    "camShortCut",
+    "MouseXSpeed",
+    "MouseYSpeed",
+    "And",
+    "pTeam",
+    "SatisfiedAngle",
+    "MouseDown",
+    "ReachedCord",
+    "EntityX",
+    "EntityY",
+    "EntityZ",
+    "pAnim",
+    "NearestSideTo",
+    "EntityYaw",
+    "Or",
+    "pOutTim",
+    "InsideTunnel",
+    "CamViable",
+    "pPlatform",
+    "pCurtain",
+    "GetSmoothSpeeds",
+    "blockType",
+    "InsideRing",
+    "FindChild",
+    "p",
+    "EntityPitch",
+    "EntityRoll",
+    "pFoc",
+    "light",
+    "weap"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetCamera",
+   "args": "option",
+   "line": 1910,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "CamConflict",
+   "args": "command",
+   "line": 1957,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "CamViable",
+   "args": "cyc",
+   "line": 1965,
+   "calls": [
+    "pControl",
+    "pOutTim",
+    "pHidden",
+    "LegalMan",
+    "Or",
+    "pRole",
+    "pChaosTim",
+    "pEliminated",
+    "pFoc",
+    "InProximity"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "EyeLevel",
+   "args": "",
+   "line": 1986,
+   "calls": [
+    "charHeight",
+    "pChar",
+    "pAnim",
+    "ProjectedAnim",
+    "EntityY",
+    "FindChild",
+    "p"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "WatchAngle",
+   "args": "",
+   "line": 2001,
+   "calls": [
+    "CamViable",
+    "pLimb",
+    "EntityYaw",
+    "EntityX",
+    "EntityZ"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "NearestSideTo",
+   "args": "cyc,x#,z#",
+   "line": 2053,
+   "calls": [
+    "ProjectDummy",
+    "EntityX",
+    "EntityZ"
+   ],
+   "doc": "1=left, 2=right"
+  },
+  {
+   "name": "FindGround",
+   "args": "",
+   "line": 2066,
+   "calls": [
+    "InsideRing"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindCeiling",
+   "args": "",
+   "line": 2073,
+   "calls": [
+    "InsideTunnel"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "InsideTunnel",
+   "args": "x#,z#",
+   "line": 2085,
+   "calls": [],
+   "doc": ""
+  }
+ ],
+ "types": [],
+ "globals": [],
+ "consts": [],
+ "dims": [],
+ "lineCount": 2092
+}

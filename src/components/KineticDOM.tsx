@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import html2canvas from 'html2canvas';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import { physicsBridgeClient } from '../utils/PhysicsFFIBridgeClient';
+
 
 interface KineticDOMProps {
     targetElementId: string; // The DOM ID of the element to explode (e.g., 'code-editor-panel')
@@ -40,6 +42,7 @@ export const KineticDOM: React.FC<KineticDOMProps> = ({ targetElementId }) => {
         window.addEventListener('compilation-failed', handleErrorEvent);
         window.addEventListener('reset-kinetic-dom', handleResetEvent);
 
+        window.removeEventListener('click', handleGlobalClick);
         return () => {
             window.removeEventListener('compilation-failed', handleErrorEvent);
             window.removeEventListener('reset-kinetic-dom', handleResetEvent);

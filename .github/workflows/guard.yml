@@ -1,0 +1,39 @@
+# BANNON SELF-HEAL GUARD — the counter-layer for clobbers / broken stubs pushed by ANY tool
+# (Google AI-Studio, CI, a bad merge). Unlike integrity.yml (which only FAILS), this REPAIRS: if a push
+# leaves BANNON_v150.html below the line floor, missing a shipped system, syntax-broken, or stubbed, it
+# restores the last healthy version from git history and pushes a [heal] commit — so main never stays dead.
+name: BANNON Self-Heal Guard
+on:
+  push:
+    branches: [main, 'claude/**']
+permissions:
+  contents: write
+jobs:
+  heal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Self-heal a clobbered / stubbed game file
+        run: |
+          set +e
+          node scripts/heal_clobber.cjs --write
+          CODE=$?
+          echo "heal exit code: $CODE"
+          if [ "$CODE" = "10" ]; then
+            git config user.name  "bannon-guard[bot]"
+            git config user.email "bannon-guard@users.noreply.github.com"
+            git add BANNON_v150.html index.html public/index.html
+            git commit -m "[heal] auto-restore game file clobbered by a bad push [skip ci]"
+            git push
+            echo "::warning::A push clobbered BANNON_v150.html — auto-healed from the last good commit."
+          elif [ "$CODE" = "2" ]; then
+            echo "::error::BANNON_v150.html is unrecoverable from the last 200 commits — manual fix needed."
+            exit 1
+          fi
+      - name: Stub scan (report only)
+        run: node scripts/stub_scan.cjs || true
