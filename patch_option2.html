@@ -1,0 +1,30 @@
+<script>
+// ============================================================================
+// BANNON — BRICK 145: OPTION 2 ASSET BINDING & EXTENDED ROSTER
+// Executed by LIVING NEXUS NATIVE MOBILE AGENT
+// ============================================================================
+(function bindOption2Assets() {
+    if (window.__nexusOption2Bound) return;
+    window.__nexusOption2Bound = true;
+
+    console.log('%c[LIVING NEXUS] SCANNING DRIVE BUFFER: OPTION 2 ACQUIRED', 'color:#00ffcc;font-weight:bold;background:#000;padding:4px');
+
+    if (window.NEXUS_MODEL_REGISTRY) {
+        const _origScan = window.NEXUS_MODEL_REGISTRY.scanAndEquip;
+        window.NEXUS_MODEL_REGISTRY.scanAndEquip = function() {
+            _origScan.call(this);
+            console.log('[NEXUS] Processing Option 2 payload...');
+            
+            // Option 2 additional variants / alternate attire meshes
+            this.equipToTarget('386f14fb', 'BANNON_OPTION2_GEAR');
+            this.equipToTarget('efcf3606', 'MAIME_OPTION2_ATTIRE');
+            this.equipToTarget('7079dc00', 'ONYX_OPTION2_VARIANT');
+            this.equipToTarget('CODY_001', 'CODY_OPTION2_ALT');
+            
+            console.log('[NEXUS] Option 2 meshes successfully overlaid and rigged. Dual-variant capability active.');
+        };
+        // Re-run scan to apply Option 2
+        window.NEXUS_MODEL_REGISTRY.scanAndEquip();
+    }
+})();
+</script>

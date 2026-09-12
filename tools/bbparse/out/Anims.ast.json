@@ -1,0 +1,614 @@
+{
+ "file": "Anims.bb",
+ "functions": [
+  {
+   "name": "LoadSequences",
+   "args": "cyc",
+   "line": 9,
+   "calls": [
+    "pSeq",
+    "LoadAnimSeq",
+    "p",
+    "ExtractAnimSeq",
+    "charStance",
+    "pChar",
+    "charGender",
+    "attackList",
+    "charAttack",
+    "attackAnimStart",
+    "attackAnimEnd",
+    "attackAnimSource",
+    "crushList",
+    "charCrush",
+    "crushAnimStart",
+    "crushAnimEnd",
+    "crushAnimSource",
+    "pRole",
+    "pRefTaunt",
+    "GetRefGesture",
+    "charTaunt",
+    "tauntAnimStart",
+    "tauntAnimEnd",
+    "tauntAnimSource",
+    "LoadMoveSequences",
+    "LoadHeadSequences",
+    "LoadLegSequences",
+    "LoadBuckleSequences",
+    "LoadTeamMoveSequences"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetRefGesture",
+   "args": "",
+   "line": 294,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "Animations",
+   "args": "cyc",
+   "line": 316,
+   "calls": [
+    "pAnim",
+    "FightViable",
+    "pFoc",
+    "stanceType",
+    "charStance",
+    "pChar",
+    "pHolding",
+    "And",
+    "weapHold",
+    "weapType",
+    "FindInjury",
+    "pDizzyTim",
+    "pBlindTim",
+    "pAnimTim",
+    "pState",
+    "p",
+    "pSeq",
+    "KeyDown",
+    "ChangeAnim",
+    "pControl",
+    "pRole",
+    "pCostume",
+    "DirPressed",
+    "cUpTim",
+    "cDownTim",
+    "cLeftTim",
+    "cRightTim",
+    "EntityYaw",
+    "pOutTim",
+    "GetMovementAnim",
+    "Or",
+    "Advance",
+    "EntertainViable",
+    "pMomentum",
+    "pOldAnim",
+    "SatisfiedAngle",
+    "RopeBounce",
+    "RunningImpacts",
+    "cRun",
+    "RiskExertion"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ChangeAnim",
+   "args": "cyc,anim",
+   "line": 2545,
+   "calls": [
+    "pOldAnim",
+    "pAnim",
+    "pAnimStage",
+    "pAnimTim"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "SharpTransition",
+   "args": "cyc,anim,location,angle#",
+   "line": 2552,
+   "calls": [
+    "EntityX",
+    "FindChild",
+    "p",
+    "EntityZ",
+    "pExcusedWorld",
+    "EntityYaw",
+    "pSeq"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ReverseTransition",
+   "args": "cyc,anim,speed#,offX#,endY#,offZ#",
+   "line": 2571,
+   "calls": [
+    "p",
+    "pSeq",
+    "EntityX",
+    "EntityZ"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "InstantTurn",
+   "args": "cyc,entity",
+   "line": 2584,
+   "calls": [
+    "p",
+    "EntityYaw"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FaceCentre",
+   "args": "cyc",
+   "line": 2593,
+   "calls": [
+    "IdentifyCentres",
+    "InstantTurn"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ProjectedAnim",
+   "args": "cyc",
+   "line": 2600,
+   "calls": [
+    "pAnim",
+    "Or"
+   ],
+   "doc": "1=projected focus only, 2=projected collisions"
+  },
+  {
+   "name": "GetMovementAnim",
+   "args": "cyc,request#",
+   "line": 2615,
+   "calls": [
+    "pFoc",
+    "SatisfiedAngle"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "Advance",
+   "args": "cyc,angle#,distance#",
+   "line": 2634,
+   "calls": [
+    "p"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "AdjustGaze",
+   "args": "cyc",
+   "line": 2642,
+   "calls": [
+    "pFoc",
+    "HeadViable",
+    "pFocTim",
+    "GetSmoothSpeeds",
+    "EntityPitch",
+    "pLimb",
+    "EntityYaw",
+    "EntityRoll",
+    "EntityX",
+    "EntityZ"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "PointHead",
+   "args": "cyc,entity",
+   "line": 2672,
+   "calls": [
+    "FindChild",
+    "p",
+    "EntityPitch",
+    "EntityYaw",
+    "EntityRoll"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LookAtObject",
+   "args": "cyc,entity",
+   "line": 2695,
+   "calls": [
+    "FindChild",
+    "p",
+    "EntityPitch",
+    "EntityYaw",
+    "EntityRoll"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LookAtPerson",
+   "args": "cyc,v",
+   "line": 2714,
+   "calls": [
+    "FindChild",
+    "p",
+    "EntityPitch",
+    "EntityYaw",
+    "EntityRoll"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ManageEyes",
+   "args": "cyc",
+   "line": 2737,
+   "calls": [
+    "GrimaceViable",
+    "charTrainCourse",
+    "pSquintRevert",
+    "charEyeShape",
+    "pBlinkTim",
+    "pBlindTim",
+    "pDizzyTim",
+    "pDT",
+    "TurnViable",
+    "pPinner",
+    "pSquintTarget",
+    "pSquintSpeed",
+    "pSquint",
+    "pChar",
+    "pLimb"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "HeadViable",
+   "args": "cyc",
+   "line": 2777,
+   "calls": [
+    "pFoc",
+    "pDizzyTim",
+    "pBlindTim",
+    "pMomentum",
+    "pAnim",
+    "pDT",
+    "And",
+    "pState",
+    "InLine",
+    "p"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FightViable",
+   "args": "cyc,v",
+   "line": 2797,
+   "calls": [
+    "LegalMan",
+    "pTeam",
+    "InProximity",
+    "InsideRing"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "SwitchViable",
+   "args": "cyc",
+   "line": 2809,
+   "calls": [
+    "pAnim",
+    "pDizzyTim",
+    "pBlindTim",
+    "pDT"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GrimaceViable",
+   "args": "cyc",
+   "line": 2822,
+   "calls": [
+    "pAnim",
+    "pPinCount",
+    "pPinning",
+    "Or",
+    "pPinner"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TurnViable",
+   "args": "cyc",
+   "line": 2843,
+   "calls": [
+    "pAnim",
+    "Or",
+    "pAnimTim",
+    "charCrush",
+    "pChar",
+    "InProximity",
+    "pFoc",
+    "crushFall",
+    "pRole",
+    "cRun"
+   ],
+   "doc": "1=swift, 2=slow"
+  },
+  {
+   "name": "AttackViable",
+   "args": "cyc",
+   "line": 2890,
+   "calls": [
+    "pAnim",
+    "pAnimTim",
+    "Or",
+    "pStretched",
+    "pGrappling",
+    "pPinning",
+    "pPinner",
+    "attackFall",
+    "charAttack",
+    "pChar",
+    "attackTransition",
+    "attackLength",
+    "charCrush",
+    "crushFall",
+    "crushTransition",
+    "crushLength",
+    "And",
+    "pRefAward",
+    "pRefVictim",
+    "pImmunity",
+    "pOutTim",
+    "pRole",
+    "pHidden"
+   ],
+   "doc": "1=standing, 2=kneeling, 3=crawling, 4=lying"
+  },
+  {
+   "name": "CollapseViable",
+   "args": "cyc",
+   "line": 2965,
+   "calls": [
+    "pAnim",
+    "Or",
+    "charAttack",
+    "pChar",
+    "attackFall",
+    "pAnimTim",
+    "attackLength",
+    "charCrush",
+    "crushFall",
+    "crushLength"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "SpillViable",
+   "args": "cyc,angle#,range#",
+   "line": 2997,
+   "calls": [
+    "pPlatform",
+    "InsideRing",
+    "SatisfiedAngle",
+    "pBuckleTim",
+    "EntityX",
+    "EntityZ",
+    "FindBuckleSlumps"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "RiskSpills",
+   "args": "cyc,angle#",
+   "line": 3018,
+   "calls": [
+    "SpillViable",
+    "ChangeAnim"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "RiskFall",
+   "args": "cyc,chance",
+   "line": 3042,
+   "calls": [
+    "pAgility",
+    "pSkill",
+    "pSpecial",
+    "pHP"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TriggerFall",
+   "args": "cyc",
+   "line": 3048,
+   "calls": [
+    "AttackViable",
+    "EntertainViable",
+    "charPopularity",
+    "pChar",
+    "SatisfiedAngle",
+    "BlockClear",
+    "SpillViable",
+    "And",
+    "TranslateWeight",
+    "charHeight",
+    "pPlatform",
+    "FlightClear",
+    "Or",
+    "KeyDown",
+    "ChangeAnim",
+    "pHP",
+    "pHealth",
+    "pDT",
+    "GetDT",
+    "pDizzyTim",
+    "pBlindTim"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "RandomFall",
+   "args": "",
+   "line": 3109,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "FallEffects",
+   "args": "cyc,style",
+   "line": 3116,
+   "calls": [
+    "Pop",
+    "ProduceSound",
+    "pLimb",
+    "sPain",
+    "GetVoice",
+    "ScarArea",
+    "RiskInjury",
+    "pHealth",
+    "pHeat",
+    "EntertainViable",
+    "InsideRing",
+    "ShakeRing",
+    "sBlock",
+    "pDT"
+   ],
+   "doc": "1=minor, 2=major"
+  },
+  {
+   "name": "CrawlOverlap",
+   "args": "cyc",
+   "line": 3148,
+   "calls": [
+    "EntityX",
+    "EntityZ",
+    "AttackViable",
+    "pAnim",
+    "pDT",
+    "InProximity",
+    "ReachedCord"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetPin",
+   "args": "cyc,v",
+   "line": 3177,
+   "calls": [
+    "PinReaction",
+    "pAnim",
+    "pPinStyle",
+    "NearestHumanSide",
+    "PinClear",
+    "Or",
+    "InProximity",
+    "ProjectDummy",
+    "EntityX",
+    "EntityZ"
+   ],
+   "doc": "1=overhead, 2=from left (flat), 3=from right (flat), 4=from left (hooked), 5=from right (hooked)"
+  },
+  {
+   "name": "PinClear",
+   "args": "cyc,v,posX#,posZ#,range",
+   "line": 3253,
+   "calls": [
+    "ProjectDummy",
+    "EntityX",
+    "EntityZ",
+    "AttackViable",
+    "iState",
+    "ScanItem",
+    "ItemCollide",
+    "blockType",
+    "InsideRing",
+    "BehindRailings"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ApplyPin",
+   "args": "cyc,v",
+   "line": 3296,
+   "calls": [
+    "pPinning",
+    "ReachedCord",
+    "SatisfiedAngle",
+    "InstantTurn",
+    "pLimb"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "PinReaction",
+   "args": "cyc",
+   "line": 3319,
+   "calls": [
+    "pAnim",
+    "pAnimTim",
+    "pGrappler",
+    "Or"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ProtectPin",
+   "args": "cyc",
+   "line": 3344,
+   "calls": [
+    "FallsCount",
+    "LegalMan",
+    "pPinning",
+    "pTeam",
+    "InProximity",
+    "pDT",
+    "pChecked",
+    "And",
+    "TouchingRopes"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TauntEffects",
+   "args": "cyc,v,tauntTim",
+   "line": 3357,
+   "calls": [
+    "LegalMan",
+    "InProximity",
+    "pAnimTim",
+    "Pop",
+    "pHeat",
+    "charPopularity",
+    "pChar",
+    "pSpecial"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TauntAbort",
+   "args": "cyc",
+   "line": 3373,
+   "calls": [
+    "pControl",
+    "DirPressed",
+    "ActionPressed",
+    "cTaunt",
+    "FindThreat",
+    "RushViable",
+    "pRole",
+    "RefViable",
+    "Or",
+    "pReaction"
+   ],
+   "doc": ""
+  }
+ ],
+ "types": [],
+ "globals": [],
+ "consts": [],
+ "dims": [],
+ "lineCount": 3393
+}

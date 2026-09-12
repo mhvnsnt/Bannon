@@ -1,0 +1,32 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.3",
+  "Category": "Games",
+  "Description": "BANNON — Procedural Wrestling Engine",
+  "Modules": [
+    {
+      "Name": "BannonCore",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "AdditionalDependencies": [
+        "Engine",
+        "PhysicsCore",
+        "ChaosVehicles"
+      ]
+    }
+  ],
+  "Plugins": [
+    { "Name": "LiveLink", "Enabled": true },
+    { "Name": "LiveLinkAnimationBlending", "Enabled": true },
+    { "Name": "ControlRig", "Enabled": true },
+    { "Name": "FullBodyIK", "Enabled": true },
+    { "Name": "ChaosCloth", "Enabled": true },
+    { "Name": "GeometryCache", "Enabled": true }
+  ],
+  "TargetPlatforms": [
+    "Android",
+    "IOS", 
+    "Win64",
+    "Mac"
+  ]
+}

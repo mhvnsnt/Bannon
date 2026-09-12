@@ -29,6 +29,7 @@ export interface GenJob {
   progress: number;          // 0..100
   glbUrl?: string;           // the RIGGED model when done
   thumbnailUrl?: string;
+  image?: string;            // optional image seed (data: URI / URL) -> forge runs image->3D
   error?: string;
   createdAt: string;
   updatedAt: string;
@@ -62,14 +63,14 @@ export class CharacterModelGen {
    * the background and updates the job (poll it via getJob / the /status route). characterId, if
    * given, is just carried through so the client can auto-bind the result to that character.
    */
-  public start(prompt: string, opts: { provider?: GenProvider; characterId?: string; rig?: boolean } = {}): GenJob {
+  public start(prompt: string, opts: { provider?: GenProvider; characterId?: string; rig?: boolean; image?: string } = {}): GenJob {
     // Prefer OUR OWN backend when configured, so it's the BANNON forge by default — not a 3rd party.
     const provider: GenProvider = opts.provider ||
       (process.env.OWN_GEN_URL ? 'self' : (process.env.MESHY_API_KEY ? 'meshy' : 'tripo'));
     const now = new Date().toISOString();
     const job: GenJob = {
       id: 'gen_' + Math.random().toString(36).slice(2, 10),
-      provider, characterId: opts.characterId, prompt,
+      provider, characterId: opts.characterId, prompt, image: opts.image,
       status: 'queued', progress: 0, createdAt: now, updatedAt: now,
     };
     this.jobs.set(job.id, job);
@@ -124,7 +125,7 @@ export class CharacterModelGen {
 
     const sub = await fetch(url, {
       method: 'POST', headers: H,
-      body: JSON.stringify({ prompt: job.prompt, rig, characterId: job.characterId }),
+      body: JSON.stringify({ prompt: job.prompt, rig, characterId: job.characterId, image: job.image }),
     }).then(r => r.json() as any);
 
     // synchronous host: a glb came straight back

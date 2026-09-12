@@ -1,0 +1,75 @@
+name: Autonomous Build & Verify Loop
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build-node-backend:
+    name: Build Node.js Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install Dependencies
+        run: npm ci
+        
+      - name: Compile TypeScript
+        run: npm run build
+
+  build-unreal-physics:
+    name: Compile Native Unreal C++
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          
+      # Build Linux Editor/Server
+      - name: Build Unreal Project (Linux)
+        id: build_unreal_linux
+        uses: epicgames/unreal-engine-github-action@v1
+        with:
+          project: unreal/Bannon.uproject
+          target: BannonEditor
+          build-configuration: Development
+          platform: Linux
+        env:
+          GITHUB_TOKEN: ${{ secrets.UE_GITHUB_TOKEN }}
+          
+      # Build Android APK Artifacts
+      - name: Build Unreal Project (Android APK)
+        id: build_unreal_android
+        uses: epicgames/unreal-engine-github-action@v1
+        with:
+          project: unreal/Bannon.uproject
+          target: Bannon
+          build-configuration: Shipping
+          platform: Android
+        env:
+          GITHUB_TOKEN: ${{ secrets.UE_GITHUB_TOKEN }}
+          
+      # Upload APK to GitHub Artifacts for the user to download and play
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bannon-Android-APK
+          path: unreal/Saved/StagedBuilds/Android/
+          
+      # The n8n Orchestrator Loop: Route failure logs straight to the AI for autonomous fixes
+      - name: Trigger n8n Agent Webhook on Failure
+        if: failure()
+        run: |
+          curl -X POST "${{ secrets.N8N_WEBHOOK_URL }}" \
+          -H "Content-Type: application/json" \
+          -d "{\"repository\": \"${{ github.repository }}\", \"commit\": \"${{ github.sha }}\", \"status\": \"failed\", \"error_log_url\": \"https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"

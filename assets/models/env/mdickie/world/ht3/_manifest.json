@@ -1,0 +1,685 @@
+{
+ "roots": [
+  {
+   "name": "Ring_Square",
+   "file": "Ring_Square.glb",
+   "tris": 1234
+  },
+  {
+   "name": "Spruce",
+   "file": "Spruce.glb",
+   "tris": 1401
+  },
+  {
+   "name": "Birch",
+   "file": "Birch.glb",
+   "tris": 728
+  },
+  {
+   "name": "Xmax_Tree",
+   "file": "Xmax_Tree.glb",
+   "tris": 1332
+  },
+  {
+   "name": "Large_Green",
+   "file": "Large_Green.glb",
+   "tris": 9970
+  },
+  {
+   "name": "Office",
+   "file": "Office.glb",
+   "tris": 2000
+  },
+  {
+   "name": "Backstage",
+   "file": "Backstage.glb",
+   "tris": 2412
+  },
+  {
+   "name": "Junction",
+   "file": "Junction.glb",
+   "tris": 8167
+  },
+  {
+   "name": "Headwear22",
+   "file": "Headwear22.glb",
+   "tris": 1440
+  },
+  {
+   "name": "Headwear43",
+   "file": "Headwear43.glb",
+   "tris": 864
+  },
+  {
+   "name": "Headwear39",
+   "file": "Headwear39.glb",
+   "tris": 1862
+  },
+  {
+   "name": "Headwear19",
+   "file": "Headwear19.glb",
+   "tris": 3816
+  },
+  {
+   "name": "Block_South",
+   "file": "Block_South.glb",
+   "tris": 24872
+  },
+  {
+   "name": "Headwear15",
+   "file": "Headwear15.glb",
+   "tris": 4244
+  },
+  {
+   "name": "Headwear45",
+   "file": "Headwear45.glb",
+   "tris": 1140
+  },
+  {
+   "name": "Headwear17",
+   "file": "Headwear17.glb",
+   "tris": 888
+  },
+  {
+   "name": "Prison Yard",
+   "file": "Prison_Yard.glb",
+   "tris": 21646
+  },
+  {
+   "name": "Headwear13",
+   "file": "Headwear13.glb",
+   "tris": 1967
+  },
+  {
+   "name": "Shoe",
+   "file": "Shoe.glb",
+   "tris": 1014
+  },
+  {
+   "name": "Machine Gun",
+   "file": "Machine_Gun.glb",
+   "tris": 629
+  },
+  {
+   "name": "Pillow",
+   "file": "Pillow.glb",
+   "tris": 620
+  },
+  {
+   "name": "Taser",
+   "file": "Taser.glb",
+   "tris": 3526
+  },
+  {
+   "name": "Baseball",
+   "file": "Baseball.glb",
+   "tris": 960
+  },
+  {
+   "name": "Basketball",
+   "file": "Basketball.glb",
+   "tris": 960
+  },
+  {
+   "name": "Barbed Bat",
+   "file": "Barbed_Bat.glb",
+   "tris": 576
+  },
+  {
+   "name": "Cricket Bat",
+   "file": "Cricket_Bat.glb",
+   "tris": 880
+  },
+  {
+   "name": "Water Gun",
+   "file": "Water_Gun.glb",
+   "tris": 1952
+  },
+  {
+   "name": "Bazooka",
+   "file": "Bazooka.glb",
+   "tris": 496
+  },
+  {
+   "name": "Hairdryer",
+   "file": "Hairdryer.glb",
+   "tris": 636
+  },
+  {
+   "name": "Beach Ball",
+   "file": "Beach_Ball.glb",
+   "tris": 960
+  },
+  {
+   "name": "Guitar",
+   "file": "Guitar.glb",
+   "tris": 5572
+  },
+  {
+   "name": "Flame Thrower",
+   "file": "Flame_Thrower.glb",
+   "tris": 3514
+  },
+  {
+   "name": "Tennis Ball",
+   "file": "Tennis_Ball.glb",
+   "tris": 960
+  },
+  {
+   "name": "Spray Paint",
+   "file": "Spray_Paint.glb",
+   "tris": 1594
+  },
+  {
+   "name": "Screwdriver",
+   "file": "Screwdriver.glb",
+   "tris": 400
+  },
+  {
+   "name": "Backpack",
+   "file": "Backpack.glb",
+   "tris": 1590
+  },
+  {
+   "name": "Tyre",
+   "file": "Tyre.glb",
+   "tris": 672
+  },
+  {
+   "name": "Skateboard",
+   "file": "Skateboard.glb",
+   "tris": 736
+  },
+  {
+   "name": "Dumbbell",
+   "file": "Dumbbell.glb",
+   "tris": 612
+  },
+  {
+   "name": "Shovel",
+   "file": "Shovel.glb",
+   "tris": 560
+  },
+  {
+   "name": "Revolver",
+   "file": "Revolver.glb",
+   "tris": 2073
+  },
+  {
+   "name": "Crossbow",
+   "file": "Crossbow.glb",
+   "tris": 2596
+  },
+  {
+   "name": "Slingshot",
+   "file": "Slingshot.glb",
+   "tris": 878
+  },
+  {
+   "name": "Key",
+   "file": "Key.glb",
+   "tris": 410
+  },
+  {
+   "name": "American Football",
+   "file": "American_Football.glb",
+   "tris": 960
+  },
+  {
+   "name": "Robogun",
+   "file": "Robogun.glb",
+   "tris": 3288
+  },
+  {
+   "name": "Rifle",
+   "file": "Rifle.glb",
+   "tris": 846
+  },
+  {
+   "name": "Handgun",
+   "file": "Handgun.glb",
+   "tris": 435
+  },
+  {
+   "name": "Chainsaw",
+   "file": "Chainsaw.glb",
+   "tris": 1944
+  },
+  {
+   "name": "Riot Shield",
+   "file": "Riot_Shield.glb",
+   "tris": 428
+  },
+  {
+   "name": "Golf Club",
+   "file": "Golf_Club.glb",
+   "tris": 512
+  },
+  {
+   "name": "Ammo",
+   "file": "Ammo.glb",
+   "tris": 2632
+  },
+  {
+   "name": "Square",
+   "file": "Square.glb",
+   "tris": 1234
+  },
+  {
+   "name": "Block_East",
+   "file": "Block_East.glb",
+   "tris": 26678
+  },
+  {
+   "name": "Block_West",
+   "file": "Block_West.glb",
+   "tris": 26678
+  },
+  {
+   "name": "Studio",
+   "file": "Studio.glb",
+   "tris": 608
+  },
+  {
+   "name": "Police Station",
+   "file": "Police_Station.glb",
+   "tris": 5249
+  },
+  {
+   "name": "Bicycle",
+   "file": "Bicycle.glb",
+   "tris": 6212
+  },
+  {
+   "name": "Court",
+   "file": "Court.glb",
+   "tris": 30566
+  },
+  {
+   "name": "Swimming Pool",
+   "file": "Swimming_Pool.glb",
+   "tris": 2700
+  },
+  {
+   "name": "Block_North",
+   "file": "Block_North.glb",
+   "tris": 27166
+  },
+  {
+   "name": "Plane",
+   "file": "Plane.glb",
+   "tris": 46084
+  },
+  {
+   "name": "Arena",
+   "file": "Arena.glb",
+   "tris": 13658
+  },
+  {
+   "name": "Hotel",
+   "file": "Hotel.glb",
+   "tris": 2190
+  },
+  {
+   "name": "Human_Prefab",
+   "file": "Human_Prefab.glb",
+   "tris": 1114
+  },
+  {
+   "name": "Headwear46",
+   "file": "Headwear46.glb",
+   "tris": 1856
+  },
+  {
+   "name": "Headwear18",
+   "file": "Headwear18.glb",
+   "tris": 1132
+  },
+  {
+   "name": "Headwear14",
+   "file": "Headwear14.glb",
+   "tris": 6934
+  },
+  {
+   "name": "Airport",
+   "file": "Airport.glb",
+   "tris": 86685
+  },
+  {
+   "name": "Gym",
+   "file": "Gym.glb",
+   "tris": 12948
+  },
+  {
+   "name": "Beach",
+   "file": "Beach.glb",
+   "tris": 40204
+  },
+  {
+   "name": "Cemetery",
+   "file": "Cemetery.glb",
+   "tris": 17858
+  },
+  {
+   "name": "Car_Van",
+   "file": "Car_Van.glb",
+   "tris": 15581
+  },
+  {
+   "name": "Stretcher",
+   "file": "Stretcher.glb",
+   "tris": 3344
+  },
+  {
+   "name": "Desk",
+   "file": "Desk.glb",
+   "tris": 948
+  },
+  {
+   "name": "Coffin",
+   "file": "Coffin.glb",
+   "tris": 430
+  },
+  {
+   "name": "Wheelchair",
+   "file": "Wheelchair.glb",
+   "tris": 10850
+  },
+  {
+   "name": "School Desk",
+   "file": "School_Desk.glb",
+   "tris": 646
+  },
+  {
+   "name": "Bed",
+   "file": "Bed.glb",
+   "tris": 857
+  },
+  {
+   "name": "Car_SUV",
+   "file": "Car_SUV.glb",
+   "tris": 14100
+  },
+  {
+   "name": "Stool",
+   "file": "Stool.glb",
+   "tris": 560
+  },
+  {
+   "name": "Folding Chair",
+   "file": "Folding_Chair.glb",
+   "tris": 1530
+  },
+  {
+   "name": "Armchair",
+   "file": "Armchair.glb",
+   "tris": 1450
+  },
+  {
+   "name": "Snooker Table",
+   "file": "Snooker_Table.glb",
+   "tris": 484
+  },
+  {
+   "name": "Car_Police",
+   "file": "Car_Police.glb",
+   "tris": 8817
+  },
+  {
+   "name": "Sofa",
+   "file": "Sofa.glb",
+   "tris": 1792
+  },
+  {
+   "name": "Toilet",
+   "file": "Toilet.glb",
+   "tris": 752
+  },
+  {
+   "name": "Car_Sedan",
+   "file": "Car_Sedan.glb",
+   "tris": 6329
+  },
+  {
+   "name": "Car_Sports",
+   "file": "Car_Sports.glb",
+   "tris": 7496
+  },
+  {
+   "name": "Computer Desk",
+   "file": "Computer_Desk.glb",
+   "tris": 1114
+  },
+  {
+   "name": "Barrel",
+   "file": "Barrel.glb",
+   "tris": 768
+  },
+  {
+   "name": "Piano",
+   "file": "Piano.glb",
+   "tris": 2800
+  },
+  {
+   "name": "Easel",
+   "file": "Easel.glb",
+   "tris": 664
+  },
+  {
+   "name": "Motorcycle",
+   "file": "Motorcycle.glb",
+   "tris": 3342
+  },
+  {
+   "name": "Office Chair",
+   "file": "Office_Chair.glb",
+   "tris": 600
+  },
+  {
+   "name": "Trailer",
+   "file": "Trailer.glb",
+   "tris": 11500
+  },
+  {
+   "name": "Headwear21",
+   "file": "Headwear21.glb",
+   "tris": 1200
+  },
+  {
+   "name": "Headwear23",
+   "file": "Headwear23.glb",
+   "tris": 1392
+  },
+  {
+   "name": "Headwear38",
+   "file": "Headwear38.glb",
+   "tris": 480
+  },
+  {
+   "name": "Headwear31",
+   "file": "Headwear31.glb",
+   "tris": 1080
+  },
+  {
+   "name": "Train",
+   "file": "Train.glb",
+   "tris": 5240
+  },
+  {
+   "name": "Library",
+   "file": "Library.glb",
+   "tris": 11274
+  },
+  {
+   "name": "Bar",
+   "file": "Bar.glb",
+   "tris": 21252
+  },
+  {
+   "name": "Basketball Court",
+   "file": "Basketball_Court.glb",
+   "tris": 49866
+  },
+  {
+   "name": "Workshop",
+   "file": "Workshop.glb",
+   "tris": 13254
+  },
+  {
+   "name": "Cafeteria",
+   "file": "Cafeteria.glb",
+   "tris": 10188
+  },
+  {
+   "name": "Arcade",
+   "file": "Arcade.glb",
+   "tris": 7908
+  },
+  {
+   "name": "Forest",
+   "file": "Forest.glb",
+   "tris": 736
+  },
+  {
+   "name": "Bus",
+   "file": "Bus.glb",
+   "tris": 107172
+  },
+  {
+   "name": "Prison Hall",
+   "file": "Prison_Hall.glb",
+   "tris": 11482
+  },
+  {
+   "name": "Headwear27",
+   "file": "Headwear27.glb",
+   "tris": 1152
+  },
+  {
+   "name": "Cinema",
+   "file": "Cinema.glb",
+   "tris": 55730
+  },
+  {
+   "name": "Headwear44",
+   "file": "Headwear44.glb",
+   "tris": 3734
+  },
+  {
+   "name": "Headwear16",
+   "file": "Headwear16.glb",
+   "tris": 1596
+  },
+  {
+   "name": "Store_Hardware",
+   "file": "Store_Hardware.glb",
+   "tris": 9813
+  },
+  {
+   "name": "Store_Clothes",
+   "file": "Store_Clothes.glb",
+   "tris": 10249
+  },
+  {
+   "name": "Store_Sports",
+   "file": "Store_Sports.glb",
+   "tris": 10017
+  },
+  {
+   "name": "Store_Tech",
+   "file": "Store_Tech.glb",
+   "tris": 9889
+  },
+  {
+   "name": "Store_Food",
+   "file": "Store_Food.glb",
+   "tris": 10145
+  },
+  {
+   "name": "Conference",
+   "file": "Conference.glb",
+   "tris": 2014
+  },
+  {
+   "name": "Headwear41",
+   "file": "Headwear41.glb",
+   "tris": 486
+  },
+  {
+   "name": "Bathroom",
+   "file": "Bathroom.glb",
+   "tris": 5732
+  },
+  {
+   "name": "Interior",
+   "file": "Interior.glb",
+   "tris": 7832
+  },
+  {
+   "name": "Hospital",
+   "file": "Hospital.glb",
+   "tris": 3604
+  },
+  {
+   "name": "Trailer Park",
+   "file": "Trailer_Park.glb",
+   "tris": 10682
+  },
+  {
+   "name": "Suburbs",
+   "file": "Suburbs.glb",
+   "tris": 27510
+  },
+  {
+   "name": "Headwear36",
+   "file": "Headwear36.glb",
+   "tris": 744
+  },
+  {
+   "name": "Headwear28",
+   "file": "Headwear28.glb",
+   "tris": 2276
+  },
+  {
+   "name": "Barber Shop",
+   "file": "Barber_Shop.glb",
+   "tris": 10472
+  },
+  {
+   "name": "Headwear20",
+   "file": "Headwear20.glb",
+   "tris": 1536
+  },
+  {
+   "name": "Police Yard",
+   "file": "Police_Yard.glb",
+   "tris": 96485
+  },
+  {
+   "name": "Subway",
+   "file": "Subway.glb",
+   "tris": 28228
+  },
+  {
+   "name": "Headwear07",
+   "file": "Headwear07.glb",
+   "tris": 416
+  },
+  {
+   "name": "Headwear03",
+   "file": "Headwear03.glb",
+   "tris": 680
+  },
+  {
+   "name": "Headwear30",
+   "file": "Headwear30.glb",
+   "tris": 416
+  },
+  {
+   "name": "Headwear42",
+   "file": "Headwear42.glb",
+   "tris": 2516
+  }
+ ],
+ "count": 136
+}

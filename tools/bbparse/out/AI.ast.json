@@ -1,0 +1,781 @@
+{
+ "file": "AI.bb",
+ "functions": [
+  {
+   "name": "GetInput",
+   "args": "cyc",
+   "line": 8,
+   "calls": [
+    "ResetInput",
+    "pOutTim",
+    "pHidden",
+    "pController",
+    "pControl",
+    "KeyDown",
+    "cUp",
+    "cDown",
+    "cLeft",
+    "cRight",
+    "cAttack",
+    "cRun",
+    "cGrapple",
+    "cPickUp",
+    "cSwitch",
+    "cTaunt",
+    "And",
+    "cBlock",
+    "JoyYDir",
+    "pJoystick",
+    "JoyXDir",
+    "JoyDown",
+    "AI"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "AI",
+   "args": "cyc",
+   "line": 68,
+   "calls": [
+    "SwitchViable",
+    "pOutTim",
+    "Or",
+    "pRole",
+    "LegalMan",
+    "pFoc",
+    "pChaosTim",
+    "InProximity",
+    "pTeam",
+    "And",
+    "TryingToTag",
+    "GetNewFoc",
+    "AttackViable",
+    "pHidden",
+    "InsideRing",
+    "RingViable",
+    "charRelationship",
+    "pChar",
+    "pAgenda",
+    "pAngerTim",
+    "pRelocate",
+    "TagStatic",
+    "pHolding",
+    "pCarrying",
+    "pScar",
+    "pWeapFoc",
+    "pSpecial",
+    "pDizzyTim",
+    "pBlindTim",
+    "pAnim",
+    "RushViable",
+    "pClient",
+    "pOldFoc",
+    "RefViable",
+    "DutyPriority",
+    "pChecked",
+    "ReachedCord",
+    "pNowhere",
+    "pCountTim",
+    "FallsCount"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TranslateInput",
+   "args": "cyc",
+   "line": 943,
+   "calls": [
+    "cAttack",
+    "LegalMan",
+    "pChaosTim",
+    "pRole",
+    "InsideRing",
+    "Or",
+    "pPlatform",
+    "cGrapple",
+    "pOutTim",
+    "cTaunt",
+    "cSwitch",
+    "pControl",
+    "InProximity",
+    "cUp",
+    "cDown",
+    "cLeft",
+    "cRight",
+    "p",
+    "EntityYaw",
+    "RequestDirection",
+    "cUpTim",
+    "cDownTim",
+    "cLeftTim",
+    "cRightTim",
+    "HumanClear",
+    "pSatisfied",
+    "DirPressed",
+    "pAnim",
+    "pMomentum",
+    "ChangeAnim",
+    "pDizzyTim",
+    "pBlindTim",
+    "pFocTim",
+    "SwitchViable",
+    "SwitchFocus",
+    "pReaction",
+    "pImmunity",
+    "pHeat",
+    "pSpecial",
+    "cRun"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "SwapControls",
+   "args": "cyc,v,style",
+   "line": 1260,
+   "calls": [
+    "pControl"
+   ],
+   "doc": "0=naturally, 1=fiddled"
+  },
+  {
+   "name": "ResetInput",
+   "args": "cyc",
+   "line": 1273,
+   "calls": [
+    "cUp",
+    "cDown",
+    "cLeft",
+    "cRight",
+    "cAttack",
+    "cGrapple",
+    "cRun",
+    "cPickUp",
+    "cSwitch",
+    "cTaunt",
+    "cBlock"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "DirPressed",
+   "args": "cyc",
+   "line": 1285,
+   "calls": [
+    "cUp",
+    "cDown",
+    "cLeft",
+    "cRight"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ActionPressed",
+   "args": "cyc",
+   "line": 1292,
+   "calls": [
+    "cAttack",
+    "cRun",
+    "cGrapple",
+    "cPickUp",
+    "cTaunt"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindRunUp",
+   "args": "cyc",
+   "line": 1299,
+   "calls": [
+    "pAnim",
+    "pAnimTim",
+    "pOldAnim"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ExploreArea",
+   "args": "area",
+   "line": 1307,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "RequestAngle",
+   "args": "",
+   "line": 1317,
+   "calls": [
+    "cLeft",
+    "cRight",
+    "cUp",
+    "cDown"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "RequestDirection",
+   "args": "cyc,angle#,hold",
+   "line": 1337,
+   "calls": [
+    "SatisfiedAngle",
+    "cUpTim",
+    "cRightTim",
+    "cDownTim",
+    "cLeftTim"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "RequestBlock",
+   "args": "cyc,block",
+   "line": 1356,
+   "calls": [
+    "DirPressed",
+    "cRun",
+    "EntityX",
+    "EntityZ",
+    "Or",
+    "blockClimb"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "RequestItem",
+   "args": "cyc,v",
+   "line": 1379,
+   "calls": [
+    "DirPressed",
+    "cRun",
+    "EntityX",
+    "EntityZ",
+    "ItemCollide"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "SwitchFocus",
+   "args": "cyc",
+   "line": 1396,
+   "calls": [
+    "pOldFoc",
+    "pFoc",
+    "pFocTim",
+    "pHidden",
+    "And",
+    "pTeam",
+    "pRole",
+    "LegalMan",
+    "pChaosTim",
+    "pOutTim",
+    "Or"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetNewFoc",
+   "args": "cyc",
+   "line": 1426,
+   "calls": [
+    "pOldFoc",
+    "pFoc",
+    "pRole",
+    "charRelationship",
+    "pChar",
+    "pTeam",
+    "LegalMan",
+    "pClient",
+    "pChaosTim",
+    "InProximity",
+    "pOutTim",
+    "pHidden"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetIntensity",
+   "args": "cyc",
+   "line": 1469,
+   "calls": [
+    "gamSchedule",
+    "pRole",
+    "pTeam"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindThreat",
+   "args": "cyc",
+   "line": 1487,
+   "calls": [
+    "pFoc",
+    "pAnim",
+    "Or",
+    "InLine",
+    "p",
+    "pSting",
+    "pAnimTim",
+    "attackExpire",
+    "charAttack",
+    "pChar"
+   ],
+   "doc": "1=potential high, 2=potential low, 11=active high, 12=active low"
+  },
+  {
+   "name": "InProximity",
+   "args": "cyc,v,range#",
+   "line": 1520,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "InLine",
+   "args": "cyc,entity,range",
+   "line": 1527,
+   "calls": [
+    "p",
+    "EntityYaw",
+    "SatisfiedAngle"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "InRearView",
+   "args": "cyc,entity,range",
+   "line": 1541,
+   "calls": [
+    "p",
+    "EntityYaw",
+    "SatisfiedAngle"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "Isolated",
+   "args": "cyc,range#",
+   "line": 1555,
+   "calls": [
+    "pTeam",
+    "pRole",
+    "pFoc",
+    "AttackViable",
+    "InProximity"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "InsideRing",
+   "args": "x#,z#,offset#",
+   "line": 1566,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "RingViable",
+   "args": "cyc",
+   "line": 1575,
+   "calls": [
+    "pRole",
+    "LegalMan",
+    "pChaosTim",
+    "pEliminated"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "BehindRailings",
+   "args": "x#,z#",
+   "line": 1587,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "FindClimbing",
+   "args": "cyc",
+   "line": 1605,
+   "calls": [
+    "pPlatform",
+    "pAnim",
+    "blockClimb",
+    "RequestBlock",
+    "cRun",
+    "pFriction",
+    "PlatformClear",
+    "InstantTurn",
+    "ChangeAnim",
+    "FlightClear",
+    "SatisfiedAngle",
+    "LegalMan",
+    "TryingToTag",
+    "InsideRing",
+    "DirPressed",
+    "RingViable",
+    "pRole",
+    "pEliminated",
+    "And",
+    "HumanClear",
+    "ItemClear",
+    "pCarrying",
+    "Or",
+    "pControl",
+    "EntityX",
+    "EntityZ",
+    "pFoc",
+    "pTeam",
+    "TagProximity",
+    "p"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "PlatformClear",
+   "args": "platform,targetX#,targetZ#",
+   "line": 2029,
+   "calls": [
+    "pPlatform",
+    "ReachedCord"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "HumanClear",
+   "args": "cyc,angle#,range#",
+   "line": 2041,
+   "calls": [
+    "EntityX",
+    "EntityZ",
+    "AttackViable"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ItemClear",
+   "args": "cyc,angle#,range#",
+   "line": 2058,
+   "calls": [
+    "EntityX",
+    "EntityZ",
+    "iState",
+    "ItemCollide",
+    "pPlatform"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "BlockClear",
+   "args": "cyc,angle#,range#",
+   "line": 2075,
+   "calls": [
+    "EntityX",
+    "EntityZ",
+    "InsideRing",
+    "BehindRailings"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "MeasureSpace",
+   "args": "cyc,angle#,limit",
+   "line": 2100,
+   "calls": [
+    "EntityX",
+    "EntityZ",
+    "AttackViable",
+    "iState",
+    "ItemCollide",
+    "InsideRing",
+    "BehindRailings"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FlightClear",
+   "args": "cyc,angle#,range#",
+   "line": 2141,
+   "calls": [
+    "EntityX",
+    "EntityZ",
+    "pPlatform",
+    "BlockConflict",
+    "pAnim",
+    "InsideRing",
+    "blockClimb",
+    "SatisfiedAngle"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "BlockConflict",
+   "args": "x#,y#,z#,ring",
+   "line": 2194,
+   "calls": [
+    "blockType"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LimbContact",
+   "args": "cyc,v,limb,range#",
+   "line": 2206,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "AttackSensible",
+   "args": "cyc,v",
+   "line": 2219,
+   "calls": [
+    "pAngerTim",
+    "pTeam",
+    "charRelationship",
+    "pChar",
+    "pRole",
+    "pEliminated",
+    "InsideRing",
+    "AttackViable",
+    "pGrappler",
+    "pPinner",
+    "pGrappling",
+    "pPinning",
+    "RefViable",
+    "pRefVictim",
+    "pRefAward",
+    "pPlatform",
+    "Or",
+    "GettingUp"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "NearGrounded",
+   "args": "cyc,range#",
+   "line": 2270,
+   "calls": [
+    "pAnim",
+    "pHolding",
+    "And",
+    "weapHold",
+    "weapType",
+    "pFoc",
+    "InProximity",
+    "AttackViable",
+    "pAnimTim",
+    "pTeam",
+    "InLine",
+    "pLimb"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "RushViable",
+   "args": "cyc",
+   "line": 2298,
+   "calls": [
+    "LegalMan",
+    "InsideRing",
+    "pOutCount"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindInteractions",
+   "args": "cyc",
+   "line": 2312,
+   "calls": [
+    "InProximity",
+    "pTeam",
+    "InsideRing",
+    "AttackViable",
+    "LegalMan",
+    "pRole",
+    "pEliminated",
+    "pInteract",
+    "pFoc",
+    "RefViable",
+    "pOutCount",
+    "FindChild",
+    "NearestCorner",
+    "ReachedCord",
+    "EntityX",
+    "EntityZ",
+    "padExposed"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "RefViable",
+   "args": "cyc",
+   "line": 2348,
+   "calls": [
+    "pRole",
+    "LegalMan",
+    "pChaosTim",
+    "AttackViable",
+    "pEliminated",
+    "InsideRing",
+    "pOutTim",
+    "Or",
+    "pPlatform",
+    "pOutCount",
+    "pFoc",
+    "pTeam",
+    "InProximity",
+    "FallsCount",
+    "pDT",
+    "pScar",
+    "pHealth",
+    "pGrappler",
+    "pStretched",
+    "pPinner",
+    "pPinCount"
+   ],
+   "doc": "1-10=checkable, 11-20=declarable, 21+=trivia"
+  },
+  {
+   "name": "RefActViable",
+   "args": "cyc,v",
+   "line": 2401,
+   "calls": [
+    "pRole",
+    "RefViable",
+    "Or",
+    "pChecked",
+    "pAnim",
+    "InProximity",
+    "pGrappler",
+    "pPinner",
+    "pPlatform",
+    "FindInteractions",
+    "pOutsideTim",
+    "InsideRing"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "DutyPriority",
+   "args": "duty",
+   "line": 2431,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "FindReferee",
+   "args": "cyc,v",
+   "line": 2444,
+   "calls": [
+    "pRole",
+    "InsideRing",
+    "AttackViable",
+    "pDizzyTim",
+    "pBlindTim",
+    "pAnim",
+    "charRelationship",
+    "pChar",
+    "gamAgreement",
+    "pGrappling",
+    "pGrappler",
+    "InLine",
+    "p"
+   ],
+   "doc": "0,0=for chaos, cyc,v=for DQ's"
+  },
+  {
+   "name": "FallsCount",
+   "args": "cyc",
+   "line": 2472,
+   "calls": [
+    "InsideRing"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LegalMan",
+   "args": "cyc",
+   "line": 2480,
+   "calls": [
+    "teamLegal",
+    "pTeam",
+    "pRole",
+    "pEliminated"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetNewLegal",
+   "args": "cyc",
+   "line": 2488,
+   "calls": [
+    "pTeam",
+    "pRole",
+    "pEliminated",
+    "teamLegal",
+    "pFoc",
+    "pAgenda",
+    "SwapControls"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindTagConflict",
+   "args": "cyc,agenda",
+   "line": 2515,
+   "calls": [
+    "pTeam",
+    "LegalMan",
+    "pAgenda"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TagProximity",
+   "args": "cyc,range#",
+   "line": 2524,
+   "calls": [
+    "pTeam"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TagStatic",
+   "args": "cyc",
+   "line": 2535,
+   "calls": [
+    "pRole",
+    "LegalMan",
+    "pEliminated",
+    "pChaosTim",
+    "InsideRing",
+    "TagProximity"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TryingToTag",
+   "args": "cyc",
+   "line": 2544,
+   "calls": [
+    "LegalMan",
+    "pControl",
+    "pAgenda",
+    "pTeam",
+    "pFoc",
+    "pPlatform"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TopeViable",
+   "args": "cyc",
+   "line": 2553,
+   "calls": [
+    "pFoc",
+    "InProximity",
+    "pRole"
+   ],
+   "doc": ""
+  }
+ ],
+ "types": [],
+ "globals": [],
+ "consts": [],
+ "dims": [],
+ "lineCount": 2557
+}

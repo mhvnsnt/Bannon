@@ -1,0 +1,131 @@
+  if(f.model&&f.modelUrl){ assignCharModel(ck, f.modelUrl, (CHOSEN_MODEL[side]&&CHOSEN_MODEL[side].name)||ck); setModelStatus(side,'★ Bound to '+ck+' — loads for this character everywhere.'); }
+  else { assignCharModel(ck,null); setModelStatus(side,'Cleared '+ck+'’s model.'); } }
+window.assignCurrentModelToChar=assignCurrentModelToChar; window.CHAR_MODEL=CHAR_MODEL;
+function applyModelChoice(side, url, name){
+  try{ CHOSEN_MODEL[side]= url?{url:url,name:name||''}:null; localStorage.setItem('bannonChosenModels',JSON.stringify(CHOSEN_MODEL)); }catch(e){}
+  if(!url){ removeFighterModel(side); setModelStatus(side,'Built-in body.'); return; }
+  setModelStatus(side,'⏳ Tapped "'+(name||'model')+'" — downloading…');
+  loadFighterModel(side, url, name);
+}
+function _bindFighterGltf(side, url, name, gltf){
+  const f=fighterFor(side); if(!f) return;
+  try{
+    const obj=gltf.scene; const bones={};
+    obj.traverse(o=>{ if(o.isBone){ var _k=(o.name||'bone').toLowerCase(), _u=_k, _i=2; while(bones[_u]){ _u=_k+'~'+_i; _i++; } bones[_u]=o; o.userData.boneKey=_u; } if(o.isMesh){o.castShadow=true;o.frustumCulled=false;} });
+    const mapped=[];
+    const key = (url.indexOf('embedded:')===0)?url.slice(9):null;
+    const useMap = (key && BONE_MAP_OVERRIDES[key]) ? BONE_MAP_OVERRIDES[key] : BONE_MAP;
+    for(const [tok,fromJ,toJ] of useMap){ let b=null; for(const nm in bones){ if(nm.includes(tok)){ b=bones[nm]; break; } } if(b) mapped.push({bone:b, fromJ, toJ}); }
+    // robust size: union each mesh's geometry box (works for skinned meshes; setFromObject returns
+    // a degenerate box for skinned meshes -> runaway scale -> the "giant" bug)
+    obj.updateMatrixWorld(true);
+    // measure TRUE size from skeleton bone world positions. skinned-mesh geometry boxes are
+    // un-posed and wildly wrong (that was the "giant" bug). fall back to mesh box, then 1.8.
+    const box=new THREE.Box3(); const _wp=new THREE.Vector3(); let _meas=false;
+    obj.traverse(o=>{ if(o.isBone){ o.getWorldPosition(_wp); box.expandByPoint(_wp); _meas=true; } });
+    let hgt;
+    if (_meas && isFinite(box.max.y-box.min.y) && (box.max.y-box.min.y)>0.001){
+      hgt=(box.max.y-box.min.y)*1.18;                      // bones span ankle->neck; pad for feet+skull
+    } else {
+      const mb=new THREE.Box3(), tmp=new THREE.Box3();
+      obj.traverse(o=>{ if(o.isMesh && o.geometry){ if(!o.geometry.boundingBox) o.geometry.computeBoundingBox(); if(o.geometry.boundingBox){ tmp.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld); mb.union(tmp); } } });
+      box.copy(mb); hgt=box.max.y-box.min.y;
+    }
+    if(!isFinite(hgt) || hgt<=0.02) hgt=1.8;
+    let s=1.78/hgt; s=Math.max(0.005, Math.min(200, s));   // wide clamp; manual control refines
+    // wrap in a container so we can fit-scale WITHOUT clobbering the model's own root transform
+    const container=new THREE.Group(); container.add(obj);
+    container.userData.fitScale=s;
+    container.userData.minY=(isFinite(box.min.y)?box.min.y:0);
+    const sc=s*(MODEL_CFG.userScale||1);
+    container.scale.setScalar(sc);
+    container.userData.yBase = -container.userData.minY*sc;
+    // ===== RIGID AUTO-RIG for unrigged models (e.g. Goro: 0 bones, separate mesh chunks) =====
+    // Build a humanoid skeleton at the rig's rest layout (scaled to this mesh), attach each chunk to
+    // its nearest bone, and register the segments so the EXISTING retarget drives it. Gated to models
+    // that ship NO skeleton, and fully guarded: any failure leaves the model exactly as-is.
+    try{
+      if(Object.keys(bones).length===0 && (typeof window!=='undefined' && window.GORO_RIG===true)){
+        var _meshes0=[]; obj.traverse(function(o){ if(o.isMesh)_meshes0.push(o); });
+        if(_meshes0.length){
+          var _H=(isFinite(box.max.y-box.min.y)&&(box.max.y-box.min.y)>1e-4)?(box.max.y-box.min.y):1.6;
+          var _cx=(box.min.x+box.max.x)/2, _cz=(box.min.z+box.max.z)/2, _by=(isFinite(box.min.y)?box.min.y:0), _scl=_H/1.60;
+          var _Pw={}; for(var _j in REST){ var r=REST[_j]; _Pw[_j]=new THREE.Vector3(_cx+r[0]*_scl, _by+(r[1]-0.06)*_scl, _cz+r[2]*_scl); }
+          var _BN={};
+          var _links=[['pelvis',null],['chest','pelvis'],['head','chest'],['shL','chest'],['elL','shL'],['haL','elL'],['shR','chest'],['elR','shR'],['haR','elR'],['hipL','pelvis'],['knL','hipL'],['ftL','knL'],['hipR','pelvis'],['knR','hipR'],['ftR','knR']];
+          _links.forEach(function(L){ var b=new THREE.Bone(); b.name='rig_'+L[0]; b.userData.boneKey='rig_'+L[0]; _BN[L[0]]=b; bones['rig_'+L[0]]=b; });
+          _links.forEach(function(L){ var b=_BN[L[0]], pw=_Pw[L[0]]; if(L[1]){ var ppw=_Pw[L[1]]; b.position.set(pw.x-ppw.x, pw.y-ppw.y, pw.z-ppw.z); _BN[L[1]].add(b); } else { b.position.copy(pw); obj.add(b); } });
+          [['pelvis','chest'],['chest','head'],['shL','elL'],['elL','haL'],['shR','elR'],['elR','haR'],['hipL','knL'],['knL','ftL'],['hipR','knR'],['knR','ftR']].forEach(function(seg){ if(_BN[seg[0]]) mapped.push({bone:_BN[seg[0]], fromJ:seg[0], toJ:seg[1]}); });
+          container.updateMatrixWorld(true); obj.updateMatrixWorld(true);
+          var _bw={}, _tv=new THREE.Vector3(); for(var _bj in _BN){ _BN[_bj].getWorldPosition(_tv); _bw[_bj]=_tv.clone(); }
+          _meshes0.forEach(function(mesh){ try{ if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox(); var _c=mesh.geometry.boundingBox.getCenter(new THREE.Vector3()); mesh.localToWorld(_c); var _best=null,_bd=Infinity; for(var _bj2 in _bw){ var _d=_c.distanceToSquared(_bw[_bj2]); if(_d<_bd){_bd=_d;_best=_BN[_bj2];} } if(_best)_best.attach(mesh); }catch(e){} });
+          container.userData.autoRig=true;
+        }
+      }
+    }catch(e){}
+    container.userData.mapped = mapped; container.userData.url=url;
+    try{ mapped.forEach(function(mp){ var _cs=mp.bone.children, _ch=null; for(var _i=0;_i<_cs.length;_i++){ if(_cs[_i].isBone){_ch=_cs[_i];break;} } if(!_ch&&_cs.length)_ch=_cs[0]; if(_ch){ var _lf=_ch.position.clone(); if(_lf.lengthSq()>1e-9) mp.localFwd=_lf.normalize(); } mp.isLimb=(mp.toJ!=='chest'&&mp.toJ!=='head'); }); }catch(e){}
+    try{ container.userData.boneByName=bones; container.userData.mappedSet=new Set(mapped.map(x=>x.bone));
+      for(var _bk in bones){ bones[_bk].userData.restQuat=bones[_bk].quaternion.clone(); bones[_bk].userData.restScale=bones[_bk].scale.clone(); }
+      container.userData.boneOverrides=(typeof DIRECTOR!=='undefined' && DIRECTOR.boneStore && DIRECTOR.boneStore[url]) ? DIRECTOR.boneStore[url] : {};
+      var _mMap={}, _mNames=[]; obj.traverse(function(o){ if(o.isMesh && o.morphTargetDictionary && o.morphTargetInfluences){ for(var _nm in o.morphTargetDictionary){ var _ix=o.morphTargetDictionary[_nm]; if(!_mMap[_nm]){_mMap[_nm]=[];_mNames.push(_nm);} _mMap[_nm].push({mesh:o,idx:_ix}); } } });
+      container.userData.morphMap=_mMap; container.userData.morphNames=_mNames;
+      container.userData.morphStore=(typeof DIRECTOR!=='undefined' && DIRECTOR.morphStore && DIRECTOR.morphStore[url]) ? DIRECTOR.morphStore[url] : {};
+      if(typeof DIRECTOR!=='undefined' && DIRECTOR.partStore && DIRECTOR.partStore[url]){ var _hid=DIRECTOR.partStore[url]; container.traverse(function(o){ if(o.isMesh && _hid[o.name]) o.visible=false; }); }
+    }catch(e){}
+    f.model=container; f.modelUrl=url; scene.add(container); setProcVisible(f,false);
+    try{ if(window.applyShapeMorphs) window.applyShapeMorphs(f); }catch(_){}   // sculpt the fresh mesh to the fighter's current CAW/DNA shape
+    _rigSense(side, name, bones, mapped, container, s);
+  }catch(e){ setModelStatus(side,'⚠ Bind error. Built-in body kept.'); removeFighterModel(side); }
+}
+function _rigSense(side, name, bones, mapped, container, s){
+  try{
+    var bc=Object.keys(bones).length, meshN=0, faceBones=0;
+    container.traverse(function(o){ if(o.isMesh)meshN++; if(o.isBone){ var n=(o.name||'').toLowerCase(); if(n.indexOf('jaw')>=0||n.indexOf('face')>=0||n.indexOf('eye')>=0||n.indexOf('cheek')>=0||n.indexOf('lip')>=0||n.indexOf('brow')>=0||n.indexOf('tongue')>=0)faceBones++; } });
+    var lr={armL:0,armR:0,legL:0,legR:0,spine:0};
+    mapped.forEach(function(m){ var t=m.toJ; if(t==='elL'||t==='haL')lr.armL=1; if(t==='elR'||t==='haR')lr.armR=1; if(t==='knL'||t==='ftL')lr.legL=1; if(t==='knR'||t==='ftR')lr.legR=1; if(t==='chest'||t==='head')lr.spine=1; });
+    var morphN=(container.userData.morphNames||[]).length, verdict;
+    if(bc===0){ verdict='\u26a0 STATIC ('+meshN+' parts, no skeleton) \u2014 needs auto-rig'; }
+    else if(mapped.length===0){ verdict='\u25b3 '+bc+' bones, none matched our rig \u2014 naming mismatch'; }
+    else { var limbs=(lr.armL?1:0)+(lr.armR?1:0)+(lr.legL?1:0)+(lr.legR?1:0); verdict='\u2713 '+bc+' bones \u00b7 '+limbs+'/4 limbs '+(lr.spine?'+ spine':'(no spine)')+' driven'+(bc>150?' (dense)':''); }
+    var face = (bc===0)?'':(faceBones>0?(' \u00b7 '+faceBones+' face bones'+(morphN?'':' (no morphs)')):(morphN?(' \u00b7 '+morphN+' morphs'):''));
+    setModelStatus(side, verdict+' \u00b7 \u00d7'+s.toFixed(2)+face);
+  }catch(e){ setModelStatus(side,'\u2713 Loaded "'+(name||'model')+'" \u2014 '+Object.keys(bones).length+' bones'); }
+}
+function loadFighterModel(side, url, name){
+  const f=fighterFor(side); if(!f){ setModelStatus(side,'Start a fight first.'); return; }
+  if(typeof THREE==='undefined' || !THREE.GLTFLoader){ setModelStatus(side,'⚠ 3D loader unavailable here.'); return; }
+  url=(url||'').trim(); if(!url){ setModelStatus(side,'Paste a .glb URL first.'); return; }
+  removeFighterModel(side);
+  let loader; try{ loader=new THREE.GLTFLoader(); }catch(e){ setModelStatus(side,'⚠ Loader init failed.'); return; }
+  // PERSISTENT device-imported model (IndexedDB blob) — no network
+  if(url.indexOf('idb:')===0){ const nm=url.slice(4);
+    if(typeof BLIB==='undefined'){ setModelStatus(side,'⚠ Library unavailable here.'); return; }
+    BLIB.get(nm).then(buf=>{ if(!buf){ setModelStatus(side,'⚠ "'+nm+'" is not in the saved library (storage cleared?). Re-import it.'); return; }
+      try{ loader.parse(buf,'',(gltf)=>_bindFighterGltf(side,url,nm,gltf),(err)=>{ setModelStatus(side,'⚠ Parse error on "'+nm+'".'); removeFighterModel(side); }); }
+      catch(e){ setModelStatus(side,'⚠ Decode error on "'+nm+'".'); removeFighterModel(side); } })
+    .catch(e=>{ setModelStatus(side,'⚠ Could not read the saved library.'); }); return; }
+  // EMBEDDED model (baked into the file as base64) — parsed with no network, can't be blocked
+  if(url.indexOf('embedded:')===0){
+    const key=url.slice(9);
+    const b64=(typeof FIGHTER_GLB_B64!=='undefined') && FIGHTER_GLB_B64[key];
+    if(!b64){ setModelStatus(side,'⚠ Embedded model "'+key+'" not found.'); return; }
+    try{ const buf=b64ToArrayBuffer(b64); loader.parse(buf, '', (gltf)=>_bindFighterGltf(side,url,name,gltf), (err)=>{ setModelStatus(side,'⚠ Parse error on "'+(name||key)+'".'); removeFighterModel(side); }); }
+    catch(e){ setModelStatus(side,'⚠ Decode error on "'+(name||key)+'".'); removeFighterModel(side); }
+    return;
+  }
+  loader.load(url, (gltf)=>_bindFighterGltf(side,url,name,gltf),
+    undefined,
+    (err)=>{ setModelStatus(side,'⚠ "'+(name||'model')+'" blocked by the sandbox — external downloads are not allowed here. Built-in body kept.'); removeFighterModel(side); });
+}
+const _mUp=new THREE.Vector3(0,1,0), _mDir=new THREE.Vector3(), _mQ=new THREE.Quaternion(), _mPQ=new THREE.Quaternion();
+const _invP=new THREE.Quaternion(), _dl=new THREE.Vector3(), _rfl=new THREE.Vector3(), _qd=new THREE.Quaternion(), _qw=new THREE.Quaternion(), _idQ=new THREE.Quaternion();
+const _DEG=Math.PI/180, LIM_LIMB=170*_DEG, LIM_SPINE=88*_DEG;
+// clamp a target local quaternion to within maxRad of the bone's rest pose (kills 360-degree spin/flip artifacts; real poses never exceed this)
+function _clampQ(t, r, maxRad){ let d=t.x*r.x+t.y*r.y+t.z*r.z+t.w*r.w; if(d<0)d=-d; if(d>1)d=1; const ang=2*Math.acos(d); if(ang>maxRad && ang>1e-3) t.slerp(r, 1-maxRad/ang); }
+function updateFighterModel(f){
+  const m=f.model; if(!m) return;
+  const root = f.ragdoll ? f.V.pelvis.pos : f.worldJoint('pelvis');
+  if(m.userData.fitScale){ const sc=m.userData.fitScale*(MODEL_CFG.userScale||1); m.scale.setScalar(sc); m.userData.yBase=-(m.userData.minY||0)*sc; }
+  var _modelY = (m.userData.yBase||0)+TUNE.modelYOffset;
+  if(f.ragdoll || f.state==='grabbed' || f.state==='down' || f.state==='getup' || f.state==='falling'){ _modelY += (root.y - (RING.floorY + 0.9)); }   // follow the rig: carry height, down to the mat, and RISE off the mat through getup

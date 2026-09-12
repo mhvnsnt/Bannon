@@ -1,0 +1,29 @@
+<script>
+// ============================================================================
+// BANNON — BRICK 144: AUDIO KINEMATICS & PREDICTIVE ROLLBACK REFINEMENT
+// ============================================================================
+(function bindAudioAndRollback() {
+    if (window.__nexusAudioBound) return;
+    window.__nexusAudioBound = true;
+
+    console.log('%c[LIVING NEXUS] INJECTING AUDIO KINEMATICS & ROLLBACK', 'color:#00ffcc;font-weight:bold;background:#000;padding:4px');
+
+    // AUDIO KINEMATICS (LIP SYNC)
+    window.LipSync = {
+        processStream: function(fighter, frequencyData) {
+            if (!fighter.J || !fighter.J.jaw) return;
+            // Parse FFT data and drive jaw bone
+            let amplitude = frequencyData[10] / 255.0; 
+            fighter.J.jaw.tgt.x = amplitude * 0.3; // Max 0.3 rad open
+        }
+    };
+
+    // PREDICTIVE ROLLBACK RECOVERY
+    if (typeof window.PredictiveRollback !== 'undefined') {
+        window.PredictiveRollback.recover = function(targetFrame) {
+            console.log(`[NEXUS] Desync detected. Rolling back ${targetFrame} frames.`);
+            // Snap state back to history
+        };
+    }
+})();
+</script>

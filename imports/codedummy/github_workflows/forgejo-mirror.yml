@@ -1,0 +1,19 @@
+name: Forgejo Mirror
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Mirror to Forgejo
+        uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url: ${{ secrets.FORGEJO_REPO_URL }}
+          ssh_private_key: ${{ secrets.FORGEJO_SSH_KEY }}

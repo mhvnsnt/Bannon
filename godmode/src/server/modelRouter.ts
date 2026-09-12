@@ -297,10 +297,38 @@ export class ModelRouter {
     const dynamicLocalBonus =
       avgLocalLatency < avgCloudLatency * 0.5 ? true : false;
 
-    // Tier 1: Cloud Primary API (Gemini/Claude)
+    // ===== TIER 0: LOCAL NO-LIMIT PRIMARY (owner directive) =====================================
+    // The owner runs uncensored/no-limit models on his own Ollama node and wants THOSE to be the
+    // primary brain for the Telegram bot / swarm — NOT Grok or Gemini (rate-limited + filtered).
+    // So when a local model is online we route to it FIRST; the cloud tiers below become fallback
+    // only (used when the local node is offline). Toggle with LOCAL_FIRST=0 to restore cloud-first.
     let apiModelName = this.getAPIModelForTier(mappedTier);
     let overflowReason = "";
+    const localFirst = (process.env.LOCAL_FIRST ?? "1") !== "0";
+    if (localFirst) {
+      const primaryLocal = this.getLocalModelForTier(mappedTier);
+      if (this.ollamaStatus.online && this.ollamaStatus.modelsAvailable.includes(primaryLocal)) {
+        try {
+          console.log(`[ModelRouter] TIER 0 [LOCAL PRIMARY]: Routing task [${taskType}] to ${primaryLocal} (no-limit local node)`);
+          return await this.callProvider(
+            "local-ollama",
+            prompt,
+            taskType,
+            false,
+            mappedTier,
+            taskId,
+            "Local-first primary (owner: no-limit local models over Grok/Gemini)",
+          );
+        } catch (localErr: any) {
+          overflowReason = `Local primary failure: ${localErr.message}. Falling to cloud.`;
+          console.warn(`[ModelRouter] ${overflowReason}`);
+        }
+      } else {
+        console.warn(`[ModelRouter] Local primary ${primaryLocal} offline/unavailable — falling to cloud tiers.`);
+      }
+    }
 
+    // Tier 1: Cloud FALLBACK API (Gemini/Claude) — only reached when the local node is down.
     try {
       console.log(`[ModelRouter] TIER 1 [API]: Routing task [${taskType}] to ${apiModelName}`);
       const response = await this.callProvider(

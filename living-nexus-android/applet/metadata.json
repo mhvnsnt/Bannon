@@ -1,0 +1,6 @@
+{
+  "name": "Bannon Engine",
+  "description": "AAA combat depth and physics-driven grapple solvers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
