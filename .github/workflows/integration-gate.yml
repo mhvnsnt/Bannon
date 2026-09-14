@@ -26,6 +26,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Reject unresolved merge markers
         shell: bash
         run: |
@@ -46,6 +51,31 @@ jobs:
           grep -q 'manifest.json' BANNON_v150.html || true
           test -f tools/deploy/build_hosting.sh
           test -f .github/workflows/pages.yml
+
+      - name: Verify Unreal engine contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s unreal/Bannon.uproject
+          grep -q '"EngineAssociation": "5.3"' unreal/Bannon.uproject
+          echo 'UNREAL_ENGINE_CONTRACT_OK engine=5.3'
+
+      - name: Run locomotion authority audit
+        run: node tools/audit_locomotion_authority.cjs
+
+      - name: Run IK target-writer audit
+        run: node tools/audit_ik_target_writers.cjs
+
+      - name: Run physics pose-writer audit
+        run: node tools/audit_physics_pose_writers.cjs
+
+      - name: Validate harness syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check tools/harness/move_truth.cjs
+          node --check tools/harness/pose_ledger.cjs
+          node --check tools/harness/grapple_contact.cjs
 
       - name: Build PWA staging payload
         shell: bash
@@ -71,5 +101,6 @@ jobs:
           set -euo pipefail
           grep -q 'manifest.json' .github/workflows/pages.yml
           grep -q 'BANNON_v150.html' .github/workflows/pages.yml
+          grep -q 'runtime-version.json' .github/workflows/pages.yml
           grep -q 'actions/deploy-pages@v4' .github/workflows/pages.yml
-          echo "PWA_DEPLOY_CONTRACT_OK"
+          echo 'PWA_DEPLOY_CONTRACT_OK'
