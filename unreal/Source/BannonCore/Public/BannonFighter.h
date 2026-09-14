@@ -8,6 +8,7 @@
 
 class UBannonRagdollComponent;
 class UBannonGrappleGrip;
+class UBannonPoseAuthorityComponent;
 
 UCLASS()
 class BANNONCORE_API ABannonFighter : public ACharacter
@@ -17,14 +18,11 @@ class BANNONCORE_API ABannonFighter : public ACharacter
 public:
     ABannonFighter(const FObjectInitializer& ObjectInitializer = FObjectInitializer::Get());
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Bannon|Physics")
-    UBannonRagdollComponent* Ragdoll = nullptr;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Bannon|Physics") UBannonRagdollComponent* Ragdoll = nullptr;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Bannon|Physics") UBannonGrappleGrip* Grip = nullptr;
+    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Bannon|Pose") UBannonPoseAuthorityComponent* PoseAuthority = nullptr;
 
-    UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Bannon|Physics")
-    UBannonGrappleGrip* Grip = nullptr;
-
-    UFUNCTION(BlueprintCallable, Category="Bannon|Combat")
-    bool GrappleGrab(ABannonFighter* Victim, FName HandSocket);
+    UFUNCTION(BlueprintCallable, Category="Bannon|Combat") bool GrappleGrab(ABannonFighter* Victim, FName HandSocket);
 
     UPROPERTY(BlueprintReadOnly, Category="Bannon|State") float HP = 10000.0f;
     UPROPERTY(BlueprintReadOnly, Category="Bannon|State") float Poise = 100.0f;
