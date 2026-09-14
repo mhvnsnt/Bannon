@@ -2,6 +2,7 @@
 #include "BannonProceduralIK.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/Character.h"
+#include "BannonPoseAuthorityComponent.h"
 
 UBannonProceduralIK::UBannonProceduralIK()
 {
@@ -10,26 +11,29 @@ UBannonProceduralIK::UBannonProceduralIK()
 
 void UBannonProceduralIK::AttachWeaponGrip(AActor* Weapon, FName HandBoneName)
 {
-    // Calculate dynamic offset from HandBoneName to weapon handle pivot.
-    // Control Rig/FBIK consumes this target; this component does not write bones.
+    // Control Rig/FBIK consumes the target; this component never writes bones.
 }
 
 void UBannonProceduralIK::TriggerLimbRagdoll(FName LimbRootBone)
 {
     ACharacter* Owner = Cast<ACharacter>(GetOwner());
-    if (Owner && Owner->GetMesh() && !LimbRootBone.IsNone())
+    if (!Owner || !Owner->GetMesh() || LimbRootBone.IsNone()) return;
+
+    if (UBannonPoseAuthorityComponent* Authority =
+        Owner->FindComponentByClass<UBannonPoseAuthorityComponent>())
     {
-        // Physical animation owns the secondary physical response. This is an
-        // explicit state transition, not an IK transform write.
-        Owner->GetMesh()->SetAllBodiesBelowSimulatePhysics(LimbRootBone, true, true);
-        Owner->GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(LimbRootBone, 1.0f);
+        // Physical response is an explicit owner transition. If another system
+        // owns the limb this frame, refuse instead of silently fighting it.
+        if (!Authority->ClaimBone(LimbRootBone, EBannonPoseOwner::Physical))
+            return;
     }
+
+    Owner->GetMesh()->SetAllBodiesBelowSimulatePhysics(LimbRootBone, true, true);
+    Owner->GetMesh()->SetAllBodiesBelowPhysicsBlendWeight(LimbRootBone, 1.0f);
 }
 
 void UBannonProceduralIK::UpdateFootPlacement(FVector LeftFootLoc, FVector RightFootLoc)
 {
-    // IK targets are consumed by the animation/Control Rig layer.
-    // No mesh transform mutation occurs here.
     UE_LOG(LogTemp, Verbose, TEXT("Bannon IK Targets | L=%s R=%s"),
         *LeftFootLoc.ToString(), *RightFootLoc.ToString());
 }
