@@ -1,15 +1,11 @@
 #include "BannonDynamicIKRigging.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "GameFramework/Character.h"
-#include "Kismet/KismetMathLibrary.h"
 
 void UBannonDynamicIKRigging::WireFullBodyIKTurnbuckle(USkeletalMeshComponent* AttackerMesh, FVector TurnbuckleLocation, FVector& OutLeftHandIK, FVector& OutRightHandIK)
 {
     if (!AttackerMesh) return;
-
-    FVector LocalOffsetLeft = FVector(-15.0f, 20.0f, 0.0f);
-    FVector LocalOffsetRight = FVector(15.0f, 20.0f, 0.0f);
-
+    const FVector LocalOffsetLeft(-15.0f, 20.0f, 0.0f);
+    const FVector LocalOffsetRight(15.0f, 20.0f, 0.0f);
     OutLeftHandIK = TurnbuckleLocation + LocalOffsetLeft;
     OutRightHandIK = TurnbuckleLocation + LocalOffsetRight;
 }
@@ -18,23 +14,27 @@ void UBannonDynamicIKRigging::CalculateRopeWalkFootPlacement(USkeletalMeshCompon
 {
     if (!AttackerMesh) return;
 
-    FVector FootOffset = FVector(0.0f, 14.0f, 0.0f);
-    FVector BalanceCorrection = FVector(0.0f, 0.0f, BalanceDelta * 2.5f);
+    const FVector FootOffset(0.0f, 14.0f, 0.0f);
+    const float BoundedBalance = FMath::Clamp(BalanceDelta, -1.0f, 1.0f);
+    const FVector BalanceCorrection(0.0f, 0.0f, BoundedBalance * 2.5f);
 
     OutLeftFootIK = RopeSplineLocation - FootOffset + BalanceCorrection;
     OutRightFootIK = RopeSplineLocation + FootOffset - BalanceCorrection;
+
+    // This component produces IK targets only. It never mutates the skeletal
+    // component, actor transform, capsule, or animation instance.
 }
 
 void UBannonDynamicIKRigging::MapHeightDependentGrappleIK(USkeletalMeshComponent* AttackerMesh, USkeletalMeshComponent* DefenderMesh, FName TargetBone, FVector& OutIKLocation)
 {
-    if (!AttackerMesh || !DefenderMesh) return;
+    if (!AttackerMesh || !DefenderMesh || !DefenderMesh->DoesSocketExist(TargetBone)) return;
 
-    FVector AttackerRoot = AttackerMesh->GetComponentLocation();
-    FVector DefenderRoot = DefenderMesh->GetComponentLocation();
-    FVector TargetSocketLocation = DefenderMesh->GetSocketLocation(TargetBone);
+    const FVector AttackerRoot = AttackerMesh->GetComponentLocation();
+    const FVector DefenderRoot = DefenderMesh->GetComponentLocation();
+    const FVector TargetSocketLocation = DefenderMesh->GetSocketLocation(TargetBone);
 
-    float ZHeightDelta = DefenderRoot.Z - AttackerRoot.Z;
-    FVector HeightAdjustment = FVector(0.0f, 0.0f, ZHeightDelta * 0.45f);
+    const float ZHeightDelta = DefenderRoot.Z - AttackerRoot.Z;
+    const FVector HeightAdjustment(0.0f, 0.0f, FMath::Clamp(ZHeightDelta * 0.45f, -50.0f, 50.0f));
 
     OutIKLocation = TargetSocketLocation + HeightAdjustment;
 }
