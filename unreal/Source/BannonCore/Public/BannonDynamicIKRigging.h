@@ -9,7 +9,7 @@ class BANNONCORE_API UBannonDynamicIKRigging : public UActorComponent
     GENERATED_BODY()
 public:
     UBannonDynamicIKRigging() { PrimaryComponentTick.bCanEverTick = false; }
-    
+
     UFUNCTION(BlueprintCallable, Category="Bannon|Physics")
     void WireFullBodyIKTurnbuckle(class USkeletalMeshComponent* AttackerMesh, FVector TurnbuckleLocation, FVector& OutLeftHandIK, FVector& OutRightHandIK);
 
