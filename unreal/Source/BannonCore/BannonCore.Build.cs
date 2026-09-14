@@ -15,7 +15,7 @@ public class BannonCore : ModuleRules
 		PublicDependencyModuleNames.AddRange(new string[] {
 			"Core", "CoreUObject", "Engine", "InputCore", "EnhancedInput",
 			"Chaos", "ChaosCore", "PhysicsCore", "UMG", "Slate", "SlateCore",
-			"Json", "JsonUtilities"
+			"Json", "JsonUtilities", "BannonEngine"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
