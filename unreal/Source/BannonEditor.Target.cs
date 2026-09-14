@@ -8,7 +8,7 @@ public class BannonEditorTarget : TargetRules
     {
         Type = TargetType.Editor;
         DefaultBuildSettings = BuildSettingsVersion.V7;
-        IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_5;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_6;
         ExtraModuleNames.Add("BannonCore");
         ExtraModuleNames.Add("BannonEngine");
     }
