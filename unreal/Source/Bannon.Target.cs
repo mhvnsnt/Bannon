@@ -8,7 +8,7 @@ public class BannonTarget : TargetRules
     {
         Type = TargetType.Game;
         DefaultBuildSettings = BuildSettingsVersion.V7;
-        IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_8;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Unreal5_5;
         ExtraModuleNames.Add("BannonCore");
         ExtraModuleNames.Add("BannonEngine");
     }
