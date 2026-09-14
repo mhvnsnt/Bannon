@@ -12,15 +12,20 @@ void UBannonProceduralSubmissions::ApplyKinematicTorque(USkeletalMeshComponent* 
     if (!AttackerMesh || !DefenderMesh) return;
 
     const float DMG_SCALE = 8.0f;
-    float AppliedTorque = 1500.0f;
+    const float AppliedTorque = 1500.0f;
 
-    // Skeletal Constraint Locking logic via motor binding approximation
-    FVector AttackerSocket = AttackerMesh->GetSocketLocation(FName("Hand_R"));
-    FVector DefenderSocket = DefenderMesh->GetSocketLocation(DefenderLimb);
-    AttackerMesh->SetWorldLocation(DefenderSocket); // Lock transforms to prevent clipping
-    
+    // P0 POSE AUTHORITY: submission contact must not teleport the entire attacker mesh.
+    // Root/world transforms belong to locomotion/interaction positioning, not limb contact.
+    // A previous implementation snapped AttackerMesh to DefenderSocket, which could
+    // overwrite locomotion and produce visible pose/root discontinuities.
+    const FVector AttackerSocket = AttackerMesh->GetSocketLocation(FName("Hand_R"));
+    const FVector DefenderSocket = DefenderMesh->GetSocketLocation(DefenderLimb);
+    const float ContactErrorCm = FVector::Dist(AttackerSocket, DefenderSocket);
+
     // Continuous Poise Drain
-    float ContinuousDrain = (AppliedTorque / 100.f) * DMG_SCALE * DeltaTime;
+    const float ContinuousDrain = (AppliedTorque / 100.f) * DMG_SCALE * DeltaTime;
 
-    UE_LOG(LogTemp, Warning, TEXT("Bannon Physics: Kinematic torque applied. Poise drained by %f. Triggering structural joint yield state without touching 10000 MAX_HP."), ContinuousDrain);
+    UE_LOG(LogTemp, Warning,
+        TEXT("Bannon Physics: Kinematic torque applied. ContactErrorCm=%f PoiseDrain=%f. Root transform unchanged."),
+        ContactErrorCm, ContinuousDrain);
 }
