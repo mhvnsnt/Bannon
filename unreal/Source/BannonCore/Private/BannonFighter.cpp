@@ -5,6 +5,7 @@
 #include "BannonRagdollComponent.h"
 #include "BannonGrappleGrip.h"
 #include "BannonALSMovementComponent.h"
+#include "BannonPoseAuthorityComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 
 ABannonFighter::ABannonFighter(const FObjectInitializer& ObjectInitializer)
@@ -17,15 +18,18 @@ ABannonFighter::ABannonFighter(const FObjectInitializer& ObjectInitializer)
 
     Ragdoll = CreateDefaultSubobject<UBannonRagdollComponent>(TEXT("Ragdoll"));
     Grip = CreateDefaultSubobject<UBannonGrappleGrip>(TEXT("GrappleGrip"));
+    PoseAuthority = CreateDefaultSubobject<UBannonPoseAuthorityComponent>(TEXT("PoseAuthority"));
 }
 
 bool ABannonFighter::GrappleGrab(ABannonFighter* Victim, FName HandSocket)
 {
     if (!Victim || !Grip) return false;
-
     USkeletalMeshComponent* VMesh = Victim->GetMesh();
     USkeletalMeshComponent* AMesh = GetMesh();
     if (!VMesh || !AMesh) return false;
+
+    if (Victim->PoseAuthority && !Victim->PoseAuthority->ClaimBone(FName(TEXT("spine_03")), EBannonPoseOwner::Grapple))
+        return false;
 
     if (Victim->Ragdoll) Victim->Ragdoll->ImpactBlend(1.0f);
     VMesh->SetAllBodiesBelowSimulatePhysics(FName(TEXT("Hips")), true, true);
@@ -59,6 +63,13 @@ void ABannonFighter::RegenStamina(bool bIdle, float Dt)
 void ABannonFighter::Tick(float DeltaTime)
 {
     Super::Tick(DeltaTime);
+
+    if (PoseAuthority)
+    {
+        PoseAuthority->BeginPoseFrame();
+        PoseAuthority->ClaimBone(FName(TEXT("root")), EBannonPoseOwner::Locomotion);
+        PoseAuthority->ClaimBone(FName(TEXT("pelvis")), EBannonPoseOwner::Locomotion);
+    }
 
     if (UBannonALSMovementComponent* Movement = Cast<UBannonALSMovementComponent>(GetCharacterMovement()))
     {
