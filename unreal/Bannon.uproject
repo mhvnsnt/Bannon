@@ -8,11 +8,13 @@
       "Name": "BannonCore",
       "Type": "Runtime",
       "LoadingPhase": "Default",
-      "AdditionalDependencies": [
-        "Engine",
-        "PhysicsCore",
-        "ChaosVehicles"
-      ]
+      "AdditionalDependencies": ["Engine", "PhysicsCore", "ChaosVehicles"]
+    },
+    {
+      "Name": "BannonEngine",
+      "Type": "Runtime",
+      "LoadingPhase": "Default",
+      "AdditionalDependencies": ["Engine", "CoreUObject"]
     }
   ],
   "Plugins": [
@@ -23,10 +25,5 @@
     { "Name": "ChaosCloth", "Enabled": true },
     { "Name": "GeometryCache", "Enabled": true }
   ],
-  "TargetPlatforms": [
-    "Android",
-    "IOS", 
-    "Win64",
-    "Mac"
-  ]
+  "TargetPlatforms": ["Android", "IOS", "Win64", "Mac"]
 }
