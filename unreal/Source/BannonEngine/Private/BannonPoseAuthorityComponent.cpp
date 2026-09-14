@@ -16,9 +16,7 @@ void UBannonPoseAuthorityComponent::BeginPoseFrame()
 bool UBannonPoseAuthorityComponent::ClaimBone(FName Bone, EBannonPoseOwner Owner)
 {
     if (Bone.IsNone() || Owner == EBannonPoseOwner::None)
-    {
         return false;
-    }
 
     ++TotalWriteCount;
 
@@ -27,6 +25,9 @@ bool UBannonPoseAuthorityComponent::ClaimBone(FName Bone, EBannonPoseOwner Owner
         if (*Existing != Owner)
         {
             ++ContestedWriteCount;
+            UE_LOG(LogTemp, Warning,
+                TEXT("[BANNON][POSE CONTENTION] frame=%llu bone=%s owner=%d requested=%d"),
+                PoseFrame, *Bone.ToString(), static_cast<int32>(*Existing), static_cast<int32>(Owner));
             return false;
         }
         return true;
@@ -44,8 +45,6 @@ void UBannonPoseAuthorityComponent::ReleaseClaims()
 EBannonPoseOwner UBannonPoseAuthorityComponent::GetBoneOwner(FName Bone) const
 {
     if (const EBannonPoseOwner* Owner = Claims.Find(Bone))
-    {
         return *Owner;
-    }
     return EBannonPoseOwner::None;
 }
