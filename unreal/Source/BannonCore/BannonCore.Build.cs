@@ -1,4 +1,4 @@
-// BANNON native game module. Depends on Chaos + PhysicsControl (the ragdoll), ControlRig (the
+// BANNON native game module. Depends on Chaos + PhysicsControl (the ragdoll/control layer), ControlRig (the
 // retarget), and adds ../../../native/include so the SAME header-only combat/physics laws the web
 // engine runs (bannon_core/rig/strike/grapple/weapon/referee/universe/anim_bridge .h) compile here.
 
@@ -19,7 +19,7 @@ public class BannonCore : ModuleRules
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {
-			"ControlRig", "RigVM", "AnimGraphRuntime"
+			"ControlRig", "RigVM", "AnimGraphRuntime", "PhysicsControl"
 		});
 
 		// THE BRIDGE: the engine-agnostic laws live in the repo's native/ core (one source of truth
