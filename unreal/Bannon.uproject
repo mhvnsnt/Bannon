@@ -1,6 +1,6 @@
 {
   "FileVersion": 3,
-  "EngineAssociation": "5.3",
+  "EngineAssociation": "5.5",
   "Category": "Games",
   "Description": "BANNON — Procedural Wrestling Engine",
   "Modules": [
@@ -22,6 +22,7 @@
     { "Name": "LiveLinkAnimationBlending", "Enabled": true },
     { "Name": "ControlRig", "Enabled": true },
     { "Name": "FullBodyIK", "Enabled": true },
+    { "Name": "PhysicsControl", "Enabled": true },
     { "Name": "ChaosCloth", "Enabled": true },
     { "Name": "GeometryCache", "Enabled": true }
   ],
