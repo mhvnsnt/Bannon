@@ -1,0 +1,75 @@
+name: BANNON Integration Gate
+
+on:
+  push:
+    branches:
+      - integration/p0-pwa-sync
+  pull_request:
+    branches:
+      - main
+      - integration/p0-pwa-sync
+  workflow_dispatch:
+
+concurrency:
+  group: bannon-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout exact candidate
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reject unresolved merge markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git grep -n -I -E '^(<<<<<<< |=======|>>>>>>> )' -- . ':!*.ast.json' ':!*.lock' ':!*.map'; then
+            echo 'ERROR: unresolved merge markers found.'
+            exit 1
+          fi
+
+      - name: Verify PWA source contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s BANNON_v150.html
+          test -s manifest.json
+          test -s assets/icons/icon-192.png
+          test -s assets/icons/icon-512.png
+          grep -q 'manifest.json' BANNON_v150.html || true
+          test -f tools/deploy/build_hosting.sh
+          test -f .github/workflows/pages.yml
+
+      - name: Build PWA staging payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash tools/deploy/build_hosting.sh
+          test -s hosting_public/index.html
+          test -s hosting_public/manifest.json
+          test -s hosting_public/assets/icons/icon-192.png
+          test -s hosting_public/assets/icons/icon-512.png
+
+      - name: Verify staged PWA matches source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cmp -s BANNON_v150.html hosting_public/index.html
+          cmp -s manifest.json hosting_public/manifest.json
+          echo "PWA_SYNC_OK commit=${GITHUB_SHA}"
+
+      - name: Verify deployment workflow is PWA-aware
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'manifest.json' .github/workflows/pages.yml
+          grep -q 'BANNON_v150.html' .github/workflows/pages.yml
+          grep -q 'actions/deploy-pages@v4' .github/workflows/pages.yml
+          echo "PWA_DEPLOY_CONTRACT_OK"
