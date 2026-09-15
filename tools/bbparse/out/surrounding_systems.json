@@ -1,0 +1,181 @@
+{
+ "_source": "MDickie Wrestling MPire (.bb) — structural extract, transformative; raw source NOT committed",
+ "_use": "blueprint for BANNON career/universe/booking surrounding-game systems (proprietary canon)",
+ "systems": {
+  "career_universe": {
+   "files": [
+    "Career.bb"
+   ],
+   "functions": [
+    "ConfirmUniverse",
+    "Calendar",
+    "Production",
+    "GenerateCareer",
+    "ResetHealthStatus",
+    "ResetCareerStatus",
+    "ResetSchedule",
+    "GetRealDate",
+    "GetDate",
+    "GetMonth",
+    "GetWeek",
+    "DescribeDate",
+    "NextDate",
+    "CourtDate",
+    "LastResult",
+    "LastEvent",
+    "OpponentBooked",
+    "CountClients",
+    "GetMatchRules",
+    "AddGimmick",
+    "AssignOpponent",
+    "AssignPartner",
+    "AssignReferee",
+    "InjuryStatus",
+    "OldInjuryStatus",
+    "IdentifyInjury",
+    "InjuryDate",
+    "CountExperience",
+    "CountMatches",
+    "CountWins",
+    "GetWinRate",
+    "CountTitles",
+    "CountRelationships",
+    "CountRealRelationships",
+    "AllegianceRatio",
+    "CountSalaries",
+    "CountProductions",
+    "ProductionCosts",
+    "PromotionPotential",
+    "TitleHolder",
+    "ImportantChar",
+    "ConstructInterPromotional"
+   ]
+  },
+  "world_arena": {
+   "files": [
+    "World.bb"
+   ],
+   "functions": [
+    "PreviewArena",
+    "LoadArena",
+    "CrowdShape",
+    "LoadSign",
+    "GetArenaSettings",
+    "GenerateArena",
+    "GenerateAttendance",
+    "TranslateAttendance",
+    "ApronColour",
+    "DecorateArena",
+    "DecorateRing",
+    "PrepareScenery",
+    "LoadBlocks",
+    "LoadAtmos",
+    "LoadLighting",
+    "ManageAtmos",
+    "Camera",
+    "GetCamera",
+    "CamConflict",
+    "CamViable",
+    "EyeLevel",
+    "WatchAngle",
+    "NearestSideTo",
+    "FindGround",
+    "FindCeiling",
+    "InsideTunnel"
+   ]
+  },
+  "contracts": {
+   "files": [
+    "Negotiations.bb"
+   ],
+   "functions": [
+    "RiskOffers",
+    "Negotiations",
+    "SellCharacter",
+    "FigureRange",
+    "GetValue",
+    "CalculateWorth",
+    "GenerateContract",
+    "ContractFilter",
+    "ClauseFilter",
+    "ClauseEntitled",
+    "GetContractVerdict",
+    "PushLuck"
+   ]
+  },
+  "news_events": {
+   "files": [
+    "News.bb"
+   ],
+   "functions": [
+    "IntroduceDate",
+    "AdvanceDate",
+    "FindEvents",
+    "AddEvent",
+    "ResetEvent",
+    "NewsReports",
+    "FightAvailable",
+    "WinEffect",
+    "FindTradeReactions",
+    "PostNewsProcess"
+   ]
+  },
+  "tournaments": {
+   "files": [
+    "Tournaments.bb"
+   ],
+   "functions": [
+    "TournamentSetup",
+    "Tournament",
+    "GenerateTournament",
+    "DrawBracket",
+    "CupStage",
+    "BracketSide",
+    "TournamentSelected",
+    "TournamentStatus",
+    "SimulateBracket"
+   ]
+  },
+  "promos_relationships": {
+   "files": [
+    "Promos.bb"
+   ],
+   "functions": [
+    "DisplayPromo",
+    "PreparePromo",
+    "FindActor",
+    "ImportantPromo",
+    "DisplaySubtitles",
+    "Speak",
+    "ResetExpressions",
+    "FacialExpressions",
+    "FormTeam",
+    "ChangeRelationship",
+    "ChangeRealRelationship",
+    "ChangeAllegiance",
+    "FindFriend",
+    "FindRealFriend",
+    "FindEnemy",
+    "FindRealEnemy",
+    "FindThirdParty",
+    "FindTeamMate",
+    "PromoCharm",
+    "PushTurn",
+    "FindStrength",
+    "AnnounceBreakup"
+   ]
+  },
+  "tag_teams": {
+   "files": [
+    "Teams.bb"
+   ],
+   "functions": [
+    "LoadTeamMoveSequences",
+    "TeamMoves",
+    "FindAssistance",
+    "PotentialAssistance",
+    "FindTeamMove"
+   ]
+  }
+ }
+}

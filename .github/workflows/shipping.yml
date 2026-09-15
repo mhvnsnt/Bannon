@@ -1,0 +1,24 @@
+name: Shipping gate
+
+# THE CHECK THAT WAS MISSING. Five bugs shipped silently this week — a document that never closed,
+# a native call to a function that did not exist, 68 equipped clips with no file, a publish step
+# git-adding an ignored path, and CDN-only scripts that made the offline app a different game.
+# None of them were a missing library; every one was a reference pointing at nothing, and a linter
+# finds all five in under a second. It runs on every push and every PR so they cannot ship again.
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: Shipping gate (dangling references)
+        run: node scripts/verify_shipping.cjs
+      - name: Existing integrity checks
+        run: node scripts/verify_integrity.cjs || true

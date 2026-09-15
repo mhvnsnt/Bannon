@@ -1,0 +1,41 @@
+{
+  "_note": "Non-canon roster only (canon/book characters excluded per owner — real refs exist). Prompts derived from BANNON_ROSTER entries (build, shape, palette, style). Feed to hunyuan3d_batch_generator; each result auto-binds as that character's DEFAULT attire, 3js kept as alternate.",
+  "style_suffix": "full-body pro-wrestling / MMA fighter, T-pose, athletic anatomy, game-ready, clean topology, PBR skin and fabric, neutral studio lighting, symmetrical, single character, no background",
+  "characters": [
+    {
+      "key": "TITAN",
+      "name": "Titan",
+      "archetype": "powerhouse",
+      "prompt": "A towering heavyweight powerhouse pro-wrestler, massively muscular with huge chest, broad shoulders and thick arms, tan-bronze skin, shaved black hair, intense red eyes, dark navy fight trunks with silver-grey trim and a metallic accent belt, black boots",
+      "build": 1.34
+    },
+    {
+      "key": "VIPER",
+      "name": "Viper",
+      "archetype": "striker",
+      "prompt": "A lean, long-limbed agile striker / kickboxer, wiry cut muscle, warm tan skin, sleek black hair, glowing green eyes, dark green fight trunks with neon-green trim and accents, minimal low-cut boots",
+      "build": 0.84
+    },
+    {
+      "key": "GOLEM",
+      "name": "Golem",
+      "archetype": "grappler",
+      "prompt": "A colossal super-heavyweight grappler, enormous stone-grey rugged skin, immense chest shoulders and forearms, huge hands, near-bald with black stubble, burning orange eyes, dark brown trunks with orange trim, heavy dark boots",
+      "build": 1.52
+    },
+    {
+      "key": "RONIN",
+      "name": "Ronin",
+      "archetype": "technical",
+      "prompt": "A disciplined balanced technical wrestler, samurai-inspired, athletic proportionate build, warm light skin, short dark topknot-style hair, dark crimson fight trunks with deep-red trim and a sash accent, dark low boots",
+      "build": 0.96
+    },
+    {
+      "key": "ZEPHYR",
+      "name": "Zephyr",
+      "archetype": "capoeira",
+      "prompt": "An acrobatic capoeira fighter with a dancer's long powerful legs and lean upper body, dark brown skin, short black hair, bright blue eyes, deep blue-grey low trunks with sky-blue trim, barefoot or minimal wraps",
+      "build": 0.90
+    }
+  ]
+}

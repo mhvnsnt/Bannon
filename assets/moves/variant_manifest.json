@@ -1,0 +1,6554 @@
+{
+ "INJURED_RUN_BACKWARDS_RIGHT_TURN_MIRROR": {
+  "base": "INJURED_RUN_BACKWARDS_RIGHT_TURN",
+  "kind": "MIRROR",
+  "diffMean": 0.3577,
+  "diffPeak": 1.1382,
+  "durDelta": 0.0,
+  "dur": 0.5333,
+  "distinct": true
+ },
+ "INJURED_RUN_BACKWARDS_RIGHT_TURN_SNAP": {
+  "base": "INJURED_RUN_BACKWARDS_RIGHT_TURN",
+  "kind": "SNAP",
+  "diffMean": 0.0413,
+  "diffPeak": 1.0987,
+  "durDelta": 0.149,
+  "dur": 0.384,
+  "distinct": true
+ },
+ "INJURED_RUN_BACKWARDS_RIGHT_TURN_SLOW": {
+  "base": "INJURED_RUN_BACKWARDS_RIGHT_TURN",
+  "kind": "SLOW",
+  "diffMean": 0.0283,
+  "diffPeak": 1.0933,
+  "durDelta": 0.187,
+  "dur": 0.72,
+  "distinct": true
+ },
+ "INJURED_RUN_BACKWARDS_RIGHT_TURN_KNEELING": {
+  "base": "INJURED_RUN_BACKWARDS_RIGHT_TURN",
+  "kind": "KNEELING",
+  "diffMean": 0.3716,
+  "diffPeak": 0.631,
+  "durDelta": 0.0,
+  "dur": 0.5333,
+  "distinct": true
+ },
+ "INJURED_RUN_BACKWARDS_RIGHT_TURN_SITOUT": {
+  "base": "INJURED_RUN_BACKWARDS_RIGHT_TURN",
+  "kind": "SITOUT",
+  "diffMean": 0.2029,
+  "diffPeak": 1.1238,
+  "durDelta": 0.053,
+  "dur": 0.48,
+  "distinct": true
+ },
+ "INJURED_RUN_BACKWARDS_RIGHT_TURN_HARD": {
+  "base": "INJURED_RUN_BACKWARDS_RIGHT_TURN",
+  "kind": "HARD",
+  "diffMean": 0.1426,
+  "diffPeak": 1.1024,
+  "durDelta": 0.203,
+  "dur": 0.3306,
+  "distinct": true
+ },
+ "INJURED_RUN_BACKWARDS_RIGHT_TURN_DELAYED": {
+  "base": "INJURED_RUN_BACKWARDS_RIGHT_TURN",
+  "kind": "DELAYED",
+  "diffMean": 0.0746,
+  "diffPeak": 1.0962,
+  "durDelta": 0.267,
+  "dur": 0.7999,
+  "distinct": true
+ },
+ "INJURED_TURN_RIGHT_MIRROR": {
+  "base": "INJURED_TURN_RIGHT",
+  "kind": "MIRROR",
+  "diffMean": 0.3591,
+  "diffPeak": 1.1377,
+  "durDelta": 0.0,
+  "dur": 0.7,
+  "distinct": true
+ },
+ "INJURED_TURN_RIGHT_SNAP": {
+  "base": "INJURED_TURN_RIGHT",
+  "kind": "SNAP",
+  "diffMean": 0.045,
+  "diffPeak": 1.1157,
+  "durDelta": 0.196,
+  "dur": 0.504,
+  "distinct": true
+ },
+ "INJURED_TURN_RIGHT_SLOW": {
+  "base": "INJURED_TURN_RIGHT",
+  "kind": "SLOW",
+  "diffMean": 0.0272,
+  "diffPeak": 1.1135,
+  "durDelta": 0.245,
+  "dur": 0.945,
+  "distinct": true
+ },
+ "INJURED_TURN_RIGHT_KNEELING": {
+  "base": "INJURED_TURN_RIGHT",
+  "kind": "KNEELING",
+  "diffMean": 0.3688,
+  "diffPeak": 0.6347,
+  "durDelta": 0.0,
+  "dur": 0.7,
+  "distinct": true
+ },
+ "INJURED_TURN_RIGHT_SITOUT": {
+  "base": "INJURED_TURN_RIGHT",
+  "kind": "SITOUT",
+  "diffMean": 0.2017,
+  "diffPeak": 1.1344,
+  "durDelta": 0.07,
+  "dur": 0.63,
+  "distinct": true
+ },
+ "INJURED_TURN_RIGHT_HARD": {
+  "base": "INJURED_TURN_RIGHT",
+  "kind": "HARD",
+  "diffMean": 0.1475,
+  "diffPeak": 1.1208,
+  "durDelta": 0.266,
+  "dur": 0.434,
+  "distinct": true
+ },
+ "INJURED_TURN_RIGHT_DELAYED": {
+  "base": "INJURED_TURN_RIGHT",
+  "kind": "DELAYED",
+  "diffMean": 0.0805,
+  "diffPeak": 1.1137,
+  "durDelta": 0.35,
+  "dur": 1.05,
+  "distinct": true
+ },
+ "DWARF_WALK_MIRROR": {
+  "base": "DWARF_WALK",
+  "kind": "MIRROR",
+  "diffMean": 0.3835,
+  "diffPeak": 1.1618,
+  "durDelta": 0.0,
+  "dur": 1.1,
+  "distinct": true
+ },
+ "DWARF_WALK_SNAP": {
+  "base": "DWARF_WALK",
+  "kind": "SNAP",
+  "diffMean": 0.0688,
+  "diffPeak": 1.1322,
+  "durDelta": 0.308,
+  "dur": 0.792,
+  "distinct": true
+ },
+ "DWARF_WALK_SLOW": {
+  "base": "DWARF_WALK",
+  "kind": "SLOW",
+  "diffMean": 0.0446,
+  "diffPeak": 1.119,
+  "durDelta": 0.385,
+  "dur": 1.485,
+  "distinct": true
+ },
+ "DWARF_WALK_KNEELING": {
+  "base": "DWARF_WALK",
+  "kind": "KNEELING",
+  "diffMean": 0.3701,
+  "diffPeak": 0.629,
+  "durDelta": 0.0,
+  "dur": 1.1,
+  "distinct": true
+ },
+ "DWARF_WALK_SITOUT": {
+  "base": "DWARF_WALK",
+  "kind": "SITOUT",
+  "diffMean": 0.212,
+  "diffPeak": 1.1379,
+  "durDelta": 0.11,
+  "dur": 0.99,
+  "distinct": true
+ },
+ "DWARF_WALK_HARD": {
+  "base": "DWARF_WALK",
+  "kind": "HARD",
+  "diffMean": 0.1673,
+  "diffPeak": 1.1444,
+  "durDelta": 0.418,
+  "dur": 0.682,
+  "distinct": true
+ },
+ "DWARF_WALK_DELAYED": {
+  "base": "DWARF_WALK",
+  "kind": "DELAYED",
+  "diffMean": 0.0808,
+  "diffPeak": 1.1257,
+  "durDelta": 0.55,
+  "dur": 1.65,
+  "distinct": true
+ },
+ "HIT_TO_BODY_MIRROR": {
+  "base": "HIT_TO_BODY",
+  "kind": "MIRROR",
+  "diffMean": 0.3049,
+  "diffPeak": 1.058,
+  "durDelta": 0.0,
+  "dur": 1.2,
+  "distinct": true
+ },
+ "HIT_TO_BODY_SNAP": {
+  "base": "HIT_TO_BODY",
+  "kind": "SNAP",
+  "diffMean": 0.0359,
+  "diffPeak": 1.1141,
+  "durDelta": 0.336,
+  "dur": 0.864,
+  "distinct": true
+ },
+ "HIT_TO_BODY_SLOW": {
+  "base": "HIT_TO_BODY",
+  "kind": "SLOW",
+  "diffMean": 0.0145,
+  "diffPeak": 1.0536,
+  "durDelta": 0.42,
+  "dur": 1.62,
+  "distinct": true
+ },
+ "HIT_TO_BODY_KNEELING": {
+  "base": "HIT_TO_BODY",
+  "kind": "KNEELING",
+  "diffMean": 0.3691,
+  "diffPeak": 0.662,
+  "durDelta": 0.0,
+  "dur": 1.2,
+  "distinct": true
+ },
+ "HIT_TO_BODY_SITOUT": {
+  "base": "HIT_TO_BODY",
+  "kind": "SITOUT",
+  "diffMean": 0.2028,
+  "diffPeak": 1.1283,
+  "durDelta": 0.12,
+  "dur": 1.08,
+  "distinct": true
+ },
+ "HIT_TO_BODY_HARD": {
+  "base": "HIT_TO_BODY",
+  "kind": "HARD",
+  "diffMean": 0.1316,
+  "diffPeak": 1.0966,
+  "durDelta": 0.456,
+  "dur": 0.744,
+  "distinct": true
+ },
+ "HIT_TO_BODY_DELAYED": {
+  "base": "HIT_TO_BODY",
+  "kind": "DELAYED",
+  "diffMean": 0.0481,
+  "diffPeak": 1.0761,
+  "durDelta": 0.6,
+  "dur": 1.8,
+  "distinct": true
+ },
+ "HURRICANE_KICK_MIRROR": {
+  "base": "HURRICANE_KICK",
+  "kind": "MIRROR",
+  "diffMean": 0.3361,
+  "diffPeak": 1.0466,
+  "durDelta": 0.0,
+  "dur": 1.8333,
+  "distinct": true
+ },
+ "HURRICANE_KICK_SNAP": {
+  "base": "HURRICANE_KICK",
+  "kind": "SNAP",
+  "diffMean": 0.0232,
+  "diffPeak": 0.7184,
+  "durDelta": 0.513,
+  "dur": 1.32,
+  "distinct": true
+ },
+ "HURRICANE_KICK_SLOW": {
+  "base": "HURRICANE_KICK",
+  "kind": "SLOW",
+  "diffMean": 0.0194,
+  "diffPeak": 0.7808,
+  "durDelta": 0.642,
+  "dur": 2.475,
+  "distinct": true
+ },
+ "HURRICANE_KICK_KNEELING": {
+  "base": "HURRICANE_KICK",
+  "kind": "KNEELING",
+  "diffMean": 0.379,
+  "diffPeak": 0.6303,
+  "durDelta": 0.0,
+  "dur": 1.8333,
+  "distinct": true
+ },
+ "HURRICANE_KICK_SITOUT": {
+  "base": "HURRICANE_KICK",
+  "kind": "SITOUT",
+  "diffMean": 0.2117,
+  "diffPeak": 0.787,
+  "durDelta": 0.183,
+  "dur": 1.65,
+  "distinct": true
+ },
+ "HURRICANE_KICK_HARD": {
+  "base": "HURRICANE_KICK",
+  "kind": "HARD",
+  "diffMean": 0.1371,
+  "diffPeak": 0.7609,
+  "durDelta": 0.697,
+  "dur": 1.1366,
+  "distinct": true
+ },
+ "HURRICANE_KICK_DELAYED": {
+  "base": "HURRICANE_KICK",
+  "kind": "DELAYED",
+  "diffMean": 0.0208,
+  "diffPeak": 0.6773,
+  "durDelta": 0.917,
+  "dur": 2.75,
+  "distinct": true
+ },
+ "CROUCH_TORCH_WALK_RIGHT_MIRROR": {
+  "base": "CROUCH_TORCH_WALK_RIGHT",
+  "kind": "MIRROR",
+  "diffMean": 0.3211,
+  "diffPeak": 1.1585,
+  "durDelta": 0.0,
+  "dur": 1.1,
+  "distinct": true
+ },
+ "CROUCH_TORCH_WALK_RIGHT_SNAP": {
+  "base": "CROUCH_TORCH_WALK_RIGHT",
+  "kind": "SNAP",
+  "diffMean": 0.0358,
+  "diffPeak": 1.1036,
+  "durDelta": 0.308,
+  "dur": 0.792,
+  "distinct": true
+ },
+ "CROUCH_TORCH_WALK_RIGHT_SLOW": {
+  "base": "CROUCH_TORCH_WALK_RIGHT",
+  "kind": "SLOW",
+  "diffMean": 0.0158,
+  "diffPeak": 0.7664,
+  "durDelta": 0.385,
+  "dur": 1.485,
+  "distinct": true
+ },
+ "CROUCH_TORCH_WALK_RIGHT_KNEELING": {
+  "base": "CROUCH_TORCH_WALK_RIGHT",
+  "kind": "KNEELING",
+  "diffMean": 0.3731,
+  "diffPeak": 0.659,
+  "durDelta": 0.0,
+  "dur": 1.1,
+  "distinct": true
+ },
+ "CROUCH_TORCH_WALK_RIGHT_SITOUT": {
+  "base": "CROUCH_TORCH_WALK_RIGHT",
+  "kind": "SITOUT",
+  "diffMean": 0.2077,
+  "diffPeak": 1.1364,
+  "durDelta": 0.11,
+  "dur": 0.99,
+  "distinct": true
+ },
+ "CROUCH_TORCH_WALK_RIGHT_HARD": {
+  "base": "CROUCH_TORCH_WALK_RIGHT",
+  "kind": "HARD",
+  "diffMean": 0.1401,
+  "diffPeak": 1.1072,
+  "durDelta": 0.418,
+  "dur": 0.682,
+  "distinct": true
+ },
+ "CROUCH_TORCH_WALK_RIGHT_DELAYED": {
+  "base": "CROUCH_TORCH_WALK_RIGHT",
+  "kind": "DELAYED",
+  "diffMean": 0.0807,
+  "diffPeak": 1.1309,
+  "durDelta": 0.55,
+  "dur": 1.65,
+  "distinct": true
+ },
+ "CROUCH_WALK_FORWARD_MIRROR": {
+  "base": "CROUCH_WALK_FORWARD",
+  "kind": "MIRROR",
+  "diffMean": 0.3645,
+  "diffPeak": 1.0857,
+  "durDelta": 0.0,
+  "dur": 1.1333,
+  "distinct": true
+ },
+ "CROUCH_WALK_FORWARD_SNAP": {
+  "base": "CROUCH_WALK_FORWARD",
+  "kind": "SNAP",
+  "diffMean": 0.0287,
+  "diffPeak": 1.1062,
+  "durDelta": 0.317,
+  "dur": 0.816,
+  "distinct": true
+ },
+ "CROUCH_WALK_FORWARD_SLOW": {
+  "base": "CROUCH_WALK_FORWARD",
+  "kind": "SLOW",
+  "diffMean": 0.0188,
+  "diffPeak": 0.7051,
+  "durDelta": 0.397,
+  "dur": 1.53,
+  "distinct": true
+ },
+ "CROUCH_WALK_FORWARD_KNEELING": {
+  "base": "CROUCH_WALK_FORWARD",
+  "kind": "KNEELING",
+  "diffMean": 0.3777,
+  "diffPeak": 0.6383,
+  "durDelta": 0.0,
+  "dur": 1.1333,
+  "distinct": true
+ },
+ "CROUCH_WALK_FORWARD_SITOUT": {
+  "base": "CROUCH_WALK_FORWARD",
+  "kind": "SITOUT",
+  "diffMean": 0.2081,
+  "diffPeak": 1.1278,
+  "durDelta": 0.113,
+  "dur": 1.02,
+  "distinct": true
+ },
+ "CROUCH_WALK_FORWARD_HARD": {
+  "base": "CROUCH_WALK_FORWARD",
+  "kind": "HARD",
+  "diffMean": 0.1349,
+  "diffPeak": 1.1144,
+  "durDelta": 0.431,
+  "dur": 0.7026,
+  "distinct": true
+ },
+ "CROUCH_WALK_FORWARD_DELAYED": {
+  "base": "CROUCH_WALK_FORWARD",
+  "kind": "DELAYED",
+  "diffMean": 0.0441,
+  "diffPeak": 1.0896,
+  "durDelta": 0.567,
+  "dur": 1.6999,
+  "distinct": true
+ },
+ "GINGA_BACKWARD_MIRROR": {
+  "base": "GINGA_BACKWARD",
+  "kind": "MIRROR",
+  "diffMean": 0.3409,
+  "diffPeak": 1.1604,
+  "durDelta": 0.0,
+  "dur": 1.1333,
+  "distinct": true
+ },
+ "GINGA_BACKWARD_SNAP": {
+  "base": "GINGA_BACKWARD",
+  "kind": "SNAP",
+  "diffMean": 0.047,
+  "diffPeak": 1.1132,
+  "durDelta": 0.317,
+  "dur": 0.816,
+  "distinct": true
+ },
+ "GINGA_BACKWARD_SLOW": {
+  "base": "GINGA_BACKWARD",
+  "kind": "SLOW",
+  "diffMean": 0.0339,
+  "diffPeak": 1.0849,
+  "durDelta": 0.397,
+  "dur": 1.53,
+  "distinct": true
+ },
+ "GINGA_BACKWARD_KNEELING": {
+  "base": "GINGA_BACKWARD",
+  "kind": "KNEELING",
+  "diffMean": 0.3755,
+  "diffPeak": 0.6582,
+  "durDelta": 0.0,
+  "dur": 1.1333,
+  "distinct": true
+ },
+ "GINGA_BACKWARD_SITOUT": {
+  "base": "GINGA_BACKWARD",
+  "kind": "SITOUT",
+  "diffMean": 0.2051,
+  "diffPeak": 1.1409,
+  "durDelta": 0.113,
+  "dur": 1.02,
+  "distinct": true
+ },
+ "GINGA_BACKWARD_HARD": {
+  "base": "GINGA_BACKWARD",
+  "kind": "HARD",
+  "diffMean": 0.1448,
+  "diffPeak": 1.1192,
+  "durDelta": 0.431,
+  "dur": 0.7026,
+  "distinct": true
+ },
+ "GINGA_BACKWARD_DELAYED": {
+  "base": "GINGA_BACKWARD",
+  "kind": "DELAYED",
+  "diffMean": 0.0954,
+  "diffPeak": 1.1128,
+  "durDelta": 0.567,
+  "dur": 1.6999,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__1__MIRROR": {
+  "base": "ILLEGAL_ELBOW_PUNCH__1_",
+  "kind": "MIRROR",
+  "diffMean": 0.3132,
+  "diffPeak": 1.0865,
+  "durDelta": 0.0,
+  "dur": 2.0333,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__1__SNAP": {
+  "base": "ILLEGAL_ELBOW_PUNCH__1_",
+  "kind": "SNAP",
+  "diffMean": 0.028,
+  "diffPeak": 1.0464,
+  "durDelta": 0.569,
+  "dur": 1.464,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__1__SLOW": {
+  "base": "ILLEGAL_ELBOW_PUNCH__1_",
+  "kind": "SLOW",
+  "diffMean": 0.0092,
+  "diffPeak": 0.2704,
+  "durDelta": 0.712,
+  "dur": 2.745,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__1__KNEELING": {
+  "base": "ILLEGAL_ELBOW_PUNCH__1_",
+  "kind": "KNEELING",
+  "diffMean": 0.3701,
+  "diffPeak": 0.621,
+  "durDelta": 0.0,
+  "dur": 2.0333,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__1__SITOUT": {
+  "base": "ILLEGAL_ELBOW_PUNCH__1_",
+  "kind": "SITOUT",
+  "diffMean": 0.203,
+  "diffPeak": 1.0856,
+  "durDelta": 0.203,
+  "dur": 1.83,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__1__HARD": {
+  "base": "ILLEGAL_ELBOW_PUNCH__1_",
+  "kind": "HARD",
+  "diffMean": 0.1255,
+  "diffPeak": 1.0457,
+  "durDelta": 0.773,
+  "dur": 1.2606,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__1__DELAYED": {
+  "base": "ILLEGAL_ELBOW_PUNCH__1_",
+  "kind": "DELAYED",
+  "diffMean": 0.0341,
+  "diffPeak": 1.0644,
+  "durDelta": 1.017,
+  "dur": 3.0499,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__2__MIRROR": {
+  "base": "ILLEGAL_ELBOW_PUNCH__2_",
+  "kind": "MIRROR",
+  "diffMean": 0.3123,
+  "diffPeak": 1.0865,
+  "durDelta": 0.0,
+  "dur": 2.0333,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__2__SNAP": {
+  "base": "ILLEGAL_ELBOW_PUNCH__2_",
+  "kind": "SNAP",
+  "diffMean": 0.0296,
+  "diffPeak": 1.0464,
+  "durDelta": 0.569,
+  "dur": 1.464,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__2__SLOW": {
+  "base": "ILLEGAL_ELBOW_PUNCH__2_",
+  "kind": "SLOW",
+  "diffMean": 0.0099,
+  "diffPeak": 0.2704,
+  "durDelta": 0.712,
+  "dur": 2.745,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__2__KNEELING": {
+  "base": "ILLEGAL_ELBOW_PUNCH__2_",
+  "kind": "KNEELING",
+  "diffMean": 0.3702,
+  "diffPeak": 0.6224,
+  "durDelta": 0.0,
+  "dur": 2.0333,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__2__SITOUT": {
+  "base": "ILLEGAL_ELBOW_PUNCH__2_",
+  "kind": "SITOUT",
+  "diffMean": 0.2035,
+  "diffPeak": 1.0856,
+  "durDelta": 0.203,
+  "dur": 1.83,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__2__HARD": {
+  "base": "ILLEGAL_ELBOW_PUNCH__2_",
+  "kind": "HARD",
+  "diffMean": 0.1259,
+  "diffPeak": 1.0457,
+  "durDelta": 0.773,
+  "dur": 1.2606,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH__2__DELAYED": {
+  "base": "ILLEGAL_ELBOW_PUNCH__2_",
+  "kind": "DELAYED",
+  "diffMean": 0.0372,
+  "diffPeak": 1.0644,
+  "durDelta": 1.017,
+  "dur": 3.0499,
+  "distinct": true
+ },
+ "FALLING_FLAT_IMPACT_MIRROR": {
+  "base": "FALLING_FLAT_IMPACT",
+  "kind": "MIRROR",
+  "diffMean": 0.2954,
+  "diffPeak": 0.758,
+  "durDelta": 0.0,
+  "dur": 1.5667,
+  "distinct": true
+ },
+ "FALLING_FLAT_IMPACT_SNAP": {
+  "base": "FALLING_FLAT_IMPACT",
+  "kind": "SNAP",
+  "diffMean": 0.0216,
+  "diffPeak": 0.3009,
+  "durDelta": 0.439,
+  "dur": 1.128,
+  "distinct": true
+ },
+ "FALLING_FLAT_IMPACT_SLOW": {
+  "base": "FALLING_FLAT_IMPACT",
+  "kind": "SLOW",
+  "diffMean": 0.0067,
+  "diffPeak": 0.1073,
+  "durDelta": 0.548,
+  "dur": 2.115,
+  "distinct": true
+ },
+ "FALLING_FLAT_IMPACT_KNEELING": {
+  "base": "FALLING_FLAT_IMPACT",
+  "kind": "KNEELING",
+  "diffMean": 0.3653,
+  "diffPeak": 0.6251,
+  "durDelta": 0.0,
+  "dur": 1.5667,
+  "distinct": true
+ },
+ "FALLING_FLAT_IMPACT_SITOUT": {
+  "base": "FALLING_FLAT_IMPACT",
+  "kind": "SITOUT",
+  "diffMean": 0.1937,
+  "diffPeak": 0.4284,
+  "durDelta": 0.157,
+  "dur": 1.41,
+  "distinct": true
+ },
+ "FALLING_FLAT_IMPACT_HARD": {
+  "base": "FALLING_FLAT_IMPACT",
+  "kind": "HARD",
+  "diffMean": 0.1234,
+  "diffPeak": 0.3812,
+  "durDelta": 0.595,
+  "dur": 0.9714,
+  "distinct": true
+ },
+ "FALLING_FLAT_IMPACT_DELAYED": {
+  "base": "FALLING_FLAT_IMPACT",
+  "kind": "DELAYED",
+  "diffMean": 0.0444,
+  "diffPeak": 0.4192,
+  "durDelta": 0.783,
+  "dur": 2.35,
+  "distinct": true
+ },
+ "ILLEGAL_KNEE_MIRROR": {
+  "base": "ILLEGAL_KNEE",
+  "kind": "MIRROR",
+  "diffMean": 0.3184,
+  "diffPeak": 1.1093,
+  "durDelta": 0.0,
+  "dur": 2.2667,
+  "distinct": true
+ },
+ "ILLEGAL_KNEE_SNAP": {
+  "base": "ILLEGAL_KNEE",
+  "kind": "SNAP",
+  "diffMean": 0.0259,
+  "diffPeak": 0.9807,
+  "durDelta": 0.635,
+  "dur": 1.632,
+  "distinct": true
+ },
+ "ILLEGAL_KNEE_SLOW": {
+  "base": "ILLEGAL_KNEE",
+  "kind": "SLOW",
+  "diffMean": 0.0141,
+  "diffPeak": 0.7452,
+  "durDelta": 0.793,
+  "dur": 3.06,
+  "distinct": true
+ },
+ "ILLEGAL_KNEE_KNEELING": {
+  "base": "ILLEGAL_KNEE",
+  "kind": "KNEELING",
+  "diffMean": 0.3694,
+  "diffPeak": 0.6233,
+  "durDelta": 0.0,
+  "dur": 2.2667,
+  "distinct": true
+ },
+ "ILLEGAL_KNEE_SITOUT": {
+  "base": "ILLEGAL_KNEE",
+  "kind": "SITOUT",
+  "diffMean": 0.1999,
+  "diffPeak": 1.0259,
+  "durDelta": 0.227,
+  "dur": 2.04,
+  "distinct": true
+ },
+ "ILLEGAL_KNEE_HARD": {
+  "base": "ILLEGAL_KNEE",
+  "kind": "HARD",
+  "diffMean": 0.1239,
+  "diffPeak": 1.0909,
+  "durDelta": 0.861,
+  "dur": 1.4054,
+  "distinct": true
+ },
+ "ILLEGAL_KNEE_DELAYED": {
+  "base": "ILLEGAL_KNEE",
+  "kind": "DELAYED",
+  "diffMean": 0.0445,
+  "diffPeak": 1.0805,
+  "durDelta": 1.133,
+  "dur": 3.4001,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH_MIRROR": {
+  "base": "ILLEGAL_ELBOW_PUNCH",
+  "kind": "MIRROR",
+  "diffMean": 0.3001,
+  "diffPeak": 0.6331,
+  "durDelta": 0.0,
+  "dur": 2.2667,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH_SNAP": {
+  "base": "ILLEGAL_ELBOW_PUNCH",
+  "kind": "SNAP",
+  "diffMean": 0.016,
+  "diffPeak": 0.2005,
+  "durDelta": 0.635,
+  "dur": 1.632,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH_SLOW": {
+  "base": "ILLEGAL_ELBOW_PUNCH",
+  "kind": "SLOW",
+  "diffMean": 0.0071,
+  "diffPeak": 0.078,
+  "durDelta": 0.793,
+  "dur": 3.06,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH_KNEELING": {
+  "base": "ILLEGAL_ELBOW_PUNCH",
+  "kind": "KNEELING",
+  "diffMean": 0.3702,
+  "diffPeak": 0.6273,
+  "durDelta": 0.0,
+  "dur": 2.2667,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH_SITOUT": {
+  "base": "ILLEGAL_ELBOW_PUNCH",
+  "kind": "SITOUT",
+  "diffMean": 0.1962,
+  "diffPeak": 0.377,
+  "durDelta": 0.227,
+  "dur": 2.04,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH_HARD": {
+  "base": "ILLEGAL_ELBOW_PUNCH",
+  "kind": "HARD",
+  "diffMean": 0.1184,
+  "diffPeak": 0.2615,
+  "durDelta": 0.861,
+  "dur": 1.4054,
+  "distinct": true
+ },
+ "ILLEGAL_ELBOW_PUNCH_DELAYED": {
+  "base": "ILLEGAL_ELBOW_PUNCH",
+  "kind": "DELAYED",
+  "diffMean": 0.0232,
+  "diffPeak": 0.1933,
+  "durDelta": 1.133,
+  "dur": 3.4001,
+  "distinct": true
+ },
+ "HIT_REACTION_MIRROR": {
+  "base": "HIT_REACTION",
+  "kind": "MIRROR",
+  "diffMean": 0.3412,
+  "diffPeak": 1.4257,
+  "durDelta": 0.0,
+  "dur": 2.4333,
+  "distinct": true
+ },
+ "HIT_REACTION_SNAP": {
+  "base": "HIT_REACTION",
+  "kind": "SNAP",
+  "diffMean": 0.0369,
+  "diffPeak": 1.1111,
+  "durDelta": 0.681,
+  "dur": 1.752,
+  "distinct": true
+ },
+ "HIT_REACTION_SLOW": {
+  "base": "HIT_REACTION",
+  "kind": "SLOW",
+  "diffMean": 0.0231,
+  "diffPeak": 1.1333,
+  "durDelta": 0.852,
+  "dur": 3.285,
+  "distinct": true
+ },
+ "HIT_REACTION_KNEELING": {
+  "base": "HIT_REACTION",
+  "kind": "KNEELING",
+  "diffMean": 0.3699,
+  "diffPeak": 0.6376,
+  "durDelta": 0.0,
+  "dur": 2.4333,
+  "distinct": true
+ },
+ "HIT_REACTION_SITOUT": {
+  "base": "HIT_REACTION",
+  "kind": "SITOUT",
+  "diffMean": 0.2049,
+  "diffPeak": 1.1314,
+  "durDelta": 0.243,
+  "dur": 2.19,
+  "distinct": true
+ },
+ "HIT_REACTION_HARD": {
+  "base": "HIT_REACTION",
+  "kind": "HARD",
+  "diffMean": 0.1362,
+  "diffPeak": 1.1157,
+  "durDelta": 0.925,
+  "dur": 1.5086,
+  "distinct": true
+ },
+ "HIT_REACTION_DELAYED": {
+  "base": "HIT_REACTION",
+  "kind": "DELAYED",
+  "diffMean": 0.0639,
+  "diffPeak": 1.1043,
+  "durDelta": 1.217,
+  "dur": 3.65,
+  "distinct": true
+ },
+ "CENTER_BLOCK_MIRROR": {
+  "base": "CENTER_BLOCK",
+  "kind": "MIRROR",
+  "diffMean": 0.3229,
+  "diffPeak": 1.0007,
+  "durDelta": 0.0,
+  "dur": 1.7667,
+  "distinct": true
+ },
+ "CENTER_BLOCK_SNAP": {
+  "base": "CENTER_BLOCK",
+  "kind": "SNAP",
+  "diffMean": 0.0361,
+  "diffPeak": 1.0817,
+  "durDelta": 0.495,
+  "dur": 1.272,
+  "distinct": true
+ },
+ "CENTER_BLOCK_SLOW": {
+  "base": "CENTER_BLOCK",
+  "kind": "SLOW",
+  "diffMean": 0.0133,
+  "diffPeak": 0.3524,
+  "durDelta": 0.618,
+  "dur": 2.385,
+  "distinct": true
+ },
+ "CENTER_BLOCK_KNEELING": {
+  "base": "CENTER_BLOCK",
+  "kind": "KNEELING",
+  "diffMean": 0.3676,
+  "diffPeak": 0.6186,
+  "durDelta": 0.0,
+  "dur": 1.7667,
+  "distinct": true
+ },
+ "CENTER_BLOCK_SITOUT": {
+  "base": "CENTER_BLOCK",
+  "kind": "SITOUT",
+  "diffMean": 0.2016,
+  "diffPeak": 1.1038,
+  "durDelta": 0.177,
+  "dur": 1.59,
+  "distinct": true
+ },
+ "CENTER_BLOCK_HARD": {
+  "base": "CENTER_BLOCK",
+  "kind": "HARD",
+  "diffMean": 0.1327,
+  "diffPeak": 1.0892,
+  "durDelta": 0.671,
+  "dur": 1.0954,
+  "distinct": true
+ },
+ "CENTER_BLOCK_DELAYED": {
+  "base": "CENTER_BLOCK",
+  "kind": "DELAYED",
+  "diffMean": 0.0526,
+  "diffPeak": 1.0652,
+  "durDelta": 0.883,
+  "dur": 2.65,
+  "distinct": true
+ },
+ "CLIMBING_UP_WALL_MIRROR": {
+  "base": "CLIMBING_UP_WALL",
+  "kind": "MIRROR",
+  "diffMean": 0.3712,
+  "diffPeak": 1.1128,
+  "durDelta": 0,
+  "dur": 2,
+  "distinct": true
+ },
+ "CLIMBING_UP_WALL_SNAP": {
+  "base": "CLIMBING_UP_WALL",
+  "kind": "SNAP",
+  "diffMean": 0.0702,
+  "diffPeak": 1.0914,
+  "durDelta": 0.56,
+  "dur": 1.44,
+  "distinct": true
+ },
+ "CLIMBING_UP_WALL_SLOW": {
+  "base": "CLIMBING_UP_WALL",
+  "kind": "SLOW",
+  "diffMean": 0.0445,
+  "diffPeak": 1.0745,
+  "durDelta": 0.7,
+  "dur": 2.7,
+  "distinct": true
+ },
+ "CLIMBING_UP_WALL_KNEELING": {
+  "base": "CLIMBING_UP_WALL",
+  "kind": "KNEELING",
+  "diffMean": 0.3812,
+  "diffPeak": 0.6437,
+  "durDelta": 0,
+  "dur": 2,
+  "distinct": true
+ },
+ "CLIMBING_UP_WALL_SITOUT": {
+  "base": "CLIMBING_UP_WALL",
+  "kind": "SITOUT",
+  "diffMean": 0.213,
+  "diffPeak": 1.0919,
+  "durDelta": 0.2,
+  "dur": 1.8,
+  "distinct": true
+ },
+ "CLIMBING_UP_WALL_HARD": {
+  "base": "CLIMBING_UP_WALL",
+  "kind": "HARD",
+  "diffMean": 0.1707,
+  "diffPeak": 1.0925,
+  "durDelta": 0.76,
+  "dur": 1.24,
+  "distinct": true
+ },
+ "CLIMBING_UP_WALL_DELAYED": {
+  "base": "CLIMBING_UP_WALL",
+  "kind": "DELAYED",
+  "diffMean": 0.1398,
+  "diffPeak": 1.094,
+  "durDelta": 1.0,
+  "dur": 3.0,
+  "distinct": true
+ },
+ "DRUNK_RUN_FORWARD_MIRROR": {
+  "base": "DRUNK_RUN_FORWARD",
+  "kind": "MIRROR",
+  "diffMean": 0.3999,
+  "diffPeak": 1.1645,
+  "durDelta": 0.0,
+  "dur": 1.8333,
+  "distinct": true
+ },
+ "DRUNK_RUN_FORWARD_SNAP": {
+  "base": "DRUNK_RUN_FORWARD",
+  "kind": "SNAP",
+  "diffMean": 0.0966,
+  "diffPeak": 1.1123,
+  "durDelta": 0.513,
+  "dur": 1.32,
+  "distinct": true
+ },
+ "DRUNK_RUN_FORWARD_SLOW": {
+  "base": "DRUNK_RUN_FORWARD",
+  "kind": "SLOW",
+  "diffMean": 0.0635,
+  "diffPeak": 1.1133,
+  "durDelta": 0.642,
+  "dur": 2.475,
+  "distinct": true
+ },
+ "DRUNK_RUN_FORWARD_KNEELING": {
+  "base": "DRUNK_RUN_FORWARD",
+  "kind": "KNEELING",
+  "diffMean": 0.3725,
+  "diffPeak": 0.6513,
+  "durDelta": 0.0,
+  "dur": 1.8333,
+  "distinct": true
+ },
+ "DRUNK_RUN_FORWARD_SITOUT": {
+  "base": "DRUNK_RUN_FORWARD",
+  "kind": "SITOUT",
+  "diffMean": 0.2177,
+  "diffPeak": 1.1492,
+  "durDelta": 0.183,
+  "dur": 1.65,
+  "distinct": true
+ },
+ "DRUNK_RUN_FORWARD_HARD": {
+  "base": "DRUNK_RUN_FORWARD",
+  "kind": "HARD",
+  "diffMean": 0.1835,
+  "diffPeak": 1.113,
+  "durDelta": 0.697,
+  "dur": 1.1366,
+  "distinct": true
+ },
+ "DRUNK_RUN_FORWARD_DELAYED": {
+  "base": "DRUNK_RUN_FORWARD",
+  "kind": "DELAYED",
+  "diffMean": 0.1065,
+  "diffPeak": 1.1139,
+  "durDelta": 0.917,
+  "dur": 2.75,
+  "distinct": true
+ },
+ "CROSS_JUMPS_MIRROR": {
+  "base": "CROSS_JUMPS",
+  "kind": "MIRROR",
+  "diffMean": 0.4079,
+  "diffPeak": 1.1601,
+  "durDelta": 0.0,
+  "dur": 2.0333,
+  "distinct": true
+ },
+ "CROSS_JUMPS_SNAP": {
+  "base": "CROSS_JUMPS",
+  "kind": "SNAP",
+  "diffMean": 0.0453,
+  "diffPeak": 1.1264,
+  "durDelta": 0.569,
+  "dur": 1.464,
+  "distinct": true
+ },
+ "CROSS_JUMPS_SLOW": {
+  "base": "CROSS_JUMPS",
+  "kind": "SLOW",
+  "diffMean": 0.0226,
+  "diffPeak": 1.127,
+  "durDelta": 0.712,
+  "dur": 2.745,
+  "distinct": true
+ },
+ "CROSS_JUMPS_KNEELING": {
+  "base": "CROSS_JUMPS",
+  "kind": "KNEELING",
+  "diffMean": 0.3706,
+  "diffPeak": 0.6344,
+  "durDelta": 0.0,
+  "dur": 2.0333,
+  "distinct": true
+ },
+ "CROSS_JUMPS_SITOUT": {
+  "base": "CROSS_JUMPS",
+  "kind": "SITOUT",
+  "diffMean": 0.207,
+  "diffPeak": 1.1419,
+  "durDelta": 0.203,
+  "dur": 1.83,
+  "distinct": true
+ },
+ "CROSS_JUMPS_HARD": {
+  "base": "CROSS_JUMPS",
+  "kind": "HARD",
+  "diffMean": 0.1514,
+  "diffPeak": 1.1313,
+  "durDelta": 0.773,
+  "dur": 1.2606,
+  "distinct": true
+ },
+ "CROSS_JUMPS_DELAYED": {
+  "base": "CROSS_JUMPS",
+  "kind": "DELAYED",
+  "diffMean": 0.0496,
+  "diffPeak": 1.1213,
+  "durDelta": 1.017,
+  "dur": 3.0499,
+  "distinct": true
+ },
+ "COMBO_PUNCH_MIRROR": {
+  "base": "COMBO_PUNCH",
+  "kind": "MIRROR",
+  "diffMean": 0.3128,
+  "diffPeak": 0.7082,
+  "durDelta": 0.0,
+  "dur": 2.9667,
+  "distinct": true
+ },
+ "COMBO_PUNCH_SNAP": {
+  "base": "COMBO_PUNCH",
+  "kind": "SNAP",
+  "diffMean": 0.0285,
+  "diffPeak": 0.2551,
+  "durDelta": 0.831,
+  "dur": 2.136,
+  "distinct": true
+ },
+ "COMBO_PUNCH_SLOW": {
+  "base": "COMBO_PUNCH",
+  "kind": "SLOW",
+  "diffMean": 0.0226,
+  "diffPeak": 0.2037,
+  "durDelta": 1.038,
+  "dur": 4.005,
+  "distinct": true
+ },
+ "COMBO_PUNCH_KNEELING": {
+  "base": "COMBO_PUNCH",
+  "kind": "KNEELING",
+  "diffMean": 0.3716,
+  "diffPeak": 0.6239,
+  "durDelta": 0.0,
+  "dur": 2.9667,
+  "distinct": true
+ },
+ "COMBO_PUNCH_SITOUT": {
+  "base": "COMBO_PUNCH",
+  "kind": "SITOUT",
+  "diffMean": 0.1995,
+  "diffPeak": 0.3458,
+  "durDelta": 0.297,
+  "dur": 2.67,
+  "distinct": true
+ },
+ "COMBO_PUNCH_HARD": {
+  "base": "COMBO_PUNCH",
+  "kind": "HARD",
+  "diffMean": 0.1216,
+  "diffPeak": 0.2844,
+  "durDelta": 1.127,
+  "dur": 1.8394,
+  "distinct": true
+ },
+ "COMBO_PUNCH_DELAYED": {
+  "base": "COMBO_PUNCH",
+  "kind": "DELAYED",
+  "diffMean": 0.0374,
+  "diffPeak": 0.2672,
+  "durDelta": 1.483,
+  "dur": 4.4501,
+  "distinct": true
+ },
+ "Y_BOT_MIRROR": {
+  "base": "Y_BOT",
+  "kind": "MIRROR",
+  "diffMean": 0.2697,
+  "diffPeak": 0.4203,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "Y_BOT_SNAP": {
+  "base": "Y_BOT",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.009,
+  "dur": 0.024,
+  "distinct": false
+ },
+ "Y_BOT_SLOW": {
+  "base": "Y_BOT",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.012,
+  "dur": 0.045,
+  "distinct": false
+ },
+ "Y_BOT_KNEELING": {
+  "base": "Y_BOT",
+  "kind": "KNEELING",
+  "diffMean": 0.3142,
+  "diffPeak": 0.51,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "Y_BOT_SITOUT": {
+  "base": "Y_BOT",
+  "kind": "SITOUT",
+  "diffMean": 0.1654,
+  "diffPeak": 0.2684,
+  "durDelta": 0.003,
+  "dur": 0.03,
+  "distinct": true
+ },
+ "Y_BOT_HARD": {
+  "base": "Y_BOT",
+  "kind": "HARD",
+  "diffMean": 0.0992,
+  "diffPeak": 0.1611,
+  "durDelta": 0.013,
+  "dur": 0.0206,
+  "distinct": true
+ },
+ "Y_BOT_DELAYED": {
+  "base": "Y_BOT",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.017,
+  "dur": 0.05,
+  "distinct": false
+ },
+ "FALLING_FORWARD_DEATH_MIRROR": {
+  "base": "FALLING_FORWARD_DEATH",
+  "kind": "MIRROR",
+  "diffMean": 0.4023,
+  "diffPeak": 1.1493,
+  "durDelta": 0.0,
+  "dur": 2.5667,
+  "distinct": true
+ },
+ "FALLING_FORWARD_DEATH_SNAP": {
+  "base": "FALLING_FORWARD_DEATH",
+  "kind": "SNAP",
+  "diffMean": 0.0511,
+  "diffPeak": 1.0712,
+  "durDelta": 0.719,
+  "dur": 1.848,
+  "distinct": true
+ },
+ "FALLING_FORWARD_DEATH_SLOW": {
+  "base": "FALLING_FORWARD_DEATH",
+  "kind": "SLOW",
+  "diffMean": 0.022,
+  "diffPeak": 0.7467,
+  "durDelta": 0.898,
+  "dur": 3.465,
+  "distinct": true
+ },
+ "FALLING_FORWARD_DEATH_KNEELING": {
+  "base": "FALLING_FORWARD_DEATH",
+  "kind": "KNEELING",
+  "diffMean": 0.3721,
+  "diffPeak": 0.6349,
+  "durDelta": 0.0,
+  "dur": 2.5667,
+  "distinct": true
+ },
+ "FALLING_FORWARD_DEATH_SITOUT": {
+  "base": "FALLING_FORWARD_DEATH",
+  "kind": "SITOUT",
+  "diffMean": 0.2117,
+  "diffPeak": 1.0998,
+  "durDelta": 0.257,
+  "dur": 2.31,
+  "distinct": true
+ },
+ "FALLING_FORWARD_DEATH_HARD": {
+  "base": "FALLING_FORWARD_DEATH",
+  "kind": "HARD",
+  "diffMean": 0.1414,
+  "diffPeak": 1.0954,
+  "durDelta": 0.975,
+  "dur": 1.5914,
+  "distinct": true
+ },
+ "FALLING_FORWARD_DEATH_DELAYED": {
+  "base": "FALLING_FORWARD_DEATH",
+  "kind": "DELAYED",
+  "diffMean": 0.0966,
+  "diffPeak": 1.1335,
+  "durDelta": 1.283,
+  "dur": 3.85,
+  "distinct": true
+ },
+ "GINGA_SIDEWAYS_2_MIRROR": {
+  "base": "GINGA_SIDEWAYS_2",
+  "kind": "MIRROR",
+  "diffMean": 0.336,
+  "diffPeak": 1.1466,
+  "durDelta": 0.0,
+  "dur": 2.2667,
+  "distinct": true
+ },
+ "GINGA_SIDEWAYS_2_SNAP": {
+  "base": "GINGA_SIDEWAYS_2",
+  "kind": "SNAP",
+  "diffMean": 0.0779,
+  "diffPeak": 1.1125,
+  "durDelta": 0.635,
+  "dur": 1.632,
+  "distinct": true
+ },
+ "GINGA_SIDEWAYS_2_SLOW": {
+  "base": "GINGA_SIDEWAYS_2",
+  "kind": "SLOW",
+  "diffMean": 0.055,
+  "diffPeak": 1.1115,
+  "durDelta": 0.793,
+  "dur": 3.06,
+  "distinct": true
+ },
+ "GINGA_SIDEWAYS_2_KNEELING": {
+  "base": "GINGA_SIDEWAYS_2",
+  "kind": "KNEELING",
+  "diffMean": 0.3741,
+  "diffPeak": 0.6373,
+  "durDelta": 0.0,
+  "dur": 2.2667,
+  "distinct": true
+ },
+ "GINGA_SIDEWAYS_2_SITOUT": {
+  "base": "GINGA_SIDEWAYS_2",
+  "kind": "SITOUT",
+  "diffMean": 0.2173,
+  "diffPeak": 1.129,
+  "durDelta": 0.227,
+  "dur": 2.04,
+  "distinct": true
+ },
+ "GINGA_SIDEWAYS_2_HARD": {
+  "base": "GINGA_SIDEWAYS_2",
+  "kind": "HARD",
+  "diffMean": 0.165,
+  "diffPeak": 1.1184,
+  "durDelta": 0.861,
+  "dur": 1.4054,
+  "distinct": true
+ },
+ "GINGA_SIDEWAYS_2_DELAYED": {
+  "base": "GINGA_SIDEWAYS_2",
+  "kind": "DELAYED",
+  "diffMean": 0.1128,
+  "diffPeak": 1.1125,
+  "durDelta": 1.133,
+  "dur": 3.4001,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE__1__MIRROR": {
+  "base": "CLIMBING_A_ROPE__1_",
+  "kind": "MIRROR",
+  "diffMean": 0.3842,
+  "diffPeak": 1.1604,
+  "durDelta": 0.0,
+  "dur": 2.4,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE__1__SNAP": {
+  "base": "CLIMBING_A_ROPE__1_",
+  "kind": "SNAP",
+  "diffMean": 0.0479,
+  "diffPeak": 1.0784,
+  "durDelta": 0.672,
+  "dur": 1.728,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE__1__SLOW": {
+  "base": "CLIMBING_A_ROPE__1_",
+  "kind": "SLOW",
+  "diffMean": 0.024,
+  "diffPeak": 0.3247,
+  "durDelta": 0.84,
+  "dur": 3.24,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE__1__KNEELING": {
+  "base": "CLIMBING_A_ROPE__1_",
+  "kind": "KNEELING",
+  "diffMean": 0.3736,
+  "diffPeak": 0.6649,
+  "durDelta": 0.0,
+  "dur": 2.4,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE__1__SITOUT": {
+  "base": "CLIMBING_A_ROPE__1_",
+  "kind": "SITOUT",
+  "diffMean": 0.2067,
+  "diffPeak": 1.1043,
+  "durDelta": 0.24,
+  "dur": 2.16,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE__1__HARD": {
+  "base": "CLIMBING_A_ROPE__1_",
+  "kind": "HARD",
+  "diffMean": 0.136,
+  "diffPeak": 1.0826,
+  "durDelta": 0.912,
+  "dur": 1.488,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE__1__DELAYED": {
+  "base": "CLIMBING_A_ROPE__1_",
+  "kind": "DELAYED",
+  "diffMean": 0.0812,
+  "diffPeak": 1.0769,
+  "durDelta": 1.2,
+  "dur": 3.6,
+  "distinct": true
+ },
+ "CORKSCREW_EVADE_MIRROR": {
+  "base": "CORKSCREW_EVADE",
+  "kind": "MIRROR",
+  "diffMean": 0.331,
+  "diffPeak": 1.0951,
+  "durDelta": 0.0,
+  "dur": 2.5,
+  "distinct": true
+ },
+ "CORKSCREW_EVADE_SNAP": {
+  "base": "CORKSCREW_EVADE",
+  "kind": "SNAP",
+  "diffMean": 0.0832,
+  "diffPeak": 1.1249,
+  "durDelta": 0.7,
+  "dur": 1.8,
+  "distinct": true
+ },
+ "CORKSCREW_EVADE_SLOW": {
+  "base": "CORKSCREW_EVADE",
+  "kind": "SLOW",
+  "diffMean": 0.0673,
+  "diffPeak": 1.1237,
+  "durDelta": 0.875,
+  "dur": 3.375,
+  "distinct": true
+ },
+ "CORKSCREW_EVADE_KNEELING": {
+  "base": "CORKSCREW_EVADE",
+  "kind": "KNEELING",
+  "diffMean": 0.3765,
+  "diffPeak": 0.6493,
+  "durDelta": 0.0,
+  "dur": 2.5,
+  "distinct": true
+ },
+ "CORKSCREW_EVADE_SITOUT": {
+  "base": "CORKSCREW_EVADE",
+  "kind": "SITOUT",
+  "diffMean": 0.2166,
+  "diffPeak": 1.1586,
+  "durDelta": 0.25,
+  "dur": 2.25,
+  "distinct": true
+ },
+ "CORKSCREW_EVADE_HARD": {
+  "base": "CORKSCREW_EVADE",
+  "kind": "HARD",
+  "diffMean": 0.1696,
+  "diffPeak": 1.1159,
+  "durDelta": 0.95,
+  "dur": 1.55,
+  "distinct": true
+ },
+ "CORKSCREW_EVADE_DELAYED": {
+  "base": "CORKSCREW_EVADE",
+  "kind": "DELAYED",
+  "diffMean": 0.0981,
+  "diffPeak": 1.1249,
+  "durDelta": 1.25,
+  "dur": 3.75,
+  "distinct": true
+ },
+ "HIT_ON_THE_BACK_MIRROR": {
+  "base": "HIT_ON_THE_BACK",
+  "kind": "MIRROR",
+  "diffMean": 0.3747,
+  "diffPeak": 1.173,
+  "durDelta": 0.0,
+  "dur": 2.5,
+  "distinct": true
+ },
+ "HIT_ON_THE_BACK_SNAP": {
+  "base": "HIT_ON_THE_BACK",
+  "kind": "SNAP",
+  "diffMean": 0.0904,
+  "diffPeak": 1.1252,
+  "durDelta": 0.7,
+  "dur": 1.8,
+  "distinct": true
+ },
+ "HIT_ON_THE_BACK_SLOW": {
+  "base": "HIT_ON_THE_BACK",
+  "kind": "SLOW",
+  "diffMean": 0.0584,
+  "diffPeak": 1.1248,
+  "durDelta": 0.875,
+  "dur": 3.375,
+  "distinct": true
+ },
+ "HIT_ON_THE_BACK_KNEELING": {
+  "base": "HIT_ON_THE_BACK",
+  "kind": "KNEELING",
+  "diffMean": 0.3702,
+  "diffPeak": 0.6463,
+  "durDelta": 0.0,
+  "dur": 2.5,
+  "distinct": true
+ },
+ "HIT_ON_THE_BACK_SITOUT": {
+  "base": "HIT_ON_THE_BACK",
+  "kind": "SITOUT",
+  "diffMean": 0.2352,
+  "diffPeak": 1.1382,
+  "durDelta": 0.25,
+  "dur": 2.25,
+  "distinct": true
+ },
+ "HIT_ON_THE_BACK_HARD": {
+  "base": "HIT_ON_THE_BACK",
+  "kind": "HARD",
+  "diffMean": 0.1793,
+  "diffPeak": 1.1269,
+  "durDelta": 0.95,
+  "dur": 1.55,
+  "distinct": true
+ },
+ "HIT_ON_THE_BACK_DELAYED": {
+  "base": "HIT_ON_THE_BACK",
+  "kind": "DELAYED",
+  "diffMean": 0.1098,
+  "diffPeak": 1.1323,
+  "durDelta": 1.25,
+  "dur": 3.75,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE_MIRROR": {
+  "base": "CLIMBING_A_ROPE",
+  "kind": "MIRROR",
+  "diffMean": 0.3208,
+  "diffPeak": 1.1018,
+  "durDelta": 0.0,
+  "dur": 2.5667,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE_SNAP": {
+  "base": "CLIMBING_A_ROPE",
+  "kind": "SNAP",
+  "diffMean": 0.0521,
+  "diffPeak": 1.0824,
+  "durDelta": 0.719,
+  "dur": 1.848,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE_SLOW": {
+  "base": "CLIMBING_A_ROPE",
+  "kind": "SLOW",
+  "diffMean": 0.0335,
+  "diffPeak": 0.6083,
+  "durDelta": 0.898,
+  "dur": 3.465,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE_KNEELING": {
+  "base": "CLIMBING_A_ROPE",
+  "kind": "KNEELING",
+  "diffMean": 0.3734,
+  "diffPeak": 0.6492,
+  "durDelta": 0.0,
+  "dur": 2.5667,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE_SITOUT": {
+  "base": "CLIMBING_A_ROPE",
+  "kind": "SITOUT",
+  "diffMean": 0.2091,
+  "diffPeak": 1.1009,
+  "durDelta": 0.257,
+  "dur": 2.31,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE_HARD": {
+  "base": "CLIMBING_A_ROPE",
+  "kind": "HARD",
+  "diffMean": 0.1335,
+  "diffPeak": 1.0722,
+  "durDelta": 0.975,
+  "dur": 1.5914,
+  "distinct": true
+ },
+ "CLIMBING_A_ROPE_DELAYED": {
+  "base": "CLIMBING_A_ROPE",
+  "kind": "DELAYED",
+  "diffMean": 0.0674,
+  "diffPeak": 1.0501,
+  "durDelta": 1.283,
+  "dur": 3.85,
+  "distinct": true
+ },
+ "HIT_TO_HEAD_MIRROR": {
+  "base": "HIT_TO_HEAD",
+  "kind": "MIRROR",
+  "diffMean": 0.3471,
+  "diffPeak": 1.1698,
+  "durDelta": 0.0,
+  "dur": 2.5333,
+  "distinct": true
+ },
+ "HIT_TO_HEAD_SNAP": {
+  "base": "HIT_TO_HEAD",
+  "kind": "SNAP",
+  "diffMean": 0.0724,
+  "diffPeak": 1.1175,
+  "durDelta": 0.709,
+  "dur": 1.824,
+  "distinct": true
+ },
+ "HIT_TO_HEAD_SLOW": {
+  "base": "HIT_TO_HEAD",
+  "kind": "SLOW",
+  "diffMean": 0.0331,
+  "diffPeak": 1.0318,
+  "durDelta": 0.887,
+  "dur": 3.42,
+  "distinct": true
+ },
+ "HIT_TO_HEAD_KNEELING": {
+  "base": "HIT_TO_HEAD",
+  "kind": "KNEELING",
+  "diffMean": 0.3734,
+  "diffPeak": 0.6451,
+  "durDelta": 0.0,
+  "dur": 2.5333,
+  "distinct": true
+ },
+ "HIT_TO_HEAD_SITOUT": {
+  "base": "HIT_TO_HEAD",
+  "kind": "SITOUT",
+  "diffMean": 0.2172,
+  "diffPeak": 1.1337,
+  "durDelta": 0.253,
+  "dur": 2.28,
+  "distinct": true
+ },
+ "HIT_TO_HEAD_HARD": {
+  "base": "HIT_TO_HEAD",
+  "kind": "HARD",
+  "diffMean": 0.1597,
+  "diffPeak": 1.1294,
+  "durDelta": 0.963,
+  "dur": 1.5706,
+  "distinct": true
+ },
+ "HIT_TO_HEAD_DELAYED": {
+  "base": "HIT_TO_HEAD",
+  "kind": "DELAYED",
+  "diffMean": 0.1233,
+  "diffPeak": 1.1279,
+  "durDelta": 1.267,
+  "dur": 3.7999,
+  "distinct": true
+ },
+ "DEFEAT_MIRROR": {
+  "base": "DEFEAT",
+  "kind": "MIRROR",
+  "diffMean": 0.3131,
+  "diffPeak": 0.6666,
+  "durDelta": 0.0,
+  "dur": 4.7667,
+  "distinct": true
+ },
+ "DEFEAT_SNAP": {
+  "base": "DEFEAT",
+  "kind": "SNAP",
+  "diffMean": 0.0199,
+  "diffPeak": 0.2077,
+  "durDelta": 1.335,
+  "dur": 3.432,
+  "distinct": true
+ },
+ "DEFEAT_SLOW": {
+  "base": "DEFEAT",
+  "kind": "SLOW",
+  "diffMean": 0.009,
+  "diffPeak": 0.1412,
+  "durDelta": 1.668,
+  "dur": 6.435,
+  "distinct": true
+ },
+ "DEFEAT_KNEELING": {
+  "base": "DEFEAT",
+  "kind": "KNEELING",
+  "diffMean": 0.3663,
+  "diffPeak": 0.6371,
+  "durDelta": 0.0,
+  "dur": 4.7667,
+  "distinct": true
+ },
+ "DEFEAT_SITOUT": {
+  "base": "DEFEAT",
+  "kind": "SITOUT",
+  "diffMean": 0.1939,
+  "diffPeak": 0.3729,
+  "durDelta": 0.477,
+  "dur": 4.29,
+  "distinct": true
+ },
+ "DEFEAT_HARD": {
+  "base": "DEFEAT",
+  "kind": "HARD",
+  "diffMean": 0.12,
+  "diffPeak": 0.2716,
+  "durDelta": 1.811,
+  "dur": 2.9554,
+  "distinct": true
+ },
+ "DEFEAT_DELAYED": {
+  "base": "DEFEAT",
+  "kind": "DELAYED",
+  "diffMean": 0.025,
+  "diffPeak": 0.2275,
+  "durDelta": 2.383,
+  "dur": 7.1501,
+  "distinct": true
+ },
+ "ESQUIVA_4_MIRROR": {
+  "base": "ESQUIVA_4",
+  "kind": "MIRROR",
+  "diffMean": 0.3378,
+  "diffPeak": 1.1465,
+  "durDelta": 0.0,
+  "dur": 2.8,
+  "distinct": true
+ },
+ "ESQUIVA_4_SNAP": {
+  "base": "ESQUIVA_4",
+  "kind": "SNAP",
+  "diffMean": 0.0662,
+  "diffPeak": 1.0896,
+  "durDelta": 0.784,
+  "dur": 2.016,
+  "distinct": true
+ },
+ "ESQUIVA_4_SLOW": {
+  "base": "ESQUIVA_4",
+  "kind": "SLOW",
+  "diffMean": 0.0486,
+  "diffPeak": 1.0852,
+  "durDelta": 0.98,
+  "dur": 3.78,
+  "distinct": true
+ },
+ "ESQUIVA_4_KNEELING": {
+  "base": "ESQUIVA_4",
+  "kind": "KNEELING",
+  "diffMean": 0.3771,
+  "diffPeak": 0.6347,
+  "durDelta": 0.0,
+  "dur": 2.8,
+  "distinct": true
+ },
+ "ESQUIVA_4_SITOUT": {
+  "base": "ESQUIVA_4",
+  "kind": "SITOUT",
+  "diffMean": 0.2104,
+  "diffPeak": 1.0927,
+  "durDelta": 0.28,
+  "dur": 2.52,
+  "distinct": true
+ },
+ "ESQUIVA_4_HARD": {
+  "base": "ESQUIVA_4",
+  "kind": "HARD",
+  "diffMean": 0.1633,
+  "diffPeak": 1.1233,
+  "durDelta": 1.064,
+  "dur": 1.736,
+  "distinct": true
+ },
+ "ESQUIVA_4_DELAYED": {
+  "base": "ESQUIVA_4",
+  "kind": "DELAYED",
+  "diffMean": 0.1066,
+  "diffPeak": 1.1246,
+  "durDelta": 1.4,
+  "dur": 4.2,
+  "distinct": true
+ },
+ "DROP_KICK_MIRROR": {
+  "base": "DROP_KICK",
+  "kind": "MIRROR",
+  "diffMean": 0.3285,
+  "diffPeak": 1.0793,
+  "durDelta": 0.0,
+  "dur": 2.9,
+  "distinct": true
+ },
+ "DROP_KICK_SNAP": {
+  "base": "DROP_KICK",
+  "kind": "SNAP",
+  "diffMean": 0.0629,
+  "diffPeak": 1.0845,
+  "durDelta": 0.812,
+  "dur": 2.088,
+  "distinct": true
+ },
+ "DROP_KICK_SLOW": {
+  "base": "DROP_KICK",
+  "kind": "SLOW",
+  "diffMean": 0.0418,
+  "diffPeak": 0.6506,
+  "durDelta": 1.015,
+  "dur": 3.915,
+  "distinct": true
+ },
+ "DROP_KICK_KNEELING": {
+  "base": "DROP_KICK",
+  "kind": "KNEELING",
+  "diffMean": 0.3776,
+  "diffPeak": 0.6543,
+  "durDelta": 0.0,
+  "dur": 2.9,
+  "distinct": true
+ },
+ "DROP_KICK_SITOUT": {
+  "base": "DROP_KICK",
+  "kind": "SITOUT",
+  "diffMean": 0.2152,
+  "diffPeak": 1.0977,
+  "durDelta": 0.29,
+  "dur": 2.61,
+  "distinct": true
+ },
+ "DROP_KICK_HARD": {
+  "base": "DROP_KICK",
+  "kind": "HARD",
+  "diffMean": 0.1423,
+  "diffPeak": 1.098,
+  "durDelta": 1.102,
+  "dur": 1.798,
+  "distinct": true
+ },
+ "DROP_KICK_DELAYED": {
+  "base": "DROP_KICK",
+  "kind": "DELAYED",
+  "diffMean": 0.082,
+  "diffPeak": 1.0548,
+  "durDelta": 1.45,
+  "dur": 4.35,
+  "distinct": true
+ },
+ "AU_MIRROR": {
+  "base": "AU",
+  "kind": "MIRROR",
+  "diffMean": 0.347,
+  "diffPeak": 1.1647,
+  "durDelta": 0.0,
+  "dur": 2.9,
+  "distinct": true
+ },
+ "AU_SNAP": {
+  "base": "AU",
+  "kind": "SNAP",
+  "diffMean": 0.0944,
+  "diffPeak": 1.1175,
+  "durDelta": 0.812,
+  "dur": 2.088,
+  "distinct": true
+ },
+ "AU_SLOW": {
+  "base": "AU",
+  "kind": "SLOW",
+  "diffMean": 0.0634,
+  "diffPeak": 1.0255,
+  "durDelta": 1.015,
+  "dur": 3.915,
+  "distinct": true
+ },
+ "AU_KNEELING": {
+  "base": "AU",
+  "kind": "KNEELING",
+  "diffMean": 0.3754,
+  "diffPeak": 0.6579,
+  "durDelta": 0.0,
+  "dur": 2.9,
+  "distinct": true
+ },
+ "AU_SITOUT": {
+  "base": "AU",
+  "kind": "SITOUT",
+  "diffMean": 0.2205,
+  "diffPeak": 1.063,
+  "durDelta": 0.29,
+  "dur": 2.61,
+  "distinct": true
+ },
+ "AU_HARD": {
+  "base": "AU",
+  "kind": "HARD",
+  "diffMean": 0.1784,
+  "diffPeak": 1.1194,
+  "durDelta": 1.102,
+  "dur": 1.798,
+  "distinct": true
+ },
+ "AU_DELAYED": {
+  "base": "AU",
+  "kind": "DELAYED",
+  "diffMean": 0.1162,
+  "diffPeak": 1.0772,
+  "durDelta": 1.45,
+  "dur": 4.35,
+  "distinct": true
+ },
+ "HEAVY_WEAPON_SWING_MIRROR": {
+  "base": "HEAVY_WEAPON_SWING",
+  "kind": "MIRROR",
+  "diffMean": 0.3491,
+  "diffPeak": 1.1431,
+  "durDelta": 0.0,
+  "dur": 5.2,
+  "distinct": true
+ },
+ "HEAVY_WEAPON_SWING_SNAP": {
+  "base": "HEAVY_WEAPON_SWING",
+  "kind": "SNAP",
+  "diffMean": 0.0571,
+  "diffPeak": 1.0818,
+  "durDelta": 1.456,
+  "dur": 3.744,
+  "distinct": true
+ },
+ "HEAVY_WEAPON_SWING_SLOW": {
+  "base": "HEAVY_WEAPON_SWING",
+  "kind": "SLOW",
+  "diffMean": 0.049,
+  "diffPeak": 0.9422,
+  "durDelta": 1.82,
+  "dur": 7.02,
+  "distinct": true
+ },
+ "HEAVY_WEAPON_SWING_KNEELING": {
+  "base": "HEAVY_WEAPON_SWING",
+  "kind": "KNEELING",
+  "diffMean": 0.3721,
+  "diffPeak": 0.6445,
+  "durDelta": 0.0,
+  "dur": 5.2,
+  "distinct": true
+ },
+ "HEAVY_WEAPON_SWING_SITOUT": {
+  "base": "HEAVY_WEAPON_SWING",
+  "kind": "SITOUT",
+  "diffMean": 0.2061,
+  "diffPeak": 0.8887,
+  "durDelta": 0.52,
+  "dur": 4.68,
+  "distinct": true
+ },
+ "HEAVY_WEAPON_SWING_HARD": {
+  "base": "HEAVY_WEAPON_SWING",
+  "kind": "HARD",
+  "diffMean": 0.152,
+  "diffPeak": 1.071,
+  "durDelta": 1.976,
+  "dur": 3.224,
+  "distinct": true
+ },
+ "HEAVY_WEAPON_SWING_DELAYED": {
+  "base": "HEAVY_WEAPON_SWING",
+  "kind": "DELAYED",
+  "diffMean": 0.0682,
+  "diffPeak": 1.0472,
+  "durDelta": 2.6,
+  "dur": 7.8,
+  "distinct": true
+ },
+ "DRUNK_WALK_MIRROR": {
+  "base": "DRUNK_WALK",
+  "kind": "MIRROR",
+  "diffMean": 0.3258,
+  "diffPeak": 1.1727,
+  "durDelta": 0,
+  "dur": 3,
+  "distinct": true
+ },
+ "DRUNK_WALK_SNAP": {
+  "base": "DRUNK_WALK",
+  "kind": "SNAP",
+  "diffMean": 0.0718,
+  "diffPeak": 1.1146,
+  "durDelta": 0.84,
+  "dur": 2.16,
+  "distinct": true
+ },
+ "DRUNK_WALK_SLOW": {
+  "base": "DRUNK_WALK",
+  "kind": "SLOW",
+  "diffMean": 0.0499,
+  "diffPeak": 1.1094,
+  "durDelta": 1.05,
+  "dur": 4.05,
+  "distinct": true
+ },
+ "DRUNK_WALK_KNEELING": {
+  "base": "DRUNK_WALK",
+  "kind": "KNEELING",
+  "diffMean": 0.3686,
+  "diffPeak": 0.6418,
+  "durDelta": 0,
+  "dur": 3,
+  "distinct": true
+ },
+ "DRUNK_WALK_SITOUT": {
+  "base": "DRUNK_WALK",
+  "kind": "SITOUT",
+  "diffMean": 0.2155,
+  "diffPeak": 1.1228,
+  "durDelta": 0.3,
+  "dur": 2.7,
+  "distinct": true
+ },
+ "DRUNK_WALK_HARD": {
+  "base": "DRUNK_WALK",
+  "kind": "HARD",
+  "diffMean": 0.155,
+  "diffPeak": 1.1194,
+  "durDelta": 1.14,
+  "dur": 1.86,
+  "distinct": true
+ },
+ "DRUNK_WALK_DELAYED": {
+  "base": "DRUNK_WALK",
+  "kind": "DELAYED",
+  "diffMean": 0.0763,
+  "diffPeak": 1.1168,
+  "durDelta": 1.5,
+  "dur": 4.5,
+  "distinct": true
+ },
+ "DEATH_FROM_BACK_HEADSHOT_MIRROR": {
+  "base": "DEATH_FROM_BACK_HEADSHOT",
+  "kind": "MIRROR",
+  "diffMean": 0.3025,
+  "diffPeak": 1.035,
+  "durDelta": 0.0,
+  "dur": 3.7,
+  "distinct": true
+ },
+ "DEATH_FROM_BACK_HEADSHOT_SNAP": {
+  "base": "DEATH_FROM_BACK_HEADSHOT",
+  "kind": "SNAP",
+  "diffMean": 0.0441,
+  "diffPeak": 0.3745,
+  "durDelta": 1.036,
+  "dur": 2.664,
+  "distinct": true
+ },
+ "DEATH_FROM_BACK_HEADSHOT_SLOW": {
+  "base": "DEATH_FROM_BACK_HEADSHOT",
+  "kind": "SLOW",
+  "diffMean": 0.0268,
+  "diffPeak": 0.2843,
+  "durDelta": 1.295,
+  "dur": 4.995,
+  "distinct": true
+ },
+ "DEATH_FROM_BACK_HEADSHOT_KNEELING": {
+  "base": "DEATH_FROM_BACK_HEADSHOT",
+  "kind": "KNEELING",
+  "diffMean": 0.3715,
+  "diffPeak": 0.6498,
+  "durDelta": 0.0,
+  "dur": 3.7,
+  "distinct": true
+ },
+ "DEATH_FROM_BACK_HEADSHOT_SITOUT": {
+  "base": "DEATH_FROM_BACK_HEADSHOT",
+  "kind": "SITOUT",
+  "diffMean": 0.2023,
+  "diffPeak": 0.4791,
+  "durDelta": 0.37,
+  "dur": 3.33,
+  "distinct": true
+ },
+ "DEATH_FROM_BACK_HEADSHOT_HARD": {
+  "base": "DEATH_FROM_BACK_HEADSHOT",
+  "kind": "HARD",
+  "diffMean": 0.1317,
+  "diffPeak": 0.4991,
+  "durDelta": 1.406,
+  "dur": 2.294,
+  "distinct": true
+ },
+ "DEATH_FROM_BACK_HEADSHOT_DELAYED": {
+  "base": "DEATH_FROM_BACK_HEADSHOT",
+  "kind": "DELAYED",
+  "diffMean": 0.078,
+  "diffPeak": 0.5319,
+  "durDelta": 1.85,
+  "dur": 5.55,
+  "distinct": true
+ },
+ "HIT_ON_SIDE_OF_HEAD_MIRROR": {
+  "base": "HIT_ON_SIDE_OF_HEAD",
+  "kind": "MIRROR",
+  "diffMean": 0.3597,
+  "diffPeak": 1.1594,
+  "durDelta": 0.0,
+  "dur": 3.3,
+  "distinct": true
+ },
+ "HIT_ON_SIDE_OF_HEAD_SNAP": {
+  "base": "HIT_ON_SIDE_OF_HEAD",
+  "kind": "SNAP",
+  "diffMean": 0.084,
+  "diffPeak": 1.1267,
+  "durDelta": 0.924,
+  "dur": 2.376,
+  "distinct": true
+ },
+ "HIT_ON_SIDE_OF_HEAD_SLOW": {
+  "base": "HIT_ON_SIDE_OF_HEAD",
+  "kind": "SLOW",
+  "diffMean": 0.0498,
+  "diffPeak": 1.1243,
+  "durDelta": 1.155,
+  "dur": 4.455,
+  "distinct": true
+ },
+ "HIT_ON_SIDE_OF_HEAD_KNEELING": {
+  "base": "HIT_ON_SIDE_OF_HEAD",
+  "kind": "KNEELING",
+  "diffMean": 0.371,
+  "diffPeak": 0.6546,
+  "durDelta": 0.0,
+  "dur": 3.3,
+  "distinct": true
+ },
+ "HIT_ON_SIDE_OF_HEAD_SITOUT": {
+  "base": "HIT_ON_SIDE_OF_HEAD",
+  "kind": "SITOUT",
+  "diffMean": 0.2226,
+  "diffPeak": 1.1404,
+  "durDelta": 0.33,
+  "dur": 2.97,
+  "distinct": true
+ },
+ "HIT_ON_SIDE_OF_HEAD_HARD": {
+  "base": "HIT_ON_SIDE_OF_HEAD",
+  "kind": "HARD",
+  "diffMean": 0.1687,
+  "diffPeak": 1.1311,
+  "durDelta": 1.254,
+  "dur": 2.046,
+  "distinct": true
+ },
+ "HIT_ON_SIDE_OF_HEAD_DELAYED": {
+  "base": "HIT_ON_SIDE_OF_HEAD",
+  "kind": "DELAYED",
+  "diffMean": 0.1155,
+  "diffPeak": 1.1258,
+  "durDelta": 1.65,
+  "dur": 4.95,
+  "distinct": true
+ },
+ "ZOMBIE_DYING_MIRROR": {
+  "base": "ZOMBIE_DYING",
+  "kind": "MIRROR",
+  "diffMean": 0.3215,
+  "diffPeak": 1.0829,
+  "durDelta": 0.0,
+  "dur": 3.3333,
+  "distinct": true
+ },
+ "ZOMBIE_DYING_SNAP": {
+  "base": "ZOMBIE_DYING",
+  "kind": "SNAP",
+  "diffMean": 0.054,
+  "diffPeak": 1.0534,
+  "durDelta": 0.933,
+  "dur": 2.4,
+  "distinct": true
+ },
+ "ZOMBIE_DYING_SLOW": {
+  "base": "ZOMBIE_DYING",
+  "kind": "SLOW",
+  "diffMean": 0.0384,
+  "diffPeak": 1.0716,
+  "durDelta": 1.167,
+  "dur": 4.5,
+  "distinct": true
+ },
+ "ZOMBIE_DYING_KNEELING": {
+  "base": "ZOMBIE_DYING",
+  "kind": "KNEELING",
+  "diffMean": 0.3713,
+  "diffPeak": 0.6625,
+  "durDelta": 0.0,
+  "dur": 3.3333,
+  "distinct": true
+ },
+ "ZOMBIE_DYING_SITOUT": {
+  "base": "ZOMBIE_DYING",
+  "kind": "SITOUT",
+  "diffMean": 0.2028,
+  "diffPeak": 0.4178,
+  "durDelta": 0.333,
+  "dur": 3.0,
+  "distinct": true
+ },
+ "ZOMBIE_DYING_HARD": {
+  "base": "ZOMBIE_DYING",
+  "kind": "HARD",
+  "diffMean": 0.139,
+  "diffPeak": 1.0596,
+  "durDelta": 1.267,
+  "dur": 2.0666,
+  "distinct": true
+ },
+ "ZOMBIE_DYING_DELAYED": {
+  "base": "ZOMBIE_DYING",
+  "kind": "DELAYED",
+  "diffMean": 0.0811,
+  "diffPeak": 1.0617,
+  "durDelta": 1.667,
+  "dur": 5.0,
+  "distinct": true
+ },
+ "BRUTAL_ASSASSINATION_MIRROR": {
+  "base": "BRUTAL_ASSASSINATION",
+  "kind": "MIRROR",
+  "diffMean": 0.3284,
+  "diffPeak": 1.16,
+  "durDelta": 0.0,
+  "dur": 4.9333,
+  "distinct": true
+ },
+ "BRUTAL_ASSASSINATION_SNAP": {
+  "base": "BRUTAL_ASSASSINATION",
+  "kind": "SNAP",
+  "diffMean": 0.0399,
+  "diffPeak": 1.0879,
+  "durDelta": 1.381,
+  "dur": 3.552,
+  "distinct": true
+ },
+ "BRUTAL_ASSASSINATION_SLOW": {
+  "base": "BRUTAL_ASSASSINATION",
+  "kind": "SLOW",
+  "diffMean": 0.0363,
+  "diffPeak": 1.033,
+  "durDelta": 1.727,
+  "dur": 6.66,
+  "distinct": true
+ },
+ "BRUTAL_ASSASSINATION_KNEELING": {
+  "base": "BRUTAL_ASSASSINATION",
+  "kind": "KNEELING",
+  "diffMean": 0.371,
+  "diffPeak": 0.6394,
+  "durDelta": 0.0,
+  "dur": 4.9333,
+  "distinct": true
+ },
+ "BRUTAL_ASSASSINATION_SITOUT": {
+  "base": "BRUTAL_ASSASSINATION",
+  "kind": "SITOUT",
+  "diffMean": 0.2083,
+  "diffPeak": 1.1082,
+  "durDelta": 0.493,
+  "dur": 4.44,
+  "distinct": true
+ },
+ "BRUTAL_ASSASSINATION_HARD": {
+  "base": "BRUTAL_ASSASSINATION",
+  "kind": "HARD",
+  "diffMean": 0.1381,
+  "diffPeak": 1.0862,
+  "durDelta": 1.875,
+  "dur": 3.0586,
+  "distinct": true
+ },
+ "BRUTAL_ASSASSINATION_DELAYED": {
+  "base": "BRUTAL_ASSASSINATION",
+  "kind": "DELAYED",
+  "diffMean": 0.0533,
+  "diffPeak": 1.0848,
+  "durDelta": 2.467,
+  "dur": 7.4,
+  "distinct": true
+ },
+ "CAPOEIRA_MIRROR": {
+  "base": "CAPOEIRA",
+  "kind": "MIRROR",
+  "diffMean": 0.3468,
+  "diffPeak": 1.1684,
+  "durDelta": 0.0,
+  "dur": 3.4333,
+  "distinct": true
+ },
+ "CAPOEIRA_SNAP": {
+  "base": "CAPOEIRA",
+  "kind": "SNAP",
+  "diffMean": 0.0778,
+  "diffPeak": 1.0942,
+  "durDelta": 0.961,
+  "dur": 2.472,
+  "distinct": true
+ },
+ "CAPOEIRA_SLOW": {
+  "base": "CAPOEIRA",
+  "kind": "SLOW",
+  "diffMean": 0.0527,
+  "diffPeak": 1.0619,
+  "durDelta": 1.202,
+  "dur": 4.635,
+  "distinct": true
+ },
+ "CAPOEIRA_KNEELING": {
+  "base": "CAPOEIRA",
+  "kind": "KNEELING",
+  "diffMean": 0.3738,
+  "diffPeak": 0.6492,
+  "durDelta": 0.0,
+  "dur": 3.4333,
+  "distinct": true
+ },
+ "CAPOEIRA_SITOUT": {
+  "base": "CAPOEIRA",
+  "kind": "SITOUT",
+  "diffMean": 0.2194,
+  "diffPeak": 1.112,
+  "durDelta": 0.343,
+  "dur": 3.09,
+  "distinct": true
+ },
+ "CAPOEIRA_HARD": {
+  "base": "CAPOEIRA",
+  "kind": "HARD",
+  "diffMean": 0.1774,
+  "diffPeak": 1.1157,
+  "durDelta": 1.305,
+  "dur": 2.1286,
+  "distinct": true
+ },
+ "CAPOEIRA_DELAYED": {
+  "base": "CAPOEIRA",
+  "kind": "DELAYED",
+  "diffMean": 0.1009,
+  "diffPeak": 1.1,
+  "durDelta": 1.717,
+  "dur": 5.15,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM__1__MIRROR": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM__1_",
+  "kind": "MIRROR",
+  "diffMean": 0.3077,
+  "diffPeak": 0.6582,
+  "durDelta": 0.0,
+  "dur": 3.5,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM__1__SNAP": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM__1_",
+  "kind": "SNAP",
+  "diffMean": 0.0275,
+  "diffPeak": 0.2786,
+  "durDelta": 0.98,
+  "dur": 2.52,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM__1__SLOW": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM__1_",
+  "kind": "SLOW",
+  "diffMean": 0.0136,
+  "diffPeak": 0.1236,
+  "durDelta": 1.225,
+  "dur": 4.725,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM__1__KNEELING": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM__1_",
+  "kind": "KNEELING",
+  "diffMean": 0.377,
+  "diffPeak": 0.6289,
+  "durDelta": 0.0,
+  "dur": 3.5,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM__1__SITOUT": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM__1_",
+  "kind": "SITOUT",
+  "diffMean": 0.2031,
+  "diffPeak": 0.3858,
+  "durDelta": 0.35,
+  "dur": 3.15,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM__1__HARD": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM__1_",
+  "kind": "HARD",
+  "diffMean": 0.1254,
+  "diffPeak": 0.2984,
+  "durDelta": 1.33,
+  "dur": 2.17,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM__1__DELAYED": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM__1_",
+  "kind": "DELAYED",
+  "diffMean": 0.0505,
+  "diffPeak": 0.3335,
+  "durDelta": 1.75,
+  "dur": 5.25,
+  "distinct": true
+ },
+ "DEFENDER_MIRROR": {
+  "base": "DEFENDER",
+  "kind": "MIRROR",
+  "diffMean": 0.3468,
+  "diffPeak": 1.078,
+  "durDelta": 0.0,
+  "dur": 3.6,
+  "distinct": true
+ },
+ "DEFENDER_SNAP": {
+  "base": "DEFENDER",
+  "kind": "SNAP",
+  "diffMean": 0.0557,
+  "diffPeak": 1.0846,
+  "durDelta": 1.008,
+  "dur": 2.592,
+  "distinct": true
+ },
+ "DEFENDER_SLOW": {
+  "base": "DEFENDER",
+  "kind": "SLOW",
+  "diffMean": 0.03,
+  "diffPeak": 0.819,
+  "durDelta": 1.26,
+  "dur": 4.86,
+  "distinct": true
+ },
+ "DEFENDER_KNEELING": {
+  "base": "DEFENDER",
+  "kind": "KNEELING",
+  "diffMean": 0.3738,
+  "diffPeak": 0.6469,
+  "durDelta": 0.0,
+  "dur": 3.6,
+  "distinct": true
+ },
+ "DEFENDER_SITOUT": {
+  "base": "DEFENDER",
+  "kind": "SITOUT",
+  "diffMean": 0.216,
+  "diffPeak": 1.0983,
+  "durDelta": 0.36,
+  "dur": 3.24,
+  "distinct": true
+ },
+ "DEFENDER_HARD": {
+  "base": "DEFENDER",
+  "kind": "HARD",
+  "diffMean": 0.1413,
+  "diffPeak": 1.0969,
+  "durDelta": 1.368,
+  "dur": 2.232,
+  "distinct": true
+ },
+ "DEFENDER_DELAYED": {
+  "base": "DEFENDER",
+  "kind": "DELAYED",
+  "diffMean": 0.0874,
+  "diffPeak": 1.0798,
+  "durDelta": 1.8,
+  "dur": 5.4,
+  "distinct": true
+ },
+ "IDLE_MIRROR": {
+  "base": "IDLE",
+  "kind": "MIRROR",
+  "diffMean": 0.3221,
+  "diffPeak": 1.1395,
+  "durDelta": 0,
+  "dur": 4,
+  "distinct": true
+ },
+ "IDLE_SNAP": {
+  "base": "IDLE",
+  "kind": "SNAP",
+  "diffMean": 0.0296,
+  "diffPeak": 1.0895,
+  "durDelta": 1.12,
+  "dur": 2.88,
+  "distinct": true
+ },
+ "IDLE_SLOW": {
+  "base": "IDLE",
+  "kind": "SLOW",
+  "diffMean": 0.0135,
+  "diffPeak": 0.6575,
+  "durDelta": 1.4,
+  "dur": 5.4,
+  "distinct": true
+ },
+ "IDLE_KNEELING": {
+  "base": "IDLE",
+  "kind": "KNEELING",
+  "diffMean": 0.3682,
+  "diffPeak": 0.6319,
+  "durDelta": 0,
+  "dur": 4,
+  "distinct": true
+ },
+ "IDLE_SITOUT": {
+  "base": "IDLE",
+  "kind": "SITOUT",
+  "diffMean": 0.202,
+  "diffPeak": 1.0962,
+  "durDelta": 0.4,
+  "dur": 3.6,
+  "distinct": true
+ },
+ "IDLE_HARD": {
+  "base": "IDLE",
+  "kind": "HARD",
+  "diffMean": 0.1281,
+  "diffPeak": 1.068,
+  "durDelta": 1.52,
+  "dur": 2.48,
+  "distinct": true
+ },
+ "IDLE_DELAYED": {
+  "base": "IDLE",
+  "kind": "DELAYED",
+  "diffMean": 0.0386,
+  "diffPeak": 1.0745,
+  "durDelta": 2.0,
+  "dur": 6.0,
+  "distinct": true
+ },
+ "DYING_BACKWARDS_MIRROR": {
+  "base": "DYING_BACKWARDS",
+  "kind": "MIRROR",
+  "diffMean": 0.3312,
+  "diffPeak": 0.7906,
+  "durDelta": 0.0,
+  "dur": 4.6,
+  "distinct": true
+ },
+ "DYING_BACKWARDS_SNAP": {
+  "base": "DYING_BACKWARDS",
+  "kind": "SNAP",
+  "diffMean": 0.0234,
+  "diffPeak": 0.35,
+  "durDelta": 1.288,
+  "dur": 3.312,
+  "distinct": true
+ },
+ "DYING_BACKWARDS_SLOW": {
+  "base": "DYING_BACKWARDS",
+  "kind": "SLOW",
+  "diffMean": 0.0088,
+  "diffPeak": 0.1715,
+  "durDelta": 1.61,
+  "dur": 6.21,
+  "distinct": true
+ },
+ "DYING_BACKWARDS_KNEELING": {
+  "base": "DYING_BACKWARDS",
+  "kind": "KNEELING",
+  "diffMean": 0.3725,
+  "diffPeak": 0.6462,
+  "durDelta": 0.0,
+  "dur": 4.6,
+  "distinct": true
+ },
+ "DYING_BACKWARDS_SITOUT": {
+  "base": "DYING_BACKWARDS",
+  "kind": "SITOUT",
+  "diffMean": 0.1999,
+  "diffPeak": 0.4119,
+  "durDelta": 0.46,
+  "dur": 4.14,
+  "distinct": true
+ },
+ "DYING_BACKWARDS_HARD": {
+  "base": "DYING_BACKWARDS",
+  "kind": "HARD",
+  "diffMean": 0.1202,
+  "diffPeak": 0.3908,
+  "durDelta": 1.748,
+  "dur": 2.852,
+  "distinct": true
+ },
+ "DYING_BACKWARDS_DELAYED": {
+  "base": "DYING_BACKWARDS",
+  "kind": "DELAYED",
+  "diffMean": 0.0561,
+  "diffPeak": 0.3932,
+  "durDelta": 2.3,
+  "dur": 6.9,
+  "distinct": true
+ },
+ "CAN_CAN_MIRROR": {
+  "base": "CAN_CAN",
+  "kind": "MIRROR",
+  "diffMean": 0.3784,
+  "diffPeak": 1.1821,
+  "durDelta": 0.0,
+  "dur": 3.6667,
+  "distinct": true
+ },
+ "CAN_CAN_SNAP": {
+  "base": "CAN_CAN",
+  "kind": "SNAP",
+  "diffMean": 0.0734,
+  "diffPeak": 1.1209,
+  "durDelta": 1.027,
+  "dur": 2.64,
+  "distinct": true
+ },
+ "CAN_CAN_SLOW": {
+  "base": "CAN_CAN",
+  "kind": "SLOW",
+  "diffMean": 0.0552,
+  "diffPeak": 1.0825,
+  "durDelta": 1.283,
+  "dur": 4.95,
+  "distinct": true
+ },
+ "CAN_CAN_KNEELING": {
+  "base": "CAN_CAN",
+  "kind": "KNEELING",
+  "diffMean": 0.3747,
+  "diffPeak": 0.6167,
+  "durDelta": 0.0,
+  "dur": 3.6667,
+  "distinct": true
+ },
+ "CAN_CAN_SITOUT": {
+  "base": "CAN_CAN",
+  "kind": "SITOUT",
+  "diffMean": 0.2297,
+  "diffPeak": 1.1348,
+  "durDelta": 0.367,
+  "dur": 3.3,
+  "distinct": true
+ },
+ "CAN_CAN_HARD": {
+  "base": "CAN_CAN",
+  "kind": "HARD",
+  "diffMean": 0.1696,
+  "diffPeak": 1.1328,
+  "durDelta": 1.393,
+  "dur": 2.2734,
+  "distinct": true
+ },
+ "CAN_CAN_DELAYED": {
+  "base": "CAN_CAN",
+  "kind": "DELAYED",
+  "diffMean": 0.0905,
+  "diffPeak": 1.1248,
+  "durDelta": 1.833,
+  "dur": 5.5,
+  "distinct": true
+ },
+ "CAPOEIRA__1__MIRROR": {
+  "base": "CAPOEIRA__1_",
+  "kind": "MIRROR",
+  "diffMean": 0.3834,
+  "diffPeak": 1.1789,
+  "durDelta": 0.0,
+  "dur": 4.8,
+  "distinct": true
+ },
+ "CAPOEIRA__1__SNAP": {
+  "base": "CAPOEIRA__1_",
+  "kind": "SNAP",
+  "diffMean": 0.1085,
+  "diffPeak": 1.0874,
+  "durDelta": 1.344,
+  "dur": 3.456,
+  "distinct": true
+ },
+ "CAPOEIRA__1__SLOW": {
+  "base": "CAPOEIRA__1_",
+  "kind": "SLOW",
+  "diffMean": 0.0828,
+  "diffPeak": 1.0241,
+  "durDelta": 1.68,
+  "dur": 6.48,
+  "distinct": true
+ },
+ "CAPOEIRA__1__KNEELING": {
+  "base": "CAPOEIRA__1_",
+  "kind": "KNEELING",
+  "diffMean": 0.3728,
+  "diffPeak": 0.6509,
+  "durDelta": 0.0,
+  "dur": 4.8,
+  "distinct": true
+ },
+ "CAPOEIRA__1__SITOUT": {
+  "base": "CAPOEIRA__1_",
+  "kind": "SITOUT",
+  "diffMean": 0.2313,
+  "diffPeak": 1.119,
+  "durDelta": 0.48,
+  "dur": 4.32,
+  "distinct": true
+ },
+ "CAPOEIRA__1__HARD": {
+  "base": "CAPOEIRA__1_",
+  "kind": "HARD",
+  "diffMean": 0.1794,
+  "diffPeak": 1.0614,
+  "durDelta": 1.824,
+  "dur": 2.976,
+  "distinct": true
+ },
+ "CAPOEIRA__1__DELAYED": {
+  "base": "CAPOEIRA__1_",
+  "kind": "DELAYED",
+  "diffMean": 0.1116,
+  "diffPeak": 1.1063,
+  "durDelta": 2.4,
+  "dur": 7.2,
+  "distinct": true
+ },
+ "BROOKLYN_UPROCK_MIRROR": {
+  "base": "BROOKLYN_UPROCK",
+  "kind": "MIRROR",
+  "diffMean": 0.3398,
+  "diffPeak": 1.1726,
+  "durDelta": 0.0,
+  "dur": 4.8667,
+  "distinct": true
+ },
+ "BROOKLYN_UPROCK_SNAP": {
+  "base": "BROOKLYN_UPROCK",
+  "kind": "SNAP",
+  "diffMean": 0.121,
+  "diffPeak": 1.1193,
+  "durDelta": 1.363,
+  "dur": 3.504,
+  "distinct": true
+ },
+ "BROOKLYN_UPROCK_SLOW": {
+  "base": "BROOKLYN_UPROCK",
+  "kind": "SLOW",
+  "diffMean": 0.0924,
+  "diffPeak": 1.1114,
+  "durDelta": 1.703,
+  "dur": 6.57,
+  "distinct": true
+ },
+ "BROOKLYN_UPROCK_KNEELING": {
+  "base": "BROOKLYN_UPROCK",
+  "kind": "KNEELING",
+  "diffMean": 0.3742,
+  "diffPeak": 0.656,
+  "durDelta": 0.0,
+  "dur": 4.8667,
+  "distinct": true
+ },
+ "BROOKLYN_UPROCK_SITOUT": {
+  "base": "BROOKLYN_UPROCK",
+  "kind": "SITOUT",
+  "diffMean": 0.2361,
+  "diffPeak": 1.1213,
+  "durDelta": 0.487,
+  "dur": 4.38,
+  "distinct": true
+ },
+ "BROOKLYN_UPROCK_HARD": {
+  "base": "BROOKLYN_UPROCK",
+  "kind": "HARD",
+  "diffMean": 0.195,
+  "diffPeak": 1.1011,
+  "durDelta": 1.849,
+  "dur": 3.0174,
+  "distinct": true
+ },
+ "BROOKLYN_UPROCK_DELAYED": {
+  "base": "BROOKLYN_UPROCK",
+  "kind": "DELAYED",
+  "diffMean": 0.1315,
+  "diffPeak": 1.1024,
+  "durDelta": 2.433,
+  "dur": 7.3,
+  "distinct": true
+ },
+ "DRUNK_IDLE_VARIATION_MIRROR": {
+  "base": "DRUNK_IDLE_VARIATION",
+  "kind": "MIRROR",
+  "diffMean": 0.3059,
+  "diffPeak": 0.6516,
+  "durDelta": 0.0,
+  "dur": 3.9667,
+  "distinct": true
+ },
+ "DRUNK_IDLE_VARIATION_SNAP": {
+  "base": "DRUNK_IDLE_VARIATION",
+  "kind": "SNAP",
+  "diffMean": 0.0148,
+  "diffPeak": 0.1597,
+  "durDelta": 1.111,
+  "dur": 2.856,
+  "distinct": true
+ },
+ "DRUNK_IDLE_VARIATION_SLOW": {
+  "base": "DRUNK_IDLE_VARIATION",
+  "kind": "SLOW",
+  "diffMean": 0.0098,
+  "diffPeak": 0.1124,
+  "durDelta": 1.388,
+  "dur": 5.355,
+  "distinct": true
+ },
+ "DRUNK_IDLE_VARIATION_KNEELING": {
+  "base": "DRUNK_IDLE_VARIATION",
+  "kind": "KNEELING",
+  "diffMean": 0.3653,
+  "diffPeak": 0.6253,
+  "durDelta": 0.0,
+  "dur": 3.9667,
+  "distinct": true
+ },
+ "DRUNK_IDLE_VARIATION_SITOUT": {
+  "base": "DRUNK_IDLE_VARIATION",
+  "kind": "SITOUT",
+  "diffMean": 0.193,
+  "diffPeak": 0.3688,
+  "durDelta": 0.397,
+  "dur": 3.57,
+  "distinct": true
+ },
+ "DRUNK_IDLE_VARIATION_HARD": {
+  "base": "DRUNK_IDLE_VARIATION",
+  "kind": "HARD",
+  "diffMean": 0.1162,
+  "diffPeak": 0.2232,
+  "durDelta": 1.507,
+  "dur": 2.4594,
+  "distinct": true
+ },
+ "DRUNK_IDLE_VARIATION_DELAYED": {
+  "base": "DRUNK_IDLE_VARIATION",
+  "kind": "DELAYED",
+  "diffMean": 0.021,
+  "diffPeak": 0.1665,
+  "durDelta": 1.983,
+  "dur": 5.9501,
+  "distinct": true
+ },
+ "DANCING_MIRROR": {
+  "base": "DANCING",
+  "kind": "MIRROR",
+  "diffMean": 0.3156,
+  "diffPeak": 0.7495,
+  "durDelta": 0.0,
+  "dur": 8.1,
+  "distinct": true
+ },
+ "DANCING_SNAP": {
+  "base": "DANCING",
+  "kind": "SNAP",
+  "diffMean": 0.0515,
+  "diffPeak": 0.4677,
+  "durDelta": 2.268,
+  "dur": 5.832,
+  "distinct": true
+ },
+ "DANCING_SLOW": {
+  "base": "DANCING",
+  "kind": "SLOW",
+  "diffMean": 0.0455,
+  "diffPeak": 0.4707,
+  "durDelta": 2.835,
+  "dur": 10.935,
+  "distinct": true
+ },
+ "DANCING_KNEELING": {
+  "base": "DANCING",
+  "kind": "KNEELING",
+  "diffMean": 0.3693,
+  "diffPeak": 0.6299,
+  "durDelta": 0.0,
+  "dur": 8.1,
+  "distinct": true
+ },
+ "DANCING_SITOUT": {
+  "base": "DANCING",
+  "kind": "SITOUT",
+  "diffMean": 0.206,
+  "diffPeak": 0.5702,
+  "durDelta": 0.81,
+  "dur": 7.29,
+  "distinct": true
+ },
+ "DANCING_HARD": {
+  "base": "DANCING",
+  "kind": "HARD",
+  "diffMean": 0.1365,
+  "diffPeak": 0.495,
+  "durDelta": 3.078,
+  "dur": 5.022,
+  "distinct": true
+ },
+ "DANCING_DELAYED": {
+  "base": "DANCING",
+  "kind": "DELAYED",
+  "diffMean": 0.0538,
+  "diffPeak": 0.4677,
+  "durDelta": 4.05,
+  "dur": 12.15,
+  "distinct": true
+ },
+ "INJURED_HURTING_IDLE_MIRROR": {
+  "base": "INJURED_HURTING_IDLE",
+  "kind": "MIRROR",
+  "diffMean": 0.3828,
+  "diffPeak": 1.1297,
+  "durDelta": 0.0,
+  "dur": 6.0333,
+  "distinct": true
+ },
+ "INJURED_HURTING_IDLE_SNAP": {
+  "base": "INJURED_HURTING_IDLE",
+  "kind": "SNAP",
+  "diffMean": 0.033,
+  "diffPeak": 1.0991,
+  "durDelta": 1.689,
+  "dur": 4.344,
+  "distinct": true
+ },
+ "INJURED_HURTING_IDLE_SLOW": {
+  "base": "INJURED_HURTING_IDLE",
+  "kind": "SLOW",
+  "diffMean": 0.0194,
+  "diffPeak": 0.2106,
+  "durDelta": 2.112,
+  "dur": 8.145,
+  "distinct": true
+ },
+ "INJURED_HURTING_IDLE_KNEELING": {
+  "base": "INJURED_HURTING_IDLE",
+  "kind": "KNEELING",
+  "diffMean": 0.3707,
+  "diffPeak": 0.6537,
+  "durDelta": 0.0,
+  "dur": 6.0333,
+  "distinct": true
+ },
+ "INJURED_HURTING_IDLE_SITOUT": {
+  "base": "INJURED_HURTING_IDLE",
+  "kind": "SITOUT",
+  "diffMean": 0.202,
+  "diffPeak": 1.1231,
+  "durDelta": 0.603,
+  "dur": 5.43,
+  "distinct": true
+ },
+ "INJURED_HURTING_IDLE_HARD": {
+  "base": "INJURED_HURTING_IDLE",
+  "kind": "HARD",
+  "diffMean": 0.1256,
+  "diffPeak": 1.1107,
+  "durDelta": 2.293,
+  "dur": 3.7406,
+  "distinct": true
+ },
+ "INJURED_HURTING_IDLE_DELAYED": {
+  "base": "INJURED_HURTING_IDLE",
+  "kind": "DELAYED",
+  "diffMean": 0.0465,
+  "diffPeak": 0.5614,
+  "durDelta": 3.017,
+  "dur": 9.0499,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM_MIRROR": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM",
+  "kind": "MIRROR",
+  "diffMean": 0.3005,
+  "diffPeak": 1.092,
+  "durDelta": 0.0,
+  "dur": 7.2333,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM_SNAP": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM",
+  "kind": "SNAP",
+  "diffMean": 0.0509,
+  "diffPeak": 1.0682,
+  "durDelta": 2.025,
+  "dur": 5.208,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM_SLOW": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM",
+  "kind": "SLOW",
+  "diffMean": 0.0356,
+  "diffPeak": 0.3429,
+  "durDelta": 2.532,
+  "dur": 9.765,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM_KNEELING": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM",
+  "kind": "KNEELING",
+  "diffMean": 0.3816,
+  "diffPeak": 0.639,
+  "durDelta": 0.0,
+  "dur": 7.2333,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM_SITOUT": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM",
+  "kind": "SITOUT",
+  "diffMean": 0.2127,
+  "diffPeak": 1.0884,
+  "durDelta": 0.723,
+  "dur": 6.51,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM_HARD": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM",
+  "kind": "HARD",
+  "diffMean": 0.1389,
+  "diffPeak": 1.0883,
+  "durDelta": 2.749,
+  "dur": 4.4846,
+  "distinct": true
+ },
+ "DOUBLE_LEG_TAKEDOWN___VICTIM_DELAYED": {
+  "base": "DOUBLE_LEG_TAKEDOWN___VICTIM",
+  "kind": "DELAYED",
+  "diffMean": 0.0651,
+  "diffPeak": 0.811,
+  "durDelta": 3.617,
+  "dur": 10.8499,
+  "distinct": true
+ },
+ "DANCING_RUNNING_MAN_MIRROR": {
+  "base": "DANCING_RUNNING_MAN",
+  "kind": "MIRROR",
+  "diffMean": 0.3427,
+  "diffPeak": 1.1457,
+  "durDelta": 0.0,
+  "dur": 10.8333,
+  "distinct": true
+ },
+ "DANCING_RUNNING_MAN_SNAP": {
+  "base": "DANCING_RUNNING_MAN",
+  "kind": "SNAP",
+  "diffMean": 0.0701,
+  "diffPeak": 1.1223,
+  "durDelta": 3.033,
+  "dur": 7.8,
+  "distinct": true
+ },
+ "DANCING_RUNNING_MAN_SLOW": {
+  "base": "DANCING_RUNNING_MAN",
+  "kind": "SLOW",
+  "diffMean": 0.061,
+  "diffPeak": 1.1194,
+  "durDelta": 3.792,
+  "dur": 14.625,
+  "distinct": true
+ },
+ "DANCING_RUNNING_MAN_KNEELING": {
+  "base": "DANCING_RUNNING_MAN",
+  "kind": "KNEELING",
+  "diffMean": 0.3727,
+  "diffPeak": 0.6547,
+  "durDelta": 0.0,
+  "dur": 10.8333,
+  "distinct": true
+ },
+ "DANCING_RUNNING_MAN_SITOUT": {
+  "base": "DANCING_RUNNING_MAN",
+  "kind": "SITOUT",
+  "diffMean": 0.2211,
+  "diffPeak": 1.1184,
+  "durDelta": 1.083,
+  "dur": 9.75,
+  "distinct": true
+ },
+ "DANCING_RUNNING_MAN_HARD": {
+  "base": "DANCING_RUNNING_MAN",
+  "kind": "HARD",
+  "diffMean": 0.1449,
+  "diffPeak": 1.1392,
+  "durDelta": 4.117,
+  "dur": 6.7166,
+  "distinct": true
+ },
+ "DANCING_RUNNING_MAN_DELAYED": {
+  "base": "DANCING_RUNNING_MAN",
+  "kind": "DELAYED",
+  "diffMean": 0.0821,
+  "diffPeak": 1.1223,
+  "durDelta": 5.417,
+  "dur": 16.2499,
+  "distinct": true
+ },
+ "TAUNT2_MIRROR": {
+  "base": "TAUNT2",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 6.3333,
+  "distinct": false
+ },
+ "TAUNT2_SNAP": {
+  "base": "TAUNT2",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.773,
+  "dur": 4.56,
+  "distinct": true
+ },
+ "TAUNT2_SLOW": {
+  "base": "TAUNT2",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.217,
+  "dur": 8.55,
+  "distinct": true
+ },
+ "TAUNT2_KNEELING": {
+  "base": "TAUNT2",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 6.3333,
+  "distinct": false
+ },
+ "TAUNT2_SITOUT": {
+  "base": "TAUNT2",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.633,
+  "dur": 5.7,
+  "distinct": true
+ },
+ "TAUNT2_HARD": {
+  "base": "TAUNT2",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.407,
+  "dur": 3.9266,
+  "distinct": true
+ },
+ "TAUNT2_DELAYED": {
+  "base": "TAUNT2",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.167,
+  "dur": 9.5,
+  "distinct": true
+ },
+ "RAPIDCHESTBEATING_MIRROR": {
+  "base": "RAPIDCHESTBEATING",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 3,
+  "distinct": false
+ },
+ "RAPIDCHESTBEATING_SNAP": {
+  "base": "RAPIDCHESTBEATING",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.84,
+  "dur": 2.16,
+  "distinct": true
+ },
+ "RAPIDCHESTBEATING_SLOW": {
+  "base": "RAPIDCHESTBEATING",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.05,
+  "dur": 4.05,
+  "distinct": true
+ },
+ "RAPIDCHESTBEATING_KNEELING": {
+  "base": "RAPIDCHESTBEATING",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 3,
+  "distinct": false
+ },
+ "RAPIDCHESTBEATING_SITOUT": {
+  "base": "RAPIDCHESTBEATING",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.3,
+  "dur": 2.7,
+  "distinct": false
+ },
+ "RAPIDCHESTBEATING_HARD": {
+  "base": "RAPIDCHESTBEATING",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.14,
+  "dur": 1.86,
+  "distinct": true
+ },
+ "RAPIDCHESTBEATING_DELAYED": {
+  "base": "RAPIDCHESTBEATING",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.5,
+  "dur": 4.5,
+  "distinct": true
+ },
+ "TAUNT_MIRROR": {
+  "base": "TAUNT",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 6.5,
+  "distinct": false
+ },
+ "TAUNT_SNAP": {
+  "base": "TAUNT",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.82,
+  "dur": 4.68,
+  "distinct": true
+ },
+ "TAUNT_SLOW": {
+  "base": "TAUNT",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.275,
+  "dur": 8.775,
+  "distinct": true
+ },
+ "TAUNT_KNEELING": {
+  "base": "TAUNT",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 6.5,
+  "distinct": false
+ },
+ "TAUNT_SITOUT": {
+  "base": "TAUNT",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.65,
+  "dur": 5.85,
+  "distinct": true
+ },
+ "TAUNT_HARD": {
+  "base": "TAUNT",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.47,
+  "dur": 4.03,
+  "distinct": true
+ },
+ "TAUNT_DELAYED": {
+  "base": "TAUNT",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.25,
+  "dur": 9.75,
+  "distinct": true
+ },
+ "LOLA_B_STYPEREK_MIRROR": {
+  "base": "LOLA_B_STYPEREK",
+  "kind": "MIRROR",
+  "diffMean": 0.4097,
+  "diffPeak": 1.1605,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "LOLA_B_STYPEREK_SNAP": {
+  "base": "LOLA_B_STYPEREK",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.009,
+  "dur": 0.024,
+  "distinct": false
+ },
+ "LOLA_B_STYPEREK_SLOW": {
+  "base": "LOLA_B_STYPEREK",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.012,
+  "dur": 0.045,
+  "distinct": false
+ },
+ "LOLA_B_STYPEREK_KNEELING": {
+  "base": "LOLA_B_STYPEREK",
+  "kind": "KNEELING",
+  "diffMean": 0.3159,
+  "diffPeak": 0.5155,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "LOLA_B_STYPEREK_SITOUT": {
+  "base": "LOLA_B_STYPEREK",
+  "kind": "SITOUT",
+  "diffMean": 0.1663,
+  "diffPeak": 0.2713,
+  "durDelta": 0.003,
+  "dur": 0.03,
+  "distinct": true
+ },
+ "LOLA_B_STYPEREK_HARD": {
+  "base": "LOLA_B_STYPEREK",
+  "kind": "HARD",
+  "diffMean": 0.0997,
+  "diffPeak": 0.1628,
+  "durDelta": 0.013,
+  "dur": 0.0206,
+  "distinct": true
+ },
+ "LOLA_B_STYPEREK_DELAYED": {
+  "base": "LOLA_B_STYPEREK",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.017,
+  "dur": 0.05,
+  "distinct": false
+ },
+ "SHELBYIKRIG_ARREGLADO_MIRROR": {
+  "base": "SHELBYIKRIG_ARREGLADO",
+  "kind": "MIRROR",
+  "diffMean": 0.0358,
+  "diffPeak": 0.1,
+  "durDelta": 0,
+  "dur": 1,
+  "distinct": false
+ },
+ "SHELBYIKRIG_ARREGLADO_SNAP": {
+  "base": "SHELBYIKRIG_ARREGLADO",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.28,
+  "dur": 0.72,
+  "distinct": false
+ },
+ "SHELBYIKRIG_ARREGLADO_SLOW": {
+  "base": "SHELBYIKRIG_ARREGLADO",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.35,
+  "dur": 1.35,
+  "distinct": true
+ },
+ "SHELBYIKRIG_ARREGLADO_KNEELING": {
+  "base": "SHELBYIKRIG_ARREGLADO",
+  "kind": "KNEELING",
+  "diffMean": 0.4518,
+  "diffPeak": 0.6172,
+  "durDelta": 0,
+  "dur": 1,
+  "distinct": true
+ },
+ "SHELBYIKRIG_ARREGLADO_SITOUT": {
+  "base": "SHELBYIKRIG_ARREGLADO",
+  "kind": "SITOUT",
+  "diffMean": 0.2378,
+  "diffPeak": 0.3248,
+  "durDelta": 0.1,
+  "dur": 0.9,
+  "distinct": true
+ },
+ "SHELBYIKRIG_ARREGLADO_HARD": {
+  "base": "SHELBYIKRIG_ARREGLADO",
+  "kind": "HARD",
+  "diffMean": 0.1427,
+  "diffPeak": 0.1949,
+  "durDelta": 0.38,
+  "dur": 0.62,
+  "distinct": true
+ },
+ "SHELBYIKRIG_ARREGLADO_DELAYED": {
+  "base": "SHELBYIKRIG_ARREGLADO",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.5,
+  "dur": 1.5,
+  "distinct": true
+ },
+ "PASSIVE_MARKER_MAN_MIRROR": {
+  "base": "PASSIVE_MARKER_MAN",
+  "kind": "MIRROR",
+  "diffMean": 0.3708,
+  "diffPeak": 1.1605,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "PASSIVE_MARKER_MAN_SNAP": {
+  "base": "PASSIVE_MARKER_MAN",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.009,
+  "dur": 0.024,
+  "distinct": false
+ },
+ "PASSIVE_MARKER_MAN_SLOW": {
+  "base": "PASSIVE_MARKER_MAN",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.012,
+  "dur": 0.045,
+  "distinct": false
+ },
+ "PASSIVE_MARKER_MAN_KNEELING": {
+  "base": "PASSIVE_MARKER_MAN",
+  "kind": "KNEELING",
+  "diffMean": 0.3489,
+  "diffPeak": 0.6314,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "PASSIVE_MARKER_MAN_SITOUT": {
+  "base": "PASSIVE_MARKER_MAN",
+  "kind": "SITOUT",
+  "diffMean": 0.1836,
+  "diffPeak": 0.3323,
+  "durDelta": 0.003,
+  "dur": 0.03,
+  "distinct": true
+ },
+ "PASSIVE_MARKER_MAN_HARD": {
+  "base": "PASSIVE_MARKER_MAN",
+  "kind": "HARD",
+  "diffMean": 0.1102,
+  "diffPeak": 0.1994,
+  "durDelta": 0.013,
+  "dur": 0.0206,
+  "distinct": true
+ },
+ "PASSIVE_MARKER_MAN_DELAYED": {
+  "base": "PASSIVE_MARKER_MAN",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.017,
+  "dur": 0.05,
+  "distinct": false
+ },
+ "RAINTRIGGER_MIRROR": {
+  "base": "RAINTRIGGER",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 6,
+  "distinct": false
+ },
+ "RAINTRIGGER_SNAP": {
+  "base": "RAINTRIGGER",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.68,
+  "dur": 4.32,
+  "distinct": true
+ },
+ "RAINTRIGGER_SLOW": {
+  "base": "RAINTRIGGER",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.1,
+  "dur": 8.1,
+  "distinct": true
+ },
+ "RAINTRIGGER_KNEELING": {
+  "base": "RAINTRIGGER",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 6,
+  "distinct": false
+ },
+ "RAINTRIGGER_SITOUT": {
+  "base": "RAINTRIGGER",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.6,
+  "dur": 5.4,
+  "distinct": true
+ },
+ "RAINTRIGGER_HARD": {
+  "base": "RAINTRIGGER",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.28,
+  "dur": 3.72,
+  "distinct": true
+ },
+ "RAINTRIGGER_DELAYED": {
+  "base": "RAINTRIGGER",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.0,
+  "dur": 9.0,
+  "distinct": true
+ },
+ "ALTERNATINGFOREARMS_MIRROR": {
+  "base": "ALTERNATINGFOREARMS",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 4,
+  "distinct": false
+ },
+ "ALTERNATINGFOREARMS_SNAP": {
+  "base": "ALTERNATINGFOREARMS",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.12,
+  "dur": 2.88,
+  "distinct": true
+ },
+ "ALTERNATINGFOREARMS_SLOW": {
+  "base": "ALTERNATINGFOREARMS",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.4,
+  "dur": 5.4,
+  "distinct": true
+ },
+ "ALTERNATINGFOREARMS_KNEELING": {
+  "base": "ALTERNATINGFOREARMS",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 4,
+  "distinct": false
+ },
+ "ALTERNATINGFOREARMS_SITOUT": {
+  "base": "ALTERNATINGFOREARMS",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.4,
+  "dur": 3.6,
+  "distinct": true
+ },
+ "ALTERNATINGFOREARMS_HARD": {
+  "base": "ALTERNATINGFOREARMS",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.52,
+  "dur": 2.48,
+  "distinct": true
+ },
+ "ALTERNATINGFOREARMS_DELAYED": {
+  "base": "ALTERNATINGFOREARMS",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.0,
+  "dur": 6.0,
+  "distinct": true
+ },
+ "TOMBSTONE_MIRROR": {
+  "base": "TOMBSTONE",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 8,
+  "distinct": false
+ },
+ "TOMBSTONE_SNAP": {
+  "base": "TOMBSTONE",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.24,
+  "dur": 5.76,
+  "distinct": true
+ },
+ "TOMBSTONE_SLOW": {
+  "base": "TOMBSTONE",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.8,
+  "dur": 10.8,
+  "distinct": true
+ },
+ "TOMBSTONE_KNEELING": {
+  "base": "TOMBSTONE",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 8,
+  "distinct": false
+ },
+ "TOMBSTONE_SITOUT": {
+  "base": "TOMBSTONE",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.8,
+  "dur": 7.2,
+  "distinct": true
+ },
+ "TOMBSTONE_HARD": {
+  "base": "TOMBSTONE",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.04,
+  "dur": 4.96,
+  "distinct": true
+ },
+ "TOMBSTONE_DELAYED": {
+  "base": "TOMBSTONE",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.0,
+  "dur": 12.0,
+  "distinct": true
+ },
+ "VIOLENCEPARTY_MIRROR": {
+  "base": "VIOLENCEPARTY",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 6,
+  "distinct": false
+ },
+ "VIOLENCEPARTY_SNAP": {
+  "base": "VIOLENCEPARTY",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.68,
+  "dur": 4.32,
+  "distinct": true
+ },
+ "VIOLENCEPARTY_SLOW": {
+  "base": "VIOLENCEPARTY",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.1,
+  "dur": 8.1,
+  "distinct": true
+ },
+ "VIOLENCEPARTY_KNEELING": {
+  "base": "VIOLENCEPARTY",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 6,
+  "distinct": false
+ },
+ "VIOLENCEPARTY_SITOUT": {
+  "base": "VIOLENCEPARTY",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.6,
+  "dur": 5.4,
+  "distinct": true
+ },
+ "VIOLENCEPARTY_HARD": {
+  "base": "VIOLENCEPARTY",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.28,
+  "dur": 3.72,
+  "distinct": true
+ },
+ "VIOLENCEPARTY_DELAYED": {
+  "base": "VIOLENCEPARTY",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.0,
+  "dur": 9.0,
+  "distinct": true
+ },
+ "HAMMERTHROW_MIRROR": {
+  "base": "HAMMERTHROW",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 5,
+  "distinct": false
+ },
+ "HAMMERTHROW_SNAP": {
+  "base": "HAMMERTHROW",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.4,
+  "dur": 3.6,
+  "distinct": true
+ },
+ "HAMMERTHROW_SLOW": {
+  "base": "HAMMERTHROW",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.75,
+  "dur": 6.75,
+  "distinct": true
+ },
+ "HAMMERTHROW_KNEELING": {
+  "base": "HAMMERTHROW",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 5,
+  "distinct": false
+ },
+ "HAMMERTHROW_SITOUT": {
+  "base": "HAMMERTHROW",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.5,
+  "dur": 4.5,
+  "distinct": true
+ },
+ "HAMMERTHROW_HARD": {
+  "base": "HAMMERTHROW",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.9,
+  "dur": 3.1,
+  "distinct": true
+ },
+ "HAMMERTHROW_DELAYED": {
+  "base": "HAMMERTHROW",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.5,
+  "dur": 7.5,
+  "distinct": true
+ },
+ "GIANTSWING_MIRROR": {
+  "base": "GIANTSWING",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 7,
+  "distinct": false
+ },
+ "GIANTSWING_SNAP": {
+  "base": "GIANTSWING",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.96,
+  "dur": 5.04,
+  "distinct": true
+ },
+ "GIANTSWING_SLOW": {
+  "base": "GIANTSWING",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.45,
+  "dur": 9.45,
+  "distinct": true
+ },
+ "GIANTSWING_KNEELING": {
+  "base": "GIANTSWING",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 7,
+  "distinct": false
+ },
+ "GIANTSWING_SITOUT": {
+  "base": "GIANTSWING",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.7,
+  "dur": 6.3,
+  "distinct": true
+ },
+ "GIANTSWING_HARD": {
+  "base": "GIANTSWING",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.66,
+  "dur": 4.34,
+  "distinct": true
+ },
+ "GIANTSWING_DELAYED": {
+  "base": "GIANTSWING",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.5,
+  "dur": 10.5,
+  "distinct": true
+ },
+ "HAMMERLOCKDDT_MIRROR": {
+  "base": "HAMMERLOCKDDT",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 8,
+  "distinct": false
+ },
+ "HAMMERLOCKDDT_SNAP": {
+  "base": "HAMMERLOCKDDT",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.24,
+  "dur": 5.76,
+  "distinct": true
+ },
+ "HAMMERLOCKDDT_SLOW": {
+  "base": "HAMMERLOCKDDT",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.8,
+  "dur": 10.8,
+  "distinct": true
+ },
+ "HAMMERLOCKDDT_KNEELING": {
+  "base": "HAMMERLOCKDDT",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 8,
+  "distinct": false
+ },
+ "HAMMERLOCKDDT_SITOUT": {
+  "base": "HAMMERLOCKDDT",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.8,
+  "dur": 7.2,
+  "distinct": true
+ },
+ "HAMMERLOCKDDT_HARD": {
+  "base": "HAMMERLOCKDDT",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.04,
+  "dur": 4.96,
+  "distinct": true
+ },
+ "HAMMERLOCKDDT_DELAYED": {
+  "base": "HAMMERLOCKDDT",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.0,
+  "dur": 12.0,
+  "distinct": true
+ },
+ "POWERBOMBWHIP_MIRROR": {
+  "base": "POWERBOMBWHIP",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 7,
+  "distinct": false
+ },
+ "POWERBOMBWHIP_SNAP": {
+  "base": "POWERBOMBWHIP",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.96,
+  "dur": 5.04,
+  "distinct": true
+ },
+ "POWERBOMBWHIP_SLOW": {
+  "base": "POWERBOMBWHIP",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.45,
+  "dur": 9.45,
+  "distinct": true
+ },
+ "POWERBOMBWHIP_KNEELING": {
+  "base": "POWERBOMBWHIP",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 7,
+  "distinct": false
+ },
+ "POWERBOMBWHIP_SITOUT": {
+  "base": "POWERBOMBWHIP",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.7,
+  "dur": 6.3,
+  "distinct": true
+ },
+ "POWERBOMBWHIP_HARD": {
+  "base": "POWERBOMBWHIP",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.66,
+  "dur": 4.34,
+  "distinct": true
+ },
+ "POWERBOMBWHIP_DELAYED": {
+  "base": "POWERBOMBWHIP",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.5,
+  "dur": 10.5,
+  "distinct": true
+ },
+ "CRUCIFIXPIN_MIRROR": {
+  "base": "CRUCIFIXPIN",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 8,
+  "distinct": false
+ },
+ "CRUCIFIXPIN_SNAP": {
+  "base": "CRUCIFIXPIN",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.24,
+  "dur": 5.76,
+  "distinct": true
+ },
+ "CRUCIFIXPIN_SLOW": {
+  "base": "CRUCIFIXPIN",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.8,
+  "dur": 10.8,
+  "distinct": true
+ },
+ "CRUCIFIXPIN_KNEELING": {
+  "base": "CRUCIFIXPIN",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 8,
+  "distinct": false
+ },
+ "CRUCIFIXPIN_SITOUT": {
+  "base": "CRUCIFIXPIN",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.8,
+  "dur": 7.2,
+  "distinct": true
+ },
+ "CRUCIFIXPIN_HARD": {
+  "base": "CRUCIFIXPIN",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.04,
+  "dur": 4.96,
+  "distinct": true
+ },
+ "CRUCIFIXPIN_DELAYED": {
+  "base": "CRUCIFIXPIN",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.0,
+  "dur": 12.0,
+  "distinct": true
+ },
+ "NOFUTURE_MIRROR": {
+  "base": "NOFUTURE",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 10,
+  "distinct": false
+ },
+ "NOFUTURE_SNAP": {
+  "base": "NOFUTURE",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.8,
+  "dur": 7.2,
+  "distinct": true
+ },
+ "NOFUTURE_SLOW": {
+  "base": "NOFUTURE",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.5,
+  "dur": 13.5,
+  "distinct": true
+ },
+ "NOFUTURE_KNEELING": {
+  "base": "NOFUTURE",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 10,
+  "distinct": false
+ },
+ "NOFUTURE_SITOUT": {
+  "base": "NOFUTURE",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.0,
+  "dur": 9.0,
+  "distinct": true
+ },
+ "NOFUTURE_HARD": {
+  "base": "NOFUTURE",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.8,
+  "dur": 6.2,
+  "distinct": true
+ },
+ "NOFUTURE_DELAYED": {
+  "base": "NOFUTURE",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 5.0,
+  "dur": 15.0,
+  "distinct": true
+ },
+ "CHOKESLAM_MIRROR": {
+  "base": "CHOKESLAM",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 5.6667,
+  "distinct": false
+ },
+ "CHOKESLAM_SNAP": {
+  "base": "CHOKESLAM",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.587,
+  "dur": 4.08,
+  "distinct": true
+ },
+ "CHOKESLAM_SLOW": {
+  "base": "CHOKESLAM",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.983,
+  "dur": 7.65,
+  "distinct": true
+ },
+ "CHOKESLAM_KNEELING": {
+  "base": "CHOKESLAM",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 5.6667,
+  "distinct": false
+ },
+ "CHOKESLAM_SITOUT": {
+  "base": "CHOKESLAM",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.567,
+  "dur": 5.1,
+  "distinct": true
+ },
+ "CHOKESLAM_HARD": {
+  "base": "CHOKESLAM",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.153,
+  "dur": 3.5134,
+  "distinct": true
+ },
+ "CHOKESLAM_DELAYED": {
+  "base": "CHOKESLAM",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.833,
+  "dur": 8.5,
+  "distinct": true
+ },
+ "SPINTORTURERACKBOMB_MIRROR": {
+  "base": "SPINTORTURERACKBOMB",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 6.3667,
+  "distinct": false
+ },
+ "SPINTORTURERACKBOMB_SNAP": {
+  "base": "SPINTORTURERACKBOMB",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.783,
+  "dur": 4.584,
+  "distinct": true
+ },
+ "SPINTORTURERACKBOMB_SLOW": {
+  "base": "SPINTORTURERACKBOMB",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.228,
+  "dur": 8.595,
+  "distinct": true
+ },
+ "SPINTORTURERACKBOMB_KNEELING": {
+  "base": "SPINTORTURERACKBOMB",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 6.3667,
+  "distinct": false
+ },
+ "SPINTORTURERACKBOMB_SITOUT": {
+  "base": "SPINTORTURERACKBOMB",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.637,
+  "dur": 5.73,
+  "distinct": true
+ },
+ "SPINTORTURERACKBOMB_HARD": {
+  "base": "SPINTORTURERACKBOMB",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.419,
+  "dur": 3.9474,
+  "distinct": true
+ },
+ "SPINTORTURERACKBOMB_DELAYED": {
+  "base": "SPINTORTURERACKBOMB",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.183,
+  "dur": 9.55,
+  "distinct": true
+ },
+ "CEMETERYDRIVE_MIRROR": {
+  "base": "CEMETERYDRIVE",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 5.8333,
+  "distinct": false
+ },
+ "CEMETERYDRIVE_SNAP": {
+  "base": "CEMETERYDRIVE",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.633,
+  "dur": 4.2,
+  "distinct": true
+ },
+ "CEMETERYDRIVE_SLOW": {
+  "base": "CEMETERYDRIVE",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.042,
+  "dur": 7.875,
+  "distinct": true
+ },
+ "CEMETERYDRIVE_KNEELING": {
+  "base": "CEMETERYDRIVE",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 5.8333,
+  "distinct": false
+ },
+ "CEMETERYDRIVE_SITOUT": {
+  "base": "CEMETERYDRIVE",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.583,
+  "dur": 5.25,
+  "distinct": true
+ },
+ "CEMETERYDRIVE_HARD": {
+  "base": "CEMETERYDRIVE",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.217,
+  "dur": 3.6166,
+  "distinct": true
+ },
+ "CEMETERYDRIVE_DELAYED": {
+  "base": "CEMETERYDRIVE",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.917,
+  "dur": 8.75,
+  "distinct": true
+ },
+ "SHARPSHOOTER_MIRROR": {
+  "base": "SHARPSHOOTER",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 14,
+  "distinct": false
+ },
+ "SHARPSHOOTER_SNAP": {
+  "base": "SHARPSHOOTER",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.92,
+  "dur": 10.08,
+  "distinct": true
+ },
+ "SHARPSHOOTER_SLOW": {
+  "base": "SHARPSHOOTER",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.9,
+  "dur": 18.9,
+  "distinct": true
+ },
+ "SHARPSHOOTER_KNEELING": {
+  "base": "SHARPSHOOTER",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 14,
+  "distinct": false
+ },
+ "SHARPSHOOTER_SITOUT": {
+  "base": "SHARPSHOOTER",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.4,
+  "dur": 12.6,
+  "distinct": true
+ },
+ "SHARPSHOOTER_HARD": {
+  "base": "SHARPSHOOTER",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 5.32,
+  "dur": 8.68,
+  "distinct": true
+ },
+ "SHARPSHOOTER_DELAYED": {
+  "base": "SHARPSHOOTER",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 7.0,
+  "dur": 21.0,
+  "distinct": true
+ },
+ "FENCEM_KICK_MIRROR": {
+  "base": "FENCEM_KICK",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 4,
+  "distinct": false
+ },
+ "FENCEM_KICK_SNAP": {
+  "base": "FENCEM_KICK",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.12,
+  "dur": 2.88,
+  "distinct": true
+ },
+ "FENCEM_KICK_SLOW": {
+  "base": "FENCEM_KICK",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.4,
+  "dur": 5.4,
+  "distinct": true
+ },
+ "FENCEM_KICK_KNEELING": {
+  "base": "FENCEM_KICK",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 4,
+  "distinct": false
+ },
+ "FENCEM_KICK_SITOUT": {
+  "base": "FENCEM_KICK",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.4,
+  "dur": 3.6,
+  "distinct": true
+ },
+ "FENCEM_KICK_HARD": {
+  "base": "FENCEM_KICK",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.52,
+  "dur": 2.48,
+  "distinct": true
+ },
+ "FENCEM_KICK_DELAYED": {
+  "base": "FENCEM_KICK",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.0,
+  "dur": 6.0,
+  "distinct": true
+ },
+ "CODERED_MIRROR": {
+  "base": "CODERED",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 10,
+  "distinct": false
+ },
+ "CODERED_SNAP": {
+  "base": "CODERED",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.8,
+  "dur": 7.2,
+  "distinct": true
+ },
+ "CODERED_SLOW": {
+  "base": "CODERED",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.5,
+  "dur": 13.5,
+  "distinct": true
+ },
+ "CODERED_KNEELING": {
+  "base": "CODERED",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 10,
+  "distinct": false
+ },
+ "CODERED_SITOUT": {
+  "base": "CODERED",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.0,
+  "dur": 9.0,
+  "distinct": true
+ },
+ "CODERED_HARD": {
+  "base": "CODERED",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.8,
+  "dur": 6.2,
+  "distinct": true
+ },
+ "CODERED_DELAYED": {
+  "base": "CODERED",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 5.0,
+  "dur": 15.0,
+  "distinct": true
+ },
+ "FIN_F10_MIRROR": {
+  "base": "FIN_F10",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 10,
+  "distinct": false
+ },
+ "FIN_F10_SNAP": {
+  "base": "FIN_F10",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.8,
+  "dur": 7.2,
+  "distinct": true
+ },
+ "FIN_F10_SLOW": {
+  "base": "FIN_F10",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.5,
+  "dur": 13.5,
+  "distinct": true
+ },
+ "FIN_F10_KNEELING": {
+  "base": "FIN_F10",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 10,
+  "distinct": false
+ },
+ "FIN_F10_SITOUT": {
+  "base": "FIN_F10",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.0,
+  "dur": 9.0,
+  "distinct": true
+ },
+ "FIN_F10_HARD": {
+  "base": "FIN_F10",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.8,
+  "dur": 6.2,
+  "distinct": true
+ },
+ "FIN_F10_DELAYED": {
+  "base": "FIN_F10",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 5.0,
+  "dur": 15.0,
+  "distinct": true
+ },
+ "OVREHEADPRESS_MIRROR": {
+  "base": "OVREHEADPRESS",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 6,
+  "distinct": false
+ },
+ "OVREHEADPRESS_SNAP": {
+  "base": "OVREHEADPRESS",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.68,
+  "dur": 4.32,
+  "distinct": true
+ },
+ "OVREHEADPRESS_SLOW": {
+  "base": "OVREHEADPRESS",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.1,
+  "dur": 8.1,
+  "distinct": true
+ },
+ "OVREHEADPRESS_KNEELING": {
+  "base": "OVREHEADPRESS",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 6,
+  "distinct": false
+ },
+ "OVREHEADPRESS_SITOUT": {
+  "base": "OVREHEADPRESS",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.6,
+  "dur": 5.4,
+  "distinct": true
+ },
+ "OVREHEADPRESS_HARD": {
+  "base": "OVREHEADPRESS",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.28,
+  "dur": 3.72,
+  "distinct": true
+ },
+ "OVREHEADPRESS_DELAYED": {
+  "base": "OVREHEADPRESS",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.0,
+  "dur": 9.0,
+  "distinct": true
+ },
+ "FENCETHROW_002_MIRROR": {
+  "base": "FENCETHROW_002",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 6,
+  "distinct": false
+ },
+ "FENCETHROW_002_SNAP": {
+  "base": "FENCETHROW_002",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.68,
+  "dur": 4.32,
+  "distinct": true
+ },
+ "FENCETHROW_002_SLOW": {
+  "base": "FENCETHROW_002",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.1,
+  "dur": 8.1,
+  "distinct": true
+ },
+ "FENCETHROW_002_KNEELING": {
+  "base": "FENCETHROW_002",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 6,
+  "distinct": false
+ },
+ "FENCETHROW_002_SITOUT": {
+  "base": "FENCETHROW_002",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.6,
+  "dur": 5.4,
+  "distinct": true
+ },
+ "FENCETHROW_002_HARD": {
+  "base": "FENCETHROW_002",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.28,
+  "dur": 3.72,
+  "distinct": true
+ },
+ "FENCETHROW_002_DELAYED": {
+  "base": "FENCETHROW_002",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.0,
+  "dur": 9.0,
+  "distinct": true
+ },
+ "PALADIN_J_NORDSTROM_MIRROR": {
+  "base": "PALADIN_J_NORDSTROM",
+  "kind": "MIRROR",
+  "diffMean": 0.4196,
+  "diffPeak": 1.1605,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "PALADIN_J_NORDSTROM_SNAP": {
+  "base": "PALADIN_J_NORDSTROM",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.009,
+  "dur": 0.024,
+  "distinct": false
+ },
+ "PALADIN_J_NORDSTROM_SLOW": {
+  "base": "PALADIN_J_NORDSTROM",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.012,
+  "dur": 0.045,
+  "distinct": false
+ },
+ "PALADIN_J_NORDSTROM_KNEELING": {
+  "base": "PALADIN_J_NORDSTROM",
+  "kind": "KNEELING",
+  "diffMean": 0.3338,
+  "diffPeak": 0.5396,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "PALADIN_J_NORDSTROM_SITOUT": {
+  "base": "PALADIN_J_NORDSTROM",
+  "kind": "SITOUT",
+  "diffMean": 0.1757,
+  "diffPeak": 0.284,
+  "durDelta": 0.003,
+  "dur": 0.03,
+  "distinct": true
+ },
+ "PALADIN_J_NORDSTROM_HARD": {
+  "base": "PALADIN_J_NORDSTROM",
+  "kind": "HARD",
+  "diffMean": 0.1054,
+  "diffPeak": 0.1704,
+  "durDelta": 0.013,
+  "dur": 0.0206,
+  "distinct": true
+ },
+ "PALADIN_J_NORDSTROM_DELAYED": {
+  "base": "PALADIN_J_NORDSTROM",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.017,
+  "dur": 0.05,
+  "distinct": false
+ },
+ "FENCETHROW_MIRROR": {
+  "base": "FENCETHROW",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 6,
+  "distinct": false
+ },
+ "FENCETHROW_SNAP": {
+  "base": "FENCETHROW",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.68,
+  "dur": 4.32,
+  "distinct": true
+ },
+ "FENCETHROW_SLOW": {
+  "base": "FENCETHROW",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.1,
+  "dur": 8.1,
+  "distinct": true
+ },
+ "FENCETHROW_KNEELING": {
+  "base": "FENCETHROW",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 6,
+  "distinct": false
+ },
+ "FENCETHROW_SITOUT": {
+  "base": "FENCETHROW",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.6,
+  "dur": 5.4,
+  "distinct": true
+ },
+ "FENCETHROW_HARD": {
+  "base": "FENCETHROW",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.28,
+  "dur": 3.72,
+  "distinct": true
+ },
+ "FENCETHROW_DELAYED": {
+  "base": "FENCETHROW",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.0,
+  "dur": 9.0,
+  "distinct": true
+ },
+ "JAYKICK_MIRROR": {
+  "base": "JAYKICK",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 7.5,
+  "distinct": false
+ },
+ "JAYKICK_SNAP": {
+  "base": "JAYKICK",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.1,
+  "dur": 5.4,
+  "distinct": true
+ },
+ "JAYKICK_SLOW": {
+  "base": "JAYKICK",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.625,
+  "dur": 10.125,
+  "distinct": true
+ },
+ "JAYKICK_KNEELING": {
+  "base": "JAYKICK",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 7.5,
+  "distinct": false
+ },
+ "JAYKICK_SITOUT": {
+  "base": "JAYKICK",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.75,
+  "dur": 6.75,
+  "distinct": true
+ },
+ "JAYKICK_HARD": {
+  "base": "JAYKICK",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.85,
+  "dur": 4.65,
+  "distinct": true
+ },
+ "JAYKICK_DELAYED": {
+  "base": "JAYKICK",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.75,
+  "dur": 11.25,
+  "distinct": true
+ },
+ "APRONJAYKICK_MIRROR": {
+  "base": "APRONJAYKICK",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 11.3333,
+  "distinct": false
+ },
+ "APRONJAYKICK_SNAP": {
+  "base": "APRONJAYKICK",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.173,
+  "dur": 8.16,
+  "distinct": true
+ },
+ "APRONJAYKICK_SLOW": {
+  "base": "APRONJAYKICK",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.967,
+  "dur": 15.3,
+  "distinct": true
+ },
+ "APRONJAYKICK_KNEELING": {
+  "base": "APRONJAYKICK",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 11.3333,
+  "distinct": false
+ },
+ "APRONJAYKICK_SITOUT": {
+  "base": "APRONJAYKICK",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.133,
+  "dur": 10.2,
+  "distinct": true
+ },
+ "APRONJAYKICK_HARD": {
+  "base": "APRONJAYKICK",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.307,
+  "dur": 7.0266,
+  "distinct": true
+ },
+ "APRONJAYKICK_DELAYED": {
+  "base": "APRONJAYKICK",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 5.667,
+  "dur": 16.9999,
+  "distinct": true
+ },
+ "TAGSUPERKICK_MIRROR": {
+  "base": "TAGSUPERKICK",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 4.6667,
+  "distinct": false
+ },
+ "TAGSUPERKICK_SNAP": {
+  "base": "TAGSUPERKICK",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.307,
+  "dur": 3.36,
+  "distinct": true
+ },
+ "TAGSUPERKICK_SLOW": {
+  "base": "TAGSUPERKICK",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.633,
+  "dur": 6.3,
+  "distinct": true
+ },
+ "TAGSUPERKICK_KNEELING": {
+  "base": "TAGSUPERKICK",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 4.6667,
+  "distinct": false
+ },
+ "TAGSUPERKICK_SITOUT": {
+  "base": "TAGSUPERKICK",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.467,
+  "dur": 4.2,
+  "distinct": true
+ },
+ "TAGSUPERKICK_HARD": {
+  "base": "TAGSUPERKICK",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.773,
+  "dur": 2.8934,
+  "distinct": true
+ },
+ "TAGSUPERKICK_DELAYED": {
+  "base": "TAGSUPERKICK",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.333,
+  "dur": 7.0,
+  "distinct": true
+ },
+ "ASSISTEDREVERSEGOOZLECHOP_MIRROR": {
+  "base": "ASSISTEDREVERSEGOOZLECHOP",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 9.2667,
+  "distinct": false
+ },
+ "ASSISTEDREVERSEGOOZLECHOP_SNAP": {
+  "base": "ASSISTEDREVERSEGOOZLECHOP",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.595,
+  "dur": 6.672,
+  "distinct": true
+ },
+ "ASSISTEDREVERSEGOOZLECHOP_SLOW": {
+  "base": "ASSISTEDREVERSEGOOZLECHOP",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.243,
+  "dur": 12.51,
+  "distinct": true
+ },
+ "ASSISTEDREVERSEGOOZLECHOP_KNEELING": {
+  "base": "ASSISTEDREVERSEGOOZLECHOP",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 9.2667,
+  "distinct": false
+ },
+ "ASSISTEDREVERSEGOOZLECHOP_SITOUT": {
+  "base": "ASSISTEDREVERSEGOOZLECHOP",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.927,
+  "dur": 8.34,
+  "distinct": true
+ },
+ "ASSISTEDREVERSEGOOZLECHOP_HARD": {
+  "base": "ASSISTEDREVERSEGOOZLECHOP",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.521,
+  "dur": 5.7454,
+  "distinct": true
+ },
+ "ASSISTEDREVERSEGOOZLECHOP_DELAYED": {
+  "base": "ASSISTEDREVERSEGOOZLECHOP",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.633,
+  "dur": 13.9001,
+  "distinct": true
+ },
+ "DOUBLESUPLEX_MIRROR": {
+  "base": "DOUBLESUPLEX",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 11,
+  "distinct": false
+ },
+ "DOUBLESUPLEX_SNAP": {
+  "base": "DOUBLESUPLEX",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.08,
+  "dur": 7.92,
+  "distinct": true
+ },
+ "DOUBLESUPLEX_SLOW": {
+  "base": "DOUBLESUPLEX",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.85,
+  "dur": 14.85,
+  "distinct": true
+ },
+ "DOUBLESUPLEX_KNEELING": {
+  "base": "DOUBLESUPLEX",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 11,
+  "distinct": false
+ },
+ "DOUBLESUPLEX_SITOUT": {
+  "base": "DOUBLESUPLEX",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.1,
+  "dur": 9.9,
+  "distinct": true
+ },
+ "DOUBLESUPLEX_HARD": {
+  "base": "DOUBLESUPLEX",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.18,
+  "dur": 6.82,
+  "distinct": true
+ },
+ "DOUBLESUPLEX_DELAYED": {
+  "base": "DOUBLESUPLEX",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 5.5,
+  "dur": 16.5,
+  "distinct": true
+ },
+ "BUCKLEBOMBENZUGIRI_MIRROR": {
+  "base": "BUCKLEBOMBENZUGIRI",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 9.5,
+  "distinct": false
+ },
+ "BUCKLEBOMBENZUGIRI_SNAP": {
+  "base": "BUCKLEBOMBENZUGIRI",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 2.66,
+  "dur": 6.84,
+  "distinct": true
+ },
+ "BUCKLEBOMBENZUGIRI_SLOW": {
+  "base": "BUCKLEBOMBENZUGIRI",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.325,
+  "dur": 12.825,
+  "distinct": true
+ },
+ "BUCKLEBOMBENZUGIRI_KNEELING": {
+  "base": "BUCKLEBOMBENZUGIRI",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 9.5,
+  "distinct": false
+ },
+ "BUCKLEBOMBENZUGIRI_SITOUT": {
+  "base": "BUCKLEBOMBENZUGIRI",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.95,
+  "dur": 8.55,
+  "distinct": true
+ },
+ "BUCKLEBOMBENZUGIRI_HARD": {
+  "base": "BUCKLEBOMBENZUGIRI",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.61,
+  "dur": 5.89,
+  "distinct": true
+ },
+ "BUCKLEBOMBENZUGIRI_DELAYED": {
+  "base": "BUCKLEBOMBENZUGIRI",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.75,
+  "dur": 14.25,
+  "distinct": true
+ },
+ "ASSISTEDDIVSENTON_MIRROR": {
+  "base": "ASSISTEDDIVSENTON",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 12,
+  "distinct": false
+ },
+ "ASSISTEDDIVSENTON_SNAP": {
+  "base": "ASSISTEDDIVSENTON",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.36,
+  "dur": 8.64,
+  "distinct": true
+ },
+ "ASSISTEDDIVSENTON_SLOW": {
+  "base": "ASSISTEDDIVSENTON",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.2,
+  "dur": 16.2,
+  "distinct": true
+ },
+ "ASSISTEDDIVSENTON_KNEELING": {
+  "base": "ASSISTEDDIVSENTON",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 12,
+  "distinct": false
+ },
+ "ASSISTEDDIVSENTON_SITOUT": {
+  "base": "ASSISTEDDIVSENTON",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.2,
+  "dur": 10.8,
+  "distinct": true
+ },
+ "ASSISTEDDIVSENTON_HARD": {
+  "base": "ASSISTEDDIVSENTON",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.56,
+  "dur": 7.44,
+  "distinct": true
+ },
+ "ASSISTEDDIVSENTON_DELAYED": {
+  "base": "ASSISTEDDIVSENTON",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 6.0,
+  "dur": 18.0,
+  "distinct": true
+ },
+ "REVERSEGOOZLEDIVFOOTSTOMP_MIRROR": {
+  "base": "REVERSEGOOZLEDIVFOOTSTOMP",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 12,
+  "distinct": false
+ },
+ "REVERSEGOOZLEDIVFOOTSTOMP_SNAP": {
+  "base": "REVERSEGOOZLEDIVFOOTSTOMP",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.36,
+  "dur": 8.64,
+  "distinct": true
+ },
+ "REVERSEGOOZLEDIVFOOTSTOMP_SLOW": {
+  "base": "REVERSEGOOZLEDIVFOOTSTOMP",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.2,
+  "dur": 16.2,
+  "distinct": true
+ },
+ "REVERSEGOOZLEDIVFOOTSTOMP_KNEELING": {
+  "base": "REVERSEGOOZLEDIVFOOTSTOMP",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 12,
+  "distinct": false
+ },
+ "REVERSEGOOZLEDIVFOOTSTOMP_SITOUT": {
+  "base": "REVERSEGOOZLEDIVFOOTSTOMP",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.2,
+  "dur": 10.8,
+  "distinct": true
+ },
+ "REVERSEGOOZLEDIVFOOTSTOMP_HARD": {
+  "base": "REVERSEGOOZLEDIVFOOTSTOMP",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.56,
+  "dur": 7.44,
+  "distinct": true
+ },
+ "REVERSEGOOZLEDIVFOOTSTOMP_DELAYED": {
+  "base": "REVERSEGOOZLEDIVFOOTSTOMP",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 6.0,
+  "dur": 18.0,
+  "distinct": true
+ },
+ "STEREOSUPERKICK_MIRROR": {
+  "base": "STEREOSUPERKICK",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 13.6,
+  "distinct": false
+ },
+ "STEREOSUPERKICK_SNAP": {
+  "base": "STEREOSUPERKICK",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.808,
+  "dur": 9.792,
+  "distinct": true
+ },
+ "STEREOSUPERKICK_SLOW": {
+  "base": "STEREOSUPERKICK",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.76,
+  "dur": 18.36,
+  "distinct": true
+ },
+ "STEREOSUPERKICK_KNEELING": {
+  "base": "STEREOSUPERKICK",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 13.6,
+  "distinct": false
+ },
+ "STEREOSUPERKICK_SITOUT": {
+  "base": "STEREOSUPERKICK",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.36,
+  "dur": 12.24,
+  "distinct": true
+ },
+ "STEREOSUPERKICK_HARD": {
+  "base": "STEREOSUPERKICK",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 5.168,
+  "dur": 8.432,
+  "distinct": true
+ },
+ "STEREOSUPERKICK_DELAYED": {
+  "base": "STEREOSUPERKICK",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 6.8,
+  "dur": 20.4,
+  "distinct": true
+ },
+ "STRONGZERO_MIRROR": {
+  "base": "STRONGZERO",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 12,
+  "distinct": false
+ },
+ "STRONGZERO_SNAP": {
+  "base": "STRONGZERO",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 3.36,
+  "dur": 8.64,
+  "distinct": true
+ },
+ "STRONGZERO_SLOW": {
+  "base": "STRONGZERO",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.2,
+  "dur": 16.2,
+  "distinct": true
+ },
+ "STRONGZERO_KNEELING": {
+  "base": "STRONGZERO",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0,
+  "dur": 12,
+  "distinct": false
+ },
+ "STRONGZERO_SITOUT": {
+  "base": "STRONGZERO",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 1.2,
+  "dur": 10.8,
+  "distinct": true
+ },
+ "STRONGZERO_HARD": {
+  "base": "STRONGZERO",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 4.56,
+  "dur": 7.44,
+  "distinct": true
+ },
+ "STRONGZERO_DELAYED": {
+  "base": "STRONGZERO",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 6.0,
+  "dur": 18.0,
+  "distinct": true
+ },
+ "PUMPKINHULK_L_SHAW_MIRROR": {
+  "base": "PUMPKINHULK_L_SHAW",
+  "kind": "MIRROR",
+  "diffMean": 0.3977,
+  "diffPeak": 1.1605,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "PUMPKINHULK_L_SHAW_SNAP": {
+  "base": "PUMPKINHULK_L_SHAW",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.009,
+  "dur": 0.024,
+  "distinct": false
+ },
+ "PUMPKINHULK_L_SHAW_SLOW": {
+  "base": "PUMPKINHULK_L_SHAW",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.012,
+  "dur": 0.045,
+  "distinct": false
+ },
+ "PUMPKINHULK_L_SHAW_KNEELING": {
+  "base": "PUMPKINHULK_L_SHAW",
+  "kind": "KNEELING",
+  "diffMean": 0.3575,
+  "diffPeak": 0.5387,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "PUMPKINHULK_L_SHAW_SITOUT": {
+  "base": "PUMPKINHULK_L_SHAW",
+  "kind": "SITOUT",
+  "diffMean": 0.1881,
+  "diffPeak": 0.2835,
+  "durDelta": 0.003,
+  "dur": 0.03,
+  "distinct": true
+ },
+ "PUMPKINHULK_L_SHAW_HARD": {
+  "base": "PUMPKINHULK_L_SHAW",
+  "kind": "HARD",
+  "diffMean": 0.1129,
+  "diffPeak": 0.1701,
+  "durDelta": 0.013,
+  "dur": 0.0206,
+  "distinct": true
+ },
+ "PUMPKINHULK_L_SHAW_DELAYED": {
+  "base": "PUMPKINHULK_L_SHAW",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.017,
+  "dur": 0.05,
+  "distinct": false
+ },
+ "FALL_B_LOOP_MIRROR": {
+  "base": "FALL_B_LOOP",
+  "kind": "MIRROR",
+  "diffMean": 0.3578,
+  "diffPeak": 1.0333,
+  "durDelta": 0.0,
+  "dur": 1.0667,
+  "distinct": true
+ },
+ "FALL_B_LOOP_SNAP": {
+  "base": "FALL_B_LOOP",
+  "kind": "SNAP",
+  "diffMean": 0.0081,
+  "diffPeak": 0.0698,
+  "durDelta": 0.299,
+  "dur": 0.768,
+  "distinct": false
+ },
+ "FALL_B_LOOP_SLOW": {
+  "base": "FALL_B_LOOP",
+  "kind": "SLOW",
+  "diffMean": 0.0047,
+  "diffPeak": 0.0533,
+  "durDelta": 0.373,
+  "dur": 1.44,
+  "distinct": true
+ },
+ "FALL_B_LOOP_KNEELING": {
+  "base": "FALL_B_LOOP",
+  "kind": "KNEELING",
+  "diffMean": 0.3807,
+  "diffPeak": 0.6401,
+  "durDelta": 0.0,
+  "dur": 1.0667,
+  "distinct": true
+ },
+ "FALL_B_LOOP_SITOUT": {
+  "base": "FALL_B_LOOP",
+  "kind": "SITOUT",
+  "diffMean": 0.2003,
+  "diffPeak": 0.3383,
+  "durDelta": 0.107,
+  "dur": 0.96,
+  "distinct": true
+ },
+ "FALL_B_LOOP_HARD": {
+  "base": "FALL_B_LOOP",
+  "kind": "HARD",
+  "diffMean": 0.1216,
+  "diffPeak": 0.212,
+  "durDelta": 0.405,
+  "dur": 0.6614,
+  "distinct": true
+ },
+ "FALL_B_LOOP_DELAYED": {
+  "base": "FALL_B_LOOP",
+  "kind": "DELAYED",
+  "diffMean": 0.0152,
+  "diffPeak": 0.1123,
+  "durDelta": 0.533,
+  "dur": 1.6,
+  "distinct": true
+ },
+ "GINGA_FORWARD_MIRROR": {
+  "base": "GINGA_FORWARD",
+  "kind": "MIRROR",
+  "diffMean": 0.3444,
+  "diffPeak": 1.1655,
+  "durDelta": 0.0,
+  "dur": 1.2333,
+  "distinct": true
+ },
+ "GINGA_FORWARD_SNAP": {
+  "base": "GINGA_FORWARD",
+  "kind": "SNAP",
+  "diffMean": 0.0505,
+  "diffPeak": 1.1251,
+  "durDelta": 0.345,
+  "dur": 0.888,
+  "distinct": true
+ },
+ "GINGA_FORWARD_SLOW": {
+  "base": "GINGA_FORWARD",
+  "kind": "SLOW",
+  "diffMean": 0.0322,
+  "diffPeak": 1.0852,
+  "durDelta": 0.432,
+  "dur": 1.665,
+  "distinct": true
+ },
+ "GINGA_FORWARD_KNEELING": {
+  "base": "GINGA_FORWARD",
+  "kind": "KNEELING",
+  "diffMean": 0.3772,
+  "diffPeak": 0.6368,
+  "durDelta": 0.0,
+  "dur": 1.2333,
+  "distinct": true
+ },
+ "GINGA_FORWARD_SITOUT": {
+  "base": "GINGA_FORWARD",
+  "kind": "SITOUT",
+  "diffMean": 0.2095,
+  "diffPeak": 1.1108,
+  "durDelta": 0.123,
+  "dur": 1.11,
+  "distinct": true
+ },
+ "GINGA_FORWARD_HARD": {
+  "base": "GINGA_FORWARD",
+  "kind": "HARD",
+  "diffMean": 0.1455,
+  "diffPeak": 1.1298,
+  "durDelta": 0.469,
+  "dur": 0.7646,
+  "distinct": true
+ },
+ "GINGA_FORWARD_DELAYED": {
+  "base": "GINGA_FORWARD",
+  "kind": "DELAYED",
+  "diffMean": 0.1065,
+  "diffPeak": 1.1061,
+  "durDelta": 0.617,
+  "dur": 1.85,
+  "distinct": true
+ },
+ "QUESHADA_2_MIRROR": {
+  "base": "QUESHADA_2",
+  "kind": "MIRROR",
+  "diffMean": 0.3234,
+  "diffPeak": 1.1563,
+  "durDelta": 0,
+  "dur": 2,
+  "distinct": true
+ },
+ "QUESHADA_2_SNAP": {
+  "base": "QUESHADA_2",
+  "kind": "SNAP",
+  "diffMean": 0.075,
+  "diffPeak": 1.1277,
+  "durDelta": 0.56,
+  "dur": 1.44,
+  "distinct": true
+ },
+ "QUESHADA_2_SLOW": {
+  "base": "QUESHADA_2",
+  "kind": "SLOW",
+  "diffMean": 0.0639,
+  "diffPeak": 1.0648,
+  "durDelta": 0.7,
+  "dur": 2.7,
+  "distinct": true
+ },
+ "QUESHADA_2_KNEELING": {
+  "base": "QUESHADA_2",
+  "kind": "KNEELING",
+  "diffMean": 0.376,
+  "diffPeak": 0.6289,
+  "durDelta": 0,
+  "dur": 2,
+  "distinct": true
+ },
+ "QUESHADA_2_SITOUT": {
+  "base": "QUESHADA_2",
+  "kind": "SITOUT",
+  "diffMean": 0.2139,
+  "diffPeak": 1.1293,
+  "durDelta": 0.2,
+  "dur": 1.8,
+  "distinct": true
+ },
+ "QUESHADA_2_HARD": {
+  "base": "QUESHADA_2",
+  "kind": "HARD",
+  "diffMean": 0.1631,
+  "diffPeak": 1.1367,
+  "durDelta": 0.76,
+  "dur": 1.24,
+  "distinct": true
+ },
+ "QUESHADA_2_DELAYED": {
+  "base": "QUESHADA_2",
+  "kind": "DELAYED",
+  "diffMean": 0.1124,
+  "diffPeak": 1.1104,
+  "durDelta": 1.0,
+  "dur": 3.0,
+  "distinct": true
+ },
+ "KIP_UP_MIRROR": {
+  "base": "KIP_UP",
+  "kind": "MIRROR",
+  "diffMean": 0.2962,
+  "diffPeak": 0.716,
+  "durDelta": 0.0,
+  "dur": 2.0333,
+  "distinct": true
+ },
+ "KIP_UP_SNAP": {
+  "base": "KIP_UP",
+  "kind": "SNAP",
+  "diffMean": 0.0497,
+  "diffPeak": 0.4753,
+  "durDelta": 0.569,
+  "dur": 1.464,
+  "distinct": true
+ },
+ "KIP_UP_SLOW": {
+  "base": "KIP_UP",
+  "kind": "SLOW",
+  "diffMean": 0.0342,
+  "diffPeak": 0.3674,
+  "durDelta": 0.712,
+  "dur": 2.745,
+  "distinct": true
+ },
+ "KIP_UP_KNEELING": {
+  "base": "KIP_UP",
+  "kind": "KNEELING",
+  "diffMean": 0.3782,
+  "diffPeak": 0.6478,
+  "durDelta": 0.0,
+  "dur": 2.0333,
+  "distinct": true
+ },
+ "KIP_UP_SITOUT": {
+  "base": "KIP_UP",
+  "kind": "SITOUT",
+  "diffMean": 0.2044,
+  "diffPeak": 0.3993,
+  "durDelta": 0.203,
+  "dur": 1.83,
+  "distinct": true
+ },
+ "KIP_UP_HARD": {
+  "base": "KIP_UP",
+  "kind": "HARD",
+  "diffMean": 0.1385,
+  "diffPeak": 0.6449,
+  "durDelta": 0.773,
+  "dur": 1.2606,
+  "distinct": true
+ },
+ "KIP_UP_DELAYED": {
+  "base": "KIP_UP",
+  "kind": "DELAYED",
+  "diffMean": 0.079,
+  "diffPeak": 0.6005,
+  "durDelta": 1.017,
+  "dur": 3.0499,
+  "distinct": true
+ },
+ "ESQUIVA_3_MIRROR": {
+  "base": "ESQUIVA_3",
+  "kind": "MIRROR",
+  "diffMean": 0.3184,
+  "diffPeak": 1.1545,
+  "durDelta": 0.0,
+  "dur": 2.1667,
+  "distinct": true
+ },
+ "ESQUIVA_3_SNAP": {
+  "base": "ESQUIVA_3",
+  "kind": "SNAP",
+  "diffMean": 0.0908,
+  "diffPeak": 1.1137,
+  "durDelta": 0.607,
+  "dur": 1.56,
+  "distinct": true
+ },
+ "ESQUIVA_3_SLOW": {
+  "base": "ESQUIVA_3",
+  "kind": "SLOW",
+  "diffMean": 0.0598,
+  "diffPeak": 1.1044,
+  "durDelta": 0.758,
+  "dur": 2.925,
+  "distinct": true
+ },
+ "ESQUIVA_3_KNEELING": {
+  "base": "ESQUIVA_3",
+  "kind": "KNEELING",
+  "diffMean": 0.3759,
+  "diffPeak": 0.6286,
+  "durDelta": 0.0,
+  "dur": 2.1667,
+  "distinct": true
+ },
+ "ESQUIVA_3_SITOUT": {
+  "base": "ESQUIVA_3",
+  "kind": "SITOUT",
+  "diffMean": 0.2152,
+  "diffPeak": 1.1307,
+  "durDelta": 0.217,
+  "dur": 1.95,
+  "distinct": true
+ },
+ "ESQUIVA_3_HARD": {
+  "base": "ESQUIVA_3",
+  "kind": "HARD",
+  "diffMean": 0.1854,
+  "diffPeak": 1.1194,
+  "durDelta": 0.823,
+  "dur": 1.3434,
+  "distinct": true
+ },
+ "ESQUIVA_3_DELAYED": {
+  "base": "ESQUIVA_3",
+  "kind": "DELAYED",
+  "diffMean": 0.1488,
+  "diffPeak": 1.1137,
+  "durDelta": 1.083,
+  "dur": 3.25,
+  "distinct": true
+ },
+ "ESQUIVA_4__1__MIRROR": {
+  "base": "ESQUIVA_4__1_",
+  "kind": "MIRROR",
+  "diffMean": 0.324,
+  "diffPeak": 1.152,
+  "durDelta": 0.0,
+  "dur": 2.8,
+  "distinct": true
+ },
+ "ESQUIVA_4__1__SNAP": {
+  "base": "ESQUIVA_4__1_",
+  "kind": "SNAP",
+  "diffMean": 0.072,
+  "diffPeak": 1.088,
+  "durDelta": 0.784,
+  "dur": 2.016,
+  "distinct": true
+ },
+ "ESQUIVA_4__1__SLOW": {
+  "base": "ESQUIVA_4__1_",
+  "kind": "SLOW",
+  "diffMean": 0.0459,
+  "diffPeak": 1.075,
+  "durDelta": 0.98,
+  "dur": 3.78,
+  "distinct": true
+ },
+ "ESQUIVA_4__1__KNEELING": {
+  "base": "ESQUIVA_4__1_",
+  "kind": "KNEELING",
+  "diffMean": 0.3764,
+  "diffPeak": 0.6349,
+  "durDelta": 0.0,
+  "dur": 2.8,
+  "distinct": true
+ },
+ "ESQUIVA_4__1__SITOUT": {
+  "base": "ESQUIVA_4__1_",
+  "kind": "SITOUT",
+  "diffMean": 0.2119,
+  "diffPeak": 1.0877,
+  "durDelta": 0.28,
+  "dur": 2.52,
+  "distinct": true
+ },
+ "ESQUIVA_4__1__HARD": {
+  "base": "ESQUIVA_4__1_",
+  "kind": "HARD",
+  "diffMean": 0.1649,
+  "diffPeak": 1.0975,
+  "durDelta": 1.064,
+  "dur": 1.736,
+  "distinct": true
+ },
+ "ESQUIVA_4__1__DELAYED": {
+  "base": "ESQUIVA_4__1_",
+  "kind": "DELAYED",
+  "diffMean": 0.1137,
+  "diffPeak": 1.107,
+  "durDelta": 1.4,
+  "dur": 4.2,
+  "distinct": true
+ },
+ "CORKSCREW_KIP_UP_MIRROR": {
+  "base": "CORKSCREW_KIP_UP",
+  "kind": "MIRROR",
+  "diffMean": 0.3434,
+  "diffPeak": 1.1443,
+  "durDelta": 0.0,
+  "dur": 2.7667,
+  "distinct": true
+ },
+ "CORKSCREW_KIP_UP_SNAP": {
+  "base": "CORKSCREW_KIP_UP",
+  "kind": "SNAP",
+  "diffMean": 0.1168,
+  "diffPeak": 1.1375,
+  "durDelta": 0.775,
+  "dur": 1.992,
+  "distinct": true
+ },
+ "CORKSCREW_KIP_UP_SLOW": {
+  "base": "CORKSCREW_KIP_UP",
+  "kind": "SLOW",
+  "diffMean": 0.0775,
+  "diffPeak": 0.831,
+  "durDelta": 0.968,
+  "dur": 3.735,
+  "distinct": true
+ },
+ "CORKSCREW_KIP_UP_KNEELING": {
+  "base": "CORKSCREW_KIP_UP",
+  "kind": "KNEELING",
+  "diffMean": 0.3767,
+  "diffPeak": 0.6519,
+  "durDelta": 0.0,
+  "dur": 2.7667,
+  "distinct": true
+ },
+ "CORKSCREW_KIP_UP_SITOUT": {
+  "base": "CORKSCREW_KIP_UP",
+  "kind": "SITOUT",
+  "diffMean": 0.2312,
+  "diffPeak": 1.1799,
+  "durDelta": 0.277,
+  "dur": 2.49,
+  "distinct": true
+ },
+ "CORKSCREW_KIP_UP_HARD": {
+  "base": "CORKSCREW_KIP_UP",
+  "kind": "HARD",
+  "diffMean": 0.1801,
+  "diffPeak": 1.1216,
+  "durDelta": 1.051,
+  "dur": 1.7154,
+  "distinct": true
+ },
+ "CORKSCREW_KIP_UP_DELAYED": {
+  "base": "CORKSCREW_KIP_UP",
+  "kind": "DELAYED",
+  "diffMean": 0.1318,
+  "diffPeak": 1.1376,
+  "durDelta": 1.383,
+  "dur": 4.1501,
+  "distinct": true
+ },
+ "DROP_KICK__1__MIRROR": {
+  "base": "DROP_KICK__1_",
+  "kind": "MIRROR",
+  "diffMean": 0.3272,
+  "diffPeak": 1.1017,
+  "durDelta": 0.0,
+  "dur": 2.9,
+  "distinct": true
+ },
+ "DROP_KICK__1__SNAP": {
+  "base": "DROP_KICK__1_",
+  "kind": "SNAP",
+  "diffMean": 0.0648,
+  "diffPeak": 1.0775,
+  "durDelta": 0.812,
+  "dur": 2.088,
+  "distinct": true
+ },
+ "DROP_KICK__1__SLOW": {
+  "base": "DROP_KICK__1_",
+  "kind": "SLOW",
+  "diffMean": 0.0431,
+  "diffPeak": 0.6553,
+  "durDelta": 1.015,
+  "dur": 3.915,
+  "distinct": true
+ },
+ "DROP_KICK__1__KNEELING": {
+  "base": "DROP_KICK__1_",
+  "kind": "KNEELING",
+  "diffMean": 0.3769,
+  "diffPeak": 0.6529,
+  "durDelta": 0.0,
+  "dur": 2.9,
+  "distinct": true
+ },
+ "DROP_KICK__1__SITOUT": {
+  "base": "DROP_KICK__1_",
+  "kind": "SITOUT",
+  "diffMean": 0.2156,
+  "diffPeak": 1.0932,
+  "durDelta": 0.29,
+  "dur": 2.61,
+  "distinct": true
+ },
+ "DROP_KICK__1__HARD": {
+  "base": "DROP_KICK__1_",
+  "kind": "HARD",
+  "diffMean": 0.1443,
+  "diffPeak": 1.0909,
+  "durDelta": 1.102,
+  "dur": 1.798,
+  "distinct": true
+ },
+ "DROP_KICK__1__DELAYED": {
+  "base": "DROP_KICK__1_",
+  "kind": "DELAYED",
+  "diffMean": 0.084,
+  "diffPeak": 1.0118,
+  "durDelta": 1.45,
+  "dur": 4.35,
+  "distinct": true
+ },
+ "CROUCH_IDLE_02_LOOKING_AROUND_MIRROR": {
+  "base": "CROUCH_IDLE_02_LOOKING_AROUND",
+  "kind": "MIRROR",
+  "diffMean": 0.3229,
+  "diffPeak": 0.6892,
+  "durDelta": 0.0,
+  "dur": 5.8333,
+  "distinct": true
+ },
+ "CROUCH_IDLE_02_LOOKING_AROUND_SNAP": {
+  "base": "CROUCH_IDLE_02_LOOKING_AROUND",
+  "kind": "SNAP",
+  "diffMean": 0.0123,
+  "diffPeak": 0.211,
+  "durDelta": 1.633,
+  "dur": 4.2,
+  "distinct": true
+ },
+ "CROUCH_IDLE_02_LOOKING_AROUND_SLOW": {
+  "base": "CROUCH_IDLE_02_LOOKING_AROUND",
+  "kind": "SLOW",
+  "diffMean": 0.0095,
+  "diffPeak": 0.2041,
+  "durDelta": 2.042,
+  "dur": 7.875,
+  "distinct": true
+ },
+ "CROUCH_IDLE_02_LOOKING_AROUND_KNEELING": {
+  "base": "CROUCH_IDLE_02_LOOKING_AROUND",
+  "kind": "KNEELING",
+  "diffMean": 0.3807,
+  "diffPeak": 0.6596,
+  "durDelta": 0.0,
+  "dur": 5.8333,
+  "distinct": true
+ },
+ "CROUCH_IDLE_02_LOOKING_AROUND_SITOUT": {
+  "base": "CROUCH_IDLE_02_LOOKING_AROUND",
+  "kind": "SITOUT",
+  "diffMean": 0.2007,
+  "diffPeak": 0.357,
+  "durDelta": 0.583,
+  "dur": 5.25,
+  "distinct": true
+ },
+ "CROUCH_IDLE_02_LOOKING_AROUND_HARD": {
+  "base": "CROUCH_IDLE_02_LOOKING_AROUND",
+  "kind": "HARD",
+  "diffMean": 0.123,
+  "diffPeak": 0.3184,
+  "durDelta": 2.217,
+  "dur": 3.6166,
+  "distinct": true
+ },
+ "CROUCH_IDLE_02_LOOKING_AROUND_DELAYED": {
+  "base": "CROUCH_IDLE_02_LOOKING_AROUND",
+  "kind": "DELAYED",
+  "diffMean": 0.0183,
+  "diffPeak": 0.2129,
+  "durDelta": 2.917,
+  "dur": 8.75,
+  "distinct": true
+ },
+ "DANCING__1__MIRROR": {
+  "base": "DANCING__1_",
+  "kind": "MIRROR",
+  "diffMean": 0.3101,
+  "diffPeak": 0.7575,
+  "durDelta": 0.0,
+  "dur": 8.1,
+  "distinct": true
+ },
+ "DANCING__1__SNAP": {
+  "base": "DANCING__1_",
+  "kind": "SNAP",
+  "diffMean": 0.0518,
+  "diffPeak": 0.4836,
+  "durDelta": 2.268,
+  "dur": 5.832,
+  "distinct": true
+ },
+ "DANCING__1__SLOW": {
+  "base": "DANCING__1_",
+  "kind": "SLOW",
+  "diffMean": 0.046,
+  "diffPeak": 0.4827,
+  "durDelta": 2.835,
+  "dur": 10.935,
+  "distinct": true
+ },
+ "DANCING__1__KNEELING": {
+  "base": "DANCING__1_",
+  "kind": "KNEELING",
+  "diffMean": 0.37,
+  "diffPeak": 0.6299,
+  "durDelta": 0.0,
+  "dur": 8.1,
+  "distinct": true
+ },
+ "DANCING__1__SITOUT": {
+  "base": "DANCING__1_",
+  "kind": "SITOUT",
+  "diffMean": 0.2068,
+  "diffPeak": 0.5921,
+  "durDelta": 0.81,
+  "dur": 7.29,
+  "distinct": true
+ },
+ "DANCING__1__HARD": {
+  "base": "DANCING__1_",
+  "kind": "HARD",
+  "diffMean": 0.1371,
+  "diffPeak": 0.5102,
+  "durDelta": 3.078,
+  "dur": 5.022,
+  "distinct": true
+ },
+ "DANCING__1__DELAYED": {
+  "base": "DANCING__1_",
+  "kind": "DELAYED",
+  "diffMean": 0.0535,
+  "diffPeak": 0.4836,
+  "durDelta": 4.05,
+  "dur": 12.15,
+  "distinct": true
+ },
+ "DANCING__2__MIRROR": {
+  "base": "DANCING__2_",
+  "kind": "MIRROR",
+  "diffMean": 0.3158,
+  "diffPeak": 1.1757,
+  "durDelta": 0.0,
+  "dur": 12.3667,
+  "distinct": true
+ },
+ "DANCING__2__SNAP": {
+  "base": "DANCING__2_",
+  "kind": "SNAP",
+  "diffMean": 0.0987,
+  "diffPeak": 1.1064,
+  "durDelta": 3.463,
+  "dur": 8.904,
+  "distinct": true
+ },
+ "DANCING__2__SLOW": {
+  "base": "DANCING__2_",
+  "kind": "SLOW",
+  "diffMean": 0.0768,
+  "diffPeak": 1.0819,
+  "durDelta": 4.328,
+  "dur": 16.695,
+  "distinct": true
+ },
+ "DANCING__2__KNEELING": {
+  "base": "DANCING__2_",
+  "kind": "KNEELING",
+  "diffMean": 0.3762,
+  "diffPeak": 0.6396,
+  "durDelta": 0.0,
+  "dur": 12.3667,
+  "distinct": true
+ },
+ "DANCING__2__SITOUT": {
+  "base": "DANCING__2_",
+  "kind": "SITOUT",
+  "diffMean": 0.2316,
+  "diffPeak": 1.1216,
+  "durDelta": 1.237,
+  "dur": 11.13,
+  "distinct": true
+ },
+ "DANCING__2__HARD": {
+  "base": "DANCING__2_",
+  "kind": "HARD",
+  "diffMean": 0.1936,
+  "diffPeak": 1.1104,
+  "durDelta": 4.699,
+  "dur": 7.6674,
+  "distinct": true
+ },
+ "DANCING__2__DELAYED": {
+  "base": "DANCING__2_",
+  "kind": "DELAYED",
+  "diffMean": 0.1068,
+  "diffPeak": 1.1064,
+  "durDelta": 6.183,
+  "dur": 18.55,
+  "distinct": true
+ },
+ "DANCING_TWERK_MIRROR": {
+  "base": "DANCING_TWERK",
+  "kind": "MIRROR",
+  "diffMean": 0.3291,
+  "diffPeak": 1.1068,
+  "durDelta": 0.0,
+  "dur": 15.2,
+  "distinct": true
+ },
+ "DANCING_TWERK_SNAP": {
+  "base": "DANCING_TWERK",
+  "kind": "SNAP",
+  "diffMean": 0.0597,
+  "diffPeak": 1.1028,
+  "durDelta": 4.256,
+  "dur": 10.944,
+  "distinct": true
+ },
+ "DANCING_TWERK_SLOW": {
+  "base": "DANCING_TWERK",
+  "kind": "SLOW",
+  "diffMean": 0.0493,
+  "diffPeak": 1.1023,
+  "durDelta": 5.32,
+  "dur": 20.52,
+  "distinct": true
+ },
+ "DANCING_TWERK_KNEELING": {
+  "base": "DANCING_TWERK",
+  "kind": "KNEELING",
+  "diffMean": 0.3741,
+  "diffPeak": 0.652,
+  "durDelta": 0.0,
+  "dur": 15.2,
+  "distinct": true
+ },
+ "DANCING_TWERK_SITOUT": {
+  "base": "DANCING_TWERK",
+  "kind": "SITOUT",
+  "diffMean": 0.2125,
+  "diffPeak": 1.1243,
+  "durDelta": 1.52,
+  "dur": 13.68,
+  "distinct": true
+ },
+ "DANCING_TWERK_HARD": {
+  "base": "DANCING_TWERK",
+  "kind": "HARD",
+  "diffMean": 0.1333,
+  "diffPeak": 1.1,
+  "durDelta": 5.776,
+  "dur": 9.424,
+  "distinct": true
+ },
+ "DANCING_TWERK_DELAYED": {
+  "base": "DANCING_TWERK",
+  "kind": "DELAYED",
+  "diffMean": 0.0735,
+  "diffPeak": 1.1028,
+  "durDelta": 7.6,
+  "dur": 22.8,
+  "distinct": true
+ },
+ "HOUSE_DANCING_MIRROR": {
+  "base": "HOUSE_DANCING",
+  "kind": "MIRROR",
+  "diffMean": 0.3227,
+  "diffPeak": 1.1608,
+  "durDelta": 0.0,
+  "dur": 21.3667,
+  "distinct": true
+ },
+ "HOUSE_DANCING_SNAP": {
+  "base": "HOUSE_DANCING",
+  "kind": "SNAP",
+  "diffMean": 0.0652,
+  "diffPeak": 1.0533,
+  "durDelta": 5.983,
+  "dur": 15.384,
+  "distinct": true
+ },
+ "HOUSE_DANCING_SLOW": {
+  "base": "HOUSE_DANCING",
+  "kind": "SLOW",
+  "diffMean": 0.0593,
+  "diffPeak": 0.9611,
+  "durDelta": 7.478,
+  "dur": 28.845,
+  "distinct": true
+ },
+ "HOUSE_DANCING_KNEELING": {
+  "base": "HOUSE_DANCING",
+  "kind": "KNEELING",
+  "diffMean": 0.3727,
+  "diffPeak": 0.6488,
+  "durDelta": 0.0,
+  "dur": 21.3667,
+  "distinct": true
+ },
+ "HOUSE_DANCING_SITOUT": {
+  "base": "HOUSE_DANCING",
+  "kind": "SITOUT",
+  "diffMean": 0.2135,
+  "diffPeak": 1.0201,
+  "durDelta": 2.137,
+  "dur": 19.23,
+  "distinct": true
+ },
+ "HOUSE_DANCING_HARD": {
+  "base": "HOUSE_DANCING",
+  "kind": "HARD",
+  "diffMean": 0.1591,
+  "diffPeak": 1.0493,
+  "durDelta": 8.119,
+  "dur": 13.2474,
+  "distinct": true
+ },
+ "HOUSE_DANCING_DELAYED": {
+  "base": "HOUSE_DANCING",
+  "kind": "DELAYED",
+  "diffMean": 0.0747,
+  "diffPeak": 1.0294,
+  "durDelta": 10.683,
+  "dur": 32.05,
+  "distinct": true
+ },
+ "CH24_NONPBR_MIRROR": {
+  "base": "CH24_NONPBR",
+  "kind": "MIRROR",
+  "diffMean": 0.3309,
+  "diffPeak": 0.6155,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "CH24_NONPBR_SNAP": {
+  "base": "CH24_NONPBR",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.009,
+  "dur": 0.024,
+  "distinct": false
+ },
+ "CH24_NONPBR_SLOW": {
+  "base": "CH24_NONPBR",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.012,
+  "dur": 0.045,
+  "distinct": false
+ },
+ "CH24_NONPBR_KNEELING": {
+  "base": "CH24_NONPBR",
+  "kind": "KNEELING",
+  "diffMean": 0.3412,
+  "diffPeak": 0.5382,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "CH24_NONPBR_SITOUT": {
+  "base": "CH24_NONPBR",
+  "kind": "SITOUT",
+  "diffMean": 0.1796,
+  "diffPeak": 0.2833,
+  "durDelta": 0.003,
+  "dur": 0.03,
+  "distinct": true
+ },
+ "CH24_NONPBR_HARD": {
+  "base": "CH24_NONPBR",
+  "kind": "HARD",
+  "diffMean": 0.1078,
+  "diffPeak": 0.17,
+  "durDelta": 0.013,
+  "dur": 0.0206,
+  "distinct": true
+ },
+ "CH24_NONPBR_DELAYED": {
+  "base": "CH24_NONPBR",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.017,
+  "dur": 0.05,
+  "distinct": false
+ },
+ "CH06_NONPBR_MIRROR": {
+  "base": "CH06_NONPBR",
+  "kind": "MIRROR",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": false
+ },
+ "CH06_NONPBR_SNAP": {
+  "base": "CH06_NONPBR",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.009,
+  "dur": 0.024,
+  "distinct": false
+ },
+ "CH06_NONPBR_SLOW": {
+  "base": "CH06_NONPBR",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.012,
+  "dur": 0.045,
+  "distinct": false
+ },
+ "CH06_NONPBR_KNEELING": {
+  "base": "CH06_NONPBR",
+  "kind": "KNEELING",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": false
+ },
+ "CH06_NONPBR_SITOUT": {
+  "base": "CH06_NONPBR",
+  "kind": "SITOUT",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.003,
+  "dur": 0.03,
+  "distinct": false
+ },
+ "CH06_NONPBR_HARD": {
+  "base": "CH06_NONPBR",
+  "kind": "HARD",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.013,
+  "dur": 0.0206,
+  "distinct": false
+ },
+ "CH06_NONPBR_DELAYED": {
+  "base": "CH06_NONPBR",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.017,
+  "dur": 0.05,
+  "distinct": false
+ },
+ "CH44_NONPBR_MIRROR": {
+  "base": "CH44_NONPBR",
+  "kind": "MIRROR",
+  "diffMean": 0.3509,
+  "diffPeak": 0.6141,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "CH44_NONPBR_SNAP": {
+  "base": "CH44_NONPBR",
+  "kind": "SNAP",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.009,
+  "dur": 0.024,
+  "distinct": false
+ },
+ "CH44_NONPBR_SLOW": {
+  "base": "CH44_NONPBR",
+  "kind": "SLOW",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.012,
+  "dur": 0.045,
+  "distinct": false
+ },
+ "CH44_NONPBR_KNEELING": {
+  "base": "CH44_NONPBR",
+  "kind": "KNEELING",
+  "diffMean": 0.341,
+  "diffPeak": 0.5387,
+  "durDelta": 0.0,
+  "dur": 0.0333,
+  "distinct": true
+ },
+ "CH44_NONPBR_SITOUT": {
+  "base": "CH44_NONPBR",
+  "kind": "SITOUT",
+  "diffMean": 0.1795,
+  "diffPeak": 0.2835,
+  "durDelta": 0.003,
+  "dur": 0.03,
+  "distinct": true
+ },
+ "CH44_NONPBR_HARD": {
+  "base": "CH44_NONPBR",
+  "kind": "HARD",
+  "diffMean": 0.1077,
+  "diffPeak": 0.1701,
+  "durDelta": 0.013,
+  "dur": 0.0206,
+  "distinct": true
+ },
+ "CH44_NONPBR_DELAYED": {
+  "base": "CH44_NONPBR",
+  "kind": "DELAYED",
+  "diffMean": 0.0,
+  "diffPeak": 0.0,
+  "durDelta": 0.017,
+  "dur": 0.05,
+  "distinct": false
+ }
+}

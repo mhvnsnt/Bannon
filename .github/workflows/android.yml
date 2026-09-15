@@ -1,0 +1,328 @@
+name: Build Android APK (WebView game)
+
+# Compiles the BANNON web game into a real installable .apk — no Unreal build needed. The game HTML is
+# bundled into the app's assets at build time; AAA models stream from the repo CDN. Download the APK from
+# this run's Artifacts on your phone and install it (allow "install unknown apps" once). See
+# docs/MOBILE_INSTALL.md. Trigger it from the Actions tab (Run workflow) or on a push to the android app.
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'android/**'
+      - 'BANNON_v150.html'
+      - '.github/workflows/android.yml'
+
+permissions:
+  contents: write   # so the built APK can be committed back to dist/ on main
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    steps:
+      # fetch-depth: 0 — the OTA build number is `git rev-list --count HEAD`, which returns 1 on the
+      # default shallow clone (so every build would look like build 1 and updates would never land).
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Stamp OTA build number into the game HTML
+        run: |
+          # BUILD = commit count (same scale as the APK versionCode). Stamp it into __BANNON_BUILD__ so
+          # the running game knows its own content build; the bundled copy AND the OTA-served copy carry
+          # the SAME number => no update loop after a hot-swap.
+          BUILD=$(git rev-list --count HEAD)
+          echo "BANNON_BUILD=$BUILD" >> "$GITHUB_ENV"
+          sed "s/__BANNON_BUILD__/$BUILD/g" BANNON_v150.html > BANNON_v150.stamped.html
+          echo "stamped build $BUILD"
+
+      - name: Bundle the game + manifest/icons + local assets into the app
+        run: |
+          A=android/app/src/main/assets
+          mkdir -p $A/assets/icons $A/assets/moves $A/assets/audio $A/assets/mocap
+          cp BANNON_v150.stamped.html $A/index.html
+          cp manifest.json    $A/manifest.json || true
+          cp assets/icons/icon-192.png assets/icons/icon-512.png assets/icons/apple-touch-icon.png $A/assets/icons/ || true
+          # move library / MDickie moves / fbx map — the game fetch()es these at runtime; without them
+          # the moveset + story data silently 404 inside the APK.
+          cp assets/moves/*.json $A/assets/moves/ 2>/dev/null || true
+          # mocap manifest (tiny) so BANNON_LOAD_FBX_LIBRARY knows the full clip list offline; the FBX
+          # themselves stay CDN-streamed (too big to bundle).
+          cp assets/mocap/*.json $A/assets/mocap/ 2>/dev/null || true
+          # THE MODELS AND THE ENGINE WERE NEVER IN THE APK. Owner: "I'm still seeing the procedural
+          # three js models". Not a loader bug — assets/models was simply never copied, so every
+          # character GLB was a multi-megabyte raw.githubusercontent.com fetch on mobile data at the
+          # moment a match starts, and a slow or refused one falls back to the procedural body.
+          # assets/vendor (three.js, GLTFLoader, FBXLoader, post-processing) was missing too, so the
+          # offline app fell back to CDN <script> tags just to boot.
+          # Selection lives in a real script, not a heredoc in this block scalar — that has broken
+          # this workflow twice. Wired models only: 59 GLBs / 36.6 MB, not the 3.6 GB workbench.
+          node scripts/bundle_apk_assets.cjs BANNON_v150.stamped.html $A
+          echo "bundled: index.html ($(du -h $A/index.html | cut -f1)), moves $(ls $A/assets/moves | wc -l) files, total assets $(du -sh $A | cut -f1)"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Build release APK (stable-signed, auto-incrementing versionCode)
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.7'
+      # RETRY THE BUILD. Run 149 failed with "Received status code 403 from server: Forbidden" on
+      # repo.maven.apache.org for jsr305-3.0.2.pom, while GitHub's own cache service was returning
+      # "Our services aren't available right now". Nothing to do with the code — and the cost was the
+      # owner being left with a stale APK that would not install. A transient registry blip should not
+      # cost an APK, so: three attempts with backoff, and Maven Central plus Google both listed so a
+      # 403 from one is survivable.
+      - name: Build release APK (retries transient registry failures)
+        run: |
+          set -o pipefail
+          export BANNON_VERSION_CODE=$(git rev-list --count HEAD)
+          for attempt in 1 2 3; do
+            echo "── assembleRelease attempt $attempt/3"
+            if gradle -p android assembleRelease --no-daemon --refresh-dependencies; then
+              echo "built on attempt $attempt"
+              exit 0
+            fi
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 30))
+            fi
+          done
+          echo "::error::assembleRelease failed three times — this is a real failure, not a registry blip"
+          exit 1
+      # SIDE-BY-SIDE APK. The main APK is structurally sound — verified v1+v2+v3 signatures,
+      # resources.arsc STORED, versionCode climbing — but Android still refuses to install it over an
+      # app of the SAME package name signed with a DIFFERENT key, which is what a pre-stable-key
+      # install leaves on the device. That refusal cannot be fixed inside the package; it is the
+      # installer objecting on identity. So build a second APK under com.bannon.game.fresh that
+      # installs ALONGSIDE whatever is already there. There is then always an APK that installs.
+      - name: Build side-by-side APK (com.bannon.game.fresh)
+        run: |
+          set -o pipefail
+          export BANNON_VERSION_CODE=$(git rev-list --count HEAD)
+          for attempt in 1 2 3; do
+            if gradle -p android assembleRelease --no-daemon -PbannonFresh=true; then exit 0; fi
+            [ "$attempt" -lt 3 ] && sleep $((attempt * 20))
+          done
+          echo "::warning::fresh-id APK failed to build; the main APK is unaffected"
+          exit 0
+
+      - name: Stash the fresh APK before the main build is re-read
+        run: |
+          mkdir -p /tmp/freshapk
+          cp android/app/build/outputs/apk/release/app-release*.apk /tmp/freshapk/BANNON-fresh.apk 2>/dev/null || true
+          ls -la /tmp/freshapk || true
+          # rebuild the MAIN id so every later step (gate, artifact, dist) sees the normal package
+          export BANNON_VERSION_CODE=$(git rev-list --count HEAD)
+          gradle -p android assembleRelease --no-daemon
+
+      # INSTALLABILITY GATE. Every "cannot install / package couldn't be parsed" report so far traced to
+      # one of these three, all silent at build time — so each is now a hard failure, not a warning:
+      #   1. v1 (JAR) signature missing. AGP drops v1 automatically in some configs, and many OEM
+      #      installers reject a v2-only APK with "problem parsing the package". Git history shows a
+      #      whole run of NO_V1_SIG builds that shipped exactly that way.
+      #   2. resources.arsc COMPRESSED. Android 11+ refuses to install it, reported as a parse failure.
+      #   3. a stale/desynced signer key, which makes the APK uninstallable OVER an existing install.
+      # NOTE ON IMPLEMENTATION: the first version of this gate string-matched apksigner's human-readable
+      # output ("JAR signing (APK Signature Scheme v1): true"). That is NOT apksigner's wording — the
+      # real line is "Verified using v1 scheme (JAR signing): true" — so the gate failed three good
+      # builds in a row and blocked the OTA payload. Checking the APK's STRUCTURE instead is both
+      # correct and immune to tool-output wording: a v1 signature IS the META-INF/*.SF + *.RSA pair, and
+      # v2/v3 IS the "APK Sig Block 42" magic. apksigner's EXIT CODE remains the authority on validity.
+      # shell: bash WITHOUT -e. GitHub's default is `bash -e {0}`, which aborts the step on ANY non-zero
+      # command — so an informational grep that simply finds nothing killed the build before the
+      # tolerant check below could run. That is what failed the previous two attempts. Only the explicit
+      # `exit 1` paths may fail this step now.
+      - name: Verify APK is installable (signature schemes + arsc storage + signer identity)
+        shell: bash --noprofile --norc {0}
+        run: |
+          BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          echo "APK: $APK"
+          # 1. authoritative validity check — apksigner's EXIT CODE, never its wording
+          "$BUILD_TOOLS_DIR/apksigner" verify --verbose --print-certs "$APK" > /tmp/apksigner.txt 2>&1
+          RC=$?
+          cat /tmp/apksigner.txt || true
+          if [ "$RC" -ne 0 ]; then echo "::error::apksigner verify FAILED (exit $RC)"; exit 1; fi
+          # 2. structural checks (wording-independent)
+          python3 - "$APK" <<'PY'
+          import sys, zipfile
+          apk = sys.argv[1]
+          fail = []
+          with zipfile.ZipFile(apk) as z:
+              names = z.namelist()
+              # v1 (JAR) signing == a signature file + a signature block in META-INF
+              has_sf  = any(n.upper().startswith('META-INF/') and n.upper().endswith('.SF') for n in names)
+              has_blk = any(n.upper().startswith('META-INF/') and n.upper().endswith(('.RSA', '.DSA', '.EC')) for n in names)
+              if not (has_sf and has_blk):
+                  fail.append("v1 JAR signature MISSING (no META-INF/*.SF + *.RSA) — OEM installers report "
+                              "'problem parsing the package'")
+              else:
+                  print("v1 JAR signature: present")
+              # Android 11+ requires resources.arsc STORED, else the install is rejected as a parse error
+              try:
+                  if z.getinfo('resources.arsc').compress_type != zipfile.ZIP_STORED:
+                      fail.append("resources.arsc is COMPRESSED — Android 11+ will refuse to install it")
+                  else:
+                      print("resources.arsc: STORED")
+              except KeyError:
+                  fail.append("resources.arsc MISSING")
+              for req in ('AndroidManifest.xml', 'classes.dex'):
+                  if req not in names:
+                      fail.append(req + " MISSING — the package cannot be parsed")
+              print("AndroidManifest.xml + classes.dex: present")
+          # v2/v3 live in the APK Signing Block, identified by its magic string
+          with open(apk, 'rb') as fh:
+              blob = fh.read()
+          if b'APK Sig Block 42' not in blob:
+              fail.append("no APK Signing Block (v2/v3 signatures absent)")
+          else:
+              print("APK Signing Block (v2/v3): present")
+          for f in fail:
+              print("::error::" + f)
+          sys.exit(1 if fail else 0)
+          PY
+          STRUCT_RC=$?
+          # Fail the step HERE on a structural problem. Without this the informational fingerprint block
+          # below (which ends in `|| true`) became the script's last exit status, so the gate reported
+          # success even while printing ::error:: — a gate that can never fail is worse than none.
+          if [ "$STRUCT_RC" -ne 0 ]; then echo "::error::APK is not installable — see errors above"; exit 1; fi
+          # 3. signer identity — a changed key cannot install OVER an existing BANNON. Computed from the
+          # META-INF signature BLOCK BYTES, not scraped from apksigner's text: the previous version
+          # grepped for a line whose wording I had guessed, and under `bash -e` a non-match killed the
+          # step outright. This is informational only and never fails the build.
+          python3 - "$APK" <<'PY' || true
+          import sys, zipfile, hashlib
+          with zipfile.ZipFile(sys.argv[1]) as z:
+              blocks = sorted(n for n in z.namelist()
+                              if n.upper().startswith('META-INF/') and n.upper().endswith(('.RSA', '.DSA', '.EC')))
+              if not blocks:
+                  print('::warning::no signature block to fingerprint'); sys.exit(0)
+              fp = hashlib.sha256(z.read(blocks[0])).hexdigest()
+              print('signer block: %s  sha256(block)=%s' % (blocks[0], fp))
+              # baseline recorded from the established sideload key's block; drift means "uninstall first"
+              BASELINE = '__RECORD_ON_FIRST_GREEN__'
+              if BASELINE.startswith('__'):
+                  print('signer baseline not recorded yet — note this value if the key should be pinned')
+              elif fp != BASELINE:
+                  print('::warning::signer key CHANGED — users must UNINSTALL the old app before this installs')
+              else:
+                  print('signer matches the established sideload key (updates install over old builds)')
+          PY
+      - name: Upload APK (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: BANNON-release-apk
+          path: android/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      # Keep the in-repo APK current: on a push to main, commit the freshly built APK to dist/BANNON.apk
+      # so the game app upgrades along with the game/repo. dist/ is NOT in the trigger paths, so this
+      # commit does not re-trigger the workflow (no loop); [skip ci] belt-and-suspenders.
+      - name: Publish APK + OTA payload to dist/ (main only)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release*.apk dist/BANNON.apk
+          # the side-by-side build, so there is always one that installs no matter what is on the phone
+          cp /tmp/freshapk/BANNON-fresh.apk dist/BANNON-fresh.apk 2>/dev/null || true
+          # OTA content: the STAMPED game HTML the installed app fetches + hot-swaps (same build number
+          # the bundle carries, so no loop).
+          cp BANNON_v150.stamped.html dist/BANNON.html
+          BUILD=$(git rev-list --count HEAD)
+          # apkMin = the versionCode of the last commit that touched NATIVE code — an installed APK older
+          # than this is missing native changes a WebView can't hot-patch, so the app nudges a reinstall.
+          NATIVE_SHA=$(git log -1 --format=%H -- android/app/src/main/java android/app/build.gradle android/app/src/main/AndroidManifest.xml)
+          APK_MIN=$(git rev-list --count "$NATIVE_SHA")
+          printf '{"build":%s,"apkMin":%s,"apk":"BANNON.apk","html":"BANNON.html","ts":"%s","commit":"%s"}\n' \
+            "$BUILD" "$APK_MIN" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${GITHUB_SHA::7}" > dist/version.json
+          echo "version.json: build=$BUILD apkMin=$APK_MIN"
+          # committer identity: use the noreply address so CI's own dist commits are not
+          # flagged alongside ours in commit-authorship checks.
+          git config user.name  "Claude"
+          git config user.email "noreply@anthropic.com"
+          git add dist/BANNON.apk dist/BANNON.html dist/version.json
+          # THIS LINE KILLED THIRTY CONSECUTIVE BUILDS. `dist/BANNON-fresh.apk` matches `dist/*` in
+          # .gitignore and has no `!` exception, so `git add` REFUSES it and exits 1 — and a GitHub
+          # Actions `run:` block is `bash -e`, so the step died right here, AFTER version.json was
+          # written and BEFORE `git commit` and `git push`. The APK built fine every time and was
+          # then thrown away. Measured: the last successful publish is build 2508 / commit 3f32626
+          # (2026-08-01 13:05); every push to main since has failed with
+          #     The following paths are ignored by one of your .gitignore files: dist/BANNON-fresh.apk
+          #     ##[error]Process completed with exit code 1
+          # so the phone's OTA check has seen the same version.json for every fix since.
+          # .gitignore now un-ignores it, and this add can never be fatal again regardless.
+          [ -f dist/BANNON-fresh.apk ] && { git add -f dist/BANNON-fresh.apk || echo "::warning::could not stage the fresh-id APK; publishing without it"; }
+          true   # the optional artifact must never decide whether the OTA payload ships
+          if git diff --cached --quiet; then echo "dist unchanged"; exit 0; fi
+          git commit -m "ci: rebuild dist/BANNON.apk + OTA payload from ${GITHUB_SHA::7} [skip ci]"
+          # PUSH RACE: this job checked out an older sha, so main has usually moved on by the time the
+          # APK finishes building — a bare push is rejected non-fast-forward and the OTA payload never
+          # lands (exactly how the first two OTA builds failed). Rebase onto the current main and retry;
+          # dist/ is ours alone so the rebase can't conflict with game-source commits.
+          for i in 1 2 3 4 5; do
+            if git push origin HEAD:main; then echo "published (attempt $i)"; exit 0; fi
+            echo "push rejected — rebasing onto origin/main (attempt $i)"
+            git fetch origin main || true
+            git rebase origin/main || { git rebase --abort || true; sleep $((i*3)); continue; }
+            sleep $((i*2))
+          done
+          echo "::error::could not publish OTA payload after 5 attempts"; exit 1
+
+      # RELIABLE INSTALL PATH. Downloading the APK from a raw blob URL is where "can't parse / won't
+      # install" comes from on phones: mobile browsers frequently mangle raw content (wrong MIME, a
+      # renamed .zip/.txt, or a truncated body), and Android then rejects a file that is perfectly valid
+      # on the server. A GitHub RELEASE ASSET is the standard sideload path — correct content type,
+      # resumable, and it lands as BANNON.apk every time.
+      - name: Publish APK as a GitHub Release asset (reliable phone install)
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        shell: bash --noprofile --norc {0}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BUILD=$(git rev-list --count HEAD)
+          APK=$(ls android/app/build/outputs/apk/release/*.apk | head -1)
+          cp "$APK" /tmp/BANNON.apk
+          TAG="build-$BUILD"
+          API="https://api.github.com/repos/${GITHUB_REPOSITORY}"
+          # create the release (ignore "already exists"), then upload the asset
+          curl -sS -X POST "$API/releases" \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            -d "{\"tag_name\":\"$TAG\",\"name\":\"BANNON build $BUILD\",\"body\":\"Sideload build $BUILD. Install this APK once; later content updates download themselves.\",\"draft\":false,\"prerelease\":false}" \
+            -o /tmp/rel.json
+          ID=$(python3 -c "import json;print(json.load(open('/tmp/rel.json')).get('id',''))" 2>/dev/null)
+          if [ -z "$ID" ]; then
+            ID=$(curl -sS "$API/releases/tags/$TAG" -H "Authorization: Bearer $GH_TOKEN" \
+                 | python3 -c "import json,sys;print(json.load(sys.stdin).get('id',''))" 2>/dev/null)
+          fi
+          if [ -z "$ID" ]; then echo "::warning::could not create or find release $TAG"; exit 0; fi
+          curl -sS -X POST "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/$ID/assets?name=BANNON.apk" \
+            -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/vnd.android.package-archive" \
+            --data-binary @/tmp/BANNON.apk -o /tmp/asset.json
+          URL=$(python3 -c "import json;print(json.load(open('/tmp/asset.json')).get('browser_download_url',''))" 2>/dev/null)
+          echo "release asset: ${URL:-upload failed}"
+          # THE SIDE-BY-SIDE BUILD BELONGS IN THE RELEASE TOO. com.bannon.game.fresh installs ALONGSIDE
+          # whatever is already on the phone, so it is the answer whenever the normal package refuses
+          # to upgrade — and "problem parsing the package" is one of the ways Android reports that.
+          # It was only ever written to dist/, and dist/BANNON-fresh.apk was gitignored, so it never
+          # actually shipped anywhere: the same ignored path that killed thirty publish steps also
+          # meant the one APK guaranteed to install was never reachable. A raw blob URL is the
+          # documented cause of phone parse failures, so it goes out as a release asset like the
+          # other one, with the correct content type.
+          if [ -s /tmp/freshapk/BANNON-fresh.apk ]; then
+            curl -sS -X POST "https://uploads.github.com/repos/${GITHUB_REPOSITORY}/releases/$ID/assets?name=BANNON-fresh.apk" \
+              -H "Authorization: Bearer $GH_TOKEN" -H "Content-Type: application/vnd.android.package-archive" \
+              --data-binary @/tmp/freshapk/BANNON-fresh.apk -o /tmp/asset2.json || true
+            echo "side-by-side asset: $(python3 -c "import json;print(json.load(open('/tmp/asset2.json')).get('browser_download_url',''))" 2>/dev/null)"
+          else
+            echo "::warning::no side-by-side APK to upload"
+          fi
+          # NOTE: release-notes decoration deliberately left out. A multi-line python heredoc inside a
+          # YAML block scalar breaks the workflow file (content lines fall outside the block), and a
+          # broken workflow means nothing ships at all — which is the whole problem this session.
+          echo "latest install link: https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/BANNON.apk"
+          echo "side-by-side link:   https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/BANNON-fresh.apk"
