@@ -1,0 +1,91 @@
+{
+  "schema": "bannon.animation-source-registry/v1",
+  "generated_from": "mhvnsnt/Bannon@65be86cbda4a7c0e8bda9f636aac260f14790e29",
+  "purpose": "Stage real animation sources independently of character rigging. The runtime bridge consumes normalized AnimationClip artifacts after target skeleton validation.",
+  "target_runtime": {
+    "visible_root": "SkeletonUtils.clone(gltf.scene)",
+    "mixer_root": "visible_clone",
+    "target_naming": "Bannon canonical/Mixamo-compatible BONE_MAP",
+    "required_states": [
+      "idle",
+      "walk_forward",
+      "walk_back",
+      "strafe_left",
+      "strafe_right",
+      "attack_1",
+      "attack_2",
+      "block",
+      "hit_reaction",
+      "knockdown",
+      "getup"
+    ]
+  },
+  "sources": [
+    {
+      "id": "bannon_mocap",
+      "repo": "mhvnsnt/Bannon",
+      "path": "assets/mocap",
+      "status": "primary",
+      "formats": [
+        "fbx",
+        "bvh",
+        "glb"
+      ],
+      "license": "per-source; gate before redistribution",
+      "notes": "Existing ingest.cjs, bake_clips.cjs, map_combat_moves.cjs and move_sheet.py."
+    },
+    {
+      "id": "bannon_open_mocap",
+      "repo": "mhvnsnt/Bannon",
+      "path": "assets/mocap/open",
+      "status": "primary-open",
+      "formats": [
+        "bvh",
+        "fbx",
+        "glb"
+      ],
+      "license": "per asset; README records source licenses",
+      "notes": "Prefer CC0/public-domain sources and sources explicitly permitted for product use."
+    },
+    {
+      "id": "schwarzerblitz_engine",
+      "repo": "mhvnsnt/SchwarzerblitzEngine",
+      "status": "architecture-reference",
+      "license": "engine BSD-3-Clause; character/stage/music assets are not redistributable per upstream",
+      "notes": "Use engine code/animation architecture where license permits; do not copy upstream proprietary character assets."
+    },
+    {
+      "id": "nightsky_engine",
+      "repo": "mhvnsnt/NightSkyEngine",
+      "status": "architecture-reference",
+      "license": "MIT",
+      "notes": "Use fighting-game animation/state-machine architecture and compatible open assets; current upstream targets UE 5.7."
+    },
+    {
+      "id": "tekken_recompiled_fan_repo",
+      "repo": "mhvnsnt/BrutalfistbaseofTekken3Recompiled",
+      "status": "reference-only",
+      "license": "REVIEW_REQUIRED",
+      "notes": "Do not import/repackage proprietary Tekken animation/character data unless a specific asset has documented redistribution rights."
+    }
+  ],
+  "pipeline": [
+    "discover source clips",
+    "record provenance and license",
+    "convert FBX/BVH/animated GLB to normalized AnimationClip source",
+    "normalize source bone names",
+    "retarget source clip to canonical target skeleton",
+    "validate track resolution",
+    "emit bridge artifact",
+    "bind bridge artifact to visible cloned GLB",
+    "state-machine action lookup",
+    "measured bone-motion gate"
+  ],
+  "invariants": [
+    "No synthetic animation is presented as authored animation.",
+    "No clip is PASS when track resolution is unknown.",
+    "No runtime action is considered active merely because .play() returned.",
+    "Character rigging and animation-source ingestion remain separable lanes.",
+    "Proprietary or unclear-license animation bytes remain reference-only."
+  ]
+}
