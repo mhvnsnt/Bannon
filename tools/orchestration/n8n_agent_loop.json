@@ -1,0 +1,53 @@
+{
+  "name": "Bannon AI Error Resolution Loop",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bannon-build-fail",
+        "options": {}
+      },
+      "name": "GitHub Actions Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [ 250, 300 ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.github.com/repos/{{$json.body.repository}}/actions/runs/{{$json.body.error_log_url.split('/').pop()}}/logs",
+        "authentication": "headerAuth",
+        "headerParameters": {
+          "Authorization": "Bearer {{$env.GITHUB_TOKEN}}"
+        }
+      },
+      "name": "Fetch Build Logs",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [ 450, 300 ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://openhands:3000/api/v1/agent/directive",
+        "sendBody": true,
+        "bodyParameters": {
+          "directive": "The autonomous build pipeline failed. Review the following C++ linker/syntax error logs, patch the corresponding files in the repository, and push the commit to trigger a rebuild.",
+          "logs": "={{$json.data}}"
+        }
+      },
+      "name": "Trigger OpenHands Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [ 650, 300 ]
+    }
+  ],
+  "connections": {
+    "GitHub Actions Webhook": {
+      "main": [ [ { "node": "Fetch Build Logs", "type": "main", "index": 0 } ] ]
+    },
+    "Fetch Build Logs": {
+      "main": [ [ { "node": "Trigger OpenHands Agent", "type": "main", "index": 0 } ] ]
+    }
+  }
+}

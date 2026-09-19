@@ -1,0 +1,4326 @@
+{
+ "file": "Values.bb",
+ "functions": [
+  {
+   "name": "LoadMusic",
+   "args": "",
+   "line": 428,
+   "calls": [
+    "Loader",
+    "sTheme",
+    "LoadSound"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LoadImages",
+   "args": "",
+   "line": 480,
+   "calls": [
+    "font",
+    "LoadFont",
+    "fontNews",
+    "fontStat",
+    "LoadImage",
+    "GraphicsWidth",
+    "GraphicsHeight",
+    "gLogo",
+    "gMenu",
+    "gBlackout",
+    "gStat",
+    "gScroll",
+    "Versus",
+    "gAllegiance",
+    "gBelt",
+    "gControl",
+    "gMonth",
+    "gEvent",
+    "gHistory",
+    "gRating",
+    "gHardcore",
+    "gResult",
+    "gChart",
+    "gFed",
+    "gFedDark",
+    "gArena",
+    "gProduction",
+    "gNewsIdentity",
+    "gNewsScene",
+    "gNewsAdvert"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LoadTextures",
+   "args": "",
+   "line": 806,
+   "calls": [
+    "Loader",
+    "tPlant",
+    "LoadTexture",
+    "tRope",
+    "tVideo",
+    "CreateTexture",
+    "tCage",
+    "tGirder",
+    "tCrowd",
+    "tSign",
+    "tMetal",
+    "tWood",
+    "tGlass",
+    "tBelt",
+    "tBottle",
+    "tEyes",
+    "tMouth",
+    "tEyeballs",
+    "tHat",
+    "tSpecs",
+    "tShaved",
+    "tHair",
+    "tBeard",
+    "tFaceType",
+    "FileType",
+    "tFace",
+    "tBodyType",
+    "tBody",
+    "tArmType",
+    "tArm",
+    "tHandType",
+    "tHands",
+    "tLegType",
+    "tLegs",
+    "tBodyShade",
+    "tArmShade",
+    "tHandShade",
+    "tLegShade",
+    "tBodyTattoo",
+    "tArmTattoo"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "RestoreTextures",
+   "args": "",
+   "line": 1010,
+   "calls": [
+    "tHat",
+    "tHatAccess",
+    "LoadTexture",
+    "tHair",
+    "tHairAccess",
+    "tFace",
+    "tFaceAccess",
+    "tFaceType",
+    "tBody",
+    "tBodyAccess",
+    "tBodyType",
+    "tArm",
+    "tArmAccess",
+    "tArmType",
+    "tHands",
+    "tHandsAccess",
+    "tHandType",
+    "tLegs",
+    "tLegsAccess",
+    "tLegType",
+    "tBodyShade",
+    "tBodyShadeAccess",
+    "tArmShade",
+    "tArmShadeAccess",
+    "tHandShade",
+    "tHandShadeAccess",
+    "tLegShade",
+    "tLegShadeAccess",
+    "tBodyTattoo",
+    "tBodyTattooAccess",
+    "tArmTattoo",
+    "tArmTattooAccess"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TextureAffix",
+   "args": "",
+   "line": 1082,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "ResetTextures",
+   "args": "",
+   "line": 1089,
+   "calls": [
+    "tHatAccess",
+    "tHairAccess",
+    "tFaceAccess",
+    "tBodyAccess",
+    "tArmAccess",
+    "tHandsAccess",
+    "tLegsAccess",
+    "tBodyShadeAccess",
+    "tArmShadeAccess",
+    "tHandShadeAccess",
+    "tLegShadeAccess",
+    "tBodyTattooAccess",
+    "tArmTattooAccess"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ResetTVRatings",
+   "args": "",
+   "line": 1172,
+   "calls": [
+    "showPopularity"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "CopyAttack",
+   "args": "sourceType,sourceID,targetType,targetID",
+   "line": 1961,
+   "calls": [
+    "attackAnimSource",
+    "attackAnimStart",
+    "attackAnimEnd",
+    "attackTransition",
+    "attackLength",
+    "attackMomentum",
+    "attackFall",
+    "attackActive",
+    "attackImpact",
+    "attackExpire",
+    "attackPower",
+    "attackLimb",
+    "attackWeapon"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LoadItemData",
+   "args": "",
+   "line": 2616,
+   "calls": [
+    "iSound",
+    "iTexture",
+    "iCarryAnim",
+    "iDamage",
+    "iFlammable",
+    "iExplodable",
+    "tMetal",
+    "tWood",
+    "tCage"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LoadWeaponData",
+   "args": "",
+   "line": 2816,
+   "calls": [
+    "weapSound",
+    "weapTex",
+    "tWood",
+    "weapDamage",
+    "weapHold",
+    "weapFlammable",
+    "weapExplodable",
+    "weapStandard",
+    "weapValue",
+    "tMetal",
+    "sBlock",
+    "tBottle",
+    "tBelt",
+    "tCage"
+   ],
+   "doc": ""
+  }
+ ],
+ "types": [],
+ "globals": [
+  {
+   "decl": "version=1",
+   "line": 8
+  },
+  {
+   "decl": "screen,oldScreen",
+   "line": 9
+  },
+  {
+   "decl": "screenSource,screenAgenda",
+   "line": 13
+  },
+  {
+   "decl": "screenCall,callX,callY",
+   "line": 14
+  },
+  {
+   "decl": "go,gotim",
+   "line": 15
+  },
+  {
+   "decl": "foc,subFoc",
+   "line": 16
+  },
+  {
+   "decl": "timer,keytim",
+   "line": 17
+  },
+  {
+   "decl": "file",
+   "line": 18
+  },
+  {
+   "decl": "tester",
+   "line": 20
+  },
+  {
+   "decl": "optPlayLim=50,optCharLim=235,optRosterLim=44",
+   "line": 27
+  },
+  {
+   "decl": "optLieHP=150,optCrawlHP=75,optSegmentLim=10",
+   "line": 28
+  },
+  {
+   "decl": "speedTim,optSpeed=1",
+   "line": 30
+  },
+  {
+   "decl": "optLevel=3",
+   "line": 37
+  },
+  {
+   "decl": "optRatingsLevel=2",
+   "line": 38
+  },
+  {
+   "decl": "optLength=2,optOldLength",
+   "line": 39
+  },
+  {
+   "decl": "optEntrances=1",
+   "line": 40
+  },
+  {
+   "decl": "optReferees=2,optManagers=2,optIntruders=2",
+   "line": 41
+  },
+  {
+   "decl": "optHideElim=1",
+   "line": 42
+  },
+  {
+   "decl": "optTagControl=2",
+   "line": 43
+  },
+  {
+   "decl": "optGameRes=2,optMenuRes=2,optWindow=0",
+   "line": 45
+  },
+  {
+   "decl": "optDefaultCam=5,optEntranceCam=1",
+   "line": 46
+  },
+  {
+   "decl": "optFX=1,optShadows=1,optGore=3",
+   "line": 47
+  },
+  {
+   "decl": "optFog=1,optDetail=1",
+   "line": 48
+  },
+  {
+   "decl": "optLabels=1",
+   "line": 49
+  },
+  {
+   "decl": "optGrid=1",
+   "line": 50
+  },
+  {
+   "decl": "optMeters=2",
+   "line": 51
+  },
+  {
+   "decl": "optCrowdAnim=2",
+   "line": 52
+  },
+  {
+   "decl": "keyAttack=30,keyGrapple=31,keyRun=44,keyPickUp=45,keySwitch=29,keyTaunt=57",
+   "line": 54
+  },
+  {
+   "decl": "buttAttack=1,buttGrapple=2,buttRun=3,buttPickUp=4,buttSwitch=5,buttTaunt=7",
+   "line": 55
+  },
+  {
+   "decl": "buttSelect=6",
+   "line": 56
+  },
+  {
+   "decl": "controlTim",
+   "line": 57
+  },
+  {
+   "decl": "optOnline=0",
+   "line": 59
+  },
+  {
+   "decl": "netName$,netID",
+   "line": 60
+  },
+  {
+   "decl": "netControl",
+   "line": 61
+  },
+  {
+   "decl": "netChat$",
+   "line": 62
+  },
+  {
+   "decl": "slot",
+   "line": 69
+  },
+  {
+   "decl": "targetSlot,gamInherit,gamComplete",
+   "line": 74
+  },
+  {
+   "decl": "game,gamChar",
+   "line": 75
+  },
+  {
+   "decl": "gamFatality,gamNewcomer",
+   "line": 76
+  },
+  {
+   "decl": "gamBuild",
+   "line": 77
+  },
+  {
+   "decl": "gamTicket,gamBonus",
+   "line": 80
+  },
+  {
+   "decl": "gamDate,gamYear,gamScroll",
+   "line": 84
+  },
+  {
+   "decl": "gamMission,gamTarget,gamDeadline",
+   "line": 85
+  },
+  {
+   "decl": "trainCourse,trainStage",
+   "line": 115
+  },
+  {
+   "decl": "trainTim,trainInput,trainAnim#",
+   "line": 116
+  },
+  {
+   "decl": "trainCPU,trainChanger,trainDrag",
+   "line": 117
+  },
+  {
+   "decl": "trainScore,trainResult,trainProgress",
+   "line": 118
+  },
+  {
+   "decl": "trainSoundTim,trainGruntTim#",
+   "line": 119
+  },
+  {
+   "decl": "negChar,negStar,negVisitor",
+   "line": 121
+  },
+  {
+   "decl": "negSetting,negVariable",
+   "line": 122
+  },
+  {
+   "decl": "negTopic,negSubTopic,negDate",
+   "line": 123
+  },
+  {
+   "decl": "negTim,negStage,negSubStage",
+   "line": 124
+  },
+  {
+   "decl": "negWorth,negContractWorth,negClauseWorth",
+   "line": 125
+  },
+  {
+   "decl": "negPaymentTotal,negInitialPaymentTotal,negPaymentRequired",
+   "line": 126
+  },
+  {
+   "decl": "negChances,negVerdict,negInterest,negOffer",
+   "line": 127
+  },
+  {
+   "decl": "negPayOff,negPayOffPrefer,negBuyOut",
+   "line": 128
+  },
+  {
+   "decl": "negSalary,negContract",
+   "line": 129
+  },
+  {
+   "decl": "negFriendsHere,negFriendsThere",
+   "line": 130
+  },
+  {
+   "decl": "negEnemiesHere,negEnemiesThere",
+   "line": 131
+  },
+  {
+   "decl": "no_events",
+   "line": 134
+  },
+  {
+   "decl": "hiInduct",
+   "line": 145
+  },
+  {
+   "decl": "no_wrestlers=2,no_refs=1,no_plays",
+   "line": 159
+  },
+  {
+   "decl": "matchPreset,no_matches=21,no_gimmicks=13",
+   "line": 160
+  },
+  {
+   "decl": "matchOldState,matchState=2",
+   "line": 161
+  },
+  {
+   "decl": "matchEntrances,matchEnter",
+   "line": 162
+  },
+  {
+   "decl": "matchMins,matchLastMin,matchSecs=0,matchClock",
+   "line": 163
+  },
+  {
+   "decl": "matchPause,matchTim,matchCountTim",
+   "line": 164
+  },
+  {
+   "decl": "matchTimeLim=10",
+   "line": 165
+  },
+  {
+   "decl": "matchRules=1",
+   "line": 166
+  },
+  {
+   "decl": "matchShoot,matchType=1",
+   "line": 167
+  },
+  {
+   "decl": "matchPins=1,matchSubs=1,matchKOs=0,matchBlood=0,matchTables=0",
+   "line": 168
+  },
+  {
+   "decl": "matchCounter,matchCountOuts=1",
+   "line": 169
+  },
+  {
+   "decl": "matchTeams=0",
+   "line": 170
+  },
+  {
+   "decl": "matchBellTim,matchWinStyle",
+   "line": 171
+  },
+  {
+   "decl": "matchRemaining,matchSurvivor",
+   "line": 172
+  },
+  {
+   "decl": "matchWinner,matchLoser,matchLeader",
+   "line": 173
+  },
+  {
+   "decl": "matchPlayer,matchMulti,matchReferee",
+   "line": 174
+  },
+  {
+   "decl": "matchIntruder,matchBetrayal",
+   "line": 180
+  },
+  {
+   "decl": "matchDamage,matchWeapon",
+   "line": 181
+  },
+  {
+   "decl": "matchLocation=0",
+   "line": 183
+  },
+  {
+   "decl": "matchRopes=0",
+   "line": 184
+  },
+  {
+   "decl": "matchCage=0",
+   "line": 185
+  },
+  {
+   "decl": "matchBlastTim,matchBlasted",
+   "line": 186
+  },
+  {
+   "decl": "matchChamps=1,matchReward",
+   "line": 187
+  },
+  {
+   "decl": "no_promos=100,matchPromo=Rnd(1,no_promos)",
+   "line": 189
+  },
+  {
+   "decl": "promoFoc,promoTim,promoLogic",
+   "line": 190
+  },
+  {
+   "decl": "speaker,promoMesser,promoVariable",
+   "line": 191
+  },
+  {
+   "decl": "promoSubTopicA,promoSubTopicB",
+   "line": 192
+  },
+  {
+   "decl": "lineA$,lineB$",
+   "line": 201
+  },
+  {
+   "decl": "greenLineA$,greenLineB$",
+   "line": 202
+  },
+  {
+   "decl": "redLineA$,redLineB$",
+   "line": 203
+  },
+  {
+   "decl": "entDisplay=3",
+   "line": 205
+  },
+  {
+   "decl": "entShortOffset=5,entLongOffset=5",
+   "line": 206
+  },
+  {
+   "decl": "entX,entY,entTX,entTY",
+   "line": 207
+  },
+  {
+   "decl": "entHype,entPotential",
+   "line": 208
+  },
+  {
+   "decl": "entExpect,entSatisfy#,entBored",
+   "line": 209
+  },
+  {
+   "decl": "entClose,entChemistry,entFeud",
+   "line": 210
+  },
+  {
+   "decl": "entWorkers,entScore,entTotal,entEndScore",
+   "line": 211
+  },
+  {
+   "decl": "entHardcore,entHardTotal,entEndHardcore",
+   "line": 212
+  },
+  {
+   "decl": "entReview",
+   "line": 213
+  },
+  {
+   "decl": "comTim,comSpeed",
+   "line": 215
+  },
+  {
+   "decl": "comScript$,comAffix$,comSuffix$",
+   "line": 216
+  },
+  {
+   "decl": "optCupFed,optCupTeams,optCupReward",
+   "line": 221
+  },
+  {
+   "decl": "optCupSize=4,optCupSelect=1",
+   "line": 222
+  },
+  {
+   "decl": "optCupControl=1",
+   "line": 223
+  },
+  {
+   "decl": "cupSlot",
+   "line": 224
+  },
+  {
+   "decl": "sMenuBrowse=LoadSound(\"Sound/Browse.wav\")",
+   "line": 319
+  },
+  {
+   "decl": "sMenuSelect=LoadSound(\"Sound/Select.wav\")",
+   "line": 320
+  },
+  {
+   "decl": "sMenuGo=LoadSound(\"Sound/Confirm.wav\")",
+   "line": 321
+  },
+  {
+   "decl": "sMenuBack=LoadSound(\"Sound/Cancel.wav\")",
+   "line": 322
+  },
+  {
+   "decl": "sVoid=LoadSound(\"Sound/Void.wav\")",
+   "line": 323
+  },
+  {
+   "decl": "sCamera=LoadSound(\"Sound/Camera.wav\")",
+   "line": 324
+  },
+  {
+   "decl": "sPaper=LoadSound(\"Sound/Paper.wav\")",
+   "line": 325
+  },
+  {
+   "decl": "sCash=LoadSound(\"Sound/Cash.wav\")",
+   "line": 326
+  },
+  {
+   "decl": "sTrash=LoadSound(\"Sound/Trash.wav\")",
+   "line": 327
+  },
+  {
+   "decl": "sWhistle=LoadSound(\"Sound/Whistle.wav\")",
+   "line": 328
+  },
+  {
+   "decl": "sProduce=LoadSound(\"Sound/Produce.wav\")",
+   "line": 329
+  },
+  {
+   "decl": "sTyping=LoadSound(\"Sound/Typing.wav\")",
+   "line": 330
+  },
+  {
+   "decl": "chTyping",
+   "line": 331
+  },
+  {
+   "decl": "sBell=Load3DSound(\"Sound/Bell.wav\")",
+   "line": 333
+  },
+  {
+   "decl": "sBuzzer=Load3DSound(\"Sound/Buzzer.wav\")",
+   "line": 334
+  },
+  {
+   "decl": "sFall=Load3DSound(\"Sound/Movement/Fall.wav\")",
+   "line": 344
+  },
+  {
+   "decl": "sThud=Load3DSound(\"Sound/Movement/Thud.wav\")",
+   "line": 345
+  },
+  {
+   "decl": "sRope=Load3DSound(\"Sound/Movement/Rope.wav\")",
+   "line": 346
+  },
+  {
+   "decl": "sSwing=Load3DSound(\"Sound/Movement/Swing.wav\")",
+   "line": 347
+  },
+  {
+   "decl": "sBleed=Load3DSound(\"Sound/Impacts/Bleed.wav\")",
+   "line": 349
+  },
+  {
+   "decl": "sStab=Load3DSound(\"Sound/Props/Stab.wav\")",
+   "line": 357
+  },
+  {
+   "decl": "sImpactBell=Load3DSound(\"Sound/Props/Impact_Bell.wav\")",
+   "line": 358
+  },
+  {
+   "decl": "sImpactBlade=Load3DSound(\"Sound/Props/Impact_Blade.wav\")",
+   "line": 359
+  },
+  {
+   "decl": "sImpactBottle=Load3DSound(\"Sound/Props/Impact_Bottle.wav\")",
+   "line": 360
+  },
+  {
+   "decl": "sImpactCane=Load3DSound(\"Sound/Props/Impact_Cane.wav\")",
+   "line": 361
+  },
+  {
+   "decl": "sImpactGun=Load3DSound(\"Sound/Props/Impact_Gun.wav\")",
+   "line": 362
+  },
+  {
+   "decl": "sImpactHammer=Load3DSound(\"Sound/Props/Impact_Hammer.wav\")",
+   "line": 363
+  },
+  {
+   "decl": "sImpactMetal=Load3DSound(\"Sound/Props/Impact_Metal.wav\")",
+   "line": 364
+  },
+  {
+   "decl": "sImpactMic=Load3DSound(\"Sound/Props/Impact_Mic.wav\")",
+   "line": 365
+  },
+  {
+   "decl": "sImpactWood=Load3DSound(\"Sound/Props/Impact_Wood.wav\")",
+   "line": 366
+  },
+  {
+   "decl": "sImpactTacks=Load3DSound(\"Sound/Props/Impact_Tacks.wav\")",
+   "line": 367
+  },
+  {
+   "decl": "sItem=Load3DSound(\"Sound/Props/Item.wav\")",
+   "line": 369
+  },
+  {
+   "decl": "sSmashCard=Load3DSound(\"Sound/Props/Smash_Card.wav\")",
+   "line": 370
+  },
+  {
+   "decl": "sSmashElectric=Load3DSound(\"Sound/Props/Smash_Electric.wav\")",
+   "line": 371
+  },
+  {
+   "decl": "sSmashGlass=Load3DSound(\"Sound/Props/Smash_Glass.wav\")",
+   "line": 372
+  },
+  {
+   "decl": "sSmashMetal=Load3DSound(\"Sound/Props/Smash_Metal.wav\")",
+   "line": 373
+  },
+  {
+   "decl": "sSmashPlastic=Load3DSound(\"Sound/Props/Smash_Plastic.wav\")",
+   "line": 374
+  },
+  {
+   "decl": "sSmashWire=Load3DSound(\"Sound/Props/Smash_Wire.wav\")",
+   "line": 375
+  },
+  {
+   "decl": "sSmashWood=Load3DSound(\"Sound/Props/Smash_Wood.wav\")",
+   "line": 376
+  },
+  {
+   "decl": "sFire=Load3DSound(\"Sound/Props/Fire.wav\")",
+   "line": 378
+  },
+  {
+   "decl": "sIgnite=Load3DSound(\"Sound/Props/Ignite.wav\")",
+   "line": 379
+  },
+  {
+   "decl": "sExpire=Load3DSound(\"Sound/Props/Expire.wav\")",
+   "line": 380
+  },
+  {
+   "decl": "sExplosion=Load3DSound(\"Sound/Props/Explosion.wav\")",
+   "line": 381
+  },
+  {
+   "decl": "sElectric=Load3DSound(\"Sound/Props/Electricity.wav\")",
+   "line": 382
+  },
+  {
+   "decl": "sPower=Load3DSound(\"Sound/Props/Power.wav\")",
+   "line": 383
+  },
+  {
+   "decl": "sSplash=Load3DSound(\"Sound/Props/Splash.wav\")",
+   "line": 384
+  },
+  {
+   "decl": "sChoke=Load3DSound(\"Sound/Pain/Choke.wav\")",
+   "line": 394
+  },
+  {
+   "decl": "sDQ=Load3DSound(\"Sound/Speech/DQ.wav\")",
+   "line": 396
+  },
+  {
+   "decl": "sRopeBreak=Load3DSound(\"Sound/Speech/Break.wav\")",
+   "line": 397
+  },
+  {
+   "decl": "chCrowd,chAtmos,chRopes",
+   "line": 403
+  },
+  {
+   "decl": "crowdVol#,crowdVolTarget#",
+   "line": 404
+  },
+  {
+   "decl": "crowdPitch#,crowdPitchTarget#",
+   "line": 405
+  },
+  {
+   "decl": "optMusicVolume=80,optJukeBox=1",
+   "line": 420
+  },
+  {
+   "decl": "chTheme,chCurrentTheme,chThemeChange",
+   "line": 421
+  },
+  {
+   "decl": "chThemeVol#,chThemeTarget#,chThemePitch",
+   "line": 422
+  },
+  {
+   "decl": "sMainTheme=LoadSound(\"Sound/Theme.wav\")",
+   "line": 423
+  },
+  {
+   "decl": "no_themes",
+   "line": 424
+  },
+  {
+   "decl": "fontNumber",
+   "line": 441
+  },
+  {
+   "decl": "gBackground,gMDickie,gOutro",
+   "line": 449
+  },
+  {
+   "decl": "gDateHighlight,gPortrait",
+   "line": 450
+  },
+  {
+   "decl": "gCursor,gSmallPrint",
+   "line": 465
+  },
+  {
+   "decl": "gCrown,gCup,gCrew",
+   "line": 466
+  },
+  {
+   "decl": "gInjured,gVacant,gTraining",
+   "line": 467
+  },
+  {
+   "decl": "gInjuryDate,gCourtDate",
+   "line": 468
+  },
+  {
+   "decl": "gMagazine,gPressPhoto",
+   "line": 469
+  },
+  {
+   "decl": "gNewspaper,gReport",
+   "line": 470
+  },
+  {
+   "decl": "gVersus,gSmallVersus",
+   "line": 471
+  },
+  {
+   "decl": "gCamera,gClock",
+   "line": 472
+  },
+  {
+   "decl": "no_hats=0",
+   "line": 657
+  },
+  {
+   "decl": "no_hairs=0",
+   "line": 666
+  },
+  {
+   "decl": "no_beards=0",
+   "line": 675
+  },
+  {
+   "decl": "no_faces=0",
+   "line": 684
+  },
+  {
+   "decl": "no_eyes=0",
+   "line": 693
+  },
+  {
+   "decl": "no_bodies=0",
+   "line": 702
+  },
+  {
+   "decl": "no_arms=0",
+   "line": 711
+  },
+  {
+   "decl": "no_hands=0",
+   "line": 720
+  },
+  {
+   "decl": "no_legs=0",
+   "line": 729
+  },
+  {
+   "decl": "no_signtex=0",
+   "line": 738
+  },
+  {
+   "decl": "tApron,tCanvas,tCanvasEdge",
+   "line": 756
+  },
+  {
+   "decl": "tPad,tPost,tMatting,tCurtain",
+   "line": 757
+  },
+  {
+   "decl": "tVideoOverlay,tCharred,tBanner",
+   "line": 758
+  },
+  {
+   "decl": "tBarbedRope,tElectricRope,tHotRope",
+   "line": 759
+  },
+  {
+   "decl": "tChair,tScreen",
+   "line": 768
+  },
+  {
+   "decl": "tTape,tGame,tTacks",
+   "line": 769
+  },
+  {
+   "decl": "tEars,tPony",
+   "line": 771
+  },
+  {
+   "decl": "labSpecial,labEliminated,labWarning",
+   "line": 803
+  },
+  {
+   "decl": "labOut,labInjured,labLegal,labControl",
+   "line": 804
+  },
+  {
+   "decl": "fed",
+   "line": 1116
+  },
+  {
+   "decl": "curtainRotor",
+   "line": 1423
+  },
+  {
+   "decl": "no_chars",
+   "line": 1500
+  },
+  {
+   "decl": "page,no_pages,no_boxes",
+   "line": 1623
+  },
+  {
+   "decl": "editChar,editFed,editFoc,editModel",
+   "line": 1625
+  },
+  {
+   "decl": "editScroll,editFilter=1,editPoints",
+   "line": 1626
+  },
+  {
+   "decl": "editThemeTest,editExamine,editClipboard",
+   "line": 1627
+  },
+  {
+   "decl": "editGimmickChanges",
+   "line": 1628
+  },
+  {
+   "decl": "advice$,adviceX,adviceY",
+   "line": 1630
+  },
+  {
+   "decl": "warning$,warnX,warnY",
+   "line": 1631
+  },
+  {
+   "decl": "blockData,blockName,blockAllegiance",
+   "line": 1632
+  },
+  {
+   "decl": "blockHair,blockCostume,blockEntrance,blockWeapon",
+   "line": 1633
+  },
+  {
+   "decl": "blockMoves,blockAttacks,blockTaunts",
+   "line": 1634
+  },
+  {
+   "decl": "blockPartner,blockManager",
+   "line": 1635
+  },
+  {
+   "decl": "no_hatstyles=10,no_specs=8",
+   "line": 1636
+  },
+  {
+   "decl": "no_hairstyles=48,no_tattoos=9",
+   "line": 1637
+  },
+  {
+   "decl": "no_lightshows=11",
+   "line": 1638
+  },
+  {
+   "decl": "hatX#,hatY#,hatZ#",
+   "line": 1639
+  },
+  {
+   "decl": "hatXA#,hatYA#,hatZA#",
+   "line": 1640
+  },
+  {
+   "decl": "no_relates",
+   "line": 1642
+  },
+  {
+   "decl": "no_stances=6",
+   "line": 2262
+  },
+  {
+   "decl": "no_taunts",
+   "line": 2273
+  },
+  {
+   "decl": "no_items=20,itemLimit=50,itemList=15",
+   "line": 2566
+  },
+  {
+   "decl": "itemSelection=1",
+   "line": 2567
+  },
+  {
+   "decl": "itemLayout=1",
+   "line": 2568
+  },
+  {
+   "decl": "no_weaps=30,weapCount,weapLimit=100,weapList=38",
+   "line": 2773
+  },
+  {
+   "decl": "weapSelection=1",
+   "line": 2774
+  },
+  {
+   "decl": "weapLayout=1",
+   "line": 2775
+  },
+  {
+   "decl": "world",
+   "line": 3094
+  },
+  {
+   "decl": "wGround#=1.6,wStage#=26.1",
+   "line": 3095
+  },
+  {
+   "decl": "meetX#,meetZ#,meetA#",
+   "line": 3096
+  },
+  {
+   "decl": "no_arenas=26,no_atmos=9,no_ropes=22",
+   "line": 3098
+  },
+  {
+   "decl": "no_aprons=18,no_canvases=10",
+   "line": 3099
+  },
+  {
+   "decl": "arenaPreset=23,arenaType=2",
+   "line": 3100
+  },
+  {
+   "decl": "arenaLight=1,arenaAtmos=0",
+   "line": 3101
+  },
+  {
+   "decl": "arenaAttendance=50,arenaCrowd=14",
+   "line": 3102
+  },
+  {
+   "decl": "arenaApron=4,arenaCanvas=1",
+   "line": 3104
+  },
+  {
+   "decl": "arenaPads=1,arenaRopes=11,arenaMatting=2",
+   "line": 3105
+  },
+  {
+   "decl": "ropeFlow#",
+   "line": 3138
+  },
+  {
+   "decl": "cage",
+   "line": 3158
+  },
+  {
+   "decl": "no_signs",
+   "line": 3173
+  },
+  {
+   "decl": "camListener,dummy",
+   "line": 3180
+  },
+  {
+   "decl": "cam,camPivot",
+   "line": 3181
+  },
+  {
+   "decl": "camType,camOption",
+   "line": 3182
+  },
+  {
+   "decl": "camOldType,camTim",
+   "line": 3183
+  },
+  {
+   "decl": "camFoc,camOldFoc,camRewardFoc",
+   "line": 3184
+  },
+  {
+   "decl": "camTempTim,camTempFoc",
+   "line": 3185
+  },
+  {
+   "decl": "camX#,camY#=75,camZ#",
+   "line": 3186
+  },
+  {
+   "decl": "camTX#,camTY#,camTZ#",
+   "line": 3187
+  },
+  {
+   "decl": "camOldX#,camOldY#,camOldZ#",
+   "line": 3188
+  },
+  {
+   "decl": "camPivX#,camPivY#=100,camPivZ#",
+   "line": 3189
+  },
+  {
+   "decl": "camPivTX#,camPivTY#,camPivTZ#",
+   "line": 3190
+  },
+  {
+   "decl": "camA#,camTA#,camSpread#",
+   "line": 3191
+  },
+  {
+   "decl": "camAccel,camPivAccel",
+   "line": 3192
+  },
+  {
+   "decl": "camCriteria,camOldCriteria",
+   "line": 3193
+  },
+  {
+   "decl": "camBlocked",
+   "line": 3194
+  },
+  {
+   "decl": "camMouseX#,camMouseY#",
+   "line": 3195
+  },
+  {
+   "decl": "speedX#,speedY#,speedZ#",
+   "line": 3197
+  },
+  {
+   "decl": "centreX#,centreY#,centreZ#",
+   "line": 3198
+  },
+  {
+   "decl": "no_lights,lightPivot",
+   "line": 3238
+  },
+  {
+   "decl": "lightR#,lightG#,lightB#",
+   "line": 3239
+  },
+  {
+   "decl": "lightTR#,lightTG#,lightTB#",
+   "line": 3240
+  },
+  {
+   "decl": "ambR#=100,ambG#=100,ambB#=100",
+   "line": 3241
+  },
+  {
+   "decl": "ambTR#,ambTG#,ambTB#",
+   "line": 3242
+  },
+  {
+   "decl": "atmosR#=100,atmosG#=100,atmosB#=100",
+   "line": 3243
+  },
+  {
+   "decl": "atmosTR#,atmosTG#,atmosTB#",
+   "line": 3244
+  },
+  {
+   "decl": "fader,fadeAlpha#,fadeTarget#",
+   "line": 3250
+  },
+  {
+   "decl": "no_particles=500",
+   "line": 3252
+  },
+  {
+   "decl": "no_explodes=10",
+   "line": 3269
+  },
+  {
+   "decl": "no_pools=50",
+   "line": 3277
+  }
+ ],
+ "consts": [],
+ "dims": [
+  {
+   "decl": "frameRate(4)",
+   "line": 31
+  },
+  {
+   "decl": "slotActive(3)",
+   "line": 70
+  },
+  {
+   "decl": "slotPreview(3)",
+   "line": 71
+  },
+  {
+   "decl": "gamNegotiated(optCharLim,3)",
+   "line": 78
+  },
+  {
+   "decl": "gamFinances(10,2)",
+   "line": 79
+  },
+  {
+   "decl": "gamAgreement(50)",
+   "line": 82
+  },
+  {
+   "decl": "gamSchedule(100)",
+   "line": 86
+  },
+  {
+   "decl": "gamRivalFed(100)",
+   "line": 87
+  },
+  {
+   "decl": "gamCourtCase(100)",
+   "line": 88
+  },
+  {
+   "decl": "gamCourtChar(100)",
+   "line": 89
+  },
+  {
+   "decl": "gamOpponent(100)",
+   "line": 90
+  },
+  {
+   "decl": "gamMatch(100)",
+   "line": 91
+  },
+  {
+   "decl": "gamGimmick(100)",
+   "line": 92
+  },
+  {
+   "decl": "gamPromo(100)",
+   "line": 93
+  },
+  {
+   "decl": "gamPromoVariable(100)",
+   "line": 94
+  },
+  {
+   "decl": "gamSegments(100)",
+   "line": 96
+  },
+  {
+   "decl": "gamMatchScore(100,10)",
+   "line": 97
+  },
+  {
+   "decl": "gamMatchHardcore(100,10)",
+   "line": 98
+  },
+  {
+   "decl": "gamMatchWinner(100,10)",
+   "line": 99
+  },
+  {
+   "decl": "gamMatchLoser(100,10)",
+   "line": 100
+  },
+  {
+   "decl": "gamMatchFormat(100,10)",
+   "line": 101
+  },
+  {
+   "decl": "gamNightScore(100)",
+   "line": 102
+  },
+  {
+   "decl": "gamNightHardcore(100)",
+   "line": 103
+  },
+  {
+   "decl": "gamResult(100)",
+   "line": 104
+  },
+  {
+   "decl": "gamVenue(100)",
+   "line": 106
+  },
+  {
+   "decl": "gamAtmos(100)",
+   "line": 107
+  },
+  {
+   "decl": "gamAttendance(100)",
+   "line": 108
+  },
+  {
+   "decl": "gamRopes(100)",
+   "line": 109
+  },
+  {
+   "decl": "gamPads(100)",
+   "line": 110
+  },
+  {
+   "decl": "gamCanvas(100)",
+   "line": 111
+  },
+  {
+   "decl": "gamApron(100)",
+   "line": 112
+  },
+  {
+   "decl": "gamMatting(100)",
+   "line": 113
+  },
+  {
+   "decl": "negClause(3),negClausePrefer(3)",
+   "line": 132
+  },
+  {
+   "decl": "eEvent(200)",
+   "line": 135
+  },
+  {
+   "decl": "eChar(200)",
+   "line": 136
+  },
+  {
+   "decl": "eFed(200)",
+   "line": 137
+  },
+  {
+   "decl": "eFoc(200)",
+   "line": 138
+  },
+  {
+   "decl": "eVariable(200)",
+   "line": 139
+  },
+  {
+   "decl": "eCharged(200)",
+   "line": 140
+  },
+  {
+   "decl": "eNewspaper(200)",
+   "line": 141
+  },
+  {
+   "decl": "eBackground(200)",
+   "line": 142
+  },
+  {
+   "decl": "eAdvert(200,2)",
+   "line": 143
+  },
+  {
+   "decl": "hiRank(10)",
+   "line": 146
+  },
+  {
+   "decl": "hiChar(10),hiName$(10)",
+   "line": 147
+  },
+  {
+   "decl": "hiPhoto(10),hiPhotoHeight#(10)",
+   "line": 148
+  },
+  {
+   "decl": "hiPhotoR(10),hiPhotoG(10),hiPhotoB(10)",
+   "line": 149
+  },
+  {
+   "decl": "hiFed(10),hiWealth(10)",
+   "line": 150
+  },
+  {
+   "decl": "hiPopularity(10),hiReputation(10)",
+   "line": 151
+  },
+  {
+   "decl": "hiExperience(10)",
+   "line": 152
+  },
+  {
+   "decl": "joyPlayer(4)",
+   "line": 177
+  },
+  {
+   "decl": "joyControlTim(4)",
+   "line": 178
+  },
+  {
+   "decl": "promoActor(3)",
+   "line": 193
+  },
+  {
+   "decl": "promoReact(20)",
+   "line": 194
+  },
+  {
+   "decl": "promoTitle$(200)",
+   "line": 195
+  },
+  {
+   "decl": "promoExplain$(200)",
+   "line": 196
+  },
+  {
+   "decl": "promoLength(200)",
+   "line": 197
+  },
+  {
+   "decl": "promoRole(200,3)",
+   "line": 198
+  },
+  {
+   "decl": "promoLocked(200)",
+   "line": 199
+  },
+  {
+   "decl": "promoLib(200)",
+   "line": 200
+  },
+  {
+   "decl": "meterSlot(3)",
+   "line": 218
+  },
+  {
+   "decl": "meterList(3,optPlayLim)",
+   "line": 219
+  },
+  {
+   "decl": "cupSpan(10)",
+   "line": 225
+  },
+  {
+   "decl": "cupFed(10)",
+   "line": 226
+  },
+  {
+   "decl": "cupTeams(10)",
+   "line": 227
+  },
+  {
+   "decl": "cupReward(10)",
+   "line": 228
+  },
+  {
+   "decl": "cupSize(10)",
+   "line": 229
+  },
+  {
+   "decl": "cupControl(10)",
+   "line": 230
+  },
+  {
+   "decl": "cupChar(10,32)",
+   "line": 231
+  },
+  {
+   "decl": "cupCharHealth(10,optCharLim)",
+   "line": 232
+  },
+  {
+   "decl": "cupCharInjured(10,optCharLim,5)",
+   "line": 233
+  },
+  {
+   "decl": "cupCharControl(10,optCharLim)",
+   "line": 234
+  },
+  {
+   "decl": "cupCharPartner(10,optCharLim)",
+   "line": 235
+  },
+  {
+   "decl": "cupBracket(10,32,2)",
+   "line": 236
+  },
+  {
+   "decl": "cupFoc(10)",
+   "line": 237
+  },
+  {
+   "decl": "cupResult(10,32)",
+   "line": 238
+  },
+  {
+   "decl": "cupX(32),cupY(32)",
+   "line": 240
+  },
+  {
+   "decl": "cupTargetBracket(32),cupTargetSlot(32)",
+   "line": 273
+  },
+  {
+   "decl": "cupScrollLimit(6)",
+   "line": 306
+  },
+  {
+   "decl": "sShuffle(3)",
+   "line": 336
+  },
+  {
+   "decl": "sStep(6)",
+   "line": 340
+  },
+  {
+   "decl": "sImpact(7)",
+   "line": 350
+  },
+  {
+   "decl": "sBlock(7)",
+   "line": 351
+  },
+  {
+   "decl": "sPain(10)",
+   "line": 386
+  },
+  {
+   "decl": "sAgony(5)",
+   "line": 390
+  },
+  {
+   "decl": "sCount(10)",
+   "line": 398
+  },
+  {
+   "decl": "sCrowd(12)",
+   "line": 406
+  },
+  {
+   "decl": "sTheme(100)",
+   "line": 425
+  },
+  {
+   "decl": "musicLearned(100)",
+   "line": 426
+  },
+  {
+   "decl": "font(20)",
+   "line": 442
+  },
+  {
+   "decl": "fontNews(20)",
+   "line": 443
+  },
+  {
+   "decl": "fontStat(10)",
+   "line": 444
+  },
+  {
+   "decl": "gIntro(2)",
+   "line": 445
+  },
+  {
+   "decl": "gLogo(3)",
+   "line": 446
+  },
+  {
+   "decl": "gMenu(20)",
+   "line": 447
+  },
+  {
+   "decl": "gBlackout(2)",
+   "line": 448
+  },
+  {
+   "decl": "gStat(20)",
+   "line": 451
+  },
+  {
+   "decl": "gScroll(4)",
+   "line": 452
+  },
+  {
+   "decl": "gLoser(3)",
+   "line": 453
+  },
+  {
+   "decl": "gControl(3)",
+   "line": 454
+  },
+  {
+   "decl": "gMonth(2)",
+   "line": 455
+  },
+  {
+   "decl": "gEvent(10)",
+   "line": 456
+  },
+  {
+   "decl": "gHistory(3)",
+   "line": 457
+  },
+  {
+   "decl": "gBelt(5)",
+   "line": 458
+  },
+  {
+   "decl": "gAllegiance(2)",
+   "line": 459
+  },
+  {
+   "decl": "gRating(5)",
+   "line": 460
+  },
+  {
+   "decl": "gHardcore(5)",
+   "line": 461
+  },
+  {
+   "decl": "gResult(5)",
+   "line": 462
+  },
+  {
+   "decl": "gChart(5)",
+   "line": 463
+  },
+  {
+   "decl": "gProduction(20)",
+   "line": 464
+  },
+  {
+   "decl": "gNewsIdentity(5)",
+   "line": 473
+  },
+  {
+   "decl": "gNewsScene(13)",
+   "line": 474
+  },
+  {
+   "decl": "gNewsAdvert(10)",
+   "line": 475
+  },
+  {
+   "decl": "gFed(10)",
+   "line": 476
+  },
+  {
+   "decl": "gFedDark(10)",
+   "line": 477
+  },
+  {
+   "decl": "gArena(30)",
+   "line": 478
+  },
+  {
+   "decl": "tCrowd(5)",
+   "line": 747
+  },
+  {
+   "decl": "tSign(no_signtex)",
+   "line": 748
+  },
+  {
+   "decl": "tVideo(30)",
+   "line": 749
+  },
+  {
+   "decl": "tPoster(6)",
+   "line": 750
+  },
+  {
+   "decl": "tPlant(4)",
+   "line": 751
+  },
+  {
+   "decl": "tRope(20)",
+   "line": 752
+  },
+  {
+   "decl": "tWall(3)",
+   "line": 753
+  },
+  {
+   "decl": "tCeiling(3)",
+   "line": 754
+  },
+  {
+   "decl": "tGround(3)",
+   "line": 755
+  },
+  {
+   "decl": "tCage(3)",
+   "line": 761
+  },
+  {
+   "decl": "tGirder(3)",
+   "line": 762
+  },
+  {
+   "decl": "tMetal(3)",
+   "line": 763
+  },
+  {
+   "decl": "tWood(3)",
+   "line": 764
+  },
+  {
+   "decl": "tGlass(2)",
+   "line": 765
+  },
+  {
+   "decl": "tBelt(3)",
+   "line": 766
+  },
+  {
+   "decl": "tBottle(2)",
+   "line": 767
+  },
+  {
+   "decl": "tEyes(3),tEyeballs(no_eyes)",
+   "line": 772
+  },
+  {
+   "decl": "tMouth(5)",
+   "line": 773
+  },
+  {
+   "decl": "tSpecs(3)",
+   "line": 774
+  },
+  {
+   "decl": "tHat(200),tHatAccess(200)",
+   "line": 775
+  },
+  {
+   "decl": "tShaved(10),tBeard(no_beards)",
+   "line": 776
+  },
+  {
+   "decl": "tHair(200),tHairAccess(200)",
+   "line": 777
+  },
+  {
+   "decl": "tFace(200),tFaceType(200),tFaceAccess(200)",
+   "line": 778
+  },
+  {
+   "decl": "tBody(200),tBodyType(200),tBodyAccess(200)",
+   "line": 779
+  },
+  {
+   "decl": "tArm(200),tArmType(200),tArmAccess(200)",
+   "line": 780
+  },
+  {
+   "decl": "tHands(200),tHandType(200),tHandsAccess(200)",
+   "line": 781
+  },
+  {
+   "decl": "tLegs(200),tLegType(200),tLegsAccess(200)",
+   "line": 782
+  },
+  {
+   "decl": "tBodyShade(100),tBodyShadeAccess(100)",
+   "line": 783
+  },
+  {
+   "decl": "tArmShade(100),tArmShadeAccess(100)",
+   "line": 784
+  },
+  {
+   "decl": "tHandShade(100),tHandShadeAccess(100)",
+   "line": 785
+  },
+  {
+   "decl": "tLegShade(100),tLegShadeAccess(100)",
+   "line": 786
+  },
+  {
+   "decl": "tBodyTattoo(100),tBodyTattooAccess(100)",
+   "line": 787
+  },
+  {
+   "decl": "tArmTattoo(100),tArmTattooAccess(100)",
+   "line": 788
+  },
+  {
+   "decl": "tFaceScar(5)",
+   "line": 789
+  },
+  {
+   "decl": "tEyeScar(5)",
+   "line": 790
+  },
+  {
+   "decl": "tBodyScar(5)",
+   "line": 791
+  },
+  {
+   "decl": "tArmScar(5)",
+   "line": 792
+  },
+  {
+   "decl": "tHandScar(5)",
+   "line": 793
+  },
+  {
+   "decl": "tLegScar(5)",
+   "line": 794
+  },
+  {
+   "decl": "tSeverEars(3)",
+   "line": 795
+  },
+  {
+   "decl": "tSeverEyes(3)",
+   "line": 796
+  },
+  {
+   "decl": "tSeverBody(3)",
+   "line": 797
+  },
+  {
+   "decl": "tSeverArm(3)",
+   "line": 798
+  },
+  {
+   "decl": "tSeverHand(3)",
+   "line": 799
+  },
+  {
+   "decl": "tSeverLegs(3)",
+   "line": 800
+  },
+  {
+   "decl": "labCount(3)",
+   "line": 802
+  },
+  {
+   "decl": "fedName$(10)",
+   "line": 1117
+  },
+  {
+   "decl": "fedOldBank(10)",
+   "line": 1118
+  },
+  {
+   "decl": "fedBank(10)",
+   "line": 1119
+  },
+  {
+   "decl": "fedPopularity(10)",
+   "line": 1120
+  },
+  {
+   "decl": "fedReputation(10)",
+   "line": 1121
+  },
+  {
+   "decl": "fedOldPopularity(10)",
+   "line": 1122
+  },
+  {
+   "decl": "fedOldReputation(10)",
+   "line": 1123
+  },
+  {
+   "decl": "fedNewPopularity(10)",
+   "line": 1124
+  },
+  {
+   "decl": "fedNewReputation(10)",
+   "line": 1125
+  },
+  {
+   "decl": "fedSize(10)",
+   "line": 1126
+  },
+  {
+   "decl": "fedRoster(10,50)",
+   "line": 1127
+  },
+  {
+   "decl": "fedRank(10,optCharLim)",
+   "line": 1128
+  },
+  {
+   "decl": "fedFatality(10)",
+   "line": 1129
+  },
+  {
+   "decl": "fedProduction(10,20)",
+   "line": 1130
+  },
+  {
+   "decl": "fedLocked(10)",
+   "line": 1131
+  },
+  {
+   "decl": "fedBooker(10)",
+   "line": 1133
+  },
+  {
+   "decl": "fedCupHolder(10)",
+   "line": 1134
+  },
+  {
+   "decl": "fedChampWorld(10)",
+   "line": 1135
+  },
+  {
+   "decl": "fedChampInter(10)",
+   "line": 1136
+  },
+  {
+   "decl": "fedChampTag(10,2)",
+   "line": 1137
+  },
+  {
+   "decl": "fedOldChampWorld(10)",
+   "line": 1138
+  },
+  {
+   "decl": "fedOldChampInter(10)",
+   "line": 1139
+  },
+  {
+   "decl": "fedOldChampTag(10,2)",
+   "line": 1140
+  },
+  {
+   "decl": "fedHistCount(10,4,10)",
+   "line": 1141
+  },
+  {
+   "decl": "fedHistChar(10,4,10)",
+   "line": 1142
+  },
+  {
+   "decl": "fedHistPartner(10,4,10)",
+   "line": 1143
+  },
+  {
+   "decl": "fedHistDate(10,4,10)",
+   "line": 1144
+  },
+  {
+   "decl": "fedHistYear(10,4,10)",
+   "line": 1145
+  },
+  {
+   "decl": "fedList(10)",
+   "line": 1147
+  },
+  {
+   "decl": "fedOldList(10)",
+   "line": 1148
+  },
+  {
+   "decl": "fedRanked(10)",
+   "line": 1149
+  },
+  {
+   "decl": "fedOldRanked(10)",
+   "line": 1150
+  },
+  {
+   "decl": "showName$(20)",
+   "line": 1152
+  },
+  {
+   "decl": "showGenre$(20)",
+   "line": 1153
+  },
+  {
+   "decl": "showPopularity(20)",
+   "line": 1154
+  },
+  {
+   "decl": "showOldPopularity(20)",
+   "line": 1155
+  },
+  {
+   "decl": "showList(20)",
+   "line": 1156
+  },
+  {
+   "decl": "showOldList(20)",
+   "line": 1157
+  },
+  {
+   "decl": "showRanked(20)",
+   "line": 1158
+  },
+  {
+   "decl": "showOldRanked(20)",
+   "line": 1159
+  },
+  {
+   "decl": "showTime(10)",
+   "line": 1160
+  },
+  {
+   "decl": "prodName$(20)",
+   "line": 1190
+  },
+  {
+   "decl": "prodDesc$(20)",
+   "line": 1191
+  },
+  {
+   "decl": "prodCost(20)",
+   "line": 1192
+  },
+  {
+   "decl": "p(optPlayLim)",
+   "line": 1225
+  },
+  {
+   "decl": "pFoc(optPlayLim)",
+   "line": 1226
+  },
+  {
+   "decl": "pOldFoc(optPlayLim)",
+   "line": 1227
+  },
+  {
+   "decl": "pWeapFoc(optPlayLim)",
+   "line": 1228
+  },
+  {
+   "decl": "pItemFoc(optPlayLim)",
+   "line": 1229
+  },
+  {
+   "decl": "pFocTim(optPlayLim)",
+   "line": 1230
+  },
+  {
+   "decl": "pOutTim(optPlayLim)",
+   "line": 1231
+  },
+  {
+   "decl": "pEntranceTim(optPlayLim)",
+   "line": 1232
+  },
+  {
+   "decl": "pX#(optPlayLim)",
+   "line": 1233
+  },
+  {
+   "decl": "pY#(optPlayLim)",
+   "line": 1234
+  },
+  {
+   "decl": "pZ#(optPlayLim)",
+   "line": 1235
+  },
+  {
+   "decl": "pOldX#(optPlayLim)",
+   "line": 1236
+  },
+  {
+   "decl": "pOldY#(optPlayLim)",
+   "line": 1237
+  },
+  {
+   "decl": "pOldZ#(optPlayLim)",
+   "line": 1238
+  },
+  {
+   "decl": "pA#(optPlayLim)",
+   "line": 1239
+  },
+  {
+   "decl": "pTA#(optPlayLim)",
+   "line": 1240
+  },
+  {
+   "decl": "pOldA#(optPlayLim)",
+   "line": 1241
+  },
+  {
+   "decl": "pBodyXA#(optPlayLim)",
+   "line": 1242
+  },
+  {
+   "decl": "pBodyZA#(optPlayLim)",
+   "line": 1243
+  },
+  {
+   "decl": "pBodyTXA#(optPlayLim)",
+   "line": 1244
+  },
+  {
+   "decl": "pBodyTZA#(optPlayLim)",
+   "line": 1245
+  },
+  {
+   "decl": "pOldBodyXA#(optPlayLim)",
+   "line": 1246
+  },
+  {
+   "decl": "pOldBodyZA#(optPlayLim)",
+   "line": 1247
+  },
+  {
+   "decl": "pSourceBodyXA#(optPlayLim,10)",
+   "line": 1248
+  },
+  {
+   "decl": "pEndBodyXA#(optPlayLim,10)",
+   "line": 1249
+  },
+  {
+   "decl": "pScanX#(optPlayLim,6)",
+   "line": 1250
+  },
+  {
+   "decl": "pScanZ#(optPlayLim,6)",
+   "line": 1251
+  },
+  {
+   "decl": "pDashState(optPlayLim)",
+   "line": 1253
+  },
+  {
+   "decl": "pDashTim(optPlayLim)",
+   "line": 1254
+  },
+  {
+   "decl": "pDashA#(optPlayLim)",
+   "line": 1255
+  },
+  {
+   "decl": "pMomentum(optPlayLim)",
+   "line": 1256
+  },
+  {
+   "decl": "pTravel#(optPlayLim)",
+   "line": 1257
+  },
+  {
+   "decl": "pGravity#(optPlayLim)",
+   "line": 1258
+  },
+  {
+   "decl": "pVelocity#(optPlayLim)",
+   "line": 1259
+  },
+  {
+   "decl": "pFlightA#(optPlayLim)",
+   "line": 1260
+  },
+  {
+   "decl": "pFlyAgenda(optPlayLim)",
+   "line": 1261
+  },
+  {
+   "decl": "pGround#(optPlayLim)",
+   "line": 1262
+  },
+  {
+   "decl": "pHurtA#(optPlayLim)",
+   "line": 1263
+  },
+  {
+   "decl": "pStagger#(optPlayLim)",
+   "line": 1264
+  },
+  {
+   "decl": "pHurtTim(optPlayLim)",
+   "line": 1265
+  },
+  {
+   "decl": "pVictim(optPlayLim)",
+   "line": 1266
+  },
+  {
+   "decl": "pSpeed#(optPlayLim)",
+   "line": 1267
+  },
+  {
+   "decl": "pFriction(optPlayLim)",
+   "line": 1268
+  },
+  {
+   "decl": "pElevation#(optPlayLim)",
+   "line": 1269
+  },
+  {
+   "decl": "pPlatform(optPlayLim)",
+   "line": 1270
+  },
+  {
+   "decl": "pOldPlatform(optPlayLim)",
+   "line": 1271
+  },
+  {
+   "decl": "pPlatformX#(optPlayLim)",
+   "line": 1272
+  },
+  {
+   "decl": "pPlatformY#(optPlayLim)",
+   "line": 1273
+  },
+  {
+   "decl": "pPlatformZ#(optPlayLim)",
+   "line": 1274
+  },
+  {
+   "decl": "pExcusedPlays(optPlayLim)",
+   "line": 1275
+  },
+  {
+   "decl": "pExcusedWorld(optPlayLim)",
+   "line": 1276
+  },
+  {
+   "decl": "pExcusedEdges(optPlayLim)",
+   "line": 1277
+  },
+  {
+   "decl": "pExcusedItems(optPlayLim)",
+   "line": 1278
+  },
+  {
+   "decl": "pRole(optPlayLim)",
+   "line": 1280
+  },
+  {
+   "decl": "pHeel(optPlayLim)",
+   "line": 1281
+  },
+  {
+   "decl": "pSting(optPlayLim)",
+   "line": 1282
+  },
+  {
+   "decl": "pMultiSting(optPlayLim,optPlayLim)",
+   "line": 1283
+  },
+  {
+   "decl": "pItemSting(optPlayLim,100)",
+   "line": 1284
+  },
+  {
+   "decl": "pWeapSting(optPlayLim,100)",
+   "line": 1285
+  },
+  {
+   "decl": "pRopeSting(optPlayLim,12)",
+   "line": 1286
+  },
+  {
+   "decl": "pCageSting(optPlayLim)",
+   "line": 1287
+  },
+  {
+   "decl": "pHealth(optPlayLim)",
+   "line": 1288
+  },
+  {
+   "decl": "pHealthLimit(optPlayLim)",
+   "line": 1289
+  },
+  {
+   "decl": "pShowHealth(optPlayLim)",
+   "line": 1290
+  },
+  {
+   "decl": "pHP(optPlayLim)",
+   "line": 1291
+  },
+  {
+   "decl": "pInjured(optPlayLim,10)",
+   "line": 1292
+  },
+  {
+   "decl": "pImmunity(optPlayLim)",
+   "line": 1293
+  },
+  {
+   "decl": "pDazed(optPlayLim)",
+   "line": 1294
+  },
+  {
+   "decl": "pDizzyTim(optPlayLim)",
+   "line": 1295
+  },
+  {
+   "decl": "pBlindTim(optPlayLim)",
+   "line": 1296
+  },
+  {
+   "decl": "pBuckleTim(optPlayLim)",
+   "line": 1297
+  },
+  {
+   "decl": "pDT(optPlayLim)",
+   "line": 1298
+  },
+  {
+   "decl": "pLieTim(optPlayLim)",
+   "line": 1299
+  },
+  {
+   "decl": "pHeat(optPlayLim)",
+   "line": 1300
+  },
+  {
+   "decl": "pShowHeat(optPlayLim)",
+   "line": 1301
+  },
+  {
+   "decl": "pSpecial(optPlayLim)",
+   "line": 1302
+  },
+  {
+   "decl": "pSpecialFlash(optPlayLim)",
+   "line": 1303
+  },
+  {
+   "decl": "pPopularity(optPlayLim)",
+   "line": 1304
+  },
+  {
+   "decl": "pStrength(optPlayLim)",
+   "line": 1305
+  },
+  {
+   "decl": "pSkill(optPlayLim)",
+   "line": 1306
+  },
+  {
+   "decl": "pAgility(optPlayLim)",
+   "line": 1307
+  },
+  {
+   "decl": "pStamina(optPlayLim)",
+   "line": 1308
+  },
+  {
+   "decl": "pToughness(optPlayLim)",
+   "line": 1309
+  },
+  {
+   "decl": "pCarrying(optPlayLim)",
+   "line": 1310
+  },
+  {
+   "decl": "pHolding(optPlayLim)",
+   "line": 1311
+  },
+  {
+   "decl": "pWeaponAccess(optPlayLim,100)",
+   "line": 1312
+  },
+  {
+   "decl": "pSpurt(optPlayLim)",
+   "line": 1313
+  },
+  {
+   "decl": "pGrappling(optPlayLim)",
+   "line": 1315
+  },
+  {
+   "decl": "pGrappler(optPlayLim)",
+   "line": 1316
+  },
+  {
+   "decl": "pGrappleAssist(optPlayLim)",
+   "line": 1317
+  },
+  {
+   "decl": "pStretched(optPlayLim)",
+   "line": 1318
+  },
+  {
+   "decl": "pPinning(optPlayLim)",
+   "line": 1319
+  },
+  {
+   "decl": "pPinner(optPlayLim)",
+   "line": 1320
+  },
+  {
+   "decl": "pPinStyle(optPlayLim)",
+   "line": 1321
+  },
+  {
+   "decl": "pPinX#(optPlayLim)",
+   "line": 1322
+  },
+  {
+   "decl": "pPinZ#(optPlayLim)",
+   "line": 1323
+  },
+  {
+   "decl": "pPinA#(optPlayLim)",
+   "line": 1324
+  },
+  {
+   "decl": "pFalls(optPlayLim)",
+   "line": 1325
+  },
+  {
+   "decl": "pPinCount(optPlayLim)",
+   "line": 1326
+  },
+  {
+   "decl": "pOutCount(optPlayLim)",
+   "line": 1327
+  },
+  {
+   "decl": "pCountTim(optPlayLim)",
+   "line": 1328
+  },
+  {
+   "decl": "pOutsideTim(optPlayLim)",
+   "line": 1329
+  },
+  {
+   "decl": "pRefAward(optPlayLim)",
+   "line": 1330
+  },
+  {
+   "decl": "pRefVictim(optPlayLim)",
+   "line": 1331
+  },
+  {
+   "decl": "pChecked(optPlayLim)",
+   "line": 1332
+  },
+  {
+   "decl": "pWarned(optPlayLim)",
+   "line": 1333
+  },
+  {
+   "decl": "pAutoTim(optPlayLim)",
+   "line": 1334
+  },
+  {
+   "decl": "pSubmitDelay(optPlayLim)",
+   "line": 1335
+  },
+  {
+   "decl": "pDQDelay(optPlayLim)",
+   "line": 1336
+  },
+  {
+   "decl": "pControl(optPlayLim)",
+   "line": 1338
+  },
+  {
+   "decl": "pJoystick(optPlayLim)",
+   "line": 1339
+  },
+  {
+   "decl": "pController(optPlayLim)",
+   "line": 1340
+  },
+  {
+   "decl": "cUp(optPlayLim)",
+   "line": 1341
+  },
+  {
+   "decl": "cDown(optPlayLim)",
+   "line": 1342
+  },
+  {
+   "decl": "cLeft(optPlayLim)",
+   "line": 1343
+  },
+  {
+   "decl": "cRight(optPlayLim)",
+   "line": 1344
+  },
+  {
+   "decl": "cUpTim(optPlayLim)",
+   "line": 1345
+  },
+  {
+   "decl": "cDownTim(optPlayLim)",
+   "line": 1346
+  },
+  {
+   "decl": "cLeftTim(optPlayLim)",
+   "line": 1347
+  },
+  {
+   "decl": "cRightTim(optPlayLim)",
+   "line": 1348
+  },
+  {
+   "decl": "cAttack(optPlayLim)",
+   "line": 1349
+  },
+  {
+   "decl": "cAttackAgenda(optPlayLim)",
+   "line": 1350
+  },
+  {
+   "decl": "cRun(optPlayLim)",
+   "line": 1351
+  },
+  {
+   "decl": "cBlock(optPlayLim)",
+   "line": 1352
+  },
+  {
+   "decl": "cGrapple(optPlayLim)",
+   "line": 1353
+  },
+  {
+   "decl": "cPickUp(optPlayLim)",
+   "line": 1354
+  },
+  {
+   "decl": "cPickUpFree(optPlayLim)",
+   "line": 1355
+  },
+  {
+   "decl": "cSwitch(optPlayLim)",
+   "line": 1356
+  },
+  {
+   "decl": "cTaunt(optPlayLim)",
+   "line": 1357
+  },
+  {
+   "decl": "pAgenda(optPlayLim)",
+   "line": 1359
+  },
+  {
+   "decl": "pOldAgenda(optPlayLim)",
+   "line": 1360
+  },
+  {
+   "decl": "pTX#(optPlayLim)",
+   "line": 1361
+  },
+  {
+   "decl": "pTZ#(optPlayLim)",
+   "line": 1362
+  },
+  {
+   "decl": "pSubX#(optPlayLim)",
+   "line": 1363
+  },
+  {
+   "decl": "pSubZ#(optPlayLim)",
+   "line": 1364
+  },
+  {
+   "decl": "pActX#(optPlayLim)",
+   "line": 1365
+  },
+  {
+   "decl": "pActZ#(optPlayLim)",
+   "line": 1366
+  },
+  {
+   "decl": "pFollow(optPlayLim)",
+   "line": 1367
+  },
+  {
+   "decl": "pSatisfied(optPlayLim)",
+   "line": 1368
+  },
+  {
+   "decl": "pNowhere(optPlayLim)",
+   "line": 1369
+  },
+  {
+   "decl": "pRelocate(optPlayLim)",
+   "line": 1370
+  },
+  {
+   "decl": "pRunTim(optPlayLim)",
+   "line": 1371
+  },
+  {
+   "decl": "pBlockTim(optPlayLim)",
+   "line": 1372
+  },
+  {
+   "decl": "pManager(optPlayLim)",
+   "line": 1373
+  },
+  {
+   "decl": "pClient(optPlayLim)",
+   "line": 1374
+  },
+  {
+   "decl": "pAngerTim(optPlayLim,optPlayLim)",
+   "line": 1375
+  },
+  {
+   "decl": "pSeq(optPlayLim,1100)",
+   "line": 1377
+  },
+  {
+   "decl": "pState(optPlayLim)",
+   "line": 1378
+  },
+  {
+   "decl": "pAnim(optPlayLim)",
+   "line": 1379
+  },
+  {
+   "decl": "pOldAnim(optPlayLim)",
+   "line": 1380
+  },
+  {
+   "decl": "pAnimStage(optPlayLim)",
+   "line": 1381
+  },
+  {
+   "decl": "pAnimTim(optPlayLim)",
+   "line": 1382
+  },
+  {
+   "decl": "pAnimSpeed#(optPlayLim)",
+   "line": 1383
+  },
+  {
+   "decl": "pRevAnim(optPlayLim)",
+   "line": 1384
+  },
+  {
+   "decl": "pRevTim#(optPlayLim)",
+   "line": 1385
+  },
+  {
+   "decl": "pRevSpeed#(optPlayLim)",
+   "line": 1386
+  },
+  {
+   "decl": "pStepTim#(optPlayLim)",
+   "line": 1387
+  },
+  {
+   "decl": "pHurtDelay(optPlayLim)",
+   "line": 1388
+  },
+  {
+   "decl": "pDelayAnim(optPlayLim)",
+   "line": 1389
+  },
+  {
+   "decl": "pReaction(optPlayLim)",
+   "line": 1390
+  },
+  {
+   "decl": "pInteract(optPlayLim)",
+   "line": 1391
+  },
+  {
+   "decl": "pRefTaunt(optPlayLim,4)",
+   "line": 1392
+  },
+  {
+   "decl": "pEyes(optPlayLim)",
+   "line": 1394
+  },
+  {
+   "decl": "pOldEyes(optPlayLim)",
+   "line": 1395
+  },
+  {
+   "decl": "pEyeTex(optPlayLim)",
+   "line": 1396
+  },
+  {
+   "decl": "pSquint(optPlayLim)",
+   "line": 1397
+  },
+  {
+   "decl": "pSquintTarget(optPlayLim)",
+   "line": 1398
+  },
+  {
+   "decl": "pSquintRevert(optPlayLim)",
+   "line": 1399
+  },
+  {
+   "decl": "pSquintSpeed(optPlayLim)",
+   "line": 1400
+  },
+  {
+   "decl": "pBlinkTim(optPlayLim)",
+   "line": 1401
+  },
+  {
+   "decl": "pLookX#(optPlayLim)",
+   "line": 1402
+  },
+  {
+   "decl": "pLookY#(optPlayLim)",
+   "line": 1403
+  },
+  {
+   "decl": "pLookZ#(optPlayLim)",
+   "line": 1404
+  },
+  {
+   "decl": "pLookTX#(optPlayLim)",
+   "line": 1405
+  },
+  {
+   "decl": "pLookTY#(optPlayLim)",
+   "line": 1406
+  },
+  {
+   "decl": "pLookTZ#(optPlayLim)",
+   "line": 1407
+  },
+  {
+   "decl": "pChar(optPlayLim)",
+   "line": 1409
+  },
+  {
+   "decl": "pCostume(optPlayLim)",
+   "line": 1410
+  },
+  {
+   "decl": "pWeapon(optPlayLim)",
+   "line": 1411
+  },
+  {
+   "decl": "pChampion(optPlayLim)",
+   "line": 1412
+  },
+  {
+   "decl": "pMouth(optPlayLim)",
+   "line": 1413
+  },
+  {
+   "decl": "pSpeaking(optPlayLim)",
+   "line": 1414
+  },
+  {
+   "decl": "pShadow(optPlayLim,50)",
+   "line": 1415
+  },
+  {
+   "decl": "pLabel(optPlayLim)",
+   "line": 1416
+  },
+  {
+   "decl": "pLabelX#(optPlayLim)",
+   "line": 1417
+  },
+  {
+   "decl": "pLabelY#(optPlayLim)",
+   "line": 1418
+  },
+  {
+   "decl": "pLabelZ#(optPlayLim)",
+   "line": 1419
+  },
+  {
+   "decl": "pOldLabel(optPlayLim)",
+   "line": 1420
+  },
+  {
+   "decl": "pHidden(optPlayLim)",
+   "line": 1421
+  },
+  {
+   "decl": "curtainSlot(2)",
+   "line": 1424
+  },
+  {
+   "decl": "pCurtain(optPlayLim)",
+   "line": 1425
+  },
+  {
+   "decl": "pTeam(optPlayLim)",
+   "line": 1426
+  },
+  {
+   "decl": "pChaosTim(optPlayLim)",
+   "line": 1427
+  },
+  {
+   "decl": "pEliminated(optPlayLim)",
+   "line": 1428
+  },
+  {
+   "decl": "pIntruder(optPlayLim)",
+   "line": 1429
+  },
+  {
+   "decl": "pAbused(optPlayLim)",
+   "line": 1430
+  },
+  {
+   "decl": "pListed(optPlayLim)",
+   "line": 1431
+  },
+  {
+   "decl": "teamLegal(optPlayLim)",
+   "line": 1432
+  },
+  {
+   "decl": "teamFalls(optPlayLim)",
+   "line": 1433
+  },
+  {
+   "decl": "teamRemaining(optPlayLim)",
+   "line": 1434
+  },
+  {
+   "decl": "teamHealth(optPlayLim)",
+   "line": 1435
+  },
+  {
+   "decl": "teamX#(optPlayLim),teamZ#(optPlayLim)",
+   "line": 1436
+  },
+  {
+   "decl": "pLimb(optPlayLim,50)",
+   "line": 1445
+  },
+  {
+   "decl": "pLimbX#(optPlayLim,50)",
+   "line": 1446
+  },
+  {
+   "decl": "pLimbY#(optPlayLim,50)",
+   "line": 1447
+  },
+  {
+   "decl": "pLimbZ#(optPlayLim,50)",
+   "line": 1448
+  },
+  {
+   "decl": "pScar(optPlayLim,50)",
+   "line": 1449
+  },
+  {
+   "decl": "pOldScar(optPlayLim,50)",
+   "line": 1450
+  },
+  {
+   "decl": "limbPrecede(50)",
+   "line": 1452
+  },
+  {
+   "decl": "limbSource(50)",
+   "line": 1453
+  },
+  {
+   "decl": "charName$(optCharLim)",
+   "line": 1502
+  },
+  {
+   "decl": "charTeamName$(optCharLim)",
+   "line": 1503
+  },
+  {
+   "decl": "charAge(optCharLim)",
+   "line": 1504
+  },
+  {
+   "decl": "charHeight(optCharLim)",
+   "line": 1505
+  },
+  {
+   "decl": "charWeight(optCharLim)",
+   "line": 1506
+  },
+  {
+   "decl": "charGender(optCharLim)",
+   "line": 1507
+  },
+  {
+   "decl": "charPopularity(optCharLim)",
+   "line": 1508
+  },
+  {
+   "decl": "charStrength(optCharLim)",
+   "line": 1509
+  },
+  {
+   "decl": "charSkill(optCharLim)",
+   "line": 1510
+  },
+  {
+   "decl": "charAgility(optCharLim)",
+   "line": 1511
+  },
+  {
+   "decl": "charStamina(optCharLim)",
+   "line": 1512
+  },
+  {
+   "decl": "charToughness(optCharLim)",
+   "line": 1513
+  },
+  {
+   "decl": "charAttitude(optCharLim)",
+   "line": 1514
+  },
+  {
+   "decl": "charHappiness(optCharLim)",
+   "line": 1515
+  },
+  {
+   "decl": "charOldPopularity(optCharLim)",
+   "line": 1516
+  },
+  {
+   "decl": "charOldStrength(optCharLim)",
+   "line": 1517
+  },
+  {
+   "decl": "charOldSkill(optCharLim)",
+   "line": 1518
+  },
+  {
+   "decl": "charOldAgility(optCharLim)",
+   "line": 1519
+  },
+  {
+   "decl": "charOldStamina(optCharLim)",
+   "line": 1520
+  },
+  {
+   "decl": "charOldToughness(optCharLim)",
+   "line": 1521
+  },
+  {
+   "decl": "charOldAttitude(optCharLim)",
+   "line": 1522
+  },
+  {
+   "decl": "charOldHappiness(optCharLim)",
+   "line": 1523
+  },
+  {
+   "decl": "charNewPopularity(optCharLim)",
+   "line": 1524
+  },
+  {
+   "decl": "charNewStrength(optCharLim)",
+   "line": 1525
+  },
+  {
+   "decl": "charNewSkill(optCharLim)",
+   "line": 1526
+  },
+  {
+   "decl": "charNewAgility(optCharLim)",
+   "line": 1527
+  },
+  {
+   "decl": "charNewStamina(optCharLim)",
+   "line": 1528
+  },
+  {
+   "decl": "charNewToughness(optCharLim)",
+   "line": 1529
+  },
+  {
+   "decl": "charNewAttitude(optCharLim)",
+   "line": 1530
+  },
+  {
+   "decl": "charNewHappiness(optCharLim)",
+   "line": 1531
+  },
+  {
+   "decl": "charRole(optCharLim)",
+   "line": 1533
+  },
+  {
+   "decl": "charHeel(optCharLim)",
+   "line": 1534
+  },
+  {
+   "decl": "charStance(optCharLim)",
+   "line": 1535
+  },
+  {
+   "decl": "charTaunt(optCharLim,5)",
+   "line": 1536
+  },
+  {
+   "decl": "charTheme(optCharLim)",
+   "line": 1537
+  },
+  {
+   "decl": "charThemePitch(optCharLim)",
+   "line": 1538
+  },
+  {
+   "decl": "charLight(optCharLim)",
+   "line": 1539
+  },
+  {
+   "decl": "charWeapon(optCharLim)",
+   "line": 1540
+  },
+  {
+   "decl": "charManager(optCharLim)",
+   "line": 1541
+  },
+  {
+   "decl": "charPartner(optCharLim)",
+   "line": 1542
+  },
+  {
+   "decl": "charPhoto(optCharLim)",
+   "line": 1544
+  },
+  {
+   "decl": "charPhotoR(optCharLim)",
+   "line": 1545
+  },
+  {
+   "decl": "charPhotoG(optCharLim)",
+   "line": 1546
+  },
+  {
+   "decl": "charPhotoB(optCharLim)",
+   "line": 1547
+  },
+  {
+   "decl": "charEyes(optCharLim)",
+   "line": 1548
+  },
+  {
+   "decl": "charEyeballs(optCharLim)",
+   "line": 1549
+  },
+  {
+   "decl": "charEyeShape(optCharLim)",
+   "line": 1550
+  },
+  {
+   "decl": "charHeadSize(optCharLim)",
+   "line": 1551
+  },
+  {
+   "decl": "charTattoos(optCharLim)",
+   "line": 1552
+  },
+  {
+   "decl": "charBaggy(optCharLim,3)",
+   "line": 1553
+  },
+  {
+   "decl": "charHatStyle(optCharLim,3)",
+   "line": 1554
+  },
+  {
+   "decl": "charHat(optCharLim,3)",
+   "line": 1555
+  },
+  {
+   "decl": "charSpecs(optCharLim,3)",
+   "line": 1556
+  },
+  {
+   "decl": "charHairStyle(optCharLim,3)",
+   "line": 1557
+  },
+  {
+   "decl": "charHair(optCharLim,3)",
+   "line": 1558
+  },
+  {
+   "decl": "charFace(optCharLim,3)",
+   "line": 1559
+  },
+  {
+   "decl": "charBeard(optCharLim,3)",
+   "line": 1560
+  },
+  {
+   "decl": "charBody(optCharLim,3)",
+   "line": 1561
+  },
+  {
+   "decl": "charLeftArm(optCharLim,3)",
+   "line": 1562
+  },
+  {
+   "decl": "charRightArm(optCharLim,3)",
+   "line": 1563
+  },
+  {
+   "decl": "charLeftForearm(optCharLim,3)",
+   "line": 1564
+  },
+  {
+   "decl": "charRightForearm(optCharLim,3)",
+   "line": 1565
+  },
+  {
+   "decl": "charLeftHand(optCharLim,3)",
+   "line": 1566
+  },
+  {
+   "decl": "charRightHand(optCharLim,3)",
+   "line": 1567
+  },
+  {
+   "decl": "charShorts(optCharLim,3)",
+   "line": 1568
+  },
+  {
+   "decl": "charLegs(optCharLim,3)",
+   "line": 1569
+  },
+  {
+   "decl": "charShins(optCharLim,3)",
+   "line": 1570
+  },
+  {
+   "decl": "charShoes(optCharLim,3)",
+   "line": 1571
+  },
+  {
+   "decl": "charAttack(optCharLim,5)",
+   "line": 1573
+  },
+  {
+   "decl": "charCrush(optCharLim,5)",
+   "line": 1574
+  },
+  {
+   "decl": "charMove(optCharLim,15)",
+   "line": 1575
+  },
+  {
+   "decl": "charGroundMove(optCharLim,6)",
+   "line": 1576
+  },
+  {
+   "decl": "charFed(optCharLim)",
+   "line": 1578
+  },
+  {
+   "decl": "charWorth(optCharLim)",
+   "line": 1579
+  },
+  {
+   "decl": "charBank(optCharLim)",
+   "line": 1580
+  },
+  {
+   "decl": "charContract(optCharLim)",
+   "line": 1581
+  },
+  {
+   "decl": "charSalary(optCharLim)",
+   "line": 1582
+  },
+  {
+   "decl": "charClause(optCharLim,3)",
+   "line": 1583
+  },
+  {
+   "decl": "charVacant(optCharLim)",
+   "line": 1584
+  },
+  {
+   "decl": "charOldVacant(optCharLim)",
+   "line": 1585
+  },
+  {
+   "decl": "charArrived(optCharLim)",
+   "line": 1586
+  },
+  {
+   "decl": "charWorked(optCharLim)",
+   "line": 1587
+  },
+  {
+   "decl": "charExperience(optCharLim,9)",
+   "line": 1588
+  },
+  {
+   "decl": "charMatches(optCharLim,9)",
+   "line": 1589
+  },
+  {
+   "decl": "charWins(optCharLim,9)",
+   "line": 1590
+  },
+  {
+   "decl": "charTitles(optCharLim,9,4)",
+   "line": 1591
+  },
+  {
+   "decl": "charTrainCourse(optCharLim)",
+   "line": 1592
+  },
+  {
+   "decl": "charTrainLevel(optCharLim)",
+   "line": 1593
+  },
+  {
+   "decl": "charWeightChange(optCharLim)",
+   "line": 1594
+  },
+  {
+   "decl": "charPeaked(optCharLim)",
+   "line": 1595
+  },
+  {
+   "decl": "charVariable(optCharLim)",
+   "line": 1596
+  },
+  {
+   "decl": "charHealth(optCharLim)",
+   "line": 1598
+  },
+  {
+   "decl": "charOldHealth(optCharLim)",
+   "line": 1599
+  },
+  {
+   "decl": "charNewHealth(optCharLim)",
+   "line": 1600
+  },
+  {
+   "decl": "charInjured(optCharLim,5)",
+   "line": 1601
+  },
+  {
+   "decl": "charOldInjured(optCharLim,5)",
+   "line": 1602
+  },
+  {
+   "decl": "charLimb(optCharLim,50)",
+   "line": 1603
+  },
+  {
+   "decl": "charRelationship(optCharLim,optCharLim)",
+   "line": 1605
+  },
+  {
+   "decl": "charRealRelationship(optCharLim,optCharLim)",
+   "line": 1606
+  },
+  {
+   "decl": "charTeamHistory(optCharLim,optCharLim)",
+   "line": 1607
+  },
+  {
+   "decl": "charHistory(optCharLim,optCharLim)",
+   "line": 1608
+  },
+  {
+   "decl": "charTradeReaction(optCharLim)",
+   "line": 1609
+  },
+  {
+   "decl": "charAgreement(optCharLim,50)",
+   "line": 1613
+  },
+  {
+   "decl": "charEvent(optCharLim)",
+   "line": 1615
+  },
+  {
+   "decl": "charOpponent(optCharLim)",
+   "line": 1616
+  },
+  {
+   "decl": "charFought(optCharLim)",
+   "line": 1617
+  },
+  {
+   "decl": "charBracket(optCharLim)",
+   "line": 1618
+  },
+  {
+   "decl": "charSelected(optCharLim)",
+   "line": 1619
+  },
+  {
+   "decl": "charRanked(optCharLim)",
+   "line": 1620
+  },
+  {
+   "decl": "charUpdated(optCharLim)",
+   "line": 1621
+  },
+  {
+   "decl": "pageList(10)",
+   "line": 1624
+  },
+  {
+   "decl": "editPointsY(5)",
+   "line": 1629
+  },
+  {
+   "decl": "costumeLearned(3,200)",
+   "line": 1641
+  },
+  {
+   "decl": "relateX(50),relateY(50),relateType(50)",
+   "line": 1643
+  },
+  {
+   "decl": "statLevel(6)",
+   "line": 1645
+  },
+  {
+   "decl": "attackList(5)",
+   "line": 1658
+  },
+  {
+   "decl": "attackName$(5,50)",
+   "line": 1659
+  },
+  {
+   "decl": "attackAnimSource(5,50)",
+   "line": 1660
+  },
+  {
+   "decl": "attackAnimStart(5,50)",
+   "line": 1661
+  },
+  {
+   "decl": "attackAnimEnd(5,50)",
+   "line": 1662
+  },
+  {
+   "decl": "attackTransition(5,50)",
+   "line": 1663
+  },
+  {
+   "decl": "attackSpeed#(5,50)",
+   "line": 1664
+  },
+  {
+   "decl": "attackLength(5,50)",
+   "line": 1665
+  },
+  {
+   "decl": "attackTravel#(5,50)",
+   "line": 1666
+  },
+  {
+   "decl": "attackMomentum(5,50)",
+   "line": 1667
+  },
+  {
+   "decl": "attackFall(5,50)",
+   "line": 1668
+  },
+  {
+   "decl": "attackTope(5,50)",
+   "line": 1669
+  },
+  {
+   "decl": "attackActive(5,50)",
+   "line": 1670
+  },
+  {
+   "decl": "attackImpact(5,50)",
+   "line": 1671
+  },
+  {
+   "decl": "attackExpire(5,50)",
+   "line": 1672
+  },
+  {
+   "decl": "attackHeight#(5,50)",
+   "line": 1673
+  },
+  {
+   "decl": "attackRange#(5,50)",
+   "line": 1674
+  },
+  {
+   "decl": "attackPower(5,50)",
+   "line": 1675
+  },
+  {
+   "decl": "attackLimb(5,50)",
+   "line": 1676
+  },
+  {
+   "decl": "attackWeapon(5,50)",
+   "line": 1677
+  },
+  {
+   "decl": "attackLearned(5,50)",
+   "line": 1678
+  },
+  {
+   "decl": "crushList(5)",
+   "line": 1988
+  },
+  {
+   "decl": "crushName$(5,50)",
+   "line": 1989
+  },
+  {
+   "decl": "crushAnimSource(5,50)",
+   "line": 1990
+  },
+  {
+   "decl": "crushAnimStart(5,50)",
+   "line": 1991
+  },
+  {
+   "decl": "crushAnimEnd(5,50)",
+   "line": 1992
+  },
+  {
+   "decl": "crushTransition(5,50)",
+   "line": 1993
+  },
+  {
+   "decl": "crushSpeed#(5,50)",
+   "line": 1994
+  },
+  {
+   "decl": "crushLength(5,50)",
+   "line": 1995
+  },
+  {
+   "decl": "crushTravel#(5,50)",
+   "line": 1996
+  },
+  {
+   "decl": "crushMomentum(5,50)",
+   "line": 1997
+  },
+  {
+   "decl": "crushFall(5,50)",
+   "line": 2000
+  },
+  {
+   "decl": "crushTope(5,50)",
+   "line": 2001
+  },
+  {
+   "decl": "crushImpactHigh(5,50)",
+   "line": 2002
+  },
+  {
+   "decl": "crushImpactLow(5,50)",
+   "line": 2003
+  },
+  {
+   "decl": "crushRange#(5,50)",
+   "line": 2004
+  },
+  {
+   "decl": "crushPower(5,50)",
+   "line": 2005
+  },
+  {
+   "decl": "crushLimb(5,50)",
+   "line": 2006
+  },
+  {
+   "decl": "crushWeapon(5,50)",
+   "line": 2007
+  },
+  {
+   "decl": "crushLearned(5,50)",
+   "line": 2008
+  },
+  {
+   "decl": "moveList(4)",
+   "line": 2136
+  },
+  {
+   "decl": "moveName$(4,200)",
+   "line": 2137
+  },
+  {
+   "decl": "moveAnim(4,200)",
+   "line": 2138
+  },
+  {
+   "decl": "moveLearned(4,200)",
+   "line": 2139
+  },
+  {
+   "decl": "stanceName$(no_stances)",
+   "line": 2263
+  },
+  {
+   "decl": "stanceType(no_stances)",
+   "line": 2264
+  },
+  {
+   "decl": "tauntName$(200)",
+   "line": 2274
+  },
+  {
+   "decl": "tauntAnimStart(200)",
+   "line": 2275
+  },
+  {
+   "decl": "tauntAnimEnd(200)",
+   "line": 2276
+  },
+  {
+   "decl": "tauntAnimSource(200)",
+   "line": 2277
+  },
+  {
+   "decl": "tauntSpeed#(200)",
+   "line": 2278
+  },
+  {
+   "decl": "tauntTransition(200)",
+   "line": 2279
+  },
+  {
+   "decl": "tauntLength(200)",
+   "line": 2280
+  },
+  {
+   "decl": "tauntLoop(200)",
+   "line": 2281
+  },
+  {
+   "decl": "tauntLearned(200)",
+   "line": 2282
+  },
+  {
+   "decl": "i(itemLimit)",
+   "line": 2570
+  },
+  {
+   "decl": "iType(itemLimit)",
+   "line": 2571
+  },
+  {
+   "decl": "iX#(itemLimit)",
+   "line": 2572
+  },
+  {
+   "decl": "iY#(itemLimit)",
+   "line": 2573
+  },
+  {
+   "decl": "iZ#(itemLimit)",
+   "line": 2574
+  },
+  {
+   "decl": "iOldX#(itemLimit)",
+   "line": 2575
+  },
+  {
+   "decl": "iOldY#(itemLimit)",
+   "line": 2576
+  },
+  {
+   "decl": "iOldZ#(itemLimit)",
+   "line": 2577
+  },
+  {
+   "decl": "iA#(itemLimit)",
+   "line": 2578
+  },
+  {
+   "decl": "iState(itemLimit)",
+   "line": 2579
+  },
+  {
+   "decl": "iOldState(itemLimit)",
+   "line": 2580
+  },
+  {
+   "decl": "iCarrier(itemLimit)",
+   "line": 2581
+  },
+  {
+   "decl": "iFallA#(itemLimit)",
+   "line": 2582
+  },
+  {
+   "decl": "iGround#(itemLimit)",
+   "line": 2583
+  },
+  {
+   "decl": "iGravity#(itemLimit)",
+   "line": 2584
+  },
+  {
+   "decl": "iAnim(itemLimit)",
+   "line": 2585
+  },
+  {
+   "decl": "iAnimTim(itemLimit)",
+   "line": 2586
+  },
+  {
+   "decl": "iScar(itemLimit)",
+   "line": 2587
+  },
+  {
+   "decl": "iOldScar(itemLimit)",
+   "line": 2588
+  },
+  {
+   "decl": "iBurning(itemLimit)",
+   "line": 2589
+  },
+  {
+   "decl": "iChannel(itemLimit)",
+   "line": 2590
+  },
+  {
+   "decl": "iScreen(itemLimit)",
+   "line": 2591
+  },
+  {
+   "decl": "iOldScreen(itemLimit)",
+   "line": 2592
+  },
+  {
+   "decl": "iDensity#(itemLimit)",
+   "line": 2594
+  },
+  {
+   "decl": "iDimX#(itemLimit,1000)",
+   "line": 2595
+  },
+  {
+   "decl": "iDimZ#(itemLimit,1000)",
+   "line": 2596
+  },
+  {
+   "decl": "iName$(itemList)",
+   "line": 2598
+  },
+  {
+   "decl": "iFile$(itemList)",
+   "line": 2599
+  },
+  {
+   "decl": "iSound(itemList)",
+   "line": 2600
+  },
+  {
+   "decl": "iTexture(itemList)",
+   "line": 2601
+  },
+  {
+   "decl": "iShine#(itemList)",
+   "line": 2602
+  },
+  {
+   "decl": "iSizeX#(itemList)",
+   "line": 2603
+  },
+  {
+   "decl": "iSizeZ#(itemList)",
+   "line": 2604
+  },
+  {
+   "decl": "iElevate#(itemList)",
+   "line": 2605
+  },
+  {
+   "decl": "iCarryY#(itemList,2)",
+   "line": 2606
+  },
+  {
+   "decl": "iCarryA#(itemList,2)",
+   "line": 2607
+  },
+  {
+   "decl": "iCarryDepth#(itemList,2)",
+   "line": 2608
+  },
+  {
+   "decl": "iCarryAnim(itemList,2)",
+   "line": 2609
+  },
+  {
+   "decl": "iHeight#(itemList)",
+   "line": 2610
+  },
+  {
+   "decl": "iDamage(itemList)",
+   "line": 2611
+  },
+  {
+   "decl": "iFlammable(itemList)",
+   "line": 2612
+  },
+  {
+   "decl": "iExplodable(itemList)",
+   "line": 2613
+  },
+  {
+   "decl": "iStandard(itemList)",
+   "line": 2614
+  },
+  {
+   "decl": "weap(weapLimit)",
+   "line": 2777
+  },
+  {
+   "decl": "weapType(weapLimit)",
+   "line": 2778
+  },
+  {
+   "decl": "weapX#(weapLimit)",
+   "line": 2779
+  },
+  {
+   "decl": "weapY#(weapLimit)",
+   "line": 2780
+  },
+  {
+   "decl": "weapZ#(weapLimit)",
+   "line": 2781
+  },
+  {
+   "decl": "weapOldX#(weapLimit)",
+   "line": 2782
+  },
+  {
+   "decl": "weapOldY#(weapLimit)",
+   "line": 2783
+  },
+  {
+   "decl": "weapOldZ#(weapLimit)",
+   "line": 2784
+  },
+  {
+   "decl": "weapA#(weapLimit)",
+   "line": 2785
+  },
+  {
+   "decl": "weapCarrier(weapLimit)",
+   "line": 2786
+  },
+  {
+   "decl": "weapWear(weapLimit)",
+   "line": 2787
+  },
+  {
+   "decl": "weapThrower(weapLimit)",
+   "line": 2788
+  },
+  {
+   "decl": "weapGround#(weapLimit)",
+   "line": 2789
+  },
+  {
+   "decl": "weapBounce#(weapLimit)",
+   "line": 2790
+  },
+  {
+   "decl": "weapGravity#(weapLimit)",
+   "line": 2791
+  },
+  {
+   "decl": "weapFlight#(weapLimit)",
+   "line": 2792
+  },
+  {
+   "decl": "weapFlightA#(weapLimit)",
+   "line": 2793
+  },
+  {
+   "decl": "weapItemSting(weapLimit,itemLimit)",
+   "line": 2794
+  },
+  {
+   "decl": "weapScar(weapLimit)",
+   "line": 2795
+  },
+  {
+   "decl": "weapOldScar(weapLimit)",
+   "line": 2796
+  },
+  {
+   "decl": "weapBurning(weapLimit)",
+   "line": 2797
+  },
+  {
+   "decl": "weapChannel(weapLimit)",
+   "line": 2798
+  },
+  {
+   "decl": "weapRelocate(weapLimit)",
+   "line": 2799
+  },
+  {
+   "decl": "weapPrimed(weapLimit)",
+   "line": 2800
+  },
+  {
+   "decl": "weapName$(weapList)",
+   "line": 2802
+  },
+  {
+   "decl": "weapFile$(weapList)",
+   "line": 2803
+  },
+  {
+   "decl": "weapSound(weapList)",
+   "line": 2804
+  },
+  {
+   "decl": "weapTex(weapList)",
+   "line": 2805
+  },
+  {
+   "decl": "weapSize#(weapList)",
+   "line": 2806
+  },
+  {
+   "decl": "weapWeight#(weapList)",
+   "line": 2807
+  },
+  {
+   "decl": "weapDamage(weapList)",
+   "line": 2808
+  },
+  {
+   "decl": "weapFlammable(weapList)",
+   "line": 2809
+  },
+  {
+   "decl": "weapExplodable(weapList)",
+   "line": 2810
+  },
+  {
+   "decl": "weapShine#(weapList)",
+   "line": 2811
+  },
+  {
+   "decl": "weapHold(weapList)",
+   "line": 2812
+  },
+  {
+   "decl": "weapStandard(weapList)",
+   "line": 2813
+  },
+  {
+   "decl": "weapValue(weapList)",
+   "line": 2814
+  },
+  {
+   "decl": "arenaWall(3),arenaCeiling(3),arenaGround(3)",
+   "line": 3103
+  },
+  {
+   "decl": "ringComponent(75)",
+   "line": 3107
+  },
+  {
+   "decl": "ringX#(75)",
+   "line": 3108
+  },
+  {
+   "decl": "ringY#(75)",
+   "line": 3109
+  },
+  {
+   "decl": "ringZ#(75)",
+   "line": 3110
+  },
+  {
+   "decl": "ringOffsetX#(75)",
+   "line": 3111
+  },
+  {
+   "decl": "ringOffsetY#(75)",
+   "line": 3112
+  },
+  {
+   "decl": "ringOffsetZ#(75)",
+   "line": 3113
+  },
+  {
+   "decl": "ringTX#(75)",
+   "line": 3114
+  },
+  {
+   "decl": "ringTY#(75)",
+   "line": 3115
+  },
+  {
+   "decl": "ringTZ#(75)",
+   "line": 3116
+  },
+  {
+   "decl": "ringSpeedX#(75)",
+   "line": 3117
+  },
+  {
+   "decl": "ringSpeedY#(75)",
+   "line": 3118
+  },
+  {
+   "decl": "ringSpeedZ#(75)",
+   "line": 3119
+  },
+  {
+   "decl": "ringShakeTim(75)",
+   "line": 3120
+  },
+  {
+   "decl": "blockX1#(100)",
+   "line": 3122
+  },
+  {
+   "decl": "blockX2#(100)",
+   "line": 3123
+  },
+  {
+   "decl": "blockZ1#(100)",
+   "line": 3124
+  },
+  {
+   "decl": "blockZ2#(100)",
+   "line": 3125
+  },
+  {
+   "decl": "blockY1#(100)",
+   "line": 3126
+  },
+  {
+   "decl": "blockY2#(100)",
+   "line": 3127
+  },
+  {
+   "decl": "blockType(100)",
+   "line": 3128
+  },
+  {
+   "decl": "blockClimb(100)",
+   "line": 3129
+  },
+  {
+   "decl": "blockPlatX1#(100)",
+   "line": 3130
+  },
+  {
+   "decl": "blockPlatX2#(100)",
+   "line": 3131
+  },
+  {
+   "decl": "blockPlatZ1#(100)",
+   "line": 3132
+  },
+  {
+   "decl": "blockPlatZ2#(100)",
+   "line": 3133
+  },
+  {
+   "decl": "videoScreen(10)",
+   "line": 3135
+  },
+  {
+   "decl": "videoOldScreen(10)",
+   "line": 3136
+  },
+  {
+   "decl": "rope(12)",
+   "line": 3139
+  },
+  {
+   "decl": "ropeSeq(12,100)",
+   "line": 3140
+  },
+  {
+   "decl": "ropeAnim(12)",
+   "line": 3141
+  },
+  {
+   "decl": "ropeAnimTim(12)",
+   "line": 3142
+  },
+  {
+   "decl": "ropeAnimSpeed#(12)",
+   "line": 3143
+  },
+  {
+   "decl": "ropeX#(12)",
+   "line": 3144
+  },
+  {
+   "decl": "ropeY#(12)",
+   "line": 3145
+  },
+  {
+   "decl": "ropeZ#(12)",
+   "line": 3146
+  },
+  {
+   "decl": "ropeA#(12)",
+   "line": 3147
+  },
+  {
+   "decl": "ropeBurning(12)",
+   "line": 3148
+  },
+  {
+   "decl": "ropeChannel(12)",
+   "line": 3149
+  },
+  {
+   "decl": "ropeSide(12)",
+   "line": 3150
+  },
+  {
+   "decl": "padExposed(4)",
+   "line": 3156
+  },
+  {
+   "decl": "cageShakeTim(4)",
+   "line": 3159
+  },
+  {
+   "decl": "cageOrigX#(4),cageOrigY#(4),cageOrigZ#(4)",
+   "line": 3160
+  },
+  {
+   "decl": "cageX#(4),cageY#(4),cageZ#(4)",
+   "line": 3161
+  },
+  {
+   "decl": "cageTX#(4),cageTY#(4),cageTZ#(4)",
+   "line": 3162
+  },
+  {
+   "decl": "cageSpeedX#(4),cageSpeedY#(4),cageSpeedZ#(4)",
+   "line": 3163
+  },
+  {
+   "decl": "cageOrigXA#(4),cageOrigYA#(4),cageOrigZA#(4)",
+   "line": 3164
+  },
+  {
+   "decl": "cageXA#(4),cageYA#(4),cageZA#(4)",
+   "line": 3165
+  },
+  {
+   "decl": "cageTXA#(4),cageTYA#(4),cageTZA#(4)",
+   "line": 3166
+  },
+  {
+   "decl": "cageSpeedXA#(4),cageSpeedYA#(4),cageSpeedZA#(4)",
+   "line": 3167
+  },
+  {
+   "decl": "crowdSource#(200)",
+   "line": 3169
+  },
+  {
+   "decl": "crowdY#(200)",
+   "line": 3170
+  },
+  {
+   "decl": "crowdTY#(200)",
+   "line": 3171
+  },
+  {
+   "decl": "sign(200)",
+   "line": 3174
+  },
+  {
+   "decl": "signX#(200)",
+   "line": 3175
+  },
+  {
+   "decl": "signY#(200)",
+   "line": 3176
+  },
+  {
+   "decl": "signZ#(200)",
+   "line": 3177
+  },
+  {
+   "decl": "signA#(200)",
+   "line": 3178
+  },
+  {
+   "decl": "camName$(20,10)",
+   "line": 3200
+  },
+  {
+   "decl": "camShortcut(10)",
+   "line": 3225
+  },
+  {
+   "decl": "light(10)",
+   "line": 3237
+  },
+  {
+   "decl": "part(1000)",
+   "line": 3253
+  },
+  {
+   "decl": "partType(1000)",
+   "line": 3254
+  },
+  {
+   "decl": "partTexture(1000)",
+   "line": 3255
+  },
+  {
+   "decl": "partX#(1000)",
+   "line": 3256
+  },
+  {
+   "decl": "partY#(1000)",
+   "line": 3257
+  },
+  {
+   "decl": "partZ#(1000)",
+   "line": 3258
+  },
+  {
+   "decl": "partA#(1000)",
+   "line": 3259
+  },
+  {
+   "decl": "partGravity#(1000)",
+   "line": 3260
+  },
+  {
+   "decl": "partWeight#(1000)",
+   "line": 3261
+  },
+  {
+   "decl": "partFlight#(1000)",
+   "line": 3262
+  },
+  {
+   "decl": "partSize#(1000)",
+   "line": 3263
+  },
+  {
+   "decl": "partAlpha#(1000)",
+   "line": 3264
+  },
+  {
+   "decl": "partFade#(1000)",
+   "line": 3265
+  },
+  {
+   "decl": "partTim(1000)",
+   "line": 3266
+  },
+  {
+   "decl": "partState(1000)",
+   "line": 3267
+  },
+  {
+   "decl": "exType(no_explodes)",
+   "line": 3270
+  },
+  {
+   "decl": "exX#(no_explodes)",
+   "line": 3271
+  },
+  {
+   "decl": "exY#(no_explodes)",
+   "line": 3272
+  },
+  {
+   "decl": "exZ#(no_explodes)",
+   "line": 3273
+  },
+  {
+   "decl": "exTim(no_explodes)",
+   "line": 3274
+  },
+  {
+   "decl": "exSting(no_explodes,optPlayLim)",
+   "line": 3275
+  },
+  {
+   "decl": "pool(no_pools)",
+   "line": 3278
+  },
+  {
+   "decl": "poolType(no_pools)",
+   "line": 3279
+  },
+  {
+   "decl": "poolX#(no_pools)",
+   "line": 3280
+  },
+  {
+   "decl": "poolY#(no_pools)",
+   "line": 3281
+  },
+  {
+   "decl": "poolZ#(no_pools)",
+   "line": 3282
+  },
+  {
+   "decl": "poolA#(no_pools)",
+   "line": 3283
+  },
+  {
+   "decl": "poolSize#(no_pools)",
+   "line": 3284
+  },
+  {
+   "decl": "poolAlpha#(no_pools)",
+   "line": 3285
+  },
+  {
+   "decl": "poolState(no_pools)",
+   "line": 3286
+  }
+ ],
+ "lineCount": 3286
+}

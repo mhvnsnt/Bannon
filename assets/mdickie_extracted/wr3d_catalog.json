@@ -1,0 +1,45 @@
+{
+ "source": "wr3d",
+ "note": "Wrestling Revolution 3D — asset taxonomy for building PROPRIETARY BANNON environments/moves from (raw meshes/textures NOT committed).",
+ "arenas": [
+  "arena",
+  "arena_basic",
+  "arena_wargames",
+  "arena_wargames_basic",
+  "hall"
+ ],
+ "rings": [
+  "double",
+  "hexagon",
+  "octogon",
+  "square"
+ ],
+ "animsZf": 14,
+ "moveClips": 25,
+ "costumes": 504,
+ "items": 28,
+ "dataFiles": [
+  "Characters.txt",
+  "Rosters.txt",
+  "builddatas.json"
+ ],
+ "arenaComponents": [
+  "aprons",
+  "arena.zf3d",
+  "arena_basic.zf3d",
+  "arena_wargames.zf3d",
+  "arena_wargames_basic.zf3d",
+  "backstage",
+  "barriers",
+  "cages",
+  "canvases",
+  "corners",
+  "crowd",
+  "curtains",
+  "decor",
+  "hall.zf3d",
+  "matting",
+  "rings",
+  "ropes"
+ ]
+}

@@ -1,0 +1,254 @@
+<script>
+/* ============================================================================
+ * BANNON MODEL FORGE — Tripo3D-parity front end (additive module)
+ * Everything Tripo3D's UI gives you, on your own free stack:
+ *   • VIEWER   — orbit/zoom 3D preview of any GLB (generated, library, or imported)
+ *   • LIBRARY  — browse generated + imported models; click to preview; assign to a character
+ *   • GENERATE — text prompt -> your daemon's self provider -> live progress -> into the library
+ *   • IMPORT   — load .glb/.gltf from local storage, single OR batch; preview, assign, keep
+ * Binds through the engine's existing assignCharModel / loadFighterModel. No engine rewrite.
+ * ============================================================================ */
+(function () {
+  'use strict';
+  if (window.__MODEL_FORGE) return; window.__MODEL_FORGE = true;
+
+  // Supabase (publishable/anon key is client-safe by design; service_role NEVER goes here)
+  var SB_URL = window.SUPABASE_URL || 'https://knwijcermhpzkkpuqrxw.supabase.co';
+  var SB_KEY = window.SUPABASE_ANON || 'sb_publishable_SQPdGgjnp9CkOYTy7EcuXw_B7NIgspB';
+  window.MODEL_BASE = window.MODEL_BASE || (SB_URL + '/storage/v1/object/public/assets/');
+
+  var LOCAL = [];   // in-session imported/generated entries: {name, url, char}
+  var THREEref = window.THREE;
+  function getLoader() { try { return new (window.GLTFLoader || THREEref.GLTFLoader)(); } catch (e) { return null; } }
+
+  // ---------------- tiny GLB viewer (manual orbit; no OrbitControls dependency) ----------------
+  function Viewer(canvas) {
+    var T = THREEref;
+    var scene = new T.Scene(); scene.background = new T.Color(0x0d1017);
+    var cam = new T.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.01, 100);
+    var rnd = new T.WebGLRenderer({ canvas: canvas, antialias: true });
+    rnd.setSize(canvas.clientWidth, canvas.clientHeight, false);
+    scene.add(new T.HemisphereLight(0xffffff, 0x333344, 1.1));
+    var key = new T.DirectionalLight(0xffffff, 1.0); key.position.set(2, 4, 3); scene.add(key);
+    var pivot = new T.Group(); scene.add(pivot);
+    var yaw = 0.5, pitch = 0.1, dist = 3, target = new T.Vector3(0, 1, 0);
+    function place() {
+      cam.position.set(target.x + dist * Math.cos(pitch) * Math.sin(yaw), target.y + dist * Math.sin(pitch), target.z + dist * Math.cos(pitch) * Math.cos(yaw));
+      cam.lookAt(target);
+    }
+    var down = false, lx = 0, ly = 0, raf = 0, alive = true;
+    var onMove = function (e) { if (!down) return; yaw -= (e.clientX - lx) * 0.01; pitch = Math.max(-1.2, Math.min(1.2, pitch + (e.clientY - ly) * 0.01)); lx = e.clientX; ly = e.clientY; };
+    var onUp = function (e) { down = false; try { canvas.releasePointerCapture(e.pointerId); } catch (_) {} };
+    canvas.onpointerdown = function (e) { down = true; lx = e.clientX; ly = e.clientY; try { canvas.setPointerCapture(e.pointerId); } catch (_) {} };
+    canvas.addEventListener('pointermove', onMove);
+    canvas.addEventListener('pointerup', onUp);
+    canvas.addEventListener('pointercancel', onUp);
+    canvas.onwheel = function (e) { e.preventDefault(); dist = Math.max(0.5, Math.min(12, dist * (1 + Math.sign(e.deltaY) * 0.1))); };
+    var cur = null;
+    this.load = function (url) {
+      var ld = getLoader(); if (!ld) return;
+      ld.load(url, function (g) {
+        if (cur) pivot.remove(cur); cur = g.scene || g.scenes[0]; pivot.add(cur);
+        var box = new T.Box3().setFromObject(cur), c = box.getCenter(new T.Vector3()), s = box.getSize(new T.Vector3());
+        target.copy(c); dist = Math.max(s.x, s.y, s.z) * 1.8 || 3;
+      }, undefined, function (err) { console.warn('[forge] load failed', url, err); });
+    };
+    this.dispose = function () {
+      alive = false;
+      if (raf) cancelAnimationFrame(raf);
+      canvas.removeEventListener('pointermove', onMove);
+      canvas.removeEventListener('pointerup', onUp);
+      canvas.removeEventListener('pointercancel', onUp);
+      try { rnd.dispose(); } catch (e) {}
+    };
+    (function anim() { if (!alive) return; raf = requestAnimationFrame(anim); place(); rnd.render(scene, cam); })();
+  }
+
+  // ---------------- data ----------------
+  function resolve(u) { return (!u || u.indexOf('embedded:') === 0 || u.indexOf('http') === 0 || u.indexOf('blob:') === 0 || u.indexOf('data:') === 0) ? u : ((window.MODEL_BASE || '') + u); }
+  function libraryFromSupabase() {
+    return fetch(SB_URL + '/rest/v1/gen_jobs?status=eq.succeeded&select=character_key,glb_url,prompt&order=created_at.desc', { headers: { apikey: SB_KEY, Authorization: 'Bearer ' + SB_KEY } })
+      .then(function (r) { return r.ok ? r.json() : []; })
+      .then(function (rows) { return (rows || []).map(function (r) { return { name: (r.character_key || 'model') + ' (gen)', url: r.glb_url, char: r.character_key }; }); })
+      .catch(function () { return []; });
+  }
+  function chars() { try { return Object.keys(window.ATTIRE || {}).concat(['BANNON', 'MAIME']).filter(function (v, i, a) { return a.indexOf(v) === i; }); } catch (e) { return ['BANNON', 'MAIME']; } }
+
+  function assign(entry, ck) {
+    if (!ck) return;
+    try { if (typeof assignCharModel === 'function') assignCharModel(ck, resolve(entry.url), entry.name); } catch (e) {}
+    ['p1', 'p2'].forEach(function (sd) {
+      try { var f = fighterFor(sd); if (f && charModelKey(f) === ck.toUpperCase()) { f.model = null; loadFighterModel(sd, resolve(entry.url), entry.name); } } catch (e) {}
+    });
+    msg(entry.name + ' → ' + ck);
+  }
+
+  // ---------------- UI ----------------
+  var msgEl, viewer, tab = 'LIBRARY';
+  function msg(t) { if (msgEl) msgEl.textContent = t; }
+
+  function build() {
+    var open = document.createElement('button'); open.textContent = 'MODEL FORGE';
+    open.style.cssText = 'position:fixed;top:8px;right:96px;z-index:99998;font:bold 12px monospace;padding:8px 12px;border-radius:9px;border:1px solid #33d0ff;background:rgba(10,10,14,.92);color:#8fe6ff;cursor:pointer';
+    document.body.appendChild(open);
+
+    var modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:5% 4%;z-index:99999;display:none;background:rgba(10,12,18,.98);border:1px solid #2a3340;border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,.7);color:#dce4f0;font:12px system-ui,monospace;overflow:hidden';
+    document.body.appendChild(modal);
+    open.onclick = function () { modal.style.display = 'block'; render(modal); };
+
+    window.__forgeRender = function () { if (modal.style.display !== 'none') render(modal); };
+  }
+
+  function render(modal) {
+    modal.innerHTML =
+      '<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid #222">' +
+      '<b style="color:#8fe6ff;letter-spacing:1px">MODEL FORGE</b>' +
+      '<span style="opacity:.5">Tripo3D-parity · your free stack</span>' +
+      '<button id="fgX" style="margin-left:auto;background:#1a1f27;color:#ccc;border:1px solid #333;border-radius:6px;padding:5px 10px;cursor:pointer">✕</button></div>' +
+      '<div style="display:flex;height:calc(100% - 46px)">' +
+      '<div style="width:200px;border-right:1px solid #222;padding:10px;display:flex;flex-direction:column;gap:6px" id="fgTabs"></div>' +
+      '<div style="flex:1;display:flex;min-width:0">' +
+      '<div style="flex:1;padding:12px;overflow:auto" id="fgMain"></div>' +
+      '<div style="width:44%;border-left:1px solid #222;display:flex;flex-direction:column">' +
+      '<canvas id="fgView" style="flex:1;width:100%;display:block;touch-action:none"></canvas>' +
+      '<div id="fgAssign" style="padding:10px;border-top:1px solid #222"></div></div></div></div>';
+
+    modal.querySelector('#fgX').onclick = function () { if (viewer && viewer.dispose) viewer.dispose(); viewer = null; modal.style.display = 'none'; };
+    ['LIBRARY', 'GENERATE', 'IMPORT'].forEach(function (t) {
+      var b = document.createElement('button'); b.textContent = t;
+      b.style.cssText = 'text-align:left;padding:9px;border-radius:7px;border:1px solid ' + (t === tab ? '#33d0ff' : '#333') + ';background:' + (t === tab ? 'rgba(51,208,255,.14)' : '#151a22') + ';color:#dce4f0;cursor:pointer;font:bold 11px monospace';
+      b.onclick = function () { tab = t; render(modal); };
+      modal.querySelector('#fgTabs').appendChild(b);
+    });
+    msgEl = document.createElement('div'); msgEl.style.cssText = 'margin-top:auto;opacity:.7;font:10px monospace;min-height:14px'; modal.querySelector('#fgTabs').appendChild(msgEl);
+
+    var canvas = modal.querySelector('#fgView');
+    if (viewer && viewer.dispose) { viewer.dispose(); viewer = null; }
+    setTimeout(function () { try { if (THREEref) viewer = new Viewer(canvas); } catch (e) { canvas.replaceWith(Object.assign(document.createElement('div'), { textContent: 'viewer needs THREE', style: 'padding:20px;opacity:.6' })); } }, 30);
+
+    var main = modal.querySelector('#fgMain');
+    if (tab === 'LIBRARY') renderLibrary(main, modal);
+    else if (tab === 'GENERATE') renderGenerate(main);
+    else renderImport(main);
+  }
+
+  function entryCard(e, modal) {
+    var d = document.createElement('button');
+    d.style.cssText = 'display:block;width:100%;text-align:left;margin-bottom:6px;padding:9px;border-radius:8px;border:1px solid #333;background:#131720;color:#dce4f0;cursor:pointer;font:11px monospace';
+    d.textContent = e.name;
+    d.onclick = function () {
+      if (viewer) viewer.load(resolve(e.url));
+      var ass = modal.querySelector('#fgAssign');
+      ass.innerHTML = '<div style="opacity:.7;margin-bottom:6px">Assign "' + e.name + '" to:</div>';
+      var sel = document.createElement('select'); sel.style.cssText = 'width:100%;padding:6px;background:#0b0e14;color:#cde;border:1px solid #444;border-radius:6px';
+      chars().forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+      if (e.char) sel.value = e.char.toUpperCase();
+      var go = document.createElement('button'); go.textContent = 'SET AS DEFAULT'; go.style.cssText = 'margin-top:8px;width:100%;padding:8px;background:#0e2a33;color:#8fe6ff;border:1px solid #33d0ff;border-radius:6px;cursor:pointer;font:bold 11px monospace';
+      go.onclick = function () { assign(e, sel.value); };
+      ass.appendChild(sel); ass.appendChild(go);
+    };
+    return d;
+  }
+
+  function renderLibrary(main, modal) {
+    main.innerHTML = '<div style="opacity:.7;margin-bottom:8px">Generated + imported models. Click to preview, then assign.</div><div id="fgList">loading…</div>';
+    var list = main.querySelector('#fgList');
+    libraryFromSupabase().then(function (remote) {
+      var all = LOCAL.concat(remote);
+      list.innerHTML = all.length ? '' : '<div style="opacity:.5">No models yet — generate one or import a .glb.</div>';
+      all.forEach(function (e) { list.appendChild(entryCard(e, modal)); });
+    });
+  }
+
+  // asset categories: 3D go through image-to-3D / char gen; 2D go through the image (FLUX/SDXL) pipeline
+  var CATS_3D = { character: 'full-body fighter, T-pose', clothing: 'single garment / fight gear, isolated', mask: 'wrestling / luchador mask, isolated', accessory: 'accessory prop (belt, pads, chains), isolated', hair: 'hairstyle hairpiece, isolated' };
+  var CATS_2D = { texture: 'seamless PBR material / skin texture', tattoo: 'tattoo design, black or color, transparent background', 'face-paint': 'face paint design, symmetric, transparent background', logo: 'character / brand logo, vector-style, transparent background', banner: 'arena banner / poster graphic, wide', titantron: 'titantron entrance graphic, high energy, wide', arena: 'wrestling arena / apron / ramp graphic' };
+
+  function aiExpand(text, cb) {
+    var url = window.AI_ASSIST_URL || (SB_URL ? null : null);
+    // POST {prompt} to your daemon's LLM endpoint (Qwen abliterated via Ollama). Falls through if not set.
+    var ep = window.AI_ASSIST_URL || '/api/ai/expand';
+    fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: text }) })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) { cb(j && (j.text || j.prompt) || null); })
+      .catch(function () { cb(null); });
+  }
+
+  function renderGenerate(main) {
+    main.innerHTML = '<div style="opacity:.7;margin-bottom:8px">Generate from text and/or reference image(s). 3D categories → image-to-3D; 2D categories → image gen (FLUX/SDXL). Needs the daemon + notebook running.</div>';
+    // category
+    var catRow = document.createElement('div'); catRow.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center';
+    var cat = document.createElement('select'); cat.style.cssText = 'flex:1;padding:7px;background:#0b0e14;color:#cde;border:1px solid #444;border-radius:6px';
+    Object.keys(CATS_3D).forEach(function (k) { var o = document.createElement('option'); o.value = '3d:' + k; o.textContent = '3D · ' + k; cat.appendChild(o); });
+    Object.keys(CATS_2D).forEach(function (k) { var o = document.createElement('option'); o.value = '2d:' + k; o.textContent = '2D · ' + k; cat.appendChild(o); });
+    catRow.appendChild(cat); main.appendChild(catRow);
+
+    var ta = document.createElement('textarea'); ta.placeholder = 'describe it… e.g. a hulking masked luchador, red and gold gear';
+    ta.style.cssText = 'width:100%;height:70px;box-sizing:border-box;padding:8px;background:#0b0e14;color:#cde;border:1px solid #444;border-radius:7px;font:12px monospace'; main.appendChild(ta);
+
+    // reference images (single OR batch) for image-to-3D / img2img
+    var imgWrap = document.createElement('div'); imgWrap.style.cssText = 'margin-top:8px';
+    var imgLbl = document.createElement('div'); imgLbl.textContent = 'Reference image(s) — optional, single or batch:'; imgLbl.style.cssText = 'opacity:.7;margin-bottom:3px'; imgWrap.appendChild(imgLbl);
+    var imgInp = document.createElement('input'); imgInp.type = 'file'; imgInp.accept = 'image/*'; imgInp.multiple = true; imgInp.style.color = '#cde';
+    var refs = [];
+    imgInp.onchange = function (e) { refs = []; Array.from(e.target.files || []).forEach(function (f) { var rd = new FileReader(); rd.onload = function () { refs.push({ name: f.name, data: rd.result }); }; rd.readAsDataURL(f); }); msg((e.target.files || []).length + ' reference(s) loaded'); };
+    imgWrap.appendChild(imgInp); main.appendChild(imgWrap);
+
+    var row = document.createElement('div'); row.style.cssText = 'display:flex;gap:8px;margin-top:10px;align-items:center';
+    var sel = document.createElement('select'); sel.style.cssText = 'flex:1;padding:7px;background:#0b0e14;color:#cde;border:1px solid #444;border-radius:6px';
+    var none = document.createElement('option'); none.value = ''; none.textContent = 'bind to… (optional)'; sel.appendChild(none);
+    chars().forEach(function (c) { var o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
+    var ai = document.createElement('button'); ai.textContent = 'AI-ASSIST'; ai.title = 'expand the prompt with your abliterated LLM'; ai.style.cssText = 'padding:9px 12px;background:#241a33;color:#c79bff;border:1px solid #8a5cff;border-radius:7px;cursor:pointer;font:bold 11px monospace';
+    var gen = document.createElement('button'); gen.textContent = 'GENERATE'; gen.style.cssText = 'padding:9px 16px;background:#0e2a33;color:#8fe6ff;border:1px solid #33d0ff;border-radius:7px;cursor:pointer;font:bold 12px monospace';
+    row.appendChild(sel); row.appendChild(ai); row.appendChild(gen); main.appendChild(row);
+    var prog = document.createElement('div'); prog.style.cssText = 'margin-top:10px;opacity:.8;font:11px monospace'; main.appendChild(prog);
+
+    ai.onclick = function () { var t = ta.value.trim(); if (!t) return; prog.textContent = 'AI-assist expanding…'; aiExpand(t, function (out) { if (out) { ta.value = out; prog.textContent = 'prompt expanded ✓'; } else prog.textContent = 'AI-assist endpoint not reachable (set window.AI_ASSIST_URL to your Qwen daemon route)'; }); };
+
+    gen.onclick = function () {
+      var p = ta.value.trim(); if (!p && !refs.length) return;
+      var mode = cat.value.split(':')[0], kind = cat.value.split(':')[1];
+      var suffix = (mode === '3d' ? CATS_3D[kind] : CATS_2D[kind]) || '';
+      var full = [p, suffix].filter(Boolean).join(', ');
+      prog.textContent = 'submitting ' + refs.length + ' ref(s)…';
+      if (mode === '3d') {
+        if (typeof window.generateCharacterModel !== 'function') { prog.textContent = 'generateCharacterModel not found.'; return; }
+        try {
+          window.generateCharacterModel(full, { characterId: sel.value || undefined, image: refs[0] && refs[0].data, images: refs.map(function (r) { return r.data; }), category: kind,
+            onProgress: function (j) { prog.textContent = 'gen ' + (j.status || '') + ' ' + (j.progress || 0) + '%'; },
+            onDone: function (j) { var url = j.glbUrl || j.url; if (url) { LOCAL.unshift({ name: (p || kind).slice(0, 24) + ' (' + kind + ')', url: url, char: sel.value }); if (viewer) viewer.load(resolve(url)); prog.textContent = 'done ✓ in library'; } else prog.textContent = 'finished, no url'; } });
+        } catch (e) { prog.textContent = 'error: ' + e.message; }
+      } else {
+        // 2D image gen -> daemon /api/gen/image (FLUX/SDXL). Result is an image URL added to the library preview.
+        var ep = window.IMAGE_GEN_URL || '/api/gen/image';
+        fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: full, category: kind, images: refs.map(function (r) { return r.data; }) }) })
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (j) { if (j && (j.url || j.imageUrl)) { var u = j.url || j.imageUrl; LOCAL.unshift({ name: (p || kind).slice(0, 20) + ' (' + kind + ')', url: u, char: null, image2d: true }); prog.textContent = '2D asset ready ✓ (in library)'; } else prog.textContent = 'image endpoint not set — deploy the FLUX/SDXL route (IMAGE_GEN_URL)'; })
+          .catch(function () { prog.textContent = 'image endpoint not reachable (set window.IMAGE_GEN_URL)'; });
+      }
+    };
+  }
+
+  function renderImport(main) {
+    main.innerHTML = '<div style="opacity:.7;margin-bottom:8px">Load .glb / .gltf from your machine — single or batch. Previews, keeps in the library, assigns.</div>';
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.glb,.gltf'; inp.multiple = true;
+    inp.style.cssText = 'display:block;margin-bottom:10px;color:#cde';
+    inp.onchange = function (e) {
+      var files = Array.from(e.target.files || []);
+      files.forEach(function (f) {
+        var url = URL.createObjectURL(f);
+        var entry = { name: f.name.replace(/\.(glb|gltf)$/i, ''), url: url, char: null, local: true };
+        LOCAL.unshift(entry);
+        if (viewer) viewer.load(url);
+      });
+      msg('imported ' + files.length + ' file(s)');
+      tab = 'LIBRARY'; window.__forgeRender && window.__forgeRender();
+    };
+    main.appendChild(inp);
+    var note = document.createElement('div'); note.style.cssText = 'opacity:.5;font:10px monospace'; note.textContent = 'Imported models preview and bind instantly, but a local blob URL only lasts this session — upload the .glb to your bucket to make the binding permanent.'; main.appendChild(note);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build); else build();
+})();
+</script>

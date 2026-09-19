@@ -1,0 +1,74 @@
+[
+ {
+  "file": "Career.bb",
+  "domain": "Node meta backend",
+  "functions": 42,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "News.bb",
+  "domain": "Node meta backend",
+  "functions": 10,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "Negotiations.bb",
+  "domain": "Node meta backend",
+  "functions": 12,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "Meetings.bb",
+  "domain": "reference only",
+  "functions": 8,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "Promos.bb",
+  "domain": "dialogue pools -> data repo",
+  "functions": 22,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "World.bb",
+  "domain": "reference only",
+  "functions": 26,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "Tournaments.bb",
+  "domain": "reference only",
+  "functions": 9,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ },
+ {
+  "file": "Teams.bb",
+  "domain": "reference only",
+  "functions": 5,
+  "types": 0,
+  "globals": 0,
+  "consts": 0,
+  "dims": 0
+ }
+]

@@ -1,0 +1,484 @@
+{
+ "file": "Gameplay.bb",
+ "functions": [
+  {
+   "name": "LoadScreen",
+   "args": "request",
+   "line": 124,
+   "calls": [
+    "MainMenu",
+    "Options",
+    "DisplayOptions",
+    "RedefineKeys",
+    "RedefineGamepad",
+    "Outro",
+    "Credits",
+    "SelectSlot",
+    "SelectRoster",
+    "SelectCharacter",
+    "ArenaSetup",
+    "MatchSetup",
+    "Tournament",
+    "TournamentSetup",
+    "GimmickSetup",
+    "Calendar",
+    "Aftermath",
+    "IntroduceDate",
+    "NewsReports",
+    "FinanceReport",
+    "Retirement",
+    "HallOfFame",
+    "ConfirmUniverse",
+    "WorldLeaders",
+    "NightSummary",
+    "TelevisionRatings",
+    "Production",
+    "Gameplay",
+    "Editor",
+    "Negotiations",
+    "Meeting",
+    "Training",
+    "CourtCase",
+    "SellCharacter"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "LoopHole",
+   "args": "",
+   "line": 166,
+   "calls": [
+    "LoopHole"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "Gameplay",
+   "args": "",
+   "line": 173,
+   "calls": [
+    "ChangeResolution",
+    "ResetTextures",
+    "gamSchedule",
+    "MatchLoader",
+    "LoadAtmos",
+    "LoadArena",
+    "LoadRopes",
+    "LoadCage",
+    "GetRingComponents",
+    "PrepareCast",
+    "LoadPlayers",
+    "GetNewFoc",
+    "pControl",
+    "RestoreTextures",
+    "PreparePromo",
+    "LoadItems",
+    "PrepareWeapons",
+    "LoadWeapons",
+    "AssignWeapons",
+    "LoadParticles",
+    "LoadPools",
+    "fedOldChampWorld",
+    "fedChampWorld",
+    "fedOldChampInter",
+    "fedChampInter",
+    "fedOldChampTag",
+    "fedChampTag",
+    "charPopularity",
+    "pChar",
+    "FindFeud",
+    "Or",
+    "cupFoc",
+    "CreateImage",
+    "ChannelPlaying",
+    "CreateTimer",
+    "frameRate",
+    "SeedRnd",
+    "MilliSecs",
+    "WaitTimer",
+    "joyControlTim"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "ManageCrowd",
+   "args": "",
+   "line": 1020,
+   "calls": [
+    "GetMatchRating",
+    "Pop",
+    "AnimateCrowd",
+    "sign"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "AnimateCrowd",
+   "args": "",
+   "line": 1071,
+   "calls": [
+    "FindChild",
+    "EntityX",
+    "EntityZ",
+    "KeyDown"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "Pop",
+   "args": "cyc,sound,vol#",
+   "line": 1090,
+   "calls": [
+    "pHeel",
+    "pPopularity",
+    "And",
+    "sCrowd"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "RoomVolume",
+   "args": "",
+   "line": 1115,
+   "calls": [
+    "Or"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "MonitorEntertainment",
+   "args": "",
+   "line": 1122,
+   "calls": [
+    "FindClose",
+    "FindChemistry",
+    "FindFeud",
+    "LegalMan",
+    "pOutTim",
+    "pEliminated",
+    "charPopularity",
+    "pChar",
+    "Or",
+    "cupFoc",
+    "GetMatchRating",
+    "GetMatchContent",
+    "teamRemaining",
+    "FindChaos",
+    "InsideRing",
+    "teamLegal"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindClose",
+   "args": "",
+   "line": 1204,
+   "calls": [
+    "pOutTim",
+    "LegalMan",
+    "pEliminated",
+    "pHealth",
+    "teamHealth",
+    "pTeam",
+    "teamFalls",
+    "teamRemaining"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindChemistry",
+   "args": "",
+   "line": 1244,
+   "calls": [
+    "LegalMan",
+    "Or",
+    "pRole",
+    "pChaosTim",
+    "pFoc",
+    "pGrappling",
+    "pGrappler",
+    "pPinning",
+    "pPinner",
+    "pTeam",
+    "pOutTim",
+    "pHeel"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindFeud",
+   "args": "",
+   "line": 1261,
+   "calls": [
+    "pRole",
+    "pChaosTim",
+    "pTeam",
+    "charRelationship",
+    "pChar",
+    "pFoc",
+    "pGrappling",
+    "pGrappler",
+    "pPinning",
+    "pPinner",
+    "pOutTim",
+    "charPopularity"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "EntertainViable",
+   "args": "cyc,v",
+   "line": 1287,
+   "calls": [
+    "LegalMan",
+    "pRole",
+    "InsideRing"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "GetMatchRating",
+   "args": "score",
+   "line": 1299,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "GetMatchContent",
+   "args": "score",
+   "line": 1309,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "DisplayRatings",
+   "args": "",
+   "line": 1319,
+   "calls": [
+    "gRating",
+    "GetMatchRating",
+    "font",
+    "Outline",
+    "gHardcore",
+    "GetMatchContent",
+    "fontStat",
+    "OutlineStraight"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "DeclareFall",
+   "args": "cyc,v",
+   "line": 1372,
+   "calls": [
+    "Pop",
+    "CauseChaos",
+    "teamRemaining",
+    "pTeam",
+    "pHeel",
+    "charPopularity",
+    "pChar",
+    "RefViable",
+    "AttackViable",
+    "pDT",
+    "pDizzyTim",
+    "pEliminated",
+    "pOutTim",
+    "GetNewLegal",
+    "PostMessage",
+    "pFalls",
+    "teamFalls",
+    "charGender",
+    "teamLegal",
+    "LegalMan",
+    "pRole",
+    "pAnim",
+    "pReaction",
+    "pOutCount",
+    "pPinCount"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "KeepScore",
+   "args": "",
+   "line": 1452,
+   "calls": [
+    "RefViable",
+    "pReaction",
+    "LegalMan",
+    "pHealth",
+    "pRole",
+    "pFalls",
+    "EndMatch",
+    "pEliminated",
+    "teamFalls",
+    "pTeam",
+    "teamRemaining",
+    "teamLegal"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "EndMatch",
+   "args": "cyc",
+   "line": 1520,
+   "calls": [
+    "pHealth",
+    "And",
+    "pTeam",
+    "Pop",
+    "fedProduction",
+    "charFed",
+    "PlayTheme",
+    "pChar",
+    "charPopularity",
+    "Or",
+    "cupFoc",
+    "pRole",
+    "pAnim",
+    "pReaction",
+    "pFoc",
+    "pAgenda",
+    "charHairStyle",
+    "ApplyHairstyle",
+    "pBlindTim",
+    "MoveChar",
+    "fedChampWorld",
+    "WriteHistory",
+    "fedChampInter",
+    "fedChampTag",
+    "charPartner",
+    "fedCupHolder",
+    "PostMessage",
+    "TitleHolder",
+    "fedOldChampTag",
+    "fedOldChampInter",
+    "fedOldChampWorld"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "PostMessage",
+   "args": "message$",
+   "line": 1641,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "DisplayCommentary",
+   "args": "",
+   "line": 1648,
+   "calls": [
+    "gLogo",
+    "SqueezeFont",
+    "OutlineStraight",
+    "StringWidth"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "DisplayMeters",
+   "args": "",
+   "line": 1689,
+   "calls": [
+    "meterSlot",
+    "meterList",
+    "pListed",
+    "pControl",
+    "Or",
+    "pTeam",
+    "LegalMan",
+    "pOutTim",
+    "pHidden",
+    "pEliminated",
+    "DrawMeter"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "DrawMeter",
+   "args": "cyc,x,y",
+   "line": 1789,
+   "calls": [
+    "LegalMan",
+    "pShowHealth",
+    "FindInjury",
+    "pShowHeat",
+    "pSpecial",
+    "pTeam",
+    "joyControlTim",
+    "pControl",
+    "pJoystick",
+    "pChar",
+    "SqueezeFont",
+    "Outline",
+    "fontStat",
+    "pFalls",
+    "pOutCount",
+    "OutlineStraight",
+    "charPhoto"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "StartOnlineGame",
+   "args": "",
+   "line": 1858,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "ManageNetwork",
+   "args": "",
+   "line": 1863,
+   "calls": [],
+   "doc": ""
+  },
+  {
+   "name": "PackOnlineData",
+   "args": "",
+   "line": 1867,
+   "calls": [
+    "pController",
+    "cUp",
+    "cDown",
+    "cLeft",
+    "cRight",
+    "cAttack",
+    "cRun",
+    "cBlock",
+    "cGrapple",
+    "cPickUp",
+    "cSwitch",
+    "cTaunt"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "UnpackOnlineData",
+   "args": "msg$,cyc",
+   "line": 1879,
+   "calls": [
+    "pController",
+    "cUp",
+    "cDown",
+    "cLeft",
+    "cRight",
+    "cAttack",
+    "cRun",
+    "cBlock",
+    "cGrapple",
+    "cPickUp",
+    "cSwitch",
+    "cTaunt"
+   ],
+   "doc": ""
+  }
+ ],
+ "types": [],
+ "globals": [],
+ "consts": [],
+ "dims": [],
+ "lineCount": 1896
+}

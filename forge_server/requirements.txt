@@ -3,6 +3,13 @@ fastapi>=0.110
 uvicorn[standard]>=0.29
 pydantic>=2
 
+# TOPOLOGY GUARD (post_process) + image-seed loader — CPU, cheap, install alongside any real backend
+# so generated meshes are welded + decimated to a game-ready, physics-safe budget before rigging:
+trimesh>=4.0
+fast-simplification>=0.1     # quadric decimation backend trimesh routes to
+numpy>=1.24
+pillow>=10                   # image seed (sketch / concept sheet -> image->3D)
+
 # --- GPU backends (install the set for your FORGE_BACKEND) ---
 # Hunyuan3D-2 (FORGE_BACKEND=hunyuan): native text->3D + texture
 #   pip install torch trimesh
