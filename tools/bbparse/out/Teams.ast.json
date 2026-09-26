@@ -1,0 +1,94 @@
+{
+ "file": "Teams.bb",
+ "functions": [
+  {
+   "name": "LoadTeamMoveSequences",
+   "args": "cyc",
+   "line": 8,
+   "calls": [
+    "pSeq",
+    "ExtractAnimSeq",
+    "p"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "TeamMoves",
+   "args": "cyc",
+   "line": 34,
+   "calls": [
+    "pAnim",
+    "pGrappling",
+    "pGrappleAssist",
+    "pExcusedItems",
+    "pAnimTim",
+    "p",
+    "pSeq",
+    "Pop",
+    "ProduceSound",
+    "sShuffle",
+    "BreakMove",
+    "FindSmashes",
+    "MoveImpact",
+    "InsideRing",
+    "ShakeRing",
+    "pLimb",
+    "pHeat",
+    "ChangeAnim",
+    "SharpTransition",
+    "EndMove",
+    "MoveThrowOut",
+    "MoveFallEffect"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindAssistance",
+   "args": "cyc,v",
+   "line": 197,
+   "calls": [
+    "pRole",
+    "pPlatform",
+    "pAnim",
+    "InProximity",
+    "pTeam",
+    "InLine",
+    "p"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "PotentialAssistance",
+   "args": "cyc",
+   "line": 210,
+   "calls": [
+    "pFoc",
+    "pRole",
+    "pTeam",
+    "AttackViable",
+    "pPlatform",
+    "pAnim",
+    "InProximity",
+    "InLine",
+    "p"
+   ],
+   "doc": ""
+  },
+  {
+   "name": "FindTeamMove",
+   "args": "cyc,a",
+   "line": 223,
+   "calls": [
+    "ProjectDummy",
+    "EntityX",
+    "EntityZ"
+   ],
+   "doc": ""
+  }
+ ],
+ "types": [],
+ "globals": [],
+ "consts": [],
+ "dims": [],
+ "lineCount": 241
+}
