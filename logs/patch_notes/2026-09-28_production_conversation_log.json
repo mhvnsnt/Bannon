@@ -1,0 +1,246 @@
+{
+  "version": "2026-09-28-production-conversation",
+  "timestamp": "2026-09-28",
+  "source_repos": [
+    "mhvnsnt/Bannon",
+    "mhvnsnt/brutalfistgrokversionten"
+  ],
+  "updates": [
+    {
+      "topic": "Universal animation intake",
+      "request": "Every new animation must work across different fighter skeletons, bone counts, rest poses, missing joints, rotating/special moves, back-turned moves, and attacker/receiver pairs without one-off fixes.",
+      "documented_facts": [
+        "Brutal Fist now has a universal intake branch with canonical bone aliasing, source-rest to target-bind conversion, explicit rest tracks for missing target bones, multi-body rejection, non-finite/frozen gates, and model-aware source recovery.",
+        "AnimationController uses fixed authored timing without Three.js time-warping during crossfade.",
+        "Grapple is a real one-shot state.",
+        "Baked motion already carries measured semantic, airborne, receiver, pairedWith, body-count, strike reach, facing, spine-up, floor-gap and moving-bone metadata.",
+        "Unknown/uncertified animation is never promoted as PASS.",
+        "Runtime visual certification remains separate from static bake safety."
+      ],
+      "next_required_pipeline": "source provenance -> skeleton inspection -> canonical alias map -> source-rest/target-bind conversion -> missing-joint rest fill -> root/facing/floor normalization -> body-count/receiver detection -> semantic classification -> joint/limb/contact gates -> combat timing -> per-model runtime visual certification -> promotion into moveset library."
+    },
+    {
+      "topic": "Known animation failure classes",
+      "documented": [
+        "Different bone counts and names.",
+        "Different bind/rest conventions, including T-pose versus A-pose.",
+        "Missing target tracks causing bones to inherit the previous move unless explicit rest tracks are filled.",
+        "Receiver halves accidentally routed as attacker clips.",
+        "Multi-body/tag captures collapsed onto one fighter.",
+        "Clips that rotate/turn the body partway through the action.",
+        "Root-motion versus in-place variants.",
+        "Frozen/statue clips and clips with too few moving bones.",
+        "Upside-down or floor-contact clips misclassified as standing attacks.",
+        "Strike direction judged from peak speed instead of actual reach.",
+        "Long demonstration clips used as single combat attacks."
+      ]
+    },
+    {
+      "topic": "Hurricane kick",
+      "status": "measured_broken_in_current_bake",
+      "facts": [
+        "public/motion/baked/index.json records HURRICANE_KICK as airborne attack_2, duration 1.8333s, but its strike geometry has negative foot reach and its measured motion was identified as a one-bone/hips-dominated statue spin.",
+        "The previous routing was therefore frozen/rejected rather than pretending it was safe.",
+        "The desired repair is to restore the visual rotating-kick behavior through a real rotation-aware special-move lane, not to revive the known-bad bake blindly."
+      ],
+      "future_rule": "Spinning attacks get a dedicated rotation/root-travel contract: preserve authored yaw/whole-body rotation when certified, separate root displacement from local limb motion, and verify opponent-facing/contact at impact."
+    },
+    {
+      "topic": "Arenas and stage specs",
+      "ring_specs": {
+        "modes": [
+          "RING_4",
+          "RING_6",
+          "OPEN"
+        ],
+        "default_ring_half_extent_m": 3,
+        "ue_ring_half_extent_cm": 350,
+        "ring_diameter_m_approx": 7,
+        "top_rope_height_m": 1.2,
+        "ue_top_rope_height_cm": 120,
+        "open_stage_half_extent_m": 30,
+        "ue_open_stage_half_extent_cm": 3000,
+        "restitution": 0.35,
+        "ring_theme_presets": [
+          "Fire",
+          "Cold",
+          "Void"
+        ],
+        "fire_palette": {
+          "floor": "#2a1a14",
+          "accent": "#ff4500",
+          "deck": "#26262e",
+          "post": "#888894",
+          "mat": "#2c2420"
+        },
+        "cold_palette": {
+          "floor": "#223344",
+          "accent": "#00bbff",
+          "mat": "#1e2830"
+        },
+        "void_palette": {
+          "floor": "#111122",
+          "accent": "#9966ff",
+          "mat": "#0c0a18"
+        }
+      },
+      "world_environments": [
+        "BACKSTAGE",
+        "PARKING",
+        "CITY",
+        "GYM",
+        "Supermax Block",
+        "Metro General",
+        "Popcorn Hotel",
+        "Promoter Desk",
+        "Neon Strip"
+      ],
+      "god_within_encounter_locations": [
+        "Loading Dock",
+        "Dumpster Corridor",
+        "Boiler Room"
+      ],
+      "canon_story_locations": [
+        "Neon Olympus",
+        "The S.S. Salvation Docks",
+        "The Temple / Boyle Heights Ruins",
+        "hospitality suite",
+        "VIP Skybox",
+        "corporate lockdown"
+      ],
+      "source_note": "These are documented project-canon/design entries from the Bannon repository; they are not all confirmed as fully playable stages in the current Brutal Fist PWA."
+    },
+    {
+      "topic": "Canon/story",
+      "facts": [
+        "God Within is documented as a New Game Plus, canon-adjacent game mode shaped after Book 3 Ch.31-40 with Onyx as a game-only cultivator of Maime.",
+        "Marquis, Bannon and Maime are documented as three fightable persona states of one man rather than three separate characters.",
+        "Book 5 establishes The Island / Neon Olympus, Shinobi/Jaleel's AR-controlled wrestling world, the Resistance/Core Unlocked, The Crash War Games, the Warlord Era after the EMP, and the rise of The Administration.",
+        "Book 6 continues Books 3-5 as binding canon and adds the Mayan Title Belt, The Temple at Boyle Heights ruins, NWC, The Outsiders, The Cabinet, D-Generation Sex, The Coven, and The Algorithm/New Breed.",
+        "God Within's game-only stable is Onyx, CIPHER, ECHO, HOLLOW and STATIC; the repository explicitly separates them from the six-book canon."
+      ]
+    },
+    {
+      "topic": "Model backlog",
+      "owner_action": "Owner will create models for additional canon characters so the roster can expand.",
+      "confirmed_model_manifest": [
+        "BANNON",
+        "BANNON muscular alt",
+        "MAIME",
+        "MAIME tattered alt",
+        "ONYX",
+        "ONYX corset/vamp",
+        "ONYX street",
+        "CAIN ELIAS (multiple attires)",
+        "STICK-UP",
+        "CIPHER",
+        "CIPHER minion",
+        "CIPHER feral",
+        "ECHO",
+        "STATIC",
+        "STATIC alt",
+        "HALL NIGHTER",
+        "CODY sober/stressed"
+      ],
+      "known_canon_roster_without_model_manifest_entry_in_assets_models_CANON_MODELS": [
+        "Tyneshia/Karma",
+        "Finxsse",
+        "Trap Shinobi",
+        "Jager",
+        "Chief Red Cloud",
+        "Lion of Punjab",
+        "Lady Rhiannon",
+        "Agent Canuck",
+        "Celtic Fury",
+        "Edwin John Kennedy",
+        "Stan Combs",
+        "Ronald Slump",
+        "Donald Slump Jr.",
+        "Sam Kennedy",
+        "Melissa Kennedy",
+        "Triple X",
+        "The Dogg",
+        "Ass-Man Billy",
+        "X-Kid",
+        "Kray-Z",
+        "Ronye",
+        "Krusha P",
+        "Mars",
+        "Saturn",
+        "The Vandal",
+        "Vato",
+        "Big Cash",
+        "Aaron Reiner",
+        "Toxin",
+        "Judas Messiah",
+        "Lil Bill",
+        "Vain Abel",
+        "Masato Iida",
+        "Hikaru Arashi",
+        "Kenji Saito",
+        "Kiko Tanaka",
+        "Ryuji Tatsu",
+        "The Finance Demon",
+        "The Shaolin Shadow",
+        "The Ghost of Lahore",
+        "Astrid",
+        "Machine Tiger",
+        "Pablo",
+        "Jean",
+        "Vincent",
+        "Salvador",
+        "Magdalena",
+        "Vincent Jean",
+        "The Saint",
+        "Locomotive",
+        "The Exam",
+        "Big LG",
+        "Gunner",
+        "The Phenom",
+        "Grave",
+        "Jett Gnarly",
+        "Mokk Gnarly",
+        "Razor",
+        "Crux",
+        "Luna",
+        "Rey Fuego",
+        "El Toro de Oro",
+        "Sombra Negra",
+        "El Jefe",
+        "The Sacrifice",
+        "John Ford",
+        "The Boulder",
+        "Agent Smith",
+        "La Flame",
+        "Lucious",
+        "Tiffany Star",
+        "Devon Trust",
+        "Chainlink",
+        "Mr. Zero Point",
+        "Gorgon",
+        "Jack Slade",
+        "Drake Vane",
+        "The Algorithm"
+      ]
+    },
+    {
+      "topic": "Open-source animation",
+      "sources": [
+        "Quaternius Universal Animation Library 1: 120+ universal-humanoid animations, CC0.",
+        "Quaternius Universal Animation Library 2: 130+ universal-humanoid animations, CC0.",
+        "Current Brutal Fist repository contains baked UAL1/UAL2 JSON/Zstd outputs and an open-animation intake/fetch/sync lane.",
+        "The public standard/free distributions are treated as intake sources; paid/proprietary source packs are not silently vendored."
+      ],
+      "engineering_note": "The source packs have both in-place and root-motion variants in current public distributions. The pipeline must keep those variants explicit instead of mixing root travel into the fighter's world transform."
+    },
+    {
+      "topic": "Current PWA verification",
+      "facts": [
+        "Latest Brutal Fist CI run 36459115946: Typecheck PASS, Tests PASS, compatibility build PASS, Production build PASS, Rocket production build PASS, Chromium install PASS, PWA start PASS.",
+        "The real portrait playtest failed: arena ready NO, 0 skinned rigs, 144 page errors, 40 failed requests, 6 attacks started from 6 presses, and the harness ran at about 2.3 fps with 56 frames over 120ms.",
+        "The failed requests included missing root /motion/TPOSE.json, /motion/SPINJUMP*.json and many UAL1 source-name JSON paths even though corresponding baked UAL outputs exist under public/motion/baked.",
+        "This is now a concrete production blocker: asset loading and core-animation startup must be fixed before claiming the PWA is playable."
+      ]
+    }
+  ]
+}
