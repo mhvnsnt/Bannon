@@ -1,0 +1,116 @@
+<script>
+/* ============================================================================
+ * BANNON UI CONTROLLER v2 — single entry point + cross-AI compatible API (additive)
+ * One dock, one active panel, broadcast-clean during matches. Exposes BOTH the
+ * .current field AND .state.activePanel + switchTab() so Gemini-authored bricks
+ * (combat poller, studio tabs) interoperate on ONE controller. State-isolated;
+ * polls gameState; never touches the physics tick.
+ * ============================================================================ */
+(function () {
+  'use strict';
+  if (window.BANNON_UI && window.BANNON_UI._v2) return;
+
+  var ENTRIES = [
+    { label: 'MOVES',   btn: 'movesBtn',      panel: 'moveLibPanel' },
+    { label: 'STUDIO',  btn: 'btnMainStudio', panel: 'studio' },
+    { label: 'CREATOR', panel: 'mcPanel' },
+    { label: 'PHYSICS', panel: 'bphysPanel' },
+    { label: 'SENSES',  btn: 'aiSensesTab',   panel: 'aiSensesPanel' },
+    { label: 'ROADMAP', btn: 'aiRoadmapTab',  panel: 'aiRoadmapTab' },
+    { label: 'SURGEON', panel: 'surgeon-panel' },
+    { label: 'ATTIRE',  text: 'ATTIRE' },
+    { label: 'FORGE',   text: 'MODEL FORGE' }
+  ];
+  var STRAGGLERS = ['movesBtn', 'btnMoves', 'btnMainStudio', 'aiSensesTab', 'aiRoadmapTab'];
+
+  function el(id) { return document.getElementById(id); }
+  function byText(t) { var bs = document.querySelectorAll('button,label'); for (var i = 0; i < bs.length; i++) if ((bs[i].textContent || '').trim() === t) return bs[i]; return null; }
+  function hidePanel(id) { var e = el(id); if (e) { e.style.display = 'none'; e.classList.remove('show', 'open', 'visible', 'active'); } }
+  function showPanel(id) { var e = el(id); if (e) { e.style.display = 'block'; e.classList.add('show', 'open', 'visible', 'active'); } }
+
+  var UI = {
+    _v2: true, current: null,
+    state: { activePanel: null },   // Gemini-brick compatible mirror of .current
+    allowInFight: false,
+
+    _sync: function () { this.state.activePanel = this.current; },
+
+    closeAll: function () {
+      for (var i = 0; i < ENTRIES.length; i++) if (ENTRIES[i].panel) hidePanel(ENTRIES[i].panel);
+      var fx = el('fgX'); if (fx && fx.offsetParent) fx.click();
+      this.current = null; this._sync(); this._paint();
+    },
+
+    open: function (label) {
+      var e = ENTRIES.filter(function (x) { return x.label === label; })[0];
+      if (!e) return;
+      if (this.current === label) { this.closeAll(); return; }
+      this.closeAll();
+      if (e.btn && el(e.btn)) el(e.btn).click();
+      else if (e.text) { var b = byText(e.text); if (b) b.click(); }
+      else if (e.panel) showPanel(e.panel);
+      this.current = label; this._sync(); this._paint();
+    },
+
+    // generic tab switcher within a group (MDickie-style tabs; used by studio-tab bricks)
+    switchTab: function (groupId, targetId) {
+      var grp = el(groupId); if (grp) {
+        var btns = grp.querySelectorAll('[data-target]');
+        for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', btns[i].getAttribute('data-target') === targetId);
+      }
+      var conts = document.querySelectorAll('.bannon-tab-content');
+      for (var j = 0; j < conts.length; j++) conts[j].classList.toggle('active', conts[j].id === targetId);
+    },
+
+    _hideStragglers: function () {
+      STRAGGLERS.forEach(function (id) { var e = el(id); if (e) e.style.display = 'none'; });
+      ['ATTIRE', 'MODEL FORGE'].forEach(function (t) { var b = byText(t); if (b && b.id !== 'fgX' && !(b.closest && b.closest('#bannonDock'))) b.style.display = 'none'; });
+    },
+
+    _tick: function () {
+      var fighting = (window.gameState === 'fight');
+      if (fighting && !this.allowInFight && this.current) this.closeAll();
+      this._hideStragglers();
+      var isMenu = (window.gameState === 'menu' || window.gameState === 'pause'); var d = el('bannonDock'); if (d) d.style.display = isMenu ? 'flex' : 'none';
+    },
+
+    _paint: function () {
+      for (var i = 0; i < ENTRIES.length; i++) {
+        var b = el('dockb_' + i); if (!b) continue;
+        var on = this.current === ENTRIES[i].label;
+        b.style.background = on ? 'rgba(212,175,55,.22)' : '#161a22';
+        b.style.borderColor = on ? '#d4af37' : '#333';
+      }
+    },
+
+    _css: function () {
+      if (el('bannonUICss')) return;
+      var s = document.createElement('style'); s.id = 'bannonUICss';
+      s.textContent = '.bannon-tab-nav{display:flex;gap:4px;margin-bottom:8px}.bannon-tab-btn{padding:6px 10px;border-radius:6px;border:1px solid #333;background:#161a22;color:#cdd6e0;cursor:pointer;font:bold 10px monospace}.bannon-tab-btn.active{background:rgba(212,175,55,.2);border-color:#d4af37}.bannon-tab-content{display:none}.bannon-tab-content.active{display:block}';
+      document.head.appendChild(s);
+    },
+
+    _dock: function () {
+      if (el('bannonDock')) return;
+      var d = document.createElement('div'); d.id = 'bannonDock';
+      d.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:6px;z-index:99990;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;padding:5px 8px;border-radius:11px;background:rgba(10,12,18,.9);border:1px solid #2a3340;transition:opacity .2s;max-width:96vw';
+      var self = this;
+      ENTRIES.forEach(function (e, i) {
+        var b = document.createElement('button'); b.id = 'dockb_' + i; b.textContent = e.label;
+        b.style.cssText = 'padding:6px 9px;border-radius:7px;border:1px solid #333;background:#161a22;color:#cdd6e0;cursor:pointer;font:bold 10px monospace';
+        b.onclick = function () { self.open(e.label); };
+        d.appendChild(b);
+      });
+      var x = document.createElement('button'); x.textContent = '\u2715';
+      x.style.cssText = 'padding:6px 9px;border-radius:7px;border:1px solid #533;background:#1a1214;color:#e88;cursor:pointer;font:bold 10px monospace';
+      x.onclick = function () { self.closeAll(); };
+      d.appendChild(x);
+      document.body.appendChild(d);
+    }
+  };
+
+  window.BANNON_UI = UI;
+  function boot() { UI._css(); UI._dock(); UI._hideStragglers(); UI.closeAll(); setInterval(function () { UI._tick(); }, 300); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 400);
+})();
+</script>

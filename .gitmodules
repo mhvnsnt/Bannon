@@ -1,0 +1,12 @@
+[submodule "native/third_party/JoltPhysics"]
+	path = native/third_party/JoltPhysics
+	url = https://github.com/jrouwe/JoltPhysics
+[submodule "unreal/ThirdParty/JoltPhysics"]
+	path = unreal/ThirdParty/JoltPhysics
+	url = https://github.com/jrouwe/JoltPhysics.git
+[submodule "unreal/ThirdParty/GGPO"]
+	path = unreal/ThirdParty/GGPO
+	url = https://github.com/pond3r/ggpo.git
+[submodule "unreal/ThirdParty/llama.cpp"]
+	path = unreal/ThirdParty/llama.cpp
+	url = https://github.com/ggerganov/llama.cpp.git

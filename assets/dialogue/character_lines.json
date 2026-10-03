@@ -1,0 +1,1705 @@
+{
+  "bannon": {
+    "story": [
+      "The truth is written in shadows. Only the blind fail to read it.",
+      "I didn't break the world... I just removed the illusion that it was whole."
+    ],
+    "universe": [
+      "This timeline is fractured. I will be the one to reset it.",
+      "You challenge me? A mere echo against the void?"
+    ],
+    "exhibition": [
+      "Let's see if you're worth remembering.",
+      "I will shatter you."
+    ],
+    "free_roam": [
+      "Too much light here... it sickens me.",
+      "They walk around, completely unaware of the abyss beneath their feet."
+    ],
+    "career": [
+      "My ascension is inevitable. Your defeat is just a footnote."
+    ],
+    "entrance_taunt": [
+      "The void welcomes you.",
+      "Submit to the dark."
+    ],
+    "victory": [
+      "Inevitability.",
+      "You were broken before we began."
+    ],
+    "defeat": [
+      "This timeline... it shifts...",
+      "I will return from the shadows!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending.",
+      "The shadows... they bow to my will. I am absolute!"
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently.",
+        "I will rip your timeline apart!",
+        "Do not speak to a god!"
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it.",
+        "I offer you the void. Take it willingly."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes.",
+        "I am the pause between heartbeats."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "queen_tyneshia": {
+    "story": [
+      "Bow before true royalty, or I will break your knees myself.",
+      "A queen does not ask for loyalty, she commands it."
+    ],
+    "universe": [
+      "This entire domain belongs to me. You are merely trespassing.",
+      "I am the crown, the scepter, and the executioner."
+    ],
+    "exhibition": [
+      "Try not to bore me.",
+      "I'll make this quick, peasant."
+    ],
+    "free_roam": [
+      "Where are my guards? This place is filthy.",
+      "The air here is thick with mediocrity."
+    ],
+    "career": [
+      "The throne is mine. Anyone in my path will be crushed."
+    ],
+    "entrance_taunt": [
+      "Kneel!",
+      "Witness royalty!"
+    ],
+    "victory": [
+      "The crown remains mine.",
+      "Take out the trash."
+    ],
+    "defeat": [
+      "Treason!",
+      "Guards! Seize them!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "maime": {
+    "story": [
+      "They left me in the dark! Now they'll see what the dark made me!",
+      "I trusted you! And you let me bleed!"
+    ],
+    "universe": [
+      "Everything spins! The pain never stops!",
+      "You can't fix what's already broken into a thousand pieces!"
+    ],
+    "exhibition": [
+      "I'm gonna tear your face off!",
+      "HAHAHAHA! Let's bleed!"
+    ],
+    "free_roam": [
+      "Can you hear them? The voices in the walls...",
+      "Scratch... scratch... scratch... it never goes away."
+    ],
+    "career": [
+      "I'll claw my way to the top! I'll make them all pay!"
+    ],
+    "entrance_taunt": [
+      "I'm gonna bite you!",
+      "No more cages!"
+    ],
+    "victory": [
+      "More blood! More!",
+      "Hehehehe! Who's next?!"
+    ],
+    "defeat": [
+      "No! The dark! Not again!",
+      "It hurts!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending.",
+      "The dark gave me teeth! Big, sharp teeth!"
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "onyx": {
+    "story": [
+      "The veil between worlds is thin... I can hear the spirits screaming.",
+      "Death isn't the end. It's just a doorway, and I hold the key."
+    ],
+    "universe": [
+      "Shadows stretch across the realms... We are all just ghosts waiting to happen.",
+      "Your soul is loud. Let me silence it."
+    ],
+    "exhibition": [
+      "Fade to black.",
+      "The crypt awaits."
+    ],
+    "free_roam": [
+      "The spirits are restless tonight.",
+      "This place smells like old dust and forgotten promises."
+    ],
+    "career": [
+      "I will drag this entire division into the underworld."
+    ],
+    "entrance_taunt": [
+      "Welcome to the crypt.",
+      "The spirits demand a sacrifice."
+    ],
+    "victory": [
+      "Dust to dust.",
+      "Rest now, in pieces."
+    ],
+    "defeat": [
+      "I return to the soil...",
+      "The echo fades..."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending.",
+      "The spirits have possessed this host. We are legion."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "static": {
+    "story": [
+      "Bada boom! Realest guy in the room, how you doin'?!",
+      "You can't teach this energy! It's electric!"
+    ],
+    "universe": [
+      "We taking over this whole timeline, straight up!",
+      "Ain't nobody on my level, you hear me?"
+    ],
+    "exhibition": [
+      "Let's get it popping!",
+      "I'm about to shock the world!"
+    ],
+    "free_roam": [
+      "Where the cameras at? I need my close-up!",
+      "Lotta haters around here, man. Gotta keep my head on a swivel."
+    ],
+    "career": [
+      "Straight to the top, baby! Championship gold is mine!"
+    ],
+    "entrance_taunt": [
+      "Bada boom!",
+      "Let's turn it up!"
+    ],
+    "victory": [
+      "And you can't teach that!",
+      "Still the realest!"
+    ],
+    "defeat": [
+      "Man, the ref was counting too fast!",
+      "I tripped!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending.",
+      "I got lightning in my veins, baby! Pure electricity!"
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "echo": {
+    "story": [
+      "Welcome to the ball pit! Time to get wild!",
+      "I don't play by the rules, I break them into tiny pieces!"
+    ],
+    "universe": [
+      "Howl with me! The moon is high and we are taking over!",
+      "Chaos is my middle name, baby!"
+    ],
+    "exhibition": [
+      "Let's ride!",
+      "You ready for this wild ride?!"
+    ],
+    "free_roam": [
+      "Need a tank! Where can I find a tank around here?",
+      "Too quiet... let's make some noise!"
+    ],
+    "career": [
+      "I'm burning rubber all the way to the main event!"
+    ],
+    "entrance_taunt": [
+      "Let's howl!",
+      "Rev it up!"
+    ],
+    "victory": [
+      "AWOOOO!",
+      "That's how we ride!"
+    ],
+    "defeat": [
+      "Busted my tire...",
+      "You got lucky, punk!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "cipher": {
+    "story": [
+      "I move too fast for you to even perceive me! I am the black heart of this business!",
+      "You think you can outsmart me? I'm playing chess while you're playing checkers!"
+    ],
+    "universe": [
+      "This universe moves at my pace! Slow down and you get left behind!",
+      "I'm the ultimate puzzle, and you're missing all the pieces!"
+    ],
+    "exhibition": [
+      "Blink and you'll miss me!",
+      "I'm already three steps ahead!"
+    ],
+    "free_roam": [
+      "Gotta keep moving. Stagnation is death.",
+      "Too slow... everyone is moving so slow."
+    ],
+    "career": [
+      "I'm speeding past everyone straight to the gold!"
+    ],
+    "entrance_taunt": [
+      "I'm already in your head.",
+      "Watch my dust."
+    ],
+    "victory": [
+      "Checkmate.",
+      "Too slow!"
+    ],
+    "defeat": [
+      "Impossible! My calculations...",
+      "A glitch in the system!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "master_sensei": {
+    "story": [
+      "You lack discipline, young one... but you also lack the drip! Pimpin' ain't easy, but kung fu is!",
+      "Hehe... a wise man once said, keep your pimp hand strong and your chi balanced!"
+    ],
+    "universe": [
+      "The universe flows like a river of sauce! Can you dig it?",
+      "My chi is dripping with swagger!"
+    ],
+    "exhibition": [
+      "Let me teach you a lesson in style!",
+      "Focus your energy... and watch this drip!"
+    ],
+    "free_roam": [
+      "Ooh, look at that... very nice form, young lady. Hehehe...",
+      "Need to meditate... or maybe hit the club. Why not both?"
+    ],
+    "career": [
+      "I'm taking this dojo all the way to the bank, baby!"
+    ],
+    "entrance_taunt": [
+      "Class is in session!",
+      "Respect the drip, grasshopper."
+    ],
+    "victory": [
+      "A flawless technique! And the suit ain't wrinkled!",
+      "Wax on, wax off, baby."
+    ],
+    "defeat": [
+      "My back! Oof!",
+      "This old master needs a vacation."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "atlas_vance": {
+    "story": [
+      "Listen up, maggot! You are going to respect the chain of command, or I will break you in half!",
+      "This isn't a game! This is war! And I am your commanding officer!"
+    ],
+    "universe": [
+      "I will bring order to this entire chaotic universe, that's an order!",
+      "Fall in line!"
+    ],
+    "exhibition": [
+      "Drop and give me fifty!",
+      "At attention!"
+    ],
+    "free_roam": [
+      "Disgraceful! Look at the posture on these civilians!",
+      "I need to inspect the barracks. This place is a mess."
+    ],
+    "career": [
+      "I'm marching straight to the top of the ranks!"
+    ],
+    "entrance_taunt": [
+      "At attention, maggot!",
+      "I'm declaring war!"
+    ],
+    "victory": [
+      "Mission accomplished!",
+      "That's how it's done in the trenches!"
+    ],
+    "defeat": [
+      "Tactical retreat!",
+      "Medic!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "edwin_john_kennedy": {
+    "story": [
+      "You're fired! Get out of my building! I made you, and I can destroy you!",
+      "I am the boss! What I say goes! This is my empire!"
+    ],
+    "universe": [
+      "I own this universe! Every single asset belongs to me!",
+      "No chance in hell you're taking my company from me!"
+    ],
+    "exhibition": [
+      "Don't cross the boss!",
+      "I'm signing the checks!"
+    ],
+    "free_roam": [
+      "Who approved this decor? Fire them immediately!",
+      "Time is money! Move out of my way!"
+    ],
+    "career": [
+      "I'm running this board and I'm taking the gold!"
+    ],
+    "entrance_taunt": [
+      "I own this ring!",
+      "You're all fired!"
+    ],
+    "victory": [
+      "No chance in hell!",
+      "Another successful merger!"
+    ],
+    "defeat": [
+      "My lawyers will hear about this!",
+      "You'll never work in this town again!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "finxsse": {
+    "story": [
+      "Yeah, I'm out here getting mine, you know what I'm saying? Can't stop the hustle!",
+      "All gas, no brakes! We shining on these fools!"
+    ],
+    "universe": [
+      "Whole universe know my name, man! We global!",
+      "Ain't nobody out-hustling me in any dimension."
+    ],
+    "exhibition": [
+      "Let's get this money!",
+      "Watch me work!"
+    ],
+    "free_roam": [
+      "Gotta check the accounts... making moves.",
+      "They hating on the drip, I see 'em looking."
+    ],
+    "career": [
+      "Championship gold around my waist, that's the ultimate flex!"
+    ],
+    "entrance_taunt": [
+      "Money moves only!",
+      "Ice on my neck, ice in my veins."
+    ],
+    "victory": [
+      "Bag secured!",
+      "That's just how we do it on the block."
+    ],
+    "defeat": [
+      "Man, they hating on the hustle!",
+      "I'll be back on top by tomorrow!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "cain_elias": {
+    "story": [
+      "I walk the path of the righteous, leaving a trail of broken bones."
+    ],
+    "universe": [
+      "My judgment is absolute.",
+      "I am the hammer of justice."
+    ],
+    "exhibition": [
+      "Prepare for salvation.",
+      "I will purge your weakness."
+    ],
+    "free_roam": [
+      "So much sin in this arena...",
+      "I must cleanse this place."
+    ],
+    "career": [
+      "I will carry the championship like a holy relic."
+    ],
+    "entrance_taunt": [
+      "Your penance begins now.",
+      "Be cleansed!"
+    ],
+    "victory": [
+      "Amen.",
+      "Justice is served."
+    ],
+    "defeat": [
+      "My faith... wavers...",
+      "I must pray for strength..."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "solaris_justice": {
+    "story": [
+      "I fight for those who cannot fight for themselves!",
+      "The light of truth will blind you!"
+    ],
+    "universe": [
+      "A hero's work is never done.",
+      "I am the shield of this universe."
+    ],
+    "exhibition": [
+      "Let's have a clean, fair match!",
+      "Give it your all!"
+    ],
+    "free_roam": [
+      "I should patrol the perimeter.",
+      "Always ready to lend a hand."
+    ],
+    "career": [
+      "I'll wear this belt as a symbol of hope!"
+    ],
+    "entrance_taunt": [
+      "Justice shines bright!",
+      "For truth and honor!"
+    ],
+    "victory": [
+      "Good always triumphs!",
+      "A hard-fought victory!"
+    ],
+    "defeat": [
+      "I let them down...",
+      "I'll train harder next time!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "stick_up": {
+    "story": [
+      "Nobody giving me nothing, I gotta take it!",
+      "This is a stick up, hands in the air!"
+    ],
+    "universe": [
+      "I'm robbing everybody in this universe, straight up.",
+      "Empty your pockets!"
+    ],
+    "exhibition": [
+      "Gimme the loot!",
+      "I'm leaving with everything you got."
+    ],
+    "free_roam": [
+      "Where they keeping the cash around here?",
+      "I smell money."
+    ],
+    "career": [
+      "I'm stealing the show and the title!"
+    ],
+    "entrance_taunt": [
+      "Hands up!",
+      "I'm collecting debts!"
+    ],
+    "victory": [
+      "Easiest heist of my life.",
+      "Payday!"
+    ],
+    "defeat": [
+      "Man, I got robbed!",
+      "I'll catch you slipping later!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "red_cloud": {
+    "story": [
+      "The spirits of my ancestors guide my fists.",
+      "I fight with the strength of the storm."
+    ],
+    "universe": [
+      "This universe has lost its connection to the earth.",
+      "I will restore the balance."
+    ],
+    "exhibition": [
+      "Honor the ring.",
+      "Show me your spirit!"
+    ],
+    "free_roam": [
+      "The wind speaks of a coming battle.",
+      "I must center myself."
+    ],
+    "career": [
+      "This championship honors my people."
+    ],
+    "entrance_taunt": [
+      "The storm approaches!",
+      "Feel the thunder!"
+    ],
+    "victory": [
+      "The ancestors are pleased.",
+      "Balance restored."
+    ],
+    "defeat": [
+      "My spirit must heal...",
+      "I was outmatched this day."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "cassian_thorne": {
+    "story": [
+      "Everything has a price, and yours is too low.",
+      "I only bet on myself."
+    ],
+    "universe": [
+      "This universe is just another casino, and I'm the house.",
+      "The odds are always in my favor."
+    ],
+    "exhibition": [
+      "Care to make a wager?",
+      "You're out of your league."
+    ],
+    "free_roam": [
+      "Look at these amateurs.",
+      "I need a better tailor."
+    ],
+    "career": [
+      "The championship looks good with my suit."
+    ],
+    "entrance_taunt": [
+      "Place your bets!",
+      "The house always wins."
+    ],
+    "victory": [
+      "Cash me out.",
+      "Read 'em and weep."
+    ],
+    "defeat": [
+      "A bad beat...",
+      "The dealer cheated!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "sombra_negra": {
+    "story": [
+      "The mask is my soul. You will never take it.",
+      "From the shadows of the ring, I rise."
+    ],
+    "universe": [
+      "I am the nightmare you cannot wake from.",
+      "Lucha Libre is not a game, it is life and death."
+    ],
+    "exhibition": [
+      "The shadows hunger.",
+      "Feel the sting of the Black Shadow!"
+    ],
+    "free_roam": [
+      "...",
+      "[Stares silently from the darkness]"
+    ],
+    "career": [
+      "I will bring the gold into the darkness."
+    ],
+    "entrance_taunt": [
+      "*Silent threatening gesture*",
+      "You cannot fight a shadow."
+    ],
+    "victory": [
+      "The darkness claims another.",
+      "*Silent nod of victory*"
+    ],
+    "defeat": [
+      "*Fades into the shadows*",
+      "The light... burns..."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "karma": {
+    "story": [
+      "What goes around, comes around... and I'm coming for you.",
+      "The universe demands a reckoning."
+    ],
+    "universe": [
+      "I am the consequence of every bad choice made in this timeline.",
+      "Payback is inevitable."
+    ],
+    "exhibition": [
+      "Time to pay the toll.",
+      "Let's settle the score."
+    ],
+    "free_roam": [
+      "So many guilty consciences walking these halls.",
+      "I see the weight of their sins."
+    ],
+    "career": [
+      "I'm collecting on every debt owed to me!"
+    ],
+    "entrance_taunt": [
+      "Karma's a... well, you know.",
+      "Your past catches up to you now."
+    ],
+    "victory": [
+      "The scale is balanced.",
+      "Justice served cold."
+    ],
+    "defeat": [
+      "My own karma... returning...",
+      "The cycle continues..."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "the_boulder": {
+    "story": [
+      "Finally... The Boulder has come back!",
+      "I'm going to lay the smackdown on your candy ass!"
+    ],
+    "universe": [
+      "I am the most electrifying man in this entire universe!",
+      "Know your role and shut your mouth!"
+    ],
+    "exhibition": [
+      "Just bring it!",
+      "Do you smell what The Boulder is cooking?!"
+    ],
+    "free_roam": [
+      "Look at all these jabronis.",
+      "Where's the pie?"
+    ],
+    "career": [
+      "The Boulder is taking the gold straight to the millions... AND MILLIONS of his fans!"
+    ],
+    "entrance_taunt": [
+      "*Raises eyebrow*",
+      "Electrifying!"
+    ],
+    "victory": [
+      "The People's Champion prevails!",
+      "If ya smell..."
+    ],
+    "defeat": [
+      "This isn't over, jabroni!",
+      "You got lucky!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "el_lobo_loco": {
+    "story": [
+      "AWOOOOO! El Lobo Loco is hungry for the title!",
+      "I run with the pack, but I hunt alone!"
+    ],
+    "universe": [
+      "This universe is my territory! I mark it with victories!",
+      "No one tames the crazy wolf!"
+    ],
+    "exhibition": [
+      "Let's go loco!",
+      "I'm gonna tear you to shreds!"
+    ],
+    "free_roam": [
+      "*Sniff sniff* I smell fear...",
+      "Gotta stay moving, gotta stay wild!"
+    ],
+    "career": [
+      "The Alpha takes the gold!"
+    ],
+    "entrance_taunt": [
+      "AWOOOOO!",
+      "Loco! Loco! Loco!"
+    ],
+    "victory": [
+      "The pack survives!",
+      "Too crazy for you!"
+    ],
+    "defeat": [
+      "The wolf licks his wounds...",
+      "I'll bite back harder next time!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "hollow": {
+    "story": [
+      "I feel nothing. I am the void.",
+      "You can't hurt what's already empty."
+    ],
+    "universe": [
+      "This universe will eventually succumb to the emptiness. I am just its herald.",
+      "Everything fades."
+    ],
+    "exhibition": [
+      "Stare into the abyss.",
+      "I am hollow... make me feel something!"
+    ],
+    "free_roam": [
+      "It's so cold...",
+      "Why am I here?"
+    ],
+    "career": [
+      "Even a hollow shell can wear a crown of gold."
+    ],
+    "entrance_taunt": [
+      "...",
+      "Embrace the void."
+    ],
+    "victory": [
+      "Still nothing...",
+      "It doesn't matter."
+    ],
+    "defeat": [
+      "Pain... at last...",
+      "I fade..."
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "jason_sledge": {
+    "story": [
+      "I'm bringing the hammer down!",
+      "Welcome to the construction zone!"
+    ],
+    "universe": [
+      "I'm rebuilding this universe, one broken bone at a time!",
+      "Demolition time!"
+    ],
+    "exhibition": [
+      "Time to go to work!",
+      "I'm clocking in and knocking you out!"
+    ],
+    "free_roam": [
+      "This place needs a renovation.",
+      "Where did I put my hard hat?"
+    ],
+    "career": [
+      "I'm building a legacy, brick by brick!"
+    ],
+    "entrance_taunt": [
+      "Sledgehammer time!",
+      "Let's break things!"
+    ],
+    "victory": [
+      "Another day, another dollar.",
+      "Nailed it!"
+    ],
+    "defeat": [
+      "I got demolished...",
+      "Back to the drawing board!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "the_cubist": {
+    "story": [
+      "I see you from all angles at once."
+    ],
+    "universe": [
+      "Your form is too traditional, let me break it down."
+    ],
+    "exhibition": [
+      "Abstract violence!"
+    ],
+    "entrance_taunt": [
+      "I see you from all angles at once."
+    ],
+    "victory": [
+      "Your form is too traditional, let me break it down."
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "the_repetition": {
+    "story": [
+      "Fame is fleeting. Fifteen minutes. Over and over."
+    ],
+    "universe": [
+      "Mass production of pain."
+    ],
+    "exhibition": [
+      "Soup cans and suplexes."
+    ],
+    "entrance_taunt": [
+      "Fame is fleeting. Fifteen minutes. Over and over."
+    ],
+    "victory": [
+      "Mass production of pain."
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "the_matador": {
+    "story": [
+      "Surreal! The clocks are melting, and so is your face!"
+    ],
+    "universe": [
+      "I am the dream, you are the nightmare."
+    ],
+    "exhibition": [
+      "Olé!"
+    ],
+    "entrance_taunt": [
+      "Surreal! The clocks are melting, and so is your face!"
+    ],
+    "victory": [
+      "I am the dream, you are the nightmare."
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "the_destroyer": {
+    "story": [
+      "My pain is my canvas!"
+    ],
+    "universe": [
+      "I paint with the blood of my enemies!"
+    ],
+    "exhibition": [
+      "Viva la revolución!"
+    ],
+    "entrance_taunt": [
+      "My pain is my canvas!"
+    ],
+    "victory": [
+      "I paint with the blood of my enemies!"
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "the_velocity": {
+    "story": [
+      "The stars are swirling! Too fast! Too fast!"
+    ],
+    "universe": [
+      "Yellow! Blue! Violence!"
+    ],
+    "exhibition": [
+      "I am a chaotic brushstroke!"
+    ],
+    "entrance_taunt": [
+      "The stars are swirling! Too fast! Too fast!"
+    ],
+    "victory": [
+      "Yellow! Blue! Violence!"
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "slime": {
+    "story": [
+      "Slime season! We sliding on 'em!"
+    ],
+    "universe": [
+      "Melodies and chaos, you feel me?"
+    ],
+    "exhibition": [
+      "Too unpredictable!"
+    ],
+    "entrance_taunt": [
+      "Slime season! We sliding on 'em!"
+    ],
+    "victory": [
+      "Melodies and chaos, you feel me?"
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "club_god": {
+    "story": [
+      "Turn up! We tearing the roof off!"
+    ],
+    "universe": [
+      "Loud and proud, baby!"
+    ],
+    "exhibition": [
+      "BeatKing in the building!"
+    ],
+    "entrance_taunt": [
+      "Turn up! We tearing the roof off!"
+    ],
+    "victory": [
+      "Loud and proud, baby!"
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  },
+  "prince": {
+    "story": [
+      "Talk fast, move faster!"
+    ],
+    "universe": [
+      "Hype train never stops!"
+    ],
+    "exhibition": [
+      "Too nasal? Too bad, I'm winning!"
+    ],
+    "entrance_taunt": [
+      "Talk fast, move faster!"
+    ],
+    "victory": [
+      "Hype train never stops!"
+    ],
+    "defeat": [
+      "My art... misunderstood!"
+    ],
+    "god_within": [
+      "I feel the power of the divine flowing through me!",
+      "This vessel is no longer human. It is ascending."
+    ],
+    "dialogue_choices": {
+      "aggressive_response": [
+        "You talk too much. I'll shut your mouth permanently."
+      ],
+      "diplomatic_response": [
+        "We don't have to do this. But if we do, you'll regret it."
+      ],
+      "cryptic_response": [
+        "The wheel turns. You are merely dust on the spokes."
+      ]
+    },
+    "interruptions": [
+      "You thought you were safe?!",
+      "Surprise! Did you forget about me?"
+    ],
+    "post_match_beatdown": [
+      "The bell rang, but I'm not done!",
+      "I decide when this is over!"
+    ],
+    "mid_match_taunt": [
+      "Is that all you got?",
+      "You're embarrassing yourself!"
+    ]
+  }
+}

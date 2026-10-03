@@ -1,0 +1,18 @@
+{ "_note": "Legal 2K-style move recreation: OUR banked mocap clips (assets/mocap/drive) bound to OUR physics (release matrix + damage/stamina). No ripped 2K data — clips are Mixamo-style FBX the owner queued. Loader merges these as named moves.",
+  "moves": {
+    "TOMBSTONE_DRIVER":   { "clip": "Tombstone.fbx",            "cat": "GRAPPLE", "release": "SLAM",  "power": 92, "staminaCost": 34, "pos": "FRONT" },
+    "VERTICAL_BRAINBUSTER":{ "clip": "VerticalBrainBuster.fbx", "cat": "GRAPPLE", "release": "SLAM",  "power": 88, "staminaCost": 32, "pos": "FRONT" },
+    "CHOKESLAM_HEX":      { "clip": "Chokeslam.fbx",            "cat": "GRAPPLE", "release": "SLAM",  "power": 85, "staminaCost": 30, "pos": "FRONT" },
+    "DOUBLE_SUPLEX":      { "clip": "DoubleSuplex.fbx",         "cat": "GRAPPLE", "release": "TOSS",  "power": 80, "staminaCost": 30, "pos": "FRONT" },
+    "HAMMERLOCK_DDT":     { "clip": "HammerlockDDT.fbx",        "cat": "GRAPPLE", "release": "DROP",  "power": 76, "staminaCost": 24, "pos": "FRONT" },
+    "STEREO_SUPERKICK":   { "clip": "StereoSuperkick.fbx",      "cat": "STRIKE",  "power": 82, "staminaCost": 18 },
+    "TAG_SUPERKICK":      { "clip": "TagSuperkick.fbx",         "cat": "STRIKE",  "power": 78, "staminaCost": 16 },
+    "JAY_KICK":           { "clip": "JayKick.fbx",              "cat": "STRIKE",  "power": 74, "staminaCost": 14 },
+    "APRON_JAY_KICK":     { "clip": "ApronJayKick.fbx",         "cat": "STRIKE",  "power": 70, "staminaCost": 14, "pos": "APRON" },
+    "HEADCRACK":          { "clip": "Tau_HEADCRACK.fbx",        "cat": "STRIKE",  "power": 84, "staminaCost": 20 },
+    "STRONG_ZERO":        { "clip": "StrongZero.fbx",           "cat": "GRAPPLE", "release": "SLAM",  "power": 90, "staminaCost": 34, "pos": "FRONT" },
+    "VIOLENCE_PARTY":     { "clip": "ViolenceParty.fbx",        "cat": "STRIKE",  "power": 72, "staminaCost": 22 },
+    "WBTC_CUTTER":        { "clip": "WBTC.fbx",                 "cat": "GRAPPLE", "release": "DROP",  "power": 86, "staminaCost": 28, "pos": "FRONT" },
+    "DROP_KICK":          { "clip": "Drop Kick.fbx",            "cat": "STRIKE",  "power": 68, "staminaCost": 15 },
+    "KIP_UP":             { "clip": "Kip Up.fbx",               "cat": "TAUNT",   "power": 0,  "staminaCost": 6 }
+  } }

@@ -1,0 +1,33 @@
+{
+  "_source": "Wrestling MPire Remix Values.bb weapon table — ported with owner's rights; damage/hold/flammable/explodable faithful to source. Names lightly proprietary for the BANNON universe.",
+  "_holdTypes": { "0": "one-hand light", "1": "one-hand swing", "2": "stab", "3": "two-hand board" },
+  "_explode": { "0": "none", "1": "explosive", "2": "spray", "3": "shatter-wet", "4": "shatter-flame" },
+  "weapons": [
+    { "id": "plank",      "name": "Wooden Plank",      "size": 11, "weight": 0.25,  "damage": 75,  "hold": 1, "flammable": true,  "explode": 0 },
+    { "id": "bat",        "name": "Baseball Bat",       "size": 9,  "weight": 0.25,  "damage": 75,  "hold": 1, "flammable": true,  "explode": 0 },
+    { "id": "cane",       "name": "Kendo Cane",         "size": 15, "weight": 0.225, "damage": 50,  "hold": 1, "flammable": true,  "explode": 0 },
+    { "id": "pipe",       "name": "Steel Pipe",         "size": 9,  "weight": 0.25,  "damage": 100, "hold": 1, "flammable": false, "explode": 0 },
+    { "id": "mic",        "name": "Microphone",         "size": 4,  "weight": 0.2,   "damage": 50,  "hold": 0, "flammable": true,  "explode": 0 },
+    { "id": "sword",      "name": "Samurai Sword",      "size": 13, "weight": 0.3,   "damage": 150, "hold": 1, "flammable": true,  "explode": 0 },
+    { "id": "dagger",     "name": "Dagger",             "size": 6,  "weight": 0.25,  "damage": 125, "hold": 2, "flammable": true,  "explode": 0 },
+    { "id": "hammer",     "name": "Sledge Hammer",      "size": 5,  "weight": 0.35,  "damage": 125, "hold": 1, "flammable": true,  "explode": 0 },
+    { "id": "bell",       "name": "Ring Bell",          "size": 4,  "weight": 0.35,  "damage": 100, "hold": 0, "flammable": false, "explode": 0 },
+    { "id": "knucks",     "name": "Brass Knuckles",     "size": 4,  "weight": 0.3,   "damage": 50,  "hold": 0, "flammable": false, "explode": 0 },
+    { "id": "trophy",     "name": "Trophy",             "size": 5,  "weight": 0.3,   "damage": 100, "hold": 0, "flammable": false, "explode": 0 },
+    { "id": "camera",     "name": "Broadcast Camera",   "size": 5,  "weight": 0.35,  "damage": 100, "hold": 0, "flammable": true,  "explode": 1 },
+    { "id": "tape",       "name": "Tape Case",          "size": 4,  "weight": 0.2,   "damage": 50,  "hold": 0, "flammable": true,  "explode": 0 },
+    { "id": "gamebox",    "name": "Console Box",        "size": 4,  "weight": 0.2,   "damage": 50,  "hold": 0, "flammable": true,  "explode": 0 },
+    { "id": "case",       "name": "Briefcase (MITB)",   "size": 6,  "weight": 0.3,   "damage": 75,  "hold": 0, "flammable": true,  "explode": 0 },
+    { "id": "waterbottle","name": "Water Bottle",       "size": 4,  "weight": 0.2,   "damage": 50,  "hold": 0, "flammable": false, "explode": 3 },
+    { "id": "beerbottle", "name": "Glass Bottle",       "size": 4,  "weight": 0.2,   "damage": 50,  "hold": 0, "flammable": true,  "explode": 4 },
+    { "id": "exting",     "name": "Fire Extinguisher",  "size": 6,  "weight": 0.3,   "damage": 100, "hold": 0, "flammable": false, "explode": 2 },
+    { "id": "tnt",        "name": "Explosive Charge",   "size": 6,  "weight": 0.25,  "damage": 50,  "hold": 0, "flammable": true,  "explode": 1 },
+    { "id": "gun",        "name": "Handgun",            "size": 4,  "weight": 0.4,   "damage": 150, "hold": 0, "flammable": false, "explode": 1 },
+    { "id": "worldtitle", "name": "World Title Belt",   "size": 7,  "weight": 0.3,   "damage": 100, "hold": 0, "flammable": true,  "explode": 0 },
+    { "id": "intertitle", "name": "Continental Belt",   "size": 7,  "weight": 0.3,   "damage": 100, "hold": 0, "flammable": true,  "explode": 0 },
+    { "id": "tagtitle",   "name": "Tag Title Belt",     "size": 7,  "weight": 0.3,   "damage": 100, "hold": 0, "flammable": true,  "explode": 0 },
+    { "id": "board",      "name": "Wooden Board",       "size": 10, "weight": 0.275, "damage": 100, "hold": 3, "flammable": false, "explode": 0 },
+    { "id": "sheet",      "name": "Metal Sheet",        "size": 10, "weight": 0.3,   "damage": 150, "hold": 3, "flammable": false, "explode": 0 },
+    { "id": "tacks",      "name": "Thumbtacks",         "size": 8,  "weight": 0.1,   "damage": 100, "hold": 3, "flammable": false, "explode": 0 }
+  ]
+}

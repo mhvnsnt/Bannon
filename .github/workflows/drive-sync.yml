@@ -1,0 +1,41 @@
+name: drive-sync
+# The owner drops models/animations into the public Drive folder; this pulls anything new into the
+# repo every 6 hours (or on demand) and auto-splits fresh single-mesh GLBs into rigready parts.
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Pull new Drive files
+        run: node tools/drive_sync/sync.mjs
+      - name: Auto-SKIN any new single-mesh GLBs (16-bone smooth-weight rig)
+        run: |
+          shopt -s nullglob
+          for f in assets/models/incoming/*.glb; do
+            base="$(basename "$f" .glb)"
+            out="assets/models/incoming/${base}_skinned.glb"
+            [ -f "$out" ] && continue
+            node tools/rigready/skin.cjs "$f" "$out" || echo "skin failed for $f (kept raw)"
+          done
+      - name: Commit anything new
+        run: |
+          git config user.name "bannon-drive-sync"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A assets/models assets/mocap/drive imports/incoming tools/drive_sync/manifest.json 2>/dev/null || true
+          if ! git diff --cached --quiet; then
+            git commit -m "drive-sync: new files from the owner's Drive folder (auto)"
+            git push
+          else
+            echo "nothing new"
+          fi

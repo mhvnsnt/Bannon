@@ -1,0 +1,213 @@
+{
+ "_note": "Owner-approved per-character situational dialogue (feral Cipher/Blackheart, Hollow cold-system, Static/Echo/Viper/Brutus...) merged from bannon_strings_v2/v3/v4. Wired via window.BANNON_DIALOGUE. Triggers: AMBUSH_BACKSTAGE/TITLE_DEMAND/POST_MATCH_WIN/CONTRACT_DISPUTE/PRE_MATCH_LOCKER_ROOM/TAG_TEAM_BETRAYAL/INJURY_TAUNT/RIVALRY_START.",
+ "count": 21,
+ "byChar": {
+  "cipher": {
+   "AMBUSH_BACKSTAGE": [
+    "They think it's a game. A game! No no no... He knows. He sees you. He sees you trying to hide! The cuts, the cuts, the cuts! Stronger and stronger and stronger!"
+   ],
+   "TITLE_DEMAND": [
+    "The gold... the bag... it's mine! It's always been mine! Give it to me! If you don't... he sees you. He knows. He knows what you did!"
+   ],
+   "POST_MATCH_WIN": [
+    "It's fine. It's fine. See the blood? He likes it. He likes it! Bleed for him! Stronger and stronger and stronger!"
+   ],
+   "CONTRACT_DISPUTE": [
+    "The paper... it's empty! Empty! He needs more! Add to the pile! If you don't... the rain comes. And it cuts! It cuts deep!"
+   ],
+   "PRE_MATCH_LOCKER_ROOM": [
+    "It's time... yes, yes, the lights are on. But the shadows... he lives in the shadows! He sees you taping your wrists. You think that tape holds you together? No no no... the cuts! The cuts! We are getting stronger and stronger and stronger!"
+   ],
+   "TAG_TEAM_BETRAYAL": [
+    "You thought we were friends? You thought he liked you?! He hates you! You're dead weight! A sacrifice! The rain is coming, and it washes the weak away! He knows! He knows!"
+   ],
+   "INJURY_TAUNT": [
+    "The bone... it's fragile! Like glass! Snap snap snap! He wants it to snap! And when it breaks, we bleed! Stronger and stronger and stronger!"
+   ],
+   "RIVALRY_START": [
+    "You keep staring at me! Why are you staring?! He sees you looking! He knows what's in your head! You can't run from it! We are the consequence!"
+   ]
+  },
+  "hollow": {
+   "AMBUSH_BACKSTAGE": [
+    "Target acquired. Structural integrity test initiated."
+   ],
+   "TITLE_DEMAND": [
+    "System parameters dictate a championship transition. Authorize the match, or face total system wipe."
+   ]
+  },
+  "onyx": {
+   "CONTRACT_DISPUTE": [
+    "The metrics don't align with your offer. Readjust the decimal, or the faction calculates your liquidation."
+   ]
+  },
+  "echo": {
+   "POST_MATCH_WIN": [
+    "Look at you! Scrub that blood off the mat before I run you over again! Welcome to the wasteland, bitch!"
+   ]
+  },
+  "static": {
+   "TITLE_DEMAND": [
+    "Badaboom! You got the realest guy in the room staring at a fake champion! Put the belt on the line tonight or I walk, and take the ratings with me! How you doin'?!"
+   ]
+  },
+  "viper": {
+   "PRE_MATCH_LOCKER_ROOM": [
+    "I've dissected your last three matches. You drop your left hand when you breathe heavy. I won't need ten minutes to end this."
+   ],
+   "INJURY_TAUNT": [
+    "I see the tape on your shoulder. It won't hold. I'm going to dismantle it at the joint."
+   ]
+  },
+  "brutus": {
+   "PRE_MATCH_LOCKER_ROOM": [
+    "Get out of my face before I put you through this concrete wall. We settle this in the center of the ring. No running."
+   ],
+   "INJURY_TAUNT": [
+    "I'm gonna grab that arm and pull until something tears. You better learn to tap fast."
+   ]
+  },
+  "cipher_01": {
+   "POST_MATCH_WIN": [
+    "No, no, no, no, no, no, no. It's fine, it's fine. You think you caught me? He let you. He wants them to know. It's always been him, it's always been me."
+   ],
+   "PRE_MATCH_LOCKER_ROOM_AMBUSH": [
+    "You locked the door, didn't you? Checking over your shoulder. You should. He sees you. He sees you. He knows!"
+   ],
+   "FACTION_BETRAYAL": [
+    "You thought we were safe? You thought he liked you?! He hates you! A sacrifice! The rain is coming, and it washes the weak away! Cuts! Cuts! Cuts!"
+   ],
+   "SPECIFIC_INJURY_TAUNT": [
+    "The bone... it's fragile! Like glass! Snap snap snap! He wants it to snap! And when it breaks, we bleed! Stronger and stronger and stronger!"
+   ]
+  }
+ },
+ "flat": [
+  {
+   "character": "cipher",
+   "trigger": "AMBUSH_BACKSTAGE",
+   "line": "They think it's a game. A game! No no no... He knows. He sees you. He sees you trying to hide! The cuts, the cuts, the cuts! Stronger and stronger and stronger!",
+   "baseline": "I'm going to attack you when you least expect it."
+  },
+  {
+   "character": "cipher",
+   "trigger": "TITLE_DEMAND",
+   "line": "The gold... the bag... it's mine! It's always been mine! Give it to me! If you don't... he sees you. He knows. He knows what you did!",
+   "baseline": "I want a title shot tonight or I'm quitting!"
+  },
+  {
+   "character": "cipher",
+   "trigger": "POST_MATCH_WIN",
+   "line": "It's fine. It's fine. See the blood? He likes it. He likes it! Bleed for him! Stronger and stronger and stronger!",
+   "baseline": "I told you I was better than you."
+  },
+  {
+   "character": "cipher",
+   "trigger": "CONTRACT_DISPUTE",
+   "line": "The paper... it's empty! Empty! He needs more! Add to the pile! If you don't... the rain comes. And it cuts! It cuts deep!",
+   "baseline": "I need more money for this match."
+  },
+  {
+   "character": "hollow",
+   "trigger": "AMBUSH_BACKSTAGE",
+   "line": "Target acquired. Structural integrity test initiated.",
+   "baseline": "I'm going to attack you when you least expect it."
+  },
+  {
+   "character": "hollow",
+   "trigger": "TITLE_DEMAND",
+   "line": "System parameters dictate a championship transition. Authorize the match, or face total system wipe.",
+   "baseline": "I want a title shot tonight or I'm quitting!"
+  },
+  {
+   "character": "onyx",
+   "trigger": "CONTRACT_DISPUTE",
+   "line": "The metrics don't align with your offer. Readjust the decimal, or the faction calculates your liquidation.",
+   "baseline": "I need more money for this match."
+  },
+  {
+   "character": "echo",
+   "trigger": "POST_MATCH_WIN",
+   "line": "Look at you! Scrub that blood off the mat before I run you over again! Welcome to the wasteland, bitch!",
+   "baseline": "I told you I was better than you."
+  },
+  {
+   "character": "static",
+   "trigger": "TITLE_DEMAND",
+   "line": "Badaboom! You got the realest guy in the room staring at a fake champion! Put the belt on the line tonight or I walk, and take the ratings with me! How you doin'?!",
+   "baseline": "I want a title shot tonight or I'm quitting!"
+  },
+  {
+   "character": "cipher",
+   "trigger": "PRE_MATCH_LOCKER_ROOM",
+   "line": "It's time... yes, yes, the lights are on. But the shadows... he lives in the shadows! He sees you taping your wrists. You think that tape holds you together? No no no... the cuts! The cuts! We are getting stronger and stronger and stronger!",
+   "baseline": "I'm ready for my match tonight."
+  },
+  {
+   "character": "cipher",
+   "trigger": "TAG_TEAM_BETRAYAL",
+   "line": "You thought we were friends? You thought he liked you?! He hates you! You're dead weight! A sacrifice! The rain is coming, and it washes the weak away! He knows! He knows!",
+   "baseline": "I'm tired of carrying you. We're done."
+  },
+  {
+   "character": "cipher",
+   "trigger": "INJURY_TAUNT",
+   "line": "The bone... it's fragile! Like glass! Snap snap snap! He wants it to snap! And when it breaks, we bleed! Stronger and stronger and stronger!",
+   "baseline": "I'm going to hurt your arm."
+  },
+  {
+   "character": "cipher",
+   "trigger": "RIVALRY_START",
+   "line": "You keep staring at me! Why are you staring?! He sees you looking! He knows what's in your head! You can't run from it! We are the consequence!",
+   "baseline": "I don't like you. We are going to fight."
+  },
+  {
+   "character": "viper",
+   "trigger": "PRE_MATCH_LOCKER_ROOM",
+   "line": "I've dissected your last three matches. You drop your left hand when you breathe heavy. I won't need ten minutes to end this.",
+   "baseline": "I'm ready for my match tonight."
+  },
+  {
+   "character": "viper",
+   "trigger": "INJURY_TAUNT",
+   "line": "I see the tape on your shoulder. It won't hold. I'm going to dismantle it at the joint.",
+   "baseline": "I'm going to hurt your arm."
+  },
+  {
+   "character": "brutus",
+   "trigger": "PRE_MATCH_LOCKER_ROOM",
+   "line": "Get out of my face before I put you through this concrete wall. We settle this in the center of the ring. No running.",
+   "baseline": "I'm ready for my match tonight."
+  },
+  {
+   "character": "brutus",
+   "trigger": "INJURY_TAUNT",
+   "line": "I'm gonna grab that arm and pull until something tears. You better learn to tap fast.",
+   "baseline": "I'm going to hurt your arm."
+  },
+  {
+   "character": "cipher_01",
+   "trigger": "POST_MATCH_WIN",
+   "line": "No, no, no, no, no, no, no. It's fine, it's fine. You think you caught me? He let you. He wants them to know. It's always been him, it's always been me.",
+   "baseline": "I told you I was better than you."
+  },
+  {
+   "character": "cipher_01",
+   "trigger": "PRE_MATCH_LOCKER_ROOM_AMBUSH",
+   "line": "You locked the door, didn't you? Checking over your shoulder. You should. He sees you. He sees you. He knows!",
+   "baseline": "I'm going to attack you when you least expect it."
+  },
+  {
+   "character": "cipher_01",
+   "trigger": "FACTION_BETRAYAL",
+   "line": "You thought we were safe? You thought he liked you?! He hates you! A sacrifice! The rain is coming, and it washes the weak away! Cuts! Cuts! Cuts!",
+   "baseline": "I'm tired of carrying you. We're done."
+  },
+  {
+   "character": "cipher_01",
+   "trigger": "SPECIFIC_INJURY_TAUNT",
+   "line": "The bone... it's fragile! Like glass! Snap snap snap! He wants it to snap! And when it breaks, we bleed! Stronger and stronger and stronger!",
+   "baseline": "I'm going to hurt your arm."
+  }
+ ]
+}

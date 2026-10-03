@@ -1,0 +1,26 @@
+{
+  "_note": "incoming filename -> banked output. prop:true = copy (weapons/props, never skinned). Heights: canon big men 1.90+, women 1.70-1.75, standard 1.85.",
+
+  "HOLLOW (based off super dragon, needs super dragon personality and moves, teamed with ONYX, static, echo, cipher, god within mode appearances too).glb": { "out": "HOLLOW.glb", "height": 1.78 },
+  "Edwin Kennedy ring attire 1 (Mustached Mogul).glb": { "out": "EDWIN_KENNEDY.glb", "height": 1.88 },
+  "Edwin Kennedy (Unchained (he's wearing chains) attire 3).glb": { "out": "EDWIN_KENNEDY_unchained.glb", "height": 1.88 },
+  "Pablothe minotaur painted attire 1.glb": { "out": "PABLO.glb", "height": 1.95 },
+  "Pablo (the Golden Bull attire, not to be confused with El Toro de oro, those are two different characters) attire 2 gold.glb": { "out": "PABLO_goldenbull.glb", "height": 1.95 },
+  "pablo (Black reign style) attire 3.glb": { "out": "PABLO_blackreign.glb", "height": 1.95 },
+  "Queen tyneshia wrestling gear 1.glb": { "out": "TYNESHIA.glb", "height": 1.73 },
+  "Tyneshia Hall Street Gear_Casual_Manager attire 2.glb": { "out": "TYNESHIA_street.glb", "height": 1.73 },
+  "triple XXX attire 1 (based off triple H, needs Triple h moveset and personality.glb": { "out": "TRIPLE_XXX.glb", "height": 1.93 },
+  "triple XXX attire 2 blue tights.glb": { "out": "TRIPLE_XXX_tights.glb", "height": 1.93 },
+  "triple XXX attire 3 blue trunks.glb": { "out": "TRIPLE_XXX_trunks.glb", "height": 1.93 },
+  "triple XXX suit_casual_manager attire 4.glb": { "out": "TRIPLE_XXX_suit.glb", "height": 1.93 },
+  "el toro de oro (the golden bull he has a minotaur head but do not get him mixed.glb": { "out": "EL_TORO_DE_ORO.glb", "height": 1.90 },
+  "StanHoneyCombs ring gear 1.glb": { "out": "STAN_COMBS_gear.glb", "height": 1.85 },
+  "CIPHER(The god within mode addition teamed with onyx as a minion for onyx) (Blackheart Lio Rush inspired).glb": { "out": "CIPHER_minion.glb", "height": 1.75 },
+
+  "Barbwire_baseball_bat.glb": { "out": "props/weapons/barbwire_bat.glb", "prop": true },
+  "baseball_bat (1).glb": { "out": "props/weapons/baseball_bat.glb", "prop": true },
+  "old_shovel.glb": { "out": "props/weapons/shovel.glb", "prop": true },
+  "rusty_folding_chairs.glb": { "out": "props/weapons/steel_chair.glb", "prop": true },
+  "foldable_table.glb": { "out": "props/weapons/table.glb", "prop": true },
+  "fiberglass_step_ladder_6_new.glb": { "out": "props/weapons/ladder.glb", "prop": true }
+}
