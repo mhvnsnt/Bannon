@@ -44,8 +44,10 @@ def load_provenance(path: Path) -> dict[str, Any]:
 
 
 def catalog_file(path: Path, report_path: Path, max_bytes: int = DEFAULT_MAX_BYTES) -> dict[str, Any]:
+    if path.is_symlink():
+        raise ValueError("symbolic links are not accepted")
     path = path.resolve(strict=True)
-    if not path.is_file() or path.is_symlink():
+    if not path.is_file():
         raise ValueError("only regular, non-symlink files are accepted")
     if path.suffix.lower() not in ALLOWED_EXTENSIONS:
         raise ValueError(f"unsupported extension: {path.suffix or '(none)'}")
@@ -98,13 +100,22 @@ class IntakeHandler(FileSystemEventHandler):
         except (OSError, ValueError, json.JSONDecodeError) as exc:
             LOG.warning("Rejected %s: %s", path.name, exc)
 
+    def _process_event_path(self, raw_path: str) -> None:
+        event_path = Path(raw_path)
+        if event_path.name.endswith(".provenance.json"):
+            # A sidecar may arrive after its file; retry cataloging the paired file.
+            target_name = event_path.name.removesuffix(".provenance.json")
+            self._process(str(event_path.with_name(target_name)))
+        else:
+            self._process(raw_path)
+
     def on_created(self, event: FileSystemEvent) -> None:
         if not event.is_directory:
-            self._process(str(event.src_path))
+            self._process_event_path(str(event.src_path))
 
     def on_moved(self, event: FileSystemEvent) -> None:
         if not event.is_directory:
-            self._process(str(event.dest_path))
+            self._process_event_path(str(event.dest_path))
 
 
 def main() -> None:
