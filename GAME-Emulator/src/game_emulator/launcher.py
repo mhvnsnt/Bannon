@@ -51,9 +51,11 @@ def launch_game(
 ) -> dict[str, Any]:
     game = get_game(library, sha256)
     system = system_override.strip() if system_override else game["system"]
-    if "needs confirmation" in system.lower() or "needs confirmation" in game["system"].lower():
-        if not system_override:
-            raise ValueError("ambiguous system: supply --system to confirm the target console")
+    if (
+        ("needs confirmation" in system.lower() or "needs confirmation" in game["system"].lower())
+        and not system_override
+    ):
+        raise ValueError("ambiguous system: supply --system to confirm the target console")
     resolved_frontend = shutil.which(frontend)
     if resolved_frontend is None and Path(frontend).is_file():
         resolved_frontend = str(Path(frontend).resolve())
