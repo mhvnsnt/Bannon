@@ -60,7 +60,9 @@ def inventory_cores(core_dir: Path, info_dir: Path | None = None) -> dict[str, A
             "info_file": str(info_path) if info else None,
             "display_name": info.get("display_name", core.stem),
             "corename": info.get("corename", ""),
-            "supported_extensions": [x for x in info.get("supported_extensions", "").split("|") if x],
+            "supported_extensions": [
+                x for x in info.get("supported_extensions", "").split("|") if x
+            ],
             "supported_systems": [x for x in info.get("supported_systems", "").split("|") if x],
             "firmware": sorted({
                 value for key, value in info.items()
@@ -76,14 +78,24 @@ def inventory_cores(core_dir: Path, info_dir: Path | None = None) -> dict[str, A
         "core_directory": str(root),
         "core_count": len(entries),
         "cores": entries,
-        "warning": "File presence and .info metadata do not prove runtime compatibility. Native cores were not loaded or executed.",
+        "warning": (
+            "File presence and .info metadata do not prove runtime compatibility. "
+            "Native cores were not loaded or executed."
+        ),
     }
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Inventory installed Libretro cores without loading them")
-    parser.add_argument("--cores", type=Path, required=True, help="directory containing installed .dll/.so/.dylib cores")
-    parser.add_argument("--info", type=Path, help="directory containing matching Libretro .info metadata")
+    parser = argparse.ArgumentParser(
+        description="Inventory installed Libretro cores without loading them"
+    )
+    parser.add_argument(
+        "--cores", type=Path, required=True,
+        help="directory containing installed .dll/.so/.dylib cores",
+    )
+    parser.add_argument(
+        "--info", type=Path, help="directory containing matching Libretro .info metadata"
+    )
     parser.add_argument("--output", type=Path, help="optional JSON report destination")
     args = parser.parse_args()
     try:
