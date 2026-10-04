@@ -24,7 +24,7 @@ Extensions are hints, not proof. Shared extensions such as ISO/BIN/PKG/ELF remai
 1. Continuous folder/removable-drive watcher with safe handling of partially copied files.
 2. Metadata adapters with opt-in network access to legitimate catalog sources.
 3. Capability registry for installed emulator frontends/cores, licenses, system coverage and firmware prerequisites.
-4. Per-game launch handoff, save/state isolation, controller mapping and test evidence.
+4. Expand the explicit RetroArch launch handoff into a capability-tested frontend/core registry, save/state isolation, controller mapping and test evidence.
 5. Reversible per-game mod profiles, load order, conflict detection and rollback. Mixing must be format/game-specific; unrelated console binaries cannot be generically blended.
 6. Optional isolated analysis adapters with explicit invocation, audit logs, and resource ceilings.
 
