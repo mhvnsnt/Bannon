@@ -7,7 +7,7 @@ import os
 import shutil
 import sqlite3
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -132,14 +132,14 @@ def import_library(
                 try:
                     shutil.copyfile(candidate, temp_path)
                     if sha256_file(temp_path) != digest:
-                        raise IOError("copy hash differs from source hash")
+                        raise OSError("copy hash differs from source hash")
                     os.replace(temp_path, destination)
                 finally:
                     temp_path.unlink(missing_ok=True)
                 record = (
                     digest, candidate.name, extension, system, size, str(destination),
                     str(candidate), source_label.strip(), rights_basis.strip(),
-                    datetime.now(timezone.utc).isoformat(),
+                    datetime.now(UTC).isoformat(),
                 )
                 try:
                     connection.execute(
