@@ -69,7 +69,9 @@ AI can later help identify ambiguous titles and recommend compatible tools, with
 
 ## Runtime and mod mixing roadmap
 
-Emulation is a separate integration layer. RetroArch/Libretro offers a modular frontend/core model, but supported systems and cores vary by operating system, core license, firmware requirements, and device capability. The next stage is a capability-tested adapter registry and a launch handoff to an installed compatible emulator. A universal runtime asset mixer is not assumed possible across unrelated console formats; mod profiles must be system/game/format-specific and reversible.
+An explicit RetroArch launch handoff is included for a cataloged file: install RetroArch and a compatible libretro core yourself, then use `game-emulator-launch --library "$HOME/GAME-Emulator-Library" --sha256 <hash> --core /path/to/installed_core.so --dry-run` to validate the command before removing `--dry-run`. The tool verifies the library hash and refuses ambiguous disc images unless you pass `--system` to confirm the target console. It uses an argument list without a shell. This is a launch adapter, not a bundled emulator: actual compatibility depends on the installed frontend/core, OS, hardware, and any firmware the emulator legitimately requires.
+
+A universal runtime asset mixer is not assumed possible across unrelated console formats; reversible mod profiles must be system/game/format-specific. The profile/conflict/rollback layer is still follow-up work.
 
 ## Safety and rights
 
