@@ -27,6 +27,15 @@ Open http://127.0.0.1:8765 on the same computer. Enter the folder containing you
 
 ### Option B: command line
 
+For hands-off intake from a folder you keep copying files into, run the initial scan and then leave the watcher running:
+
+```bash
+game-emulator-watch-folder --source "/path/to/game-files" --library "$HOME/GAME-Emulator-Library" --rights-basis "personal dumps and homebrew I am authorized to use"
+```
+
+It imports existing files at startup and watches nested folders for newly created/changed files. Keep the terminal/process running; stopping it stops automatic watching. Large files should be fully copied before import settles.
+
+
 ```bash
 game-emulator import --source "/path/to/game-files" --library "$HOME/GAME-Emulator-Library" --rights-basis "personal dumps and homebrew I am authorized to use"
 game-emulator list --library "$HOME/GAME-Emulator-Library"
