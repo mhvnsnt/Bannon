@@ -6,7 +6,7 @@ import hashlib
 import json
 import logging
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -36,7 +36,7 @@ def load_provenance(path: Path) -> dict[str, Any]:
     sidecar = path.with_name(path.name + ".provenance.json")
     data = json.loads(sidecar.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
-        raise ValueError("provenance sidecar must contain a JSON object")
+        raise TypeError("provenance sidecar must contain a JSON object")
     missing = [key for key in REQUIRED_PROVENANCE if not str(data.get(key, "")).strip()]
     if missing:
         raise ValueError("missing provenance fields: " + ", ".join(missing))
@@ -60,7 +60,7 @@ def catalog_file(path: Path, report_path: Path, max_bytes: int = DEFAULT_MAX_BYT
         raise ValueError(f"file exceeds configured size limit ({max_bytes} bytes)")
     provenance = load_provenance(path)
     record = {
-        "recorded_at": datetime.now(timezone.utc).isoformat(),
+        "recorded_at": datetime.now(UTC).isoformat(),
         "filename": path.name,
         "extension": path.suffix.lower(),
         "size_bytes": size,
