@@ -17,6 +17,8 @@ LOG = logging.getLogger("game_emulator.intake")
 ALLOWED_EXTENSIONS = {
     ".gba", ".gbc", ".gb", ".nes", ".fds", ".sfc", ".smc", ".n64", ".z64",
     ".v64", ".iso", ".bin", ".cue", ".chd", ".cso", ".pbp", ".3ds", ".nds",
+    ".gcm", ".wbfs", ".wud", ".wux", ".nsp", ".xci", ".xiso", ".xex", ".xbe",
+    ".god", ".pkg", ".rap", ".ird", ".cia", ".cxi", ".dol", ".wad", ".elf", ".app", ".tik",
 }
 REQUIRED_PROVENANCE = ("source", "rights_basis", "acquired_at")
 DEFAULT_MAX_BYTES = 8 * 1024 * 1024 * 1024
