@@ -20,4 +20,4 @@ my-game-dumps/
 
 The app hashes and copies recognized files into your chosen library. It never modifies or removes originals, downloads files, extracts archives, or launches game binaries. Identical bytes are deduplicated by SHA-256. The extension allowlist is documented in `src/game_emulator/library.py`.
 
-The older low-level watcher command in this scaffold is a provenance-sidecar cataloging utility; for the end-to-end copy/store workflow use `game-emulator import` or `game-emulator-ui`.
+For continuous intake after setup, run `game-emulator-watch-folder --source "/path/to/game-files" --library "$HOME/GAME-Emulator-Library" --rights-basis "your authorization basis"`. It imports existing files on startup and then watches nested folders. For a one-time batch use `game-emulator import`; for a local form use `game-emulator-ui`. The legacy `game-emulator-watch` command remains a provenance-sidecar catalog-only utility.
