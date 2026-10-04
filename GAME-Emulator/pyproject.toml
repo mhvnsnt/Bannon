@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "game-emulator-lab"
-version = "0.1.0"
-description = "Local-first catalog and safe intake for authorized game files"
+version = "0.2.0"
+description = "Local-first library intake and catalog for authorized game files"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["watchdog>=4.0,<7"]
@@ -14,6 +14,8 @@ dependencies = ["watchdog>=4.0,<7"]
 dev = ["pytest>=8.0,<9", "ruff>=0.5"]
 
 [project.scripts]
+game-emulator = "game_emulator.library:main"
+game-emulator-ui = "game_emulator.app:main"
 game-emulator-watch = "game_emulator.watcher:main"
 
 [tool.setuptools.packages.find]
