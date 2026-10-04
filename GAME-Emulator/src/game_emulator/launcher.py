@@ -22,7 +22,10 @@ def get_game(library: Path, sha256: str) -> dict[str, Any]:
     if row is None:
         raise ValueError("SHA-256 was not found in this library")
     game = dict(row)
-    content = Path(game["stored_path"]).resolve(strict=True)
+    stored_path = Path(game["stored_path"])
+    if stored_path.is_symlink():
+        raise ValueError("cataloged content may not be a symbolic link")
+    content = stored_path.resolve(strict=True)
     allowed_root = (root / "files").resolve(strict=True)
     if content != allowed_root and allowed_root not in content.parents:
         raise ValueError("catalog entry points outside the library files directory")
