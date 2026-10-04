@@ -69,6 +69,9 @@ AI can later help identify ambiguous titles and recommend compatible tools, with
 
 ## Runtime and mod mixing roadmap
 
+Inventory installed Libretro cores without loading them using `game-emulator-adapters --cores /path/to/RetroArch/cores --info /path/to/RetroArch/info --output core-inventory.json`. The report hashes each native core and reads matching `.info` metadata when present. It is an inventory, not proof that a core will run or a substitute for a sandboxed smoke test. See [the FFI and open-source integration plan](docs/LIBRETRO-FFI-AND-OPEN-SOURCE.md) for ABI constraints, verified project availability, licensing, and the next acceptance gates.
+
+
 An explicit RetroArch launch handoff is included for a cataloged file: install RetroArch and a compatible libretro core yourself, then use `game-emulator-launch --library "$HOME/GAME-Emulator-Library" --sha256 <hash> --core /path/to/installed_core.so --dry-run` to validate the command before removing `--dry-run`. The tool verifies the library hash and refuses ambiguous disc images unless you pass `--system` to confirm the target console. It uses an argument list without a shell. This is a launch adapter, not a bundled emulator: actual compatibility depends on the installed frontend/core, OS, hardware, and any firmware the emulator legitimately requires.
 
 A universal runtime asset mixer is not assumed possible across unrelated console formats; reversible mod profiles must be system/game/format-specific. The profile/conflict/rollback layer is still follow-up work.
