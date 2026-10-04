@@ -96,8 +96,8 @@ def import_library(
         raise ValueError("source must be a directory")
     if not rights_basis.strip():
         raise ValueError("rights_basis must describe why you are authorized to use this batch")
-    if library == source or source in library.parents:
-        raise ValueError("library cannot be the source folder or inside it")
+    if library == source or source in library.parents or library in source.parents:
+        raise ValueError("source and library folders must not contain one another")
     library.mkdir(parents=True, exist_ok=True)
     database = library / "library.sqlite3"
     counts = {"imported": 0, "duplicates": 0, "rejected": 0, "errors": []}
