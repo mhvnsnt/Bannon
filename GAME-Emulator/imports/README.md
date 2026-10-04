@@ -1,22 +1,23 @@
-# Local imports
+# Local import
 
-Only place files here that you are authorized to possess and analyze. Keep imported binaries out of Git.
+The library importer accepts a **folder you select** and recursively scans its subfolders. You do not need to create a provenance JSON sidecar for every file; the CLI/dashboard records a rights-basis statement for the import batch.
 
-1. Copy the file into `inbox/`.
-2. Create a sidecar named exactly `<filename>.provenance.json` (example: `sample.gba.provenance.json`).
-3. Include the source, rights basis, and acquisition date.
-4. Run the watcher. It records SHA-256, size, extension, provenance, and timestamp in a JSONL manifest.
-5. Review the record before selecting any future analysis adapter.
+Recommended source layout (folder names help classify ambiguous disc formats):
 
-Example sidecar:
-
-```json
-{
-  "source": "Personal backup made from my own cartridge",
-  "rights_basis": "Personal copy; analysis limited to permitted local use",
-  "acquired_at": "2026-10-04",
-  "notes": "Replace with accurate details"
-}
+```text
+my-game-dumps/
+  GBA/
+    example.gba
+  GameCube/
+    example.iso
+  PS2/
+    example.iso
+  PS3/
+    example.iso
+  Switch/
+    example.xci
 ```
 
-This is a user assertion, not a legal determination. Missing or malformed provenance causes rejection. The importer never downloads, unpacks, executes, or modifies the input.
+The app hashes and copies recognized files into your chosen library. It never modifies or removes originals, downloads files, extracts archives, or launches game binaries. Identical bytes are deduplicated by SHA-256. The extension allowlist is documented in `src/game_emulator/library.py`.
+
+The older low-level watcher command in this scaffold is a provenance-sidecar cataloging utility; for the end-to-end copy/store workflow use `game-emulator import` or `game-emulator-ui`.
