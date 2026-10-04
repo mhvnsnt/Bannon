@@ -59,6 +59,16 @@ def create_handler(default_library: Path):
             self.send_html(body.replace("__ROWS__", rows))
 
         def do_POST(self):
+            allowed_hosts = {
+                f"127.0.0.1:{self.server.server_port}",
+                f"localhost:{self.server.server_port}",
+                f"[::1]:{self.server.server_port}",
+            }
+            host = self.headers.get("Host", "")
+            origin = self.headers.get("Origin")
+            if host not in allowed_hosts or (origin and origin not in {f"http://{host}", f"https://{host}"}):
+                self.send_html("Forbidden origin/host", 403)
+                return
             if self.path != "/import":
                 self.send_html("Not found", 404)
                 return
