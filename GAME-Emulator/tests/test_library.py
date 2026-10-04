@@ -50,7 +50,7 @@ def test_requires_rights_basis_and_source_not_inside_library(tmp_path: Path):
     with pytest.raises(ValueError, match="rights_basis"):
         import_library(source, tmp_path / "library", rights_basis=" ")
     library = source / "library"
-    with pytest.raises(ValueError, match="inside it"):
+    with pytest.raises(ValueError, match="contain one another"):
         import_library(source, library, rights_basis="test")
 
 
