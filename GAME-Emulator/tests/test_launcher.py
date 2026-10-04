@@ -57,7 +57,7 @@ def test_rejects_unknown_hash(tmp_path: Path):
 
 
 def test_ambiguous_disc_needs_explicit_system_confirmation(tmp_path: Path):
-    library, digest, content = make_library(tmp_path)
+    library, digest, _content = make_library(tmp_path)
     with sqlite3.connect(library / "library.sqlite3") as db:
         db.execute("UPDATE games SET system = ? WHERE sha256 = ?",
                    ("Disc image (system needs confirmation)", digest))
