@@ -1,27 +1,37 @@
 # Architecture and boundaries
 
-## Pipeline stages
+## Implemented local flow
 
-1. **Select:** a person copies a local file into the inbox.
-2. **Validate:** extension allowlist, regular file, size ceiling, valid provenance sidecar.
-3. **Fingerprint:** SHA-256, byte size, timestamp, extension, and record ID.
-4. **Review:** original remains unchanged; unsupported files are not processed.
-5. **Inspect:** future adapters declare accepted formats, output schema, permissions, resource ceilings, and rights notes.
-6. **Compose:** mod profiles reference content by hash and declare ordering/conflicts. Originals stay immutable.
-7. **Run:** a compatible emulator core runs in a separate restricted process.
+```text
+User selects local source folder
+  -> recursive scan / extension allowlist / size and symlink checks
+  -> SHA-256 source fingerprint and stability check
+  -> classify by known extension and parent-folder labels
+  -> copy to content-addressed library
+  -> hash verification of stored copy
+  -> SQLite metadata + deduplication
+  -> local loopback dashboard / CLI catalog
+```
 
-## Planned adapter contract
+The source remains unchanged. The app never unpacks archives, executes imported content, downloads missing firmware, or sends game files to GitHub/cloud services. The local dashboard binds to loopback only and is not a general-purpose file server.
 
-Adapters declare identifier/version/license, accepted signatures, read/write/execute permissions, output schema, CPU/memory/time ceilings, network requirements (denied by default), provenance requirements, and audit output.
+## System identification
 
-No adapter may silently download missing game/firmware files, disable access controls, or execute imported packages during cataloging.
+Extensions are hints, not proof. Shared extensions such as ISO/BIN/PKG/ELF remain ambiguous unless the directory label supplies a clear system. A later metadata adapter can offer likely matches but should retain confidence and never silently assert a guess as fact.
+
+## Next integration stages
+
+1. Continuous folder/removable-drive watcher with safe handling of partially copied files.
+2. Metadata adapters with opt-in network access to legitimate catalog sources.
+3. Capability registry for installed emulator frontends/cores, licenses, system coverage and firmware prerequisites.
+4. Per-game launch handoff, save/state isolation, controller mapping and test evidence.
+5. Reversible per-game mod profiles, load order, conflict detection and rollback. Mixing must be format/game-specific; unrelated console binaries cannot be generically blended.
+6. Optional isolated analysis adapters with explicit invocation, audit logs, and resource ceilings.
 
 ## Analysis tools
 
-Ghidra and radare2 are optional, separately invoked analysis tools—not default intake steps. Use them only on material and for purposes you are authorized to analyze. Keep reports separate from the runtime library. This project does not automatically translate proprietary decompiler output into a substitute implementation.
-
-AssetStudio is not a universal package extractor; support must be explicit per format/version. Playwright is for testing this application's UI. Browser automation must not defeat anti-bot protections or fetch protected binaries.
+Ghidra and radare2 are optional, separately invoked analysis tools—not default intake steps. AssetStudio is not a universal package extractor. Playwright tests this app's UI. Browser automation must not defeat anti-bot protections or fetch protected binaries. Do not automatically translate proprietary decompiler output into a substitute implementation.
 
 ## Threat model
 
-Treat filenames, sidecars, archives, and binaries as untrusted. Never shell-interpolate filenames. Avoid archive extraction in the intake process. Do not expose the inbox to the web server. Keep reports free of file contents and secrets. Add malware scanning and OS/container isolation before enabling any third-party analysis worker.
+Treat filenames and binaries as untrusted. Never shell-interpolate filenames. Do not expose the library to the web server or network. Keep reports free of file contents and secrets. Before enabling third-party analysis workers, add OS/container isolation and malware scanning.
