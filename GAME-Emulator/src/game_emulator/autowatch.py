@@ -77,7 +77,17 @@ def main() -> None:
     if library == source or source in library.parents or library in source.parents:
         parser.error("source and library folders must not contain one another")
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    initial = import_library(source, library, rights_basis=args.rights_basis,
+                             source_label=args.source_label, max_bytes=args.max_bytes)
+    LOG.info("Initial scan complete: %s", initial)
     handler = AutoImportHandler(library, args.rights_basis, args.source_label, args.max_bytes)
+    for existing in source.rglob("*"):
+        try:
+            if not existing.is_symlink() and existing.is_file() and existing.suffix.lower() in EXTENSIONS:
+                stat = existing.stat()
+                handler.seen[str(existing.resolve())] = (stat.st_size, stat.st_mtime_ns)
+        except OSError:
+            continue
     observer = Observer()
     observer.schedule(handler, str(source), recursive=True)
     observer.start()
