@@ -67,7 +67,8 @@ def create_handler(default_library: Path):
                 self.send_html("Invalid form size", 400)
                 return
             values = parse_qs(self.rfile.read(length).decode("utf-8"), keep_blank_values=True)
-            get = lambda key: values.get(key, [""])[0].strip()
+            def get(key: str) -> str:
+                return values.get(key, [""])[0].strip()
             try:
                 summary = import_library(
                     Path(get("source")), Path(get("library") or str(default_library)),
