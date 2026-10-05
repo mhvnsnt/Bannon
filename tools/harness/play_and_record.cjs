@@ -91,6 +91,9 @@ function INSTRUMENT(){
   console.warn  = function(){ try{ T.warns.push(String([].slice.call(arguments).join(' ')).slice(0,180)); }catch(e){} return ow.apply(console, arguments); };
 
   // hook the animation path once the game has defined it
+  // Public diagnostic hook: expose the live arm() attempt so the capture can prove the
+  // instrumentation attached instead of silently producing zero deformation samples.
+  window.__recorderArm = () => { try { arm(); return !!(window.studioApplyClipPose && window.studioApplyClipPose.__rec); } catch(e) { return false; } };
   const arm = () => {
     if (window.studioApplyClipPose && !window.studioApplyClipPose.__rec){
       const o = window.studioApplyClipPose;
@@ -257,6 +260,7 @@ async function playMatch(page, seconds, log){
     return done;
   }, 90000, 'the loader to finish');
   log('loader done');
+  log((await page.evaluate(() => window.__recorderArm ? window.__recorderArm() : false)) ? 'recorder instrumentation attached' : 'RECORDER INSTRUMENTATION NOT ATTACHED');
 
   if (scenario !== 'menu'){
     await page.evaluate(([a,b]) => {
