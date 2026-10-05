@@ -1,0 +1,98 @@
+{
+ "license": "CC0 1.0 Universal",
+ "source": "KayKit Dungeon Remastered via AshLane",
+ "files": [
+  {
+   "file": "banner_patternA_red.gltf.glb",
+   "bytes": 25164
+  },
+  {
+   "file": "banner_red.gltf.glb",
+   "bytes": 24216
+  },
+  {
+   "file": "barrel_large.gltf.glb",
+   "bytes": 44292
+  },
+  {
+   "file": "barrel_small.gltf.glb",
+   "bytes": 32060
+  },
+  {
+   "file": "barrel_small_stack.gltf.glb",
+   "bytes": 98092
+  },
+  {
+   "file": "barrier.gltf.glb",
+   "bytes": 23292
+  },
+  {
+   "file": "box_large.gltf.glb",
+   "bytes": 28740
+  },
+  {
+   "file": "box_small.gltf.glb",
+   "bytes": 28692
+  },
+  {
+   "file": "column.gltf.glb",
+   "bytes": 20260
+  },
+  {
+   "file": "floor_tile_large.gltf.glb",
+   "bytes": 28100
+  },
+  {
+   "file": "floor_tile_small.gltf.glb",
+   "bytes": 20740
+  },
+  {
+   "file": "pillar.gltf.glb",
+   "bytes": 25552
+  },
+  {
+   "file": "stairs.gltf.glb",
+   "bytes": 43368
+  },
+  {
+   "file": "stairs_wood.gltf.glb",
+   "bytes": 34632
+  },
+  {
+   "file": "stool.gltf.glb",
+   "bytes": 28528
+  },
+  {
+   "file": "table_medium.gltf.glb",
+   "bytes": 33832
+  },
+  {
+   "file": "table_small.gltf.glb",
+   "bytes": 29908
+  },
+  {
+   "file": "torch.gltf.glb",
+   "bytes": 29380
+  },
+  {
+   "file": "torch_mounted.gltf.glb",
+   "bytes": 33220
+  },
+  {
+   "file": "wall.gltf.glb",
+   "bytes": 53132
+  },
+  {
+   "file": "wall_arched.gltf.glb",
+   "bytes": 69124
+  },
+  {
+   "file": "wall_corner.gltf.glb",
+   "bytes": 49212
+  },
+  {
+   "file": "wall_gated.gltf.glb",
+   "bytes": 46364
+  }
+ ]
+}

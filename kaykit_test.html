@@ -1,0 +1,47 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>KayKit standalone test</title></head><body>
+<script src="assets/vendor/three.min.js"></script>
+<script src="assets/vendor/GLTFLoader.js"></script>
+<script src="assets/js/bannon_kaykit.js"></script>
+<script>
+var scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a0a12);
+var camera = new THREE.PerspectiveCamera(55, 480/270, 0.1, 200);
+var renderer = new THREE.WebGLRenderer({ antialias: false, preserveDrawingBuffer: true });
+renderer.setSize(480, 270);
+document.body.appendChild(renderer.domElement);
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+var key = new THREE.DirectionalLight(0xfff2dd, 0.9); key.position.set(6, 10, 4); scene.add(key);
+var fill = new THREE.DirectionalLight(0x88aaff, 0.35); fill.position.set(-6, 4, -8); scene.add(fill);
+// ground grid for scale reference
+var grid = new THREE.GridHelper(40, 40, 0x333344, 0x222233); scene.add(grid);
+
+var arenaGroup = new THREE.Group(); scene.add(arenaGroup);
+window.BANNON_KAYKIT.init(arenaGroup);
+
+var shots = 0;
+function snap(name, px,py,pz, lx,ly,lz){
+  camera.position.set(px,py,pz); camera.lookAt(lx,ly,lz);
+  renderer.render(scene, camera);
+  var a = document.createElement('a');
+  a.href = renderer.domElement.toDataURL('image/png');
+  a.download = name;
+  // expose for playwright
+  window['__shot_' + name] = a.href;
+}
+var t0 = Date.now();
+var iv = setInterval(function(){
+  if (!window.BANNON_KAYKIT.ready){
+    if (Date.now() - t0 > 60000){ window.__testDone = 'TIMEOUT'; clearInterval(iv); }
+    return;
+  }
+  clearInterval(iv);
+  // settle mixers WITHOUT rendering per tick (SwiftShader is ~0.5fps); render once per shot
+  for (var i = 0; i < 24; i++) window.BANNON_KAYKIT.update(i * 0.05, 0.05);
+  snap('kk_crowd.png', 3, 2.2, -1.0, -2, 1.0, -6.5);
+  snap('kk_props.png', 0, 9, 19, 0, 0.5, -9);
+  window.__kkMembers = window.BANNON_KAYKIT.members.length;
+  var n = 0; scene.traverse(function(o){ if (o.isMesh) n++; });
+  window.__kkMeshes = n;
+  window.__testDone = 'OK';
+}, 500);
+</script></body></html>

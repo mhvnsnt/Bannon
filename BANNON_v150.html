@@ -56981,6 +56981,8 @@ window.__deriveVariant = async function(key){
 
   window.BANNON_WALKOUT = {
     run: run,
+    begin: begin,   // exposed for the frame-exact cinematic capture driver (manual step)
+    step: step,     // step(f, dt): advance the walk by dt seconds; returns true when arrived
     segments: function(){ return SEGMENTS.slice(); },
     composeFor: composeFor,
     // every capture any segment might use, for BANNON_WARM. Without this the segments are silent
