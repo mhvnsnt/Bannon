@@ -23,22 +23,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Delivery batch starts from models with measured deformation QA, not merely filenames.
+          # BANNON.glb is a rigid action-figure asset; the actual playable BANNON model is BANNON_rigged.glb.
           - character: BANNON
-            glb: BANNON.glb
-          - character: CAIN_ELIAS
-            glb: CAIN_ELIAS_gear.glb
-          - character: CIPHER
-            glb: CIPHER.glb
-          - character: CODY
-            glb: CODY_gear.glb
-          - character: EDWIN_KENNEDY
-            glb: EDWIN_KENNEDY.glb
-          - character: HALL_NIGHTER
-            glb: HALL_NIGHTER.glb
-          - character: JAGER
-            glb: JAGER.glb
+            glb: BANNON_rigged.glb
+          - character: VIPER
+            glb: VIPER.glb
           - character: KOBRA
             glb: KOBRA.glb
+          - character: AARON_RUBEN
+            glb: AARON_RUBEN.glb
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -85,8 +79,19 @@ jobs:
           if(!gameplay) throw new Error('BLOCK: match never reached FIGHT; this is not gameplay footage');
           if((r.pageErrorCount||0)>0) throw new Error('BLOCK: page errors during capture: '+r.pageErrors.join(' | '));
           if((r.errorCount||0)>0) throw new Error('BLOCK: console errors during capture: '+r.consoleErrors.join(' | '));
-          console.log('PASS real gameplay:', r.video);
+          if((r.anim||{}).poseCalls < 1) throw new Error('BLOCK: no animation pose reached the skeleton');
+          if((r.anim||{}).clipBoneRefs > 0 && (r.anim||{}).clipBoneResolved === 0) throw new Error('BLOCK: clip bones referenced but none resolved');
+          if((r.deformation||{}).spikes > 0) throw new Error('BLOCK: runtime deformation sentinel found '+r.deformation.spikes+' stretched triangle samples; keep this model out of delivery until repaired');
+          console.log('PASS real gameplay + deformation gate:', r.video);
           NODE
+
+      - name: Upload raw gameplay diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bannon-character-diagnostics-${{ matrix.character }}
+          path: dist/character-videos/${{ matrix.character }}/playtest_report.json
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Encode delivery cuts
         env:
