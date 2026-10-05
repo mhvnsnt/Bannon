@@ -26,6 +26,14 @@ Producerbot's lane — nothing here duplicates that.
    treatment (pattern lifted from TRIPPEDD `tools/visual/make_visual_packet.py`).
 4. **Slow/unguessed encodes** → `encode_profiles.sh`: draft/delivery/archive
    presets with measured benchmark (see below).
+5. **No orchestration / batch-only CI** → `queue/` (2026-10-05): `queue.json`
+   owner-edited priority queue + `run_one.py` one-character orchestrator
+   (capture → fail-closed gates → beat-synced assembly → thumbnail →
+   delivery encode → SHA256SUMS → VIDEO_LOG.md → mark done), plus
+   `.github/workflows/character-video-queue.yml` (manual dispatch, one
+   character per run, 30-day artifacts). See `docs/VIDEO_WORKFLOW.md`.
+   The old batch workflow's `-an` silent encodes are superseded: assembly
+   with music bed is now in-chain.
 
 ## What was evaluated and deliberately NOT added
 
