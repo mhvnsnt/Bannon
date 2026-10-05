@@ -78,3 +78,18 @@ web/3D build services**. The game + video + studio work feeds that:
   + correct game identity + provenance/report + encoded deliverables.
 - Service offers: demos runnable, copy accurate, nothing auto-sends or spends.
 - When in doubt, produce evidence and ask. The owner approves every external step.
+
+## 6. Deliverable text policy (owner directive, 2026-10-05)
+
+- Never render placeholder, "not in canon", TODO-style, or any other internal
+  note text in a video, title card, lower third, or commercial. The
+  "HOMETOWN: [PLACEHOLDER - NOT IN CANON]" that shipped on the El Toro de Oro
+  sample entrance kit must never happen again.
+- If billing info (hometown, etc.) is missing from the canon files: ASK THE
+  OWNER first — he can usually supply it on the spot.
+- If you cannot reach the owner, default to "parts unknown" (wrestling
+  tradition). Never a placeholder string.
+- El Toro de Oro's hometown is unconfirmed; the owner suggested Spain (e.g.
+  Pamplona, city of the bull runs). Do not lock it in until he confirms.
+- This applies to every agent and pipeline producing deliverables, including
+  Producerbot's video work — treat this file as the standing rule.
