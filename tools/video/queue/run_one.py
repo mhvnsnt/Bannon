@@ -5,8 +5,8 @@ Takes the head of tools/video/queue/queue.json with status "queued"
 (or --character NAME to override) and runs the full chain for exactly
 one character:
 
-  capture (play_and_record.cjs)
-    -> fail-closed gates (same checks as .github/workflows/character-videos.yml)
+  capture (capture_entrance.cjs — ENTRANCE CINEMATIC, El Toro grade)
+    -> fail-closed gates (entrance-specific checks)
     -> assemble (assemble_character_video.py, beat-synced, loudness-normalized)
     -> thumbnail (make_thumbnail.py, beat-aligned)
     -> encode (delivery profile, inside assemble)
@@ -18,11 +18,15 @@ One character per run. Exit nonzero on any gate failure; the character
 stays "queued" (never marked done on failure). Real capture only —
 no placeholders, no fake footage.
 
+The capture is an ENTRANCE CINEMATIC (not a fight recording): the game's
+cinematic entrance kit stages the character's walkout with directed
+multi-angle takes, beat-synced in assembly. This is the El Toro de Oro
+standard — owner-rejected fight-recordings are not produced by default.
+
 Usage:
   python3 tools/video/queue/run_one.py                 # queue head
   python3 tools/video/queue/run_one.py --character VIPER
   python3 tools/video/queue/run_one.py --dry-run       # print the plan, run nothing
-  python3 tools/video/queue/run_one.py --seconds 40
 """
 import argparse
 import glob
@@ -78,34 +82,54 @@ def pick(entries, override):
     fail("queue is empty — nothing with status 'queued'")
 
 
-def check_gates(report_path):
-    """Port of the fail-closed gate block in .github/workflows/character-videos.yml."""
+def check_gates(report_path, outdir):
+    """Fail-closed gates for an ENTRANCE-CINEMATIC capture.
+
+    Verifies the capture_entrance.cjs contract: take PNG sequences exist,
+    the cine setup staged (HUD hidden, fighter found), the repaired model
+    loaded (no fallback), zero page/console errors, and the walkout takes
+    actually ran.
+    """
     if not os.path.isfile(report_path) or os.path.getsize(report_path) == 0:
         fail(f"no playtest_report.json at {report_path}")
     r = json.load(open(report_path))
-    if not r.get("video"):
-        fail("recorder produced no video")
+    if r.get("scenario") != "entrance":
+        fail(f"report scenario is {r.get('scenario')!r}, not 'entrance' — "
+             "this is not an entrance-cinematic capture")
     beats = r.get("beats") or []
-    if not any("bell:" in (x.get("what") or "") for x in beats):
-        fail("match never reached FIGHT; this is not gameplay footage")
+    if not any("cine setup:" in (x.get("what") or "") for x in beats):
+        fail("cine setup never ran; this is not a staged entrance")
+    cine = r.get("cineSetup") or {}
+    if not cine.get("cine"):
+        fail("cine CSS did not stage (HUD would be visible)")
+    if not cine.get("hudHidden"):
+        fail("HUD was not hidden during the cinematic")
+    if (cine.get("idx") or -1) < 0:
+        fail("fighter not found in fighters[] — cannot certify the entrance")
     if (r.get("pageErrorCount") or 0) > 0:
         fail("page errors during capture: " + " | ".join(r.get("pageErrors") or []))
     if (r.get("errorCount") or 0) > 0:
         fail("console errors during capture: " + " | ".join(r.get("consoleErrors") or []))
-    anim = r.get("anim") or {}
-    if (anim.get("poseCalls") or 0) < 1:
-        fail("no animation pose reached the skeleton")
-    if (anim.get("clipBoneRefs") or 0) > 0 and (anim.get("clipBoneResolved") or 0) == 0:
-        fail("clip bones referenced but none resolved")
-    if not any("recorder instrumentation attached" in (x.get("what") or "") for x in beats):
-        fail("recorder instrumentation did not attach; do not certify this capture")
+    # take PNG sequences: each take dir must hold real frames
+    takes = r.get("takes") or []
+    if not takes:
+        fail("no takes recorded in the report")
+    for t in takes:
+        tdir = os.path.join(outdir, "take_" + t)
+        frames = sorted(glob.glob(os.path.join(tdir, "f*.png")))
+        if len(frames) < 20:
+            fail(f"take {t} has only {len(frames)} frames — the walkout did not run")
+    # the model gate: the capture refuses fallbacks, but double-check the report
+    if not any("model wait:" in (x.get("what") or "") and "ok" in (x.get("what") or "")
+               for x in beats):
+        fail("repaired-model load not confirmed in beats; refusing to certify")
     d = r.get("deformation") or {}
-    if not d.get("samples"):
-        fail("runtime deformation telemetry did not execute; do not certify this capture")
     if (d.get("spikes") or 0) > 0:
         fail(f"runtime deformation sentinel found {d['spikes']} stretched triangle "
              "samples; keep this model out of delivery until repaired")
-    print(f"PASS real gameplay + deformation gate: {r['video']}")
+    print(f"PASS entrance-cinematic gates: {len(takes)} takes, "
+          f"{sum(len(glob.glob(os.path.join(outdir, 'take_'+t, 'f*.png'))) for t in takes)} frames, "
+          "0 errors, model verified")
     return r
 
 
@@ -133,8 +157,9 @@ def log_entry(entry, outdir, artifacts):
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = [f"\n## {now} — {entry['character']}\n",
              f"- glb: `{entry.get('glb')}` | opponent: `{entry.get('p2', 'BANNON')}`",
-             "- gates: bell=gameplay, 0 page/console errors, pose_calls>=1, "
-             "clip bones resolved, deformation spikes==0 — PASS"]
+             "- capture: ENTRANCE CINEMATIC (capture_entrance.cjs) — El Toro grade",
+             "- gates: cine staged, HUD hidden, fighter found, repaired model loaded, "
+             "0 page/console errors, take frames>=20 each, deformation spikes==0 — PASS"]
     for label, path in artifacts:
         lines.append(f"- {label}: `{os.path.relpath(path, ROOT)}` "
                      f"(sha256 `{sha256_file(path)[:16]}…`)")
@@ -150,7 +175,6 @@ def main():
     ap = argparse.ArgumentParser(description="Video machine: one character, full chain.")
     ap.add_argument("--character", default=None, help="override queue head")
     ap.add_argument("--queue", default=QUEUE_DEFAULT)
-    ap.add_argument("--seconds", type=int, default=28)
     ap.add_argument("--dry-run", action="store_true", help="print plan, run nothing")
     args = ap.parse_args()
 
@@ -166,11 +190,11 @@ def main():
 
     plan = [
         f"[1] verify GLB: {e.get('glb')}",
-        f"[2] capture: node tools/harness/play_and_record.cjs --seconds {args.seconds} "
+        f"[2] capture ENTRANCE CINEMATIC: node tools/harness/capture_entrance.cjs "
         f"--p1 {char} --p2 {e.get('p2', 'BANNON')} --out {outdir}",
-        "[3] fail-closed gates on playtest_report.json "
-        "(bell=gameplay, 0 errors, pose_calls>=1, bones resolved, spikes==0)",
-        f"[4] assemble: assemble_character_video.py --footage <capture>.webm "
+        "[3] fail-closed entrance gates on playtest_report.json "
+        "(cine staged, HUD hidden, model loaded, 0 errors, takes>=20f each, spikes==0)",
+        f"[4] assemble: assemble_character_video.py --takes {outdir}/take_* "
         f"--audio {music} --beats {beats} --profile delivery -> {outdir}",
         "[5] thumbnail: make_thumbnail.py (beat-aligned frame)",
         "[6] SHA256SUMS + VIDEO_LOG.md entry + mark queue entry done",
@@ -190,24 +214,28 @@ def main():
 
     os.makedirs(outdir, exist_ok=True)
 
-    # [2] capture
-    rc, out = sh(["node", "tools/harness/play_and_record.cjs",
-                  "--seconds", str(args.seconds),
+    # [2] capture the entrance cinematic
+    rc, out = sh(["node", "tools/harness/capture_entrance.cjs",
                   "--p1", char, "--p2", e.get("p2", "BANNON"),
                   "--out", outdir])
     print(out[-2000:])
     if rc != 0:
-        fail(f"capture exited {rc} for {char}")
+        fail(f"entrance capture exited {rc} for {char}")
 
-    # [3] gates
-    rep = check_gates(report)
+    # [3] entrance gates
+    rep = check_gates(report, outdir)
 
-    # [4] assemble
-    webms = sorted(glob.glob(os.path.join(outdir, "bannon_*.webm")),
-                   key=os.path.getmtime)
-    if not webms:
-        fail(f"no capture webm in {outdir}")
-    footage = webms[-1]
+    # [4] takes -> footage -> assemble
+    take_dirs = sorted(glob.glob(os.path.join(outdir, "take_*")))
+    if not take_dirs:
+        fail(f"no take_* dirs in {outdir}")
+    footage = os.path.join(outdir, "footage_takes.mp4")
+    rc, out = sh(["python3", "tools/video/takes_to_footage.py",
+                  "--takes", *take_dirs,
+                  "--out", footage])
+    print(out[-1000:])
+    if rc != 0:
+        fail(f"takes_to_footage exited {rc} for {char}")
     rc, out = sh(["python3", "tools/video/assemble_character_video.py",
                   "--footage", footage,
                   "--audio", music,

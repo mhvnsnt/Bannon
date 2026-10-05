@@ -1,5 +1,23 @@
 # VIDEO_WORKFLOW.md — the character-video machine
 
+## The standard: ENTRANCE CINEMATIC (owner-locked 2026-10-05)
+
+The video machine produces **staged entrance cinematics in the El Toro de Oro
+style** — NOT plain gameplay screen recordings with music overlaid. The owner's
+rejection of the Stick-Up v1 (a recorded match with HUD/touch controls) set the
+bar: different camera angles, different lighting, working model animations,
+beat-synced to the character's entrance music.
+
+The capture step is `tools/harness/capture_entrance.cjs`: it stages the
+character's entrance with the game's cinematic entrance kit (DARK arena, SPOT
+on the wrestler, smoke/pyro, name on the titantron), hides all UI, **hides the
+opponent and the crowd** (the El Toro look is a dark empty arena — the spot +
+pyro carry the shot), and drives the free camera through 5 directed takes
+(stage pyro reveal, ramp track, ring low, taunt close-up, wide arena). Capture is
+**frame-exact**: the game clamps dt to 0.05s, so at ~0.3fps every rendered frame
+advances the sim by exactly 0.05s — the driver steps the walkout manually,
+CDP-captures one PNG per frame, and the takes assemble at 20fps into smooth footage.
+
 ## (a) What the old workflow was
 
 Evidence: `tools/harness/play_and_record.cjs`, `.github/workflows/character-videos.yml`,
@@ -11,6 +29,8 @@ Evidence: `tools/harness/play_and_record.cjs`, `.github/workflows/character-vide
    and writes `playtest_report.json` telemetry: frame-time percentiles, stalls
    over 250ms, page/console errors, pose calls, clip-bone resolution counts,
    and runtime deformation samples. Viewport: 412×915 portrait.
+   (This fight-recording path is RETAINED for QA/regression but is NOT the
+   video machine's capture step anymore.)
 2. **Batch CI** — `.github/workflows/character-videos.yml`: a 4-character matrix
    (BANNON/BANNON_rigged.glb, VIPER, KOBRA, AARON_RUBEN), each captured 28s,
    then fail-closed gates on the report: match must reach FIGHT (a `bell:`
@@ -37,11 +57,12 @@ Evidence: `tools/harness/play_and_record.cjs`, `.github/workflows/character-vide
 | Old | New |
 |---|---|
 | Batch matrix of 4, all-or-nothing | `queue/queue.json`: owner-edited priority order; `run_one.py` takes the head (or `--character`), finishes it fully, marks it done |
+| Fight recording as the video | **Entrance cinematic as the video**: `capture_entrance.cjs` stages the walkout with the cinematic kit + 5 directed takes (El Toro grade) |
 | Encode with `-an` — silent videos | Assembly wired in-chain: beat-synced music bed, name/end cards, two-pass loudnorm |
 | No thumbnails | `make_thumbnail.py` in-chain, beat-aligned frame |
 | No per-delivery record | `queue/VIDEO_LOG.md`: one entry per delivered video with hashes |
 | CI-only | Runs on this machine (`python3 tools/video/queue/run_one.py`) or CI (`.github/workflows/character-video-queue.yml`, manual dispatch, 30-day artifacts) |
-| Gates only in CI | Same fail-closed gates in `run_one.py`: bell=gameplay, 0 errors, pose_calls≥1, bones resolved, spikes==0 — nonzero exit leaves the character `queued`, never `done` |
+| Gates only in CI | Same fail-closed gates in `run_one.py`, entrance-specific: cine staged, HUD hidden, repaired model loaded, 0 errors, take frames≥20 each, spikes==0 — nonzero exit leaves the character `queued`, never `done` |
 
 **Zero new cost.** Existing stack only: node + Playwright/Chromium (already
 vendored/used by the harness), python3 + Pillow/OTIO (`requirements-video.txt`),
@@ -51,7 +72,7 @@ system ffmpeg. CI uses free GitHub Actions minutes on ubuntu-latest.
 ```bash
 # see the order, edit freely (never mid-run)
 cat tools/video/queue/queue.json
-# run the head of the queue
+# run the head of the queue (entrance cinematic for one character)
 python3 tools/video/queue/run_one.py
 # preview without running
 python3 tools/video/queue/run_one.py --dry-run
@@ -60,8 +81,9 @@ python3 tools/video/queue/run_one.py --character VIPER
 ```
 Deliverables land in `dist/character-videos/<CHARACTER>/`:
 `<CHARACTER>_16x9.mp4`, `<CHARACTER>_9x16.mp4`, `<CHARACTER>_thumb.jpg`,
-`SHA256SUMS.txt`, plus the raw capture (`bannon_match_*.webm`) and
+`SHA256SUMS.txt`, plus the raw take PNG sequences (`take_*/f*.png`) and
 `playtest_report.json` for audit.
 
 Text policy: all rendered text comes from owner-locked canon in queue.json
 (name/nicknames/billing) — never placeholder or "not in canon" text.
+End card reads "OFFICIAL ENTRANCE VIDEO" (these are entrance pieces, not fights).

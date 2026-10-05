@@ -90,7 +90,7 @@ def end_card(name, out):
     fn = font(FONT_BOLD, 110)
     centered(d, 380, "B A N N O N", fb, (200, 200, 205))
     centered(d, 500, name, fn, (245, 245, 245))
-    centered(d, 680, "VERIFIED GAMEPLAY FOOTAGE", fr, (150, 150, 155))
+    centered(d, 680, "OFFICIAL ENTRANCE VIDEO", fr, (150, 150, 155))
     img.save(out)
 
 def main():
@@ -140,14 +140,23 @@ def main():
                  f":offset={ln['target_offset']}:linear=true")
 
     prof = PROFILES[a.profile]
+    # NOTE (2026-10-05): concat requires identical input dims, so each input is
+    # normalized BEFORE concat (was: concat-then-scale, which fails when the
+    # footage isn't 1920x1080, e.g. 412x915 phone captures).
     vf169 = (f"[0:v]fade=t=in:st=0:d=0.4,fade=t=out:st={card_dur-0.5:.3f}:d=0.5,"
-             f"format=yuv420p[v0];[v0][1:v][2:v]concat=n=3:v=1:a=0,"
-             f"scale=1920:1080:force_original_aspect_ratio=decrease,"
-             f"pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1[v169]")
+             f"scale=1920:1080,setsar=1[v0];"
+             f"[1:v]scale=1920:1080:force_original_aspect_ratio=decrease,"
+             f"pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1[v1];"
+             f"[2:v]scale=1920:1080,setsar=1[v2];"
+             f"[v0][v1][v2]concat=n=3:v=1:a=0,format=yuv420p[v169]")
     vf916 = (f"[0:v]fade=t=in:st=0:d=0.4,fade=t=out:st={card_dur-0.5:.3f}:d=0.5,"
-             f"format=yuv420p[v0];[v0][1:v][2:v]concat=n=3:v=1:a=0,"
-             f"scale=1080:1920:force_original_aspect_ratio=increase,"
-             f"crop=1080:1920,setsar=1[v916]")
+             f"scale=1080:1920:force_original_aspect_ratio=decrease,"
+             f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1[v0];"
+             f"[1:v]scale=1080:1920:force_original_aspect_ratio=increase,"
+             f"crop=1080:1920,setsar=1[v1];"
+             f"[2:v]scale=1080:1920:force_original_aspect_ratio=decrease,"
+             f"pad=1080:1920:(ow-iw)/2:(oh-ih)/2,setsar=1[v2];"
+             f"[v0][v1][v2]concat=n=3:v=1:a=0,format=yuv420p[v916]")
     af = (f"[3:a]{ln_filter},atrim=0:{total:.3f},apad=whole_dur={total:.3f},aformat=sample_fmts=fltp:channel_layouts=stereo[aout]")
 
     base = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
