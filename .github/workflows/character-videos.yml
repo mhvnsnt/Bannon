@@ -1,4 +1,5 @@
 name: Bannon GLB character video batch
+# live deformation diagnostics enabled in recorder
 
 on:
   push:
