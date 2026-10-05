@@ -83,7 +83,8 @@ jobs:
           if((r.errorCount||0)>0) throw new Error('BLOCK: console errors during capture: '+r.consoleErrors.join(' | '));
           if((r.anim||{}).poseCalls < 1) throw new Error('BLOCK: no animation pose reached the skeleton');
           if((r.anim||{}).clipBoneRefs > 0 && (r.anim||{}).clipBoneResolved === 0) throw new Error('BLOCK: clip bones referenced but none resolved');
-          if((r.deformation||{}).spikes > 0) throw new Error('BLOCK: runtime deformation sentinel found '+r.deformation.spikes+' stretched triangle samples; keep this model out of delivery until repaired');
+          if(!r.deformation || !r.deformation.samples) throw new Error('BLOCK: runtime deformation telemetry did not execute; do not certify this capture');
+          if(r.deformation.spikes > 0) throw new Error('BLOCK: runtime deformation sentinel found '+r.deformation.spikes+' stretched triangle samples; keep this model out of delivery until repaired');
           console.log('PASS real gameplay + deformation gate:', r.video);
           NODE
 
