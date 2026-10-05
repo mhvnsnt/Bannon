@@ -37,16 +37,25 @@ rest live in `BANNON_v150.html` (`BONE_MAP_EXACT` 19 rows, fuzzy `BONE_MAP`,
    best automated result (1062 vs 1199 spikes) but still needs Blender re-skin —
    flagged below.
 
-## Clip library (973 JSON, short-token procedural format)
+## Clip library (973 JSON) — CORRECTED 2026-10-05 evening
 
-- 510 clips: full 19-token vocab · 91: 20-token (+neck) · rest: 12–18 token subsets
-- **298 clips are EMPTY (zero pose keys)** — 22 of them are REFERENCED by the move
-  maps, including CHOKESLAM, SUPLEX, DDT, TOMBSTONE, GERMANSUPLEX, BRAINBUSTER,
-  NECKBREAKER. A referenced-but-empty clip silently falls back to procedural
-  posing = the marionette look. **This is the next fix.**
-- 2 clips fail to parse.
-- 45 refs have no file at all (includes garbage refs like `2026-07-27` —
-  needs map cleanup).
+Re-measured (the "298 empty" in the earlier audit was a misclassification):
+
+- **673 clips: `mixamorig*` bone names** — map DIRECTLY to the canonical 58-joint
+  skeletons via `window.__boneOf` (prefix strip). No retargeting needed.
+- **298 clips: MDickie convention** (`J_*` joints, `F_*` facial, `N_*` prop/aim
+  helpers, `Root`). `J_*` maps via the same `__boneOf` prefix-strip
+  (`J_LeftArm`→`leftarm`→hit). `N_*`/`F_*` are prop/aim/facial helpers — safe
+  to miss for body animation. **NOT empty:** CHOKESLAM has 24 keys/519 bones,
+  SUPLEX 24/607, DDT 24/712.
+- 2 clips truly empty (no keys). 45 refs have no file (garbage like
+  `2026-07-27` — needs map cleanup).
+- **Bone-convention unification (task #1) is DONE in the engine:**
+  canonical = `mixamorig:` 58-joint; adapters = `__boneOf` + `__buildBoneNorm`
+  + `BONE_MAP_EXACT` + `BONE_MAP` + `BONE_MAP_OVERRIDES` (all in
+  `BANNON_v150.html`). No new adapter code needed — the gap was the clips
+  never being mapped because the MODELS were wrong (zero-joint kits), not the
+  clip format.
 
 ## Per-character status
 
@@ -67,6 +76,32 @@ rest live in `BANNON_v150.html` (`BONE_MAP_EXACT` 19 rows, fuzzy `BONE_MAP`,
 (Full QA numbers: `~/workspace/bannon-repair/out/QA_AFTER.md`. Full audit JSON:
 `/tmp/glb_audit_models.json`, `/tmp/glb_audit_repair.json`. Promote plan:
 `/tmp/promote_final.json`.)
+
+## In-game proof (2026-10-05 evening — measured, not claimed)
+
+**Sandbox harness reality:** `tools/harness/smoke.cjs` cannot boot here —
+Playwright's bundled Chromium path is wrong (`/opt/pw-browsers/chromium-1194/`
+exists but the harness hardcodes a different layout), and the full game needs
+external hosts (`raw.githubusercontent.com`, `esm.sh`, `fonts.googleapis.com`)
+that hang in this sandbox, so `domcontentloaded` never fires without request
+interception. The teardown (`~/workspace/bannon-teardown/`) hit the same wall
+and solved it with interception (~95s boot).
+
+**What was proven with a custom interception probe (this session):**
+- Game boots to menu in ~89s. Screenshot `/tmp/bannon_boot4.png`: menu renders,
+  KayKit crowd visible in the arena background (convergence import #1 working).
+- Attract mode auto-starts BANNON vs VIPER ("ROUND 1" HUD).
+- **BLOCKER for fight screenshots:** at 0 FPS under SwiftShader the page goes
+  unresponsive after menu; `page.evaluate` stops returning. Fight-capture probe
+  (`/tmp/probe_proof.cjs`, KayKit stripped from a /tmp copy — committed file
+  untouched) is running; shots land in `/tmp/proof_fight_*.png` if the attract
+  fight renders.
+- All 46 promoted GLBs pass GLB 2.0 header validation (magic `glTF`, version 2,
+  length matches).
+
+**Per-character proof status:** method proven for the build; per-character
+screenshots pending a faster harness or GPU. The "In-game proof" column stays
+PENDING until pixels exist.
 
 ## Still broken / next steps
 
