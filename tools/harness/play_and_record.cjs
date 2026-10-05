@@ -346,6 +346,8 @@ async function playMatch(page, seconds, log){
   console.log('anim    : pose ' + report.anim.poseCalls + '   clip bone refs ' + report.anim.clipBoneRefs +
               '   RESOLVED ' + report.anim.clipBoneResolved + ' (' + report.anim.resolvedPct + '%)');
   console.log('bones   : ' + Object.keys(report.boneMovement).map(k => k+' '+report.boneMovement[k].max).join('  '));
+  console.log('deform  : samples ' + (report.deformation&&report.deformation.samples||0) + ' spikes ' + (report.deformation&&report.deformation.spikes||0) + ' worst ' + (report.deformation&&report.deformation.worst||0));
+  if(report.deformation&&report.deformation.examples&&report.deformation.examples.length) console.log('deform examples: ' + JSON.stringify(report.deformation.examples));
   console.log('errors  : page ' + report.pageErrorCount + '   console ' + report.errorCount);
   if (report.pageErrors.length) report.pageErrors.forEach(e => console.log('   ! ' + e));
 })();
