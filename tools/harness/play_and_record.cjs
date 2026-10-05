@@ -178,8 +178,9 @@ async function playMatch(page, seconds, log){
   fs.mkdirSync(outDir, { recursive: true });
 
   const srv = await serve(port);
+  const chromiumPath = process.env.BANNON_CHROMIUM || (fs.existsSync('/opt/pw-browsers/chromium-1194/chrome-linux/chrome') ? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' : undefined);
   const browser = await chromium.launch({
-    executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+    ...(chromiumPath ? { executablePath: chromiumPath } : {}),
     args: ['--use-gl=swiftshader', '--no-sandbox', '--no-proxy-server', '--proxy-bypass-list=<-loopback>',
            '--autoplay-policy=no-user-gesture-required']
   });
