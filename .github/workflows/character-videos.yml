@@ -70,7 +70,6 @@ jobs:
       - name: Fail closed if no real gameplay was captured
         env:
           CHARACTER: ${{ matrix.character }}
-        env:
           EXPECTED_P1_GLB: ${{ matrix.glb }}
         run: |
           test -s "dist/character-videos/${CHARACTER}/playtest_report.json"
