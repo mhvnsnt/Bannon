@@ -121,7 +121,7 @@ function INSTRUMENT(){
         try{
           T.states[f.state] = (T.states[f.state]||0)+1;
           if(f && f.model){
-            const key=f.name || f.id || ('fighter_'+(f.side||'?'));
+            const key=(f.side||f.id||'?')+':'+(f.name||'fighter');
             if(!T.models[key]){
               let skinnedMeshes=0, bones=0;
               f.model.traverse && f.model.traverse(x=>{ if(x.isSkinnedMesh) skinnedMeshes++; if(x.isBone) bones++; });
