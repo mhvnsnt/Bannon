@@ -70,6 +70,8 @@ jobs:
       - name: Fail closed if no real gameplay was captured
         env:
           CHARACTER: ${{ matrix.character }}
+        env:
+          EXPECTED_P1_GLB: ${{ matrix.glb }}
         run: |
           test -s "dist/character-videos/${CHARACTER}/playtest_report.json"
           node - <<'NODE'
@@ -85,6 +87,14 @@ jobs:
           if((r.anim||{}).clipBoneRefs > 0 && (r.anim||{}).clipBoneResolved === 0) throw new Error('BLOCK: clip bones referenced but none resolved');
           if(!(r.beats||[]).some(x=>/recorder instrumentation attached/.test(x.what))) throw new Error('BLOCK: recorder instrumentation did not attach; do not certify this capture');
           if(!r.deformation || !r.deformation.samples) throw new Error('BLOCK: runtime deformation telemetry did not execute; do not certify this capture');
+          const models=Object.values(r.models||{});
+          if(models.length < 2) throw new Error('BLOCK: fewer than two runtime fighter models were observed; capture may be using a procedural/missing body');
+          const norm=s=>String(s||'').split('/').pop().toLowerCase();
+          const expectedP1=norm(process.env.EXPECTED_P1_GLB), expectedP2='bannon_rigged.glb';
+          const urls=models.map(m=>norm(m.modelUrl));
+          if(!urls.some(u=>u===expectedP1)) throw new Error('BLOCK: expected P1 GLB was not observed at runtime: '+expectedP1+'; observed '+urls.join(', '));
+          if(!urls.some(u=>u===expectedP2)) throw new Error('BLOCK: expected BANNON GLB was not observed at runtime: '+expectedP2+'; observed '+urls.join(', '));
+          for(const m of models) if(!m.skinnedMeshes || !m.mappedBones) throw new Error('BLOCK: runtime model lacks skinned/mapped rig evidence: '+JSON.stringify(m));
           if(r.deformation.spikes > 0) throw new Error('BLOCK: runtime deformation sentinel found '+r.deformation.spikes+' stretched triangle samples; keep this model out of delivery until repaired');
           console.log('PASS real gameplay + deformation gate:', r.video);
           NODE
