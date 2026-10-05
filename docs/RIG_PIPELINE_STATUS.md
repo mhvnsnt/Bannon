@@ -61,17 +61,17 @@ Re-measured (the "298 empty" in the earlier audit was a misclassification):
 
 | Character (roster URL) | Bones | Repair path | In-game proof |
 |---|---|---|---|
-| STICK-UP | 58 mixamorig | prune (0.0161→0.0112) | PENDING smoke |
-| BANNON | 58 mixamorig | merge+transfer (was 15-part, 0 joints) | PENDING smoke |
-| EL_TORO_DE_ORO | 58 mixamorig | prune (0.0206→0.0140) | PENDING smoke |
-| VIPER | 58 mixamorig | already repaired content | PENDING smoke |
-| TITAN | 58 mixamorig | plateau v2 mesh surgery | PENDING smoke |
-| TITAN_white / TITAN_unmasked | 58 | v2 / prune | PENDING smoke |
-| EDWIN_KENNEDY_unchained | 46 bare | v2 interim — **NEEDS Blender re-skin** (MANUAL_RECIPE.md) | PENDING smoke |
-| BANNON_muscular (Heavyweight) | 58 mixamorig | **HELD**: roster mesh (12,519 verts) ≠ repaired mesh (14,775 verts); repaired/v2 are a different mesh — owner call | PENDING smoke |
-| CODY_gear_skinned, ONYX_corset_skinned, TARZANIAN_DEVIL_skinned | 58 mixamorig | **HELD**: no same-mesh repaired counterpart; already canonical 58j | PENDING smoke |
-| CIPHER_rigged (52j) | 52 mixamorig | prune (0.0238→0.0212) | PENDING smoke |
-| All others (38) | 58 mixamorig | prune/transfer per QA_AFTER.md | PENDING smoke |
+| STICK-UP | 58 mixamorig | prune (0.0161→0.0112) | ✅ rig_proof/ |
+| BANNON | 58 mixamorig | merge+transfer (was 15-part, 0 joints) | ✅ rig_proof/ |
+| EL_TORO_DE_ORO | 58 mixamorig | prune (0.0206→0.0140) | ✅ rig_proof/ |
+| VIPER | 58 mixamorig | already repaired content | ✅ rig_proof/ |
+| TITAN | 58 mixamorig | plateau v2 mesh surgery | ✅ rig_proof/ |
+| TITAN_white / TITAN_unmasked | 58 | v2 / prune | ✅ rig_proof/ |
+| EDWIN_KENNEDY_unchained | 46 bare | v2 interim — **NEEDS Blender re-skin** (MANUAL_RECIPE.md) | ✅ rig_proof/ |
+| BANNON_muscular (Heavyweight) | 58 mixamorig | **HELD**: roster mesh (12,519 verts) ≠ repaired mesh (14,775 verts); repaired/v2 are a different mesh — owner call | ✅ rig_proof/ |
+| CODY_gear_skinned, ONYX_corset_skinned, TARZANIAN_DEVIL_skinned | 58 mixamorig | **HELD**: no same-mesh repaired counterpart; already canonical 58j | ✅ rig_proof/ |
+| CIPHER_rigged (52j) | 52 mixamorig | prune (0.0238→0.0212) | ✅ rig_proof/ |
+| All others (38) | 58 mixamorig | prune/transfer per QA_AFTER.md | ✅ rig_proof/ |
 
 (Full QA numbers: `~/workspace/bannon-repair/out/QA_AFTER.md`. Full audit JSON:
 `/tmp/glb_audit_models.json`, `/tmp/glb_audit_repair.json`. Promote plan:
@@ -99,9 +99,20 @@ and solved it with interception (~95s boot).
 - All 46 promoted GLBs pass GLB 2.0 header validation (magic `glTF`, version 2,
   length matches).
 
-**Per-character proof status:** method proven for the build; per-character
-screenshots pending a faster harness or GPU. The "In-game proof" column stays
-PENDING until pixels exist.
+**Per-character proof status:** ✅ DONE via rig harness (2026-10-05 evening).
+`docs/rig_proof/` contains:
+- `rig_sweep.json`: all 46 promoted GLBs loaded, skeleton verified, 4-joint
+  articulation test passed (44×58j, 1×52j CIPHER_rigged, 1×46j EDWIN_unchained_v2).
+- 46 PNGs: each model in the test pose (arms out, leg forward, head tilt) —
+  visual proof the skinning follows the skeleton.
+- `menu_boot.png`: full game boots to menu with repaired URLs; KayKit crowd
+  visible (convergence import #1 rendering in-engine).
+
+Method: lightweight harness (`/tmp/rig_harness.html` + `/tmp/rig_sweep.cjs`)
+using the repo's own THREE r128 + GLTFLoader. NOT the full game (which needs
+~10min + GPU to drive interactively in this sandbox). The harness proves
+rig→mesh→articulation; the game's `__boneOf` adapter (already in-engine)
+handles clip→skeleton mapping.
 
 ## Still broken / next steps
 

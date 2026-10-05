@@ -1,0 +1,876 @@
+[
+ {
+  "model": "BANNON_repaired.glb",
+  "url": "assets/models/BANNON_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 13560,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/BANNON_repaired.png"
+ },
+ {
+  "model": "BRUTUS_repaired.glb",
+  "url": "assets/models/BRUTUS_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 13508,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/BRUTUS_repaired.png"
+ },
+ {
+  "model": "CAIN_ELIAS_gear_repaired.glb",
+  "url": "assets/models/CAIN_ELIAS_gear_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11457,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/CAIN_ELIAS_gear_repaired.png"
+ },
+ {
+  "model": "CAIN_ELIAS_godwithin_repaired.glb",
+  "url": "assets/models/CAIN_ELIAS_godwithin_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11997,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/CAIN_ELIAS_godwithin_repaired.png"
+ },
+ {
+  "model": "CAIN_ELIAS_ring_repaired.glb",
+  "url": "assets/models/CAIN_ELIAS_ring_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 13031,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/CAIN_ELIAS_ring_repaired.png"
+ },
+ {
+  "model": "CAIN_ELIAS_snakeskin_repaired.glb",
+  "url": "assets/models/CAIN_ELIAS_snakeskin_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11480,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/CAIN_ELIAS_snakeskin_repaired.png"
+ },
+ {
+  "model": "CIPHER_feral_v2.glb",
+  "url": "assets/models/CIPHER_feral_v2.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12025,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/CIPHER_feral_v2.png"
+ },
+ {
+  "model": "CIPHER_minion_repaired.glb",
+  "url": "assets/models/CIPHER_minion_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11563,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/CIPHER_minion_repaired.png"
+ },
+ {
+  "model": "CIPHER_repaired.glb",
+  "url": "assets/models/CIPHER_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11703,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/CIPHER_repaired.png"
+ },
+ {
+  "model": "CIPHER_rigged_repaired.glb",
+  "url": "assets/models/CIPHER_rigged_repaired.glb",
+  "bones": 52,
+  "skinnedMeshes": 1,
+  "verts": 11749,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/CIPHER_rigged_repaired.png"
+ },
+ {
+  "model": "CODY_sober_repaired.glb",
+  "url": "assets/models/CODY_sober_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12054,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/CODY_sober_repaired.png"
+ },
+ {
+  "model": "CODY_stressed_repaired.glb",
+  "url": "assets/models/CODY_stressed_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12516,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/CODY_stressed_repaired.png"
+ },
+ {
+  "model": "ECHO_repaired.glb",
+  "url": "assets/models/ECHO_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12819,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/ECHO_repaired.png"
+ },
+ {
+  "model": "EDWIN_KENNEDY_repaired.glb",
+  "url": "assets/models/EDWIN_KENNEDY_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11551,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/EDWIN_KENNEDY_repaired.png"
+ },
+ {
+  "model": "EDWIN_KENNEDY_unchained_v2.glb",
+  "url": "assets/models/EDWIN_KENNEDY_unchained_v2.glb",
+  "bones": 46,
+  "skinnedMeshes": 1,
+  "verts": 13101,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/EDWIN_KENNEDY_unchained_v2.png"
+ },
+ {
+  "model": "EL_TORO_DE_ORO_repaired.glb",
+  "url": "assets/models/EL_TORO_DE_ORO_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11600,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/EL_TORO_DE_ORO_repaired.png"
+ },
+ {
+  "model": "HALL_NIGHTER_repaired.glb",
+  "url": "assets/models/HALL_NIGHTER_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12168,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/HALL_NIGHTER_repaired.png"
+ },
+ {
+  "model": "HOLLOW_repaired.glb",
+  "url": "assets/models/HOLLOW_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12580,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/HOLLOW_repaired.png"
+ },
+ {
+  "model": "JAGER_beard_repaired.glb",
+  "url": "assets/models/JAGER_beard_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 37780,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/JAGER_beard_repaired.png"
+ },
+ {
+  "model": "JAGER_repaired.glb",
+  "url": "assets/models/JAGER_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 33917,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/JAGER_repaired.png"
+ },
+ {
+  "model": "MAIME_repaired.glb",
+  "url": "assets/models/MAIME_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 13679,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/MAIME_repaired.png"
+ },
+ {
+  "model": "MASTER_SENSEI_repaired.glb",
+  "url": "assets/models/MASTER_SENSEI_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12744,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/MASTER_SENSEI_repaired.png"
+ },
+ {
+  "model": "MASTER_SENSEI_rose_repaired.glb",
+  "url": "assets/models/MASTER_SENSEI_rose_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12445,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/MASTER_SENSEI_rose_repaired.png"
+ },
+ {
+  "model": "NPC_FINXSSE_repaired.glb",
+  "url": "assets/models/NPC_FINXSSE_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12453,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/NPC_FINXSSE_repaired.png"
+ },
+ {
+  "model": "ONYX_corset_repaired.glb",
+  "url": "assets/models/ONYX_corset_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 13815,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/ONYX_corset_repaired.png"
+ },
+ {
+  "model": "ONYX_straightjacket_repaired.glb",
+  "url": "assets/models/ONYX_straightjacket_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12644,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/ONYX_straightjacket_repaired.png"
+ },
+ {
+  "model": "ONYX_street_repaired.glb",
+  "url": "assets/models/ONYX_street_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12567,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/ONYX_street_repaired.png"
+ },
+ {
+  "model": "PABLO_blackreign_repaired.glb",
+  "url": "assets/models/PABLO_blackreign_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11974,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/PABLO_blackreign_repaired.png"
+ },
+ {
+  "model": "PABLO_goldenbull_repaired.glb",
+  "url": "assets/models/PABLO_goldenbull_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11940,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/PABLO_goldenbull_repaired.png"
+ },
+ {
+  "model": "PABLO_repaired.glb",
+  "url": "assets/models/PABLO_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11975,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/PABLO_repaired.png"
+ },
+ {
+  "model": "STAN_COMBS_gear_repaired.glb",
+  "url": "assets/models/STAN_COMBS_gear_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11810,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/STAN_COMBS_gear_repaired.png"
+ },
+ {
+  "model": "STATIC_alt_repaired.glb",
+  "url": "assets/models/STATIC_alt_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12744,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/STATIC_alt_repaired.png"
+ },
+ {
+  "model": "STATIC_repaired.glb",
+  "url": "assets/models/STATIC_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12235,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/STATIC_repaired.png"
+ },
+ {
+  "model": "STICKUP_repaired.glb",
+  "url": "assets/models/STICKUP_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12633,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/STICKUP_repaired.png"
+ },
+ {
+  "model": "TITAN_unmasked_repaired.glb",
+  "url": "assets/models/TITAN_unmasked_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11704,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/TITAN_unmasked_repaired.png"
+ },
+ {
+  "model": "TITAN_v2.glb",
+  "url": "assets/models/TITAN_v2.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11696,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/TITAN_v2.png"
+ },
+ {
+  "model": "TITAN_white_v2.glb",
+  "url": "assets/models/TITAN_white_v2.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12113,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/TITAN_white_v2.png"
+ },
+ {
+  "model": "TRIPLE_XXX_repaired.glb",
+  "url": "assets/models/TRIPLE_XXX_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11620,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/TRIPLE_XXX_repaired.png"
+ },
+ {
+  "model": "TRIPLE_XXX_suit_repaired.glb",
+  "url": "assets/models/TRIPLE_XXX_suit_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12390,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/TRIPLE_XXX_suit_repaired.png"
+ },
+ {
+  "model": "TRIPLE_XXX_tights_repaired.glb",
+  "url": "assets/models/TRIPLE_XXX_tights_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11480,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/TRIPLE_XXX_tights_repaired.png"
+ },
+ {
+  "model": "TRIPLE_XXX_trunks_repaired.glb",
+  "url": "assets/models/TRIPLE_XXX_trunks_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11626,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/TRIPLE_XXX_trunks_repaired.png"
+ },
+ {
+  "model": "TYNESHIA_repaired.glb",
+  "url": "assets/models/TYNESHIA_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 14470,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/TYNESHIA_repaired.png"
+ },
+ {
+  "model": "TYNESHIA_street_repaired.glb",
+  "url": "assets/models/TYNESHIA_street_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 13575,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/TYNESHIA_street_repaired.png"
+ },
+ {
+  "model": "WRECK_PATTERSON_attire2_repaired.glb",
+  "url": "assets/models/WRECK_PATTERSON_attire2_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11755,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/WRECK_PATTERSON_attire2_repaired.png"
+ },
+ {
+  "model": "WRECK_PATTERSON_attire3_repaired.glb",
+  "url": "assets/models/WRECK_PATTERSON_attire3_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 11767,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/WRECK_PATTERSON_attire3_repaired.png"
+ },
+ {
+  "model": "WRECK_PATTERSON_godwithin_repaired.glb",
+  "url": "assets/models/WRECK_PATTERSON_godwithin_repaired.glb",
+  "bones": 58,
+  "skinnedMeshes": 1,
+  "verts": 12637,
+  "articulated": 4,
+  "keyJoints": {
+   "hips": true,
+   "spine": true,
+   "neck": true,
+   "head": true,
+   "shL": true,
+   "shR": true,
+   "hipL": true,
+   "hipR": true
+  },
+  "shot": "/tmp/rigshots/WRECK_PATTERSON_godwithin_repaired.png"
+ }
+]
