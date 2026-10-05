@@ -25,7 +25,7 @@
  * fix is usually one joint index or a vertex with no weight at all.
  */
 'use strict';
-const { chromium } = require('/opt/node22/lib/node_modules/playwright/node_modules/playwright-core');
+const { chromium } = require('playwright');
 const { spawn } = require('child_process');
 const path = require('path');
 
@@ -40,16 +40,16 @@ const STRETCH = 2.5;
 const MAX_BAD = 0;        // --gate: any spike at all is a fail; they are always visible
 
 (async () => {
-  const dir = path.join(__dirname);
-  const srv = spawn('/opt/node22/bin/node', ['-e', `
-    const http=require('http'),fs=require('fs'),p=require('path');const root='${dir}',md='/home/user/Bannon/assets/models';
+  const dir = path.join(__dirname); const repo = path.resolve(__dirname, '..', '..'); const md = path.join(repo, 'assets', 'models');
+  const srv = spawn(process.execPath, ['-e', `
+    const http=require('http'),fs=require('fs'),p=require('path');const root='${dir}',md='${md}';
     const T={'.html':'text/html','.js':'text/javascript','.glb':'model/gltf-binary'};
     http.createServer((req,res)=>{let f=decodeURIComponent(req.url.split('?')[0]);
       let fp=f.startsWith('/m/')?p.join(md,f.slice(3)):p.join(root,f==='/'?'/test.html':f);
       fs.readFile(fp,(e,d)=>{if(e){res.writeHead(404);res.end('nf');return;}res.writeHead(200,{'content-type':T[p.extname(fp)]||'application/octet-stream'});res.end(d);});}).listen(8087);
   `], { stdio: 'ignore' });
   await new Promise(r => setTimeout(r, 800));
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--use-gl=swiftshader', '--no-sandbox'] });
+  const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--no-sandbox'] });
   const page = await browser.newPage();
   const perr = []; page.on('pageerror', e => perr.push(String(e)));
   await page.goto('http://localhost:8087/test.html', { waitUntil: 'domcontentloaded' });
