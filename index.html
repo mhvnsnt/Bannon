@@ -6974,7 +6974,8 @@ window.CHAR_ALT_MODELS = {
   TITAN:           [ {id:'TITAN_unmasked',label:'Unmasked',url:'assets/models/TITAN_unmasked.glb'}, {id:'TITAN_white',label:'White',url:'assets/models/TITAN_white.glb'} ],
   TRIPLE_XXX:      [ {id:'TRIPLE_XXX_trunks',label:'Trunks',url:'assets/models/TRIPLE_XXX_trunks.glb'}, {id:'TRIPLE_XXX_tights',label:'Tights',url:'assets/models/TRIPLE_XXX_tights.glb'}, {id:'TRIPLE_XXX_suit',label:'Suit',url:'assets/models/TRIPLE_XXX_suit.glb'} ],
   TYNESHIA:        [ {id:'TYNESHIA_street',label:'Street',url:'assets/models/TYNESHIA_street.glb'} ],
-  WRECK_PATTERSON: [ {id:'WRECK_PATTERSON_attire2',label:'Attire 2',url:'assets/models/WRECK_PATTERSON_attire2.glb'}, {id:'WRECK_PATTERSON_attire3',label:'Attire 3',url:'assets/models/WRECK_PATTERSON_attire3.glb'}, {id:'WRECK_PATTERSON_godwithin',label:'God Within',url:'assets/models/WRECK_PATTERSON_godwithin.glb'} ]
+  WRECK_PATTERSON: [ {id:'WRECK_PATTERSON_attire2',label:'Attire 2',url:'assets/models/WRECK_PATTERSON_attire2.glb'}, {id:'WRECK_PATTERSON_attire3',label:'Attire 3',url:'assets/models/WRECK_PATTERSON_attire3.glb'}, {id:'WRECK_PATTERSON_godwithin',label:'God Within',url:'assets/models/WRECK_PATTERSON_godwithin.glb'} ],
+  SOMBRA_NEGRA:   [ {id:'SOMBRA_NEGRA_main',label:'Main Attire',url:'https://raw.githubusercontent.com/mhvnsnt/Bannon/main/assets/models/SOMBRA_NEGRA.glb'} ]
 };
 window.altModelUrl = function(charKey, altId){ const list=(window.CHAR_ALT_MODELS||{})[String(charKey||'').toUpperCase()]||[]; const e=list.find(a=>a.id===altId); return e?e.url:null; };
 window.altsFor = function(name){
