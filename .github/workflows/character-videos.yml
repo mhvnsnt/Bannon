@@ -1,0 +1,101 @@
+name: Bannon GLB character video batch
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'BANNON_v150.html'
+      - 'assets/models/**'
+      - 'tools/harness/play_and_record.cjs'
+      - '.github/workflows/character-videos.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: character-videos
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        character:
+          - BANNON
+          - CAIN_ELIAS
+          - CIPHER
+          - CODY
+          - EDWIN_KENNEDY
+          - HALL_NIGHTER
+          - JAGER
+          - KOBRA
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install browser recorder
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node -e "const {chromium}=require('playwright'); console.log('chromium:', chromium.executablePath())"
+
+      - name: Verify character GLB exists
+        env:
+          CHARACTER: ${{ matrix.character }}
+        run: |
+          test -f "assets/models/${CHARACTER}.glb" || {
+            echo "BLOCK: no real GLB for ${CHARACTER}"
+            exit 1
+          }
+
+      - name: Capture real BANNON gameplay
+        env:
+          CHARACTER: ${{ matrix.character }}
+          BANNON_CHROMIUM: ${{ steps.browser.outputs.path }}
+        run: |
+          CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          mkdir -p "dist/character-videos/${CHARACTER}"
+          BANNON_CHROMIUM="$CHROMIUM" node tools/harness/play_and_record.cjs \
+            --seconds 28 \
+            --p1 "${CHARACTER}" \
+            --p2 BANNON \
+            --out "dist/character-videos/${CHARACTER}"
+
+      - name: Fail closed if no real gameplay was captured
+        env:
+          CHARACTER: ${{ matrix.character }}
+        run: |
+          test -s "dist/character-videos/${CHARACTER}/playtest_report.json"
+          node - <<'NODE'
+          const fs=require('fs');
+          const p='dist/character-videos/'+process.env.CHARACTER+'/playtest_report.json';
+          const r=JSON.parse(fs.readFileSync(p,'utf8'));
+          if(!r.video) throw new Error('BLOCK: recorder produced no video');
+          const gameplay=(r.beats||[]).some(x=>/bell:/.test(x.what));
+          if(!gameplay) throw new Error('BLOCK: match never reached FIGHT; this is not gameplay footage');
+          if((r.pageErrorCount||0)>0) throw new Error('BLOCK: page errors during capture: '+r.pageErrors.join(' | '));
+          if((r.errorCount||0)>0) throw new Error('BLOCK: console errors during capture: '+r.consoleErrors.join(' | '));
+          console.log('PASS real gameplay:', r.video);
+          NODE
+
+      - name: Encode delivery cuts
+        env:
+          CHARACTER: ${{ matrix.character }}
+        run: |
+          DIR="dist/character-videos/${CHARACTER}"
+          WEBM="$(find "$DIR" -maxdepth 1 -name 'bannon_match_*.webm' -print -quit)"
+          test -n "$WEBM"
+          ffmpeg -y -i "$WEBM" -an -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p "$DIR/${CHARACTER}_BANNON_16x9.mp4"
+          ffmpeg -y -i "$WEBM" -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2" -an -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p "$DIR/${CHARACTER}_BANNON_9x16.mp4"
+          sha256sum "$DIR"/*.mp4 > "$DIR/SHA256SUMS.txt"
+
+      - name: Upload character video package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bannon-character-video-${{ matrix.character }}
+          path: dist/character-videos/${{ matrix.character }}
+          if-no-files-found: error
+          retention-days: 14
