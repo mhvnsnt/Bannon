@@ -2065,9 +2065,29 @@ body.match-live #movesBtn { display:none !important; }
       </div>
       <div class="field-label">MODEL SIZE — <span id="modelSizeVal">1.00×</span></div>
       <input type="range" id="modelSizeSlider" min="0.1" max="6" step="0.01" value="1" style="width:100%;height:38px;accent-color:#ff7a1a;background:transparent;">
+      <div class="field-label">3 · CUSTOMIZE TEXTURE — tap to paint on the selected fighter's model</div>
+      <div class="option-row"><button class="opt-chip" id="btnOpenTexStudio" style="border-color:#a78bfa;color:#a78bfa;">🎨 TEXTURE STUDIO</button></div>
       <div class="creator-actions" style="margin-top:14px;">
         <button class="menu-btn gold" id="btnDoneModels">DONE</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- TEXTURE STUDIO overlay: touch texture painter integrated in Model Lab -->
+<div class="menu-overlay hidden" id="texStudio">
+  <div style="width:100%;max-width:700px;">
+    <div class="creator-header"><div class="creator-title">TEXTURE STUDIO</div><button class="close-x" id="texStudioClose">×</button></div>
+    <div class="creator-card">
+      <div class="field-label">TEXTURE</div>
+      <div id="texStudioThumbs" style="display:flex;gap:8px;overflow-x:auto;margin-bottom:10px;"></div>
+      <canvas id="texStudioCanvas" style="width:100%;touch-action:none;background:#000;border-radius:8px;"></canvas>
+      <div class="hint" style="font-size:12px;opacity:.7;margin:6px 0;">Drag to move • Pinch to scale (uniform) • Twist to rotate</div>
+      <div class="option-row">
+        <button class="opt-chip" id="texStudioAdd">ADD IMAGE</button>
+        <button class="opt-chip" id="texStudioApply" style="border-color:#4ade80;color:#4ade80;">APPLY TO MODEL</button>
+      </div>
+      <input type="file" id="texStudioFile" accept="image/*" hidden>
     </div>
   </div>
 </div>
@@ -58153,5 +58173,198 @@ window.__deriveVariant = async function(key){
                armed: !!(window.loadClipFor && window.loadClipFor.__cw) };
     }
   };
+})();
+</script>
+
+<script>
+// ============================================================================
+// BRICK: TEXTURE STUDIO — touch texture painter for fighter models
+// Integrated in Model Lab. Drag/pinch/twist images onto model textures.
+// ============================================================================
+(function(){
+  const TS = { textures: [], active: -1, layers: [], sel: -1 };
+  const canvas = document.getElementById('texStudioCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function getFighterGLB() {
+    // Get the currently selected fighter's loaded GLB model
+    try {
+      const side = (typeof modelSel !== 'undefined') ? modelSel : 'p1';
+      const f = (typeof fighters !== 'undefined' && fighters.length) ?
+        (side === 'p2' ? fighters[1] : fighters[0]) : null;
+      if (f && f.model3D) return f.model3D;
+      // Fallback: find any loaded GLB in the scene
+      if (typeof scene !== 'undefined') {
+        let found = null;
+        scene.traverse(o => { if (!found && o.isMesh && o.material && o.material.map) found = o; });
+        return found;
+      }
+    } catch(e) {}
+    return null;
+  }
+
+  function extractTextures() {
+    TS.textures = [];
+    const thumbs = document.getElementById('texStudioThumbs');
+    thumbs.innerHTML = '';
+    const seen = new Set();
+    try {
+      const root = getFighterGLB();
+      if (!root) { thumbs.innerHTML = '<div style="opacity:.6;font-size:12px">No model loaded. Pick a model first.</div>'; return; }
+      const objs = root.isMesh ? [root] : [];
+      if (root.traverse) root.traverse(o => { if (o.isMesh) objs.push(o); });
+      objs.forEach(mesh => {
+        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        mats.forEach(m => {
+          if (m && m.map && m.map.image && !seen.has(m.map.image)) {
+            seen.add(m.map.image);
+            const img = m.map.image;
+            const cv = document.createElement('canvas');
+            cv.width = img.width || 512; cv.height = img.height || 512;
+            cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
+            const entry = { canvas: cv, mat: m, threeTex: m.map };
+            TS.textures.push(entry);
+            const th = document.createElement('canvas');
+            th.width = 64; th.height = 64;
+            th.style.cssText = 'width:64px;height:64px;border-radius:8px;cursor:pointer;border:2px solid transparent;flex-shrink:0';
+            th.getContext('2d').drawImage(cv, 0, 0, 64, 64);
+            th.onclick = () => selectTex(TS.textures.indexOf(entry));
+            thumbs.appendChild(th);
+            entry.thumb = th;
+          }
+        });
+      });
+    } catch(e) {
+      thumbs.innerHTML = '<div style="opacity:.6;font-size:12px">Error reading textures.</div>';
+    }
+    if (TS.textures.length) selectTex(0);
+  }
+
+  function selectTex(i) {
+    TS.active = i; TS.layers = []; TS.sel = -1;
+    TS.textures.forEach((t, j) => { if (t.thumb) t.thumb.style.borderColor = j === i ? '#a78bfa' : 'transparent'; });
+    drawTex();
+  }
+
+  function drawTex() {
+    const t = TS.textures[TS.active];
+    if (!t) { ctx.clearRect(0, 0, canvas.width, canvas.height); return; }
+    canvas.width = t.canvas.width; canvas.height = t.canvas.height;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(t.canvas, 0, 0);
+    TS.layers.forEach((L, i) => {
+      ctx.save();
+      ctx.translate(L.x, L.y); ctx.rotate(L.rot);
+      ctx.scale(L.scale, L.scale); // UNIFORM — single scale value, aspect preserved
+      ctx.globalAlpha = 0.95;
+      ctx.drawImage(L.img, -L.img.width/2, -L.img.height/2);
+      ctx.restore();
+      if (i === TS.sel) {
+        ctx.save();
+        ctx.translate(L.x, L.y); ctx.rotate(L.rot);
+        const w = L.img.width * L.scale, h = L.img.height * L.scale;
+        ctx.strokeStyle = '#a78bfa'; ctx.lineWidth = 3;
+        ctx.strokeRect(-w/2, -h/2, w, h);
+        ctx.restore();
+      }
+    });
+  }
+
+  // Touch gestures: 1-finger drag, 2-finger uniform pinch + rotate
+  let gest = null;
+  canvas.addEventListener('pointerdown', e => {
+    canvas.setPointerCapture(e.pointerId);
+    if (!gest) gest = { pts: new Map() };
+    gest.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (gest.pts.size === 1) {
+      const r = canvas.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width * canvas.width;
+      const py = (e.clientY - r.top) / r.height * canvas.height;
+      let hit = -1;
+      for (let i = TS.layers.length - 1; i >= 0; i--) {
+        const L = TS.layers[i];
+        const dx = px - L.x, dy = py - L.y;
+        const c = Math.cos(-L.rot), s = Math.sin(-L.rot);
+        const lx = (dx*c - dy*s) / L.scale, ly = (dx*s + dy*c) / L.scale;
+        if (Math.abs(lx) < L.img.width/2 && Math.abs(ly) < L.img.height/2) { hit = i; break; }
+      }
+      TS.sel = hit;
+      if (hit >= 0) gest.start = { x: TS.layers[hit].x, y: TS.layers[hit].y, px, py };
+      drawTex();
+    } else if (gest.pts.size === 2 && TS.sel >= 0) {
+      const [a, b] = [...gest.pts.values()];
+      gest.d0 = Math.hypot(b.x-a.x, b.y-a.y);
+      gest.a0 = Math.atan2(b.y-a.y, b.x-a.x);
+      gest.s0 = TS.layers[TS.sel].scale;
+      gest.r0 = TS.layers[TS.sel].rot;
+    }
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!gest || !gest.pts.has(e.pointerId) || TS.sel < 0) return;
+    gest.pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    const L = TS.layers[TS.sel];
+    if (gest.pts.size === 1 && gest.start) {
+      const r = canvas.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width * canvas.width;
+      const py = (e.clientY - r.top) / r.height * canvas.height;
+      L.x = gest.start.x + (px - gest.start.px);
+      L.y = gest.start.y + (py - gest.start.py);
+      drawTex();
+    } else if (gest.pts.size === 2) {
+      const [a, b] = [...gest.pts.values()];
+      const d = Math.hypot(b.x-a.x, b.y-a.y);
+      const an = Math.atan2(b.y-a.y, b.x-a.x);
+      L.scale = Math.max(0.05, gest.s0 * (d / gest.d0)); // UNIFORM
+      L.rot = gest.r0 + (an - gest.a0);
+      drawTex();
+    }
+  });
+  const gend = e => { if (gest) { gest.pts.delete(e.pointerId); if (!gest.pts.size) gest = null; } };
+  canvas.addEventListener('pointerup', gend);
+  canvas.addEventListener('pointercancel', gend);
+
+  document.getElementById('btnOpenTexStudio').onclick = () => {
+    document.getElementById('modelLab').classList.add('hidden');
+    document.getElementById('texStudio').classList.remove('hidden');
+    extractTextures();
+  };
+  document.getElementById('texStudioClose').onclick = () => {
+    document.getElementById('texStudio').classList.add('hidden');
+    document.getElementById('modelLab').classList.remove('hidden');
+  };
+  document.getElementById('texStudioAdd').onclick = () => document.getElementById('texStudioFile').click();
+  document.getElementById('texStudioFile').onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const bmp = await createImageBitmap(f);
+    const cv = document.createElement('canvas');
+    cv.width = bmp.width; cv.height = bmp.height;
+    cv.getContext('2d').drawImage(bmp, 0, 0);
+    const t = TS.textures[TS.active];
+    TS.layers.push({ img: cv, x: canvas.width/2, y: canvas.height/2,
+      scale: t ? Math.min(1, (t.canvas.width*0.4)/cv.width) : 0.5, rot: 0 });
+    TS.sel = TS.layers.length - 1;
+    drawTex();
+    e.target.value = '';
+  };
+  document.getElementById('texStudioApply').onclick = () => {
+    const t = TS.textures[TS.active];
+    if (!t || !TS.layers.length) return;
+    const c2 = t.canvas.getContext('2d');
+    TS.layers.forEach(L => {
+      c2.save();
+      c2.translate(L.x, L.y); c2.rotate(L.rot); c2.scale(L.scale, L.scale);
+      c2.drawImage(L.img, -L.img.width/2, -L.img.height/2);
+      c2.restore();
+    });
+    // Push to live 3D material
+    if (t.threeTex) {
+      t.threeTex.image = t.canvas;
+      t.threeTex.needsUpdate = true;
+    }
+    TS.layers = []; TS.sel = -1;
+    drawTex();
+    try { if (typeof refreshModelUI === 'function') refreshModelUI(); } catch(e){}
+  };
+  window.BANNON_TEXSTUDIO = { open: () => document.getElementById('btnOpenTexStudio').click() };
 })();
 </script>
