@@ -7,7 +7,7 @@
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { simplify, weld, dedup, textureCompress, prune } from '@gltf-transform/functions';
-import { MeshoptSimplifier } from 'meshoptimizer';
+import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 
 const [,, inP, outP, ...rest] = process.argv;
@@ -16,8 +16,10 @@ const arg = (k, d) => { const a = rest.find(x => x.startsWith(`--${k}=`)); retur
 const TEX = arg('tex', 1024);
 
 async function main() {
-  await MeshoptSimplifier.ready;
-  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
+  await MeshoptDecoder.ready; await MeshoptEncoder.ready; await MeshoptSimplifier.ready;
+  const io = new NodeIO()
+    .registerExtensions(ALL_EXTENSIONS)
+    .registerDependencies({ 'meshopt.decoder': MeshoptDecoder, 'meshopt.encoder': MeshoptEncoder });
   const doc = await io.read(inP);
 
   // count triangles to derive a ratio for the target
