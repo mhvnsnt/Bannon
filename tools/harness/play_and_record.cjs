@@ -112,8 +112,8 @@ function INSTRUMENT(){
     }
     if (typeof window.updateFighterModel === 'function' && !window.updateFighterModel.__rec){
       const o = window.updateFighterModel;
-      const TRACK = ['LeftArm','LeftForeArm','LeftHand','LeftShoulder','RightArm','RightForeArm',
-                     'LeftUpLeg','LeftLeg','LeftFoot','Spine1','Neck','Head'];
+      const TRACK = ['LeftArm','LeftForeArm','LeftHand','LeftShoulder','RightArm','RightForeArm','RightShoulder',
+                     'LeftUpLeg','LeftLeg','LeftFoot','Spine1','Spine2','Neck','Head'];
       const w = function(f){
         try{ T.states[f.state] = (T.states[f.state]||0)+1; }catch(e){}
         let before = null;
@@ -127,7 +127,38 @@ function INSTRUMENT(){
           const d = 1 - Math.abs(before[n].dot(B[n].quaternion));
           const s = T.boneMove[n] || (T.boneMove[n] = { max:0, sum:0, n:0 });
           if (d > s.max) s.max = d; s.sum += d; s.n++;
+          const q = B[n].quaternion;
+          const ang = 2 * Math.acos(Math.min(1, Math.abs(q.w)));
+          const e = T.boneExtrema[n] || (T.boneExtrema[n] = {maxDeg:0});
+          e.maxDeg = Math.max(e.maxDeg, +(ang * 180 / Math.PI));
         }
+        // Lightweight CPU deformation sentinel. It samples a handful of triangles from the first
+        // skinned mesh each update and uses the same bone matrices/weights that three.js skinning
+        // sends to the GPU. A triangle growing >2.5x and >15cm is the exact signature of the sheets
+        // that previously slipped through p95-only QA. This is diagnostic only: never fail a capture
+        // on a number whose motion semantics have not been visually verified.
+        try {
+          if (f.model && f.model.traverse && (T.frames % 12 === 0)) {
+            let sm = null; f.model.traverse(x => { if (!sm && x.isSkinnedMesh) sm = x; });
+            if (sm && sm.geometry && sm.geometry.attributes && sm.geometry.attributes.position) {
+              const geo=sm.geometry, pos=geo.attributes.position, idx=geo.index, si=geo.attributes.skinIndex, sw=geo.attributes.skinWeight;
+              if (si && sw && sm.skeleton) {
+                const comp=(a,i,k)=>k===0?a.getX(i):k===1?a.getY(i):k===2?a.getZ(i):a.getW(i);
+                const v=(i,out)=>{ out.set(0,0,0); const p=new THREE.Vector3().fromBufferAttribute(pos,i); const m=new THREE.Matrix4(), q=new THREE.Vector3();
+                  for(let k=0;k<4;k++){const w=comp(sw,i,k); if(!w) continue; const bi=comp(si,i,k); if(bi<0||bi>=sm.skeleton.bones.length) continue;
+                    m.multiplyMatrices(sm.skeleton.bones[bi].matrixWorld, sm.skeleton.boneInverses[bi]); q.copy(p).applyMatrix4(m).multiplyScalar(w); out.add(q);}};
+                const count=idx?Math.floor(idx.count/3):Math.floor(pos.count/3), step=Math.max(1,Math.floor(count/32));
+                const a=new THREE.Vector3(),b=new THREE.Vector3(),d=new THREE.Vector3(),e=new THREE.Vector3();
+                for(let t=0;t<count;t+=step){const ia=idx?idx.getX(t*3):t*3, ib=idx?idx.getX(t*3+1):t*3+1, ic=idx?idx.getX(t*3+2):t*3+2;
+                  const ba=new THREE.Vector3().fromBufferAttribute(pos,ia), bb=new THREE.Vector3().fromBufferAttribute(pos,ib), bc=new THREE.Vector3().fromBufferAttribute(pos,ic);
+                  const rest=Math.max(ba.distanceTo(bb),bb.distanceTo(bc),bc.distanceTo(ba)); if(rest<1e-5) continue;
+                  v(ia,a);v(ib,b);v(ic,d); const now=Math.max(a.distanceTo(b),b.distanceTo(d),d.distanceTo(a));
+                  const ratio=now/rest; T.deformation.samples++; if(ratio>2.5 && now>0.15){T.deformation.spikes++; if(ratio>T.deformation.worst){T.deformation.worst=ratio; if(T.deformation.examples.length<8) T.deformation.examples.push({fighter:f.name||f.id||'?',ratio:+ratio.toFixed(2),cm:+(now*100).toFixed(1),restCm:+(rest*100).toFixed(1)});}}
+                }
+              }
+            }
+          }
+        } catch(e) { /* diagnostic must never break gameplay */ }
         return r;
       };
       w.__rec = 1; window.updateFighterModel = w;
@@ -281,7 +312,7 @@ async function playMatch(page, seconds, log){
       anim: { poseCalls: T.pose, clipBoneRefs: T.clipRefs, clipBoneResolved: T.clipResolved,
               resolvedPct: T.clipRefs ? +(100*T.clipResolved/T.clipRefs).toFixed(1) : null,
               topUnresolved: Object.keys(T.clipMissNames).slice(0, 10) },
-      boneMovement: bm, states: T.states,
+      boneMovement: bm, boneExtrema: T.boneExtrema, deformation: T.deformation, states: T.states,
       consoleErrors: T.errors.slice(0, 12), errorCount: T.errors.length
     };
   });
