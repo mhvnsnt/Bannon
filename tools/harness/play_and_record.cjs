@@ -62,7 +62,7 @@ function INSTRUMENT(){
   window.__T = {
     frames: 0, t0: 0, last: 0, dts: [], stalls: [],
     pose: 0, clipRefs: 0, clipResolved: 0, clipMissNames: {},
-    boneMove: {}, states: {}, errors: [], warns: []
+    boneMove: {}, boneExtrema: {}, deformation: {samples:0, spikes:0, worst:0, examples:[]}, states: {}, errors: [], warns: []
   };
   const T = window.__T;
 
