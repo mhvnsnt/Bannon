@@ -106,6 +106,28 @@ Candidate flow:
 
 The known defect family includes shoulder/upper-arm twisting, reversed arm orientation, stretching/mesh tearing, bad rest poses, grounding/sinking, and action-state retarget mangling.
 
+## Tag-team division of labor
+
+### This agent / repo-side lane
+- Maintain GitHub source-of-truth, commits, workflows, issue handoffs, and provenance.
+- Audit existing agent history instead of discarding earlier measured work.
+- Harden the real gameplay recorder and certification gates.
+- Diagnose CI failures and instrumentation failures with bounded verification.
+- Keep Bannon / Brutal Fist / AshLane identities and video provenance separated.
+- Integrate Muse findings into the repo without blindly overwriting working changes.
+
+### Muse / external-agent lane
+- Use Muse's strengths for broad visual/model/animation investigation and parallel asset review.
+- Test candidate repairs against actual visuals and gameplay where its environment permits.
+- Return concrete model/animation findings, before/after evidence, and exact assets/commits/results rather than subjective approval.
+
+### Shared contract
+- Neither side treats the other side's claim as proof without evidence.
+- Prefer complementary work over duplicate edits.
+- If both sides modify the same subsystem, reconcile against the newest measured behavior before merging.
+- Preserve working state first; repair incrementally; never replace a verified asset with a speculative one.
+- Conflicts become explicit BLOCKED/UNKNOWN findings instead of guesses.
+
 ## Muse's job
 
 Muse agents should operate as a second engineering/production team, not as a blind parallel implementation.
