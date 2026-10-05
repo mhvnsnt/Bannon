@@ -22,5 +22,9 @@ To create truly unpredictable, visceral combat AI, we need true randomness and q
 ## 5. J-SPACE EVOLUTION
 - Expand the SpatialEnvironment (J-Space) to handle fully destructible environments, dynamic ring ropes (spring physics), and multi-tiered arenas.
 
-**IMMEDIATE AGENT DIRECTIVE:**
-Read this document. Begin writing Python/Node scripts to research these APIs, scrape the web for Euphoria ragdoll implementation in Three.js/Cannon.js, and send a comprehensive progress report to Marquis via Telegram.
+**Research task:** use this document to guide Python/Node research scripts on these APIs
+(Euphoria ragdoll implementation in Three.js/Cannon.js, etc.). Record progress as repo docs /
+work-log entries.
+
+**NOTE (owner 2026-10-05):** Telegram bot reporting is deprecated — the Telegram bots have been
+broken for months. Do not send reports via Telegram.

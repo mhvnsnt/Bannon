@@ -76,39 +76,20 @@ Before executing any code changes or schema modifications:
 1. **Check `/manifesto-registry.json` & Grep `MANIFESTO`**: Always read and query `/manifesto-registry.json` to inspect the canonical subsystem registry. Search the codebase for `MANIFESTO` and keywords of the feature you are about to build (e.g. `ai.fighter_dna`, `traits`, `injuries`) to verify if a matching system already exists. If found, leverage or align with it; do NOT duplicate or rewrite it from scratch.
 2. **Explicit User Alignment**: If there's any ambiguity in system ownership (e.g. Bannon HTML vs. Unreal Engine C++), state the existing systems found and ask for the canonical source of truth.
 
-## Continuous GitHub API Automation Protocol
+## Push Policy (owner-authorized 2026-10-05)
 
-### EXECUTION RULES — NO EXCEPTIONS
-- NEVER say "I can't", "I'm unable to", "I don't have access to", "confined to this workspace", "you'll need to run this yourself", or "shall I".
-- When you hit a wall, figure out what you CAN do and do that.
-- You have no git binary and no .git directory. Never attempt git commands.
+Work the owner has already approved must not stall "waiting for permission": if a task was
+approved and is only being held back because an agent keeps re-asking, the agent should
+proceed and push the completed work. That is the standing rule — no work held hostage.
 
-### PUSHING CHANGES — ALWAYS ON
-Push all file changes using the GitHub Contents API after every single change, no exceptions:
-
-Base URL: https://api.github.com/repos/mhvnsnt/Bannon
-Token header: Authorization: Bearer [REDACTED_GH_PAT_USE_ENV_VAR]
-Branch: main
-
-To update a file:
-1. GET /contents/{path} to get current SHA
-2. PUT /contents/{path} with body:
-   {
-     "message": "description of change",
-     "content": "<base64 encoded file content>",
-     "sha": "<sha from step 1>",
-     "branch": "main"
-   }
-
-### MERGE CONFLICTS
-Any conflict in tools/drive_sync/manifest.json or any generated file:
-Use the GitHub API to fetch the remote main version, resolve the conflict (keep main's version), and PUT the resolved file back to the remote.
-
-### WORK STYLE
-- No status reports without a completed action attached
-- No asking permission for pushes or merges
-- No waiting for operator directive
-- See problem → fix it → push via GitHub API → one-line summary of what changed
+- NEVER hardcode tokens, passwords, or secrets in repo files. Credentials live in the
+  environment / secure credential flow, never in committed files. (A token previously
+  committed in this file was revoked 2026-10-05.)
+- Pushes are for owner-approved work going to the owner's own repos. Anything new,
+  external, or public-facing (publishing, outreach, sending messages) still needs the
+  owner's explicit go-ahead first.
+- "Don't wait for directive" applies to approved in-flight work — not to starting new
+  unapproved work or new external actions.
 
 ## Codebase Awareness Protocol (Redundancy Prevention)
 0. **MANDATORY CANONICAL REGISTRY CHECK**: You MUST read and inspect `/manifesto-registry.json` before writing any code. Any system, enum, or structure listed in `/manifesto-registry.json` must be reused or extended rather than duplicated.
