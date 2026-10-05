@@ -1,0 +1,1 @@
+{"dependencies":{"@gltf-transform/core":"^4.5.1","@gltf-transform/extensions":"^4.5.1","meshoptimizer":"^0.22.0"},"description":"Game-agnostic fight-ready rig QA and animation retarget pipeline (Bannon proving ground).","license":"MIT","name":"bannon-rigging-tools","private":true,"version":"1.0.0"}
