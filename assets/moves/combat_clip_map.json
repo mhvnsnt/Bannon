@@ -6,637 +6,637 @@
  "clipsConsidered": 91,
  "map": {
   "APRON JAY KICK": {
-   "clip": "ApronJayKick",
+   "clip": "APRONJAYKICK",
    "limb": "KICK",
    "traj": "SPINNING",
    "score": 99,
    "exact": true
   },
   "APRON KNEE": {
-   "clip": "Illegal Knee",
+   "clip": "ILLEGAL_KNEE",
    "limb": "KNEE",
    "traj": "STRAIGHT",
    "score": 19
   },
   "ARMADA": {
-   "clip": "Au",
+   "clip": "AU",
    "limb": "LEFT KICK",
    "traj": "SPINNING",
    "score": 24
   },
   "ARMADA DUPLA": {
-   "clip": "Queshada 2",
+   "clip": "QUESHADA_2",
    "limb": "LEFT KICK",
    "traj": "SPINNING",
    "score": 24
   },
   "ARMADA SPIN": {
-   "clip": "Hurricane Kick",
+   "clip": "HURRICANE_KICK",
    "limb": "LEFT KICK",
    "traj": "SPINNING",
    "score": 19
   },
   "AU BATIDO": {
-   "clip": "Drop Kick (1)",
+   "clip": "DROP_KICK__1_",
    "limb": "RIGHT KICK",
    "traj": "FLYING",
    "score": 19
   },
   "AXE KICK": {
-   "clip": "Drop Kick",
+   "clip": "DROP_KICK",
    "limb": "RIGHT KICK",
    "traj": "OVERHAND",
    "score": 17
   },
   "BACK ELBOW": {
-   "clip": "Illegal Elbow Punch (1)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__1_",
    "limb": "ELBOW",
    "traj": "SPINNING",
    "score": 19
   },
   "BACK ELBOW \u00b7 CORNER": {
-   "clip": "Illegal Elbow Punch (2)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__2_",
    "limb": "LEFT ELBOW",
    "traj": "HOOK",
    "score": 16
   },
   "BACKFIST": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "RIGHT CROSS",
    "traj": "HOOK",
    "score": 12
   },
   "BASEBALL SLIDE \u00b7 TREE OF WOE": {
-   "clip": "FenceM-Kick",
+   "clip": "FENCEM_KICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 13
   },
   "BEARHUG SLAM": {
-   "clip": "OvreheadPress",
+   "clip": "OVREHEADPRESS",
    "limb": "HEADBUTT",
    "traj": "OVERHAND",
    "score": 8
   },
   "BENCAO": {
-   "clip": "Capoeira (1)",
+   "clip": "CAPOEIRA__1_",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 18
   },
   "BODY CROSS": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "RIGHT CROSS",
    "traj": "STRAIGHT",
    "score": 16
   },
   "BODY HOOK": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "LEFT HOOK",
    "traj": "HOOK",
    "score": 15
   },
   "BODY JAB": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "LEFT JAB",
    "traj": "STRAIGHT",
    "score": 14
   },
   "BODY KICK": {
-   "clip": "Drop Kick (1)",
+   "clip": "DROP_KICK__1_",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 16
   },
   "BODY KNEE": {
-   "clip": "Illegal Knee",
+   "clip": "ILLEGAL_KNEE",
    "limb": "KNEE",
    "traj": "STRAIGHT",
    "score": 18
   },
   "BODY RIP": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "RIGHT CROSS",
    "traj": "HOOK",
    "score": 13
   },
   "BODY UPPERCUT": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "RIGHT UPPERCUT",
    "traj": "UPPERCUT",
    "score": 12
   },
   "CHAPA": {
-   "clip": "Capoeira",
+   "clip": "CAPOEIRA",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 18
   },
   "CHAPA BAIXA": {
-   "clip": "Au",
+   "clip": "AU",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 17
   },
   "CHECK HOOK": {
-   "clip": "Combo Punch",
+   "clip": "COMBO_PUNCH",
    "limb": "LEFT HOOK",
    "traj": "HOOK",
    "score": 12
   },
   "CHOKESLAM HEX": {
-   "clip": "Chokeslam",
+   "clip": "CHOKESLAM",
    "limb": "",
    "traj": "",
    "score": 99,
    "exact": true
   },
   "CHOPPING ELBOW": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "limb": "ELBOW",
    "traj": "OVERHAND",
    "score": 19
   },
   "CLINCH KNEE": {
-   "clip": "Illegal Knee",
+   "clip": "ILLEGAL_KNEE",
    "limb": "KNEE",
    "traj": "STRAIGHT",
    "score": 17
   },
   "CLONE DROPKICK": {
-   "clip": "Drop Kick",
+   "clip": "DROP_KICK",
    "limb": "KICK",
    "traj": "STRAIGHT",
    "score": 99,
    "exact": true
   },
   "CLUBBING LEFT": {
-   "clip": "Combo Punch",
+   "clip": "COMBO_PUNCH",
    "limb": "LEFT JAB",
    "traj": "OVERHAND",
    "score": 11
   },
   "CLUBBING RIGHT": {
-   "clip": "Illegal Elbow Punch (1)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__1_",
    "limb": "RIGHT CROSS",
    "traj": "OVERHAND",
    "score": 11
   },
   "CROSS COUNTER": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "RIGHT CROSS",
    "traj": "STRAIGHT",
    "score": 11
   },
   "DESCENDING ELBOW": {
-   "clip": "Illegal Elbow Punch (2)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__2_",
    "limb": "ELBOW",
    "traj": "OVERHAND",
    "score": 18
   },
   "DOUBLE JAB": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "limb": "LEFT JAB",
    "traj": "STRAIGHT",
    "score": 11
   },
   "FIRE JAB": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "LEFT JAB",
    "traj": "STRAIGHT",
    "score": 10
   },
   "FIRE RAT SPIN": {
-   "clip": "Hurricane Kick",
+   "clip": "HURRICANE_KICK",
    "limb": "RIGHT KICK",
    "traj": "SPINNING",
    "score": 18
   },
   "FLICKER JAB": {
-   "clip": "Combo Punch",
+   "clip": "COMBO_PUNCH",
    "limb": "LEFT JAB",
    "traj": "STRAIGHT",
    "score": 10
   },
   "FLYING ELBOW": {
-   "clip": "Illegal Elbow Punch (1)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__1_",
    "limb": "ELBOW",
    "traj": "FLYING",
    "score": 17
   },
   "FLYING KICK": {
-   "clip": "Drop Kick (1)",
+   "clip": "DROP_KICK__1_",
    "limb": "RIGHT KICK",
    "traj": "FLYING",
    "score": 21
   },
   "FLYING KNEE": {
-   "clip": "Illegal Knee",
+   "clip": "ILLEGAL_KNEE",
    "limb": "KNEE",
    "traj": "FLYING",
    "score": 16
   },
   "FOREARM SMASH \u00b7 KIDNEYS": {
-   "clip": "Illegal Elbow Punch (2)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__2_",
    "limb": "RIGHT CROSS",
    "traj": "HOOKING",
    "score": 10
   },
   "FRONT KICK": {
-   "clip": "FenceM-Kick",
+   "clip": "FENCEM_KICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 16
   },
   "GAZELLE HOOK": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "limb": "LEFT HOOK",
    "traj": "HOOK",
    "score": 10
   },
   "GAZELLE UPPERCUT": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "LEFT UPPERCUT",
    "traj": "UPPERCUT",
    "score": 9
   },
   "GERMAN SUPLEX": {
-   "clip": "OvreheadPress",
+   "clip": "OVREHEADPRESS",
    "limb": "HEADBUTT",
    "traj": "OVERHAND",
    "score": 7
   },
   "GINGA CROSS": {
-   "clip": "Combo Punch",
+   "clip": "COMBO_PUNCH",
    "limb": "RIGHT CROSS",
    "traj": "STRAIGHT",
    "score": 9
   },
   "GINGA ELBOW": {
-   "clip": "Illegal Elbow Punch (1)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__1_",
    "limb": "ELBOW",
    "traj": "HOOK",
    "score": 16
   },
   "GINGA JAB": {
-   "clip": "Illegal Elbow Punch (2)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__2_",
    "limb": "LEFT JAB",
    "traj": "STRAIGHT",
    "score": 9
   },
   "GROUND POUND": {
-   "clip": "Brutal Assassination",
+   "clip": "BRUTAL_ASSASSINATION",
    "limb": "RIGHT CROSS",
    "traj": "OVERHAND",
    "score": 9
   },
   "GROUND STOMP": {
-   "clip": "Capoeira (1)",
+   "clip": "CAPOEIRA__1_",
    "limb": "RIGHT KICK",
    "traj": "OVERHAND",
    "score": 17
   },
   "HAMMERFIST": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "limb": "RIGHT CROSS",
    "traj": "OVERHAND",
    "score": 9
   },
   "HAMMERLOCK DDT": {
-   "clip": "HammerlockDDT",
+   "clip": "HAMMERLOCKDDT",
    "limb": "",
    "traj": "",
    "score": 99,
    "exact": true
   },
   "HANGING STOMP \u00b7 TREE OF WOE": {
-   "clip": "JayKick",
+   "clip": "JAYKICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 13
   },
   "HAYMAKER": {
-   "clip": "Combo Punch",
+   "clip": "COMBO_PUNCH",
    "limb": "RIGHT CROSS",
    "traj": "HOOK",
    "score": 8
   },
   "HEAD KICK": {
-   "clip": "Drop Kick",
+   "clip": "DROP_KICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 15
   },
   "HEAD KNEE": {
-   "clip": "Illegal Knee",
+   "clip": "ILLEGAL_KNEE",
    "limb": "KNEE",
    "traj": "UPPERCUT",
    "score": 15
   },
   "HEADCRACK": {
-   "clip": "Illegal Elbow Punch (1)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__1_",
    "limb": "ELBOW",
    "traj": "OVERHAND",
    "score": 11
   },
   "HELLHOOK UPPERCUT": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "RIGHT UPPERCUT",
    "traj": "HOOK",
    "score": 8
   },
   "HOTSHOT SNAP": {
-   "clip": "Illegal Elbow Punch (2)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__2_",
    "limb": "RIGHT CROSS",
    "traj": "HOOKING",
    "score": 8
   },
   "JABBING TEEP": {
-   "clip": "StereoSuperkick",
+   "clip": "STEREOSUPERKICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 13
   },
   "JAY KICK": {
-   "clip": "JayKick",
+   "clip": "JAYKICK",
    "limb": "KICK",
    "traj": "SPINNING",
    "score": 99,
    "exact": true
   },
   "JOELHADA": {
-   "clip": "Capoeira",
+   "clip": "CAPOEIRA",
    "limb": "KNEE",
    "traj": "STRAIGHT",
    "score": 11
   },
   "KNIFE HAND": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "limb": "RIGHT CROSS",
    "traj": "STRAIGHT",
    "score": 8
   },
   "KNIFE-EDGE CHOP \u00b7 CORNER": {
-   "clip": "Combo Punch",
+   "clip": "COMBO_PUNCH",
    "limb": "LEFT JAB",
    "traj": "HOOK",
    "score": 7
   },
   "LEAD BACKFIST": {
-   "clip": "Illegal Elbow Punch (1)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__1_",
    "limb": "RIGHT CROSS",
    "traj": "HOOK",
    "score": 7
   },
   "LEAD CALF KICK": {
-   "clip": "FenceM-Kick",
+   "clip": "FENCEM_KICK",
    "limb": "LEFT KICK",
    "traj": "SWEEP",
    "score": 15
   },
   "LEAD ELBOW": {
-   "clip": "Illegal Elbow Punch (2)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__2_",
    "limb": "ELBOW",
    "traj": "HOOK",
    "score": 14
   },
   "LEAD HOOK": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "RIGHT CROSS",
    "traj": "HOOK",
    "score": 7
   },
   "LEAD UPPERCUT": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "limb": "LEFT UPPERCUT",
    "traj": "UPPERCUT",
    "score": 7
   },
   "LEFT HOOK": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "limb": "LEFT HOOK",
    "traj": "HOOK",
    "score": 6
   },
   "LEO CROSS": {
-   "clip": "Combo Punch",
+   "clip": "COMBO_PUNCH",
    "limb": "RIGHT CROSS",
    "traj": "STRAIGHT",
    "score": 6
   },
   "LIVER SHOT": {
-   "clip": "Illegal Elbow Punch (1)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__1_",
    "limb": "LEFT HOOK",
    "traj": "HOOK",
    "score": 6
   },
   "LOW KICK": {
-   "clip": "Hurricane Kick",
+   "clip": "HURRICANE_KICK",
    "limb": "RIGHT KICK",
    "traj": "SWEEP",
    "score": 15
   },
   "MACACO": {
-   "clip": "StereoSuperkick",
+   "clip": "STEREOSUPERKICK",
    "limb": "LEFT KICK",
    "traj": "FLYING",
    "score": 18
   },
   "MARTELO": {
-   "clip": "TagSuperkick",
+   "clip": "TAGSUPERKICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 13
   },
   "MEIA LUA": {
-   "clip": "Queshada 2",
+   "clip": "QUESHADA_2",
    "limb": "LEFT KICK",
    "traj": "SPINNING",
    "score": 23
   },
   "MEIA LUA DE COMPASSO": {
-   "clip": "Au",
+   "clip": "AU",
    "limb": "RIGHT KICK",
    "traj": "SPINNING",
    "score": 22
   },
   "MEIA LUA DE FRENTE": {
-   "clip": "Capoeira (1)",
+   "clip": "CAPOEIRA__1_",
    "limb": "RIGHT KICK",
    "traj": "HOOK",
    "score": 16
   },
   "MUDHOLE STOMP \u00b7 CORNER": {
-   "clip": "ApronJayKick",
+   "clip": "APRONJAYKICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 12
   },
   "NECKBREAKER": {
-   "clip": "OvreheadPress",
+   "clip": "OVREHEADPRESS",
    "limb": "HEADBUTT",
    "traj": "OVERHAND",
    "score": 6
   },
   "NEGATIVA KICK": {
-   "clip": "Capoeira",
+   "clip": "CAPOEIRA",
    "limb": "LEFT KICK",
    "traj": "SWEEP",
    "score": 16
   },
   "OBLIQUE KICK": {
-   "clip": "Drop Kick (1)",
+   "clip": "DROP_KICK__1_",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 14
   },
   "OVER-THE-ROPE FOREARM": {
-   "clip": "Illegal Elbow Punch (2)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__2_",
    "limb": "LEFT JAB",
    "traj": "OVERHAND",
    "score": 6
   },
   "OVERHAND BOMB": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "limb": "RIGHT CROSS",
    "traj": "OVERHAND",
    "score": 6
   },
   "PARAFUSO": {
-   "clip": "Queshada 2",
+   "clip": "QUESHADA_2",
    "limb": "RIGHT KICK",
    "traj": "SPINNING",
    "score": 22
   },
   "PISAO": {
-   "clip": "Au",
+   "clip": "AU",
    "limb": "RIGHT KICK",
    "traj": "OVERHAND",
    "score": 15
   },
   "PONTEIRA": {
-   "clip": "TagSuperkick",
+   "clip": "TAGSUPERKICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 12
   },
   "PUSH KICK": {
-   "clip": "Drop Kick",
+   "clip": "DROP_KICK",
    "limb": "LEFT KICK",
    "traj": "STRAIGHT",
    "score": 14
   },
   "QUEIXADA": {
-   "clip": "ApronJayKick",
+   "clip": "APRONJAYKICK",
    "limb": "LEFT KICK",
    "traj": "HOOK",
    "score": 11
   },
   "QUESTION MARK KICK": {
-   "clip": "FenceM-Kick",
+   "clip": "FENCEM_KICK",
    "limb": "RIGHT KICK",
    "traj": "HOOK",
    "score": 14
   },
   "RASTEIRA": {
-   "clip": "JayKick",
+   "clip": "JAYKICK",
    "limb": "RIGHT KICK",
    "traj": "SWEEP",
    "score": 11
   },
   "RAT SWEEP": {
-   "clip": "StereoSuperkick",
+   "clip": "STEREOSUPERKICK",
    "limb": "LEFT KICK",
    "traj": "SWEEP",
    "score": 11
   },
   "RELAMPAGO": {
-   "clip": "Queshada 2",
+   "clip": "QUESHADA_2",
    "limb": "RIGHT KICK",
    "traj": "SPINNING",
    "score": 21
   },
   "REVERSE PUNCH": {
-   "clip": "Combo Punch",
+   "clip": "COMBO_PUNCH",
    "limb": "RIGHT CROSS",
    "traj": "STRAIGHT",
    "score": 9
   },
   "ROLE KICK": {
-   "clip": "Capoeira (1)",
+   "clip": "CAPOEIRA__1_",
    "limb": "RIGHT KICK",
    "traj": "SWEEP",
    "score": 15
   },
   "SAG KNEE": {
-   "clip": "Illegal Knee",
+   "clip": "ILLEGAL_KNEE",
    "limb": "KNEE",
    "traj": "STRAIGHT",
    "score": 14
   },
   "SHORT ELBOW": {
-   "clip": "Illegal Elbow Punch (1)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__1_",
    "limb": "ELBOW",
    "traj": "HOOK",
    "score": 12
   },
   "SIDE KICK": {
-   "clip": "Hurricane Kick",
+   "clip": "HURRICANE_KICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 14
   },
   "SLIDING DROPKICK \u00b7 DRAPED": {
-   "clip": "TagSuperkick",
+   "clip": "TAGSUPERKICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 11
   },
   "SPIN HOOK KICK": {
-   "clip": "Hurricane Kick",
+   "clip": "HURRICANE_KICK",
    "limb": "LEFT KICK",
    "traj": "SPINNING",
    "score": 19
   },
   "SPINNING ELBOW": {
-   "clip": "Illegal Elbow Punch (2)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__2_",
    "limb": "ELBOW",
    "traj": "SPINNING",
    "score": 12
   },
   "SPINNING HEEL KICK": {
-   "clip": "Hurricane Kick",
+   "clip": "HURRICANE_KICK",
    "limb": "RIGHT KICK",
    "traj": "SPINNING",
    "score": 18
   },
   "STEREO SUPERKICK": {
-   "clip": "StereoSuperkick",
+   "clip": "STEREOSUPERKICK",
    "limb": "KICK",
    "traj": "STRAIGHT",
    "score": 99,
    "exact": true
   },
   "STOMP": {
-   "clip": "ApronJayKick",
+   "clip": "APRONJAYKICK",
    "limb": "RIGHT KICK",
    "traj": "OVERHAND",
    "score": 7
   },
   "SUPERMAN PUNCH": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "limb": "RIGHT CROSS",
    "traj": "FLYING",
    "score": 9
   },
   "SWITCH KICK": {
-   "clip": "Drop Kick (1)",
+   "clip": "DROP_KICK__1_",
    "limb": "LEFT KICK",
    "traj": "FLYING",
    "score": 19
   },
   "TAG SUPERKICK": {
-   "clip": "TagSuperkick",
+   "clip": "TAGSUPERKICK",
    "limb": "KICK",
    "traj": "STRAIGHT",
    "score": 99,
@@ -650,38 +650,38 @@
    "src": "owner capture (exact move)"
   },
   "TOMBSTONE DRIVER": {
-   "clip": "Tombstone",
+   "clip": "TOMBSTONE",
    "limb": "",
    "traj": "",
    "score": 99,
    "exact": true
   },
   "TORNADO KICK": {
-   "clip": "Hurricane Kick",
+   "clip": "HURRICANE_KICK",
    "limb": "LEFT KICK",
    "traj": "SPINNING",
    "score": 16
   },
   "TREE-OF-WOE STOMP": {
-   "clip": "JayKick",
+   "clip": "JAYKICK",
    "limb": "RIGHT KICK",
    "traj": "STRAIGHT",
    "score": 10
   },
   "TWELVE-SIX ELBOW": {
-   "clip": "Illegal Elbow Punch (1)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__1_",
    "limb": "ELBOW",
    "traj": "OVERHAND",
    "score": 11
   },
   "UP ELBOW": {
-   "clip": "Illegal Elbow Punch (2)",
+   "clip": "ILLEGAL_ELBOW_PUNCH__2_",
    "limb": "ELBOW",
    "traj": "UPPERCUT",
    "score": 11
   },
   "VIOLENCE PARTY": {
-   "clip": "ViolenceParty",
+   "clip": "VIOLENCEPARTY",
    "limb": "ELBOW",
    "traj": "HOOK",
    "score": 99,

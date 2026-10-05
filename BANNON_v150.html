@@ -463,6 +463,8 @@ window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10
 <script src="assets/vendor/GLTFLoader.js"></script>
 <script>if(typeof THREE!=='undefined'&&!THREE.GLTFLoader){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');}</script>
 <script>if(typeof THREE!=='undefined'&&!THREE.GLTFLoader){document.write('<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');}</script>
+<!-- KAYKIT CROWD + ARENA PROPS (CC0 — convergence imports #1/#2, docs/SOURCE_REGISTRY.md) -->
+<script src="assets/js/bannon_kaykit.js"></script>
 <!-- MESHOPT DECODER (meshoptimizer, MIT, vendored — never a CDN, same reason as three.js).
      Our character rigs are the single biggest thing the phone has to move: 361 MB of GLB across the
      roster, and BANNON_rigged alone was 11.5 MB of which only 1% is texture — the rest is raw
@@ -7052,19 +7054,19 @@ window.CHAR_ALT_MODELS = {
   // model's beard was far thicker than his. The bearded one is kept as an attire rather than
   // deleted (owner LAW: never drop generated content), and it also measures worse: skinqa 0.1361
   // FAIL against the no-beard body's 0.1133 WEAK, same donor rig, same pipeline.
-  JAGER:           [ {id:'JAGER_beard',label:'Bearded',url:'assets/models/JAGER_beard.glb'} ],
-  CAIN_ELIAS:      [ {id:'CAIN_ELIAS_ring',label:'Ring Gear',url:'assets/models/CAIN_ELIAS_ring.glb'}, {id:'CAIN_ELIAS_snakeskin',label:'Snakeskin',url:'assets/models/CAIN_ELIAS_snakeskin.glb'}, {id:'CAIN_ELIAS_godwithin',label:'God Within',url:'assets/models/CAIN_ELIAS_godwithin.glb'} ],
-  CIPHER:          [ {id:'CIPHER_minion',label:'Minion',url:'assets/models/CIPHER_minion.glb'}, {id:'CIPHER_feral',label:'Feral',url:'assets/models/CIPHER_feral.glb'} ],
-  CODY:            [ {id:'CODY_sober',label:'Sober',url:'assets/models/CODY_sober.glb'}, {id:'CODY_stressed',label:'Stressed',url:'assets/models/CODY_stressed.glb'} ],
-  EDWIN_KENNEDY:   [ {id:'EDWIN_KENNEDY_unchained',label:'Unchained',url:'assets/models/EDWIN_KENNEDY_unchained.glb'} ],
-  MASTER_SENSEI:   [ {id:'MASTER_SENSEI_rose',label:'Rose',url:'assets/models/MASTER_SENSEI_rose.glb'} ],
-  ONYX:            [ {id:'ONYX_corset',label:'Corset',url:'assets/models/ONYX_corset.glb'}, {id:'ONYX_straightjacket',label:'Straightjacket',url:'assets/models/ONYX_straightjacket.glb'}, {id:'ONYX_street',label:'Street',url:'assets/models/ONYX_street.glb'} ],
-  PABLO:           [ {id:'PABLO_goldenbull',label:'Golden Bull',url:'assets/models/PABLO_goldenbull.glb'}, {id:'PABLO_blackreign',label:'Black Reign',url:'assets/models/PABLO_blackreign.glb'} ],
-  STATIC:          [ {id:'STATIC_alt',label:'Attire 2',url:'assets/models/STATIC_alt.glb'} ],
-  TITAN:           [ {id:'TITAN_unmasked',label:'Unmasked',url:'assets/models/TITAN_unmasked.glb'}, {id:'TITAN_white',label:'White',url:'assets/models/TITAN_white.glb'} ],
-  TRIPLE_XXX:      [ {id:'TRIPLE_XXX_trunks',label:'Trunks',url:'assets/models/TRIPLE_XXX_trunks.glb'}, {id:'TRIPLE_XXX_tights',label:'Tights',url:'assets/models/TRIPLE_XXX_tights.glb'}, {id:'TRIPLE_XXX_suit',label:'Suit',url:'assets/models/TRIPLE_XXX_suit.glb'} ],
-  TYNESHIA:        [ {id:'TYNESHIA_street',label:'Street',url:'assets/models/TYNESHIA_street.glb'} ],
-  WRECK_PATTERSON: [ {id:'WRECK_PATTERSON_attire2',label:'Attire 2',url:'assets/models/WRECK_PATTERSON_attire2.glb'}, {id:'WRECK_PATTERSON_attire3',label:'Attire 3',url:'assets/models/WRECK_PATTERSON_attire3.glb'}, {id:'WRECK_PATTERSON_godwithin',label:'God Within',url:'assets/models/WRECK_PATTERSON_godwithin.glb'} ]
+  JAGER:           [ {id:'JAGER_beard',label:'Bearded',url:'assets/models/JAGER_beard_repaired.glb'} ],
+  CAIN_ELIAS:      [ {id:'CAIN_ELIAS_ring',label:'Ring Gear',url:'assets/models/CAIN_ELIAS_ring_repaired.glb'}, {id:'CAIN_ELIAS_snakeskin',label:'Snakeskin',url:'assets/models/CAIN_ELIAS_snakeskin_repaired.glb'}, {id:'CAIN_ELIAS_godwithin',label:'God Within',url:'assets/models/CAIN_ELIAS_godwithin_repaired.glb'} ],
+  CIPHER:          [ {id:'CIPHER_minion',label:'Minion',url:'assets/models/CIPHER_minion_repaired.glb'}, {id:'CIPHER_feral',label:'Feral',url:'assets/models/CIPHER_feral_v2.glb'} ],
+  CODY:            [ {id:'CODY_sober',label:'Sober',url:'assets/models/CODY_sober_repaired.glb'}, {id:'CODY_stressed',label:'Stressed',url:'assets/models/CODY_stressed_repaired.glb'} ],
+  EDWIN_KENNEDY:   [ {id:'EDWIN_KENNEDY_unchained',label:'Unchained',url:'assets/models/EDWIN_KENNEDY_unchained_v2.glb'} ],
+  MASTER_SENSEI:   [ {id:'MASTER_SENSEI_rose',label:'Rose',url:'assets/models/MASTER_SENSEI_rose_repaired.glb'} ],
+  ONYX:            [ {id:'ONYX_corset',label:'Corset',url:'assets/models/ONYX_corset_repaired.glb'}, {id:'ONYX_straightjacket',label:'Straightjacket',url:'assets/models/ONYX_straightjacket_repaired.glb'}, {id:'ONYX_street',label:'Street',url:'assets/models/ONYX_street_repaired.glb'} ],
+  PABLO:           [ {id:'PABLO_goldenbull',label:'Golden Bull',url:'assets/models/PABLO_goldenbull_repaired.glb'}, {id:'PABLO_blackreign',label:'Black Reign',url:'assets/models/PABLO_blackreign_repaired.glb'} ],
+  STATIC:          [ {id:'STATIC_alt',label:'Attire 2',url:'assets/models/STATIC_alt_repaired.glb'} ],
+  TITAN:           [ {id:'TITAN_unmasked',label:'Unmasked',url:'assets/models/TITAN_unmasked_repaired.glb'}, {id:'TITAN_white',label:'White',url:'assets/models/TITAN_white_v2.glb'} ],
+  TRIPLE_XXX:      [ {id:'TRIPLE_XXX_trunks',label:'Trunks',url:'assets/models/TRIPLE_XXX_trunks_repaired.glb'}, {id:'TRIPLE_XXX_tights',label:'Tights',url:'assets/models/TRIPLE_XXX_tights_repaired.glb'}, {id:'TRIPLE_XXX_suit',label:'Suit',url:'assets/models/TRIPLE_XXX_suit_repaired.glb'} ],
+  TYNESHIA:        [ {id:'TYNESHIA_street',label:'Street',url:'assets/models/TYNESHIA_street_repaired.glb'} ],
+  WRECK_PATTERSON: [ {id:'WRECK_PATTERSON_attire2',label:'Attire 2',url:'assets/models/WRECK_PATTERSON_attire2_repaired.glb'}, {id:'WRECK_PATTERSON_attire3',label:'Attire 3',url:'assets/models/WRECK_PATTERSON_attire3_repaired.glb'}, {id:'WRECK_PATTERSON_godwithin',label:'God Within',url:'assets/models/WRECK_PATTERSON_godwithin_repaired.glb'} ]
 };
 window.altModelUrl = function(charKey, altId){ const list=(window.CHAR_ALT_MODELS||{})[String(charKey||'').toUpperCase()]||[]; const e=list.find(a=>a.id===altId); return e?e.url:null; };
 window.altsFor = function(name){
@@ -12604,10 +12606,13 @@ function buildArena(){
     // mid-distance
     buildCrowdBand(55,-12,-8, -12,12, 0.34,0.58, 0.05, false, false);
     // near rows — heads + phones + signs
-    buildCrowdBand(38,-8, -5.5,-11,11, 0.38,0.64, 0.10, true,  true);
+    // CONVERGENCE #1: the KayKit crowd takes the front row (z=-6.0) and the inner end
+    // columns (x=±6.9); the instanced bands shrink to sit behind, not inside, the real fans.
+    var _kk = (typeof window.BANNON_KAYKIT!=='undefined' && window.BANNON_KAYKIT.slots) ? 1 : 0;
+    buildCrowdBand(_kk?30:38,-8, _kk?-6.7:-5.5,-11,11, 0.38,0.64, 0.10, true,  true);
     // end-side bands (facing camera, most visible)
-    buildCrowdBand(32,-7, 6, -13,-7.5, 0.40,0.66, 0.12, true,  true);
-    buildCrowdBand(32,-7, 6,   7.5,13, 0.40,0.66, 0.12, true,  true);
+    buildCrowdBand(_kk?26:32,-7, 6, -13,_kk?-8.0:-7.5, 0.40,0.66, 0.12, true,  true);
+    buildCrowdBand(_kk?26:32,-7, 6,   _kk?8.0:7.5,13, 0.40,0.66, 0.12, true,  true);
 
     // bake the spec into InstancedMeshes — SECTOR-SPLIT for real frustum culling. One IM per kind
     // per 90° sector around ring center (max 20, typically ~14 non-empty). r128 culls an
@@ -12644,6 +12649,8 @@ function buildArena(){
       arenaGroup.add(im); window.__crowdIMs.push(im);
     }
     window.__crowdMembers=_cMembers;
+    // CONVERGENCE #1/#2: KayKit crowd + arena props (CC0 — docs/SOURCE_REGISTRY.md rows 1-2)
+    try{ if(window.BANNON_KAYKIT) window.BANNON_KAYKIT.init(arenaGroup); }catch(e){ try{console.warn('[kaykit] init failed', e);}catch(_){} }
   }
 
   // LIGHTS — WWE 2K / UFC broadcast grade:
@@ -12995,6 +13002,8 @@ window.crowdReaction = function(intensity){
 function updateArenaAnim(t){
   // hype bleeds off over ~1.5s so a pop reads as a surge, not a permanent state
   if (window.__crowdHype > 0) window.__crowdHype = Math.max(0, window.__crowdHype - 0.011);
+  // CONVERGENCE #1: KayKit crowd mixers (Idle -> Cheer on hype)
+  try{ if(window.BANNON_KAYKIT) window.BANNON_KAYKIT.update(t, 0.016); }catch(e){}
   const _hype = window.__crowdHype || 0;
   const _amp = 0.08 * (1 + _hype * 2.4);      // out of their seats on a big moment
   const _spd = 1 + _hype * 1.6;               // and faster
@@ -15960,8 +15969,8 @@ const MODEL_LIBRARY = [
   // auto-rig binds to the fight skeleton — these are the correct AAA attires for the canon leads.
   // Identity verified by baked texture: BANNON = steel mask + blond dreads + vale tudo trunks;
   // MAIME = white skull facepaint + jeans/chains; MAIME (Tattered) = skull paint + tattered graphics.
-  { name:'BANNON (canon)', url:'assets/models/BANNON.glb', charKey:'BANNON' },
-  { name:'MAIME (canon)', url:'assets/models/MAIME.glb', charKey:'MAIME' },
+  { name:'BANNON (canon)', url:'assets/models/BANNON_repaired.glb', charKey:'BANNON' },
+  { name:'MAIME (canon)', url:'assets/models/MAIME_repaired.glb', charKey:'MAIME' },
   { name:'MAIME · Tattered', url:'assets/models/MAIME_tattered.glb', charKey:'MAIME' },
   // ONYX (new canon character) — darker-skinned woman, white chola/vamp facepaint, spiked corset.
   // *_skinned versions from OUR auto-rigger (tools/rigready/skin.cjs): ONE continuous mesh + 16-bone
@@ -15972,55 +15981,55 @@ const MODEL_LIBRARY = [
   { name:'CODY · Wrestling Gear', url:'assets/models/CODY_gear_skinned.glb', charKey:'CODY_CALLAHAN' },
   // CAIN ELIAS "The Executioner" (canon, owner-made) — Undertaker-inspired: leather coat/tie entrance
   // gear + snakeskin-pants street attire. Auto-skinned (v4.2) from the owner's Tripo uploads.
-  { name:'CAIN ELIAS · Ring/Entrance', url:'assets/models/CAIN_ELIAS_ring.glb', charKey:'CAIN_ELIAS' },
-  { name:'CAIN ELIAS · Snakeskin', url:'assets/models/CAIN_ELIAS_snakeskin.glb', charKey:'CAIN_ELIAS' },
-  { name:'STICK-UP · Jackboy', url:'assets/models/STICKUP.glb', charKey:'STICK_UP' },
-  { name:'CIPHER', url:'assets/models/CIPHER.glb', charKey:'CIPHER' },
-  { name:'ECHO', url:'assets/models/ECHO.glb', charKey:'ECHO' },
-  { name:'ONYX · Street', url:'assets/models/ONYX_street.glb', charKey:'ONYX' },
-  { name:'ONYX · Straightjacket', url:'assets/models/ONYX_straightjacket.glb', charKey:'ONYX' },
-  { name:'CODY · Sober', url:'assets/models/CODY_sober.glb', charKey:'CODY_CALLAHAN' },
-  { name:'CODY · Stressed', url:'assets/models/CODY_stressed.glb', charKey:'CODY_CALLAHAN' },
+  { name:'CAIN ELIAS · Ring/Entrance', url:'assets/models/CAIN_ELIAS_ring_repaired.glb', charKey:'CAIN_ELIAS' },
+  { name:'CAIN ELIAS · Snakeskin', url:'assets/models/CAIN_ELIAS_snakeskin_repaired.glb', charKey:'CAIN_ELIAS' },
+  { name:'STICK-UP · Jackboy', url:'assets/models/STICKUP_repaired.glb', charKey:'STICK_UP' },
+  { name:'CIPHER', url:'assets/models/CIPHER_repaired.glb', charKey:'CIPHER' },
+  { name:'ECHO', url:'assets/models/ECHO_repaired.glb', charKey:'ECHO' },
+  { name:'ONYX · Street', url:'assets/models/ONYX_street_repaired.glb', charKey:'ONYX' },
+  { name:'ONYX · Straightjacket', url:'assets/models/ONYX_straightjacket_repaired.glb', charKey:'ONYX' },
+  { name:'CODY · Sober', url:'assets/models/CODY_sober_repaired.glb', charKey:'CODY_CALLAHAN' },
+  { name:'CODY · Stressed', url:'assets/models/CODY_stressed_repaired.glb', charKey:'CODY_CALLAHAN' },
   // CIPHER alt attires (owner-made, Onyx's stable) + CAIN ELIAS wrestling gear — auto-skinned v4.2.
-  { name:'CIPHER · Minion', url:'assets/models/CIPHER_minion.glb', charKey:'CIPHER' },
-  { name:'CIPHER · Feral', url:'assets/models/CIPHER_feral.glb', charKey:'CIPHER' },
-  { name:'CAIN ELIAS · Wrestling Gear', url:'assets/models/CAIN_ELIAS_gear.glb', charKey:'CAIN_ELIAS' },
+  { name:'CIPHER · Minion', url:'assets/models/CIPHER_minion_repaired.glb', charKey:'CIPHER' },
+  { name:'CIPHER · Feral', url:'assets/models/CIPHER_feral_v2.glb', charKey:'CIPHER' },
+  { name:'CAIN ELIAS · Wrestling Gear', url:'assets/models/CAIN_ELIAS_gear_repaired.glb', charKey:'CAIN_ELIAS' },
   // 2026-07-12 owner drops: HALL NIGHTER (Book 6 canon, Showstopper/HBK archetype) + STATIC
   // (game-only, Onyx's stable — Enzo-style motor-mouth spitfire) with alt attire.
-  { name:'HALL NIGHTER (canon)', url:'assets/models/HALL_NIGHTER.glb', charKey:'HALL_NIGHTER' },
-  { name:'STATIC', url:'assets/models/STATIC.glb', charKey:'STATIC' },
-  { name:'STATIC · Attire 2', url:'assets/models/STATIC_alt.glb', charKey:'STATIC' },
+  { name:'HALL NIGHTER (canon)', url:'assets/models/HALL_NIGHTER_repaired.glb', charKey:'HALL_NIGHTER' },
+  { name:'STATIC', url:'assets/models/STATIC_repaired.glb', charKey:'STATIC' },
+  { name:'STATIC · Attire 2', url:'assets/models/STATIC_alt_repaired.glb', charKey:'STATIC' },
   // 2026-07-13 owner drop — new canon + stable models (auto-skinned v4.2, multi-attire):
-  { name:'HOLLOW', url:'assets/models/HOLLOW.glb', charKey:'HOLLOW' },
-  { name:'EDWIN KENNEDY · Mustached Mogul', url:'assets/models/EDWIN_KENNEDY.glb', charKey:'EDWIN_KENNEDY' },
-  { name:'EDWIN KENNEDY · Unchained', url:'assets/models/EDWIN_KENNEDY_unchained.glb', charKey:'EDWIN_KENNEDY' },
-  { name:'PABLO · Minotaur (painted)', url:'assets/models/PABLO.glb', charKey:'PABLO' },
-  { name:'PABLO · Golden Bull', url:'assets/models/PABLO_goldenbull.glb', charKey:'PABLO' },
-  { name:'PABLO · Black Reign', url:'assets/models/PABLO_blackreign.glb', charKey:'PABLO' },
-  { name:'QUEEN TYNESHIA · Ring Gear', url:'assets/models/TYNESHIA.glb', charKey:'QUEEN_TYNESHIA' },
-  { name:'QUEEN TYNESHIA · Street/Manager', url:'assets/models/TYNESHIA_street.glb', charKey:'QUEEN_TYNESHIA' },
-  { name:'TRIPLE XXX · Attire 1', url:'assets/models/TRIPLE_XXX.glb', charKey:'TRIPLE_XXX' },
-  { name:'TRIPLE XXX · Blue Tights', url:'assets/models/TRIPLE_XXX_tights.glb', charKey:'TRIPLE_XXX' },
-  { name:'TRIPLE XXX · Blue Trunks', url:'assets/models/TRIPLE_XXX_trunks.glb', charKey:'TRIPLE_XXX' },
-  { name:'TRIPLE XXX · Suit/Manager', url:'assets/models/TRIPLE_XXX_suit.glb', charKey:'TRIPLE_XXX' },
-  { name:'EL TORO DE ORO · Matador', url:'assets/models/EL_TORO_DE_ORO.glb', charKey:'EL_TORO_DE_ORO' },
-  { name:'STAN "HONEY" COMBS · Ring Gear', url:'assets/models/STAN_COMBS_gear.glb', charKey:'STAN_COMBS' },
+  { name:'HOLLOW', url:'assets/models/HOLLOW_repaired.glb', charKey:'HOLLOW' },
+  { name:'EDWIN KENNEDY · Mustached Mogul', url:'assets/models/EDWIN_KENNEDY_repaired.glb', charKey:'EDWIN_KENNEDY' },
+  { name:'EDWIN KENNEDY · Unchained', url:'assets/models/EDWIN_KENNEDY_unchained_v2.glb', charKey:'EDWIN_KENNEDY' },
+  { name:'PABLO · Minotaur (painted)', url:'assets/models/PABLO_repaired.glb', charKey:'PABLO' },
+  { name:'PABLO · Golden Bull', url:'assets/models/PABLO_goldenbull_repaired.glb', charKey:'PABLO' },
+  { name:'PABLO · Black Reign', url:'assets/models/PABLO_blackreign_repaired.glb', charKey:'PABLO' },
+  { name:'QUEEN TYNESHIA · Ring Gear', url:'assets/models/TYNESHIA_repaired.glb', charKey:'QUEEN_TYNESHIA' },
+  { name:'QUEEN TYNESHIA · Street/Manager', url:'assets/models/TYNESHIA_street_repaired.glb', charKey:'QUEEN_TYNESHIA' },
+  { name:'TRIPLE XXX · Attire 1', url:'assets/models/TRIPLE_XXX_repaired.glb', charKey:'TRIPLE_XXX' },
+  { name:'TRIPLE XXX · Blue Tights', url:'assets/models/TRIPLE_XXX_tights_repaired.glb', charKey:'TRIPLE_XXX' },
+  { name:'TRIPLE XXX · Blue Trunks', url:'assets/models/TRIPLE_XXX_trunks_repaired.glb', charKey:'TRIPLE_XXX' },
+  { name:'TRIPLE XXX · Suit/Manager', url:'assets/models/TRIPLE_XXX_suit_repaired.glb', charKey:'TRIPLE_XXX' },
+  { name:'EL TORO DE ORO · Matador', url:'assets/models/EL_TORO_DE_ORO_repaired.glb', charKey:'EL_TORO_DE_ORO' },
+  { name:'STAN "HONEY" COMBS · Ring Gear', url:'assets/models/STAN_COMBS_gear_repaired.glb', charKey:'STAN_COMBS' },
   // 2026-07-14 owner drop — new + game-only fighters (auto-skinned v4.4 A-pose rigger, decimated):
   { name:'VIPER · Default', url:'assets/models/VIPER.glb', charKey:'VIPER' },
-  { name:'BRUTUS', url:'assets/models/BRUTUS.glb', charKey:'BRUTUS' },
-  { name:'TITAN · Attire 1', url:'assets/models/TITAN.glb', charKey:'TITAN' },
-  { name:'TITAN · White/Masked', url:'assets/models/TITAN_white.glb', charKey:'TITAN' },
-  { name:'TITAN · Unmasked', url:'assets/models/TITAN_unmasked.glb', charKey:'TITAN' },
+  { name:'BRUTUS', url:'assets/models/BRUTUS_repaired.glb', charKey:'BRUTUS' },
+  { name:'TITAN · Attire 1', url:'assets/models/TITAN_v2.glb', charKey:'TITAN' },
+  { name:'TITAN · White/Masked', url:'assets/models/TITAN_white_v2.glb', charKey:'TITAN' },
+  { name:'TITAN · Unmasked', url:'assets/models/TITAN_unmasked_repaired.glb', charKey:'TITAN' },
   { name:'KOBRA', url:'assets/models/KOBRA.glb', charKey:'KOBRA' },
-  { name:'MASTER SENSEI · Sauce', url:'assets/models/MASTER_SENSEI.glb', charKey:'MASTER_SENSEI' },
-  { name:'MASTER SENSEI · Rose', url:'assets/models/MASTER_SENSEI_rose.glb', charKey:'MASTER_SENSEI' },
+  { name:'MASTER SENSEI · Sauce', url:'assets/models/MASTER_SENSEI_repaired.glb', charKey:'MASTER_SENSEI' },
+  { name:'MASTER SENSEI · Rose', url:'assets/models/MASTER_SENSEI_rose_repaired.glb', charKey:'MASTER_SENSEI' },
   { name:'WRECK PATTERSON · Default', url:'assets/models/WRECK_PATTERSON.glb', charKey:'WRECK_PATTERSON' },
-  { name:'WRECK PATTERSON · Title Tee', url:'assets/models/WRECK_PATTERSON_attire2.glb', charKey:'WRECK_PATTERSON' },
-  { name:'WRECK PATTERSON · Graphic Tee', url:'assets/models/WRECK_PATTERSON_attire3.glb', charKey:'WRECK_PATTERSON' },
-  { name:'WRECK PATTERSON · God Within', url:'assets/models/WRECK_PATTERSON_godwithin.glb', charKey:'WRECK_PATTERSON' },
-  { name:'FINXSSE · NPC (No Problem Crashin)', url:'assets/models/NPC_FINXSSE.glb', charKey:'FINXSSE' },
+  { name:'WRECK PATTERSON · Title Tee', url:'assets/models/WRECK_PATTERSON_attire2_repaired.glb', charKey:'WRECK_PATTERSON' },
+  { name:'WRECK PATTERSON · Graphic Tee', url:'assets/models/WRECK_PATTERSON_attire3_repaired.glb', charKey:'WRECK_PATTERSON' },
+  { name:'WRECK PATTERSON · God Within', url:'assets/models/WRECK_PATTERSON_godwithin_repaired.glb', charKey:'WRECK_PATTERSON' },
+  { name:'FINXSSE · NPC (No Problem Crashin)', url:'assets/models/NPC_FINXSSE_repaired.glb', charKey:'FINXSSE' },
   { name:'AARON RUBEN · Textbook', url:'assets/models/AARON_RUBEN.glb', charKey:'AARON_RUBEN' },
-  { name:'CAIN ELIAS · God Within', url:'assets/models/CAIN_ELIAS_godwithin.glb', charKey:'CAIN_ELIAS' },
+  { name:'CAIN ELIAS · God Within', url:'assets/models/CAIN_ELIAS_godwithin_repaired.glb', charKey:'CAIN_ELIAS' },
   { name:'King', url:'embedded:king' },
   { name:'Referee', url:'embedded:ref' },
   { name:'Chun-Li', url:'embedded:chunli' },
@@ -16295,7 +16304,7 @@ function applyChosenModels(){ ['p1','p2'].forEach(function(sd){ var ch=CHOSEN_MO
 // overrides (localStorage CHAR_MODEL wins). Add a row when a new canon model banks.
 const CHAR_MODEL_DEFAULTS = {
   // owner-supplied Tripo model, rigged here by weight transfer from VIPER's 58-joint skeleton
-  JAGER: { url:'assets/models/JAGER.glb', name:'Young Jager' },
+  JAGER: { url:'assets/models/JAGER_repaired.glb', name:'Young Jager' },
   // BANNON: UniRig-rigged skinned mesh. Renders PERFECT (proven raw); the engine retarget was what
   // mangled it, so GLB_NATIVE_POSE now holds the model's own correct pose while calm (no bone-mangling)
   // and only physics-drives during action. Standing/idle/walking look right.
@@ -16303,29 +16312,29 @@ const CHAR_MODEL_DEFAULTS = {
   // MDickie fights AS his assembled WR3D body (decoded from his own game files, owner has
   // permission) — unskinned, so it goes through the rigid-chunk auto-rig path until UniRig'd.
   MDICKIE:{url:'assets/models/mdickie_char/MDICKIE_tinted.glb',name:'MDICKIE (WR3D)'},
-  MAIME:{url:'assets/models/MAIME.glb',name:'MAIME (canon)'},
+  MAIME:{url:'assets/models/MAIME_repaired.glb',name:'MAIME (canon)'},
   ONYX:{url:'assets/models/ONYX_skinned.glb',name:'ONYX'},
   CODY_CALLAHAN:{url:'assets/models/CODY_gear_skinned.glb',name:'CODY · Gear'},
-  CAIN_ELIAS:{url:'assets/models/CAIN_ELIAS_gear.glb',name:'CAIN ELIAS · Gear'},
-  STICK_UP:{url:'assets/models/STICKUP.glb',name:'STICK-UP'},
-  FINXSSE:{url:'assets/models/NPC_FINXSSE.glb',name:'FINXSSE'},   // was procedural (pink) — real model exists, verified clean raw
-  CIPHER:{url:'assets/models/CIPHER_rigged.glb',name:'CIPHER'},   // UniRig re-rig (22-joint, all limbs) — gate p95 0.027 vs 0.184; verified no action-smear
-  ECHO:{url:'assets/models/ECHO.glb',name:'ECHO'},
-  STATIC:{url:'assets/models/STATIC.glb',name:'STATIC'},
-  HOLLOW:{url:'assets/models/HOLLOW.glb',name:'HOLLOW'},
-  HALL_NIGHTER:{url:'assets/models/HALL_NIGHTER.glb',name:'HALL NIGHTER'},
-  EDWIN_KENNEDY:{url:'assets/models/EDWIN_KENNEDY.glb',name:'EDWIN KENNEDY'},
-  PABLO:{url:'assets/models/PABLO.glb',name:'PABLO'},
-  QUEEN_TYNESHIA:{url:'assets/models/TYNESHIA.glb',name:'QUEEN TYNESHIA'},
-  TRIPLE_XXX:{url:'assets/models/TRIPLE_XXX.glb',name:'TRIPLE XXX'},
-  EL_TORO_DE_ORO:{url:'assets/models/EL_TORO_DE_ORO.glb',name:'EL TORO DE ORO'},
-  STAN_COMBS:{url:'assets/models/STAN_COMBS_gear.glb',name:'STAN COMBS'},
+  CAIN_ELIAS:{url:'assets/models/CAIN_ELIAS_gear_repaired.glb',name:'CAIN ELIAS · Gear'},
+  STICK_UP:{url:'assets/models/STICKUP_repaired.glb',name:'STICK-UP'},
+  FINXSSE:{url:'assets/models/NPC_FINXSSE_repaired.glb',name:'FINXSSE'},   // was procedural (pink) — real model exists, verified clean raw
+  CIPHER:{url:'assets/models/CIPHER_rigged_repaired.glb',name:'CIPHER'},   // UniRig re-rig (22-joint, all limbs) — gate p95 0.027 vs 0.184; verified no action-smear
+  ECHO:{url:'assets/models/ECHO_repaired.glb',name:'ECHO'},
+  STATIC:{url:'assets/models/STATIC_repaired.glb',name:'STATIC'},
+  HOLLOW:{url:'assets/models/HOLLOW_repaired.glb',name:'HOLLOW'},
+  HALL_NIGHTER:{url:'assets/models/HALL_NIGHTER_repaired.glb',name:'HALL NIGHTER'},
+  EDWIN_KENNEDY:{url:'assets/models/EDWIN_KENNEDY_repaired.glb',name:'EDWIN KENNEDY'},
+  PABLO:{url:'assets/models/PABLO_repaired.glb',name:'PABLO'},
+  QUEEN_TYNESHIA:{url:'assets/models/TYNESHIA_repaired.glb',name:'QUEEN TYNESHIA'},
+  TRIPLE_XXX:{url:'assets/models/TRIPLE_XXX_repaired.glb',name:'TRIPLE XXX'},
+  EL_TORO_DE_ORO:{url:'assets/models/EL_TORO_DE_ORO_repaired.glb',name:'EL TORO DE ORO'},
+  STAN_COMBS:{url:'assets/models/STAN_COMBS_gear_repaired.glb',name:'STAN COMBS'},
   // v159 owner drop (2026-07-14) — auto-load the freshly skinned + decimated AAA GLBs
   VIPER:{url:'assets/models/VIPER.glb',name:'VIPER'},
-  BRUTUS:{url:'assets/models/BRUTUS.glb',name:'BRUTUS'},
-  TITAN:{url:'assets/models/TITAN.glb',name:'TITAN'},
+  BRUTUS:{url:'assets/models/BRUTUS_repaired.glb',name:'BRUTUS'},
+  TITAN:{url:'assets/models/TITAN_v2.glb',name:'TITAN'},
   KOBRA:{url:'assets/models/KOBRA.glb',name:'KOBRA'},
-  MASTER_SENSEI:{url:'assets/models/MASTER_SENSEI.glb',name:'MASTER SENSEI'},
+  MASTER_SENSEI:{url:'assets/models/MASTER_SENSEI_repaired.glb',name:'MASTER SENSEI'},
   WRECK_PATTERSON:{url:'assets/models/WRECK_PATTERSON.glb',name:'WRECK PATTERSON'},
   AARON_RUBEN:{url:'assets/models/AARON_RUBEN.glb',name:'AARON RUBEN'},
   // TARZANIAN DEVIL (2026-08-01). 28-joint UniRig skin, skinqa p95 0.0853 with all four limb bones
@@ -16379,15 +16388,15 @@ window.MDICKIE_MAP = Object.assign({
 // silently popped back to the procedural body — the archetype-base path did nothing at all. These are
 // bodies that ARE in the repo, matched by build, so the fallback now actually lands on a wrestler.
 window.MDICKIE_BASE_FILES = Object.assign({
-  POWERHOUSE:      'assets/models/TITAN.glb',
-  BRAWLER:         'assets/models/BRUTUS.glb',
-  TECHNICIAN:      'assets/models/CIPHER_rigged.glb',
+  POWERHOUSE:      'assets/models/TITAN_v2.glb',
+  BRAWLER:         'assets/models/BRUTUS_repaired.glb',
+  TECHNICIAN:      'assets/models/CIPHER_rigged_repaired.glb',
   CRUISER:         'assets/models/VIPER.glb',
-  LUCHADOR:        'assets/models/EL_TORO_DE_ORO.glb',
-  FEMALE:          'assets/models/TYNESHIA.glb',
+  LUCHADOR:        'assets/models/EL_TORO_DE_ORO_repaired.glb',
+  FEMALE:          'assets/models/TYNESHIA_repaired.glb',
   FEMALE_ATHLETIC: 'assets/models/ONYX_skinned.glb',
-  SUIT:            'assets/models/STAN_COMBS_gear.glb',
-  REFEREE:         'assets/models/STAN_COMBS_gear.glb'
+  SUIT:            'assets/models/STAN_COMBS_gear_repaired.glb',
+  REFEREE:         'assets/models/STAN_COMBS_gear_repaired.glb'
 }, window.MDICKIE_BASE_FILES||{});
 function mdickieBaseUrl(base){
   if(window.MDICKIE_BASE_FILES[base]) return window.MDICKIE_BASE_FILES[base];
@@ -16513,16 +16522,16 @@ function applyCharModels(only){ (only ? [only] : ['p1','p2','p3','p4']).forEach(
 // and a real rigged body that plays real mocap beats a procedural one every time.
 // Specific characters still win: this only ever runs when nothing else resolved.
 window.ARCHETYPE_BODY = window.ARCHETYPE_BODY || {
-  powerhouse: 'assets/models/BRUTUS.glb',
-  monster:    'assets/models/TITAN.glb',
+  powerhouse: 'assets/models/BRUTUS_repaired.glb',
+  monster:    'assets/models/TITAN_v2.glb',
   brawler:    'assets/models/WRECK_PATTERSON.glb',
   striker:    'assets/models/KOBRA.glb',
   technician: 'assets/models/AARON_RUBEN.glb',
-  cruiser:    'assets/models/CIPHER_rigged.glb',
-  luchador:   'assets/models/EL_TORO_DE_ORO.glb',
-  enigma:     'assets/models/HOLLOW.glb',
-  female:     'assets/models/TYNESHIA.glb',
-  suit:       'assets/models/STAN_COMBS_gear.glb'
+  cruiser:    'assets/models/CIPHER_rigged_repaired.glb',
+  luchador:   'assets/models/EL_TORO_DE_ORO_repaired.glb',
+  enigma:     'assets/models/HOLLOW_repaired.glb',
+  female:     'assets/models/TYNESHIA_repaired.glb',
+  suit:       'assets/models/STAN_COMBS_gear_repaired.glb'
 };
 function archetypeBodyFor(f, ck){
   try{

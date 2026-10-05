@@ -4,27 +4,27 @@
  "count": 153,
  "map": {
   "Deadlift German": {
-   "clip": "GermanSuplex",
+   "clip": "GERMANSUPLEX",
    "engine": "BACK_SUPLEX",
    "score": 20
   },
   "Executioner's Drop": {
-   "clip": "CemeteryDrive",
+   "clip": "CEMETERYDRIVE",
    "engine": "CROSS_POWERBOMB",
    "score": 20
   },
   "Saturn Ring Bridge": {
-   "clip": "GermanSuplex",
+   "clip": "GERMANSUPLEX",
    "engine": "BACK_SUPLEX",
    "score": 20
   },
   "Broken Architect Bomb": {
-   "clip": "PowerbombWhip",
+   "clip": "POWERBOMBWHIP",
    "engine": "POWERBOMB",
    "score": 17
   },
   "Skyfall Suplex": {
-   "clip": "Suplex",
+   "clip": "SUPLEX",
    "engine": "VERTICAL_SUPLEX",
    "score": 23
   },
@@ -39,67 +39,67 @@
    "score": 14
   },
   "Gooseneck Hoist": {
-   "clip": "Chokeslam",
+   "clip": "CHOKESLAM",
    "engine": "CHOKESLAM",
    "score": 20
   },
   "Shoulder Reckoning": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Cranium Driver": {
-   "clip": "BrainBuster",
+   "clip": "BRAINBUSTER",
    "engine": "BRAINBUSTER",
    "score": 20
   },
   "Comet Fallaway": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Lateral Collapse": {
-   "clip": "Hit On Side Of Head",
+   "clip": "HIT_ON_SIDE_OF_HEAD",
    "engine": "SELL",
    "score": 9
   },
   "Deadlift Spinebuster": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Hip Toss Reversal": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Backspin Spike": {
-   "clip": "NeckBreaker",
+   "clip": "NECKBREAKER",
    "engine": "REVERSE_DDT",
    "score": 20
   },
   "Pumphandle Fall": {
-   "clip": "AssistedReverseGoozleChop",
+   "clip": "ASSISTEDREVERSEGOOZLECHOP",
    "engine": "CHOKESLAM",
    "score": 8
   },
   "Kidney Breaker": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Rear Skyfall": {
-   "clip": "GermanSuplex",
+   "clip": "GERMANSUPLEX",
    "engine": "BACK_SUPLEX",
    "score": 20
   },
   "Chair of Judgment": {
-   "clip": "AssistedReverseGoozleChop",
+   "clip": "ASSISTEDREVERSEGOOZLECHOP",
    "engine": "CHOKESLAM",
    "score": 8
   },
   "Indefinite Suspension": {
-   "clip": "OvreheadPress",
+   "clip": "OVREHEADPRESS",
    "engine": "GORILLA_PRESS",
    "score": 20
   },
@@ -109,67 +109,67 @@
    "score": 14
   },
   "Broken Halo": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Solar Flare": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Gravity's Debt": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Leap of Faith": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Full Rotation": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Spiral Verdict": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Corkscrew Comet": {
-   "clip": "Corkscrew Evade",
+   "clip": "CORKSCREW_EVADE",
    "engine": "SWANTON",
    "score": 5
   },
   "Guillotine Drop": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Meteor Stomp": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 15
   },
   "Slingshot Comet": {
-   "clip": "ApronJayKick",
+   "clip": "APRONJAYKICK",
    "engine": "STRIKE_KICK",
    "score": 3
   },
   "Running Powerslam": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Scorpio Lariat": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Big Boot Toll": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
@@ -179,202 +179,202 @@
    "score": 6
   },
   "Knife-Edge Sermon": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 5
   },
   "Mudhole Liturgy": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 5
   },
   "Stiff Palm": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "engine": "STRIKE_PUNCH",
    "score": 8
   },
   "Roaring Elbow": {
-   "clip": "AlternatingForearms",
+   "clip": "ALTERNATINGFOREARMS",
    "engine": "STRIKE_PUNCH",
    "score": 8
   },
   "Self-Destruct Headbutt": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Ring of Saturn": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 8
   },
   "The Structural Collapse": {
-   "clip": "Death From Back Headshot",
+   "clip": "DEATH_FROM_BACK_HEADSHOT",
    "engine": "SELL",
    "score": 6
   },
   "Boston Crab": {
-   "clip": "Double Leg Takedown - Victim",
+   "clip": "DOUBLE_LEG_TAKEDOWN___VICTIM",
    "engine": "SUBMISSION",
    "score": 11
   },
   "Iron Anaconda": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 8
   },
   "Fault Line": {
-   "clip": "Death From Back Headshot",
+   "clip": "DEATH_FROM_BACK_HEADSHOT",
    "engine": "SELL",
    "score": 6
   },
   "Tap Protocol": {
-   "clip": "Double Leg Takedown - Victim",
+   "clip": "DOUBLE_LEG_TAKEDOWN___VICTIM",
    "engine": "SUBMISSION",
    "score": 11
   },
   "Quadrant Lock": {
-   "clip": "Double Leg Takedown - Victim",
+   "clip": "DOUBLE_LEG_TAKEDOWN___VICTIM",
    "engine": "SUBMISSION",
    "score": 11
   },
   "Kimura Clause": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 8
   },
   "Silent Sleeper": {
-   "clip": "HammerlockDDT",
+   "clip": "HAMMERLOCKDDT",
    "engine": "DDT",
    "score": 8
   },
   "Collar-and-Elbow": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Irish Whip": {
-   "clip": "FenceThrow",
+   "clip": "FENCETHROW",
    "engine": "WHIP",
    "score": 17
   },
   "Toss From Ring": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Roll Into Ring": {
-   "clip": "ApronJayKick",
+   "clip": "APRONJAYKICK",
    "engine": "STRIKE_KICK",
    "score": 3
   },
   "Apron Drag-Out": {
-   "clip": "ApronJayKick",
+   "clip": "APRONJAYKICK",
    "engine": "STRIKE_KICK",
    "score": 3
   },
   "Apron Drag-In": {
-   "clip": "ApronJayKick",
+   "clip": "APRONJAYKICK",
    "engine": "STRIKE_KICK",
    "score": 3
   },
   "Platform Drag-Down": {
-   "clip": "ApronJayKick",
+   "clip": "APRONJAYKICK",
    "engine": "STRIKE_KICK",
    "score": 3
   },
   "Body Toll": {
-   "clip": "Big Body Blow",
+   "clip": "BIG_BODY_BLOW",
    "engine": "SELL",
    "score": 9
   },
   "Vertical Verdict": {
-   "clip": "Suplex",
+   "clip": "SUPLEX",
    "engine": "VERTICAL_SUPLEX",
    "score": 23
   },
   "Snap Verdict": {
-   "clip": "Suplex",
+   "clip": "SUPLEX",
    "engine": "VERTICAL_SUPLEX",
    "score": 23
   },
   "Suspended Verdict": {
-   "clip": "Suplex",
+   "clip": "SUPLEX",
    "engine": "VERTICAL_SUPLEX",
    "score": 23
   },
   "Suspended Cranium": {
-   "clip": "BrainBuster",
+   "clip": "BRAINBUSTER",
    "engine": "BRAINBUSTER",
    "score": 20
   },
   "Piston Slam": {
-   "clip": "BrainBuster",
+   "clip": "BRAINBUSTER",
    "engine": "BRAINBUSTER",
    "score": 20
   },
   "Dropping Verdict": {
-   "clip": "Suplex",
+   "clip": "SUPLEX",
    "engine": "VERTICAL_SUPLEX",
    "score": 23
   },
   "Vice Headlock": {
-   "clip": "Death From Back Headshot",
+   "clip": "DEATH_FROM_BACK_HEADSHOT",
    "engine": "SELL",
    "score": 6
   },
   "Headlock Hammer": {
-   "clip": "Combo Punch",
+   "clip": "COMBO_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 14
   },
   "Running Bulldog": {
-   "clip": "NeckBreaker",
+   "clip": "NECKBREAKER",
    "engine": "REVERSE_DDT",
    "score": 14
   },
   "Headlock Takedown": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Piston Press": {
-   "clip": "OvreheadPress",
+   "clip": "OVREHEADPRESS",
    "engine": "GORILLA_PRESS",
    "score": 20
   },
   "Overhead Verdict": {
-   "clip": "OvreheadPress",
+   "clip": "OVREHEADPRESS",
    "engine": "GORILLA_PRESS",
    "score": 20
   },
   "Shoulder Breaker": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "The Headstone": {
-   "clip": "Tombstone",
+   "clip": "TOMBSTONE",
    "engine": "CROSS_POWERBOMB",
    "score": 23
   },
   "Inverted Foundation": {
-   "clip": "CemeteryDrive",
+   "clip": "CEMETERYDRIVE",
    "engine": "CROSS_POWERBOMB",
    "score": 20
   },
   "Leaping Body Toll": {
-   "clip": "Big Body Blow",
+   "clip": "BIG_BODY_BLOW",
    "engine": "SELL",
    "score": 9
   },
   "Foundation Driver": {
-   "clip": "CemeteryDrive",
+   "clip": "CEMETERYDRIVE",
    "engine": "CROSS_POWERBOMB",
    "score": 20
   },
   "Seated Collapse": {
-   "clip": "PowerbombWhip",
+   "clip": "POWERBOMBWHIP",
    "engine": "POWERBOMB",
    "score": 17
   },
@@ -384,112 +384,112 @@
    "score": 20
   },
   "Comet Rana": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Leaping Comet": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Orbital Scissors": {
-   "clip": "Big Jump",
+   "clip": "BIG_JUMP",
    "engine": "VAULT",
    "score": 3
   },
   "Small Package": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 6
   },
   "Overhand Collapse": {
-   "clip": "Suplex",
+   "clip": "SUPLEX",
    "engine": "VERTICAL_SUPLEX",
    "score": 23
   },
   "Overhand Slam": {
-   "clip": "Hit On Side Of Head",
+   "clip": "HIT_ON_SIDE_OF_HEAD",
    "engine": "SELL",
    "score": 9
   },
   "Aurora Bridge": {
-   "clip": "Suplex",
+   "clip": "SUPLEX",
    "engine": "VERTICAL_SUPLEX",
    "score": 23
   },
   "Skyward Toss": {
-   "clip": "Big Body Blow",
+   "clip": "BIG_BODY_BLOW",
    "engine": "SELL",
    "score": 9
   },
   "Lateral Breaker": {
-   "clip": "Hit On Side Of Head",
+   "clip": "HIT_ON_SIDE_OF_HEAD",
    "engine": "SELL",
    "score": 9
   },
   "Inverted Atomic": {
-   "clip": "AssistedReverseGoozleChop",
+   "clip": "ASSISTEDREVERSEGOOZLECHOP",
    "engine": "CHOKESLAM",
    "score": 8
   },
   "The Reckoning Cutter": {
-   "clip": "NeckBreaker",
+   "clip": "NECKBREAKER",
    "engine": "REVERSE_DDT",
    "score": 20
   },
   "The Bottom Line": {
-   "clip": "Hit On Side Of Head",
+   "clip": "HIT_ON_SIDE_OF_HEAD",
    "engine": "SELL",
    "score": 9
   },
   "Atomic Verdict": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Toe-Hold Takedown": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Island Drop": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Ravine Driver": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Snap Takedown": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Neck Verdict": {
-   "clip": "NeckBreaker",
+   "clip": "NECKBREAKER",
    "engine": "REVERSE_DDT",
    "score": 23
   },
   "Hip Verdict": {
-   "clip": "AssistedCutter",
+   "clip": "ASSISTEDCUTTER",
    "engine": "VERTICAL_SUPLEX",
    "score": 8
   },
   "Gutwrench Verdict": {
-   "clip": "Suplex",
+   "clip": "SUPLEX",
    "engine": "VERTICAL_SUPLEX",
    "score": 23
   },
   "Sickle Sweep": {
-   "clip": "NeckBreaker",
+   "clip": "NECKBREAKER",
    "engine": "REVERSE_DDT",
    "score": 17
   },
   "Scorpio Spear": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
@@ -499,17 +499,17 @@
    "score": 20
   },
   "Underhook Verdict": {
-   "clip": "Suplex",
+   "clip": "SUPLEX",
    "engine": "VERTICAL_SUPLEX",
    "score": 23
   },
   "Reverse Verdict": {
-   "clip": "GermanSuplex",
+   "clip": "GERMANSUPLEX",
    "engine": "BACK_SUPLEX",
    "score": 20
   },
   "Victory Roll": {
-   "clip": "AssistedReverseGoozleChop",
+   "clip": "ASSISTEDREVERSEGOOZLECHOP",
    "engine": "CHOKESLAM",
    "score": 8
   },
@@ -519,187 +519,187 @@
    "score": 8
   },
   "Guillotine Verdict": {
-   "clip": "CemeteryDrive",
+   "clip": "CEMETERYDRIVE",
    "engine": "CROSS_POWERBOMB",
    "score": 20
   },
   "Lights Out Knee": {
-   "clip": "Illegal Knee",
+   "clip": "ILLEGAL_KNEE",
    "engine": null,
    "score": 9
   },
   "Schoolboy Roll-Up": {
-   "clip": "AssistedReverseGoozleChop",
+   "clip": "ASSISTEDREVERSEGOOZLECHOP",
    "engine": "CHOKESLAM",
    "score": 8
   },
   "Crucifix Cradle": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 6
   },
   "Nelson Vice": {
-   "clip": "HammerlockDDT",
+   "clip": "HAMMERLOCKDDT",
    "engine": "DDT",
    "score": 8
   },
   "Dragon Collapse": {
-   "clip": "GermanSuplex",
+   "clip": "GERMANSUPLEX",
    "engine": "BACK_SUPLEX",
    "score": 20
   },
   "Cranial Finale": {
-   "clip": "Hit On Side Of Head",
+   "clip": "HIT_ON_SIDE_OF_HEAD",
    "engine": "SELL",
    "score": 9
   },
   "Gooseneck Toss": {
-   "clip": "Chokeslam",
+   "clip": "CHOKESLAM",
    "engine": "CHOKESLAM",
    "score": 20
   },
   "Turnbuckle Verdict": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Cranial Superplex": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Sky Skyfall": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Executioner's Avalanche": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 11
   },
   "Mounted Ten Count": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 17
   },
   "Mudhole Reckoning": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 11
   },
   "Tree Of Woe Stomp": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 11
   },
   "Corner Cable Choke": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 5
   },
   "Buckle Foundation Bomb": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 3
   },
   "Monkey Flip Verdict": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 3
   },
   "Snake Eyes Reckoning": {
-   "clip": "Illegal Elbow Punch",
+   "clip": "ILLEGAL_ELBOW_PUNCH",
    "engine": "STRIKE_PUNCH",
    "score": 3
   },
   "Super Frankensteiner": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Diving Ten-Bell Splash": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "Turnbuckle Smash": {
-   "clip": "Climbing A Rope",
+   "clip": "CLIMBING_A_ROPE",
    "engine": "ROPE",
    "score": 12
   },
   "The Executioner's Vise": {
-   "clip": "Death From Back Headshot",
+   "clip": "DEATH_FROM_BACK_HEADSHOT",
    "engine": "SELL",
    "score": 6
   },
   "Sleeper Hold": {
-   "clip": "Death From Back Headshot",
+   "clip": "DEATH_FROM_BACK_HEADSHOT",
    "engine": "SELL",
    "score": 6
   },
   "Dragon Sleeper": {
-   "clip": "Death From Back Headshot",
+   "clip": "DEATH_FROM_BACK_HEADSHOT",
    "engine": "SELL",
    "score": 6
   },
   "Cable Choke": {
-   "clip": "Death From Back Headshot",
+   "clip": "DEATH_FROM_BACK_HEADSHOT",
    "engine": "SELL",
    "score": 6
   },
   "Crossface Clutch": {
-   "clip": "Death From Back Headshot",
+   "clip": "DEATH_FROM_BACK_HEADSHOT",
    "engine": "SELL",
    "score": 6
   },
   "Arm Bar": {
-   "clip": "Death From Back Headshot",
+   "clip": "DEATH_FROM_BACK_HEADSHOT",
    "engine": "SELL",
    "score": 6
   },
   "The Boston Crab": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 5
   },
   "Half Crab": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 5
   },
   "The Ring Of Saturn": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 5
   },
   "Figure-Four Leglock": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 5
   },
   "Spinning Toe Hold": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 5
   },
   "Ankle Lock": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 5
   },
   "Scorpion Lock": {
-   "clip": "CrucifixPin",
+   "clip": "CRUCIFIXPIN",
    "engine": "SUBMISSION",
    "score": 5
   },
   "Mounted Ground Pound": {
-   "clip": "Breakdance Uprock To Ground",
+   "clip": "BREAKDANCE_UPROCK_TO_GROUND",
    "engine": "WAKEUP",
    "score": 6
   },
   "Grounded Elbow Drop": {
-   "clip": "Drop Kick",
+   "clip": "DROP_KICK",
    "engine": "STRIKE_KICK",
    "score": 11
   }
