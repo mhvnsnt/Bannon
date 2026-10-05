@@ -62,7 +62,7 @@ function INSTRUMENT(){
   window.__T = {
     frames: 0, t0: 0, last: 0, dts: [], stalls: [],
     pose: 0, clipRefs: 0, clipResolved: 0, clipMissNames: {},
-    boneMove: {}, boneExtrema: {}, deformation: {samples:0, spikes:0, worst:0, examples:[]}, states: {}, errors: [], warns: []
+    boneMove: {}, boneExtrema: {}, deformation: {samples:0, spikes:0, worst:0, examples:[]}, models: {}, states: {}, errors: [], warns: []
   };
   const T = window.__T;
 
@@ -118,7 +118,23 @@ function INSTRUMENT(){
       const TRACK = ['LeftArm','LeftForeArm','LeftHand','LeftShoulder','RightArm','RightForeArm','RightShoulder',
                      'LeftUpLeg','LeftLeg','LeftFoot','Spine1','Spine2','Neck','Head'];
       const w = function(f){
-        try{ T.states[f.state] = (T.states[f.state]||0)+1; }catch(e){}
+        try{
+          T.states[f.state] = (T.states[f.state]||0)+1;
+          if(f && f.model){
+            const key=f.name || f.id || ('fighter_'+(f.side||'?'));
+            if(!T.models[key]){
+              let skinnedMeshes=0, bones=0;
+              f.model.traverse && f.model.traverse(x=>{ if(x.isSkinnedMesh) skinnedMeshes++; if(x.isBone) bones++; });
+              T.models[key]={
+                side:f.side||null,
+                modelUrl:f.modelUrl || (f.model.userData && f.model.userData.url) || null,
+                mappedBones:f.model.userData && f.model.userData.mapped ? f.model.userData.mapped.length : 0,
+                bones, skinnedMeshes,
+                autoRig:!!(f.model.userData && f.model.userData.autoRig)
+              };
+            }
+          }
+        }catch(e){}
         let before = null;
         const B = {};
         if (f.model && window.__boneOf){
@@ -316,7 +332,7 @@ async function playMatch(page, seconds, log){
       anim: { poseCalls: T.pose, clipBoneRefs: T.clipRefs, clipBoneResolved: T.clipResolved,
               resolvedPct: T.clipRefs ? +(100*T.clipResolved/T.clipRefs).toFixed(1) : null,
               topUnresolved: Object.keys(T.clipMissNames).slice(0, 10) },
-      boneMovement: bm, boneExtrema: T.boneExtrema, deformation: T.deformation, states: T.states,
+      boneMovement: bm, boneExtrema: T.boneExtrema, deformation: T.deformation, models: T.models, states: T.states,
       consoleErrors: T.errors.slice(0, 12), errorCount: T.errors.length
     };
   });
