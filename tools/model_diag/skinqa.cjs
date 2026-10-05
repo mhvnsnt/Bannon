@@ -3,12 +3,12 @@
 // bone. Good weights => vertices ride their bone (low residual). Bad weights (skin.cjs) => vertices
 // smear across the body (high residual). Uses the model's OWN bind geometry as ground truth — no
 // eyeballing. PASS/FAIL per model. Batchable.
-const { chromium } = require('/opt/node22/lib/node_modules/playwright/node_modules/playwright-core');
+const { chromium } = require('playwright');
 const { spawn } = require('child_process');
 (async () => {
   const dir=__dirname;
-  const srv = spawn('/opt/node22/bin/node', ['-e', `
-    const http=require('http'),fs=require('fs'),p=require('path');const root='${dir}',md='/home/user/Bannon/assets/models';
+  const srv = spawn(process.execPath, ['-e', `
+    const http=require('http'),fs=require('fs'),p=require('path');const root='${dir}',md='${md}';
     const T={'.html':'text/html','.js':'text/javascript','.glb':'model/gltf-binary'};
     http.createServer((req,res)=>{let f=decodeURIComponent(req.url.split('?')[0]);
       let fp=f.startsWith('/m/')?p.join(md,f.slice(3)):p.join(root,f==='/'?'/test.html':f);
