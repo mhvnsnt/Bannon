@@ -5,8 +5,9 @@
 // eyeballing. PASS/FAIL per model. Batchable.
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
+const path = require('path');
 (async () => {
-  const dir=__dirname;
+  const dir=__dirname; const repo=path.resolve(__dirname,'..','..'); const md=path.join(repo,'assets','models');
   const srv = spawn(process.execPath, ['-e', `
     const http=require('http'),fs=require('fs'),p=require('path');const root='${dir}',md='${md}';
     const T={'.html':'text/html','.js':'text/javascript','.glb':'model/gltf-binary'};
@@ -15,8 +16,7 @@ const { spawn } = require('child_process');
       fs.readFile(fp,(e,d)=>{if(e){res.writeHead(404);res.end('nf');return;}res.writeHead(200,{'content-type':T[p.extname(fp)]||'application/octet-stream'});res.end(d);});}).listen(8084);
   `], { stdio:'ignore' });
   await new Promise(r=>setTimeout(r,700));
-  const browser = await chromium.launch({ executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome', // localhost-only page: keep it off the agent proxy so the fetches cannot be intercepted.
-  args:['--use-gl=swiftshader','--no-sandbox','--no-proxy-server','--proxy-bypass-list=<-loopback>'] });
+  const browser = await chromium.launch({ args:['--use-gl=swiftshader','--no-sandbox','--no-proxy-server','--proxy-bypass-list=<-loopback>'] });
   const page = await browser.newPage(); const perr=[]; page.on('pageerror',e=>perr.push(String(e)));
   await page.goto('http://localhost:8084/test.html', { waitUntil:'domcontentloaded' });
   await page.waitForTimeout(3500);
