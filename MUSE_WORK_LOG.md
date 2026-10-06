@@ -55,3 +55,12 @@ Repo Co Dev's track. Marketing videos are Producerbot's track.
   - Debug text visible in-shots ("AUTOPILOT • staged 0 • queue 2", "BANNON V160" watermark).
 - Run 1 died mid-drive (browser closed ~06:08); rerun (drive3) in progress with
   fixed probes (game uses lexical `let fighters`, not `window.fighters`).
+
+## Playtest: LIFT VERIFIED (2026-10-06, drive7)
+- Full grapple chain probe-verified on STICK_UP vs GOLEM: `g` in range (dist<1.6)
+  → `gs:1` LOCKUP (grip, opponent `grabbed`) → `w+j` (direction+attack) →
+  `gs:2` LIFT held 1s+ → visual: "FALLAWAY SLAM" banner, opponent hoisted off mat
+  (video `drive7/bannon_liftprobe_1791272144207.webm` @600s).
+- Correction: pressing GRAB alone at lockup only toggles front/rear waistlock;
+  the lift requires direction+attack (code `:13660-13682`).
+- Report: `~/workspace/goals/bannon-playable-build-teardown-and-visual-upgrades/files/PLAYTEST_2026-10-06_STICKUP_VS_GOLEM.md`.
