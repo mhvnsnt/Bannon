@@ -44,15 +44,19 @@ async function shot(page, name) {
     await H.sleep(300);
   }
   log('in-range', await fighters(page));
-  // GRAB -> lockup (stage 1)
+  // GRAB -> lockup (stage 1). NOTE: pressing GRAB again at lockup only toggles
+  // front/rear — to LIFT, press direction+attack (up+jab picks a hoist position).
   await H.press(page, 'g', 60); await H.sleep(1500);
-  const s1 = await fighters(page); log('after-grab1', s1);
-  // GRAB again -> LIFT (stage 2)
-  await H.press(page, 'g', 60); await H.sleep(1500);
-  const s2 = await fighters(page); log('after-grab2-LIFT', s2);
-  // hold the lift so it's visible, then deliver
+  const s1 = await fighters(page); log('after-grab1-lockup', s1);
+  // up+jab -> pick hoist position -> grappleStage 2 (LIFT)
+  await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'w', bubbles: true })));
+  await H.press(page, 'j', 60);
+  await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keyup', { key: 'w', bubbles: true })));
+  await H.sleep(1500);
+  const s2 = await fighters(page); log('after-hoist-LIFT', s2);
   await H.sleep(1000);
   const s3 = await fighters(page); log('lift-hold', s3);
+  // jab again -> carry (stage 3) + deliver on the same press
   await H.press(page, 'j', 60); await H.sleep(1500);
   log('after-deliver', await fighters(page));
   log('pageErrors', g.pageErrors.slice(0, 10));
