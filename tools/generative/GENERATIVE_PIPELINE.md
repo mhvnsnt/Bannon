@@ -69,10 +69,35 @@ non-commercial license). Note: `tools/gen/hf_pipeline.py` (pre-existing,
 another lane) references Hunyuan3D-2 via HF Spaces — flagged for license review,
 not part of this pipeline.
 
-## Queued next (research scouts delivered 2026-10-06 — folding in)
-- Text-to-motion: MoMask (already wired in `tools/mocap/text_to_clip.py`; license
-  re-verification queued) and scout-verified alternates → GLB converter reusing
-  the SMPL-22→Bannon mapping pattern.
-- Extra mesh backends: gltf-transform (verified Apache-2.0, already wrapped),
-  meshoptimizer (MIT) for LOD, open3d (MIT) as alt decimator.
-- World: scout-verified procedural arena/city tools to extend `world/`.
+## Queued next — license-verified candidates (research scout 2026-10-06)
+
+Every license below was verified from the repo's actual LICENSE file
+(raw.githubusercontent.com or GitHub API `spdx_id`) — never from memory.
+
+### Mesh — ACCEPTED, not yet wired
+| Tool | License | Use |
+|---|---|---|
+| meshoptimizer (+gltfpack) | MIT | LOD simplification, overdraw/vertex-cache opt — add as `lod_chain.py` backend |
+| Manifold (elalish) | Apache-2.0 | Guaranteed-manifold CSG booleans + auto-repair — ring geometry, props, arena collision — **high priority** |
+| Open3D | MIT | Hole-filling, Poisson reconstruction for scan meshes (alt decimator, already referenced by `lod_chain.py`) |
+| Fast-Quadric-Mesh-Simplification | MIT | Standalone quadric LOD decimation |
+| mesh-fixer (mikolalysenko) | MIT | Tiny hole-patcher for non-manifold meshes |
+| KTX-Software | Apache-2.0 | KTX2/Basis GPU texture compression |
+| Draco (google) | Apache-2.0 | Mesh compression (already used via `optimize_glb.sh`) |
+| gltf-transform | **MIT** (verified; doc previously said Apache-2.0 — corrected) | Already wrapped in `mesh/optimize_glb.sh` |
+
+### World — ACCEPTED, not yet wired
+| Tool | License | Use |
+|---|---|---|
+| threeforge | MIT | Instanced animated crowd (hundreds of fans, ~1 draw call) — crowd perf path |
+| TerrainForge | MIT | Procedural terrain → GLB for arena surroundings |
+| ProcIsoCity | MIT | Procedural city → GLB (AshLane blocks) |
+| hide-and-seek-arena | MIT | Reference patterns only (12 runtime arenas + CC0 prop kit) |
+
+### Explicitly OUT — do not touch
+- **Rejected (copyleft/proprietary):** libigl (**GPL-3.0** — verified worse than the assumed MPL), BlenderProc (GPL-3.0), pymeshlab (GPL-3.0), MakeHuman (AGPL-3.0), MPFB2 (GPL-3.0), OCCTSwiftMesh (LGPL-2.1), bene-proggen-maps (GPL-3.0), mapgen (Proprietary), Jelly-Colosseum (GPL-3.0), Manuel Bastioni Lab (dead + AGPL lineage).
+- **Ambiguous (needs owner clearance):** Instant Meshes (BSD-3-Clause **plus grant-back clause** — not pure BSD), geogen (no LICENSE file; strong re-check candidate — parametric skinned humanoids would be ideal for crowds), OpenMesh (unverifiable), RustMesh / procedural-city-studio / cricket-arena-unity (no/unknown license).
+- **Gap:** no clean-license stadium/arena generator found — in-house arena builder on Manifold + threeforge is the legal path.
+
+### Animation/mocap scout — report pending delivery at push time
+Animation/mocap lane (MDM, MoMask, InterGen, T2M-GPT, MotionDiffuse, EDGE, MediaPipe/MMPose/WHAM/HybrIK license checks, BVH retargeters) was still running when this doc was pushed; its verified table lands in the follow-up.
