@@ -99,5 +99,40 @@ Every license below was verified from the repo's actual LICENSE file
 - **Ambiguous (needs owner clearance):** Instant Meshes (BSD-3-Clause **plus grant-back clause** — not pure BSD), geogen (no LICENSE file; strong re-check candidate — parametric skinned humanoids would be ideal for crowds), OpenMesh (unverifiable), RustMesh / procedural-city-studio / cricket-arena-unity (no/unknown license).
 - **Gap:** no clean-license stadium/arena generator found — in-house arena builder on Manifold + threeforge is the legal path.
 
-### Animation/mocap scout — report pending delivery at push time
-Animation/mocap lane (MDM, MoMask, InterGen, T2M-GPT, MotionDiffuse, EDGE, MediaPipe/MMPose/WHAM/HybrIK license checks, BVH retargeters) was still running when this doc was pushed; its verified table lands in the follow-up.
+### Animation/mocap — ACCEPTED (verified), integration queued
+Text-to-motion (all output SMPL/HumanML3D `.npy`; integration = SMPL-22→Bannon
+converter reusing the `tools/mocap/text_to_clip.py` pattern, then GLB via `retarget/`):
+
+| Tool | License | Notes |
+|---|---|---|
+| MDM | MIT | Reference text-to-motion; body-part editing + in-betweening |
+| PriorMDM | MIT | DoubleTake (long sequences: entrance→match flows), ComMDM (two-person) |
+| MoMask | MIT | Faster masked generation; CPU wrapper ~10–20s (already default in `tools/mocap/`) |
+| T2M-GPT | Apache-2.0 | Best text→motion alignment — precise prompt→move control |
+| EDGE | MIT | Music→dance = entrance themes→choreographed entrances |
+| FLAME | Apache-2.0 | Language motion synthesis + editing (taunt variants) |
+| Light-T2M | MIT | Lightweight fast text-to-motion for prototyping |
+
+Video mocap → Bannon skeleton:
+
+| Tool | License | Notes |
+|---|---|---|
+| ROMP | Apache-2.0 | **Fastest video→glTF path**: FBX/GLB/BVH directly, multi-person real-time, CPU ONNX option |
+| WHAM | MIT | World-grounded mocap, handles moving cameras (ring-side handheld) |
+| HybrIK | MIT | Clean joint rotations from reference footage |
+| 4DHumans | MIT | Multi-person tracking in one ring shot |
+| mixamo-llm-mocap | MIT (caveats: GVHMR separate license; SMPL-X registration) | Video→Mixamo FK, **two fighters from one video** |
+| RTMPose/MMPose | Apache-2.0 | 2D pose front-end for lifting pipelines |
+
+Retarget plumbing:
+
+| Tool | License | Notes |
+|---|---|---|
+| fairmotion | BSD | BVH I/O, conversions, retarget/IK utils — the plumbing between formats |
+| BVH Motion Retargeter | MIT | BVH→Mixamo/UE5 rigs, bakes + FBX (Blender 4.2+) |
+| blender-bvh-to-mixamo | MIT | Tiny zero-dependency fallback retargeter |
+| bvh2vrma | MIT | BVH→VRMA for browser builds |
+
+**Rejected (verified):** InterGen (CC BY-NC-SA), MotionDiffuse/ReMoDiffuse (S-Lab non-commercial), SINC/TEACH/PARE (research-only / MPG non-commercial), OpenPose (non-commercial), Rokoko Blender addon (**LGPL-3.0 — README's MIT badge is stale/false, trap**), mixaify-retarget (GPL-3.0).
+**Ambiguous (stay OUT):** Motius (no LICENSE — most promising infra, re-check), MotionGPT (no LICENSE), ardy2bvh, DeepMotionEditing.
+**Global caveat:** SMPL/SMPL-X *model files* are registration-gated (signup form, not a blocker); code licenses above are permissive.
