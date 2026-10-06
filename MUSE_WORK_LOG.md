@@ -32,3 +32,26 @@ Repo Co Dev's track. Marketing videos are Producerbot's track.
 ## Still pending (owner)
 - Delete mhvnsnt public forks (M-OS-Daywalker, Moneymachine); change reused admin password.
 - Revoke Bannon GitHub PAT + Telegram bot token flagged 2026-10-05.
+
+# Muse work log — 2026-10-06 (playtest)
+
+## Playtest: STICK_UP vs GOLEM lift scenario (in progress)
+- Tool: `tools/harness/playtest_lift.cjs` (new, committed `ea55d97`) — builds on
+  `tools/harness/harness_lib.cjs` (sibling video-pipeline track), no duplication.
+  Boots BANNON_v150.html over HTTP, starts STICK_UP vs GOLEM via char-select
+  cards (falls back to `startFight()`+`MATCH_SETUP`), drives walk/jab/grab→lockup/
+  grab→LIFT/deliver with per-step `grappleStage` probes, measured world heights
+  (THREE.Box3), crowd-object inspection, CDP screenshots + full-session WebM.
+- Findings so far (run 1, `~/workspace/bannon-teardown/drive2/`):
+  - Match starts and plays: ROUND 1, HUD, health bars, timer all live.
+  - Fighters walk, strike, and clinch/grapple (video frames at 1200s/1500s/2100s/2400s).
+  - GOLEM has NO entry in CHAR_MODEL_DEFAULTS → always the procedural mannequin.
+  - STICK_UP's GLB (`assets/models/STICKUP_repaired.glb`, exists, 858KB) loads late;
+    both render as mannequins at the bell.
+  - Height: GOLEM (heightScale 1.18) and STICK_UP (0.99) render at visually
+    identical heights — `heightScale` is written (line 2980) but never read for
+    visuals; fit-scale is uniform `1.78/hgt` (line 16648).
+  - Crowd = instanced colored boxes (code: 5 InstancedMeshes); `assets/js/bannon_kaykit.js` 404s.
+  - Debug text visible in-shots ("AUTOPILOT • staged 0 • queue 2", "BANNON V160" watermark).
+- Run 1 died mid-drive (browser closed ~06:08); rerun (drive3) in progress with
+  fixed probes (game uses lexical `let fighters`, not `window.fighters`).
