@@ -55,17 +55,20 @@ torch ~2.5GB; stub `bin/video_to_bvh.py` ready).
 
 ### 6. Pose QA — `api-wiring/bin/pose_qa.py` + `render_tpose.py` (MediaPipe, Apache-2.0)
 Headless Blender (Cycles CPU) renders the model front view — full arm reach in
-frame per the T-pose rule — then MediaPipe PoseLandmarker checks: person
-detected, torso present, head present, structure not collapsed. Shared with the
-AshLanev2 verification gate.
+frame per the T-pose rule, mid-grey backdrop for detector contrast — then
+MediaPipe PoseLandmarker checks: person detected, torso present, head present,
+structure not collapsed. Proven: El Toro render → PASS (33/33 keypoints,
+0.983 mean visibility); non-person texture → FAIL. Shared with the AshLanev2
+verification gate.
 
 ## Box quirks (2026-10-06)
 - `/tmp` is a 100%-full 512MB tmpfs. ALL pip/npm work needs
   `TMPDIR=$HOME/workspace/tmp PIP_CACHE_DIR=$HOME/workspace/tmp/pip-cache`
   (npm: `NPM_CONFIG_CACHE=$HOME/workspace/tmp/npm-cache`).
-- No libEGL on the box → EEVEE headless and MediaPipe native fail until
-  `apt install libegl1` lands (apt was lock-stuck 2026-10-06). Workarounds in
-  place: Blender renders use Cycles CPU; pose_qa needs libEGL to run.
+- No system libEGL/libGLESv2 on the box (EEVEE headless + MediaPipe native need
+  them). RESOLVED 2026-10-06 without root: Ubuntu debs dpkg-deb-extracted to
+  `~/workspace/vendor/egl`; `pose_qa.py` self-bootstraps LD_LIBRARY_PATH.
+  Blender renders use Cycles CPU regardless (EEVEE still can't init EGL here).
 - venv: `api-wiring/venv-charpipe` (trimesh 5.1.1, manifold3d, xatlas,
   networkx, mediapipe 1.1.0, pyglet<2 unused).
 
