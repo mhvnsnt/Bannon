@@ -19,9 +19,10 @@ Black woman, white chola/vamp facepaint, spiked leather. ~5 attires (see `../../
   information denial). Finisher **The Vacancy** — no setup, ends the sequence mid-motion.
 
 ## The stable (all off the numerology engine)
-- **CIPHER** — Anti-Pattern Brawler; Life Path recalculates to a different digit every read. Offense genuinely
+- **CIPHER** — **"The Undefined" (canonical, owner-locked 2026-10-07).** Based on **Lio Rush's 2026 "Blackheart" persona** (AEW, March 2026–): demonic alter ego, rain/umbrella motif, shrouded in black paint, contact lenses, black liquid from mouth. **Voice:** zoned out, spaced out, sounds controlled by an unseen being; manic and feral, somewhat comedic; whisper-to-shriek delivery (Gollum-like); loops single words ("bet bet bet", "cuts cuts cuts", "no no no"); third-person entity "he" ("he sees you", "he knows", "he's listening"); first-person plural "WE" ("WE are obsessed"); catchphrase shape "The Rain! The rain...cuts...deep!". **Behavior/mannerisms:** paranoid, erratic; feral crouch, crawls; manic grin; grabs his head; writhes when hurt holding the injury; professing about rain. Anti-Pattern Brawler; Life Path recalculates to a different digit every read. Offense genuinely
   non-deterministic move-to-move (real RNG in attack selection — nothing else in the roster does this).
-  Finisher **The Undefined** — randomizes between three finishers, no tell.
+  Finisher **The Undefined** — randomizes between three finishers, no tell. Onyx's wild card — the one she points at problems.
+  **DIALOGUE SOURCE LAW:** ONLY `assets/dialogue/bannon_dialogue.json` feral Cipher/Blackheart sets (`cipher` + `cipher_01`) are authorized. The old `character_lines.json` cipher "speedster" set ("I move too fast...", "Blink and you'll miss me!", "Too slow!", "Checkmate", etc.) is REJECTED (owner 2026-10-07) — removed from this repo and never copied forward.
 - **ECHO** — Mimic/Read; no Life Path of her own, hers is whatever the opponent runs. Finisher **The Reflection**
   — no signature; she hits you with your own move. (Doubles as "corrupted-reflection" boss tech.)
 - **HOLLOW** — Life Path resolves to a flat **0** (impossible under the universe's rules — a system error in a

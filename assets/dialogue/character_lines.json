@@ -367,66 +367,6 @@
       "You're embarrassing yourself!"
     ]
   },
-  "cipher": {
-    "story": [
-      "I move too fast for you to even perceive me! I am the black heart of this business!",
-      "You think you can outsmart me? I'm playing chess while you're playing checkers!"
-    ],
-    "universe": [
-      "This universe moves at my pace! Slow down and you get left behind!",
-      "I'm the ultimate puzzle, and you're missing all the pieces!"
-    ],
-    "exhibition": [
-      "Blink and you'll miss me!",
-      "I'm already three steps ahead!"
-    ],
-    "free_roam": [
-      "Gotta keep moving. Stagnation is death.",
-      "Too slow... everyone is moving so slow."
-    ],
-    "career": [
-      "I'm speeding past everyone straight to the gold!"
-    ],
-    "entrance_taunt": [
-      "I'm already in your head.",
-      "Watch my dust."
-    ],
-    "victory": [
-      "Checkmate.",
-      "Too slow!"
-    ],
-    "defeat": [
-      "Impossible! My calculations...",
-      "A glitch in the system!"
-    ],
-    "god_within": [
-      "I feel the power of the divine flowing through me!",
-      "This vessel is no longer human. It is ascending."
-    ],
-    "dialogue_choices": {
-      "aggressive_response": [
-        "You talk too much. I'll shut your mouth permanently."
-      ],
-      "diplomatic_response": [
-        "We don't have to do this. But if we do, you'll regret it."
-      ],
-      "cryptic_response": [
-        "The wheel turns. You are merely dust on the spokes."
-      ]
-    },
-    "interruptions": [
-      "You thought you were safe?!",
-      "Surprise! Did you forget about me?"
-    ],
-    "post_match_beatdown": [
-      "The bell rang, but I'm not done!",
-      "I decide when this is over!"
-    ],
-    "mid_match_taunt": [
-      "Is that all you got?",
-      "You're embarrassing yourself!"
-    ]
-  },
   "master_sensei": {
     "story": [
       "You lack discipline, young one... but you also lack the drip! Pimpin' ain't easy, but kung fu is!",
