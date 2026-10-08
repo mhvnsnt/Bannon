@@ -271,13 +271,47 @@ body.cine #fxCanvas{position:fixed !important;inset:0 !important;width:100vw !im
             if (!this.active) return;
             try{
               const F = (typeof fighters !== 'undefined') ? fighters : [];
+              const f = F[this.idx];
               for (let i = 0; i < F.length; i++){
                 if (i === this.idx || !F[i]) continue;
-                const f = F[i];
-                try{ if (f.root) f.root.visible = false; }catch(e){}
-                try{ if (f.model) f.model.visible = false; }catch(e){}
-                try{ if (f.grp) f.grp.visible = false; }catch(e){}
+                const o = F[i];
+                try{ if (o.root) o.root.visible = false; }catch(e){}
+                try{ if (o.model) o.model.visible = false; }catch(e){}
+                try{ if (o.grp) o.grp.visible = false; }catch(e){}
               }
+              // chain taunts: when the clip ends, play the next in rotation
+              // (in-page, no round-trip — the 3min/frame evaluate is gone)
+              try{
+                if (f && !f._tauntPlay && window.BANNON_TAUNTS && this.fams){
+                  this._slot = ((this._slot || 0) + 1) % 4;
+                  const slots = ['up','left','right','down'];
+                  window.BANNON_TAUNTS.play(f, slots[this._slot]);
+                }
+              }catch(e){}
+              // pyro on schedule
+              try{
+                this._f = (this._f || 0) + 1;
+                if (this.pyroEvery && this._f % this.pyroEvery === 0 && window.BANNON_FX){
+                  const HZ = (typeof ARENA_HALF_Z !== 'undefined') ? ARENA_HALF_Z : 2.2;
+                  window.BANNON_FX.pyroBurst(-2, HZ, 0xffdd33, 90);
+                  window.BANNON_FX.pyroBurst(2, HZ, 0xffdd33, 90);
+                  window.BANNON_FX.openWindow(60);
+                }
+              }catch(e){}
+              // walk take: glide the root toward the camera
+              try{
+                if (f && this.walk && f.root){
+                  const n = this.walk.n || 120;
+                  this._w = Math.min(1, ((this._w || 0) + 1) / n);
+                  const t = this._w;
+                  const x = this.walk.from[0] + (this.walk.to[0] - this.walk.from[0]) * t;
+                  const y = this.walk.from[1] + (this.walk.to[1] - this.walk.from[1]) * t;
+                  const z = this.walk.from[2] + (this.walk.to[2] - this.walk.from[2]) * t;
+                  f.root.position.set(x, y, z);
+                  if (f.grp) f.grp.position.set(x, y, z);
+                  f.x = x; f.y = y; f.z = z;
+                }
+              }catch(e){}
               const now = Date.now();
               if (!this._lastTron || now - this._lastTron > 5000){
                 this._lastTron = now;
@@ -501,7 +535,19 @@ body.cine #fxCanvas{position:fixed !important;inset:0 !important;width:100vw !im
       // FX window open for the whole take, tron on him, director live, spot lighting pinned
       try{ if (window.BANNON_FX) window.BANNON_FX.openWindow(60); }catch(e){}
       try{ if (window.BANNON_TRON){ window.BANNON_TRON.set('STICK UP'); window.BANNON_TRON.entrance('STICK UP'); } }catch(e){}
-      try{ if (window.__suDirect){ window.__suDirect.active = true; window.__suDirect.idx = i; window.__suDirect.initSpot(); } }catch(e){}
+      try{
+        if (window.__suDirect){
+          window.__suDirect.active = true;
+          window.__suDirect.idx = i;
+          window.__suDirect.fams = c.fams;
+          window.__suDirect.pyroEvery = c.pyro;
+          window.__suDirect.walk = c.walk;
+          window.__suDirect._f = 0;
+          window.__suDirect._w = 0;
+          window.__suDirect._slot = 0;
+          window.__suDirect.initSpot();
+        }
+      }catch(e){}
       // kick off the first taunt NOW (real mocap via the taunt system)
       try{ if (window.BANNON_TAUNTS) window.BANNON_TAUNTS.play(f, 'up'); out.taunt = 'playing'; }catch(e){ out.taunt = 'err'; }
       return 'directed ' + JSON.stringify(out);
@@ -548,9 +594,10 @@ body.cine #fxCanvas{position:fixed !important;inset:0 !important;width:100vw !im
   }, [k, cfg]);
 
   const captureDirected = async (tdir, cfg, nframes) => {
-    cfg.walk && (cfg.walk.n = nframes);
+    // NOTE: per-frame directFrame() evaluate was 3min/frame with the repaired model.
+    // The take setup triggers the taunt; the render-wrapper director handles
+    // opponent-hide/lighting/tron every frame. We just capture as fast as renders come.
     for (let k = 0; k < nframes; k++){
-      await directFrame(k, cfg, tdir, k);
       const last = await renderCount();
       const rc = await waitRender(last);
       if (rc < 0) throw new Error('render stall during take');
