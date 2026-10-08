@@ -2,15 +2,15 @@
  "_note": "Owner-edited priority queue for the character-video machine. One character per run: tools/video/queue/run_one.py takes the head entry with status 'queued' (or --character override). Edit order freely; never reorder mid-run. Statuses: queued | done | blocked.",
  "queue": [
   {
-   "beats": "/home/hatch/workspace/bannon-video-pipe/stickup/audio/stickup_beats.json",
+   "beats": "stickup/audio/stickup_beats.json",
    "billing": "Americus, Georgia - 6'1\" - 155 lbs",
    "character": "STICK_UP",
-   "glb": "assets/models/STICKUP.glb",
-   "music_cut": "/home/hatch/workspace/bannon-video-pipe/stickup/audio/stickup_video_cut.mp3",
+   "glb": "assets/models/STICKUP_repaired.glb",
+   "music_cut": "stickup/audio/stickup_video_cut.mp3",
    "name": "STICK-UP",
    "nicknames": "The Enigmatic Gangster|The Flamboyant Flexer",
    "p2": "BANNON",
-   "status": "done"
+   "status": "queued"
   },
   {
    "character": "BANNON",
