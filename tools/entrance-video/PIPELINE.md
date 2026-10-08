@@ -90,7 +90,7 @@ What `render_scene.py` builds (El Toro spec):
   Respects each bone's active rotation mode (no quaternion/euler double-write).
 - **Camera:** 7 cinematic framings, slightly low default, 3/4 preferred, TRACK_TO
   the character. Never flat profile.
-- Frames cached in `$ENTRANCE_WORKDIR` (default `repo/out/entrance_work_v2/`);
+- Frames cached in `$ENTRANCE_WORKDIR` (default `~/workspace/bannon-video-pipe/out/entrance_work_v2/`);
   re-runs skip scenes whose frames already exist.
 
 ### 2. Edit (beat-synced ffmpeg + PIL cards)
@@ -129,7 +129,7 @@ python3 tools/entrance-video/pipeline.py \
 
 - `<out>_16x9.mp4` — 960x540 (proof) or 1920x1080 (production), h264, 30fps, ~50s, AAC audio.
 - `<out>_9x16.mp4` — 1080x1920 vertical crop for Reels/Shorts/TikTok.
-- Intermediate frames persist in `repo/out/entrance_work_v2/frames_*/` (do NOT use /tmp — tmpfs wipes on restart).
+- Intermediate frames persist in `~/workspace/bannon-video-pipe/out/entrance_work_v2/frames_*/` (do NOT use /tmp — tmpfs wipes on restart).
 
 ## Verification (per the deliverable verification law)
 
