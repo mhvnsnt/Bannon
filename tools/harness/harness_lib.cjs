@@ -255,8 +255,12 @@ async function selectAndFight(g, p1, p2, p1alt, p2alt, p1model, p2model){
     }, plateId);
     await sleep(1500);
     return await page.evaluate((nm) => {
+      const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const want = norm(nm);
       const cards = [...document.querySelectorAll('.csCard')];
-      const c = cards.find(d => (d.dataset.porname || '').toUpperCase() === String(nm).toUpperCase());
+      // exact first, then normalized (STICK_UP == Stick-Up == STICK-UP)
+      let c = cards.find(d => (d.dataset.porname || '').toUpperCase() === String(nm).toUpperCase());
+      if (!c) c = cards.find(d => norm(d.dataset.porname) === want);
       if (!c) return false;
       try{ c.scrollIntoView({ block: 'center' }); }catch(e){}
       c.click();
@@ -274,6 +278,9 @@ async function selectAndFight(g, p1, p2, p1alt, p2alt, p1model, p2model){
     log(ok1 ? 'P1 card picked: ' + p1 : 'P1 CARD NOT FOUND: ' + p1);
     const ok2 = await pickCard('csPlateP2', p2);
     log(ok2 ? 'P2 card picked: ' + p2 : 'P2 CARD NOT FOUND: ' + p2);
+    // fail-closed: never start a match with the wrong characters — a default
+    // BANNON vs VIPER filming as "STICK_UP" is worse than no footage at all.
+    if (!ok1 || !ok2) throw new Error('character card pick failed (p1=' + ok1 + ' p2=' + ok2 + ') — refusing to film wrong matchup');
     await page.evaluate(() => { const s = document.getElementById('csStart'); if (s) s.click(); });
     live = await waitFor(async () => (await gameState()) === 'fight', 60000, 'FIGHT ▶ to start the match');
   }
