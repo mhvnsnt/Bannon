@@ -283,6 +283,7 @@ body.cine #fxCanvas{position:fixed !important;inset:0 !important;width:100vw !im
                 this._lastTron = now;
                 try{
                   if (window.BANNON_TRON){
+                    window.BANNON_TRON.bind(); // re-grab the live texture (arena rebuilds orphan old bindings)
                     window.BANNON_TRON.set('STICK UP');
                     window.BANNON_TRON.entrance('STICK UP');
                   }
@@ -475,10 +476,11 @@ body.cine #fxCanvas{position:fixed !important;inset:0 !important;width:100vw !im
       try{ f.x = px; f.y = py; f.z = pz; f._entering = false; f.zone = 'RING'; }catch(e){}
       try{ if (f.root){ f.root.position.set(px, py, pz); } }catch(e){}
       try{ if (f.grp){ f.grp.position.set(px, py, pz); } }catch(e){}
-      // face the camera: yaw so his front (+z of model) points at the lens
+      // face the camera: yaw so his front points at the lens
+      // (model front is -z at rotation 0, so add PI to face +z toward camera)
       try{
         const dx = c.cam[0][0] - px, dz = c.cam[0][2] - pz;
-        const yaw = Math.atan2(dx, dz);
+        const yaw = Math.atan2(dx, dz) + Math.PI;
         if (f.model) f.model.rotation.y = yaw;
         if (f.grp) f.grp.rotation.y = yaw;
         if (f.root) f.root.rotation.y = yaw;
