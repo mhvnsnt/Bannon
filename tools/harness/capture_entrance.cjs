@@ -43,11 +43,14 @@ const { ROOT, arg, has, sleep, bootGame, selectAndFight, buildReport, closeGame 
 // 3 entrance takes (short — the sandbox OOM-kills long runs).
 // Staged in-ring performance with entrance FX (pyro, tron, dark arena, spot).
 // [name, action, frames]
-const TAKES = [
-  ['stage_pyro',  'pyro_taunt', 100],  // 5s: pyro burst + taunt
-  ['taunt_close', 'taunt',      100],  // 5s: taunt performance
-  ['wide_final',  'taunt',      100],  // 5s: final pose
-];
+  // ---- directed takes: every take is a PERFORMANCE, never a mannequin hold ----
+  // [name, action, nframes, {cam:[pos,look], fams:[BANNON_TAUNTS families], pyro:frames-between-bursts, walk:{from,to}}]
+  const TAKES = [
+    ['stage_pyro',  'perform', 100, { cam:[[0,3.4,9.5],[0,1.2,0]],   fams:['ARMS_WIDE','CALLOUT'],       pyro:25, walk:null }],
+    ['taunt_close', 'perform', 100, { cam:[[0,1.7,3.4],[0,1.35,0]],   fams:['CROTCH','CALLOUT','POINT'],   pyro:0,  walk:null }],
+    ['strut_to_cam','perform', 120, { cam:[[0,1.9,6.5],[0,1.2,0.5]],  fams:['STRUT'],                       pyro:0,  walk:{from:[0,-0.85,-2.5], to:[0,-0.85,1.8]} }],
+    ['wide_final',  'perform', 100, { cam:[[0,3.0,10.5],[0,1.1,0]],   fams:['FLEX','POINT','ARMS_WIDE'],   pyro:30, walk:null }],
+  ];
 const TAKE_KIND = { stage_pyro:'walkout', ramp_track:'walkout', ring_low:'walkout', taunt_close:'taunts', wide_final:'walkout' };
 
 const CINE_CSS = `
@@ -229,15 +232,75 @@ body.cine #fxCanvas{position:fixed !important;inset:0 !important;width:100vw !im
   // Also installs the cinematic camera override: every render, if window.__cineCam
   // is set, the camera is forced to that position/lookAt (defeats the game's
   // per-frame camera logic which would otherwise overwrite a one-time set).
+  // PLUS the performance director: every render, while window.__suDirect is active,
+  // it re-hides the opponent, re-applies SPOT lighting, and refreshes the tron —
+  // defeating the game's per-frame resets that turned v1 takes into mannequin shots.
   await page.evaluate(() => {
     try{
       const R = new Function('return renderer')();
+      // ---- performance director (installed once) ----
+      if (!window.__suDirect){
+        window.__suDirect = {
+          active:false, idx:0, _n:0, _lastTron:0, _bases:null,
+          initSpot(){
+            try{
+              const S = new Function('return scene')();
+              this._bases = [];
+              S.traverse(o => {
+                if (!o.isLight) return;
+                const base = (o.userData.__perfBaseInt != null) ? o.userData.__perfBaseInt : o.intensity;
+                this._bases.push({ l:o, base });
+              });
+              this.applySpot();
+            }catch(e){}
+          },
+          applySpot(){
+            try{
+              (this._bases || []).forEach(e => {
+                const l = e.l, b = e.base;
+                let v;
+                if (l.isAmbientLight || l.isHemisphereLight) v = b * 0.15;
+                else if (l.isSpotLight) v = b * 1.6;
+                else v = b * 0.22;
+                l.intensity = v;
+                l.userData.__perfBaseInt = v; // pin it: the perf system restores OUR dark values
+              });
+            }catch(e){}
+          },
+          perFrame(){
+            if (!this.active) return;
+            try{
+              const F = (typeof fighters !== 'undefined') ? fighters : [];
+              for (let i = 0; i < F.length; i++){
+                if (i === this.idx || !F[i]) continue;
+                const f = F[i];
+                try{ if (f.root) f.root.visible = false; }catch(e){}
+                try{ if (f.model) f.model.visible = false; }catch(e){}
+                try{ if (f.grp) f.grp.visible = false; }catch(e){}
+              }
+              const now = Date.now();
+              if (!this._lastTron || now - this._lastTron > 5000){
+                this._lastTron = now;
+                try{
+                  if (window.BANNON_TRON){
+                    window.BANNON_TRON.set('STICK UP');
+                    window.BANNON_TRON.entrance('STICK UP');
+                  }
+                }catch(e){}
+              }
+              this._n++;
+              if (this._n % 60 === 0) this.applySpot();
+            }catch(e){}
+          }
+        };
+      }
       if (!R.render.__cineCounted){
         const orig = R.render.bind(R);
         window.__renderCount = 0;
         R.render = function(){
           window.__renderCount++;
           try{
+            if (window.__suDirect) window.__suDirect.perFrame();
             const cc = window.__cineCam;
             if (cc){
               const C = new Function('return camera')();
@@ -398,29 +461,114 @@ body.cine #fxCanvas{position:fixed !important;inset:0 !important;width:100vw !im
     return startFrame + n;
   };
 
-  for (const [tname, action, nframes] of takes){
-    // default follow-camera (setCam is a no-op that confirms the mode)
-    const cam = await setCam(0, 0, 0, 0, 0, 0);
+  // ---- directed take driver: real taunts via BANNON_TAUNTS (mocap clips), chained ----
+  const directTake = (idx, cfg) => page.evaluate(([i, c]) => {
+    try{
+      const F = (typeof fighters !== 'undefined') ? fighters : [];
+      const f = F[i];
+      if (!f) return 'no-fighter';
+      const out = {};
+      // camera: hard override every render via __cineCam
+      try{ window.__cineCam = [c.cam[0][0],c.cam[0][1],c.cam[0][2],c.cam[1][0],c.cam[1][1],c.cam[1][2]]; out.cam = 'set'; }catch(e){ out.cam = 'err'; }
+      // place him (and face the camera)
+      const px = c.walk ? c.walk.from[0] : 0, py = c.walk ? c.walk.from[1] : -0.85, pz = c.walk ? c.walk.from[2] : -0.9;
+      try{ f.x = px; f.y = py; f.z = pz; f._entering = false; f.zone = 'RING'; }catch(e){}
+      try{ if (f.root){ f.root.position.set(px, py, pz); } }catch(e){}
+      try{ if (f.grp){ f.grp.position.set(px, py, pz); } }catch(e){}
+      // face the camera: yaw so his front (+z of model) points at the lens
+      try{
+        const dx = c.cam[0][0] - px, dz = c.cam[0][2] - pz;
+        const yaw = Math.atan2(dx, dz);
+        if (f.model) f.model.rotation.y = yaw;
+        if (f.grp) f.grp.rotation.y = yaw;
+        if (f.root) f.root.rotation.y = yaw;
+        out.yaw = yaw.toFixed(2);
+      }catch(e){}
+      // directed taunt kit: ONLY the families for this take, in rotation
+      try{
+        const cat = window.BANNON_TAUNTS ? window.BANNON_TAUNTS.catalogue() : [];
+        const pick = {};
+        ['up','left','right','down'].forEach((slot, s) => {
+          const fam = c.fams[s % c.fams.length];
+          const e = cat.find(x => x.family === fam) || cat[s % cat.length];
+          if (e) pick[slot] = e;
+        });
+        f._tauntKit = pick;
+        out.kit = Object.values(pick).map(e => e.family + ':' + e.clip).join(',');
+      }catch(e){ out.kit = 'err'; }
+      // FX window open for the whole take, tron on him, director live, spot lighting pinned
+      try{ if (window.BANNON_FX) window.BANNON_FX.openWindow(60); }catch(e){}
+      try{ if (window.BANNON_TRON){ window.BANNON_TRON.set('STICK UP'); window.BANNON_TRON.entrance('STICK UP'); } }catch(e){}
+      try{ if (window.__suDirect){ window.__suDirect.active = true; window.__suDirect.idx = i; window.__suDirect.initSpot(); } }catch(e){}
+      // kick off the first taunt NOW (real mocap via the taunt system)
+      try{ if (window.BANNON_TAUNTS) window.BANNON_TAUNTS.play(f, 'up'); out.taunt = 'playing'; }catch(e){ out.taunt = 'err'; }
+      return 'directed ' + JSON.stringify(out);
+    }catch(e){ return 'err:' + String(e).slice(0,80); }
+  }, [setup.idx, cfg]);
+
+  // one directed frame: chain the next taunt when the last ends, fire pyro on schedule,
+  // walk the root toward the camera for walk takes — then wait a render and shoot it
+  const directFrame = (k, cfg, tdir, frame) => page.evaluate(([kk, c]) => {
+    try{
+      const F = (typeof fighters !== 'undefined') ? fighters : [];
+      const f = F[(window.__suDirect && window.__suDirect.idx) || 0];
+      if (!f) return 'no-fighter';
+      // chain taunts: when the clip ends, play the next family in rotation
+      try{
+        if (!f._tauntPlay && window.BANNON_TAUNTS){
+          const slots = ['up','left','right','down'];
+          window.BANNON_TAUNTS.play(f, slots[kk % 4]);
+        }
+      }catch(e){}
+      // pyro on schedule
+      try{
+        if (c.pyro && kk % c.pyro === 0 && window.BANNON_FX){
+          const HZ = (typeof ARENA_HALF_Z !== 'undefined') ? ARENA_HALF_Z : 2.2;
+          window.BANNON_FX.pyroBurst(-2, HZ, 0xffdd33, 90);
+          window.BANNON_FX.pyroBurst(2, HZ, 0xffdd33, 90);
+          window.BANNON_FX.openWindow(60);
+        }
+      }catch(e){}
+      // walk take: glide the root from->to across the take
+      try{
+        if (c.walk && f.root){
+          const n = c.walk.n || 120, t = Math.min(1, kk / n);
+          const x = c.walk.from[0] + (c.walk.to[0] - c.walk.from[0]) * t;
+          const y = c.walk.from[1] + (c.walk.to[1] - c.walk.from[1]) * t;
+          const z = c.walk.from[2] + (c.walk.to[2] - c.walk.from[2]) * t;
+          f.root.position.set(x, y, z);
+          if (f.grp) f.grp.position.set(x, y, z);
+          f.x = x; f.y = y; f.z = z;
+        }
+      }catch(e){}
+      return 'ok';
+    }catch(e){ return 'err:' + String(e).slice(0,60); }
+  }, [k, cfg]);
+
+  const captureDirected = async (tdir, cfg, nframes) => {
+    cfg.walk && (cfg.walk.n = nframes);
+    for (let k = 0; k < nframes; k++){
+      await directFrame(k, cfg, tdir, k);
+      const last = await renderCount();
+      const rc = await waitRender(last);
+      if (rc < 0) throw new Error('render stall during take');
+      await shot(path.join(tdir, 'f' + String(k).padStart(4, '0') + '.png'));
+      if ((k+1) % 40 === 0) console.error('  frame ' + (k + 1) + '/' + nframes);
+    }
+    return nframes;
+  };
+
+  for (const take of takes){
+    const [tname, action, nframes, cfg] = take;
     const tdir = path.join(outDir, 'take_' + tname);
     fs.mkdirSync(tdir, { recursive: true });
-    console.error('TAKE_START: ' + tname + ' cam=' + JSON.stringify(cam));
+    console.error('TAKE_START: ' + tname + ' cfg=' + JSON.stringify({cam:cfg.cam, fams:cfg.fams, pyro:cfg.pyro, walk:!!cfg.walk}));
     let frame = 0;
-    if (action === 'pyro_taunt'){
-      // pyro burst + taunt: the entrance moment
-      await page.evaluate((i) => {
-        try{
-          const F = (typeof fighters !== 'undefined') ? fighters : [];
-          const f = F[i];
-          if (f && window.BANNON_FX){
-            window.BANNON_FX.pyroBurst(f.x || 0, f.z || 0, 0xffdd33, 120);
-            window.BANNON_FX.openWindow(30);
-          }
-          if (window.BANNON_TRON) window.BANNON_TRON.entrance('STICK UP');
-          if (f) f.state = 'taunt';
-        }catch(e){}
-      }, setup.idx);
-      frame = await captureFrames(tdir, nframes, 0);
-      log('take:' + tname + ' pyro_taunt frames=' + frame);
+    if (action === 'perform'){
+      const d = await directTake(setup.idx, cfg);
+      log('take:' + tname + ' ' + d);
+      frame = await captureDirected(tdir, cfg, nframes);
+      log('take:' + tname + ' performed frames=' + frame);
     } else {
       const t = await startTaunt(setup.idx);
       log('take:' + tname + ' ' + t);
@@ -434,6 +582,8 @@ body.cine #fxCanvas{position:fixed !important;inset:0 !important;width:100vw !im
     }
     await sleep(1200);
   }
+  // director off
+  await page.evaluate(() => { try{ if (window.__suDirect) window.__suDirect.active = false; }catch(e){} });
 
   const report = await buildReport(g, 'entrance');
   report.cineSetup = setup;
