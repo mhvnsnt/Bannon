@@ -50,6 +50,8 @@ def main():
     ap.add_argument("--width", type=int, default=1920)
     ap.add_argument("--height", type=int, default=1080)
     ap.add_argument("--max-frames", type=int, default=0)
+    ap.add_argument("--samples", type=int, default=64,
+                    help="EEVEE render samples per frame (lower=faster)")
     pa = ap.parse_args()
     cfg = json.load(open(pa.config))
     fps = 30
@@ -85,7 +87,8 @@ def main():
                    "--frames", str(nframes),
                    "--fps", str(fps),
                    "--output", fdir + "/",
-                   "--width", str(pa.width), "--height", str(pa.height)]
+                   "--width", str(pa.width), "--height", str(pa.height),
+                   "--samples", str(pa.samples)]
             if s.get("mocap"):
                 cmd += ["--mocap", s["mocap"]]
             run(cmd)

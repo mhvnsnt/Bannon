@@ -49,6 +49,7 @@ FPS = int(arg("--fps", "30"))
 OUTDIR = arg("--output", "/tmp/frames/")
 WIDTH = int(arg("--width", "1920"))
 HEIGHT = int(arg("--height", "1080"))
+SAMPLES = int(arg("--samples", "64"))
 
 os.makedirs(OUTDIR, exist_ok=True)
 
@@ -70,6 +71,7 @@ scene.frame_end = FRAMES
 # EEVEE volumetrics for god rays
 scene.eevee.volumetric_tile_size = '4'
 scene.eevee.volumetric_samples = 16
+scene.eevee.taa_render_samples = SAMPLES
 
 # --- world: near-black with starfield ---
 world = scene.world
