@@ -281,7 +281,11 @@ async function selectAndFight(g, p1, p2, p1alt, p2alt, p1model, p2model){
     return false;
   };
   await page.evaluate(() => { const b = document.getElementById('btnFight'); if (b) b.click(); });
-  const selectOpen = await waitFor(async () => page.evaluate(() => {
+  // BANNON_SKIP_SELECT=1: bypass the fragile card UI entirely — set MATCH_SETUP
+  // directly and start the fight. The card picker races the roster render and
+  // silently films defaults (BANNON vs VIPER) when it loses.
+  const skipSelect = process.env.BANNON_SKIP_SELECT === '1';
+  const selectOpen = skipSelect ? false : await waitFor(async () => page.evaluate(() => {
     const s = document.getElementById('csStart'); return !!(s && s.offsetParent !== null);
   }), 60000, 'the character select screen');
   let live = false;
@@ -316,6 +320,23 @@ async function selectAndFight(g, p1, p2, p1alt, p2alt, p1model, p2model){
     const s = window.MATCH_SETUP; return s ? (s.p1Name + ' vs ' + s.p2Name) : 'unknown';
   }) : null;
   log(live ? ('bell: ' + actualMatchup) : 'NO MATCH STARTED — figures below are NOT gameplay');
+  // fail-fast: verify the SPAWNED fighters match the requested ones, not just MATCH_SETUP.
+  // (The select UI can silently start defaults; catching it here saves a 10-min doomed capture.)
+  if (live){
+    const spawned = await page.evaluate(() => {
+      try{
+        const F = (typeof fighters !== 'undefined') ? fighters : [];
+        return F.slice(0, 2).map(f => {
+          try{ return (f.opts && f.opts.name) || f.name || f.specName || '?'; }catch(e){ return '?'; }
+        });
+      }catch(e){ return []; }
+    });
+    log('spawned fighters: ' + JSON.stringify(spawned));
+    const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (norm(spawned[0]) !== norm(p1)) {
+      throw new Error('spawned P1 is "' + spawned[0] + '", expected "' + p1 + '" — refusing to film wrong matchup');
+    }
+  }
   return live ? actualMatchup : null;
 }
 
