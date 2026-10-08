@@ -121,13 +121,14 @@ What `edit.py` does:
 cd ~/workspace/bannon-video-pipe/repo
 python3 tools/entrance-video/pipeline.py \
   tools/entrance-video/kits/stickup_v2_proof_50s.json \
-  --width 960 --height 540
+  --width 480 --height 270 --samples 24
 # outputs: <out>_16x9.mp4 + <out>_9x16.mp4
+# Proof uses 480x270 for speed (~2h for 50s); production uses 960x540+.
 ```
 
 ## Outputs
 
-- `<out>_16x9.mp4` — 960x540 (proof) or 1920x1080 (production), h264, 30fps, ~50s, AAC audio.
+- `<out>_16x9.mp4` — 480x270 (proof) or 960x540/1920x1080 (production), h264, 30fps, ~50s, AAC audio.
 - `<out>_9x16.mp4` — 1080x1920 vertical crop for Reels/Shorts/TikTok.
 - Intermediate frames persist in `~/workspace/bannon-video-pipe/out/entrance_work_v2/frames_*/` (do NOT use /tmp — tmpfs wipes on restart).
 
@@ -146,7 +147,8 @@ After every run, before claiming done:
 
 - No clean walk-cycle mocap in `assets/mocap/drive/` (only crouch/drunk/dwarf walks);
   entrance scenes use idle/taunt clips until a walk is sourced.
-- Render speed ~15–35 s/frame at 960x540 EEVEE on this VM; a 50s/30fps video is
-  ~1500 frames ≈ 6–14 hours. Proof renders use 960x540; production 1080p TBD.
+- Render speed ~4–6 s/frame at 480x270/24 samples EEVEE on this VM (2 CPU);
+  a 50s/30fps video is ~1500 frames ≈ 2 hours. 960x540 is ~4x slower (~8h).
+  Use 480x270 for proofs, 960x540+ for production.
 - God-ray cone meshes removed (rendered as opaque pillars); black void + spot
   pool carries the look until a proven volumetric solution lands.
