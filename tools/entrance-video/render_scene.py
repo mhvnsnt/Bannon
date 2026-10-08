@@ -256,14 +256,18 @@ def add_light(name, ltype, energy, loc, color=(1.0, 1.0, 1.0)):
     l.data.color = color
     return l
 
-key = add_light("Key", 'SPOT', 1200, (5, -7, 7), (1.0, 0.92, 0.80))
+key = add_light("Key", 'SPOT', 3000, (4, -6, 6), (1.0, 0.92, 0.80))
 key.data.spot_size = math.radians(55)
 
-rim = add_light("Rim", 'SPOT', 1500, (-4, 7, 5), (1.0, 0.08, 0.05))  # RED signature
+rim = add_light("Rim", 'SPOT', 2500, (-4, 7, 5), (1.0, 0.08, 0.05))  # RED signature
 rim.data.spot_size = math.radians(50)
 
-fill = add_light("Fill", 'AREA', 250, (6, -2, 3), (0.35, 0.55, 1.0))  # cool blue
+fill = add_light("Fill", 'AREA', 600, (5, -3, 2.5), (0.35, 0.55, 1.0))  # cool blue
 fill.data.size = 4.0
+
+# front wash: ensures the character reads on camera (was pitch dark)
+front = add_light("Front", 'SPOT', 1800, (0, -8, 3), (1.0, 0.95, 0.88))
+front.data.spot_size = math.radians(45)
 
 # overhead spot pool — color shifts per scene (El Toro: blue -> red -> gold)
 pool_colors = {
@@ -283,9 +287,13 @@ for l in [o for o in bpy.context.scene.objects if o.type == 'LIGHT']:
     c.track_axis = 'TRACK_NEGATIVE_Z'
     c.up_axis = 'UP_Y'
 
-# --- volumetric god-ray cones (fake volumetrics, cheap + reliable) ---
+# --- volumetric god-ray cones: REMOVED (2026-10-08) ---
+# The fake-volumetric cones rendered as opaque solid pillars in every test,
+# dominating the frame. El Toro's look is black void + spotlight pool;
+# cones are cut until a proper volumetric solution is proven.
+# (def god_ray retained below for future use, not called)
 def god_ray(x, tilt_deg=8):
-    bpy.ops.mesh.primitive_cone_add(radius1=0.4, radius2=2.2, depth=14,
+    bpy.ops.mesh.primitive_cone_add(radius1=0.15, radius2=0.9, depth=14,
                                     location=(x, 0, 7))
     cone = bpy.context.active_object
     cone.name = f"GodRay_{x}"
@@ -299,11 +307,9 @@ def god_ray(x, tilt_deg=8):
     transp = mn.new('ShaderNodeBsdfTransparent')
     emis = mn.new('ShaderNodeEmission')
     emis.inputs[0].default_value = (1.0, 0.82, 0.55, 1.0)  # warm gold
-    emis.inputs[1].default_value = 0.55
+    emis.inputs[1].default_value = 0.18  # subtle — was 0.55, rendered as solid pillars
     mixs = mn.new('ShaderNodeMixShader')
-    mixs.inputs[0].default_value = 0.88  # mostly transparent
-    fres = mn.new('ShaderNodeFresnel')
-    ml.new(fres.outputs[0], mixs.inputs[0])
+    mixs.inputs[0].default_value = 0.97  # nearly fully transparent
     ml.new(transp.outputs[0], mixs.inputs[1])
     ml.new(emis.outputs[0], mixs.inputs[2])
     ml.new(mixs.outputs[0], mout.inputs[0])
@@ -311,7 +317,8 @@ def god_ray(x, tilt_deg=8):
     cone.data.materials.append(mat)
     return cone
 
-for gx in (-4.5, -1.5, 1.5, 4.5):
+# god_ray() calls removed — cones cut (see above)
+for gx in ():
     god_ray(gx, tilt_deg=random.uniform(5, 12))
 
 # --- CAMERA v2: 7 cinematic framings ---
@@ -331,13 +338,13 @@ cam.animation_data_create()
 F = FRAMES
 # each framing: (start_xyz, end_xyz) — 3/4 angles, low default
 framings = {
-    "push_in":    ((3.0, -9.0, 1.8), (2.0, -5.0, 1.5)),
-    "orbit":      ((6.5, -4.5, 1.8), (-6.5, -4.5, 2.2)),
-    "low_angle":  ((2.0, -7.5, 0.7), (1.2, -4.5, 1.1)),
-    "closeup_34": ((2.2, -4.2, 2.0), (1.6, -3.0, 1.9)),
-    "side_profile": ((7.5, -1.5, 1.7), (7.0, 1.0, 1.7)),
-    "wide":       ((4.5, -13.0, 2.5), (3.5, -11.0, 2.2)),
-    "medium":     ((2.8, -6.5, 1.7), (2.2, -5.5, 1.6)),
+    "push_in":    ((2.2, -6.5, 1.7), (1.5, -4.0, 1.5)),
+    "orbit":      ((4.5, -3.5, 1.8), (-4.5, -3.5, 2.0)),
+    "low_angle":  ((1.8, -5.5, 0.7), (1.2, -3.8, 1.0)),
+    "closeup_34": ((1.8, -3.2, 2.0), (1.4, -2.6, 1.9)),
+    "side_profile": ((5.5, -1.2, 1.7), (5.0, 0.8, 1.7)),
+    "wide":       ((3.5, -10.0, 2.3), (2.8, -8.5, 2.1)),
+    "medium":     ((2.2, -5.0, 1.7), (1.8, -4.2, 1.6)),
 }
 start, end = framings.get(CAM_MOVE, framings["push_in"])
 for f, pos in [(1, start), (F, end)]:

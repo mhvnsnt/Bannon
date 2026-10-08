@@ -156,7 +156,8 @@ def main():
          "-c:a", "copy", v_faded])
 
     # --- 6. music mux ---
-    total_dur = beats[scenes[-1]["beats"][1]] - beats[0]
+    # total video duration = last scene end beat - first scene start beat
+    total_dur = beats[scenes[-1]["beats"][1]] - beats[scenes[0]["beats"][0]]
     v_16x9 = f"{a.out}_16x9.mp4"
     run(["ffmpeg", "-y", "-i", v_faded, "-i", a.music,
          "-t", f"{total_dur:.2f}",
