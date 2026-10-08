@@ -35,9 +35,14 @@ Input: one JSON file with shot measurements, or a directory of them:
 Usage:
   python3 promo_gates.py --metrics metrics.json [--metrics dir/] [--config gates_config.json]
   python3 promo_gates.py --self-test   # runs on the bundled v1/v2 sample metrics
+  python3 promo_gates.py --measure MODEL.glb [--ref REF.glb] [--clip CLIP.glb]
+      # measure the GLB directly with rig_measure.py (any path, no hardcoding),
+      # then run the gates on the measured numbers. Default ref is the repo's
+      # XBot. Shot-level gates (foot slide, rope crossing, ...) SKIP when only
+      # rig measurements exist — those need per-shot telemetry.
 
-The numbers above must come from measurement tooling (rig-repair tools,
-retarget QA, frame analysis). This script evaluates; it does not measure.
+The numbers above must come from measurement tooling. --measure makes this
+script measure (via rig_measure.py) instead of trusting a hand-written JSON.
 """
 import argparse
 import json
@@ -130,10 +135,34 @@ def main():
                     '{"rig.rotation_error_eff_deg": 3.0, ...}')
     ap.add_argument("--self-test", action="store_true",
                     help="run bundled sample metrics (v1 FAIL demo)")
+    ap.add_argument("--measure", metavar="MODEL.glb",
+                    help="GLB model file: measure it with rig_measure.py, then gate")
+    ap.add_argument("--ref", help="reference GLB for rotation eff-deg "
+                    "(default: repo assets/models/xbot.glb)")
+    ap.add_argument("--clip", help="animation GLB driving clip eff-deg")
     args = ap.parse_args()
 
     thresholds = json.load(open(args.config)) if args.config else {}
     items = load_metrics(args)
+    if args.measure:
+        here = os.path.dirname(os.path.abspath(__file__))
+        sys.path.insert(0, here)
+        import rig_measure
+        default_ref = os.path.normpath(os.path.join(
+            here, "..", "..", "assets", "models", "xbot.glb"))
+        ref = args.ref or (default_ref if os.path.exists(default_ref) else None)
+        if ref is None:
+            print("no --ref given and no repo XBot found", file=sys.stderr)
+            sys.exit(2)
+        m = rig_measure.measure(args.measure, ref, args.clip)
+        g = m.get("gates", {})
+        items.append({
+            "shot": m.get("shot", os.path.basename(args.measure)),
+            "rig": g.get("rig", {}),
+            "feet_above_ground_max_mm": g.get("feet_above_ground_max_mm"),
+            "_measured_from": os.path.abspath(args.measure),
+            "_ref": os.path.abspath(ref),
+        })
     if not items:
         print("no metrics loaded", file=sys.stderr)
         sys.exit(2)

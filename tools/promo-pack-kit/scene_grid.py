@@ -24,8 +24,9 @@ Usage:
 A custom shot list can be supplied with --shots shot_list.json:
   {"shots": [{"name": "...", "beat_start": 0, "beat_end": 8,
               "camera": "...", "audio": "...", "graphics": "..."}]}
-Shot times are computed from beat positions; anything not on a beat is snapped
-and reported as a warning (cuts must land on beats).
+Shot times are computed from beat positions; anything not on a beat is reported
+as a warning (cuts must land on beats) unless the shot sets
+"intentional_offbeat": true (e.g. the dead_air dropout before the golden hit).
 """
 import argparse
 import json
@@ -41,7 +42,8 @@ EL_TORO_SHOTS = [
      "camera": "hold push-in",
      "lighting": "near-black",
      "audio": "0.25 s of silence (dropout before the hit)",
-     "graphics": "none"},
+     "graphics": "none",
+     "intentional_offbeat": True},  # deliberate quarter-beat dropout, not a cut error
     {"name": "golden_hit", "beat_start": 8, "beat_end": 24,
      "camera": "cut to lit medium, slight dolly",
      "lighting": "full reveal",
@@ -88,11 +90,13 @@ def build_grid(bpm, duration_s, shots, fps):
     warnings = []
     for s in shots:
         bs, be = s["beat_start"], s["beat_end"]
+        intentional = bool(s.get("intentional_offbeat"))
         for key, val in (("beat_start", bs), ("beat_end", be)):
-            if abs(val - round(val)) > 1e-9:
+            if abs(val - round(val)) > 1e-9 and not intentional:
                 warnings.append(
                     f"shot '{s['name']}' {key}={val} is not on a beat; "
-                    "cuts must land on beats")
+                    "cuts must land on beats (set intentional_offbeat: true "
+                    "if the off-beat position is deliberate)")
         if be * beat_s > duration_s + 1e-9:
             warnings.append(
                 f"shot '{s['name']}' ends at {be * beat_s:.2f}s, past duration {duration_s}s")
