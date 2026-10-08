@@ -250,35 +250,21 @@ async function selectAndFight(g, p1, p2, p1alt, p2alt, p1model, p2model){
     log('model bind: ' + ck + ' -> ' + url);
   }
   const pickCard = async (plateId, name) => {
-    const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const want = norm(name);
-    for (let attempt = 0; attempt < 3; attempt++){
-      await page.evaluate((pid) => {
-        const pl = document.getElementById(pid); if (pl) pl.click();
-      }, plateId);
-      await sleep(1500);
-      const clicked = await page.evaluate((nm) => {
-        const n2 = String(nm || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-        const cards = [...document.querySelectorAll('.csCard')];
-        let c = cards.find(d => (d.dataset.porname || '').toUpperCase() === String(nm).toUpperCase());
-        if (!c) c = cards.find(d => String(d.dataset.porname || '').toUpperCase().replace(/[^A-Z0-9]/g, '') === n2);
-        if (!c) return 'not-found';
-        try{ c.scrollIntoView({ block: 'center' }); }catch(e){}
-        c.click();
-        return 'clicked';
-      }, name);
-      if (clicked === 'not-found') continue;
-      await sleep(800);
-      // verify the plate actually shows our character (not a stale default)
-      const shown = await page.evaluate((pid) => {
-        const pl = document.getElementById(pid);
-        const nm = pl ? pl.querySelector('.pnm') : null;
-        return nm ? nm.textContent : '';
-      }, plateId);
-      if (norm(shown) === want) return true;
-      log('card pick attempt ' + (attempt+1) + ' for ' + name + ': plate shows "' + shown + '", retrying');
-    }
-    return false;
+    await page.evaluate((pid) => {
+      const pl = document.getElementById(pid); if (pl) pl.click();
+    }, plateId);
+    await sleep(1500);
+    return await page.evaluate((nm) => {
+      const norm = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const want = norm(nm);
+      const cards = [...document.querySelectorAll('.csCard')];
+      let c = cards.find(d => (d.dataset.porname || '').toUpperCase() === String(nm).toUpperCase());
+      if (!c) c = cards.find(d => norm(d.dataset.porname) === want);
+      if (!c) return false;
+      try{ c.scrollIntoView({ block: 'center' }); }catch(e){}
+      c.click();
+      return true;
+    }, name);
   };
   await page.evaluate(() => { const b = document.getElementById('btnFight'); if (b) b.click(); });
   // BANNON_SKIP_SELECT=1: bypass the fragile card UI entirely — set MATCH_SETUP
