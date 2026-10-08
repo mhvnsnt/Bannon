@@ -41,8 +41,13 @@ def run(cmd):
         raise RuntimeError(f"failed: {cmd[0]}")
 
 def main():
-    cfg_path = sys.argv[1]
-    cfg = json.load(open(cfg_path))
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("config")
+    ap.add_argument("--width", type=int, default=1920)
+    ap.add_argument("--height", type=int, default=1080)
+    pa = ap.parse_args()
+    cfg = json.load(open(pa.config))
     fps = 30
     workdir = "/tmp/entrance_work"
     os.makedirs(workdir, exist_ok=True)
@@ -70,7 +75,7 @@ def main():
                    "--frames", str(nframes),
                    "--fps", str(fps),
                    "--output", fdir + "/",
-                   "--width", "1920", "--height", "1080"]
+                   "--width", str(pa.width), "--height", str(pa.height)]
             if s.get("mocap"):
                 cmd += ["--mocap", s["mocap"]]
             run(cmd)
@@ -87,7 +92,8 @@ def main():
          "--music", cfg["music"],
          "--cards", cards_json,
          "--out", cfg["out"],
-         "--fps", str(fps)])
+         "--fps", str(fps),
+         "--width", str(pa.width), "--height", str(pa.height)])
     print("PIPELINE DONE:", cfg["out"] + "_16x9.mp4")
 
 if __name__ == "__main__":

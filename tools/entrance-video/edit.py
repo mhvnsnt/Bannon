@@ -36,7 +36,10 @@ def main():
     ap.add_argument("--cards", required=True, help="JSON: {titantron:{...}, tagline:{...}, endcard:{...}} text cards")
     ap.add_argument("--out", required=True, help="output prefix")
     ap.add_argument("--fps", type=int, default=30)
+    ap.add_argument("--width", type=int, default=1920)
+    ap.add_argument("--height", type=int, default=1080)
     a = ap.parse_args()
+    W, H = a.width, a.height
 
     beats = json.load(open(a.beats))["beat_times_s"]
     scenes = json.load(open(a.scenes))
@@ -62,9 +65,10 @@ def main():
         scene_clips.append((out, t0, dur))
 
     # --- 2. text cards via ffmpeg drawtext ---
-    def card(text_lines, dur, out, fontsize=72):
+    def card(text_lines, dur, out, fontsize=None):
+        fontsize = fontsize or max(36, H // 15)
         # black bg with gold text, multi-line
-        w, h = 1920, 1080
+        w, h = W, H
         # build drawtext chain
         vf = f"color=c=black:s={w}x{h}:d={dur}"
         y = h // 2 - (len(text_lines) * (fontsize + 20)) // 2
@@ -112,10 +116,14 @@ def main():
          "-c:v", "copy", "-c:a", "aac", "-b:a", "192k",
          "-shortest", v_16x9])
 
-    # --- 5. 9x16 vertical: center crop ---
+    # --- 5. vertical: center crop to 9x16 ---
     v_9x16 = f"{a.out}_9x16.mp4"
+    crop_w = int(H * 9 / 16)
+    crop_x = (W - crop_w) // 2
+    out_h = 1920
+    out_w = 1080
     run(["ffmpeg", "-y", "-i", v_16x9,
-         "-vf", "crop=608:1080:656:0,scale=1080:1920",
+         "-vf", f"crop={crop_w}:{H}:{crop_x}:0,scale={out_w}:{out_h}",
          "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18",
          "-c:a", "copy", v_9x16])
 
