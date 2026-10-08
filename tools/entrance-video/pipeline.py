@@ -53,7 +53,11 @@ def main():
     pa = ap.parse_args()
     cfg = json.load(open(pa.config))
     fps = 30
-    workdir = "/tmp/entrance_work_v2"
+    workdir = os.environ.get(
+        "ENTRANCE_WORKDIR",
+        os.path.join(HERE, "..", "..", "..", "out", "entrance_work_v2"),
+    )
+    workdir = os.path.abspath(workdir)
     os.makedirs(workdir, exist_ok=True)
 
     beats = json.load(open(cfg["beats"]))["beat_times_s"]
