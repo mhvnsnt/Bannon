@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-pipeline.py — Entrance video pipeline orchestrator.
-Takes a character config JSON and produces a 50-second 5-beat
-entrance video (16x9 + 9x16), beating the Grok producer bot's lane.
+pipeline.py v2 — Entrance video pipeline orchestrator.
+Rebuilt to match EL TORO DE ORO quality.
 
 Input config:
 {
@@ -11,21 +10,25 @@ Input config:
   "music": "/path/to/stickup_video_cut.mp3",
   "beats": "/path/to/stickup_beats.json",
   "cards": {
-    "titantron": {"lines": ["STICK UP", "AMERICUS, GEORGIA", "6'1\" - 155 LBS"]},
-    "tagline":   {"lines": ["THE ENIGMATIC GANGSTER"]},
-    "endcard":   {"lines": ["STICK UP", "BANNON"]}
+    "titantron": {"text": "STICK UP", "sub": "AMERICUS, GEORGIA"},
+    "tagline":   {"text": "THE ENIGMATIC GANGSTER", "sub": ""},
+    "endcard":   {"text": "STICK UP", "sub": "BANNON"}
   },
   "scenes": [
-    {"name": "entrance", "mocap": "/path/to/Idle.fbx", "camera": "push_in", "beats": [8, 40]},
-    {"name": "taunts",   "mocap": "/path/to/Taunt.fbx", "camera": "orbit", "beats": [40, 72]},
-    {"name": "finish1",  "mocap": "/path/to/AssistedCutter.fbx", "camera": "low_angle", "beats": [72, 96]},
-    {"name": "finish2",  "mocap": "/path/to/Big Jump.fbx", "camera": "static", "beats": [96, 120]}
+    {"name": "entrance", "mocap": "/path/to/Idle.fbx",
+     "camera": "push_in", "lightshift": "blue", "beats": [8, 40]},
+    {"name": "taunts", "mocap": "/path/to/Taunt.fbx",
+     "camera": "closeup_34", "lightshift": "red", "beats": [40, 72]},
+    {"name": "finish1", "mocap": "/path/to/Clip.fbx",
+     "camera": "low_angle", "lightshift": "gold", "beats": [72, 96]},
+    {"name": "finish2", "mocap": null,
+     "camera": "wide", "lightshift": "gold", "beats": [96, 120]}
   ],
-  "out": "/path/to/out/STICKUP_test"
+  "out": "/path/to/out/STICKUP_v2"
 }
 
-Beat spans: titantron uses beats[0..first_scene_start], tagline/endcard use the tail.
-All tools free/open-source: Blender (GPL) + ffmpeg (LGPL/GPL).
+Cameras: push_in, orbit, low_angle, closeup_34, side_profile, wide, medium
+Lightshifts: blue, red, gold, white (spotlight pool color per scene)
 """
 import json
 import subprocess
@@ -46,11 +49,11 @@ def main():
     ap.add_argument("config")
     ap.add_argument("--width", type=int, default=1920)
     ap.add_argument("--height", type=int, default=1080)
-    ap.add_argument("--max-frames", type=int, default=0, help="cap frames per scene (proof runs)")
+    ap.add_argument("--max-frames", type=int, default=0)
     pa = ap.parse_args()
     cfg = json.load(open(pa.config))
     fps = 30
-    workdir = "/tmp/entrance_work"
+    workdir = "/tmp/entrance_work_v2"
     os.makedirs(workdir, exist_ok=True)
 
     beats = json.load(open(cfg["beats"]))["beat_times_s"]
@@ -67,7 +70,6 @@ def main():
             nframes = min(nframes, pa.max_frames)
         fdir = os.path.join(workdir, f"frames_{s['name']}")
         os.makedirs(fdir, exist_ok=True)
-        # skip re-render if frames exist (iterate fast)
         existing = [f for f in os.listdir(fdir) if f.endswith(".png")]
         if len(existing) >= nframes - 2:
             print(f"  [{s['name']}] {len(existing)} frames cached, skipping render")
@@ -75,6 +77,7 @@ def main():
             cmd = ["blender", "-b", "-P", os.path.join(HERE, "render_scene.py"), "--",
                    "--glb", cfg["glb"],
                    "--camera", s.get("camera", "push_in"),
+                   "--lightshift", s.get("lightshift", "blue"),
                    "--frames", str(nframes),
                    "--fps", str(fps),
                    "--output", fdir + "/",
