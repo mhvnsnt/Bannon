@@ -124,28 +124,64 @@ Nothing is "done" without ALL of the following:
    mtime/hash). Every revision is a new versioned output (v2, v3, ...) in
    its own directory. No redoing work over the old version.
 
-## 8. Rig + QA gates (automated, computed from data)
+## 8. Rig + QA gates (automated, MEASURED from the GLB — not trusted inputs)
 
-`promo_gates.py --metrics <shot-metrics.json>` evaluates per shot, following
-the `gate_check.cjs` pattern (PASS/FAIL lines, exit 1 on any failure).
-Thresholds are overridable via `--config`; defaults:
+`promo_gates.py` used to evaluate a metrics JSON someone else measured — a gate
+that trusts unmeasured inputs proves nothing. Now:
 
-| Gate | Threshold | From |
-|------|-----------|------|
-| rig.rotation_error_eff_deg | ≤ 3.0 deg | QA chart after rig repair (2026-10-07): XBot ref 0.0 PASS, BANNON_v1 5.1 FAIL, Cody tripo 7.0 FAIL — the gate MUST fail these before any promo renders on repaired models |
-| feet_above_ground_max_mm | ≤ 15 mm | v1's ending pose floated off the mat |
-| facing_vs_movement_deg | ≤ 15 deg | no crab-walking |
-| skin_flap_area_px | ≤ 200 px | v1's pale shoulder flap |
-| ribbon_geometry / exploded_geometry | false | no exploded geometry |
-| foot_slide_mm_per_frame | ≤ 8 mm/frame | walk locked to the beat, feet planted |
-| rope_crossing_frames | == 0 | no rope across the body |
-| broken_pose_frames | == 0 | no broken poses |
-| capture.pageErrorCount / errorCount / deformation.spikes | == 0 | passthrough from capture gates |
+```
+rig_measure.py MODEL.glb [--ref REF.glb] [--clip CLIP.glb]
+      |  measures the rig DIRECTLY from file bytes (stdlib + numpy only)
+      v
+promo_gates.py --measure MODEL.glb [--ref REF.glb] [--clip CLIP.glb]
+      |  gates the measured numbers (default ref: assets/models/xbot.glb)
+```
 
-Metrics must come from measurement tooling (rig-repair tools, retarget QA,
-frame analysis). `promo_gates.py` evaluates; it does not measure. Verified
-this session: the bundled v1 sample metrics FAIL 5 gates (exit 1); a clean
-sample PASSES all 12 (exit 0). Gates that pass everything prove nothing.
+`rig_measure.py` measurements (all computed, never trusted):
+- **rotation eff-deg (rest)** — mean local-quaternion angle over name-matched
+  joints vs the reference rig. Local (not world): root-orientation and
+  hierarchy-depth differences must not inflate every joint. XBot vs XBot = 0.0.
+- **rotation eff-deg (clip)** — same clip drives both rigs
+  (e.g. `Body_Jab_Cross.glb`, 2.08 s mixamo); per joint per frame, compare how
+  it ROTATES relative to its own rest pose (delta-from-rest). Mirrors the QA
+  chart setup. Per-joint breakdown included — it pinpoints the bad joints
+  instead of hiding them in a mean.
+- **feet min-Y** — from skinned bind-pose geometry (proper linear blend
+  skinning: sum_j w_ij * (jointWorld_j @ invBind_j) * pos_i). Floating = min_Y.
+- **skin-weight audit** — zero-total-weight verts, verts bound to >4 joints,
+  max single-joint dominance + which joint (the shoulder-flap class).
+- **rest-pose sanity** — zero-length bones, left/right bone-length symmetry,
+  A/T-pose classification from arm abduction.
+- Graceful degradation: models with meshopt-compressed buffers (e.g. the
+  repo's xbot.glb mesh data) still get full hierarchy metrics from the JSON
+  node transforms; geometry metrics report "unavailable" instead of crashing.
+
+Cross-validation on real GLBs (2026-10-08, quoted raw):
+
+| model | rest eff-deg | clip eff-deg (Body_JabCross, 8 frames) | gate (<= 3.0 deg) |
+|---|---|---|---|
+| xbot.glb (ref vs itself) | 0.000 (65 joints) | 0.000 | PASS |
+| BANNON_repaired.glb (bannon-repair/out) | 22.797 (52 joints) | 13.849 | FAIL |
+| CODY_sober_repaired.glb (bannon-repair/out) | 22.797 (52 joints) | 13.849 | FAIL |
+| STICKUP_repaired.glb (bannon-repair/out) | 22.797 (52 joints) | 13.849 | FAIL |
+
+Honest caveat: the QA chart's exact generator was not recoverable from the
+repos (its numbers — XBot 0.0 / BANNON_v1 5.1 / Cody 7.0 — came from an
+animation-frame comparison whose script is gone), so these are NOT claimed to
+reproduce 5.1/7.0 exactly. What holds: the ordering (0.0 < repaired rigs), the
+reference self-check at exactly 0.0, and the operational point — all three
+repaired rigs FAIL the 3.0 deg gate, i.e. the repair is not yet passing, which
+matches the owner's QA state. The per-joint clip breakdown shows why: median
+joint delta is 0.08 deg (the repair tracks well almost everywhere) but
+`mixamorig:LeftUpLeg` / `RightUpLeg` sit at ~174-175 deg — flipped thigh bind
+orientation dominates the mean. That is the next repair target.
+
+`promo_gates.py --metrics <shot-metrics.json>` still evaluates per-shot gates
+(feet planted, facing, flap, ribbon/exploded, foot slide, rope crossing, broken
+poses, capture passthroughs) from the `gate_check.cjs` pattern (PASS/FAIL
+lines, exit 1 on any failure). Thresholds overridable via `--config`. When
+only rig measurements exist, shot-level gates SKIP honestly instead of passing
+on nothing.
 
 ## 9. Side-by-side proof format
 
