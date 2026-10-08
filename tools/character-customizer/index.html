@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#111827">
+<title>Bannon Character Customizer</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.152.2/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://unpkg.com/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+<div id="app">
+  <header>
+    <button id="btn-back" class="btn">← Menu</button>
+    <h1>Character Customizer</h1>
+    <button id="btn-save" class="btn primary">Save</button>
+  </header>
+  <div id="main">
+    <div id="viewport">
+      <canvas id="gl3d"></canvas>
+      <div id="vp-hint">Select a wrestler to begin</div>
+      <div id="vp-controls">
+        <button id="btn-zoom-in" class="vbtn">+</button>
+        <button id="btn-zoom-out" class="vbtn">−</button>
+        <button id="btn-rot" class="vbtn">⟳</button>
+      </div>
+    </div>
+    <div id="panel">
+      <div id="tabs">
+        <button class="tab active" data-tab="model">Wrestler</button>
+        <button class="tab" data-tab="texture">Texture</button>
+        <button class="tab" data-tab="body">Body</button>
+        <button class="tab" data-tab="hair">Hair</button>
+        <button class="tab" data-tab="face">Face</button>
+        <button class="tab" data-tab="gear">Gear</button>
+      </div>
+      <div id="tab-model" class="tabpage active">
+        <div id="roster-grid"></div>
+      </div>
+      <div id="tab-texture" class="tabpage">
+        <div id="tex-thumbs"></div>
+        <canvas id="tex2d"></canvas>
+        <div class="row">
+          <button id="btn-addimg" class="btn">Add Image</button>
+          <button id="btn-applytex" class="btn primary">Apply</button>
+        </div>
+        <div class="hint">Drag to move • Pinch to scale (uniform) • Twist to rotate</div>
+        <input type="file" id="file-img" accept="image/*" hidden>
+      </div>
+      <div id="tab-body" class="tabpage">
+        <h3>GNM Morph — Body</h3>
+        <div id="gnm-sliders"></div>
+        <div class="hint">Latent vectors drive procedural body morphs via Google GNM</div>
+      </div>
+      <div id="tab-hair" class="tabpage">
+        <h3>Hair</h3>
+        <div id="hair-grid" class="opt-grid"></div>
+        <h3>Facial Hair</h3>
+        <div id="beard-grid" class="opt-grid"></div>
+      </div>
+      <div id="tab-face" class="tabpage">
+        <h3>Face Morph (GNM)</h3>
+        <div id="face-sliders"></div>
+      </div>
+      <div id="tab-gear" class="tabpage">
+        <h3>Clothes</h3>
+        <div id="clothes-grid" class="opt-grid"></div>
+        <h3>Accessories</h3>
+        <div id="acc-grid" class="opt-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="customizer.js"></script>
+</body>
+</html>
