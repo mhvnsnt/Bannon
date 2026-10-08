@@ -57,8 +57,11 @@ def main():
         dur = t1 - t0
         frames = os.path.join(s["frames_dir"], "frame_%04d.png")
         out = f"{tmp}/scene{i}.mp4"
-        # frames are 30fps renders; map onto beat-timed duration
+        # render frames to clip, then loop/pad to exact beat duration
+        raw = f"{tmp}/scene{i}_raw.mp4"
         run(["ffmpeg", "-y", "-framerate", str(a.fps), "-i", frames,
+             "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", raw])
+        run(["ffmpeg", "-y", "-stream_loop", "3", "-i", raw,
              "-t", f"{dur:.3f}",
              "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18",
              out])
@@ -73,8 +76,8 @@ def main():
         vf = f"color=c=black:s={w}x{h}:d={dur}"
         y = h // 2 - (len(text_lines) * (fontsize + 20)) // 2
         for j, line in enumerate(text_lines):
-            # escape for drawtext
-            esc = line.replace(":", "\\:").replace("'", "")
+            # escape for drawtext: backslash-escape quotes and colons
+            esc = line.replace("\\", "\\\\").replace("'", "\\'").replace(":", "\\:")
             vf += f",drawtext=text='{esc}':fontcolor=0xFFD700:fontsize={fontsize}:x=(w-text_w)/2:y={y}"
             y += fontsize + 20
         # subtle fade in/out
@@ -83,17 +86,20 @@ def main():
              "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "18", out])
 
     card_clips = {}
-    # titantron: first scene's beat span
-    tb = scenes[0]["beats"] if scenes else [0, 8]
-    card(f"{tmp}/titantron.mp4", cards["titantron"]["lines"], beats[tb[1]] - beats[tb[0]])
-    card_clips["titantron"] = (f"{tmp}/titantron.mp4", beats[tb[0]], beats[tb[1]] - beats[tb[0]])
-    # tagline + endcard at the end
-    gb = scenes[-1]["beats"] if scenes else [len(beats)-16, len(beats)-8]
-    eb = [len(beats)-8, len(beats)-1]
-    card(f"{tmp}/tagline.mp4", cards["tagline"]["lines"], beats[gb[1]] - beats[gb[0]])
-    card(f"{tmp}/endcard.mp4", cards["endcard"]["lines"], beats[eb[1]] - beats[eb[0]])
-    card_clips["tagline"] = (f"{tmp}/tagline.mp4", beats[gb[0]], beats[gb[1]] - beats[gb[0]])
-    card_clips["endcard"] = (f"{tmp}/endcard.mp4", beats[eb[0]], beats[eb[1]] - beats[eb[0]])
+    # titantron: beats[0] to first scene's start beat
+    first_b0 = scenes[0]["beats"][0]
+    card(cards["titantron"]["lines"], beats[first_b0] - beats[0], f"{tmp}/titantron.mp4")
+    card_clips["titantron"] = (f"{tmp}/titantron.mp4", beats[0], beats[first_b0] - beats[0])
+    # tagline: last scene's end beat to 8 beats before end
+    last_b1 = scenes[-1]["beats"][1]
+    tag_end_idx = len(beats) - 8
+    if tag_end_idx <= last_b1:
+        tag_end_idx = last_b1 + 4
+    card(cards["tagline"]["lines"], beats[tag_end_idx] - beats[last_b1], f"{tmp}/tagline.mp4")
+    card(cards["endcard"]["lines"], beats[-1] - beats[tag_end_idx], f"{tmp}/endcard.mp4")
+    card_clips["tagline"] = (f"{tmp}/tagline.mp4", beats[last_b1], beats[tag_end_idx] - beats[last_b1])
+    card_clips["endcard"] = (f"{tmp}/endcard.mp4", beats[tag_end_idx], beats[-1] - beats[tag_end_idx])
+    eb = [tag_end_idx, len(beats) - 1]
 
     # --- 3. assemble timeline in beat order ---
     # order: titantron | scene clips... | tagline | endcard

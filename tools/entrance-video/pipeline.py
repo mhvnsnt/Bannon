@@ -46,6 +46,7 @@ def main():
     ap.add_argument("config")
     ap.add_argument("--width", type=int, default=1920)
     ap.add_argument("--height", type=int, default=1080)
+    ap.add_argument("--max-frames", type=int, default=0, help="cap frames per scene (proof runs)")
     pa = ap.parse_args()
     cfg = json.load(open(pa.config))
     fps = 30
@@ -62,6 +63,8 @@ def main():
         b0, b1 = s["beats"]
         dur = beats[b1] - beats[b0]
         nframes = max(30, int(dur * fps))
+        if pa.max_frames > 0:
+            nframes = min(nframes, pa.max_frames)
         fdir = os.path.join(workdir, f"frames_{s['name']}")
         os.makedirs(fdir, exist_ok=True)
         # skip re-render if frames exist (iterate fast)
