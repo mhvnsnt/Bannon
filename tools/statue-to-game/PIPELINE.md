@@ -76,9 +76,14 @@ only need small touch-ups, not full repaints.
 hand-animates these — we take real motion-capture clips and *retarget* them
 (re-map the motion from the mocap skeleton onto your character's bones).
 **Who:** Agent (fully automatic).
-**Cost:** Free. Clip sources: Mixamo (2000+ free clips, Adobe account), CMU mocap
-archive (free, no account), or your own phone video via PoseTrak (free,
-open-source).
+**Cost:** Free. Clip sources (all verified, see
+`tools/statue-to-game/INTEGRATIONS.md`): Mixamo (2000+ free clips, Adobe
+account), CMU mocap archive (free, no account — the agent fetches clips with
+`tools/statue-to-game/fetch_mocap.py`), Quaternius Universal Animation Library
+(CC0), Kenney Animated Characters (CC0), or your own phone video tracked with
+PoseTrak (free, open-source) for custom taunts. Retargeting runs through the
+free Rokoko Studio Live Blender addon (LGPL-3.0, retarget panel needs no
+account or hardware).
 **How you know it worked:** The character plays the clip without limbs detaching
 or twisting backwards. The agent renders a preview video per clip.
 
@@ -145,6 +150,9 @@ Everything else is machines.
 - Agent runbook (the step-by-step workers follow): `tools/statue-to-game/AGENTS.md`
 - Intake checker: `tools/statue-to-game/mesh_intake_check.py`
 - Verifier: `tools/statue-to-game/verify_character.py`
+- Free integrations (verified 2026-10-09 — mocap, trackers, CC0 asset sources):
+  `tools/statue-to-game/INTEGRATIONS.md`
+- CMU clip fetcher: `tools/statue-to-game/fetch_mocap.py`
 - Weight-paint tool (your hands): `tools/weight-paint-pwa/` (+ phone link)
 - Shoulder probe renders: `tools/rig-repair/probe_shoulders.py`
 - Background research: `docs/AI_RIGGING_RESEARCH.md`
