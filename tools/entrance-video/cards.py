@@ -43,10 +43,12 @@ def render_card(text, sub, width, height, frame_idx, total_frames,
     img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
 
-    # animation: scale 0.92 -> 1.0 and fade in over first 12 frames
-    t = min(1.0, frame_idx / 12.0)
-    ease = 1 - pow(1 - t, 3)
-    alpha = int(255 * ease)
+    # CARD ANIMATION FIX (2026-10-08): the old code baked a 12-frame alpha
+    # fade-in and scale-up into the PNG sequence. When edit.py loops the card
+    # (-stream_loop), every loop restart jumps back to alpha=0 = visible
+    # FLASHING. Cards now render at full opacity, static. edit.py's ffmpeg
+    # fade in/out handles the entrance/exit. No baked animation = seamless loop.
+    alpha = 255
 
     main_size = int(height * 0.16)
     sub_size = int(height * 0.055)
@@ -59,12 +61,17 @@ def render_card(text, sub, width, height, frame_idx, total_frames,
     except OSError:
         f_sub = ImageFont.load_default()
 
-    # auto-fit: shrink main text until it fits 90% of the frame width
+    # auto-fit: shrink main text until it fits within frame width
     # (long names like "THE ENIGMATIC GANGSTER" must never clip)
+    # GLOW-CLIP FIX (2026-10-08): the old code measured with stroke_width=10
+    # and fit to 90% width, but the glow layer uses stroke_width=14 PLUS a
+    # 28px Gaussian blur that extends ~28px beyond the text on each side.
+    # At 480px wide, that pushed text out of bounds. Now we measure with the
+    # glow's stroke width and fit to 80%, leaving room for the blur.
     fit_draw = ImageDraw.Draw(Image.new("RGBA", (8, 8), (0, 0, 0, 0)))
     while main_size > 8:
-        bb = fit_draw.textbbox((0, 0), text, font=f_main, stroke_width=10)
-        if bb[2] - bb[0] <= int(width * 0.90):
+        bb = fit_draw.textbbox((0, 0), text, font=f_main, stroke_width=14)
+        if bb[2] - bb[0] <= int(width * 0.80):
             break
         main_size = int(main_size * 0.92)
         try:
@@ -133,15 +140,7 @@ def render_card(text, sub, width, height, frame_idx, total_frames,
     img = Image.alpha_composite(img, txt_layer)
     img = Image.alpha_composite(img, rule)
     img = Image.alpha_composite(img, sub_layer)
-
-    # scale animation around center
-    if ease < 1.0:
-        s = 0.92 + 0.08 * ease
-        nw, nh = int(width * s), int(height * s)
-        img = img.resize((nw, nh), Image.LANCZOS)
-        canvas = Image.new("RGBA", (width, height), (0, 0, 0, 0))
-        canvas.paste(img, ((width - nw) // 2, (height - nh) // 2), img)
-        img = canvas
+    # (scale animation removed 2026-10-08 — see note above; static card)
     return img
 
 def main():

@@ -133,6 +133,22 @@ print(f"Character armature: {char_arm.name}, bones: {len(char_arm.data.bones)}")
 char_arm.location = (0, 0, 0)
 # face camera: rotate so character faces -Y (toward camera at -Y)
 char_arm.rotation_euler = (0, 0, 0)
+# GROUND-PLANE FIX (2026-10-08): the GLB bind pose has feet BELOW origin
+# (mesh min_z ≈ -0.92). Without this, the model sinks halfway through the
+# floor. Lift the armature so the lowest bind-pose vertex sits on z=0.
+bpy.context.view_layer.update()
+_min_z = min(
+    (child.matrix_world @ v.co).z
+    for child in char_arm.children_recursive
+    if child.type == 'MESH'
+    for v in child.data.vertices
+)
+if _min_z < -0.001:
+    char_arm.location.z -= _min_z
+    bpy.context.view_layer.update()
+    print(f"Ground fix: lifted armature by {-_min_z:.3f} (bind min_z was {_min_z:.3f})")
+else:
+    print(f"Ground fix: no lift needed (bind min_z={_min_z:.3f})")
 
 # --- retarget mocap: ROTATION ONLY (v2 fix) ---
 # The v1 bug: copying root location 1:1 caused flinging/sliding when the
@@ -207,6 +223,24 @@ if MOCAP and os.path.exists(MOCAP):
             char_arm.animation_data_create()
         # identify root (Hips) — rotation only, NO location copy
         root_names = {char_by_short.get("Hips")}
+        # REST-POSE CORRECTION (2026-10-08 fix for webbing/stretching):
+        # The old code copied src_pb.rotation_quaternion directly to the dest
+        # bone. That's only valid if both rigs share IDENTICAL rest orientations.
+        # They don't (measured 24-174° differences, e.g. LeftUpLeg 174° off).
+        # Direct copying in mismatched rest spaces causes the mesh webbing and
+        # limb stretching the owner reported.
+        # Correct formula: dst_pose = dst_rest^-1 @ src_rest @ src_pose
+        # This makes each dest bone match the source's world orientation.
+        _rest_corr = {}
+        for _dst, _src in bone_map.items():
+            _sb = mocap_arm.data.bones.get(_src)
+            _db = char_arm.data.bones.get(_dst)
+            if _sb and _db:
+                _rest_corr[_dst] = (
+                    _db.matrix.to_quaternion().inverted(),
+                    _sb.matrix.to_quaternion(),
+                )
+        print(f"Rest-pose correction built for {len(_rest_corr)}/{len(bone_map)} mapped bones")
         for f in range(1, FRAMES + 1):
             mf = m_start + (f - 1) % max(1, (m_end - m_start + 1))
             scene.frame_set(mf)
@@ -217,12 +251,30 @@ if MOCAP and os.path.exists(MOCAP):
                 dst_pb = char_arm.pose.bones.get(dst_name)
                 if src_pb is None or dst_pb is None:
                     continue
-                # ROTATION ONLY — respect the bone's active rotation mode
+                # ROTATION ONLY, rest-pose corrected — respect rotation mode
+                _corr = _rest_corr.get(dst_name)
                 if dst_pb.rotation_mode == 'QUATERNION':
-                    dst_pb.rotation_quaternion = src_pb.rotation_quaternion
+                    _sq = src_pb.rotation_quaternion
+                    if _corr:
+                        _di, _sr = _corr
+                        dst_pb.rotation_quaternion = _di @ _sr @ _sq
+                    else:
+                        dst_pb.rotation_quaternion = _sq
                     dst_pb.keyframe_insert(data_path="rotation_quaternion", frame=f)
                 elif dst_pb.rotation_mode == 'AXIS_ANGLE':
-                    dst_pb.rotation_axis_angle = src_pb.rotation_axis_angle
+                    # axis-angle: convert via quaternion, correct, convert back
+                    from mathutils import Quaternion
+                    _sq = Quaternion(dst_pb.rotation_axis_angle[1:],
+                                     dst_pb.rotation_axis_angle[0])
+                    _src_q = Quaternion(src_pb.rotation_axis_angle[1:],
+                                        src_pb.rotation_axis_angle[0])
+                    if _corr:
+                        _di, _sr = _corr
+                        _q = _di @ _sr @ _src_q
+                    else:
+                        _q = _src_q
+                    _aa = _q.to_axis_angle()
+                    dst_pb.rotation_axis_angle = (_aa[1], _aa[0][0], _aa[0][1], _aa[0][2])
                     dst_pb.keyframe_insert(data_path="rotation_axis_angle", frame=f)
                 else:
                     dst_pb.rotation_euler = src_pb.rotation_euler
