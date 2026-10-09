@@ -11,15 +11,21 @@ data only (bone.matrix_local, no posed reads), then applied inline per-frame
 like the walk. Fully deterministic. Verified frame-by-frame.
 
 Taunts (--overlay):
-  fingerguns : shoulders fixed; arms+forearms point AT the camera target;
-               hands neutral; index straight; middle/ring/pinky curled;
-               thumb out. Held all frames.
-  crucifix   : shoulders fixed; arms+forearms point out to the sides+up;
-               head tilted back slightly. Held all frames.
+  fingerguns : SAFE VERSION (2026-10-09, deformation envelope mapped by probe).
+               Upper arms forward TRUE 12deg only (envelope: fwd<=15 clean;
+               lateral webs at 10deg, elbow/wrist bends web the right
+               shoulder). Forearms/wrists untouched. Finger-gun hand shapes
+               (index straight, middle/ring/pinky curled, thumb out — proven
+               clean). Held all frames. The old version aimed arms at the
+               camera target (~89deg raise) and exploded the shoulders.
+  callout    : SAFE final-pose (replaces crucifix — the rig cannot do a
+               lateral arm raise). Head back -20deg + torso twist 30deg
+               total (both proven clean). Arms stay at rest. Held all frames.
   (empty)    : walk arms.
 
 --headshake N : dread-whip — rapid head yaw snap centered at frame N,
   composed on top of the walk head rotation (no pop). Neck follows at 0.35x.
+  Proven clean at +-52deg yaw.
 """
 import bpy, sys, os, math, mathutils
 
@@ -134,14 +140,27 @@ def _point_at_rest(child_short, parent_shoulder_short, target_world):
 TAUNT = {}  # short-name -> fixed quaternion (applied every frame)
 
 if OVERLAY == "fingerguns":
-    for sd in ("Left", "Right"):
+    # SAFE (2026-10-09): upper arms forward TRUE 12deg — inside the measured
+    # envelope (fwd 15deg clean, 25deg webs). Forearms/wrists NOT touched
+    # (elbow/wrist bends web the right shoulder). Finger shapes proven clean.
+    _TD = math.radians(12)
+    for sd, sgn in (("Left", -1), ("Right", 1)):
         sh = bone_by_short(f"{sd}Shoulder")
+        arm_b = bone_by_short(f"{sd}Arm")
+        Pp = sh.matrix_local.to_quaternion()
+        B_rel = _rel_q(arm_b, sh)
+        rest_world = (Pp @ B_rel) @ Y_AXIS
+        lift = mathutils.Vector((0, -1, 0))
+        tgt_dir = (rest_world * math.cos(_TD) + lift * math.sin(_TD)).normalized()
+        tgt = mathutils.Vector(sh.head_local) + tgt_dir * 2.4
+        A = rest_world.normalized()
+        D = (tgt - mathutils.Vector(sh.head_local)).normalized()
+        Qw = A.rotation_difference(D)
+        R = B_rel.inverted() @ Pp.inverted() @ Qw @ Pp @ B_rel
+        R.normalize()
         TAUNT[f"{sd}Shoulder"] = ID_Q
-        TAUNT[f"{sd}Arm"] = _point_at_rest(f"{sd}Arm", f"{sd}Shoulder", FG_TARGET)
-        # forearm straight (follows upper arm) — arm points at lens
-        TAUNT[f"{sd}ForeArm"] = ID_Q
-        TAUNT[f"{sd}Hand"] = ID_Q
-        # index: straighten (rest is curled; negative X uncurls). Tune visually.
+        TAUNT[f"{sd}Arm"] = R
+        # index: straighten (rest is curled; negative X uncurls).
         for jn in (f"{sd}HandIndex1", f"{sd}HandIndex2", f"{sd}HandIndex3"):
             TAUNT[jn] = RX(-45)
         for fn in ("Middle", "Ring", "Pinky"):
@@ -149,23 +168,16 @@ if OVERLAY == "fingerguns":
                 TAUNT[jn] = RX(75 - 15 * i)
         for jn in (f"{sd}HandThumb1", f"{sd}HandThumb2", f"{sd}HandThumb3"):
             TAUNT[jn] = RX(-30)
-    print(f"finger-gun taunts precomputed for {len(TAUNT)} bones")
+    print(f"SAFE finger-gun taunts precomputed for {len(TAUNT)} bones (arms fwd 12deg)")
 
-elif OVERLAY == "crucifix":
-    # rest frame: shoulders separated along Y (left=-Y, right=+Y). Spread
-    # arms straight out to the sides and up, in rest frame (no un-yaw).
-    for sd, sgn in (("Left", -1), ("Right", 1)):
-        sh_b = bone_by_short(f"{sd}Shoulder")
-        if not sh_b: continue
-        sh_head = mathutils.Vector(sh_b.head_local)
-        tgt = sh_head + mathutils.Vector((0, 2.4 * sgn, 1.6))
-        TAUNT[f"{sd}Shoulder"] = ID_Q
-        TAUNT[f"{sd}Arm"] = _point_at_rest_nonyaw(f"{sd}Arm", f"{sd}Shoulder", tgt)
-        # forearm straight (follows upper arm) for a clean crucifix
-        TAUNT[f"{sd}ForeArm"] = ID_Q
-    # head back slightly (local pitch; verified axis by probe: X+ = forward)
-    TAUNT["Head"] = RX(-16)
-    print(f"crucifix taunts precomputed for {len(TAUNT)} bones")
+elif OVERLAY == "callout":
+    # SAFE final-pose replacing crucifix (2026-10-09): the rig cannot raise
+    # arms laterally (webs at 10deg true). Head back -20deg + torso twist
+    # 30deg total — both inside the measured envelope. Arms stay at rest.
+    TAUNT["Head"] = RX(-20)
+    for s in ("Spine", "Spine1", "Spine2"):
+        TAUNT[s] = RY(10)
+    print(f"SAFE callout pose precomputed for {len(TAUNT)} bones")
 
 # head-whip snap keys: (frame_offset, degrees). Applied as local-Y on top of walk.
 WHIP_KEYS = [(-12, 0), (-6, 22), (0, -52), (6, 34), (12, -18), (18, 8), (24, 0)]
