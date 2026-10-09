@@ -187,6 +187,11 @@ def main():
     glb_path = os.path.join(ROOT, e.get("glb", ""))
     music = e.get("music_cut")
     beats = e.get("beats")
+    # repo-canonical relative paths resolve against the repo root
+    if music and not os.path.isabs(music):
+        music = os.path.join(ROOT, music)
+    if beats and not os.path.isabs(beats):
+        beats = os.path.join(ROOT, beats)
 
     plan = [
         f"[1] verify GLB: {e.get('glb')}",
