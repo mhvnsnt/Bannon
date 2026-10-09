@@ -28,6 +28,12 @@ jobs:
 
   build-unreal-physics:
     name: Compile Native Unreal C++
+    # DISABLED 2026-10-09: epicgames/unreal-engine-github-action does not exist — there is no
+    # official Epic action — and GitHub-hosted runners ship no Unreal Engine, so even a valid
+    # community action cannot build here (the UE5.8 source engine is required; see unreal/README.md).
+    # This job needs a self-hosted runner with the engine installed. Re-enable by deleting the
+    # `if: false` line once that exists.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
