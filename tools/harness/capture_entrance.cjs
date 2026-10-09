@@ -594,13 +594,19 @@ body.cine #fxCanvas{position:fixed !important;inset:0 !important;width:100vw !im
   }, [k, cfg]);
 
   const captureDirected = async (tdir, cfg, nframes) => {
-    // NOTE: per-frame directFrame() evaluate was 3min/frame with the repaired model.
-    // The take setup triggers the taunt; the render-wrapper director handles
-    // opponent-hide/lighting/tron every frame. We just capture as fast as renders come.
+    // The game's RAF renders slowly with the repaired model; we manually trigger
+    // a render before each screenshot (in-page, fast) instead of waiting.
+    const triggerRender = () => page.evaluate(() => {
+      try{
+        const R = new Function('return renderer')();
+        const C = new Function('return camera')();
+        const S = new Function('return scene')();
+        R.render(S, C);
+        return window.__renderCount || 0;
+      }catch(e){ return -1; }
+    });
     for (let k = 0; k < nframes; k++){
-      const last = await renderCount();
-      const rc = await waitRender(last);
-      if (rc < 0) throw new Error('render stall during take');
+      await triggerRender();
       await shot(path.join(tdir, 'f' + String(k).padStart(4, '0') + '.png'));
       if ((k+1) % 40 === 0) console.error('  frame ' + (k + 1) + '/' + nframes);
     }
