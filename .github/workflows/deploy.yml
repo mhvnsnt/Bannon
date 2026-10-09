@@ -1,4 +1,8 @@
-name: Deploy bannon-daemon to Oracle Cloud
+name: Build gate — bannon-daemon (godmode)
+
+# Deploys happen on Render via the render.yaml Blueprint (auto-deploy on push
+# to main). This workflow is the pre-merge build gate: if godmode doesn't
+# compile, the PR shouldn't land. It deploys nothing itself.
 
 on:
   push:
@@ -10,9 +14,12 @@ on:
     types: [closed]
 
 jobs:
-  build-and-deploy:
+  build:
     if: github.event.pull_request.merged == true || github.event_name == 'push'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: godmode
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -20,20 +27,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install Dependencies
         run: npm ci
 
       - name: Run Build Checks
         run: npm run build
-
-      - name: Deploy to Oracle Cloud VM
-        uses: appleboy/ssh-action@v1
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: 22
-          script: |
-            bash ~/bannon/deploy/deploy.sh
