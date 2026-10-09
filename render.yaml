@@ -1,0 +1,45 @@
+# render.yaml — Render Blueprint for bannon-daemon (the godmode Express server).
+#
+# Deploy (owner, one time, no credit card):
+#   1. render.com → Sign up with GitHub (free, no card asked)
+#   2. Dashboard → New → Blueprint → pick the Bannon repo → Apply
+#   3. Fill in the secrets when Render prompts (TELEGRAM_BOT_TOKEN, etc.)
+# Render auto-deploys on every push to main from then on.
+#
+# Spec: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: bannon-daemon
+    runtime: node
+    plan: free
+    rootDir: godmode
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Secrets — sync: false means Render prompts for the value on first
+      # deploy and stores it on the service. Nothing secret lives in this file.
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ADMIN_ID
+        sync: false
+      - key: TELEGRAM_WEBHOOK_SECRET
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GOOGLE_GENAI_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: API_BEARER_TOKEN
+        sync: false
+      - key: CDP_API_KEY_NAME
+        sync: false
+      - key: CDP_PRIVATE_KEY
+        sync: false
