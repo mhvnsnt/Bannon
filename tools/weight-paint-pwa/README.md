@@ -27,6 +27,23 @@ Single `index.html`, Three.js r160 (vendored in `lib/`), ES modules + importmap.
 No build step. Painting edits `skinIndex`/`skinWeight` in place (bind pose),
 renormalizes to sum 1.0, GLTFExporter writes the result.
 
+## Guided fix mode (for first-timers)
+
+Tap **🧭 Start guided fix**. It walks you through in plain language:
+
+1. Drag the **Angle** slider up (try 45°) until the shoulder looks stretched.
+2. Tap **🔍 Find bad spots** — the tool scans the shoulder region, finds verts
+   that move differently from their neighbors (the tear signature), and makes
+   them pulse. It auto-selects the right bone (usually the shoulder).
+3. Paint the glowing spots. They turn red as you fix them.
+4. Tap **🔍 Check again** — if the glow is gone, you fixed it. Export the GLB.
+
+Detection: per-vertex displacement (posed vs rest, via CPU skinning) restricted
+to a 0.38-unit radius around the shoulder joints; flags verts exceeding
+mean + 2.5σ of neighbor-displacement variance. Self-tested on
+`STICKUP_repaired.glb`: 90 verts flagged at 45°, bbox y 0.24→0.46 (armpit/delt),
+recommends LeftShoulder. Headless test: `?autotest=1&model=<url>`.
+
 ## Self-test (2026-10-09, headless Chromium + SwiftShader, localhost)
 
 - Load: 12,633 verts / 58 bones, renders correct heat view.
