@@ -68,6 +68,11 @@ app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Healthcheck endpoint (used by deploy health verification)
+app.get("/health", (_req, res) => {
+  res.status(200).json({ status: "ok", uptime: process.uptime(), ts: Date.now() });
+});
+
 import { setupA2AServer } from "./src/lib/A2AServerEndpoint.js";
 setupA2AServer(app);
 
