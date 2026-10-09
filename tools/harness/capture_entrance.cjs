@@ -194,7 +194,7 @@ body.cine #fxCanvas{position:fixed !important;inset:0 !important;width:100vw !im
     }catch(e){ out.camErr = String(e).slice(0,120); }
     return out;
   }, [p1, CINE_CSS]),
-    sleep(60000).then(() => { throw new Error('SETUP_EVALUATE_TIMEOUT_60s'); })
+    sleep(180000).then(() => { throw new Error('SETUP_EVALUATE_TIMEOUT_180s'); })
   ]);
   log('cine setup: ' + JSON.stringify(setup));
   console.error('PHASE: cine setup done ' + JSON.stringify({ cine: setup.cine, hudHidden: setup.hudHidden, idx: setup.idx, kitErr: setup.kitErr, cineLightErr: setup.cineLightErr }));
