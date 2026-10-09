@@ -59,6 +59,19 @@ def render_card(text, sub, width, height, frame_idx, total_frames,
     except OSError:
         f_sub = ImageFont.load_default()
 
+    # auto-fit: shrink main text until it fits 90% of the frame width
+    # (long names like "THE ENIGMATIC GANGSTER" must never clip)
+    fit_draw = ImageDraw.Draw(Image.new("RGBA", (8, 8), (0, 0, 0, 0)))
+    while main_size > 8:
+        bb = fit_draw.textbbox((0, 0), text, font=f_main, stroke_width=10)
+        if bb[2] - bb[0] <= int(width * 0.90):
+            break
+        main_size = int(main_size * 0.92)
+        try:
+            f_main = ImageFont.truetype(FONT_MAIN, main_size)
+        except OSError:
+            f_main = ImageFont.truetype(find_font(), main_size)
+
     # --- glow layer (red for name, gold for end) ---
     glow_color = (255, 40, 20) if style == "name" else (255, 190, 80)
     glow = Image.new("RGBA", (width, height), (0, 0, 0, 0))
