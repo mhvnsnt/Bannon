@@ -107,11 +107,41 @@ Run the verifier (STAGE 8's script) on the skinned file and read gate G4:
 
 ## STAGE 6 — ANIMATION (agent-runnable)
 
-1. Pick clips: Mixamo library (free, Adobe account) or CMU BVH mirror
-   (free, no account) — boxing/karate for fighters, walks/idles for entrances.
-2. Retarget: pure-bpy constraint-bake — per-bone Copy Rotation constraints from
-   the source armature to the character rig using a versioned bone-map dict,
-   then `bpy.ops.nla.bake()`. (See `docs/AI_RIGGING_RESEARCH.md` Part 1C.)
+1. Pick clips — free sources, all verified in
+   `tools/statue-to-game/INTEGRATIONS.md`:
+   - Mixamo library (free, Adobe account) — boxing/karate for fighters,
+     walks/idles for entrances.
+   - **CMU BVH mirror** (free, no account — preferred for locomotion): agent
+     fetches directly:
+     ```
+     python3 tools/statue-to-game/fetch_mocap.py --sample \
+         --out assets/models/mocap/
+     ```
+     (downloads subject 001 clip `01_01.bvh`, a walk cycle, and runs a BVH
+     structure check). Use `--list --subject <nnn>` to browse other clips.
+   - **Quaternius Universal Animation Library** (CC0, no account) — alternative
+     retargetable humanoid clips. Download the pack zip from quaternius.com,
+     unzip, import the glTF into Blender headless.
+   - **Kenney Animated Characters** (CC0, no account) — same flow, kenney.nl.
+   - **PoseTrak** (Apache-2.0, no account) — custom-taunt input: the owner
+     films the taunt on his phone; agent runs `posetrak track config.toml`
+     on the footage and retargets the tracked skeleton onto the character.
+     No packaged release yet — build from source per `docs/setup.md` in the
+     PoseTrak repo; confirm export format feeds the retarget step before
+     planning a run around it.
+2. Retarget — two methods, in preference order:
+   - **Rokoko Studio Live Blender addon** (LGPL-3.0, free, no account; the
+     retarget panel works fully offline in Blender — no Studio app, no
+     hardware). Install into headless Blender 4.0.2 (Blender 2.80+ supported):
+     import source clip armature + character armature, run the retarget
+     panel's "Build Bone List" → "Auto Detect" → "Retarget Animation" flow in
+     a bpy script, save the preset for reuse across same-rig characters.
+     Wire-up not yet done in our Blender — first use must install and smoke
+     test the addon headless before trusting it in a run.
+   - **Pure-bpy constraint-bake** (fallback, works today): per-bone Copy
+     Rotation constraints from the source armature to the character rig using
+     a versioned bone-map dict, then `bpy.ops.nla.bake()`.
+     (See `docs/AI_RIGGING_RESEARCH.md` Part 1C.)
 3. Save each baked clip; render a 3-second preview per clip.
 - Evidence: preview renders show the character performing the clip with no
   detached limbs or inverted joints.
