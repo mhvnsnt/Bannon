@@ -77,12 +77,20 @@ def main():
     def make_card(card_cfg, style, name):
         cdir = f"{tmp}/card_{name}"
         os.makedirs(cdir, exist_ok=True)
+        # card_cfg may use {"lines": [...]} (kit schema) or {"text":..., "sub":...} (legacy)
+        if "lines" in card_cfg:
+            lines = card_cfg["lines"]
+            text = lines[0] if lines else ""
+            sub = "\n".join(lines[1:]) if len(lines) > 1 else ""
+        else:
+            text = card_cfg["text"]
+            sub = card_cfg.get("sub", "")
         # 3 seconds of card frames at 30fps
         nframes = 90
         r = subprocess.run([
             sys.executable, os.path.join(HERE, "cards.py"),
-            "--text", card_cfg["text"],
-            "--sub", card_cfg.get("sub", ""),
+            "--text", text,
+            "--sub", sub,
             "--style", style,
             "--out", cdir,
             "--width", str(W), "--height", str(H),
