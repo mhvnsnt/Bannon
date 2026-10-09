@@ -63,6 +63,20 @@ export interface Attire {
   primaryColor: number; secondaryColor: number; accentColor: number;
   boots: string; kneePads: boolean; elbowPads: boolean; wrists: string;
   facePaint?: string;         // optional, ties to character/faction
+  // --- Customizer suite (Phase 2 port, bannon_customizer.js) — all optional,
+  // additive. These carry the in-menu customizer build for banked GLB models:
+  // accessory manifest ids per slot, GLB-attachment hairstyle, iris palette
+  // id, procedural morph dials, and the face-paint spec (preset id or
+  // serialized FacePaintLayer[]). facePaint stays the single string field.
+  mask?: string | null;       // accessory manifest id, e.g. 'mask_luchador_sombra'
+  gloves?: string | null;     // e.g. 'boxing' (L/R pair grouped)
+  wristbands?: string | null; // e.g. 'sweatband'
+  shoes?: string | null;      // e.g. 'wrestling_boot'
+  hood?: string | null;       // e.g. 'hood_purple_robe'
+  chain?: string | null;      // e.g. 'chain_gold_ashlane' (pendant-fixed)
+  hairstyle?: string | null;  // e.g. 'hair_echo_long_green'
+  eyeColor?: string;          // iris palette id, e.g. 'iceblue' ('natural' = authored)
+  morphs?: { muscle?: number; height?: number; build?: number; jaw?: number }; // 0..1, 0.5 = authored
 }
 
 export interface ForgedCharacter {
