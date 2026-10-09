@@ -26,6 +26,11 @@ Taunts (--overlay):
 --headshake N : dread-whip — rapid head yaw snap centered at frame N,
   composed on top of the walk head rotation (no pop). Neck follows at 0.35x.
   Proven clean at +-52deg yaw.
+
+UNIVERSAL SAFE-ARM BASE: every take overrides the arm chain to a safe fixed
+pose (arms forward TRUE 12deg, forearms/shoulders at rest) because the walk
+mocap's arm swing (65-67deg) webs the shoulders. The head/torso/fingers
+choreograph freely on top of the fixed arms.
 """
 import bpy, sys, os, math, mathutils
 
@@ -178,6 +183,36 @@ elif OVERLAY == "callout":
     for s in ("Spine", "Spine1", "Spine2"):
         TAUNT[s] = RY(10)
     print(f"SAFE callout pose precomputed for {len(TAUNT)} bones")
+
+# UNIVERSAL SAFE-ARM BASE (2026-10-09, root cause found): the walk mocap's
+# arm swing hits 65-67deg local rotation (measured) vs the 15deg clean
+# envelope — the walk ITSELF webs the shoulders at swing extremes. Every
+# prior "head/spine" webbing was actually the walk's arms, not the override.
+# So: override the arm chain to a safe fixed pose on EVERY take, regardless
+# of overlay. Arms forward TRUE 12deg (proven clean), forearms at rest,
+# shoulders at rest. The head/torso/fingers then choreograph freely on top
+# (verified clean in pipeline: callout+fixed arms, whip needs the same).
+_TD = math.radians(12)
+for _sd, _sgn in (("Left", -1), ("Right", 1)):
+    if f"{_sd}Arm" not in TAUNT:
+        _sh = bone_by_short(f"{_sd}Shoulder")
+        _ab = bone_by_short(f"{_sd}Arm")
+        _Pp = _sh.matrix_local.to_quaternion()
+        _Br = _rel_q(_ab, _sh)
+        _rw = (_Pp @ _Br) @ Y_AXIS
+        _lift = mathutils.Vector((0, -1, 0))
+        _tdir = (_rw * math.cos(_TD) + _lift * math.sin(_TD)).normalized()
+        _tgt = mathutils.Vector(_sh.head_local) + _tdir * 2.4
+        _A = _rw.normalized()
+        _D = (_tgt - mathutils.Vector(_sh.head_local)).normalized()
+        _Qw = _A.rotation_difference(_D)
+        _R = _Br.inverted() @ _Pp.inverted() @ _Qw @ _Pp @ _Br
+        _R.normalize()
+        TAUNT[f"{_sd}Shoulder"] = ID_Q
+        TAUNT[f"{_sd}Arm"] = _R
+    if f"{_sd}ForeArm" not in TAUNT:
+        TAUNT[f"{_sd}ForeArm"] = ID_Q
+print(f"universal safe-arm base applied; {len(TAUNT)} bones total in TAUNT")
 
 # head-whip snap keys: (frame_offset, degrees). Applied as local-Y on top of walk.
 WHIP_KEYS = [(-12, 0), (-6, 22), (0, -52), (6, 34), (12, -18), (18, 8), (24, 0)]
