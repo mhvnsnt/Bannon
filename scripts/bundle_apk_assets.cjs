@@ -23,6 +23,8 @@
  * WHAT GETS BUNDLED, and why each one:
  *   assets/vendor      the engine itself. Nothing works before these parse.
  *   assets/ring        ring textures — small, and visible in every single match.
+ *   assets/js          game scripts (KayKit crowd/props) — 12 KB, and a literal <script src> the
+ *                      offline build must resolve without the CDN (shipping gate #7).
  *   assets/models      only the GLBs whose filename actually appears in the shipped HTML. Wiring is
  *                      the test, not the directory listing, or the APK carries 3.6 GB of workbench.
  *   assets/moves/clips only the captures named by combat_clip_map.json — the ones a strike or a
@@ -69,7 +71,7 @@ const add = rel => { const abs = R(rel);
 // assets/tron are the per-character entrance videos — baked silent and tron-sized, 0.38 MB for a
 // 21-second clip. They play at the exact moment an entrance starts, which is the worst possible
 // time to be waiting on a download.
-for (const dir of ['assets/vendor', 'assets/ring', 'assets/models/props',
+for (const dir of ['assets/vendor', 'assets/ring', 'assets/js', 'assets/models/props',
                    'assets/models/mdickie_char', 'assets/mocap/open', 'assets/tron'])
   for (const f of walkFiles(R(dir))) add(path.relative(ROOT, f));
 
