@@ -83,6 +83,9 @@
     <div class="seg" style="flex:1"><button id="dirFwd" class="on" style="flex:1">Forward</button><button id="dirLat" style="flex:1">Side</button></div>
   </div>
   <div class="row"><button class="seg" id="resetPose" style="flex:1;padding:12px;font-size:15px;">Reset pose</button></div>
+  <h3>🧭 Guided fix</h3>
+  <div id="guideText" style="font-size:14px;line-height:1.55;margin:6px 0;">Never painted weights? Tap <b>Start</b> and I'll find the torn spots for you — no experience needed.</div>
+  <button class="bigbtn" id="guideBtn" style="background:#7c5cff;color:#fff;">🧭 Start guided fix</button>
   <button class="bigbtn" id="exportBtn">⬇ Export GLB</button>
   <button class="bigbtn" id="sendbackBtn">📤 Send back to pipeline</button>
   <div id="sendback">
@@ -113,6 +116,7 @@ let restPose=[], boneByName={}, selectedBone=-1;
 let paintMode=true, heatOn=true;
 let brushRadius=0.12, brushStrength=0.4, brushDir=1;
 let poseDeg=0, poseArms='both', poseDir='fwd';
+let guideOn=false, guideFlags=null, guideAdj=null, guideStep='idle';
 let heatMat, normalMat;
 const raycaster=new THREE.Raycaster();
 // bone names vary (some exports strip the 'mixamorig:' prefix) — match by suffix
@@ -121,7 +125,8 @@ function findBone(suffix){ if(!skeleton)return null;
 function shortName(n){ return n.replace(/^mixamorig:?/,''); }
 
 init();
-loadModel(DEFAULT_URL);
+const _qp=new URLSearchParams(location.search);
+loadModel(_qp.get('model')||DEFAULT_URL);
 
 function init(){
   const c=$('view3d');
@@ -144,7 +149,152 @@ function init(){
   renderer.domElement.addEventListener('pointermove',onMove);
   addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
     renderer.setSize(innerWidth,innerHeight);});
-  (function loop(){requestAnimationFrame(loop);controls.update();renderer.render(scene,camera);})();
+  (function loop(){requestAnimationFrame(loop);controls.update();
+    if(guideOn&&guideFlags&&skinnedMesh)pulseGuide();
+    renderer.render(scene,camera);})();
+}
+let pulseT=0;
+function pulseGuide(){
+  pulseT+=0.05;
+  const k=0.45+0.55*Math.abs(Math.sin(pulseT*3));
+  const col=skinnedMesh.geometry.attributes.color;
+  for(let i=0;i<guideFlags.length;i++)if(guideFlags[i])col.setXYZ(i,1.0,0.25+0.65*k,0.08);
+  col.needsUpdate=true;
+}
+// ---- Guided fix mode: finds torn spots, talks plain English ----
+function getAdjacency(){
+  if(guideAdj)return guideAdj;
+  const geo=skinnedMesh.geometry, idx=geo.index;
+  if(!idx){toast('This model has no index — guided mode unavailable');return null;}
+  const n=geo.attributes.position.count, adj=Array.from({length:n},()=>[]), ia=idx.array;
+  for(let t=0;t<ia.length;t+=3){const a=ia[t],b=ia[t+1],c=ia[t+2];
+    adj[a].push(b,c);adj[b].push(a,c);adj[c].push(a,b);}
+  guideAdj=adj; return adj;
+}
+const _bv=new THREE.Vector3();
+function skinnedPositions(out){
+  // applyBoneTransform(index,target): target must HOLD the rest position on entry
+  const posAttr=skinnedMesh.geometry.attributes.position, n=posAttr.count;
+  for(let i=0;i<n;i++){
+    _bv.fromBufferAttribute(posAttr,i);
+    skinnedMesh.applyBoneTransform(i,_bv);
+    out[i*3]=_bv.x;out[i*3+1]=_bv.y;out[i*3+2]=_bv.z;
+  }
+}
+function detectWebbing(){
+  if(!skinnedMesh){toast('Load a model first');return -1;}
+  if(poseDeg<15){toast('Drag the Angle slider up first — try 45°');return -1;}
+  const adj=getAdjacency(); if(!adj)return -1;
+  const n=skinnedMesh.geometry.attributes.position.count;
+  const rest=new Float32Array(n*3), posed=new Float32Array(n*3);
+  resetPose();
+  skinnedPositions(rest);
+  applyPose(poseDeg);
+  skinnedPositions(posed);
+  const disp=new Float32Array(n);
+  for(let i=0;i<n;i++){const dx=posed[i*3]-rest[i*3],dy=posed[i*3+1]-rest[i*3+1],dz=posed[i*3+2]-rest[i*3+2];
+    disp[i]=Math.sqrt(dx*dx+dy*dy+dz*dz);}
+  // a torn spot = a vertex that moved very differently from its neighbors.
+  // Restrict to the shoulder region — that's where arm-raise webbing happens
+  // and where a beginner should paint. (Full-body scan is too noisy.)
+  const shL=findBone('LeftShoulder'), shR=findBone('RightShoulder');
+  const shPos=[];
+  [shL,shR].forEach(b=>{ if(!b)return;
+    const wp=new THREE.Vector3(); b.getWorldPosition(wp);
+    shPos.push(skinnedMesh.worldToLocal(wp.clone())); });
+  const RGN=0.38, posAttr=skinnedMesh.geometry.attributes.position;
+  const inRegion=new Uint8Array(n);
+  if(shPos.length){
+    for(let i=0;i<n;i++){
+      const x=posAttr.getX(i),y=posAttr.getY(i),z=posAttr.getZ(i);
+      for(const s of shPos){
+        const dx=x-s.x,dy=y-s.y,dz=z-s.z;
+        if(dx*dx+dy*dy+dz*dz<RGN*RGN){inRegion[i]=1;break;}
+      }
+    }
+  } else { inRegion.fill(1); } // fallback: whole body
+  const stretch=new Float32Array(n);
+  for(let i=0;i<n;i++){ if(!inRegion[i])continue;
+    const nb=adj[i]; if(!nb.length)continue;
+    let m=0,c=0; for(let k=0;k<nb.length;k++){ if(!inRegion[nb[k]])continue; m+=disp[nb[k]]; c++; }
+    if(!c)continue; m/=c;
+    stretch[i]=Math.abs(disp[i]-m); }
+  let mean=0,rc=0;for(let i=0;i<n;i++)if(inRegion[i]){mean+=stretch[i];rc++;}mean/=Math.max(1,rc);
+  let sd=0;for(let i=0;i<n;i++)if(inRegion[i]){const d=stretch[i]-mean;sd+=d*d;}sd=Math.sqrt(sd/Math.max(1,rc))||1e-9;
+  guideFlags=new Uint8Array(n);let count=0;
+  const thr=mean+2.5*sd;
+  for(let i=0;i<n;i++)if(inRegion[i]&&stretch[i]>thr){guideFlags[i]=1;count++;}
+  if(count>n*0.08){ // too many — keep the worst offenders
+    const order=[...Array(n).keys()].sort((a,b)=>stretch[b]-stretch[a]);
+    guideFlags.fill(0);const keep=Math.max(8,Math.floor(n*0.02));
+    for(let k=0;k<keep;k++)guideFlags[order[k]]=1;count=keep;
+  }
+  guideDebug={n,stretch,posed,disp};
+  return count;
+}
+let guideDebug=null;
+function recommendBone(){
+  const ji=skinnedMesh.geometry.attributes.skinIndex, jw=skinnedMesh.geometry.attributes.skinWeight;
+  const armIdx=new Set();
+  ['LeftArm','RightArm'].forEach(s=>{const b=findBone(s);if(b)armIdx.add(skeleton.bones.indexOf(b));});
+  // Which arm owns the flagged verts? Recommend ITS parent (the shoulder) —
+  // the natural bridge bone for smoothing the arm/torso transition.
+  const armW={};
+  for(let i=0;i<guideFlags.length;i++)if(guideFlags[i])
+    for(let s=0;s<4;s++){const bi=gC(ji,i,s);if(!armIdx.has(bi))continue;
+      armW[bi]=(armW[bi]||0)+gC(jw,i,s);}
+  let bestArm=-1,bw=-1;for(const k in armW)if(armW[k]>bw){bw=armW[k];bestArm=+k;}
+  if(bestArm>=0){
+    const p=skeleton.bones[bestArm].parent;
+    if(p&&p.isBone)return skeleton.bones.indexOf(p);
+  }
+  // Fallback: highest non-arm weight among flagged verts
+  const tot={};
+  for(let i=0;i<guideFlags.length;i++)if(guideFlags[i])
+    for(let s=0;s<4;s++){const bi=gC(ji,i,s);if(armIdx.has(bi))continue;
+      const w=gC(jw,i,s);tot[bi]=(tot[bi]||0)+w;}
+  let best=-1,bv=-1;for(const k in tot)if(tot[k]>bv){bv=tot[k];best=+k;}
+  if(best<0){
+    const b=findBone(poseArms==='right'?'RightShoulder':'LeftShoulder');
+    if(b)best=skeleton.bones.indexOf(b);
+  }
+  return best;
+}
+function guideSet(html,btn){$('guideText').innerHTML=html;$('guideBtn').textContent=btn;}
+function guideStart(){
+  if(!skinnedMesh){toast('Load a model first');return;}
+  guideOn=true;guideStep='scan';
+  guideSet('Step 1: drag the <b>Angle</b> slider up (try 45°) until the shoulder looks stretched or torn. Then tap below.','🔍 Find bad spots');
+}
+function guideScan(){
+  const count=detectWebbing();
+  if(count<0)return; // toast already shown
+  if(count<8){
+    guideStep='clean';
+    guideSet(`Looks clean at ${poseDeg}° — no torn spots found. Try a bigger angle, or you're done!`,'👍 Done');
+    guideOn=false;guideFlags=null;updateHeatColors();return;
+  }
+  const rec=recommendBone();
+  const recName=rec>=0?shortName(skeleton.bones[rec].name):'shoulder';
+  if(rec>=0){$('boneSelect').value=rec;selectedBone=rec;updateHeatColors();}
+  brushDir=1;$('brushAdd').classList.add('on');$('brushSub').classList.remove('on');
+  guideStep='paint';
+  guideSet(`Step 2: found <b>${count} stretched spots</b> — see them glowing? <b>${recName}</b> is selected above. Paint the glowing spots and they'll turn red as you fix them.`,'🔍 Check again');
+}
+function guideRecheck(){
+  const count=detectWebbing();
+  if(count<0)return;
+  if(count<8){
+    guideStep='fixed';
+    guideSet(`The glow is gone at ${poseDeg}° — <b>you fixed it!</b> 🎉 Tap Export GLB to send it to the pipeline.`,'👍 Done');
+    guideOn=false;guideFlags=null;updateHeatColors();return;
+  }
+  guideStep='paint';
+  guideSet(`Still <b>${count} spots</b> glowing — keep painting them, then check again. Small strokes, then re-check.`,'🔍 Check again');
+}
+function guideExit(){
+  guideOn=false;guideFlags=null;guideStep='idle';updateHeatColors();
+  guideSet('Never painted weights? Tap <b>Start</b> and I\'ll find the torn spots for you — no experience needed.','🧭 Start guided fix');
 }
 function wireUI(){
   const seg=(ids,fn)=>ids.forEach(id=>$(id).onclick=e=>{ids.forEach(x=>$(x).classList.remove('on'));
@@ -161,6 +311,12 @@ function wireUI(){
   $('resetPose').onclick=()=>{poseDeg=0;$('poseSlider').value=0;$('poseVal').textContent='0°';applyPose(0);};
   $('boneSelect').onchange=e=>{selectedBone=+e.target.value;updateHeatColors();};
   $('exportBtn').onclick=exportGLB;
+  $('guideBtn').onclick=()=>{
+    if(guideStep==='idle')guideStart();
+    else if(guideStep==='scan')guideScan();
+    else if(guideStep==='paint')guideRecheck();
+    else guideExit();
+  };
   $('sendbackBtn').onclick=()=>{const p=$('sendback');p.style.display=p.style.display==='block'?'none':'block';};
   $('loadUrlBtn').onclick=()=>{const u=$('loadUrl').value.trim();if(u)loadModel(u);};
   $('uploadBtn').onchange=e=>{const f=e.target.files[0];if(f)loadModel(URL.createObjectURL(f),f.name);};
@@ -233,6 +389,15 @@ function updateHeatColors(){
 function resetPose(){
   if(!skeleton)return;
   skeleton.bones.forEach((b,i)=>{b.position.copy(restPose[i].p);b.quaternion.copy(restPose[i].q);b.scale.copy(restPose[i].s);});
+  refreshBones();
+}
+// skeleton.update() reads bone.matrixWorld, which is stale until the scene
+// graph updates — refresh it explicitly before CPU skinning queries.
+function refreshBones(){
+  if(!skeleton||!skeleton.bones.length)return;
+  let root=skeleton.bones[0];
+  while(root.parent&&root.parent.isBone)root=root.parent;
+  root.updateWorldMatrix(true,true);
   skeleton.update();
 }
 function applyPose(deg){
@@ -243,7 +408,7 @@ function applyPose(deg){
   bones.forEach(([side,b])=>{
     if(poseDir==='fwd')b.rotation.x=-rad;              // arm swings forward
     else b.rotation.z=(side==='L'?-1:1)*rad; });       // arm swings sideways
-  skeleton.update();
+  refreshBones();
 }
 let painting=false;
 function evNDC(e){const r=renderer.domElement.getBoundingClientRect();
@@ -299,7 +464,59 @@ async function exportGLB(){
 window.__pwa={get skinnedMesh(){return skinnedMesh},get skeleton(){return skeleton},
   get selectedBone(){return selectedBone},set selectedBone(v){selectedBone=v;updateHeatColors();},
   get camera(){return camera},get renderer(){return renderer},get scene(){return scene},
-  paintAt,applyPose,resetPose,updateHeatColors,exportGLB,get boneByName(){return boneByName}};
+  paintAt,applyPose,resetPose,updateHeatColors,exportGLB,get boneByName(){return boneByName},
+  detectWebbing,guideScan,get guideFlags(){return guideFlags},get poseDeg(){return poseDeg},
+  set poseDeg(v){poseDeg=v;$('poseSlider').value=v;$('poseVal').textContent=v+'°';applyPose(v);}};
+// headless self-test: ?autotest=1&model=<url> -> writes JSON into #autotest-out
+if(_qp.has('autotest')){
+  (async()=>{
+    const out={};
+    try{
+      let t=0;while(!skinnedMesh&&t<240){await new Promise(r=>setTimeout(r,250));t++;}
+      out.loaded=!!skinnedMesh;
+      if(skinnedMesh){
+        window.__pwa.poseDeg=45;
+        const c=detectWebbing(); out.flagged=c; out.angle=45;
+        if(c>0){
+          let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9,mnz=1e9,mxz=-1e9,fc=0;
+          const p=skinnedMesh.geometry.attributes.position;
+          for(let i=0;i<guideFlags.length;i++)if(guideFlags[i]){fc++;
+            const x=p.getX(i),y=p.getY(i),z=p.getZ(i);
+            if(x<mnx)mnx=x;if(x>mxx)mxx=x;if(y<mny)mny=y;if(y>mxy)mxy=y;if(z<mnz)mnz=z;if(z>mxz)mxz=z;}
+          out.flagBBox={mn:[+mnx.toFixed(3),+mny.toFixed(3),+mnz.toFixed(3)],mx:[+mxx.toFixed(3),+mxy.toFixed(3),+mxz.toFixed(3)]};
+          const rec=recommendBone();
+          out.recBone=rec>=0?shortName(skeleton.bones[rec].name):null;
+          // top-10 stretch verts: position + dominant bone (debug)
+          if(guideDebug){
+            const {n,stretch,posed,disp}=guideDebug;
+            const jw=skinnedMesh.geometry.attributes.skinWeight, ji=skinnedMesh.geometry.attributes.skinIndex;
+            const order=[...Array(n).keys()].sort((a,b)=>stretch[b]-stretch[a]);
+            out.top10=order.slice(0,10).map(i=>{
+              let bb=-1,bw=-1;
+              for(let s=0;s<4;s++){const w=gC(jw,i,s);if(w>bw){bw=w;bb=gC(ji,i,s);}}
+              return {p:[+posed[i*3].toFixed(3),+posed[i*3+1].toFixed(3),+posed[i*3+2].toFixed(3)],
+                      bone:shortName(skeleton.bones[bb].name),w:+bw.toFixed(2),
+                      s:+stretch[i].toFixed(4),d:+disp[i].toFixed(4)};
+            });
+            // max displacement overall — sanity check on the pose
+            let mi=0,md=0;for(let i=0;i<n;i++)if(disp[i]>md){md=disp[i];mi=i;}
+            const pa=skinnedMesh.geometry.attributes.position;
+            out.maxDisp={d:+md.toFixed(4),rest:[+pa.getX(mi).toFixed(3),+pa.getY(mi).toFixed(3),+pa.getZ(mi).toFixed(3)]};
+          }
+          // model bounds + shoulder bone world pos for sanity
+          const bb=new THREE.Box3().setFromObject(skinnedMesh);
+          out.modelBBox={mn:bb.min.toArray().map(v=>+v.toFixed(2)),mx:bb.max.toArray().map(v=>+v.toFixed(2))};
+          const sh=findBone('LeftShoulder')||findBone('mixamorigLeftShoulder');
+          if(sh){const wp=new THREE.Vector3();sh.getWorldPosition(wp);
+            out.shoulderPos=wp.toArray().map(v=>+v.toFixed(3));
+            out.shoulderLocal=skinnedMesh.worldToLocal(wp.clone()).toArray().map(v=>+v.toFixed(3));}
+        }
+      }
+    }catch(e){out.error=String(e&&e.stack||e);}
+    const pre=document.createElement('pre');pre.id='autotest-out';
+    pre.textContent=JSON.stringify(out);document.body.appendChild(pre);
+  })();
+}
 </script>
 </body>
 </html>
