@@ -1,0 +1,68 @@
+{
+ "glb": "tools/rig-repair/work/STICKUP_relabelled.glb",
+ "diagnosis": [
+  "A-POSE (28 deg from straight-down): arms hang close to the torso. Re-pose to T-pose and re-skin BEFORE painting weights \u2014 A-pose bind causes shoulder weight bleed.",
+  "SKELETON: 58 bones, depth 10, 20/23 L/R pairs mirrored.",
+  "WEIGHT BLEED: 12.7% of verts carry >15% weight on bones over 0.35m away (worst: RightUpLeg, LeftUpLeg, RightLeg). Paint or re-skin.",
+  "SEVERED MESH: 34 large disconnected pieces, largest is only 3% of verts \u2014 the body is cut at the joints and cannot bend smoothly. Sew/weld before rigging."
+ ],
+ "rest_pose": {
+  "arms": {
+   "L": {
+    "deg_from_down": 27.2,
+    "n_verts": 105,
+    "bone_deg_from_down": 32.6
+   },
+   "R": {
+    "deg_from_down": 27.8,
+    "n_verts": 87,
+    "bone_deg_from_down": 32.6
+   }
+  },
+  "avg_arm_deg_from_down": 27.5,
+  "leg_deg_from_down": [
+   11.6,
+   11.6
+  ],
+  "verdict": "A-POSE"
+ },
+ "skeleton": {
+  "bone_count": 58,
+  "root_bones": 1,
+  "max_depth": 10,
+  "lr_pairs": 23,
+  "lr_pairs_mirrored": 20,
+  "mirrored_labels": []
+ },
+ "weight_bleed": {
+  "verts": 1614,
+  "total": 12734,
+  "pct": 12.7,
+  "worst_bones": [
+   {
+    "bone": "mixamorig:RightUpLeg",
+    "verts": 458
+   },
+   {
+    "bone": "mixamorig:LeftUpLeg",
+    "verts": 424
+   },
+   {
+    "bone": "mixamorig:RightLeg",
+    "verts": 392
+   },
+   {
+    "bone": "mixamorig:LeftLeg",
+    "verts": 340
+   }
+  ]
+ },
+ "mesh": {
+  "verts": 12734,
+  "islands": 318,
+  "largest_island_pct": 3.2,
+  "islands_over_100v": 34,
+  "name": "BANNON_XFER_MESH"
+ },
+ "critical_findings": 3
+}
