@@ -20,7 +20,7 @@ Gates:
 Exit 0 = all PASS (WARNs allowed). Exit 1 = any FAIL.
 """
 import bpy, sys, os, json, math
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 def arg(n, d=None):

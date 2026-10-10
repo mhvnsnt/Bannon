@@ -153,7 +153,10 @@ else:
     bleed_verts, worst = 0, {}
     total = 0
     if mesh:
-        bhead = {b.name: wpos(b, True) for b in bones}
+        # use SEGMENT distance (not head distance): a vert at the far end of a
+        # 47cm thigh is 0.47m from the head yet correctly skinned. Head-distance
+        # flags all long bones as false-positive bleed.
+        bseg = {b.name: (wpos(b, True), wpos(b, False)) for b in bones}
         vg_names = {vg.index: vg.name for vg in mesh.vertex_groups}
         for v in mesh.data.vertices:
             total += 1
@@ -161,9 +164,13 @@ else:
             for g in v.groups:
                 if g.weight < 0.15: continue
                 bn = vg_names.get(g.group)
-                bh = bhead.get(bn)
-                if bh is None: continue
-                if (co - bh).length > 0.35:
+                seg = bseg.get(bn)
+                if seg is None: continue
+                bh, bt = seg
+                ab = bt - bh
+                t = max(0.0, min(1.0, (co - bh).dot(ab) / max(ab.length_squared, 1e-12)))
+                d = (co - (bh + t * ab)).length
+                if d > 0.35:
                     bleed_verts += 1
                     worst[bn] = worst.get(bn, 0) + 1
                     break
