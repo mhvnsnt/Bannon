@@ -1,0 +1,67 @@
+{
+ "input": "assets/models/STICKUP_v3.glb",
+ "results": [
+  {
+   "gate": "G1_STRUCTURE",
+   "status": "PASS",
+   "detail": "2 mesh(es), 1 armature(s), 58 bones"
+  },
+  {
+   "gate": "G2_RIG",
+   "status": "PASS",
+   "detail": "58 bones, all required bones present"
+  },
+  {
+   "gate": "G3_WEIGHTS",
+   "status": "PASS",
+   "detail": "all skinned verts sum to 1.0 (max dev 0.0000)"
+  },
+  {
+   "gate": "G4_ARM_PROBES",
+   "status": "PASS",
+   "detail": "max stretch 2.06x at LeftArm/lat/90 edge=21.3mm at (-0.041, 0.293, 0.416) (limit 3.0x, all 20 poses)",
+   "per_angle": {
+    "LeftArm/fwd/15": 1.2,
+    "LeftArm/fwd/30": 1.39,
+    "LeftArm/fwd/45": 1.56,
+    "LeftArm/fwd/60": 1.7,
+    "LeftArm/fwd/90": 1.98,
+    "LeftArm/lat/15": 1.18,
+    "LeftArm/lat/30": 1.37,
+    "LeftArm/lat/45": 1.57,
+    "LeftArm/lat/60": 1.75,
+    "LeftArm/lat/90": 2.06,
+    "RightArm/fwd/15": 1.19,
+    "RightArm/fwd/30": 1.37,
+    "RightArm/fwd/45": 1.52,
+    "RightArm/fwd/60": 1.65,
+    "RightArm/fwd/90": 1.85,
+    "RightArm/lat/15": 1.13,
+    "RightArm/lat/30": 1.3,
+    "RightArm/lat/45": 1.48,
+    "RightArm/lat/60": 1.66,
+    "RightArm/lat/90": 1.97
+   }
+  },
+  {
+   "gate": "G5_STRAY_GEO",
+   "status": "PASS",
+   "detail": "feet cluster at -922 mm, lowest vert -924 mm (gap 3 mm)"
+  },
+  {
+   "gate": "G6_SCALE",
+   "status": "PASS",
+   "detail": "height 1.84 m"
+  },
+  {
+   "gate": "G7_TEXTURES",
+   "status": "PASS",
+   "detail": "3 image texture(s)"
+  }
+ ],
+ "summary": {
+  "pass": 7,
+  "warn": 0,
+  "fail": 0
+ }
+}

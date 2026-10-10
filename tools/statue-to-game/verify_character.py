@@ -8,8 +8,9 @@ Gates:
   G2 RIG COMPLETENESS >=20 bones; Hips/Spine/Head/Arm/Leg bones found (suffix match)
   G3 WEIGHTS          every vertex's skin weights sum to 1.0 (+/- 0.01)
   G4 ARM PROBES       arms raised 15/30/45/60/90 deg forward + lateral (both arms);
-                      max triangle stretch < 3.0x at every angle (deterministic,
-                      computed from deformed vertex data — no eyeballing)
+                      joint-centric raises (about the shoulder joint); max triangle
+                      stretch < 3.0x at every angle (deterministic, computed from
+                      deformed vertex data — no eyeballing)
   G5 STRAY GEOMETRY  no verts >5 cm below the feet cluster (catches exploded
                       geometry; character GLBs are authored origin-at-center,
                       so feet are NOT at z=0)
@@ -19,7 +20,7 @@ Gates:
 Exit 0 = all PASS (WARNs allowed). Exit 1 = any FAIL.
 """
 import bpy, sys, os, json, math
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 def arg(n, d=None):
@@ -98,12 +99,19 @@ def reset_pose():
 def set_arm(short, angle_deg, direction):
     pb = bone(short)
     rest = pb.bone.matrix_local.copy()
-    if direction == 'fwd':
-        R = Matrix.Rotation(math.radians(-angle_deg), 4, 'Y')
-    else:  # lateral: left arm toward -Y, right arm toward +Y
-        s = -1 if short.startswith("Left") else 1
-        R = Matrix.Rotation(math.radians(s * angle_deg), 4, 'X')
-    pb.matrix = R @ rest
+    Jw = arm.matrix_world @ pb.bone.head_local
+    uw = (arm.matrix_world.to_3x3() @ (pb.bone.tail_local - pb.bone.head_local)).normalized()
+    tgt = Vector((0, 0, 1)) if direction == 'lat' else Vector((1, 0, 0))
+    axis = uw.cross(tgt)
+    if axis.length < 1e-6: axis = Vector((0, 1, 0))
+    axis.normalize()
+    Rw = Matrix.Rotation(math.radians(angle_deg), 4, axis)
+    if (Rw @ uw).dot(tgt) < uw.dot(tgt):  # keep the arm rotating TOWARD target
+        Rw = Matrix.Rotation(math.radians(-angle_deg), 4, axis)
+    A = arm.matrix_world
+    R = A.inverted() @ Rw @ A  # joint-centric rotation, armature space
+    J = pb.bone.head_local
+    pb.matrix = rot_about_point_arm(J, R) @ rest
     bpy.context.view_layer.update()
 
 def deformed_cos():
@@ -147,6 +155,20 @@ def max_stretch(rest_cos, posed_cos, tris, region_center, region_r=0.30):
     return worst, w_edge, w_cent
 
 # ---------- G4 ARM PROBES ----------
+# CONVENTION FIX 2026-10-10 (stickup rebuild): raises are JOINT-CENTRIC —
+# the arm bone frame rotates about the shoulder JOINT, not the world origin.
+# The old origin-centric convention displaced the joint up to 1.5 m (head
+# position rotated about origin) and spun T-posed arms in place instead of
+# raising them, so it was geometrically meaningless on T-posed rests.
+# Lateral raise = rotate the arm's own rest direction toward +Z (up) by the
+# probe angle; forward raise = toward +X (character faces +X).
+# Effect on baselines: old-convention numbers on A-posed models conflated
+# joint displacement with skin stretch and are NOT comparable to the new
+# joint-centric numbers. Threshold (3.0x) unchanged. Documented per
+# tools/statue-to-game/AGENTS.md G4 recalibration rule.
+def rot_about_point_arm(pt, R):
+    T1 = Matrix.Translation(pt); T2 = Matrix.Translation(-pt)
+    return T1 @ R @ T2
 if mesh and arm and bone("LeftArm") and bone("RightArm"):
     tris = tri_list()
     reset_pose()
