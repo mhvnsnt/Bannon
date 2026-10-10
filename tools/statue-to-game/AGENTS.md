@@ -15,7 +15,22 @@ PR. Never push to main. Never overwrite the owner's source statue file.
 
 ---
 
-## STAGE 0 — RECEIVE
+## STAGE 0 — DIAGNOSE (mandatory, before any repair)
+
+Run the diagnostic suite FIRST — no rig/mesh repair attempt runs without it
+(diagnose-before-repair law, owner 2026-10-09):
+```
+env -u PYTHONPATH ~/workspace/tools/blender/blender-4.0.2-linux-x64/blender -b \
+  --python tools/rig-repair/diagnose_rig.py -- \
+  --glb <input.glb> --json /tmp/diag.json
+```
+The suite reports rest-pose angles, skeleton sanity, weight-bleed detection,
+severed-mesh check, and a plain-language diagnosis. The repair plan must
+address what it finds before any weights get touched.
+- Evidence: `/tmp/diag.json` + the printed DIAG lines.
+- If the file is already T-pose with clean weights, skip to STAGE 8 (verify).
+
+## STAGE 0b — RECEIVE
 
 - Input: owner drops a Tripo export (`.glb` or `.obj`) into
   `assets/models/intake/<character>_statue.<ext>`. Never rename or move it.
