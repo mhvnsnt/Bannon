@@ -463,6 +463,13 @@ window.BANNON_BUILD = (function(){ var s="__BANNON_BUILD__"; var n=parseInt(s,10
 <script src="assets/vendor/GLTFLoader.js"></script>
 <script>if(typeof THREE!=='undefined'&&!THREE.GLTFLoader){document.write('<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');}</script>
 <script>if(typeof THREE!=='undefined'&&!THREE.GLTFLoader){document.write('<script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"><\/script>');}</script>
+<!-- Meshopt decoder — VENDORED LOCALLY (MIT, Arseny Kapoulkine). Banked character GLBs
+     (CIPHER_rigged, ECHO, …) use EXT_meshopt_compression; without this the r128
+     GLTFLoader throws 'setMeshoptDecoder must be called before loading compressed
+     files' and the model silently falls back to the procedural body. The customizer
+     (bannon_customizer.js) and any engine loader call .setMeshoptDecoder when present. -->
+<script src="assets/vendor/meshopt_decoder.js"></script>
+<script>if(typeof MeshoptDecoder==='undefined'){document.write('<script src="https://unpkg.com/meshoptimizer@0.18.1/meshopt_decoder.js"><\/script>');}</script>
 <!-- FBXLoader + fflate — VENDORED LOCALLY so the offline APK (file://) can load mocap animation.
      This is THE reason combat looked marionette: FBXLoader was CDN-only and never loaded on the APK,
      so STUDIO.clips stayed empty and every move fell back to procedural spring poses. Local-first;
@@ -6651,7 +6658,12 @@ window.BANNON_DNA = (function(){
       // v161e GNM FACE: the scan-grade face recipe (38 morph influences from the FACE LAB) rides in
       // the DNA — engine-agnostic (maps 1:1 onto gnm_head.glb morphTargetInfluences in any engine).
       gnmFace:(function(){ try{ const nm=(f.specName||(f.opts&&f.opts.name)||'').toUpperCase();
-        return (window.BANNON_GNM_FACE&&window.BANNON_GNM_FACE.facesFor)?(window.BANNON_GNM_FACE.facesFor(nm)||undefined):undefined; }catch(e){ return undefined; } })()
+        return (window.BANNON_GNM_FACE&&window.BANNON_GNM_FACE.facesFor)?(window.BANNON_GNM_FACE.facesFor(nm)||undefined):undefined; }catch(e){ return undefined; } })(),
+      // CUSTOMIZER SUITE (Phase 2): the player's in-menu customizer build
+      // (eye color, morphs, accessories, face paint) rides in the recipe,
+      // keyed by fighter name — bannon_customizer.js owns the schema.
+      customizer:(function(){ try{ const nm=String(f.specName||sp.name||(f.opts&&f.opts.name)||'FIGHTER').toUpperCase();
+        return (window.BANNON_CUSTOMIZER&&window.BANNON_CUSTOMIZER.loadBuildSync)?(window.BANNON_CUSTOMIZER.loadBuildSync(nm)||undefined):undefined; }catch(e){ return undefined; } })()
     };
   }
   // apply(f, dna) -> reshape a live fighter from a recipe (procedural body today)
@@ -6676,6 +6688,10 @@ window.BANNON_DNA = (function(){
       // keyed to the recipe's name — the face travels with the DNA across devices/engines.
       if(dna.gnmFace){ try{ const _fk='bannon_gnm_faces'; const _fm=JSON.parse(localStorage.getItem(_fk)||'{}');
         _fm[String(dna.name||'FIGHTER').toUpperCase()]=dna.gnmFace; localStorage.setItem(_fk, JSON.stringify(_fm)); }catch(_e2){} }
+      // CUSTOMIZER SUITE (Phase 2): stash the build on the fighter so the GLB
+      // bind path (the _bindFighterGltf wrapper in bannon_customizer.js)
+      // applies it when the model loads.
+      if(dna.customizer){ try{ f._customBuild=dna.customizer; }catch(_e3){} }
       return true;
     }catch(e){ console.warn('[BANNON_DNA] apply failed', e); return false; }
   }
@@ -57194,6 +57210,7 @@ window.__deriveVariant = async function(key){
 })();
 </script>
 
+<script src="bannon_customizer.js"></script>
 </body></html>
 
 

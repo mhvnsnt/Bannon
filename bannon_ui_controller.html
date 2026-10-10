@@ -19,7 +19,8 @@
     { label: 'ROADMAP', btn: 'aiRoadmapTab',  panel: 'aiRoadmapTab' },
     { label: 'SURGEON', panel: 'surgeon-panel' },
     { label: 'ATTIRE',  text: 'ATTIRE' },
-    { label: 'FORGE',   text: 'MODEL FORGE' }
+    { label: 'FORGE',   text: 'MODEL FORGE' },
+    { label: 'CUSTOMIZE', fn: 'openCustomizer' }
   ];
   var STRAGGLERS = ['movesBtn', 'btnMoves', 'btnMainStudio', 'aiSensesTab', 'aiRoadmapTab'];
 
@@ -46,7 +47,12 @@
       if (!e) return;
       if (this.current === label) { this.closeAll(); return; }
       this.closeAll();
-      if (e.btn && el(e.btn)) el(e.btn).click();
+      if (e.fn === 'openCustomizer') {
+        // Character customization suite (bannon_customizer.js): opens the
+        // in-menu customizer on the live page. No-op if the suite isn't loaded.
+        try { if (window.BANNON_CUSTOMIZER) window.BANNON_CUSTOMIZER.open(); } catch (_) {}
+      }
+      else if (e.btn && el(e.btn)) el(e.btn).click();
       else if (e.text) { var b = byText(e.text); if (b) b.click(); }
       else if (e.panel) showPanel(e.panel);
       this.current = label; this._sync(); this._paint();
