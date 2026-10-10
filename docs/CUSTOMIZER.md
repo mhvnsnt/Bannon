@@ -22,6 +22,20 @@ SUITE hub (+ `CUSTOMIZE` entry in the `bannon_ui_controller.html` dock).
 ## What the suite adds (the 7 items)
 
 1. **Chain pendant orientation fix** — the 4 FIXED chain GLBs
+   (pendant baked vertical per a6162b58). **Render-verified 2026-10-09 on
+   Bannon's CIPHER_rigged.glb AND AshLanev2's ASTRID.glb (same code, same
+   byte-identical GLB):** the chain attaches at the Neck, renders (fixed a
+   frustum-culling bug that made skinned accessories invisible), and the
+   manifest `attach.rotation` knob now actually affects skinned accessories
+   (it was dead — the bind math cancelled the holder transform; fixed by
+   injecting the holder rotation into the bind inverses). **Known limitation
+   (upstream design, not a port bug):** the authored chain is a 0.9m oval
+   drape — it hangs to the waist on 1.5–1.8m fighters, and its 3D spread
+   means a +90° Y facing correction (to put the pendant on the chest of
+   Bannon's +X-facing rigs) trades a side-drape for an overhead antenna, so
+   no per-fighter chain rotation is applied. Matches AshLanev2's own
+   reference renders. If the owner wants a shorter/front-corrected chain,
+   tune `SLOT_ROTFIX` in `bannon_customizer.js` (the knob now works).
    (`assets/customizer/chains/`, pendant baked vertical per a6162b58) +
    per-rig rotation knob (`attach.rotation` / `rotFix`). Bone: `Neck`, scale 0.15.
 2. **Masks** — 7 GLBs (`assets/customizer/masks/` + manifest). ⚠ `mask_hollow_superdragon`

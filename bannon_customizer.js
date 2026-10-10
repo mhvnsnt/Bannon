@@ -369,12 +369,25 @@ var HEAD_FIT={
   stick_up:  { scale:0.4460 },
   cipher:    { scale:0.5360 }
 };
+/* Per-(fighter,slot) rotation corrections (degrees, XYZ) ADDED to the manifest
+ * attach.rotation. Needed when an accessory was authored for a different
+ * bone-facing convention than the fighter's rig. Verified case: Bannon's
+ * banked GLBs have meshes facing +X while their bones' +Z is world +Z
+ * (AshLanev2's ASTRID has bone-+Z = mesh facing, which is what the chain and
+ * mask GLBs were authored for) — so forward-jutting accessories (chain
+ * pendant, mask front) need +90° about Y to land on the mesh's facing.
+ * Values here are RENDER-VERIFIED per fighter; do not guess new ones. */
+var SLOT_ROTFIX={
+};
 function headFit(fighterId, slot){
   var none={ scale:1, offset:[0,0,0], rotFix:[0,0,0] };
-  if(!fighterId || !HEAD_SLOTS[slot]) return none;
-  var f=HEAD_FIT[String(fighterId).toLowerCase()];
-  if(!f) return none;
-  return { scale:f.scale, offset:f.offset||[0,0,0], rotFix:f.rotFix||[0,0,0] };
+  if(!fighterId) return none;
+  var f=HEAD_FIT[String(fighterId).toLowerCase()]||{};
+  var sr=(SLOT_ROTFIX[String(fighterId).toLowerCase()]||{})[slot]||[0,0,0];
+  var rf=f.rotFix||[0,0,0];
+  if(!HEAD_SLOTS[slot]) return { scale:1, offset:[0,0,0], rotFix:sr };
+  return { scale:f.scale||1, offset:f.offset||[0,0,0],
+           rotFix:[rf[0]+sr[0], rf[1]+sr[1], rf[2]+sr[2]] };
 }
 function fighterOf(root){ return root.userData && root.userData.fighterId; }
 function registry(root){
@@ -536,6 +549,14 @@ function attachSingle(root, manifest, file, fit){
       root.add(holder);
       root.updateMatrixWorld(true);
       var S=new THREE.Matrix4().makeScale(s,s,s);
+      // The holder's rigid rotation must ALSO ride into the bind inverses.
+      // three.js renders rebound verts at W·I'·B·v with I'=S·I·B^-1, so the
+      // holder transform (B) cancels out of the final placement — without
+      // this R the manifest attach.rotation knob would be dead for skinned
+      // accessories. R rotates the accessory in the fighter-bone's frame,
+      // which is what corrects authoring-facing mismatches (e.g. a chain
+      // authored for bone-+Z-forward on a rig whose mesh faces bone-+X).
+      var R=new THREE.Matrix4().makeRotationFromEuler(holder.rotation);
       rebound.forEach(function(mesh){
         // Skinned verts are posed by the fighter's bones, but the geometry
         // bounding sphere still sits at the accessory's authored location —
@@ -543,7 +564,7 @@ function attachSingle(root, manifest, file, fit){
         mesh.frustumCulled=false;
         var Binv=mesh.matrixWorld.clone().invert();
         var inv=mesh.skeleton.boneInverses;
-        for(var i=0;i<inv.length;i++) inv[i]=S.clone().multiply(inv[i]).multiply(Binv);
+        for(var i=0;i<inv.length;i++) inv[i]=R.clone().multiply(S).multiply(inv[i]).multiply(Binv);
       });
       rebound.forEach(function(mesh){ mesh.bind(mesh.skeleton, mesh.matrixWorld); });
       return holder;
