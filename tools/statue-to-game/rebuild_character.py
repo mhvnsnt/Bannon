@@ -194,12 +194,16 @@ if "repose" in STAGES:
 
 # ============ STAGE: SKIN (heat diffusion) ============
 if "skin" in STAGES:
-    # drop old armature parent + groups, re-skin from the T-posed geometry
+    # drop old armature parent + groups, re-skin from the T-posed geometry.
+    # clear parents on EVERYTHING first (imported GLBs can carry parent
+    # relationships that make parent_set fail with "Loop in parents").
+    bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.select_all(action='SELECT')
+    bpy.ops.object.parent_clear(type='CLEAR_KEEP_TRANSFORM')
     for mod in mesh.modifiers:
         if mod.type == 'ARMATURE': mesh.modifiers.remove(mod)
     mesh.vertex_groups.clear()
-    mesh.parent = None
-    mesh.matrix_parent_inverse.identity()
+    bpy.ops.object.select_all(action='DESELECT')
     bpy.context.view_layer.objects.active = arm
     mesh.select_set(True); arm.select_set(True)
     bpy.ops.object.parent_set(type='ARMATURE_AUTO')
