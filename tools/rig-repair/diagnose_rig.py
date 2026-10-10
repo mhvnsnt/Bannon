@@ -183,6 +183,35 @@ else:
 if mesh:
     import bmesh
     bm = bmesh.new(); bm.from_mesh(mesh.data); bm.verts.ensure_lookup_table()
+    # merge coincident verts (1e-5 grid) before flood-fill: the glTF exporter
+    # splits verts at UV seams, which reads as false "severed pieces".
+    # Only merge if BOTH are boundary verts (same rule as the weld).
+    bm.verts.index_update()
+    def _is_b(v): return any(len(e.link_faces) < 2 for e in v.link_edges)
+    from mathutils.kdtree import KDTree
+    _bnd = {v.index for v in bm.verts if _is_b(v)}
+    _kd = KDTree(len(bm.verts))
+    for _v in bm.verts: _kd.insert(_v.co, _v.index)
+    _kd.balance()
+    _par = {v.index: v.index for v in bm.verts}
+    def _find(a):
+        while _par[a] != a: _par[a] = _par[_par[a]]; a = _par[a]
+        return a
+    for _v in bm.verts:
+        if _v.index not in _bnd: continue
+        for (_co, _ji, _dd) in _kd.find_range(_v.co, 1e-5):
+            if _ji <= _v.index or _ji not in _bnd: continue
+            _ra, _rb = _find(_v.index), _find(_ji)
+            if _ra != _rb: _par[_ra] = _rb
+    _groups = {}
+    for _v in bm.verts: _groups.setdefault(_find(_v.index), []).append(_v)
+    for _g in _groups.values():
+        if len(_g) > 1:
+            _cx = sum(_v.co.x for _v in _g)/len(_g)
+            _cy = sum(_v.co.y for _v in _g)/len(_g)
+            _cz = sum(_v.co.z for _v in _g)/len(_g)
+            bmesh.ops.pointmerge(bm, verts=_g, merge_co=(_cx, _cy, _cz))
+    bm.verts.ensure_lookup_table()
     seen_v, sizes = set(), []
     for v in bm.verts:
         if v.index in seen_v: continue
