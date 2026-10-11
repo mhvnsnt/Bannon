@@ -1,0 +1,87 @@
+apply plugin: 'com.android.application'
+
+// Stable sideload signing: BOTH debug and release sign with the committed bannon-release.keystore so
+// every build (local + CI) is identically signed and updates install over old builds. This is a
+// sideload/debug key (documented in CLAUDE.md), NOT a Play Store upload key. Password can be overridden
+// with -PBANNON_STORE_PW / -PBANNON_KEY_PW; falls back to the documented default.
+def _storePw = (project.hasProperty('BANNON_STORE_PW') ? BANNON_STORE_PW : 'bannon123')
+def _keyPw   = (project.hasProperty('BANNON_KEY_PW')   ? BANNON_KEY_PW   : 'bannon123')
+
+// SIDE-BY-SIDE BUILD. Android hard-refuses to install an APK over an existing app with the same
+// package name and a DIFFERENT signing key — reported on the phone as "App not installed" or, on some
+// OEM installers, "problem parsing the package". Nothing in the APK can fix that, because it is the
+// installer refusing on identity grounds and the package IS structurally fine (v1+v2+v3 present,
+// resources.arsc STORED, versionCode climbing).
+//
+// The owner has an install predating the stable-key commit, so his phone has exactly that clash, and
+// the only in-package answer is a DIFFERENT package name that installs ALONGSIDE the old one instead
+// of over it. -PbannonFresh=true produces com.bannon.game.fresh with its own label, so there is
+// always an APK that installs no matter what is already on the device. No uninstall, no data loss on
+// the old one, and both can sit on the home screen while he checks the new build is good.
+def _fresh   = project.hasProperty('bannonFresh') && bannonFresh.toString() == 'true'
+
+android {
+    namespace = "com.bannon.game"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.bannon.game"
+        if (_fresh) {
+            applicationIdSuffix ".fresh"
+            // app_name already exists in strings.xml, so resValue here would be a duplicate-resource
+            // build failure. Override the label through a manifest placeholder instead.
+            manifestPlaceholders = [ bannonLabel: "BANNON fresh" ]
+        } else {
+            manifestPlaceholders = [ bannonLabel: "BANNON" ]
+        }
+        minSdkVersion 21   // Android 5.0+ (was 24) — installs on far more devices AND forces v1 JAR
+                           // signing to stay on (AGP auto-drops v1 at minSdk>=24), fixing "problem
+                           // parsing the package" on OEM/older installers. WebView game runs fine on 21+.
+        targetSdkVersion 34
+        // auto-incrementing versionCode from commit count (CI sets BANNON_VERSION_CODE); default 1 locally
+        versionCode (System.getenv("BANNON_VERSION_CODE") ? System.getenv("BANNON_VERSION_CODE").toInteger() : 1)
+        // versionName carries the build so the installed app is IDENTIFIABLE in Android's app info.
+        // It used to be a frozen "1.0", which made a successful update indistinguishable from a failed
+        // one — you could not tell whether a new APK had actually taken.
+        versionName ("1.0." + (System.getenv("BANNON_VERSION_CODE") ?: "0"))
+        aaptOptions {
+            // don't strip dotfiles etc. from bundled web assets (default aapt ignore would drop some)
+            ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+
+    signingConfigs {
+        bannon {
+            storeFile file('bannon-release.keystore')
+            storePassword _storePw
+            keyAlias 'bannon'
+            keyPassword _keyPw
+            // FIX "problem parsing the package": the build was v2-ONLY (v1 JAR sig off), which many
+            // Android installers (esp. API 24-27 + several OEMs) reject on install. Sign v1+v2+v3 so
+            // it installs everywhere from minSdk 24 up.
+            enableV1Signing true
+            enableV2Signing true
+            enableV3Signing true
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.bannon
+        }
+        release {
+            signingConfig signingConfigs.bannon
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation "androidx.appcompat:appcompat:1.6.1"
+}

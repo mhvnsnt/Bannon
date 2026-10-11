@@ -1,0 +1,5 @@
+# tools/video runtime deps (open-source; licenses in TOOLS_VIDEO.md)
+Pillow==10.2.0            # HPND — title cards, thumbnails
+opentimelineio==0.18.1    # Apache-2.0 — beat EDL interchange
+# ffmpeg is a system binary (https://ffmpeg.org), not a pip package.
+# aubio (GPL-3.0) is used by the existing beat-grid pipeline, not required here.

@@ -1,0 +1,28 @@
+name: Stick-Up Entrance Video Render
+on:
+  workflow_dispatch:
+    inputs:
+      take:
+        description: 'Take to render (stage_pyro, ring_intro, crowd_pan)'
+        required: true
+        default: 'stage_pyro'
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install Playwright
+        run: |
+          npm install playwright
+          npx playwright install chromium --with-deps
+      - name: Render take
+        run: |
+          node tools/harness/capture_entrance.cjs --take=${{ inputs.take }} --out=/tmp/take_frames
+      - name: Upload frames
+        uses: actions/upload-artifact@v4
+        with:
+          name: take-${{ inputs.take }}-frames
+          path: /tmp/take_frames/

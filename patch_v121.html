@@ -1,0 +1,58 @@
+<script>
+// ============================================================================
+// BANNON — BRICK 139: MENU STACK CONDITIONAL VISIBILITY & IK DELTA CACHE
+// Resolves extreme mobile layout lag by unmounting the dock during active combat
+// and applies position-gating to the _twoBoneIK Pole Vector matrix math.
+// ============================================================================
+(function finalizeBrick139() {
+    if (window.__bannonBrick139) return;
+    window.__bannonBrick139 = true;
+
+    // 1. Optimize Pole Vector IK (Delta-Time Gating & Caching)
+    if (typeof Fighter !== 'undefined') {
+        const _origTwoBoneIK = Fighter.prototype._twoBoneIK;
+        Fighter.prototype._twoBoneIK = function(sh, el, ha, a, b, pole) {
+            this._ikCache = this._ikCache || {};
+            const cacheKey = sh + el + ha;
+            const c = this._ikCache[cacheKey];
+            
+            const S = this.J[sh].pos, H = this.J[ha].pos;
+            
+            // Delta-gating: bypass matrix math if limb hasn't moved > 0.005m
+            if (c && Math.hypot(S.x - c.S.x, S.y - c.S.y, S.z - c.S.z) < 0.005 &&
+                     Math.hypot(H.x - c.H.x, H.y - c.H.y, H.z - c.H.z) < 0.005 &&
+                     Math.hypot(pole.x - c.P.x, pole.y - c.P.y, pole.z - c.P.z) < 0.005) {
+                // Return cached target
+                this.J[el].tgt.copy(c.T);
+                return;
+            }
+
+            // Execute original heavy calculation
+            _origTwoBoneIK.call(this, sh, el, ha, a, b, pole);
+
+            // Cache new state
+            this._ikCache[cacheKey] = {
+                S: {x: S.x, y: S.y, z: S.z},
+                H: {x: H.x, y: H.y, z: H.z},
+                P: {x: pole.x, y: pole.y, z: pole.z},
+                T: {x: this.J[el].tgt.x, y: this.J[el].tgt.y, z: this.J[el].tgt.z}
+            };
+        };
+    }
+
+    // 2. Hide Menu Stack Grid Overlay completely when not in menu/pause
+    if (window.BANNON_UI && window.BANNON_UI._tick) {
+        const _origTick = window.BANNON_UI._tick;
+        window.BANNON_UI._tick = function() {
+            _origTick.call(this);
+            const isMenuOrPause = (window.gameState === 'menu' || window.gameState === 'pause');
+            const d = document.getElementById('bannonDock');
+            if (d) {
+                d.style.display = isMenuOrPause ? 'flex' : 'none';
+            }
+        };
+    }
+    
+    console.log('%c[BANNON UI] Brick 139: MENU STACK WRAPPER & IK CACHING ONLINE', 'color:#00ffcc;font-weight:bold;');
+})();
+</script>

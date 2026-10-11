@@ -1,0 +1,64 @@
+body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; color: #00ff00; font-family: monospace; overflow: hidden; }
+#gameCanvas { width: 100%; height: 100%; display: block; background: #222; }
+#uiLayer { position: absolute; top: 10px; left: 10px; pointer-events: none; z-index: 10; display: none; }
+.menu-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; pointer-events: auto; z-index: 100;}
+.creator-card { background: #1a1a1a; border: 1px solid #00e5ff; padding: 25px; text-align: center; color: white; font-family: sans-serif; border-radius: 8px; max-width: 500px; box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);}
+button { background: #00e5ff; border: none; padding: 12px 24px; font-weight: bold; cursor: pointer; margin-top: 20px; border-radius: 4px; color: black; pointer-events: auto; text-transform: uppercase; transition: transform 0.1s;}
+button:active { transform: scale(0.95); }
+
+/* Top HUD based on image */
+#topHud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 10px 20px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    z-index: 50;
+    pointer-events: none;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.hud-side { width: 35%; display: flex; flex-direction: column; }
+.hud-side.right { align-items: flex-end; text-align: right; }
+
+.fighter-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    width: 100%;
+    color: #ff5722;
+    margin-bottom: 2px;
+}
+.right .fighter-name-row { flex-direction: row-reverse; color: #00e5ff; }
+
+.fighter-name { font-weight: bold; font-size: 18px; text-transform: uppercase; letter-spacing: 1px;}
+.fighter-subtitle { color: #888; font-size: 10px; text-transform: uppercase; }
+
+.main-bars { width: 100%; display: flex; flex-direction: column; gap: 4px; }
+
+.segmented-bar {
+    width: 100%; height: 18px; display: flex; gap: 2px;
+}
+.segment { flex: 1; background: #ff5722; height: 100%; transition: opacity 0.2s; }
+.segment.empty { opacity: 0.1; }
+.right .segment { background: #00e5ff; }
+
+.stamina-bar { width: 100%; height: 4px; background: rgba(0,0,0,0.5); border-bottom: 2px solid #00ff00; }
+.right .stamina-bar { border-bottom: 2px solid #00e5ff; display: flex; justify-content: flex-end; }
+.stamina-fill { height: 100%; background: #00ff00; transition: width 0.2s; }
+.right .stamina-fill { background: #00e5ff; }
+
+.trauma-indicators { display: flex; gap: 10px; margin-top: 6px; }
+.right .trauma-indicators { flex-direction: row-reverse; }
+.trauma-part { font-size: 8px; color: white; text-align: center; }
+.trauma-box { width: 24px; height: 6px; background: #4caf50; margin-top: 2px; transition: background 0.3s; }
+
+.timer-section {
+    display: flex; flex-direction: column; align-items: center; color: #ffeb3b; font-weight: bold; margin-top: 10px;
+}
+.round-text { font-size: 12px; letter-spacing: 2px; margin-bottom: -5px;}
+.timer-text { font-size: 42px; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }

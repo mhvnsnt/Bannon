@@ -1,0 +1,93 @@
+{
+ "glb": "assets/models/STICKUP_repaired.glb",
+ "diagnosis": [
+  "A-POSE (28 deg from straight-down): arms hang close to the torso. Re-pose to T-pose and re-skin BEFORE painting weights \u2014 A-pose bind causes shoulder weight bleed.",
+  "SKELETON: 58 bones, depth 10, 20/23 L/R pairs mirrored.",
+  "MIRRORED BONE LABELS (23 pairs, e.g. RightShoulder/LeftShoulder): bones named 'Left' sit on the anatomical right. Any retarget/animation code assuming Left=left WILL break \u2014 fix labels or use mirror-aware mapping.",
+  "WEIGHT BLEED: 12.6% of verts carry >15% weight on bones over 0.35m away (worst: LeftUpLeg, RightUpLeg, LeftLeg). Paint or re-skin.",
+  "SEVERED MESH: 34 large disconnected pieces, largest is only 3% of verts \u2014 the body is cut at the joints and cannot bend smoothly. Sew/weld before rigging."
+ ],
+ "rest_pose": {
+  "arms": {
+   "L": {
+    "deg_from_down": 27.8,
+    "n_verts": 87,
+    "bone_deg_from_down": 32.6
+   },
+   "R": {
+    "deg_from_down": 27.3,
+    "n_verts": 101,
+    "bone_deg_from_down": 32.6
+   }
+  },
+  "avg_arm_deg_from_down": 27.6,
+  "leg_deg_from_down": [
+   11.6,
+   11.6
+  ],
+  "verdict": "A-POSE"
+ },
+ "skeleton": {
+  "bone_count": 58,
+  "root_bones": 1,
+  "max_depth": 10,
+  "lr_pairs": 23,
+  "lr_pairs_mirrored": 20,
+  "mirrored_labels": [
+   "RightShoulder/LeftShoulder",
+   "RightArm/LeftArm",
+   "RightForeArm/LeftForeArm",
+   "RightHand/LeftHand",
+   "RightHandThumb1/LeftHandThumb1",
+   "RightHandThumb2/LeftHandThumb2",
+   "RightHandThumb3/LeftHandThumb3",
+   "RightHandIndex1/LeftHandIndex1",
+   "RightHandIndex2/LeftHandIndex2",
+   "RightHandIndex3/LeftHandIndex3",
+   "RightHandMiddle1/LeftHandMiddle1",
+   "RightHandMiddle2/LeftHandMiddle2",
+   "RightHandMiddle3/LeftHandMiddle3",
+   "RightHandRing1/LeftHandRing1",
+   "RightHandRing2/LeftHandRing2",
+   "RightHandRing3/LeftHandRing3",
+   "RightHandPinky1/LeftHandPinky1",
+   "RightHandPinky2/LeftHandPinky2",
+   "RightHandPinky3/LeftHandPinky3",
+   "RightUpLeg/LeftUpLeg",
+   "RightLeg/LeftLeg",
+   "RightFoot/LeftFoot",
+   "RightToeBase/LeftToeBase"
+  ]
+ },
+ "weight_bleed": {
+  "verts": 1595,
+  "total": 12633,
+  "pct": 12.6,
+  "worst_bones": [
+   {
+    "bone": "mixamorig:LeftUpLeg",
+    "verts": 454
+   },
+   {
+    "bone": "mixamorig:RightUpLeg",
+    "verts": 413
+   },
+   {
+    "bone": "mixamorig:LeftLeg",
+    "verts": 391
+   },
+   {
+    "bone": "mixamorig:RightLeg",
+    "verts": 337
+   }
+  ]
+ },
+ "mesh": {
+  "verts": 12633,
+  "islands": 303,
+  "largest_island_pct": 3.2,
+  "islands_over_100v": 34,
+  "name": "BANNON_XFER_MESH"
+ },
+ "critical_findings": 4
+}

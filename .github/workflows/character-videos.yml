@@ -1,0 +1,129 @@
+name: Bannon GLB character video batch
+# live deformation diagnostics enabled in recorder
+# rerun with deformation evidence printed
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'BANNON_v150.html'
+      - 'assets/models/**'
+      - 'tools/harness/play_and_record.cjs'
+      - '.github/workflows/character-videos.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: character-videos
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Delivery batch starts from models with measured deformation QA, not merely filenames.
+          # BANNON.glb is a rigid action-figure asset; the actual playable BANNON model is BANNON_rigged.glb.
+          - character: BANNON
+            glb: BANNON_rigged.glb
+          - character: VIPER
+            glb: VIPER.glb
+          - character: KOBRA
+            glb: KOBRA.glb
+          - character: AARON_RUBEN
+            glb: AARON_RUBEN.glb
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install browser recorder
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node -e "const {chromium}=require('playwright'); console.log('chromium:', chromium.executablePath())"
+
+      - name: Verify character GLB exists
+        env:
+          CHARACTER: ${{ matrix.character }}
+        run: |
+          test -f "assets/models/${{ matrix.glb }}" || {
+            echo "BLOCK: no real GLB for ${CHARACTER}"
+            exit 1
+          }
+
+      - name: Capture real BANNON gameplay
+        env:
+          CHARACTER: ${{ matrix.character }}
+        run: |
+          CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          mkdir -p "dist/character-videos/${CHARACTER}"
+          BANNON_CHROMIUM="$CHROMIUM" node tools/harness/play_and_record.cjs \
+            --seconds 28 \
+            --p1 "${CHARACTER}" \
+            --p2 BANNON \
+            --out "dist/character-videos/${CHARACTER}"
+
+      - name: Fail closed if no real gameplay was captured
+        env:
+          CHARACTER: ${{ matrix.character }}
+          EXPECTED_P1_GLB: ${{ matrix.glb }}
+        run: |
+          test -s "dist/character-videos/${CHARACTER}/playtest_report.json"
+          node - <<'NODE'
+          const fs=require('fs');
+          const p='dist/character-videos/'+process.env.CHARACTER+'/playtest_report.json';
+          const r=JSON.parse(fs.readFileSync(p,'utf8'));
+          if(!r.video) throw new Error('BLOCK: recorder produced no video');
+          const gameplay=(r.beats||[]).some(x=>/bell:/.test(x.what));
+          if(!gameplay) throw new Error('BLOCK: match never reached FIGHT; this is not gameplay footage');
+          if((r.pageErrorCount||0)>0) throw new Error('BLOCK: page errors during capture: '+r.pageErrors.join(' | '));
+          if((r.errorCount||0)>0) throw new Error('BLOCK: console errors during capture: '+r.consoleErrors.join(' | '));
+          if((r.anim||{}).poseCalls < 1) throw new Error('BLOCK: no animation pose reached the skeleton');
+          if((r.anim||{}).clipBoneRefs > 0 && (r.anim||{}).clipBoneResolved === 0) throw new Error('BLOCK: clip bones referenced but none resolved');
+          if(!(r.beats||[]).some(x=>/recorder instrumentation attached/.test(x.what))) throw new Error('BLOCK: recorder instrumentation did not attach; do not certify this capture');
+          if(!r.deformation || !r.deformation.samples) throw new Error('BLOCK: runtime deformation telemetry did not execute; do not certify this capture');
+          const models=Object.values(r.models||{});
+          if(models.length < 2) throw new Error('BLOCK: fewer than two runtime fighter models were observed; capture may be using a procedural/missing body');
+          const norm=s=>String(s||'').split('/').pop().toLowerCase();
+          const expectedP1=norm(process.env.EXPECTED_P1_GLB), expectedP2='bannon_rigged.glb';
+          const urls=models.map(m=>norm(m.modelUrl));
+          if(!urls.some(u=>u===expectedP1)) throw new Error('BLOCK: expected P1 GLB was not observed at runtime: '+expectedP1+'; observed '+urls.join(', '));
+          if(!urls.some(u=>u===expectedP2)) throw new Error('BLOCK: expected BANNON GLB was not observed at runtime: '+expectedP2+'; observed '+urls.join(', '));
+          for(const m of models) if(!m.skinnedMeshes || !m.mappedBones) throw new Error('BLOCK: runtime model lacks skinned/mapped rig evidence: '+JSON.stringify(m));
+          if(r.deformation.spikes > 0) throw new Error('BLOCK: runtime deformation sentinel found '+r.deformation.spikes+' stretched triangle samples; keep this model out of delivery until repaired');
+          console.log('PASS real gameplay + deformation gate:', r.video);
+          NODE
+
+      - name: Upload raw gameplay diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bannon-character-diagnostics-${{ matrix.character }}
+          path: dist/character-videos/${{ matrix.character }}/playtest_report.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Encode delivery cuts
+        env:
+          CHARACTER: ${{ matrix.character }}
+        run: |
+          DIR="dist/character-videos/${CHARACTER}"
+          WEBM="$(find "$DIR" -maxdepth 1 -name 'bannon_match_*.webm' -print -quit)"
+          test -n "$WEBM"
+          ffmpeg -y -i "$WEBM" -an -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p "$DIR/${CHARACTER}_BANNON_16x9.mp4"
+          ffmpeg -y -i "$WEBM" -vf "scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2" -an -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p "$DIR/${CHARACTER}_BANNON_9x16.mp4"
+          sha256sum "$DIR"/*.mp4 > "$DIR/SHA256SUMS.txt"
+
+      - name: Upload character video package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bannon-character-video-${{ matrix.character }}
+          path: dist/character-videos/${{ matrix.character }}
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,64 @@
+name: Bannon character video queue (one at a time)
+# The video machine: one character per run, from the owner-edited priority
+# queue at tools/video/queue/queue.json. Replaces batch thinking —
+# no matrix, no wandering. run_one.py owns the whole chain:
+# capture -> fail-closed gates -> beat-synced assembly -> thumbnail ->
+# delivery encode -> SHA256SUMS -> VIDEO_LOG.md -> queue marked done.
+
+on:
+  workflow_dispatch:
+    inputs:
+      character:
+        description: "Character slug (e.g. STICK_UP). Empty = queue head."
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: character-video-queue
+  cancel-in-progress: false
+
+jobs:
+  run-one:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install browser recorder
+        run: |
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+          node -e "const {chromium}=require('playwright'); console.log('chromium:', chromium.executablePath())"
+
+      - name: Install ffmpeg + python deps
+        run: |
+          sudo apt-get update && sudo apt-get install -y ffmpeg
+          pip install --no-cache-dir -r tools/video/requirements-video.txt
+
+      - name: Run the video machine (one character)
+        env:
+          CHARACTER: ${{ inputs.character }}
+        run: |
+          CHROMIUM="$(node -e "console.log(require('playwright').chromium.executablePath())")"
+          ARGS=""
+          if [ -n "$CHARACTER" ]; then ARGS="--character $CHARACTER"; fi
+          BANNON_CHROMIUM="$CHROMIUM" python3 tools/video/queue/run_one.py $ARGS
+
+      - name: Upload character video package
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bannon-character-video-package
+          path: dist/character-videos/
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload video log
+        uses: actions/upload-artifact@v4
+        with:
+          name: Bannon-video-log
+          path: tools/video/queue/VIDEO_LOG.md
+          if-no-files-found: warn
+          retention-days: 30

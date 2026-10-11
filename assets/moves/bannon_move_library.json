@@ -1,0 +1,68 @@
+{
+  "_note": "BANNON 2K-level MOVE LIBRARY — proprietary move catalog organized by POSITION + STYLE, structured from the MDickie position taxonomy (tools/bbparse/out/moves_catalog.json) + WWE-2K moveset depth, every entry mapped to a real in-engine GRAPPLE_POSITIONS key / DIVE_TYPES key so it routes through resolveGrapPos into OUR physics (no canned animation). Names are proprietary (no trademarks). style = which fighting styles favor the move; the moveset editor filters by position + style.",
+  "_styles": ["technical","powerhouse","highFlyer","brawler","striker","lucha","mma","hardcore","oldSchool","showman"],
+  "_positions": ["STANDING_FRONT","STANDING_REAR","GROUNDED_HEAD","GROUNDED_LEG","GROUNDED_SIDE","CORNER","APRON","ROPE_REBOUND","TOP_ROPE","MIDDLE_ROPE","SPRINGBOARD"],
+  "grapples": [
+    {"name":"Deadlift German","pos":"BACK_SUPLEX","mode":"rear","from":"STANDING_REAR","style":["powerhouse","technical"],"deliver":"toss","power":78,"desc":"deadlift bridge German — Bannon canon"},
+    {"name":"Executioner's Drop","pos":"CROSS_POWERBOMB","mode":"front","from":"STANDING_FRONT","style":["powerhouse"],"deliver":"slam","power":92,"desc":"Bannon placeholder finisher family"},
+    {"name":"Saturn Ring Bridge","pos":"BACK_SUPLEX","mode":"rear","from":"STANDING_REAR","style":["technical"],"deliver":"bridge","power":70,"desc":"bridge into the Ring of Saturn submission"},
+    {"name":"Broken Architect Bomb","pos":"POWERBOMB","mode":"front","from":"STANDING_FRONT","style":["powerhouse"],"deliver":"slam","power":85},
+    {"name":"Skyfall Suplex","pos":"VERTICAL_SUPLEX","mode":"front","from":"STANDING_FRONT","style":["technical","powerhouse"],"deliver":"drop","power":72},
+    {"name":"Spike Verdict","pos":"DDT","mode":"front","from":"STANDING_FRONT","style":["technical","striker"],"deliver":"spike","power":74},
+    {"name":"Butterfly Verdict","pos":"BUTTERFLY_DDT","mode":"front","from":"STANDING_FRONT","style":["technical"],"deliver":"spike","power":76},
+    {"name":"Gooseneck Hoist","pos":"CHOKESLAM","mode":"front","from":"STANDING_FRONT","style":["powerhouse"],"deliver":"choke","power":80},
+    {"name":"Shoulder Reckoning","pos":"FIREMANS_CARRY","mode":"front","from":"STANDING_FRONT","style":["powerhouse","brawler"],"deliver":"slam","power":82},
+    {"name":"Cranium Driver","pos":"BRAINBUSTER","mode":"front","from":"STANDING_FRONT","style":["technical","striker"],"deliver":"spike","power":83},
+    {"name":"Comet Fallaway","pos":"FALLAWAY_SLAM","mode":"front","from":"STANDING_FRONT","style":["powerhouse"],"deliver":"toss","power":68},
+    {"name":"Lateral Collapse","pos":"SIDE_SLAM","mode":"front","from":"STANDING_FRONT","style":["powerhouse","brawler"],"deliver":"slam","power":66},
+    {"name":"Deadlift Spinebuster","pos":"SPINEBUSTER","mode":"front","from":"STANDING_FRONT","style":["powerhouse"],"deliver":"slam","power":77,"desc":"Bannon canon"},
+    {"name":"Hip Toss Reversal","pos":"ATOMIC_DROP","mode":"front","from":"STANDING_FRONT","style":["oldSchool","technical"],"deliver":"drop","power":52},
+    {"name":"Backspin Spike","pos":"REVERSE_DDT","mode":"front","from":"STANDING_FRONT","style":["technical","showman"],"deliver":"spike","power":71},
+    {"name":"Pumphandle Fall","pos":"PUMPHANDLE_SLAM","mode":"rear","from":"STANDING_REAR","style":["powerhouse"],"deliver":"slam","power":74},
+    {"name":"Kidney Breaker","pos":"BACKBREAKER","mode":"front","from":"STANDING_FRONT","style":["technical","brawler"],"deliver":"drop","power":58},
+    {"name":"Rear Skyfall","pos":"REAR_SUPLEX","mode":"rear","from":"STANDING_REAR","style":["technical"],"deliver":"toss","power":70},
+    {"name":"Chair of Judgment","pos":"ELECTRIC_CHAIR","mode":"rear","from":"STANDING_REAR","style":["powerhouse","showman"],"deliver":"drop","power":75},
+    {"name":"Indefinite Suspension","pos":"GORILLA_PRESS","mode":"front","from":"STANDING_FRONT","style":["powerhouse"],"deliver":"toss","power":80,"desc":"gorilla press canon"},
+    {"name":"Tornado Snap","pos":"DDT","mode":"front","from":"ROPE_REBOUND","style":["highFlyer","lucha"],"deliver":"spike","power":68,"mdickie":"tornado DDT family"}
+  ],
+  "dives": [
+    {"name":"Broken Halo","dive":"SHOOTING_STAR","from":"TOP_ROPE","style":["highFlyer"],"power":82},
+    {"name":"Solar Flare","dive":"PHOENIX","from":"TOP_ROPE","style":["highFlyer","showman"],"power":86},
+    {"name":"Gravity's Debt","dive":"FROG_SPLASH","from":"TOP_ROPE","style":["highFlyer"],"power":72},
+    {"name":"Leap of Faith","dive":"SWANTON","from":"TOP_ROPE","style":["highFlyer","hardcore"],"power":78,"desc":"Stick-Up canon family"},
+    {"name":"Full Rotation","dive":"FOURFIFTY","from":"TOP_ROPE","style":["highFlyer"],"power":80},
+    {"name":"Spiral Verdict","dive":"SPIRAL_TAP","from":"TOP_ROPE","style":["highFlyer","showman"],"power":84},
+    {"name":"Corkscrew Comet","dive":"TORNILLO","from":"SPRINGBOARD","style":["lucha","highFlyer"],"power":70},
+    {"name":"Guillotine Drop","dive":"DIVING_LEG_DROP","from":"TOP_ROPE","style":["oldSchool","powerhouse"],"power":66},
+    {"name":"Meteor Stomp","dive":"DOUBLE_STOMP","from":"MIDDLE_ROPE","style":["highFlyer","striker"],"power":64},
+    {"name":"Slingshot Comet","dive":"SPRINGBOARD_SPLASH","from":"APRON","style":["lucha","highFlyer"],"power":60}
+  ],
+  "submissions": [
+    {"name":"Ring of Saturn","sub":"ARM_TRAP_CRANK","limb":"arm","from":"GROUNDED_SIDE","style":["technical"],"desc":"Bannon canon finisher hold"},
+    {"name":"The Structural Collapse","sub":"BRIDGING_CHINLOCK","limb":"neck","from":"GROUNDED_HEAD","style":["technical"]},
+    {"name":"Boston Crab","sub":"BACK_BEND","limb":"back","from":"GROUNDED_LEG","style":["oldSchool","technical"],"desc":"Bannon canon"},
+    {"name":"Iron Anaconda","sub":"ARM_TRIANGLE","limb":"neck","from":"GROUNDED_SIDE","style":["mma","technical"]},
+    {"name":"Fault Line","sub":"CROSSFACE","limb":"neck","from":"GROUNDED_HEAD","style":["technical","mma"]},
+    {"name":"Tap Protocol","sub":"ANKLE_LOCK","limb":"leg","from":"GROUNDED_LEG","style":["technical","mma"]},
+    {"name":"Quadrant Lock","sub":"FIGURE_FOUR","limb":"leg","from":"GROUNDED_LEG","style":["oldSchool","technical"]},
+    {"name":"Kimura Clause","sub":"KIMURA","limb":"arm","from":"GROUNDED_SIDE","style":["mma"]},
+    {"name":"Silent Sleeper","sub":"REAR_NAKED","limb":"neck","from":"STANDING_REAR","style":["mma","striker"]}
+  ],
+  "strikes": [
+    {"name":"Running Powerslam","pos":"SIDE_SLAM","from":"ROPE_REBOUND","style":["powerhouse","brawler"],"power":74,"desc":"Bannon canon, onto tacks"},
+    {"name":"Scorpio Lariat","from":"ROPE_REBOUND","style":["brawler","powerhouse"],"power":70,"kind":"strike"},
+    {"name":"Big Boot Toll","from":"ROPE_REBOUND","style":["brawler"],"power":64,"kind":"strike"},
+    {"name":"Shoulder Reckoning Block","from":"RUNNING","style":["powerhouse"],"power":60,"kind":"strike"},
+    {"name":"Knife-Edge Sermon","from":"CORNER","style":["oldSchool","striker"],"power":30,"kind":"strike"},
+    {"name":"Mudhole Liturgy","from":"CORNER","style":["brawler","hardcore"],"power":34,"kind":"strike"},
+    {"name":"Stiff Palm","from":"STANDING_FRONT","style":["striker","mma"],"power":40,"kind":"strike"},
+    {"name":"Roaring Elbow","from":"STANDING_FRONT","style":["striker","mma"],"power":56,"kind":"strike"},
+    {"name":"Self-Destruct Headbutt","from":"TOP_ROPE","style":["hardcore","oldSchool"],"power":68,"kind":"strike","desc":"Bannon canon flying headbutt"}
+  ],
+  "ground": [
+    {"name":"Mounted Hammer","from":"GROUNDED_HEAD","style":["brawler","mma"],"power":36,"kind":"strike"},
+    {"name":"Kidney Stomp","from":"GROUNDED_SIDE","style":["brawler","hardcore"],"power":32,"kind":"strike"},
+    {"name":"Hamstring Chop","from":"GROUNDED_LEG","style":["technical"],"power":28,"kind":"strike"},
+    {"name":"Elbow of Judgment","from":"GROUNDED_HEAD","style":["oldSchool"],"power":44,"kind":"strike"}
+  ]
+}

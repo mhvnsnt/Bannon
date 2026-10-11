@@ -1,0 +1,26 @@
+{
+ "meshes": 1,
+ "verts_before": 12633,
+ "faces_before": 18000,
+ "degenerate_removed": 0,
+ "duplicate_removed": 0,
+ "unreferenced_removed": 0,
+ "holes_filled": 81,
+ "verts_after": 12102,
+ "faces_after": 18081,
+ "scale_applied": 1.0,
+ "bounds_after": [
+  [
+   -0.1504748836159706,
+   -0.9244527220726013,
+   -0.28852061927318573
+  ],
+  [
+   0.1504748836159706,
+   0.9200168251991272,
+   0.28852061927318573
+  ]
+ ],
+ "input": "../../out/STICKUP_repaired.glb",
+ "output": "mesh/proof/STICKUP_doctored.glb"
+}

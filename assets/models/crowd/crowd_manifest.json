@@ -1,0 +1,96 @@
+{
+ "license": "CC0 1.0 Universal",
+ "source": "KayKit via AshLane",
+ "files": [
+  {
+   "file": "Knight.glb",
+   "bytes": 1055188,
+   "animations_kept": [
+    "Cheer",
+    "Idle",
+    "Unarmed_Idle"
+   ],
+   "animations_removed": 73
+  },
+  {
+   "file": "Rogue.glb",
+   "bytes": 1012256,
+   "animations_kept": [
+    "Cheer",
+    "Idle",
+    "Unarmed_Idle"
+   ],
+   "animations_removed": 73
+  },
+  {
+   "file": "Rogue_Hooded.glb",
+   "bytes": 993828,
+   "animations_kept": [
+    "Cheer",
+    "Idle",
+    "Unarmed_Idle"
+   ],
+   "animations_removed": 73
+  },
+  {
+   "file": "Barbarian.glb",
+   "bytes": 1009264,
+   "animations_kept": [
+    "Cheer",
+    "Idle",
+    "Unarmed_Idle"
+   ],
+   "animations_removed": 73
+  },
+  {
+   "file": "Mage.glb",
+   "bytes": 985696,
+   "animations_kept": [
+    "Cheer",
+    "Idle",
+    "Unarmed_Idle"
+   ],
+   "animations_removed": 73
+  },
+  {
+   "file": "Skeleton_Warrior.glb",
+   "bytes": 1191052,
+   "animations_kept": [
+    "Cheer",
+    "Idle",
+    "Unarmed_Idle"
+   ],
+   "animations_removed": 92
+  },
+  {
+   "file": "Skeleton_Rogue.glb",
+   "bytes": 1154736,
+   "animations_kept": [
+    "Cheer",
+    "Idle",
+    "Unarmed_Idle"
+   ],
+   "animations_removed": 92
+  },
+  {
+   "file": "Skeleton_Minion.glb",
+   "bytes": 1142072,
+   "animations_kept": [
+    "Cheer",
+    "Idle",
+    "Unarmed_Idle"
+   ],
+   "animations_removed": 92
+  },
+  {
+   "file": "Skeleton_Mage.glb",
+   "bytes": 1089216,
+   "animations_kept": [
+    "Cheer",
+    "Idle",
+    "Unarmed_Idle"
+   ],
+   "animations_removed": 92
+  }
+ ]
+}

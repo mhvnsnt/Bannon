@@ -1,0 +1,29 @@
+name: Keepalive — ping bannon-daemon on Render
+
+# Render's free tier sleeps after 15 min of no inbound traffic, which would
+# kill the Telegram bot / WebSocket connections. This pings /health every
+# 10 minutes so the service never goes idle. Costs nothing: public-repo
+# Actions minutes are unlimited, and the ping itself is one tiny HTTP GET.
+#
+# Set the service URL once: repo Settings → Secrets and variables →
+# Actions → Variables → RENDER_SERVICE_URL = https://<your-service>.onrender.com
+# If unset, it defaults to https://bannon-daemon.onrender.com.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health
+        run: |
+          URL="${{ vars.RENDER_SERVICE_URL }}"
+          if [ -z "$URL" ]; then URL="https://bannon-daemon.onrender.com"; fi
+          echo "Pinging $URL/health"
+          # retry: the first hit after idle can take ~60s while Render wakes the service
+          curl -sf --retry 3 --retry-delay 30 --max-time 150 "$URL/health" \
+            && echo "ALIVE" \
+            || { echo "keepalive ping failed after retries"; exit 1; }

@@ -1,0 +1,80 @@
+[
+ {
+  "name": "DOUBLESUPLEX",
+  "dur": 11.0,
+  "keys": 24,
+  "attacker": {
+   "invPeak": 35.4,
+   "invSwing": 28.1,
+   "invEnd": 18.7,
+   "invertedFrac": 0.0,
+   "headMin": 0.288,
+   "headTravel": 0.218,
+   "headBelowFrac": 0.0,
+   "statureStart": 1.242,
+   "statureMin": 0.897,
+   "compaction": 0.28,
+   "headBelowFeetFrac": 0.0,
+   "turnNet": 170.1,
+   "turnWidest": 172.3
+  },
+  "receiver": null,
+  "hasReceiver": false,
+  "family": "unclassified",
+  "confidence": 0.2,
+  "why": "inv 35  headBelow 0%  travel 0.22  fold 28%  turn 172  \u2014 no rule fits, needs an eye",
+  "strip": null
+ },
+ {
+  "name": "ALTERNATINGFOREARMS",
+  "dur": 4.0,
+  "keys": 24,
+  "attacker": {
+   "invPeak": 18.2,
+   "invSwing": 15.9,
+   "invEnd": 3.6,
+   "invertedFrac": 0.0,
+   "headMin": 0.456,
+   "headTravel": 0.062,
+   "headBelowFrac": 0.0,
+   "statureStart": 1.423,
+   "statureMin": 1.128,
+   "compaction": 0.21,
+   "headBelowFeetFrac": 0.0,
+   "turnNet": 4.5,
+   "turnWidest": 59.7
+  },
+  "receiver": null,
+  "hasReceiver": false,
+  "family": "strike / kick family",
+  "confidence": 0.45,
+  "why": "nothing inverts (18 deg), nothing folds (21%), no real turn (60 deg) \u2014 reads as a strike",
+  "strip": null
+ },
+ {
+  "name": "HAMMERLOCKDDT",
+  "dur": 8.0,
+  "keys": 24,
+  "attacker": {
+   "invPeak": 30.5,
+   "invSwing": 28.2,
+   "invEnd": 3.8,
+   "invertedFrac": 0.0,
+   "headMin": 0.303,
+   "headTravel": 0.215,
+   "headBelowFrac": 0.0,
+   "statureStart": 1.346,
+   "statureMin": 1.061,
+   "compaction": 0.21,
+   "headBelowFeetFrac": 0.0,
+   "turnNet": 154.1,
+   "turnWidest": 171.0
+  },
+  "receiver": null,
+  "hasReceiver": false,
+  "family": "unclassified",
+  "confidence": 0.2,
+  "why": "inv 30  headBelow 0%  travel 0.21  fold 21%  turn 171  \u2014 no rule fits, needs an eye",
+  "strip": null
+ }
+]
