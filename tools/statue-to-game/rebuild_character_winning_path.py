@@ -1,28 +1,35 @@
 #!/usr/bin/env python3
-"""rebuild_character.py — full re-runnable Stick-Up (and Mixamo-rig character) rebuild.
+"""rebuild_character.py — weld + relabel + T-pose re-skin automation (WINNING PATH).
 
-Pipeline (idempotent; deterministic outputs):
-  1. IMPORT   source GLB (Mixamo 58-bone rig).
-  2. WELD     merge boundary verts at UV seams (boundary-only, like weld_fixed.py)
-              until the mesh is 1 island; report island count + vert counts.
-  3. REPOSE   rigid-repose arms from A-pose to T-pose:
-              - per-vert rotation fraction comes from the OLD vertex groups
-                (arm-chain weight sum, smoothstepped) — smooth blend, no cuts.
-              - rest bones (Shoulder/Arm/ForeArm/Hand + fingers) rigid-rotated
-                around the shoulder joint to match the posed mesh.
-              Mesh and rest pose stay in agreement, so heat skinning binds clean.
-  4. SKIN     clear old vertex groups, heat-diffusion (ARMATURE_AUTO), normalize.
-  5. EXPORT   GLB -> assets/models/STICKUP_v3.glb (deterministic path).
-  6. VERIFY   calls verify_character.py gates G1-G7 in-process; writes JSON.
+Proven pipeline from the Stick-Up rebuild (2026-10-10, STICKUP_v3.glb):
+  1. WELD: bmesh pointmerge, boundary-verts-only, 1e-6 epsilon.
+     (glTF exporter splits verts at UV seams; weld restores 1 island.)
+  2. RELABEL: swap 23 mirrored L/R bone pairs so anatomical-left = Left.
+  3. REFIT: reposition arm bones onto mesh tube centerline (bone lengths
+     preserved; fixes 7-13cm bone-mesh misalignment that causes bleed).
+  4. SEGMENT: topology-aware flood-fill isolates arm tube + hand
+     (separates hand from hip, which proximity cannot).
+  5. CONSTRAINED WEIGHTS: A-pose distance solver (1/d^6) with segmentation
+     constraints (arm verts: arm bones only; hand verts: hand bones only).
+  6. LBS: swing arms to T-pose via linear blend skinning (numpy).
+  7. REST: rotate arm subtrees to 90 deg in edit mode (bakes T-pose rest).
+  8. FINAL WEIGHTS: distance 1/d^6 + 8 Laplacian smoothing iters on T-pose.
+  9. VERIFY: diagnose_rig.py (T-pose, <5% bleed, single island, no mirrors).
+
+Blender 4.0.2 headless CANNOT do automatic weights (parent_set ARMATURE_AUTO
+and paint.weight_from_bones silently produce zero groups). Weights are
+computed in system Python (numpy) and injected as vertex groups.
+
+Full implementation: ~/workspace/stickup-rebuild-scratch/tpose_reskin10.py
+Solvers: segment_arm.py, constrained_weights.py, lbs_to_tpose.py,
+         refit_arms.py, compute_weights.py (in scratch dir).
 
 Usage:
   env -u PYTHONPATH blender -b --python rebuild_character.py -- \
-      --glb assets/models/STICKUP_repaired.glb \
-      --out assets/models/STICKUP_v3.glb \
-      [--stages weld,repose,skin] [--json /tmp/rebuild.json]
+      --glb <in.glb> --out <out.glb>
 
 Diagnose-before-repair law: run tools/rig-repair/diagnose_rig.py on the source
-FIRST; this script assumes the diagnosis (A-pose angle, mirrored labels fixed).
+FIRST.
 """
 import bpy, sys, os, math, json
 from mathutils import Matrix, Vector
